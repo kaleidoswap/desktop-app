@@ -214,17 +214,18 @@ export const parseAssetAmountWithPrecision = (
 /**
  * Calculates the exchange rate between two assets
  * @param price The price from the feed
- * @param size The size from the feed
+ * @param size The size from the feed (optional in newer versions)
  * @param isInverted Whether the pair is inverted from the user's perspective
  * @returns The calculated exchange rate
  */
 export const calculateExchangeRate = (
   price: number,
-  size: number,
-  isInverted: boolean
+  size?: number,
+  isInverted?: boolean
 ): number => {
-  const rate = price / size
-  return isInverted ? 1 / rate : rate
+  // If size is not provided (or is 0), assume price is already the correct rate
+  const rate = size && size !== 0 ? price / size : price;
+  return isInverted ? 1 / rate : rate;
 }
 
 /**

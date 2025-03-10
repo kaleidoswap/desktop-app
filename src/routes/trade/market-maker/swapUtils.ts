@@ -20,7 +20,6 @@ export interface SwapDetails {
   timestamp: string
   payment_hash: string
   selectedPair: TradingPair | null
-  selectedPairFeed: any // Replace with proper type
 }
 
 /**
@@ -89,7 +88,7 @@ export const validateSwapString = (
 export const createSwapExecutor = (
   assets: NiaAsset[],
   pubKey: string,
-  selectedPairFeed: any,
+  price: number,
   selectedPair: TradingPair | null,
   parseAssetAmount: (
     amount: string | undefined | null,
@@ -259,9 +258,8 @@ export const createSwapExecutor = (
         ),
         fromAsset: data.fromAsset,
         payment_hash: payment_hash,
-        price: selectedPairFeed.price / selectedPairFeed.size,
+        price: price || 0,
         selectedPair: selectedPair,
-        selectedPairFeed: selectedPairFeed,
         timestamp: new Date().toISOString(),
         toAmount: formatAmount(
           parseAssetAmount(data.to, data.toAsset),

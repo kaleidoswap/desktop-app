@@ -53,6 +53,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
     ) => {
       if (!price || !selectedPair) return 'Price not available'
 
+      // Use price directly as the exchange rate
       let rate = price
       let displayFromAsset = fromAsset
       let displayToAsset = toAsset
@@ -75,29 +76,20 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
         rate = rate / SATOSHIS_PER_BTC
       }
 
-      const formattedRate = !isInverted
-        ? new Intl.NumberFormat('en-US', {
-            maximumFractionDigits: precision > 4 ? precision : 4,
-            minimumFractionDigits: precision,
-            useGrouping: true,
-          }).format(
-            parseFloat(
-              (rate / Math.pow(10, precision)).toFixed(
-                precision > 4 ? precision : 4
-              )
-            )
+      // Apply inversion if needed
+      rate = isInverted ? 1 / rate : rate;
+
+      const formattedRate = new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: precision > 4 ? precision : 4,
+        minimumFractionDigits: precision,
+        useGrouping: true,
+      }).format(
+        parseFloat(
+          (rate / Math.pow(10, precision)).toFixed(
+            precision > 4 ? precision : 4
           )
-        : new Intl.NumberFormat('en-US', {
-            maximumFractionDigits: precision > 4 ? precision : 4,
-            minimumFractionDigits: precision,
-            useGrouping: true,
-          }).format(
-            parseFloat(
-              (Math.pow(10, precision) / rate).toFixed(
-                precision > 4 ? precision : 4
-              )
-            )
-          )
+        )
+      )
 
       return (
         <div className="flex items-center gap-2">
@@ -132,7 +124,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
 
 interface ExchangeRateSectionProps {
   selectedPair: TradingPair | null
-  selectedPairFeed: any
+  price: number | null
   isPriceLoading: boolean
   fromAsset: string
   toAsset: string
@@ -144,7 +136,7 @@ interface ExchangeRateSectionProps {
 
 export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   selectedPair,
-  selectedPairFeed,
+  price,
   isPriceLoading,
   fromAsset,
   toAsset,
@@ -164,17 +156,16 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   const [isReconnecting, setIsReconnecting] = useState(false)
   const autoReconnectTimeoutRef = useRef<number | null>(null)
 
-  // Store the previous selectedPairFeed in a ref to detect changes
-  const prevSelectedPairFeedRef = useRef<any>(null)
+  // Store the previous price in a ref to detect changes
+  const prevPriceRef = useRef<number | null>(null)
 
   // Effect to detect price updates
   useEffect(() => {
-    const currentPrice = selectedPairFeed?.price
-    const currentFeed = selectedPairFeed
-    const prevFeed = prevSelectedPairFeedRef.current
+    const currentPrice = price
+    const prevStoredPrice = prevPriceRef.current
 
-    // Update the ref with the current feed
-    prevSelectedPairFeedRef.current = currentFeed
+    // Update the ref with the current price
+    prevPriceRef.current = currentPrice
 
     // Only trigger animation if we have a previous price and it changed
     if (
@@ -195,14 +186,12 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       return () => clearTimeout(timer)
     }
 
-    // Check if the feed object itself changed (new quote received)
-    if (prevFeed && currentFeed && prevFeed !== currentFeed) {
-      // If the feed object changed but the price didn't, we still want to update the timestamp
-      if (prevFeed.price === currentFeed.price) {
-        setLastQuoteTimestamp(Date.now())
-        setIsPriceFresh(true)
-        setIsReconnecting(false)
-      }
+    // Check if the price changed (new quote received)
+    if (prevStoredPrice !== null && currentPrice !== null && prevStoredPrice !== currentPrice) {
+      // If the price changed, update the timestamp
+      setLastQuoteTimestamp(Date.now())
+      setIsPriceFresh(true)
+      setIsReconnecting(false)
     }
 
     // Update previous price and set initial timestamp if first load
@@ -213,14 +202,13 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
         setIsPriceFresh(true)
       }
     }
-  }, [selectedPairFeed, prevPrice, lastQuoteTimestamp])
+  }, [price, prevPrice, lastQuoteTimestamp])
 
   // Auto-reconnect logic when price gets stale
   useEffect(() => {
     if (
       !isPriceFresh &&
       !isReconnecting &&
-      onReconnect &&
       autoReconnectTimeoutRef.current === null
     ) {
       // Wait for 10 seconds before attempting an automatic reconnection
@@ -236,7 +224,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
         autoReconnectTimeoutRef.current = null
       }
     }
-  }, [isPriceFresh, isReconnecting, onReconnect])
+  }, [isPriceFresh, isReconnecting])
 
   // Update the formatted time difference every second and check price freshness
   useEffect(() => {
@@ -349,7 +337,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
                 formatAmount={formatAmount}
                 fromAsset={fromAsset}
                 getAssetPrecision={getAssetPrecision}
-                price={selectedPairFeed ? selectedPairFeed.price : null}
+                price={price}
                 priceUpdated={showPriceUpdate}
                 selectedPair={selectedPair}
                 toAsset={toAsset}

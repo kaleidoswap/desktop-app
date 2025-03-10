@@ -3,24 +3,6 @@ import { Dispatch } from '@reduxjs/toolkit'
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { logger } from '../../../utils/logger'
 
-// Track last subscription time and requests
-const subscriptionState = {
-  backoffMultiplier: 1.5,
-  // Minimum time between subscriptions (milliseconds)
-consecutiveRateLimitErrors: 0,
-  
-// Maximum backoff interval in milliseconds
-currentBackoff: 500, 
-  
-
-lastSubscriptionTime: 0,
-  
-
-maxBackoffInterval: 5000,
-  
-minInterval: 500, 
-  pendingSubscriptions: new Map<string, number>(), // Start with the min interval
-}
 
 // Rate limiting backoff parameters
 let rateLimit = {
@@ -227,46 +209,36 @@ export function addJitter(delay: number, jitterFactor: number = 0.3): number {
 }
 
 /**
- * Subscribe to a trading pair's price feed with rate limiting
- * This function debounces multiple subscription requests to the same pair
- * and ensures we don't exceed the server's rate limit
- * @param pair The trading pair to subscribe to (e.g. "BTC/USD")
+ * Subscribe to a trading pair feed
+ *
+ * @param pair Trading pair string in format "BTC/USD"
  */
 export const subscribeToPairFeed = (pair: string): void => {
-  if (!pair) {
-    logger.error('Cannot subscribe to empty pair')
-    return
-  }
+  // Log information about the subscription attempt
+  logger.info(`Subscribing to trading pair feed: ${pair}`)
 
-  // Cancel any pending subscription for this pair
-  if (subscriptionState.pendingSubscriptions.has(pair)) {
-    clearTimeout(subscriptionState.pendingSubscriptions.get(pair))
-    subscriptionState.pendingSubscriptions.delete(pair)
-  }
-
-  const now = Date.now()
-  const timeSinceLastSubscription = now - subscriptionState.lastSubscriptionTime
-  const currentDelay = subscriptionState.currentBackoff
-
-  // If we've recently sent a subscription request, delay this one
-  if (timeSinceLastSubscription < currentDelay) {
-    const delay = currentDelay - timeSinceLastSubscription
-    logger.debug(
-      `Delaying subscription to ${pair} by ${delay}ms to avoid rate limiting`
-    )
-
-    // Set a timeout to subscribe after the delay
-    const timeoutId = setTimeout(() => {
-      subscriptionState.pendingSubscriptions.delete(pair)
-      subscriptionState.lastSubscriptionTime = Date.now()
-      webSocketService.subscribeToPair(pair)
-    }, delay)
-
-    subscriptionState.pendingSubscriptions.set(pair, timeoutId)
-  } else {
-    // If enough time has passed, subscribe immediately
-    subscriptionState.lastSubscriptionTime = now
-    webSocketService.subscribeToPair(pair)
+  try {
+    // Extract the assets from the pair string
+    const [fromAsset, toAsset] = pair.split('/')
+    
+    if (!fromAsset || !toAsset) {
+      logger.error(`Invalid pair format: ${pair}`)
+      return
+    }
+    
+    // The WebSocket API now only supports 'ping' and 'quote_request' actions
+    // Instead of using the 'subscribe' action which is no longer supported,
+    // we send a quote request with a minimal amount to get initial pricing
+    // This will be used to update the UI
+    const success = webSocketService.requestQuote(fromAsset, toAsset, 1000)
+    
+    if (success) {
+      logger.debug(`Sent initial quote request for pair: ${pair}`)
+    } else {
+      logger.warn(`Failed to send initial quote request for pair: ${pair}`)
+    }
+  } catch (error) {
+    logger.error(`Error subscribing to pair feed: ${pair}`, error)
   }
 }
 

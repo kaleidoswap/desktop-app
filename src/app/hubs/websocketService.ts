@@ -14,7 +14,7 @@ import {
   setWsConnected,
   subscribeToPair,
   unsubscribeFromPair,
-  updatePrice,
+  updateQuote,
 } from '../../slices/makerApi/pairs.slice'
 import { logger } from '../../utils/logger'
 
@@ -53,8 +53,8 @@ class WebSocketService {
   // Message queue system
   private messageQueue: QueuedMessage[] = []
   private processingQueue: boolean = false
-  private maxQueueSize: number = 100
-  private messageProcessInterval: number = 500
+  private maxQueueSize: number = 200
+  private messageProcessInterval: number = 300
   private messageProcessTimer: number | null = null
   private lastMessageSent: number = 0
 
@@ -124,6 +124,37 @@ class WebSocketService {
         `WebSocketService: Not queuing message, socket not connected (${action})`
       )
       return false
+    }
+
+    // For quote requests, try to replace an existing request for the same asset pair
+    if (action === 'quote_request' && payload.from_asset && payload.to_asset) {
+      const pairKey = `${payload.from_asset}/${payload.to_asset}`
+      
+      // Find any existing quote request for this pair
+      const existingIndex = this.messageQueue.findIndex(
+        (msg) => 
+          msg.action === 'quote_request' && 
+          msg.payload.from_asset === payload.from_asset && 
+          msg.payload.to_asset === payload.to_asset
+      )
+      
+      // If found, replace it instead of adding a new message
+      if (existingIndex >= 0) {
+        this.messageQueue[existingIndex] = {
+          action,
+          payload,
+          priority,
+          timestamp: Date.now(),
+        }
+        logger.debug(`WebSocketService: Replaced existing quote request for ${pairKey}`)
+        
+        // Start processing if not already running
+        if (!this.processingQueue) {
+          this.processMessageQueue()
+        }
+        
+        return true
+      }
     }
 
     // Check if queue is full
@@ -386,31 +417,10 @@ class WebSocketService {
     resetConnectionHealth()
     this.messageProcessInterval = 500 // Reset to default
 
-    // Synchronize subscriptions to ensure client and server are in sync
-    this.syncSubscriptions()
-
     this.startHeartbeat()
 
     // Reset rate limiting after successful connection
     resetRateLimitBackoff()
-  }
-
-  /**
-   * Synchronize subscriptions with the server
-   * This ensures the server knows exactly what we're subscribed to
-   */
-  private syncSubscriptions(): void {
-    if (this.subscribedPairs.size === 0) {
-      logger.debug('WebSocketService: No pairs to sync')
-      return
-    }
-
-    const pairs = Array.from(this.subscribedPairs)
-    logger.info(
-      `WebSocketService: Synchronizing ${pairs.length} subscriptions with server`
-    )
-
-    this.queueMessage('sync_subscriptions', { pairs }, 5) // Highest priority
   }
 
   /**
@@ -419,28 +429,44 @@ class WebSocketService {
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data)
+      
+      // Log the raw data for debugging
+      logger.debug('WebSocketService: Received message data:', data)
 
       // Always update heartbeat timestamp when we receive any message
       this.lastHeartbeatResponse = Date.now()
 
       // Handle message based on action type
-      if (data.action === 'price_update') {
+      if (data.action === 'quote_response') {
         if (this.dispatch) {
-          this.dispatch(updatePrice(data.data))
+          if (data.data) {
+            // Ensure data contains all required fields
+            logger.debug('WebSocketService: Processing quote response data:', data.data)
+            
+            // Make sure we have the necessary fields
+            if (data.data.from_asset && data.data.to_asset && data.data.to_amount !== undefined) {
+              logger.info(`WebSocketService: Received valid quote: with ID: ${data.data.rfq_id} - ${data.data.from_amount} ${data.data.from_asset} -> ${data.data.to_amount} ${data.data.to_asset}`)
+              this.dispatch(updateQuote(data.data))
+            } else {
+              logger.error('WebSocketService: Malformed quote response - missing required fields:', data.data)
+            }
+          } else if (data.error) {
+            logger.error(`WebSocketService: Quote response error: ${data.error}`)
+          } else {
+            logger.error('WebSocketService: Invalid quote response format - missing data')
+          }
+        } else {
+          logger.warn('WebSocketService: Redux dispatch not set, cannot update quote')
         }
-        // Count successful message receipt
+        
+        // Reset rate limit and track success
+        resetRateLimitBackoff()
         trackMessageSuccess()
       } else if (data.action === 'pong') {
         logger.debug('WebSocketService: Received pong response')
         // Reset rate limit and track success
         resetRateLimitBackoff()
         trackMessageSuccess()
-      } else if (data.action === 'subscribed') {
-        logger.info(`WebSocketService: Successfully subscribed to ${data.pair}`)
-        resetRateLimitBackoff()
-        trackMessageSuccess()
-      } else if (data.action === 'sync_result') {
-        this.handleSyncResult(data)
       } else if (data.error) {
         logger.error(`WebSocketService: Server reported error: ${data.error}`)
         trackMessageFailure(`Server error: ${data.error}`)
@@ -457,63 +483,211 @@ class WebSocketService {
   }
 
   /**
-   * Handle subscription sync result
+   * Store trading pairs we're interested in
+   * This is now just a client-side tracker since we're using request-response pattern
+   * 
+   * @param pair Trading pair to track (e.g. BTC/USD)
    */
-  private handleSyncResult(data: any): void {
-    if (data.success) {
+  public subscribeToPair(pair: string): void {
+    if (!pair) {
+      logger.error('WebSocketService subscribeToPair: No pair provided')
+      return
+    }
+
+    this.subscribedPairs.add(pair)
+
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      // Extract the assets from the pair string
+      const [fromAsset, toAsset] = pair.split('/')
+      
+      if (!fromAsset || !toAsset) {
+        logger.error(`Invalid pair format: ${pair}`)
+        return
+      }
+      
+      // The server only supports 'ping' and 'quote_request' actions
+      // Use a quote request with minimal amount to initialize pricing
+      this.queueMessage('quote_request', { 
+        from_asset: fromAsset, 
+        to_asset: toAsset, 
+        from_amount: 1000 
+      }, 2)
+
+      if (this.dispatch) {
+        this.dispatch(subscribeToPair(pair))
+      }
+
+      logger.info(`WebSocketService: Subscribed to ${pair}`)
+    } else {
       logger.info(
-        `WebSocketService: Subscription sync successful with ${data.subscribed_pairs?.length || 0} pairs`
+        `WebSocketService: Socket not ready, ${pair} will be subscribed upon reconnection`
       )
+    }
+  }
 
-      // Reset backoff and track success
-      resetRateLimitBackoff()
-      trackMessageSuccess()
+  /**
+   * Remove a pair from our tracking
+   *
+   * @param pair Trading pair to remove
+   */
+  public unsubscribeFromPair(pair: string): void {
+    if (!pair) return
 
-      // Update local subscription state if it's different from server
-      if (data.subscribed_pairs && Array.isArray(data.subscribed_pairs)) {
-        const serverPairs = new Set<string>(data.subscribed_pairs as string[])
-        const localPairs = this.subscribedPairs
+    this.subscribedPairs.delete(pair)
 
-        // Check for differences
-        let differences = false
+    // Note: We don't need to send anything to the server when unsubscribing
+    // since the server doesn't track subscriptions. We just need to update
+    // our local state and stop sending quote requests for this pair.
+    
+    if (this.dispatch) {
+      this.dispatch(unsubscribeFromPair(pair))
+    }
 
-        // Find pairs we think we're subscribed to that the server doesn't have
-        for (const pair of localPairs) {
-          if (!serverPairs.has(pair)) {
-            logger.warn(
-              `WebSocketService: Local subscription to ${pair} not reflected on server, resubscribing`
+    logger.info(`WebSocketService: Unsubscribed from ${pair}`)
+  }
+
+  /**
+   * Close the WebSocket connection
+   */
+  public close(): void {
+    logger.info('WebSocketService: Closing connection')
+    this.stopHeartbeat()
+    this.cleanupNetworkListeners()
+
+    if (this.socket) {
+      if (this.socket.readyState === WebSocket.OPEN) {
+        this.subscribedPairs.forEach((pair) => {
+          try {
+            // No need to send unsubscribe messages anymore
+            logger.debug(
+              `WebSocketService: Unsubscribed from ${pair} before closing`
             )
-            this.subscribeToPair(pair)
-            differences = true
+          } catch (e) {
+            // Ignore errors when unsubscribing during close
           }
-        }
+        })
 
-        // Find pairs the server thinks we're subscribed to that we don't have locally
-        for (const pair of serverPairs) {
-          if (!localPairs.has(pair)) {
-            logger.warn(
-              `WebSocketService: Server subscription to ${pair} not reflected locally, unsubscribing`
-            )
-            this.unsubscribeFromPair(pair)
-            differences = true
-          }
-        }
-
-        if (!differences) {
-          logger.debug(
-            'WebSocketService: Client and server subscriptions are in sync'
-          )
+        try {
+          // Send a final ping before closing
+          this.queueMessage('ping', {}, 5)
+        } catch (e) {
+          // Ignore errors when sending disconnect
         }
       }
-    } else {
-      logger.error(
-        `WebSocketService: Subscription sync failed: ${data.error || 'Unknown error'}`
-      )
-      trackMessageFailure(`Sync failed: ${data.error || 'Unknown error'}`)
 
-      // Retry sync after a short delay
-      setTimeout(() => this.syncSubscriptions(), 3000)
+      try {
+        this.socket.close(1000, 'Normal closure')
+      } catch (e) {
+        logger.error('WebSocketService close: Error closing WebSocket', e)
+      }
+
+      this.socket = null
+      this.subscribedPairs.clear()
+      this.connectionInitialized = false
+      this.messageQueue = []
+
+      if (this.dispatch) {
+        this.dispatch(setWsConnected(false))
+      }
     }
+  }
+
+  /**
+   * Check if the WebSocket is currently connected
+   */
+  public isConnected(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN
+  }
+
+  /**
+   * Get the current URL the WebSocket is connected to
+   */
+  public getCurrentUrl(): string {
+    return this.url
+  }
+
+  /**
+   * Force a reconnection to the WebSocket server
+   */
+  public reconnect(): boolean {
+    logger.info('WebSocketService: Manual reconnection requested')
+
+    if (this.url && this.clientId && this.dispatch) {
+      this.reconnectAttempts = 0
+      this.isReconnecting = false
+      this.close()
+
+      // Short delay before reconnecting
+      setTimeout(() => {
+        this.connectionInitialized = true
+        this.connect()
+      }, 100)
+
+      return true
+    }
+
+    logger.error(
+      'WebSocketService reconnect: Missing required connection parameters'
+    )
+    return false
+  }
+
+  /**
+   * Verify current subscription state and repair if needed
+   */
+  public verifySubscriptions(): void {
+    if (!this.isConnected()) {
+      logger.warn(
+        'WebSocketService: Cannot verify subscriptions while disconnected'
+      )
+      return
+    }
+
+    this.syncSubscriptions()
+  }
+
+  /**
+   * Get connection diagnostic information
+   */
+  public getDiagnostics(): any {
+    return {
+      connectionAttempts: this.connectionAttempts,
+      connectionInitialized: this.connectionInitialized,
+      isConnected: this.isConnected(),
+      lastHeartbeat: this.lastHeartbeatResponse
+        ? new Date(this.lastHeartbeatResponse).toISOString()
+        : null,
+      lastSuccessfulConnection: this.lastSuccessfulConnection
+        ? new Date(this.lastSuccessfulConnection).toISOString()
+        : null,
+      queuedMessages: this.messageQueue.length,
+      reconnectAttempts: this.reconnectAttempts,
+      subscribedPairs: Array.from(this.subscribedPairs),
+      url: this.url,
+    }
+  }
+
+  /**
+   * Request a quote for swapping from one asset to another
+   * 
+   * @param fromAsset The asset to swap from
+   * @param toAsset The asset to swap to
+   * @param fromAmount The amount to swap
+   * @returns A promise that resolves to true if the quote request was sent successfully
+   */
+  public requestQuote(fromAsset: string, toAsset: string, fromAmount: number): boolean {
+    if (!this.isConnected()) {
+      logger.debug('WebSocketService: Cannot request quote, socket not connected');
+      return false;
+    }
+
+    logger.debug(`WebSocketService: Requesting quote for ${fromAmount} ${fromAsset} -> ${toAsset}`);
+    
+    return this.queueMessage('quote_request', {
+      from_amount: fromAmount,
+      from_asset: fromAsset,
+      to_asset: toAsset
+    }, 4); // Higher priority than normal messages but lower than connection management
   }
 
   /**
@@ -638,17 +812,21 @@ class WebSocketService {
           if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({ action: 'ping' }))
             logger.debug('WebSocketService: Sent emergency ping')
-
-            // Also sync subscriptions
+            
+            // For each pair, send a quote request
             if (this.subscribedPairs.size > 0) {
-              const pairs = Array.from(this.subscribedPairs)
-              this.socket.send(
-                JSON.stringify({
-                  action: 'sync_subscriptions',
-                  pairs,
-                })
-              )
-              logger.debug('WebSocketService: Sent subscription sync')
+              this.subscribedPairs.forEach(pair => {
+                const [fromAsset, toAsset] = pair.split('/')
+                if (fromAsset && toAsset) {
+                  this.socket?.send(JSON.stringify({
+                    action: 'quote_request',
+                    from_asset: fromAsset,
+                    to_asset: toAsset,
+                    from_amount: 1000
+                  }))
+                }
+              })
+              logger.debug(`WebSocketService: Sent emergency quote requests for ${this.subscribedPairs.size} pairs`)
             }
           }
 
@@ -794,172 +972,13 @@ class WebSocketService {
   }
 
   /**
-   * Subscribe to a trading pair
-   *
-   * @param pair Trading pair to subscribe to (e.g. BTC/USD)
+   * Empty method for backward compatibility
+   * @deprecated
    */
-  public subscribeToPair(pair: string): void {
-    if (!pair) {
-      logger.error('WebSocketService subscribeToPair: No pair provided')
-      return
-    }
-
-    this.subscribedPairs.add(pair)
-
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.queueMessage('subscribe', { pair }, 2)
-
-      if (this.dispatch) {
-        this.dispatch(subscribeToPair(pair))
-      }
-
-      logger.info(`WebSocketService: Subscribed to ${pair}`)
-    } else {
-      logger.info(
-        `WebSocketService: Socket not ready, ${pair} will be subscribed upon reconnection`
-      )
-    }
-  }
-
-  /**
-   * Unsubscribe from a trading pair
-   *
-   * @param pair Trading pair to unsubscribe from
-   */
-  public unsubscribeFromPair(pair: string): void {
-    if (!pair) return
-
-    this.subscribedPairs.delete(pair)
-
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.queueMessage('unsubscribe', { pair }, 2)
-
-      if (this.dispatch) {
-        this.dispatch(unsubscribeFromPair(pair))
-      }
-
-      logger.info(`WebSocketService: Unsubscribed from ${pair}`)
-    }
-  }
-
-  /**
-   * Close the WebSocket connection
-   */
-  public close(): void {
-    logger.info('WebSocketService: Closing connection')
-    this.stopHeartbeat()
-    this.cleanupNetworkListeners()
-
-    if (this.socket) {
-      if (this.socket.readyState === WebSocket.OPEN) {
-        this.subscribedPairs.forEach((pair) => {
-          try {
-            this.queueMessage('unsubscribe', { pair }, 3)
-            logger.debug(
-              `WebSocketService: Unsubscribed from ${pair} before closing`
-            )
-          } catch (e) {
-            // Ignore errors when unsubscribing during close
-          }
-        })
-
-        try {
-          this.queueMessage('disconnect', {}, 5)
-        } catch (e) {
-          // Ignore errors when sending disconnect
-        }
-      }
-
-      try {
-        this.socket.close(1000, 'Normal closure')
-      } catch (e) {
-        logger.error('WebSocketService close: Error closing WebSocket', e)
-      }
-
-      this.socket = null
-      this.subscribedPairs.clear()
-      this.connectionInitialized = false
-      this.messageQueue = []
-
-      if (this.dispatch) {
-        this.dispatch(setWsConnected(false))
-      }
-    }
-  }
-
-  /**
-   * Check if the WebSocket is currently connected
-   */
-  public isConnected(): boolean {
-    return this.socket?.readyState === WebSocket.OPEN
-  }
-
-  /**
-   * Get the current URL the WebSocket is connected to
-   */
-  public getCurrentUrl(): string {
-    return this.url
-  }
-
-  /**
-   * Force a reconnection to the WebSocket server
-   */
-  public reconnect(): boolean {
-    logger.info('WebSocketService: Manual reconnection requested')
-
-    if (this.url && this.clientId && this.dispatch) {
-      this.reconnectAttempts = 0
-      this.isReconnecting = false
-      this.close()
-
-      // Short delay before reconnecting
-      setTimeout(() => {
-        this.connectionInitialized = true
-        this.connect()
-      }, 100)
-
-      return true
-    }
-
-    logger.error(
-      'WebSocketService reconnect: Missing required connection parameters'
-    )
-    return false
-  }
-
-  /**
-   * Verify current subscription state and repair if needed
-   */
-  public verifySubscriptions(): void {
-    if (!this.isConnected()) {
-      logger.warn(
-        'WebSocketService: Cannot verify subscriptions while disconnected'
-      )
-      return
-    }
-
-    this.syncSubscriptions()
-  }
-
-  /**
-   * Get connection diagnostic information
-   */
-  public getDiagnostics(): any {
-    return {
-      connectionAttempts: this.connectionAttempts,
-      connectionInitialized: this.connectionInitialized,
-      isConnected: this.isConnected(),
-      lastHeartbeat: this.lastHeartbeatResponse
-        ? new Date(this.lastHeartbeatResponse).toISOString()
-        : null,
-      lastSuccessfulConnection: this.lastSuccessfulConnection
-        ? new Date(this.lastSuccessfulConnection).toISOString()
-        : null,
-      queuedMessages: this.messageQueue.length,
-      reconnectAttempts: this.reconnectAttempts,
-      subscribedPairs: Array.from(this.subscribedPairs),
-      url: this.url,
-    }
+  private syncSubscriptions(): void {
+    // This method is kept for backward compatibility but does nothing
+    // as the server doesn't support subscription management anymore
+    logger.debug('WebSocketService: syncSubscriptions no longer needed with current API')
   }
 }
 

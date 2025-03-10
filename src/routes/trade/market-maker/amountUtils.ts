@@ -141,7 +141,6 @@ export const createRefreshAmountsHandler = (
  * Creates a function to update the 'to' amount based on the 'from' amount
  */
 export const createUpdateToAmountHandler = (
-  selectedPairFeed: any,
   form: any,
   parseAssetAmount: (
     amount: string | undefined | null,
@@ -153,14 +152,9 @@ export const createUpdateToAmountHandler = (
 ) => {
   return (fromAmount: string): void => {
     try {
-      // If the from amount is empty, zero, or there's no selected pair feed,
+      // If the from amount is empty or zero,
       // clear the to field and trigger validation
-      if (
-        !selectedPairFeed ||
-        !fromAmount ||
-        fromAmount === '' ||
-        fromAmount === '0'
-      ) {
+      if (!fromAmount || fromAmount === '' || fromAmount === '0') {
         form.setValue('to', '', {
           shouldDirty: true,
           shouldTouch: true,

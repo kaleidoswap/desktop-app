@@ -22,7 +22,6 @@ export interface SwapDetails {
   toAsset: string
   timestamp: string
   selectedPair: TradingPair | null
-  selectedPairFeed: any | null
   payment_hash: string
 }
 
@@ -93,7 +92,6 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
     toAsset,
     timestamp,
     selectedPair,
-    selectedPairFeed,
     payment_hash,
   } = swapDetails
 
@@ -113,14 +111,13 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
     (
       fromAsset: string,
       toAsset: string,
-      selectedPair: { base_asset: string; quote_asset: string } | null,
-      selectedPairFeed: { price: number } | null
+      price: number,
+      selectedPair: { base_asset: string; quote_asset: string } | null
     ) => {
-      if (!price || !selectedPair || !selectedPairFeed)
+      if (!price || !selectedPair)
         return 'Price not available'
 
-      let rate = selectedPairFeed.price
-      console.log(rate)
+      let rate = price
       let displayFromAsset = fromAsset
       let displayToAsset = toAsset
 
@@ -172,8 +169,8 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
   const exchangeRate = calculateAndFormatRate(
     fromAsset,
     toAsset,
-    selectedPair,
-    selectedPairFeed
+    price,
+    selectedPair
   )
 
   const isPending = currentSwap?.status?.toLowerCase() === 'pending'

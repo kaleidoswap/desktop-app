@@ -9,6 +9,7 @@ interface SwapButtonProps {
   hasTradablePairs: boolean
   isSwapInProgress: boolean
   hasZeroAmount?: boolean
+  hasValidQuote?: boolean
 }
 
 export const SwapButton: React.FC<SwapButtonProps> = ({
@@ -20,6 +21,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   hasTradablePairs,
   isSwapInProgress,
   hasZeroAmount = false,
+  hasValidQuote = false,
 }) => {
   const getButtonText = () => {
     if (!wsConnected) return 'Connecting...'
@@ -29,6 +31,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     if (errorMessage) return 'Invalid Amount'
     if (hasZeroAmount) return 'Enter Amount'
     if (isSwapInProgress) return 'Swap in Progress...'
+    if (!hasValidQuote) return 'Waiting for Quote...'
     return 'Swap Now'
   }
 
@@ -45,7 +48,8 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
         !hasChannels ||
         !hasTradablePairs ||
         isSwapInProgress ||
-        hasZeroAmount
+        hasZeroAmount ||
+        !hasValidQuote
       }
       type="submit"
     >

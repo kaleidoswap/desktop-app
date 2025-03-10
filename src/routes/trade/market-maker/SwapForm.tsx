@@ -33,7 +33,7 @@ interface SwapFormProps {
   selectedSize: number
   errorMessage: string | null
   selectedPair: TradingPair | null
-  selectedPairFeed: any
+  price: number | null
   handleFromAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleToAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleAssetChange: (field: 'fromAsset' | 'toAsset', value: string) => void
@@ -65,7 +65,7 @@ export const SwapForm: React.FC<SwapFormProps> = ({
   selectedSize,
   errorMessage,
   selectedPair,
-  selectedPairFeed,
+  price,
   handleFromAmountChange,
   handleToAmountChange,
   handleAssetChange,
@@ -191,8 +191,8 @@ export const SwapForm: React.FC<SwapFormProps> = ({
                 fromAsset={form.getValues().fromAsset}
                 getAssetPrecision={getAssetPrecision}
                 isPriceLoading={isPriceLoading}
+                price={price}
                 selectedPair={selectedPair}
-                selectedPairFeed={selectedPairFeed}
                 toAsset={form.getValues().toAsset}
               />
             )}

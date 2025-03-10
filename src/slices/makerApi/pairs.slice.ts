@@ -2,19 +2,33 @@ import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import { TradingPair } from '../makerApi/makerApi.slice'
 
-export interface PairFeed {
-  rfq_id: string
+interface PriceData {
   price: number
-  price_precision: number
-  pair: string
   size: number
+  rfq_id: string
+}
+
+interface QuoteResponse {
+  from_asset: string
+  to_asset: string
+  from_amount: number
+  to_amount: number
+  taker_to_amount: number
+  price: number
+  base_fee: number
+  variable_fee: number
+  final_fee: number
+  fee_rate: number
+  price_precision: number
   timestamp: number
   expires_at: number
+  rfq_id: string
 }
 
 export interface PairsState {
   assets: string[]
-  feed: Record<string, PairFeed>
+  feed: { [key: string]: PriceData }
+  quotes: { [key: string]: QuoteResponse }
   values: TradingPair[]
   ticker: Record<string, number>
   subscribedPairs: string[]
@@ -24,6 +38,7 @@ export interface PairsState {
 const initialState: PairsState = {
   assets: [],
   feed: {},
+  quotes: {},
   subscribedPairs: [],
   ticker: {},
   values: [],
@@ -53,23 +68,25 @@ export const pairsSlice = createSlice({
         (pair) => pair !== action.payload
       )
     },
-    updatePrice: (state, action: PayloadAction<PairFeed>) => {
-      const { pair, ...values } = action.payload
-      state.feed[pair] = {
-        ...state.feed[pair],
-        ...values,
-      }
-      state.ticker[pair] = Date.now()
+    updatePrice: (state, action: PayloadAction<any>) => {
+      const { pair, price, size, rfq_id } = action.payload
+      state.feed[pair] = { price, rfq_id, size }
+    },
+    updateQuote: (state, action: PayloadAction<QuoteResponse>) => {
+      const quote = action.payload
+      const key = `${quote.from_asset}/${quote.to_asset}/${quote.from_amount}`
+      state.quotes[key] = quote
     },
   },
 })
 
 export const {
   setTradingPairs,
-  updatePrice,
+  setWsConnected,
   subscribeToPair,
   unsubscribeFromPair,
-  setWsConnected,
+  updatePrice,
+  updateQuote,
 } = pairsSlice.actions
 
 export const pairsReducer = pairsSlice.reducer
