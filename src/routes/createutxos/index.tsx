@@ -16,9 +16,9 @@ interface FormFields {
 
 export const Component = () => {
   const [feeRates, setFeeRates] = useState({
-    fast: 3.0,
-    normal: 2.0,
-    slow: 1.0,
+    fast: 3,
+    normal: 2,
+    slow: 1,
   })
   const [customFee, setCustomFee] = useState(1.0)
   const [isLoading, setIsLoading] = useState(false)
