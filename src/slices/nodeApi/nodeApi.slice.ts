@@ -70,6 +70,7 @@ interface ListAssetsResponse {
 interface CloseChannelRequest {
   channel_id: string
   peer_pubkey: string
+  force?: boolean
 }
 
 export interface Channel {
@@ -556,7 +557,7 @@ export const nodeApi = createApi({
       query: (body) => ({
         body: {
           channel_id: body.channel_id,
-          force: false,
+          force: body.force === true,
           peer_pubkey: body.peer_pubkey,
         },
         method: 'POST',
