@@ -391,20 +391,17 @@ export const Component = () => {
       {isUnlocking ? (
         <SetupLayout
           centered={true}
+          className="flex items-center justify-center min-h-screen py-8"
           fullHeight
-          icon={<Lock />}
-          maxWidth="xl"
-          subtitle="Please wait while we access your wallet"
-          title="Unlocking Wallet"
+          maxWidth="2xl"
+          title="Wallet Access"
         >
-          <Card className="w-full max-w-3xl mx-auto p-6 bg-gray-900 border border-gray-800 rounded-xl">
-            <UnlockingProgress
-              errorMessage={unlockError || undefined}
-              isUnlocking={isUnlocking}
-              onBack={handleBack}
-              onCancel={handleCancelUnlocking}
-            />
-          </Card>
+          <UnlockingProgress
+            errorMessage={unlockError || undefined}
+            isUnlocking={isUnlocking}
+            onBack={handleBack}
+            onCancel={handleCancelUnlocking}
+          />
         </SetupLayout>
       ) : (
         <div className="flex items-center justify-center min-h-screen px-4 py-12">

@@ -13,6 +13,7 @@ interface SetupLayoutProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl'
   centered?: boolean
   fullHeight?: boolean
+  className?: string
 }
 
 /**
@@ -28,6 +29,7 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
   maxWidth = '4xl',
   centered = false,
   fullHeight = false,
+  className = '',
 }) => {
   const maxWidthClasses = {
     '2xl': 'max-w-2xl',
@@ -43,7 +45,7 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
 
   return (
     <div
-      className={`${maxWidthClasses[maxWidth]} mx-auto w-full p-3 ${fullHeight ? 'h-full flex flex-col' : ''}`}
+      className={`${maxWidthClasses[maxWidth]} mx-auto w-full p-3 ${fullHeight ? 'h-full flex flex-col' : ''} ${className}`}
     >
       <Card
         className={`p-5 md:p-6 ${fullHeight ? 'flex-1 flex flex-col overflow-hidden min-h-0' : ''}`}

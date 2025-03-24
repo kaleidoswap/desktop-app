@@ -23,10 +23,10 @@ export const UnlockingProgress = ({
   ]
 
   return (
-    <div className="flex items-center justify-center p-4">
-      <div className="w-full max-w-3xl flex flex-col items-center">
+    <div className="flex items-center justify-center h-full w-full">
+      <div className="w-full max-w-2xl flex flex-col items-center">
         {/* Animated Progress Ring with Gradient */}
-        <div className="relative w-32 h-32 mb-8">
+        <div className="relative w-28 h-28 mb-8">
           {/* Outer static ring */}
           <div className="absolute inset-0 rounded-full border-4 border-cyan-500/20" />
 
@@ -36,15 +36,15 @@ export const UnlockingProgress = ({
           />
 
           {/* Inner pulsing circle */}
-          <div className="absolute inset-0 m-auto w-16 h-16">
+          <div className="absolute inset-0 m-auto w-14 h-14">
             <div
               className={`w-full h-full rounded-full ${errorMessage ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/30' : 'bg-gradient-to-br from-cyan-400 to-blue-500 shadow-cyan-500/30'} animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] shadow-lg flex items-center justify-center`}
             >
               {errorMessage ? (
-                <XCircle className="w-8 h-8 text-red-100" />
+                <XCircle className="w-7 h-7 text-red-100" />
               ) : (
                 <svg
-                  className="w-8 h-8 text-blue-900"
+                  className="w-7 h-7 text-blue-900"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -73,17 +73,17 @@ export const UnlockingProgress = ({
 
           {/* Error Message Display */}
           {errorMessage && (
-            <div className="p-4 rounded-lg bg-red-900/30 border border-red-500/20 text-red-200 animate-[fadeIn_0.5s_ease-out] max-w-2xl mx-auto">
+            <div className="p-4 rounded-lg bg-red-900/30 border border-red-500/20 text-red-200 animate-[fadeIn_0.5s_ease-out] max-w-xl mx-auto">
               <p>{errorMessage}</p>
             </div>
           )}
 
           {isUnlocking && !errorMessage && (
-            <div className="space-y-4 animate-[fadeIn_0.5s_ease-out] max-w-2xl mx-auto">
+            <div className="space-y-4 animate-[fadeIn_0.5s_ease-out] max-w-xl mx-auto">
               <div className="grid grid-cols-2 gap-4">
                 {steps.map((step, index) => (
                   <div
-                    className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-r from-transparent to-cyan-500/5 backdrop-blur-sm border border-cyan-500/10 animate-[slideInRight_0.5s_ease-out]"
+                    className="flex items-center space-x-3 p-3.5 rounded-lg bg-gradient-to-r from-transparent to-cyan-500/5 backdrop-blur-sm border border-cyan-500/10 animate-[slideInRight_0.5s_ease-out]"
                     key={step.title}
                     style={{ animationDelay: `${index * 150}ms` }}
                   >
@@ -116,7 +116,7 @@ export const UnlockingProgress = ({
 
           {(onBack || onCancel) && (
             <div
-              className="mt-6 flex justify-center gap-4 animate-[fadeIn_0.5s_ease-out]"
+              className="mt-8 flex justify-center gap-4 animate-[fadeIn_0.5s_ease-out]"
               style={{ animationDelay: '800ms' }}
             >
               {onBack && (
