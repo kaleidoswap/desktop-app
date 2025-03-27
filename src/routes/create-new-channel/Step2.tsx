@@ -69,7 +69,7 @@ export const Step2 = ({
         assetAmount: formData.assetAmount || 0,
         assetId: formData.assetId || '',
         assetTicker: formData.assetTicker || '',
-        capacitySat: '',
+        capacitySat: formData.capacitySat.toString(),
         fee: formData.fee || 'medium',
         pubKeyAndAddress: formData.pubKeyAndAddress,
       },
