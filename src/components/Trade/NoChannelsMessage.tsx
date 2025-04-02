@@ -201,6 +201,20 @@ export const NoTradingChannelsMessage: React.FC<
             {getRecommendationMessage()}
           </p>
 
+          <button
+            className="mt-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            onClick={async () => {
+              try {
+                await onMakerChange()
+              } catch (error) {
+                console.error('Failed to refresh channels:', error)
+              }
+            }}
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Refresh
+          </button>
+
           <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
             <h3 className="text-sm font-semibold text-slate-200 mb-3.5 flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-blue-400" />

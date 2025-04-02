@@ -2,6 +2,7 @@ import { ChevronDown, Info, Loader, Settings, Zap } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
+import { ERROR_NOT_ENOUGH_UNCOLORED } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface CreateUTXOModalProps {
@@ -28,8 +29,24 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   const [isLoading, setIsLoading] = useState(false)
   const [feeRate, setFeeRate] = useState(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [numUtxos, setNumUtxos] = useState(1)
+  const [numUtxos, setNumUtxos] = useState(() => {
+    // For channel creation with no uncolored UTXOs, always use 1 UTXO
+    if (
+      operationType === 'channel' &&
+      error?.includes(ERROR_NOT_ENOUGH_UNCOLORED)
+    ) {
+      return 1
+    }
+    return 1
+  })
   const [utxoSize, setUtxoSize] = useState(() => {
+    // For channel creation with no uncolored UTXOs, use the channel capacity
+    if (
+      operationType === 'channel' &&
+      error?.includes(ERROR_NOT_ENOUGH_UNCOLORED)
+    ) {
+      return channelCapacity || DEFAULT_UTXO_SIZE
+    }
     // Default size for issuing an asset
     if (operationType === 'issuance') {
       return DEFAULT_UTXO_SIZE

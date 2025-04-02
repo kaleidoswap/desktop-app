@@ -188,6 +188,18 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       {/* Status indicator */}
       <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-slate-600/40 to-transparent"></div>
 
+      {/* Usability dot indicator */}
+      <div className="absolute top-2 right-2 flex items-center">
+        <div
+          className={`w-2 h-2 rounded-full ${channel.is_usable ? 'bg-emerald-400' : 'bg-red-400'}`}
+        />
+      </div>
+
+      {/* Unusable overlay */}
+      {!channel.is_usable && (
+        <div className="absolute inset-0 bg-red-900/10 rounded-lg pointer-events-none" />
+      )}
+
       {/* Channel header */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center">

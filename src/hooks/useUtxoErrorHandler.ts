@@ -1,15 +1,9 @@
 import { useState } from 'react'
 
-// Error constants
-const ERROR_NOT_ENOUGH_UNCOLORED =
-  'No uncolored UTXOs are available (hint: call createutxos)'
-const ERROR_INSUFFICIENT_ALLOCATION_SLOT =
-  'Cannot open channel: InsufficientAllocationSlots'
-const ERROR_INSUFFICIENT_UTXOs = [
+import {
   ERROR_NOT_ENOUGH_UNCOLORED,
-  ERROR_INSUFFICIENT_ALLOCATION_SLOT,
-]
-
+  ERROR_INSUFFICIENT_UTXOs,
+} from '../constants'
 /**
  * Custom hook to handle UTXO-related errors and show the CreateUTXOModal when needed
  */
@@ -46,12 +40,25 @@ export const useUtxoErrorHandler = () => {
     retryFunction?: () => Promise<any>
   ): boolean => {
     if (isUtxoError(error)) {
-      setUtxoModalProps({
-        channelCapacity,
-        error: error.data.error,
-        operationType,
-        retryFunction,
-      })
+      // For channel creation with no uncolored UTXOs, suggest 1 UTXO with channel capacity
+      if (
+        operationType === 'channel' &&
+        error.data.error.includes(ERROR_NOT_ENOUGH_UNCOLORED)
+      ) {
+        setUtxoModalProps({
+          channelCapacity,
+          error: `No uncolored UTXOs available. We'll create 1 UTXO of ${channelCapacity} sats to open your channel.`,
+          operationType,
+          retryFunction,
+        })
+      } else {
+        setUtxoModalProps({
+          channelCapacity,
+          error: error.data.error,
+          operationType,
+          retryFunction,
+        })
+      }
       setShowUtxoModal(true)
       return true
     }

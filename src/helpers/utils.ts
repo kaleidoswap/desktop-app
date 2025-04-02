@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react'
 import defaultRgbIcon from '../assets/rgb-symbol-color.svg'
 import { COIN_ICON_URL } from '../constants'
 
+// Cache for asset icons to prevent repeated downloads
+const iconCache = new Map<string, string>()
+
 export const parseRpcUrl = (url: string) => {
   try {
     const [credentials, hostPort] = url.split('@')
@@ -31,9 +34,17 @@ export const loadAssetIcon = async (
       assetTicker = 'BTC'
     }
 
+    // Check if icon is already in cache
+    const cachedIcon = iconCache.get(assetTicker)
+    if (cachedIcon) {
+      return cachedIcon
+    }
+
     const iconUrl = `${COIN_ICON_URL}${assetTicker.toLowerCase()}.png`
     const response = await fetch(iconUrl)
     if (response.ok) {
+      // Cache the successful icon URL
+      iconCache.set(assetTicker, iconUrl)
       return iconUrl
     }
     throw new Error('Icon not found')
@@ -48,6 +59,13 @@ export const useAssetIcon = (ticker: string, defaultIcon = defaultRgbIcon) => {
   useEffect(() => {
     if (!ticker || ticker === 'None') {
       setImgSrc(defaultIcon)
+      return
+    }
+
+    // Check cache first
+    const cachedIcon = iconCache.get(ticker)
+    if (cachedIcon) {
+      setImgSrc(cachedIcon)
       return
     }
 
