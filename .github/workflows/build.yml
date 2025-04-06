@@ -92,10 +92,24 @@ jobs:
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
 
-          for file in ${{ steps.tauri_build.outputs.artifactPath }}/*.{dmg,AppImage,deb,msi,exe}; do
+          artifact_paths="${{ steps.tauri_build.outputs.artifactPaths }}"
+          artifact_paths=$(echo "$artifact_paths" | tr -d '[]' | tr ',' ' ' | tr -d '"')
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            CHECKSUM_CMD="sha256sum"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            CHECKSUM_CMD="shasum -a 256"
+          else
+            echo "Unsupported OS: $RUNNER_OS"
+            exit 1
+          fi
+
+          for file in $artifact_paths; do
+            # if [[ "$file" =~ \.(dmg|AppImage|deb|msi|exe)$ ]] && [ -f "$file" ]; then
             if [ -f "$file" ]; then
-              CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
-              echo "$file: $CHECKSUM" >> manifest.txt
+              CHECKSUM=$($CHECKSUM_CMD "$file" | awk '{print $1}')
+              filename=$(basename "$file")
+              echo "$filename: $CHECKSUM" >> manifest.txt
             fi
           done
 
