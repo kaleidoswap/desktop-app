@@ -82,26 +82,6 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-      # - name: Create Latest Release
-      #   if: matrix.platform == 'ubuntu-22.04' # Only run once, on the last platform
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     tag_name: ${{ github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest' }}
-      #     name: ${{ github.ref == 'refs/heads/test-build' && 'Test Latest Release' || 'Latest Release' }}
-      #     body: |
-      #       This is the ${{ github.ref == 'refs/heads/test-build' && 'test ' || '' }}latest release of the application.
-
-      #       See the assets to download and install this version.
-
-      #       Changes in this version:
-      #       - Built from ${{ github.ref == 'refs/heads/test-build' && 'test-build' || 'build' }} branch
-      #       - Includes macOS (Intel + Apple Silicon) and Linux builds
-
-      #       SHA256 checksums will be provided separately.
-      #     draft: true
-      #     prerelease: false
-      #     files: ${{ steps.tauri_build.outputs.artifactPath }}/*
-
       - name: Create manifest file
         run: |
           echo "Creating manifest.txt for signing..."
@@ -112,15 +92,14 @@ jobs:
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
 
-          cd ${{ steps.tauri_build.outputs.artifactPath }}/../
-          for file in *.{dmg,AppImage,deb,msi,exe}; do
+          for file in ${{ steps.tauri_build.outputs.artifactPath }}/*.{dmg,AppImage,deb,msi,exe}; do
             if [ -f "$file" ]; then
               CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
-              echo "$file: $CHECKSUM" >> ../../manifest.txt
+              echo "$file: $CHECKSUM" >> manifest.txt
             fi
           done
 
-          cat ../../manifest.txt
+          cat manifest.txt
 
       - name: Upload manifest.txt
         uses: actions/upload-artifact@v4
