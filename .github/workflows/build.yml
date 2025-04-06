@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - build
+      - test-build
     tags:
-      - 'v*'  
+      - 'v*'
+      - 'test-v*'
   workflow_dispatch:
 
 jobs:
@@ -31,7 +33,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev 
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -61,21 +63,44 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # test key
+          TAURI_PRIVATE_KEY: 'dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5VzhpNHgyUnJ2ekc4blppQkhvRG9pT0RMUVF3b3ViUG9haWg5QVY3T2lqSUFBQkFBQUFBQUFBQUFBQUlBQUFBQWtvYzFxemNLL3Byb3R5d2tnZG5LODhVYWdWMlNPM2VMSDYyYmtqRzhRY09iQWQ1Y1ZqN2x3WUo3YlloWUFDWnVOOHRhR2tFSndOYWtuVFM4OVFSTWtrWVl4M1N1a2Fwa05sdERnVmN0WHd1TU1OOFhlSHNTVmRXRFphT2QycEYzNCs0Z2l4YmthN0k9Cg=='
+          TAURI_KEY_PASSWORD: 'password'
         id: tauri_build
         with:
-          tagName: app-v__VERSION__
-          releaseName: 'App v__VERSION__'
+          tagName: ${{ github.ref == 'refs/heads/test-build' && 'test-app-v__VERSION__' || 'app-v__VERSION__' }}
+          releaseName: ${{ github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__' }}
           releaseBody: |
             See the assets to download and install this version.
-            
+
             Changes in this version:
-            - Built from build branch
+            - Built from ${{ github.ref == 'refs/heads/test-build' && 'test-build' || 'build' }} branch
             - Includes macOS (Intel + Apple Silicon) and Linux builds
-            
+
             SHA256 checksums will be provided separately.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      # - name: Create Latest Release
+      #   if: matrix.platform == 'ubuntu-22.04' # Only run once, on the last platform
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     tag_name: ${{ github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest' }}
+      #     name: ${{ github.ref == 'refs/heads/test-build' && 'Test Latest Release' || 'Latest Release' }}
+      #     body: |
+      #       This is the ${{ github.ref == 'refs/heads/test-build' && 'test ' || '' }}latest release of the application.
+
+      #       See the assets to download and install this version.
+
+      #       Changes in this version:
+      #       - Built from ${{ github.ref == 'refs/heads/test-build' && 'test-build' || 'build' }} branch
+      #       - Includes macOS (Intel + Apple Silicon) and Linux builds
+
+      #       SHA256 checksums will be provided separately.
+      #     draft: true
+      #     prerelease: false
+      #     files: ${{ steps.tauri_build.outputs.artifactPath }}/*
 
       - name: Create manifest file
         run: |
@@ -86,7 +111,7 @@ jobs:
           echo "Architecture target: ${{ matrix.args }}" >> manifest.txt
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
-          
+
           cd ${{ steps.tauri_build.outputs.artifactPath }}/../
           for file in *.{dmg,AppImage,deb,msi,exe}; do
             if [ -f "$file" ]; then
@@ -94,7 +119,7 @@ jobs:
               echo "$file: $CHECKSUM" >> ../../manifest.txt
             fi
           done
-          
+
           cat ../../manifest.txt
 
       - name: Upload manifest.txt
@@ -103,5 +128,3 @@ jobs:
           name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
           path: manifest.txt
           if-no-files-found: error
-
-     
