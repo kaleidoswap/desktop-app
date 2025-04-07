@@ -121,3 +121,31 @@ jobs:
           name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
           path: manifest.txt
           if-no-files-found: error
+
+      - name: Setup GitHub CLI
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Update latest tag
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Determine which tag to use based on the branch
+          if [[ "${{ github.ref }}" == "refs/heads/test-build" ]]; then
+            TAG_NAME="test-latest"
+          else
+            TAG_NAME="latest"
+          fi
+          
+          # Get the release ID from the Tauri action output
+          RELEASE_ID=${{ steps.tauri_build.outputs.releaseId }}
+          
+          # Delete the existing tag if it exists
+          if gh api repos/${{ github.repository }}/git/refs/tags/$TAG_NAME --silent; then
+            gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$TAG_NAME
+          fi
+          
+          # Create new tag pointing to the latest release
+          gh release edit $RELEASE_ID --tag $TAG_NAME
