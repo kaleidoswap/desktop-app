@@ -14,6 +14,7 @@ jobs:
   build-tauri:
     permissions:
       contents: write
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -132,20 +133,33 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Debug output
+          echo "Repository: ${{ github.repository }}"
+          echo "Release ID: ${{ steps.tauri_build.outputs.releaseId }}"
+          
           # Determine which tag to use based on the branch
           if [[ "${{ github.ref }}" == "refs/heads/test-build" ]]; then
             TAG_NAME="test-latest"
           else
             TAG_NAME="latest"
           fi
+          echo "Tag name: $TAG_NAME"
           
           # Get the release ID from the Tauri action output
           RELEASE_ID=${{ steps.tauri_build.outputs.releaseId }}
           
+          # Verify the release exists
+          if ! gh release view $RELEASE_ID; then
+            echo "Error: Release $RELEASE_ID not found"
+            exit 1
+          fi
+          
           # Delete the existing tag if it exists
           if gh api repos/${{ github.repository }}/git/refs/tags/$TAG_NAME --silent; then
+            echo "Deleting existing tag $TAG_NAME"
             gh api -X DELETE repos/${{ github.repository }}/git/refs/tags/$TAG_NAME
           fi
           
           # Create new tag pointing to the latest release
+          echo "Creating new tag $TAG_NAME for release $RELEASE_ID"
           gh release edit $RELEASE_ID --tag $TAG_NAME
