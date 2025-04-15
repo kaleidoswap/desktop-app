@@ -64,11 +64,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # test key
-          TAURI_SIGNING_PRIVATE_KEY: 'dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5VzhpNHgyUnJ2ekc4blppQkhvRG9pT0RMUVF3b3ViUG9haWg5QVY3T2lqSUFBQkFBQUFBQUFBQUFBQUlBQUFBQWtvYzFxemNLL3Byb3R5d2tnZG5LODhVYWdWMlNPM2VMSDYyYmtqRzhRY09iQWQ1Y1ZqN2x3WUo3YlloWUFDWnVOOHRhR2tFSndOYWtuVFM4OVFSTWtrWVl4M1N1a2Fwa05sdERnVmN0WHd1TU1OOFhlSHNTVmRXRFphT2QycEYzNCs0Z2l4YmthN0k9Cg=='
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: 'password'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         id: tauri_build
         with:
-          tagName: ${{ github.ref == 'refs/heads/test-build' && 'test-app-v__VERSION__' || 'app-v__VERSION__' }}
+          tagName: ${{ github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest' }}
           releaseName: ${{ github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__' }}
           releaseBody: |
             See the assets to download and install this version.
