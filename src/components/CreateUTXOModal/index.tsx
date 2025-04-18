@@ -81,18 +81,6 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
     }
   }, [isOpen, estimateFee, getBtcBalance])
 
-  // Prevent scrolling when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [isOpen])
-
   const toggleAdvanced = () => {
     setShowAdvanced((prev) => !prev)
   }
@@ -145,11 +133,11 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-b from-blue-dark to-blue-darker p-0 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-divider/20 animate-scaleIn overflow-hidden"
+        className="bg-gradient-to-b from-blue-dark to-blue-darker p-0 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-divider/20 animate-scaleIn overflow-hidden flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with close button */}
-        <div className="relative px-6 pt-6 pb-4 border-b border-divider/10">
+        {/* Header - Fixed */}
+        <div className="relative px-6 pt-6 pb-4 border-b border-divider/10 flex-shrink-0">
           <h3 className="text-xl font-bold text-white flex items-center">
             <Zap className="mr-2 text-blue-400" size={20} />
             Create Colored UTXOs
@@ -176,212 +164,219 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
           </button>
         </div>
 
-        {/* Modal body */}
-        <div className="p-6">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 shadow-inner animate-pulse">
-              <div className="flex items-center gap-2">
-                <svg
-                  className="text-red-400"
-                  fill="none"
-                  height="16"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" x2="12" y1="8" y2="12"></line>
-                  <line x1="12" x2="12.01" y1="16" y2="16"></line>
-                </svg>
-                <p className="text-sm font-medium text-red-300">
-                  Error: {error}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 shadow-inner animate-pulse">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="text-red-400"
+                    fill="none"
+                    height="16"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" x2="12" y1="8" y2="12"></line>
+                    <line x1="12" x2="12.01" y1="16" y2="16"></line>
+                  </svg>
+                  <p className="text-sm font-medium text-red-300">
+                    Error: {error}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3 mb-6 shadow-inner">
+              <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-slate-200">
+                <p className="mb-2 font-medium">
+                  {operationType === 'issuance'
+                    ? 'Issuing an RGB asset requires colorable UTXOs.'
+                    : 'Opening a channel with RGB assets requires colorable UTXOs.'}
+                </p>
+                <p className="text-slate-300">
+                  This operation requires an on-chain transaction. A fee of
+                  approximately{' '}
+                  <span className="font-medium text-white">
+                    {feeRate.toFixed(2)} sat/vB
+                  </span>{' '}
+                  will be used.
                 </p>
               </div>
             </div>
-          )}
 
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3 mb-6 shadow-inner">
-            <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-slate-200">
-              <p className="mb-2 font-medium">
-                {operationType === 'issuance'
-                  ? 'Issuing an RGB asset requires colorable UTXOs.'
-                  : 'Opening a channel with RGB assets requires colorable UTXOs.'}
-              </p>
-              <p className="text-slate-300">
-                This operation requires an on-chain transaction. A fee of
-                approximately{' '}
-                <span className="font-medium text-white">
-                  {feeRate.toFixed(2)} sat/vB
-                </span>{' '}
-                will be used.
-              </p>
-            </div>
-          </div>
-
-          <button
-            className="w-full flex items-center justify-between py-3 px-4 mb-5 text-sm font-medium text-slate-200 hover:text-white bg-slate-800/40 hover:bg-slate-800/60 border border-slate-700/50 rounded-xl transition-all duration-200 group hover:shadow-md"
-            onClick={toggleAdvanced}
-          >
-            <div className="flex items-center">
-              <Settings
-                className="mr-2 text-blue-400 group-hover:text-blue-300 transition-colors"
-                size={15}
-              />
-              <span>Advanced Settings</span>
-            </div>
-            <div
-              className={`transition-transform duration-300 ease-in-out ${showAdvanced ? 'rotate-180' : ''}`}
+            <button
+              className="w-full flex items-center justify-between py-3 px-4 mb-5 text-sm font-medium text-slate-200 hover:text-white bg-slate-800/40 hover:bg-slate-800/60 border border-slate-700/50 rounded-xl transition-all duration-200 group hover:shadow-md"
+              onClick={toggleAdvanced}
             >
-              <ChevronDown
-                className="text-slate-400 group-hover:text-blue-300 transition-colors"
-                size={16}
-              />
-            </div>
-          </button>
+              <div className="flex items-center">
+                <Settings
+                  className="mr-2 text-blue-400 group-hover:text-blue-300 transition-colors"
+                  size={15}
+                />
+                <span>Advanced Settings</span>
+              </div>
+              <div
+                className={`transition-transform duration-300 ease-in-out ${showAdvanced ? 'rotate-180' : ''}`}
+              >
+                <ChevronDown
+                  className="text-slate-400 group-hover:text-blue-300 transition-colors"
+                  size={16}
+                />
+              </div>
+            </button>
 
-          {showAdvanced && (
-            <div className="mb-6 space-y-5 bg-blue-darker/90 p-5 rounded-xl border border-slate-700/30 shadow-inner animate-fadeIn">
-              <div>
-                <label className="block text-sm font-medium text-slate-200 mb-2 flex items-center">
-                  Number of UTXOs
-                  <div className="relative ml-2 group">
-                    <Info
-                      className="text-slate-400 hover:text-blue-400 cursor-help"
-                      size={14}
-                    />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-xs text-slate-200 rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
-                      Creating multiple UTXOs allows for parallel transactions
-                      but uses more chain space.
+            {showAdvanced && (
+              <div className="mb-6 space-y-5 bg-blue-darker/90 p-5 rounded-xl border border-slate-700/30 shadow-inner animate-fadeIn max-h-[200px] overflow-y-auto">
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2 flex items-center">
+                    Number of UTXOs
+                    <div className="relative ml-2 group">
+                      <Info
+                        className="text-slate-400 hover:text-blue-400 cursor-help"
+                        size={14}
+                      />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-xs text-slate-200 rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
+                        Creating multiple UTXOs allows for parallel transactions
+                        but uses more chain space.
+                      </div>
                     </div>
-                  </div>
-                </label>
-                <div className="flex rounded-lg overflow-hidden border border-slate-600 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
-                  <button
-                    className="bg-slate-700 text-white px-3 py-2 hover:bg-slate-600 disabled:opacity-50 transition-colors"
-                    disabled={numUtxos <= 1}
-                    onClick={() => setNumUtxos((prev) => Math.max(1, prev - 1))}
-                  >
-                    <svg
-                      fill="none"
-                      height="16"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      xmlns="http://www.w3.org/2000/svg"
+                  </label>
+                  <div className="flex rounded-lg overflow-hidden border border-slate-600 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                    <button
+                      className="bg-slate-700 text-white px-3 py-2 hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                      disabled={numUtxos <= 1}
+                      onClick={() =>
+                        setNumUtxos((prev) => Math.max(1, prev - 1))
+                      }
                     >
-                      <line x1="5" x2="19" y1="12" y2="12"></line>
-                    </svg>
-                  </button>
+                      <svg
+                        fill="none"
+                        height="16"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <line x1="5" x2="19" y1="12" y2="12"></line>
+                      </svg>
+                    </button>
+                    <input
+                      className="w-full bg-slate-800/80 text-white px-4 py-2 text-center focus:outline-none"
+                      max="10"
+                      min="1"
+                      onChange={(e) =>
+                        setNumUtxos(Math.max(1, parseInt(e.target.value) || 1))
+                      }
+                      type="number"
+                      value={numUtxos}
+                    />
+                    <button
+                      className="bg-slate-700 text-white px-3 py-2 hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                      disabled={numUtxos >= 10}
+                      onClick={() =>
+                        setNumUtxos((prev) => Math.min(10, prev + 1))
+                      }
+                    >
+                      <svg
+                        fill="none"
+                        height="16"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <line x1="12" x2="12" y1="5" y2="19"></line>
+                        <line x1="5" x2="19" y1="12" y2="12"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Recommended: 1-10 UTXOs
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2 flex items-center">
+                    UTXO Size (in satoshis)
+                    <div className="relative ml-2 group">
+                      <Info
+                        className="text-slate-400 hover:text-blue-400 cursor-help"
+                        size={14}
+                      />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-xs text-slate-200 rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
+                        Larger UTXOs allow for larger operations but require
+                        more capital.
+                      </div>
+                    </div>
+                  </label>
                   <input
-                    className="w-full bg-slate-800/80 text-white px-4 py-2 text-center focus:outline-none"
-                    max="10"
-                    min="1"
+                    className="w-full bg-slate-800/80 text-white px-4 py-2 rounded-lg border border-slate-600 
+                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    max={maxPossibleSize}
+                    min="5000"
                     onChange={(e) =>
-                      setNumUtxos(Math.max(1, parseInt(e.target.value) || 1))
+                      setUtxoSize(
+                        Math.max(5000, parseInt(e.target.value) || 5000)
+                      )
                     }
                     type="number"
-                    value={numUtxos}
+                    value={utxoSize}
                   />
-                  <button
-                    className="bg-slate-700 text-white px-3 py-2 hover:bg-slate-600 disabled:opacity-50 transition-colors"
-                    disabled={numUtxos >= 10}
-                    onClick={() =>
-                      setNumUtxos((prev) => Math.min(10, prev + 1))
-                    }
-                  >
-                    <svg
-                      fill="none"
-                      height="16"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <line x1="12" x2="12" y1="5" y2="19"></line>
-                      <line x1="5" x2="19" y1="12" y2="12"></line>
-                    </svg>
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-slate-400">
-                  Recommended: 1-10 UTXOs
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-200 mb-2 flex items-center">
-                  UTXO Size (in satoshis)
-                  <div className="relative ml-2 group">
-                    <Info
-                      className="text-slate-400 hover:text-blue-400 cursor-help"
-                      size={14}
-                    />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-slate-800 text-xs text-slate-200 rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
-                      Larger UTXOs allow for larger operations but require more
-                      capital.
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">Available balance:</span>
+                      <span className="text-slate-200 font-medium">
+                        {btcBalanceData
+                          ? btcBalanceData.vanilla.spendable.toLocaleString()
+                          : '...'}{' '}
+                        sats
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-400">Total amount:</span>
+                      <span className="text-blue-300 font-medium">
+                        {(numUtxos * utxoSize).toLocaleString()} sats
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-1">
+                      <div
+                        className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                        style={{
+                          backgroundColor:
+                            numUtxos * utxoSize >
+                            (btcBalanceData?.vanilla.spendable || 0)
+                              ? 'rgb(239, 68, 68)'
+                              : undefined,
+                          width: btcBalanceData
+                            ? `${Math.min(100, ((numUtxos * utxoSize) / btcBalanceData.vanilla.spendable) * 100)}%`
+                            : '0%',
+                        }}
+                      ></div>
                     </div>
                   </div>
-                </label>
-                <input
-                  className="w-full bg-slate-800/80 text-white px-4 py-2 rounded-lg border border-slate-600 
-                         focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                  max={maxPossibleSize}
-                  min="5000"
-                  onChange={(e) =>
-                    setUtxoSize(
-                      Math.max(5000, parseInt(e.target.value) || 5000)
-                    )
-                  }
-                  type="number"
-                  value={utxoSize}
-                />
-                <div className="mt-2 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Available balance:</span>
-                    <span className="text-slate-200 font-medium">
-                      {btcBalanceData
-                        ? btcBalanceData.vanilla.spendable.toLocaleString()
-                        : '...'}{' '}
-                      sats
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Total amount:</span>
-                    <span className="text-blue-300 font-medium">
-                      {(numUtxos * utxoSize).toLocaleString()} sats
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-1">
-                    <div
-                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      style={{
-                        backgroundColor:
-                          numUtxos * utxoSize >
-                          (btcBalanceData?.vanilla.spendable || 0)
-                            ? 'rgb(239, 68, 68)'
-                            : undefined,
-                        width: btcBalanceData
-                          ? `${Math.min(100, ((numUtxos * utxoSize) / btcBalanceData.vanilla.spendable) * 100)}%`
-                          : '0%',
-                      }}
-                    ></div>
-                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
 
-          <div className="flex justify-end space-x-4 mt-8">
+        {/* Footer - Fixed */}
+        <div className="px-6 py-4 border-t border-divider/10 bg-blue-darker flex-shrink-0 sticky bottom-0 z-10">
+          <div className="flex justify-end space-x-4">
             <button
               className="px-5 py-2.5 rounded-lg text-slate-300 bg-slate-800/50 hover:bg-slate-700/70 border border-slate-700/50 transition-colors disabled:opacity-50"
               disabled={isLoading}
