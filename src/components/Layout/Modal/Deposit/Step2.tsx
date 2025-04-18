@@ -87,67 +87,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   // Add network info query
   const { data: networkInfo } = nodeApi.endpoints.networkInfo.useQuery()
 
-  // Function to render faucet suggestion
-  const renderFaucetSuggestion = () => {
-    if (!networkInfo || networkInfo.network === Network.Mainnet) return null
-
-    let faucetInfo = {
-      description: '',
-      link: '',
-      linkText: '',
-      title: '',
-    }
-
-    switch (networkInfo.network) {
-      case Network.Signet:
-        faucetInfo = {
-          description:
-            'Get test coins from the Mutinynet faucet to try out the application.',
-          link: 'https://faucet.mutinynet.com/',
-          linkText: 'Visit Mutinynet Faucet',
-          title: 'Mutinynet Faucet Available',
-        }
-        break
-      case Network.Regtest:
-        faucetInfo = {
-          description:
-            'Get test coins from the RGB Tools Telegram bot to try out the application.',
-          link: 'https://t.me/rgb_lightning_bot',
-          linkText: 'Open RGB Tools Bot',
-          title: 'RGB Tools Bot Available',
-        }
-        break
-      case Network.Testnet:
-        faucetInfo = {
-          description:
-            'Get test coins from a Bitcoin testnet faucet to try out the application.',
-          link: 'https://faucet.mutinynet.com/',
-          linkText: 'Visit Testnet Faucet',
-          title: 'Testnet Faucet Available',
-        }
-        break
-    }
-
-    return (
-      <div className="mb-6 p-4 bg-green-500/10 rounded-xl border border-green-500/20">
-        <h4 className="text-green-400 font-medium mb-2">{faucetInfo.title}</h4>
-        <p className="text-green-300/80 text-sm mb-3">
-          {faucetInfo.description}
-        </p>
-        <button
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 
-                   hover:bg-green-500/30 text-green-400 rounded-lg transition-colors text-sm"
-          onClick={() => {
-            openUrl(faucetInfo.link)
-          }}
-        >
-          <ArrowRight className="w-4 h-4" />
-          {faucetInfo.linkText}
-        </button>
-      </div>
-    )
-  }
-
   const generateRgbInvoice = async () => {
     try {
       const res = await rgbInvoice(assetId ? { asset_id: assetId } : {})
@@ -289,17 +228,17 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   }
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-      <div className="flex flex-col items-center mb-8">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6 overflow-y-auto">
+      <div className="flex flex-col items-center mb-4">
         {/* Display selected asset icon */}
         {assetId === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-12 h-12 mb-4" src={btcLogo} />
+          <img alt="Bitcoin" className="w-10 h-10 mb-3" src={btcLogo} />
         ) : (
-          <img alt="RGB Asset" className="w-12 h-12 mb-4" src={rgbLogo} />
+          <img alt="RGB Asset" className="w-10 h-10 mb-3" src={rgbLogo} />
         )}
 
         {/* Show the asset name and ticker prominently */}
-        <h3 className="text-3xl font-bold text-white mb-2">
+        <h3 className="text-2xl font-bold text-white mb-1">
           {assetId
             ? assetTicker
               ? `Deposit ${assetTicker}`
@@ -307,56 +246,86 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             : 'Deposit Any RGB Asset'}
         </h3>
 
-        {assetName && <div className="text-slate-400 mb-2">{assetName}</div>}
+        {assetName && (
+          <div className="text-slate-400 mb-1 text-sm">{assetName}</div>
+        )}
 
         {assetId && assetId !== BTC_ASSET_ID && (
-          <div className="text-xs text-slate-500 mt-1 bg-slate-800 px-3 py-1 rounded-full">
-            {assetId.slice(0, 10)}...{assetId.slice(-10)}
+          <div className="text-xs text-slate-500 mt-1 bg-slate-800 px-2 py-0.5 rounded-full">
+            {assetId.slice(0, 8)}...{assetId.slice(-8)}
           </div>
         )}
 
-        <p className="text-slate-400 text-center max-w-md mt-4">
+        <p className="text-slate-400 text-center max-w-md mt-2 text-xs">
           Choose your preferred deposit method and follow the steps below
         </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Show network info and faucet suggestion if on test network */}
-        {networkInfo && networkInfo.network !== Network.Mainnet && (
-          <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-            <p className="text-blue-400 text-sm flex items-center gap-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-500/20 text-xs font-medium">
-                {networkInfo.network}
-              </span>
-              You are connected to {networkInfo.network}. Use test coins for
-              experimenting.
-            </p>
+      <div className="space-y-4">
+        {/* Show network info and faucet suggestion in a more compact format */}
+        {networkInfo && (
+          <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-500/20 text-xs font-medium">
+                  {networkInfo.network}
+                </span>
+                <span className="text-blue-400 text-xs">
+                  Using {networkInfo.network} network
+                </span>
+              </div>
+
+              <div className="text-xs text-blue-400 mt-1">
+                <p className="mb-1.5">
+                  Get test coins from the
+                  {networkInfo.network === Network.Signet
+                    ? ' Mutinynet faucet'
+                    : networkInfo.network === Network.Regtest
+                      ? ' RGB Tools bot'
+                      : ' Testnet faucet'}{' '}
+                  to try the application.
+                </p>
+                <button
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 
+                          hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors text-xs"
+                  onClick={() => {
+                    const link =
+                      networkInfo.network === Network.Regtest
+                        ? 'https://t.me/rgb_lightning_bot'
+                        : 'https://faucet.mutinynet.com/'
+                    openUrl(link)
+                  }}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  {networkInfo.network === Network.Signet
+                    ? 'Visit Mutinynet Faucet'
+                    : networkInfo.network === Network.Regtest
+                      ? 'Open RGB Tools Bot'
+                      : 'Visit Testnet Faucet'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Render faucet suggestion */}
-        {renderFaucetSuggestion()}
-
-        {/* No Colorable UTXOs Warning */}
+        {/* No Colorable UTXOs Warning - Made more compact */}
         {noColorableUtxos && (
-          <div className="mb-6 p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
+          <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
             <div className="flex items-start">
-              <AlertTriangle className="text-yellow-500 w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="text-yellow-500 w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="text-yellow-400 font-medium mb-2">
+                <h4 className="text-yellow-400 font-medium text-sm mb-1">
                   Colorable UTXOs Required
                 </h4>
-                <p className="text-yellow-300/80 text-sm mb-3">
-                  To receive RGB assets on-chain, you need to have colorable
-                  UTXOs available. These are special UTXOs that can hold RGB
-                  assets.
+                <p className="text-yellow-300/80 text-xs mb-2">
+                  To receive onchain RGB assets, you need colorable UTXOs.
                 </p>
                 <button
-                  className="px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 
-                          rounded-lg transition-colors text-sm flex items-center gap-2"
+                  className="px-3 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 
+                          rounded-lg transition-colors text-xs flex items-center gap-2"
                   onClick={() => setShowUtxoModal(true)}
                 >
-                  <Wallet className="w-4 h-4" />
+                  <Wallet className="w-3.5 h-3.5" />
                   Create Colorable UTXOs
                 </button>
               </div>
@@ -364,46 +333,35 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </div>
         )}
 
-        {!assetId && (
-          <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-            <p className="text-blue-400 text-sm">
-              You are generating a deposit address that can receive any RGB
-              asset. Make sure to communicate with the sender about which asset
-              they intend to send.
-            </p>
-          </div>
-        )}
-
-        {/* Network Selection */}
-        <div className="flex gap-4 p-1">
+        {/* Network Selection - Made more compact */}
+        <div className="flex gap-3 mb-3">
           <NetworkOption icon={ChainIcon} label="On-chain" type="on-chain" />
           <NetworkOption icon={Zap} label="Lightning" type="lightning" />
         </div>
 
         {/* Amount Input for Lightning */}
         {network === 'lightning' && (
-          <div className="space-y-2 animate-fadeIn">
-            <label className="text-sm font-medium text-slate-400">Amount</label>
+          <div className="space-y-1 animate-fadeIn">
+            <label className="text-xs font-medium text-slate-400">Amount</label>
             <div className="flex items-center gap-2">
               <input
-                className="flex-1 px-4 py-3 bg-slate-800/50 rounded-xl border border-slate-700 
+                className="flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                         placeholder:text-slate-600 transition-all duration-200"
+                         placeholder:text-slate-600 transition-all duration-200 text-sm"
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Enter amount"
                 type="number"
                 value={amount}
               />
-              <div className="px-4 py-3 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400">
+              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
                 {assetId === BTC_ASSET_ID ? bitcoinUnit : assetTicker}
               </div>
             </div>
             {assetId && assetId !== BTC_ASSET_ID && (
-              <div className="mt-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className="text-sm text-blue-400">
-                  <span className="font-medium">Note:</span> 3,000 sats will be
-                  included in the lightning invoice. This is required for RGB
-                  asset transfers over the Lightning Network.
+              <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <p className="text-xs text-blue-400">
+                  <span className="font-medium">Note:</span> 3,000 sats required
+                  for RGB asset transfers.
                 </p>
               </div>
             )}
@@ -412,71 +370,71 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {!address ? (
           <button
-            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
+            className="w-full py-2.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
                      text-white rounded-xl font-medium transition-all duration-200 
                      flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             disabled={loading || (network === 'lightning' && !amount)}
             onClick={generateAddress}
           >
             {loading ? (
-              <Loader className="w-5 h-5 animate-spin" />
+              <Loader className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <span>
                   Generate {network === 'lightning' ? 'Invoice' : 'Address'}
                 </span>
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         ) : (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-4 animate-fadeIn">
             {/* Payment Status */}
             {invoiceStatus && (
               <div
-                className={`flex items-center justify-center gap-2 ${getStatusColor()}`}
+                className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm`}
               >
                 {invoiceStatus.status === 'Pending' ? (
                   <>
-                    <Loader className="w-5 h-5 animate-spin" />
+                    <Loader className="w-4 h-4 animate-spin" />
                     <span>Waiting for payment...</span>
                   </>
                 ) : invoiceStatus.status === 'Succeeded' ? (
                   <>
-                    <CircleCheckBig className="w-5 h-5" />
+                    <CircleCheckBig className="w-4 h-4" />
                     <span>Payment received!</span>
                   </>
                 ) : (
                   <>
-                    <CircleX className="w-5 h-5" />
+                    <CircleX className="w-4 h-4" />
                     <span>{invoiceStatus.status}</span>
                   </>
                 )}
               </div>
             )}
 
-            {/* QR Code */}
+            {/* QR Code - Made smaller */}
             <div className="flex justify-center">
-              <div className="p-6 bg-white rounded-2xl shadow-xl">
+              <div className="p-3 bg-white rounded-xl shadow-xl">
                 <QRCodeCanvas
                   includeMargin={true}
                   level="H"
-                  size={200}
+                  size={160}
                   value={address}
                 />
               </div>
             </div>
 
-            {/* Address Display */}
+            {/* Address Display - More compact */}
             <div
-              className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 
+              className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 
                           flex items-center justify-between group hover:border-blue-500/50 
                           transition-all duration-200"
             >
-              <div className="truncate flex-1 text-slate-300 font-mono text-sm flex items-center gap-2">
+              <div className="truncate flex-1 text-slate-300 font-mono text-xs flex items-center gap-2">
                 <span
                   className={`
-                  px-2 py-1 rounded-md text-xs font-medium
+                  px-1.5 py-0.5 rounded-md text-xs font-medium
                   ${
                     assetId === BTC_ASSET_ID
                       ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20'
@@ -484,62 +442,70 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   }
                 `}
                 >
-                  {assetId === BTC_ASSET_ID ? 'BTC Address' : 'RGB Invoice'}
+                  {assetId === BTC_ASSET_ID
+                    ? network === 'lightning'
+                      ? 'LN Invoice'
+                      : 'BTC Address'
+                    : network === 'lightning'
+                      ? 'LN Invoice'
+                      : 'RGB Invoice'}
                 </span>
                 {address.length > 45 ? `${address.slice(0, 42)}...` : address}
               </div>
               <button
-                className="ml-2 p-2 hover:bg-blue-500/10 rounded-lg transition-colors
+                className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
                          text-slate-400 hover:text-blue-500"
                 onClick={handleCopy}
               >
-                <Copy className="w-5 h-5" />
+                <Copy className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Recipient ID Display for Assets */}
-            {assetId !== BTC_ASSET_ID && recipientId && (
-              <div
-                className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 
+            {/* Recipient ID Display for Assets - More compact */}
+            {assetId !== BTC_ASSET_ID &&
+              recipientId &&
+              network === 'on-chain' && (
+                <div
+                  className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 
                             flex items-center justify-between group hover:border-blue-500/50 
                             transition-all duration-200"
-              >
-                <div className="truncate flex-1 text-slate-300 font-mono text-sm">
-                  <span className="text-slate-400 mr-2">Recipient ID:</span>
-                  {recipientId.length > 45
-                    ? `${recipientId.slice(0, 42)}...`
-                    : recipientId}
-                </div>
-                <button
-                  className="ml-2 p-2 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-slate-400 hover:text-blue-500"
-                  onClick={handleCopyRecipientId}
                 >
-                  <Copy className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+                  <div className="truncate flex-1 text-slate-300 font-mono text-xs">
+                    <span className="text-slate-400 mr-2">Recipient ID:</span>
+                    {recipientId.length > 45
+                      ? `${recipientId.slice(0, 42)}...`
+                      : recipientId}
+                  </div>
+                  <button
+                    className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
+                           text-slate-400 hover:text-blue-500"
+                    onClick={handleCopyRecipientId}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between pt-6">
+        {/* Navigation - Make this sticky to the bottom */}
+        <div className="flex justify-between pt-4 sticky bottom-0">
           <button
-            className="px-4 py-2 text-slate-400 hover:text-white transition-colors 
-                     flex items-center gap-2 hover:bg-slate-800/50 rounded-lg"
+            className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
+                     flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"
             onClick={onBack}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back</span>
           </button>
 
           <button
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
-                     transition-colors flex items-center gap-2"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
+                     transition-colors flex items-center gap-1.5 text-sm"
             onClick={onNext}
           >
             <span>Finish</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
