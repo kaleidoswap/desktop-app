@@ -130,6 +130,7 @@ export const Step2 = ({
           )
           if (asset) {
             setSelectedAsset(asset)
+            setAddAsset(true)
           }
         }
       } else {
@@ -558,7 +559,7 @@ export const Step2 = ({
               >
                 <div className="font-medium capitalize">{speed}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {`${feeRates[speed] / 1000} sat/vB`}
+                  {`${feeRates[speed]} sat/vB`}
                 </div>
               </button>
             ))}

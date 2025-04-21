@@ -41,7 +41,7 @@ export const Step4 = (props: Props) => {
                 shadow-lg hover:shadow-xl"
               onClick={props.onFinish}
             >
-              Go to Trade Page
+              Go to Channels Page
             </button>
           </div>
         </div>
@@ -72,7 +72,7 @@ export const Step4 = (props: Props) => {
             shadow-lg hover:shadow-xl"
           onClick={props.onFinish}
         >
-          Go to Trade Page
+          Go to Channels Page
         </button>
       </div>
     </div>

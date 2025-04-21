@@ -2,7 +2,7 @@ import { AlertTriangle, RefreshCw, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { TRADE_PATH } from '../../app/router/paths'
+import { CHANNELS_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { CreateUTXOModal } from '../../components/CreateUTXOModal'
 import { Spinner } from '../../components/Spinner'
@@ -296,7 +296,7 @@ export const Component = () => {
             {step === 4 && (
               <Step4
                 error={channelOpeningError}
-                onFinish={() => navigate(TRADE_PATH)}
+                onFinish={() => navigate(CHANNELS_PATH)}
                 onRetry={() => setStep(3)}
               />
             )}
