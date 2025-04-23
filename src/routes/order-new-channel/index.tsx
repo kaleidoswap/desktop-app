@@ -1,5 +1,5 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
@@ -35,6 +35,10 @@ export const Component = () => {
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<
+    'success' | 'error' | 'expired' | null
+  >(null)
+  const [paymentReceived, setPaymentReceived] = useState(false)
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -43,76 +47,87 @@ export const Component = () => {
   const [getOrderRequest, getOrderResponse] =
     makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
-  const [paymentStatus, setPaymentStatus] = useState<
-    'success' | 'error' | null
-  >(null)
 
-  const toastIdRef = useRef<string | number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
+  let toastId: string | number | null = null
 
   useEffect(() => {
     if (orderId && step === 3) {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current)
-      }
-
-      toastIdRef.current = toast.loading('Waiting for payment...', {
-        position: 'bottom-right',
-      })
+      let timeoutId: number | null = null
 
       const intervalId = setInterval(async () => {
         const orderResponse = await getOrderRequest({ order_id: orderId })
+        const orderData = orderResponse.data
 
-        if (orderResponse.data?.order_state === 'COMPLETED') {
+        // Check if payment has been received (either in HOLD or PAID state)
+        const paymentState =
+          orderData?.payment?.bolt11?.state ||
+          orderData?.payment?.onchain?.state
+        const paymentJustReceived =
+          (paymentState === 'HOLD' || paymentState === 'PAID') &&
+          !paymentReceived
+
+        if (paymentJustReceived) {
+          setPaymentReceived(true)
+          // Start the 3-minute timeout only after payment is received
+          timeoutId = setTimeout(
+            () => {
+              // When timeout occurs after payment is received, we treat it as an expired order
+              setPaymentStatus('expired')
+              toast.error(`Order confirmation timed out. Order ID: ${orderId}`)
+              setStep(4)
+            },
+            3 * 60 * 1000
+          ) // 3 minutes
+        }
+
+        if (orderData?.order_state === 'COMPLETED') {
           clearInterval(intervalId)
+          if (timeoutId) clearTimeout(timeoutId)
           setPaymentStatus('success')
           setStep(4)
-          if (toastIdRef.current) {
-            toast.update(toastIdRef.current, {
-              autoClose: 5000,
-              isLoading: false,
-              render: 'Payment completed. Channel is being set up.',
-              type: 'success',
-            })
-          }
-        } else if (orderResponse.data?.order_state === 'FAILED') {
+        } else if (orderData?.order_state === 'FAILED') {
+          // Check if the failure is due to expiration
+          const now = new Date().getTime()
+          const bolt11ExpiresAt = orderData?.payment?.bolt11?.expires_at
+            ? new Date(orderData.payment.bolt11.expires_at).getTime()
+            : 0
+          const onchainExpiresAt = orderData?.payment?.onchain?.expires_at
+            ? new Date(orderData.payment.onchain.expires_at).getTime()
+            : 0
+
+          // Get payment states
+          const bolt11State = orderData?.payment?.bolt11?.state
+          const onchainState = orderData?.payment?.onchain?.state
+
+          // Check if we're past the expiry time AND payment hasn't been made yet
+          // Only consider it expired if payment is still in EXPECT_PAYMENT state
+          const isExpired =
+            (now > bolt11ExpiresAt && bolt11State === 'EXPECT_PAYMENT') ||
+            (now > onchainExpiresAt && onchainState === 'EXPECT_PAYMENT')
+
           clearInterval(intervalId)
-          setPaymentStatus('error')
+          if (timeoutId) clearTimeout(timeoutId)
+
+          // Set the appropriate status based on expiration check
+          setPaymentStatus(isExpired ? 'expired' : 'error')
           setStep(4)
-          if (toastIdRef.current) {
-            toast.update(toastIdRef.current, {
-              autoClose: 5000,
-              isLoading: false,
-              render: 'Payment failed. Please try again.',
-              type: 'error',
-            })
-          }
         }
       }, 5000)
 
       return () => {
         clearInterval(intervalId)
-        if (toastIdRef.current) {
-          toast.dismiss(toastIdRef.current)
-        }
+        if (timeoutId) clearTimeout(timeoutId)
       }
     }
-  }, [orderId, getOrderRequest, step])
+  }, [orderId, getOrderRequest, step, paymentReceived])
 
   const onSubmitStep1 = useCallback(
     async (data: { connectionUrl: string; success: boolean }) => {
       if (data.success) {
         setStep(2)
       } else {
-        toast.error('Failed to connect to LSP. Please try again.', {
-          autoClose: 5000,
-          position: 'bottom-right',
-        })
+        setPaymentStatus('error')
+        setStep(4)
       }
     },
     []
@@ -304,8 +319,8 @@ export const Component = () => {
   const handleConfirmBack = useCallback(() => {
     setShowBackConfirmation(false)
     setOrderId(null)
-    if (toastIdRef.current) {
-      toast.dismiss(toastIdRef.current)
+    if (toastId) {
+      toast.dismiss(toastId)
     }
     setStep(2)
   }, [])
@@ -363,13 +378,14 @@ export const Component = () => {
           loading={getOrderResponse.isLoading}
           onBack={onStepBack}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
+          paymentStatus={paymentStatus}
         />
       </div>
 
       <div className={step !== 4 ? 'hidden' : ''}>
         <Step4
           orderId={orderId ?? undefined}
-          paymentStatus={paymentStatus ?? ''}
+          paymentStatus={paymentStatus || 'error'}
         />
       </div>
     </div>

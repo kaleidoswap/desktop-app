@@ -137,7 +137,9 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
   const handleConnect = async () => {
     setShowConnectPopup(false)
     if (isAlreadyConnected) {
-      toast.success('Already connected to LSP')
+      toast.info('Already connected to LSP', {
+        autoClose: 2000,
+      })
       onNext({ connectionUrl, success: true })
       return
     }

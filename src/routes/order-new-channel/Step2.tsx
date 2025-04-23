@@ -340,6 +340,18 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         return
       }
 
+      if (
+        addAsset &&
+        data.assetId &&
+        (data.assetAmount === '' || data.assetAmount === '0')
+      ) {
+        toast.error('Please enter an amount before proceeding.', {
+          autoClose: 5000,
+          position: 'bottom-right',
+        })
+        return
+      }
+
       // Apply min/max constraints before submission
       let capacitySat = data.capacitySat
       let clientBalanceSat = data.clientBalanceSat
@@ -765,59 +777,98 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
                 {addAsset && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Select Asset
-                        <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                          ⓘ
-                          <span
-                            className="invisible group-hover:visible absolute left-0 
-                            bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                            shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            Choose an RGB asset to add to your channel. The
-                            selected amount will be on the LSP side, allowing
-                            you to receive the asset. Additional fees will apply
-                            based on the asset type and amount.
-                          </span>
-                        </span>
-                      </label>
-                      <AssetSelector
-                        assetMap={assetMap}
-                        control={control}
-                        name="assetId"
-                      />
-                    </div>
-
-                    {assetId && (
-                      <div>
-                        <NumberInput
-                          className="group transition-all duration-300 hover:translate-x-1"
-                          error={formState.errors.assetAmount?.message}
-                          label={`Asset Amount (${assetMap[assetId]?.ticker || ''})`}
-                          max={getAssetMaxAmount()}
-                          min={getAssetMinAmount()}
-                          onChange={(value) => setValue('assetAmount', value)}
-                          onSliderChange={(e) =>
-                            setValue('assetAmount', e.target.value)
-                          }
-                          placeholder="Enter amount"
-                          precision={getAssetPrecision(assetId)}
-                          showSlider
-                          sliderStep={
-                            1 / Math.pow(10, getAssetPrecision(assetId))
-                          }
-                          sliderValue={
-                            watch('assetAmount')
-                              ? parseFloat(
-                                  parseNumberWithCommas(watch('assetAmount')) ||
-                                    '0'
-                                )
-                              : getAssetMinAmount()
-                          }
-                          value={watch('assetAmount')}
-                        />
+                    {Object.keys(assetMap).length === 0 ? (
+                      <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-yellow-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                clipRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                fillRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-200">
+                              No Assets Available
+                            </h3>
+                            <div className="mt-2 text-sm text-yellow-300">
+                              <p>
+                                There are currently no assets available to add
+                                to your channel. Please try again later or
+                                proceed without adding an asset.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Select Asset
+                            <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
+                              ⓘ
+                              <span
+                                className="invisible group-hover:visible absolute left-0 
+                                bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
+                                shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              >
+                                Choose an RGB asset to add to your channel. The
+                                selected amount will be on the LSP side,
+                                allowing you to receive the asset. Additional
+                                fees will apply based on the asset type and
+                                amount.
+                              </span>
+                            </span>
+                          </label>
+                          <AssetSelector
+                            assetMap={assetMap}
+                            control={control}
+                            name="assetId"
+                          />
+                        </div>
+
+                        {assetId && (
+                          <div>
+                            <NumberInput
+                              className="group transition-all duration-300 hover:translate-x-1"
+                              error={formState.errors.assetAmount?.message}
+                              label={`Asset Amount (${assetMap[assetId]?.ticker || ''})`}
+                              max={getAssetMaxAmount()}
+                              min={getAssetMinAmount()}
+                              onChange={(value) =>
+                                setValue('assetAmount', value)
+                              }
+                              onSliderChange={(e) =>
+                                setValue('assetAmount', e.target.value)
+                              }
+                              placeholder="Enter amount"
+                              precision={getAssetPrecision(assetId)}
+                              showSlider
+                              sliderStep={
+                                1 / Math.pow(10, getAssetPrecision(assetId))
+                              }
+                              sliderValue={
+                                watch('assetAmount')
+                                  ? parseFloat(
+                                      parseNumberWithCommas(
+                                        watch('assetAmount')
+                                      ) || '0'
+                                    )
+                                  : getAssetMinAmount()
+                              }
+                              value={watch('assetAmount')}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}

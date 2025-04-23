@@ -25,10 +25,154 @@ import {
   SendPaymentResponse,
 } from '../../slices/nodeApi/nodeApi.slice'
 
+// PaymentWaiting component - extracted from renderWaitingPayment to fix hooks issue
+interface PaymentWaitingProps {
+  paymentURI: string
+  expiresAt: string
+  currentPayment: any
+  bitcoinUnit: string
+  paymentMethod: 'lightning' | 'onchain'
+  order: Lsps1CreateOrderResponse | null
+  handleCopy: () => void
+}
+
+const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
+  paymentURI,
+  expiresAt,
+  currentPayment,
+  bitcoinUnit,
+  paymentMethod,
+  order,
+  handleCopy,
+}) => {
+  const expiryDate = new Date(expiresAt)
+  const now = new Date()
+  // Store initial secondsRemaining as a ref to avoid recalculation on re-renders
+  const initialSecondsRef = React.useRef(
+    Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / 1000))
+  )
+  const [countdown, setCountdown] = useState(initialSecondsRef.current)
+
+  // Use a more stable countdown implementation with useRef to prevent re-renders
+  useEffect(() => {
+    if (countdown <= 0) return
+
+    const intervalId = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(intervalId)
+  }, []) // Empty dependency array to run only once on mount
+
+  // Format countdown as MM:SS
+  const formatCountdown = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  // Get the payment text to copy safely
+  const getPaymentTextToCopy = (): string => {
+    if (paymentMethod === 'lightning' && order?.payment?.bolt11?.invoice) {
+      return order.payment.bolt11.invoice
+    } else if (order?.payment?.onchain?.address) {
+      return order.payment.onchain.address
+    }
+    return '' // Fallback to empty string if none available
+  }
+
+  return (
+    <div className="w-full flex flex-col items-center justify-center p-4">
+      <div className="flex flex-col md:flex-row items-center justify-around gap-8 w-full">
+        {/* QR Code - NO overlay */}
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <QRCode size={240} value={paymentURI} />
+        </div>
+
+        <div className="flex flex-col space-y-4">
+          <div className="bg-gray-800/70 p-5 rounded-xl border border-gray-700">
+            <div className="flex items-center gap-3 mb-3">
+              <h4 className="text-sm text-gray-400">Amount to Pay</h4>
+              <div className="flex items-center ml-auto">
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                <span className="text-blue-400 text-sm">
+                  Waiting for payment
+                </span>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {formatBitcoinAmount(
+                currentPayment?.order_total_sat || 0,
+                bitcoinUnit
+              )}{' '}
+              {bitcoinUnit}
+            </p>
+
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-gray-400 text-sm">Time Remaining:</span>
+                <span className="text-white font-mono bg-gray-700/70 px-3 py-1 rounded">
+                  {formatCountdown(countdown)}
+                </span>
+              </div>
+
+              <div className="w-full bg-gray-700/50 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-1000 ease-linear"
+                  style={{
+                    backgroundColor:
+                      countdown < 60
+                        ? '#EF4444'
+                        : countdown < 180
+                          ? '#F59E0B'
+                          : '#3B82F6',
+                    width: `${(countdown / initialSecondsRef.current) * 100}%`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="flex items-start">
+              <div className="text-blue-400 mr-3 mt-0.5">
+                <Info size={18} />
+              </div>
+              <p className="text-gray-400 text-sm">
+                Keep this window open. The QR code can be scanned to make
+                payment.
+                <br />
+                This page will update automatically once payment is detected.
+              </p>
+            </div>
+          </div>
+
+          <CopyToClipboard onCopy={handleCopy} text={getPaymentTextToCopy()}>
+            <button
+              className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                      transform transition-all duration-200 hover:scale-105 focus:outline-none 
+                      focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            >
+              Copy {paymentMethod === 'lightning' ? 'Invoice' : 'Address'}
+            </button>
+          </CopyToClipboard>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface StepProps {
   onBack: () => void
   loading: boolean
   order: Lsps1CreateOrderResponse | null
+  paymentStatus: 'success' | 'error' | 'expired' | null
 }
 
 const getFeeIcon = (type: string) => {
@@ -52,12 +196,22 @@ const formatAssetAmount = (
   return (amount / Math.pow(10, precision)).toFixed(precision)
 }
 
-export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
+export const Step3: React.FC<StepProps> = ({
+  onBack,
+  loading,
+  order,
+  paymentStatus,
+}) => {
   const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'onchain'>(
     'lightning'
   )
   const [useWalletFunds, setUseWalletFunds] = useState(false)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  // Define a proper type for payment state
+  type PaymentStateType = 'waiting' | 'success' | 'error' | 'expired' | null
+  const [localPaymentState, setLocalPaymentState] =
+    useState<PaymentStateType>(null)
+  const [isOrderExpired, setIsOrderExpired] = useState(false)
 
   const [btcBalance, btcBalanceResponse] =
     nodeApi.endpoints.btcBalance.useLazyQuery()
@@ -79,10 +233,6 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
     { label: 'Fast', rate: 3, value: 'fast' },
     { label: 'Custom', rate: customFee, value: 'custom' },
   ]
-
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | null>(
-    null
-  )
 
   const [isLoadingData, setIsLoadingData] = useState(false)
 
@@ -129,17 +279,13 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
     // Initial fetch
     refreshData()
 
-    // Use RAF for smoother updates
-    let rafId: number
+    // Use a simpler interval with less frequent refreshes to avoid too many re-renders
     const interval = setInterval(() => {
-      rafId = requestAnimationFrame(() => {
-        refreshData()
-      })
-    }, 10000)
+      refreshData()
+    }, 15000) // Increased to 15 seconds to reduce refresh frequency
 
     return () => {
       clearInterval(interval)
-      cancelAnimationFrame(rafId)
     }
   }, [refreshData, isProcessingWalletPayment])
 
@@ -169,6 +315,49 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
   const vanillaChainBalance = btcBalanceResponse.data?.vanilla.spendable || 0
   const coloredChainBalance = btcBalanceResponse.data?.colored.spendable || 0
   const onChainBalance = vanillaChainBalance + coloredChainBalance
+
+  // Check if the order is expired - Stabilized implementation
+  useEffect(() => {
+    if (!order?.payment) return
+
+    const expiresAt =
+      order.payment.bolt11?.expires_at || order.payment.onchain?.expires_at
+    if (!expiresAt) return
+
+    const expiryDate = new Date(expiresAt)
+    const now = new Date()
+
+    // If already expired
+    if (now > expiryDate) {
+      setIsOrderExpired(true)
+      setLocalPaymentState('expired')
+      return
+    }
+
+    // Set up a single timeout for expiry
+    const timeToExpiry = expiryDate.getTime() - now.getTime()
+    const timerId = setTimeout(() => {
+      setIsOrderExpired(true)
+      setLocalPaymentState('expired')
+    }, timeToExpiry)
+
+    // Clear timeout on unmount
+    return () => clearTimeout(timerId)
+  }, [order?.payment?.bolt11?.expires_at, order?.payment?.onchain?.expires_at]) // More specific dependencies
+
+  // If payment is started, update localPaymentState to waiting - only run once when initialized
+  useEffect(() => {
+    if (order && !isOrderExpired && !localPaymentState && !paymentStatus) {
+      setLocalPaymentState('waiting')
+    }
+  }, [order, isOrderExpired, localPaymentState, paymentStatus])
+
+  // Update localPaymentState based on paymentStatus from parent - Simplified
+  useEffect(() => {
+    if (paymentStatus && paymentStatus !== localPaymentState) {
+      setLocalPaymentState(paymentStatus)
+    }
+  }, [paymentStatus])
 
   // Function to handle wallet payment
   const handleWalletPayment = async () => {
@@ -224,7 +413,7 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
             ? 'Lightning payment initiated successfully!'
             : 'Lightning payment completed successfully!'
         )
-        setPaymentStatus('paid')
+        setLocalPaymentState('success')
       } else if (paymentMethod === 'onchain' && order?.payment?.onchain) {
         const feeRate =
           selectedFee === 'custom'
@@ -243,7 +432,7 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
         }
 
         toast.success('On-chain payment sent successfully!')
-        setPaymentStatus('paid')
+        setLocalPaymentState('success')
       }
 
       setShowWalletConfirmation(false)
@@ -252,7 +441,7 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
         'Payment failed: ' +
           (error instanceof Error ? error.message : 'Unknown error')
       )
-      setPaymentStatus(null)
+      setLocalPaymentState('error')
     } finally {
       setIsProcessingWalletPayment(false)
     }
@@ -630,6 +819,55 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
     )
   }
 
+  // Render the waiting payment animation - now just returns the component
+  const renderWaitingPayment = () => {
+    const expiresAt =
+      order?.payment?.bolt11?.expires_at ||
+      order?.payment?.onchain?.expires_at ||
+      ''
+
+    return (
+      <PaymentWaiting
+        bitcoinUnit={bitcoinUnit}
+        currentPayment={currentPayment}
+        expiresAt={expiresAt}
+        handleCopy={handleCopy}
+        order={order}
+        paymentMethod={paymentMethod}
+        paymentURI={paymentURI}
+      />
+    )
+  }
+
+  // Render the expired payment message
+  const renderExpiredPayment = () => (
+    <div className="w-full flex flex-col items-center justify-center p-8">
+      <div className="flex flex-col items-center">
+        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-4">
+          <svg
+            className="w-8 h-8 text-yellow-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+            />
+          </svg>
+        </div>
+        <h3 className="text-xl font-bold text-white mb-2">
+          Payment Time Expired
+        </h3>
+        <p className="text-gray-400 text-center">
+          The payment time has expired. Please go back and create a new order.
+        </p>
+      </div>
+    </div>
+  )
+
   const renderSuccessMessage = () => (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 mb-6">
       <div className="flex flex-col items-center text-center">
@@ -656,7 +894,7 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
             ? 'Your lightning payment has been initiated. Please wait while we process the payment and set up the channel with the LSP.'
             : 'Your payment has been sent successfully. Please wait while we confirm the channel setup with the LSP.'}
         </p>
-        <div className="w-full max-w-sm bg-gray-900/50 rounded-lg p-4">
+        <div className="w-full max-w-sm bg-gray-900/50 rounded-lg p-4 mb-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-400">Payment Amount:</span>
             <span className="text-white font-medium">
@@ -684,13 +922,26 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
             </span>
           </div>
         </div>
-        <div className="mt-6 flex items-center gap-2 text-blue-400">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-          <span>
-            {paymentMethod === 'lightning'
-              ? 'Processing payment and setting up channel...'
-              : 'Waiting for LSP confirmation...'}
-          </span>
+
+        <div className="w-full bg-green-500/10 rounded-xl p-5 border border-green-500/20">
+          <div className="flex items-center justify-center mb-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-green-500/20"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 animate-spin"></div>
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-green-400 mb-2">
+            Channel Opening in Progress
+          </h3>
+          <p className="text-gray-400 text-sm">
+            Your payment has been received. We are now setting up your channel
+            with the Lightning Service Provider.
+            <br />
+            This process can take a few minutes to complete.
+          </p>
+          <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-4 overflow-hidden">
+            <div className="bg-green-500 h-1.5 animate-pulse-width"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -933,8 +1184,8 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
           </div>
         </div>
 
-        {/* Payment Section - Show either payment methods or success message */}
-        {paymentStatus === 'paid' ? (
+        {/* Payment Section - Show appropriate message based on payment state */}
+        {localPaymentState === 'success' || paymentStatus === 'success' ? (
           renderSuccessMessage()
         ) : (
           <>
@@ -969,42 +1220,124 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
 
               {!useWalletFunds && (
                 <div className="flex flex-col md:flex-row items-center justify-around gap-8">
-                  <div className="bg-white p-6 rounded-xl shadow-lg transition-transform hover:scale-105">
-                    <QRCode size={240} value={paymentURI} />
-                  </div>
+                  {(() => {
+                    // Initial state - show QR and payment info
+                    if (localPaymentState === null) {
+                      return (
+                        <>
+                          <div className="bg-white p-6 rounded-xl shadow-lg transition-transform hover:scale-105">
+                            <QRCode size={240} value={paymentURI} />
+                          </div>
 
-                  <div className="flex flex-col space-y-4">
-                    <div className="bg-gray-900/50 p-4 rounded-lg">
-                      <h4 className="text-sm text-gray-400 mb-1">
-                        Amount to Pay
-                      </h4>
-                      <p className="text-2xl font-bold text-white">
-                        {formatBitcoinAmount(
-                          currentPayment?.order_total_sat || 0,
-                          bitcoinUnit
-                        )}{' '}
-                        {bitcoinUnit}
-                      </p>
-                    </div>
+                          <div className="flex flex-col space-y-4">
+                            <div className="bg-gray-900/50 p-4 rounded-lg">
+                              <h4 className="text-sm text-gray-400 mb-1">
+                                Amount to Pay
+                              </h4>
+                              <p className="text-2xl font-bold text-white">
+                                {formatBitcoinAmount(
+                                  currentPayment?.order_total_sat || 0,
+                                  bitcoinUnit
+                                )}{' '}
+                                {bitcoinUnit}
+                              </p>
+                            </div>
 
-                    <CopyToClipboard
-                      onCopy={handleCopy}
-                      text={
-                        paymentMethod === 'lightning'
-                          ? order?.payment?.bolt11?.invoice
-                          : order?.payment?.onchain?.address
-                      }
-                    >
-                      <button
-                        className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                                       transform transition-all duration-200 hover:scale-105 focus:outline-none 
-                                       focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-                      >
-                        Copy{' '}
-                        {paymentMethod === 'lightning' ? 'Invoice' : 'Address'}
-                      </button>
-                    </CopyToClipboard>
-                  </div>
+                            <CopyToClipboard
+                              onCopy={handleCopy}
+                              text={
+                                paymentMethod === 'lightning' &&
+                                order?.payment?.bolt11?.invoice
+                                  ? order.payment.bolt11.invoice
+                                  : order?.payment?.onchain?.address || ''
+                              }
+                            >
+                              <button
+                                className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                                         transform transition-all duration-200 hover:scale-105 focus:outline-none 
+                                         focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                              >
+                                Copy{' '}
+                                {paymentMethod === 'lightning'
+                                  ? 'Invoice'
+                                  : 'Address'}
+                              </button>
+                            </CopyToClipboard>
+                          </div>
+                        </>
+                      )
+                    }
+
+                    // Waiting for payment
+                    if (localPaymentState === 'waiting') {
+                      return renderWaitingPayment()
+                    }
+
+                    // Payment received, channel setup in progress
+                    if ((localPaymentState as PaymentStateType) === 'success') {
+                      return (
+                        <div className="w-full bg-green-500/10 rounded-xl p-8 border border-green-500/20">
+                          <div className="flex flex-col items-center text-center">
+                            <div className="relative w-16 h-16 mb-4">
+                              <div className="absolute inset-0 rounded-full border-4 border-green-500/20"></div>
+                              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 animate-spin"></div>
+                            </div>
+                            <h3 className="text-xl font-bold text-green-400 mb-2">
+                              Channel Opening in Progress
+                            </h3>
+                            <p className="text-gray-300 mb-4">
+                              Your payment has been processed. The LSP is now
+                              setting up your channel.
+                              <br />
+                              This may take a few minutes.
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // Payment expired
+                    if (localPaymentState === 'expired') {
+                      return renderExpiredPayment()
+                    }
+
+                    // Payment failed
+                    if (
+                      localPaymentState === 'error' ||
+                      paymentStatus === 'error'
+                    ) {
+                      return (
+                        <div className="w-full flex flex-col items-center justify-center p-8">
+                          <div className="flex flex-col items-center">
+                            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4">
+                              <svg
+                                className="w-8 h-8 text-red-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M6 18L18 6M6 6l12 12"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                />
+                              </svg>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">
+                              Payment Failed
+                            </h3>
+                            <p className="text-gray-400 text-center">
+                              The payment could not be completed. Please try
+                              again.
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return null
+                  })()}
                 </div>
               )}
             </div>
@@ -1012,7 +1345,7 @@ export const Step3: React.FC<StepProps> = ({ onBack, loading, order }) => {
         )}
 
         {/* Back Button - Hide when payment is successful */}
-        {paymentStatus !== 'paid' && (
+        {localPaymentState !== 'success' && paymentStatus !== 'success' && (
           <div className="flex justify-center">
             <button
               className="px-8 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 
