@@ -23,7 +23,6 @@ import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 import { WithdrawForm, ConfirmationModal } from './components'
 import {
   AddressType,
-  AssetOption,
   FeeEstimations,
   FeeRateOption,
   Fields,

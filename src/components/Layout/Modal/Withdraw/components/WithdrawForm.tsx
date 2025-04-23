@@ -18,11 +18,10 @@ import {
 import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
 import { WithdrawFormProps, AssetOption } from '../types'
 
-// Import sub-components
-import BalanceDisplay from './BalanceDisplay'
-import LightningInvoiceDetails from './LightningInvoiceDetails'
-import PaymentStatus from './PaymentStatus'
-import RGBInvoiceDetails from './RGBInvoiceDetails'
+import { BalanceDisplay } from './BalanceDisplay'
+import { LightningInvoiceDetails } from './LightningInvoiceDetails'
+import { PaymentStatus } from './PaymentStatus'
+import { RGBInvoiceDetails } from './RGBInvoiceDetails'
 
 // WithdrawForm component for rendering the form
 const WithdrawForm: React.FC<WithdrawFormProps> = ({
