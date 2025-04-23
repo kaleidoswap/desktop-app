@@ -15,7 +15,7 @@ export const DepositModalContent = () => {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-4 max-h-[90vh] flex flex-col">
+      <div className="max-w-2xl mx-auto p-4 h-[80vh] flex flex-col">
         {/* Progress bar */}
         <div className="mb-4">
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -25,8 +25,12 @@ export const DepositModalContent = () => {
             />
           </div>
           <div className="flex justify-between mt-2 text-sm text-slate-400">
-            <span>Select Asset</span>
-            <span>Deposit Details</span>
+            <span className={step === 1 ? 'text-blue-400 font-medium' : ''}>
+              Select Asset
+            </span>
+            <span className={step === 2 ? 'text-blue-400 font-medium' : ''}>
+              Deposit Details
+            </span>
           </div>
         </div>
 

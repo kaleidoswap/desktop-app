@@ -87,6 +87,15 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   // Add network info query
   const { data: networkInfo } = nodeApi.endpoints.networkInfo.useQuery()
 
+  // Handle amount input change with validation
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Allow empty value or positive numbers
+    if (value === '' || parseFloat(value) > 0) {
+      setAmount(value)
+    }
+  }
+
   const generateRgbInvoice = async () => {
     try {
       const res = await rgbInvoice(assetId ? { asset_id: assetId } : {})
@@ -125,7 +134,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     try {
       if (network === 'lightning') {
         if (!amount || parseFloat(amount) <= 0) {
-          toast.error('Please enter a valid amount')
+          toast.error('Please enter a valid positive amount')
           setLoading(false)
           return
         }
@@ -227,8 +236,28 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }
 
+  // Add a useEffect to close modal on successful payment
+  useEffect(() => {
+    if (invoiceStatus?.status === 'Succeeded') {
+      // Show success toast notification
+      toast.success(`Lightning deposit received successfully!`, {
+        autoClose: 5000,
+        progressStyle: { background: '#3B82F6' },
+      })
+      onNext()
+    } else if (
+      invoiceStatus?.status === 'Failed' ||
+      invoiceStatus?.status === 'Expired'
+    ) {
+      // Show failure toast notification
+      toast.error(`Lightning deposit failed: ${invoiceStatus.status}`, {
+        autoClose: 5000,
+      })
+    }
+  }, [invoiceStatus, onNext])
+
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6 overflow-y-auto">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
       <div className="flex flex-col items-center mb-4">
         {/* Display selected asset icon */}
         {assetId === BTC_ASSET_ID ? (
@@ -262,6 +291,12 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       </div>
 
       <div className="space-y-4">
+        {/* Network Selection - Made more compact and sticky */}
+        <div className="flex gap-3 mb-3 top-[60px] z-20 pb-2 pt-1 bg-slate-900/95 backdrop-blur-sm">
+          <NetworkOption icon={ChainIcon} label="On-chain" type="on-chain" />
+          <NetworkOption icon={Zap} label="Lightning" type="lightning" />
+        </div>
+
         {/* Show network info and faucet suggestion in a more compact format */}
         {networkInfo && (
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
@@ -333,23 +368,20 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </div>
         )}
 
-        {/* Network Selection - Made more compact */}
-        <div className="flex gap-3 mb-3">
-          <NetworkOption icon={ChainIcon} label="On-chain" type="on-chain" />
-          <NetworkOption icon={Zap} label="Lightning" type="lightning" />
-        </div>
-
         {/* Amount Input for Lightning */}
         {network === 'lightning' && (
           <div className="space-y-1 animate-fadeIn">
             <label className="text-xs font-medium text-slate-400">Amount</label>
             <div className="flex items-center gap-2">
               <input
+                autoFocus
                 className="flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
                          placeholder:text-slate-600 transition-all duration-200 text-sm"
-                onChange={(e) => setAmount(e.target.value)}
+                min="0.000001"
+                onChange={handleAmountChange}
                 placeholder="Enter amount"
+                step="any"
                 type="number"
                 value={amount}
               />
@@ -392,7 +424,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {/* Payment Status */}
             {invoiceStatus && (
               <div
-                className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm`}
+                className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm py-2 bg-slate-800/50 rounded-lg`}
               >
                 {invoiceStatus.status === 'Pending' ? (
                   <>
@@ -413,13 +445,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
             )}
 
-            {/* QR Code - Made smaller */}
-            <div className="flex justify-center">
+            {/* QR Code - Made more responsive */}
+            <div className="flex justify-center py-2">
               <div className="p-3 bg-white rounded-xl shadow-xl">
                 <QRCodeCanvas
                   includeMargin={true}
                   level="H"
-                  size={160}
+                  size={window.innerWidth < 500 ? 140 : 160}
                   value={address}
                 />
               </div>
@@ -488,8 +520,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </div>
         )}
 
-        {/* Navigation - Make this sticky to the bottom */}
-        <div className="flex justify-between pt-4 sticky bottom-0">
+        {/* Navigation - Sticky to the bottom */}
+        <div className="sticky bottom-0 pt-4 pb-1 flex justify-between bg-slate-900/95 backdrop-blur-sm z-10">
           <button
             className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
                      flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"

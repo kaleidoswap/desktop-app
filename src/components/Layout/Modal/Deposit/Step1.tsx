@@ -66,7 +66,7 @@ export const Step1 = ({ onNext }: Props) => {
   }, [assetId, onNext, isNewAsset])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6 overflow-y-auto">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
       <div className="flex flex-col items-center mb-6">
         {selectedAsset?.asset_id === BTC_ASSET_ID ? (
           <img alt="Bitcoin" className="w-10 h-10 mb-3" src={btcLogo} />
@@ -123,12 +123,13 @@ export const Step1 = ({ onNext }: Props) => {
           {isDropdownOpen && (
             <div
               className="absolute mt-2 w-full bg-slate-800 rounded-xl border border-slate-700 
-                          shadow-xl z-50 max-h-[250px] overflow-y-auto"
+                          shadow-xl z-50 max-h-[250px] overflow-y-auto custom-scrollbar"
             >
-              <div className="p-2 border-b border-slate-700">
+              <div className="sticky top-0 p-2 border-b border-slate-700 bg-slate-800 z-10">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    autoFocus
                     className="w-full pl-10 pr-4 py-1.5 bg-slate-900/50 rounded-lg border border-slate-600 
                              text-white placeholder:text-slate-500 focus:border-blue-500 
                              focus:ring-1 focus:ring-blue-500 text-sm"
@@ -144,41 +145,58 @@ export const Step1 = ({ onNext }: Props) => {
                 {/* Add New Asset Button - Now at the top */}
                 <button
                   className="w-full px-3 py-2 flex items-center gap-2 hover:bg-blue-500/10 
-                           text-blue-500 transition-colors duration-200 border-b border-slate-700 text-sm"
+                           text-blue-500 transition-colors duration-200 border-b border-slate-700 text-sm sticky top-[52px] z-10 bg-slate-800/95 backdrop-blur-sm"
                   onClick={handleAddNewAsset}
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add New Asset</span>
                 </button>
 
-                {filteredAssets.map((asset) => (
-                  <button
-                    className="w-full px-3 py-2 flex items-center gap-3 hover:bg-blue-500/10 
-                             transition-colors duration-200 text-sm"
-                    key={asset.asset_id}
-                    onClick={() => handleAssetSelect(asset)}
-                  >
-                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      {asset.asset_id === BTC_ASSET_ID ? (
-                        <img alt="Bitcoin" className="w-4 h-4" src={btcLogo} />
-                      ) : (
-                        <img
-                          alt="RGB Asset"
-                          className="w-4 h-4"
-                          src={rgbLogo}
-                        />
-                      )}
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  {filteredAssets.length === 0 ? (
+                    <div className="p-3 text-center text-slate-500 text-sm">
+                      No assets found matching "{searchQuery}"
                     </div>
-                    <div className="text-left">
-                      <div className="font-medium text-white">
-                        {asset.ticker}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {asset.name || 'Asset'}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                  ) : (
+                    filteredAssets.map((asset) => (
+                      <button
+                        className="w-full px-3 py-2 flex items-center gap-3 hover:bg-blue-500/10 
+                                 transition-colors duration-200 text-sm"
+                        key={asset.asset_id}
+                        onClick={() => handleAssetSelect(asset)}
+                      >
+                        <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
+                          {asset.asset_id === BTC_ASSET_ID ? (
+                            <img
+                              alt="Bitcoin"
+                              className="w-4 h-4"
+                              src={btcLogo}
+                            />
+                          ) : (
+                            <img
+                              alt="RGB Asset"
+                              className="w-4 h-4"
+                              src={rgbLogo}
+                            />
+                          )}
+                        </div>
+                        <div className="text-left flex-1">
+                          <div className="font-medium text-white flex items-center justify-between">
+                            <span>{asset.ticker}</span>
+                            {asset.asset_id === assetId && (
+                              <span className="text-blue-400 text-xs bg-blue-500/10 px-1.5 py-0.5 rounded-lg">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 truncate">
+                            {asset.name || 'Asset'}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
