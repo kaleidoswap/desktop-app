@@ -276,7 +276,10 @@ interface ListPaymentsResponse {
     asset_id: string | null
     payment_hash: string
     inbound: boolean
-    status: string
+    status: HTLCStatus
+    created_at: number
+    updated_at: number
+    payee_pubkey: string
   }[]
 }
 
