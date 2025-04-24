@@ -73,6 +73,7 @@ import { Fields } from './types'
 import { subscribeToPairFeed } from './websocketUtils'
 
 const MSATS_PER_SAT = 1000
+const RGB_HTLC_MIN_SAT = 3000
 
 export const Component = () => {
   const dispatch = useAppDispatch()
@@ -277,8 +278,9 @@ export const Component = () => {
         }
 
         const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        setMaxOutboundHtlcSat(maxHtlcLimit)
-        return maxHtlcLimit
+        const maxTradableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
+        setMaxOutboundHtlcSat(maxTradableAmount)
+        return maxTradableAmount
       } else {
         const assetInfo = assetsList.find((a) => a.ticker === asset)
         if (!assetInfo) {
