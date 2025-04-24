@@ -174,8 +174,9 @@ impl BuildManager {
         // Clone the rgb-lightning-node repo
         self.project_builder.clone_repo();
 
-        // Check whether it is "release" or "debug" build
-        let is_release = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()) == "release";
+        // Always build in release mode instead of checking the PROFILE env var
+        // let is_release = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()) == "release";
+        let is_release = true;  // Always build in release mode for better performance
 
         // Build the project
         self.project_builder.build(is_release);

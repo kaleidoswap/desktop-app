@@ -27,6 +27,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -63,16 +67,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         id: tauri_build
         with:
-          tagName: app-v__VERSION__
-          releaseName: 'App v__VERSION__'
+          tagName: v${{ env.VERSION }}
+          releaseName: 'App v${{ env.VERSION }}'
           releaseBody: |
+            Release v${{ env.VERSION }}
+            
             See the assets to download and install this version.
             
-            Changes in this version:
-            - Built from build branch
-            - Includes macOS (Intel + Apple Silicon) and Linux builds
-            
-            SHA256 checksums will be provided separately.
+            SHA256 checksums are included in the manifest files.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
@@ -80,8 +82,10 @@ jobs:
       - name: Create manifest file
         run: |
           echo "Creating manifest.txt for signing..."
-          echo "Build timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > manifest.txt
+          echo "App version: ${{ env.VERSION }}" > manifest.txt
+          echo "Build timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> manifest.txt
           echo "Git commit: ${{ github.sha }}" >> manifest.txt
+          echo "Git tag: ${{ github.ref_name }}" >> manifest.txt
           echo "Build platform: ${{ matrix.platform }}" >> manifest.txt
           echo "Architecture target: ${{ matrix.args }}" >> manifest.txt
           echo "" >> manifest.txt
@@ -91,15 +95,15 @@ jobs:
           for file in *.{dmg,AppImage,deb,msi,exe}; do
             if [ -f "$file" ]; then
               CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
-              echo "$file: $CHECKSUM" >> ../../manifest.txt
+              echo "$file: $CHECKSUM" >> $GITHUB_WORKSPACE/manifest.txt
             fi
           done
           
-          cat ../../manifest.txt
+          cat $GITHUB_WORKSPACE/manifest.txt
 
       - name: Upload manifest.txt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
+          name: manifest-v${{ env.VERSION }}-${{ matrix.platform }}-${{ matrix.args || 'default' }}
           path: manifest.txt
-          if-no-files-found: error
+          if-no-files-found: error 
