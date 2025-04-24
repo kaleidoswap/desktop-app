@@ -102,7 +102,7 @@ jobs:
           cat $GITHUB_WORKSPACE/manifest.txt
 
       - name: Upload manifest.txt
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: manifest-v${{ env.VERSION }}-${{ matrix.platform }}-${{ matrix.args || 'default' }}
           path: manifest.txt
