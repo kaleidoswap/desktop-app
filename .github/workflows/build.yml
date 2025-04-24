@@ -104,6 +104,6 @@ jobs:
       - name: Upload manifest.txt
         uses: actions/upload-artifact@v4
         with:
-          name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ (matrix.args != '' && matrix.args || 'default') | replace('/', '-') | replace(' ', '_') }}
+          name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}
           path: manifest.txt
           if-no-files-found: error 
