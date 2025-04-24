@@ -201,6 +201,20 @@ export const NoTradingChannelsMessage: React.FC<
             {getRecommendationMessage()}
           </p>
 
+          <button
+            className="mt-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            onClick={async () => {
+              try {
+                await onMakerChange()
+              } catch (error) {
+                console.error('Failed to refresh channels:', error)
+              }
+            }}
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Refresh
+          </button>
+
           <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
             <h3 className="text-sm font-semibold text-slate-200 mb-3.5 flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-blue-400" />
@@ -354,6 +368,14 @@ interface WebSocketDisconnectedMessageProps {
 export const WebSocketDisconnectedMessage: React.FC<
   WebSocketDisconnectedMessageProps
 > = ({ onMakerChange, makerUrl }) => {
+  const handleRefreshConnection = async () => {
+    try {
+      await onMakerChange()
+    } catch (error) {
+      console.error('Failed to refresh connection:', error)
+    }
+  }
+
   return (
     <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-amber-700/30 overflow-hidden">
       <div className="border-b border-slate-700/50 px-4 pt-3 pb-2">
@@ -364,13 +386,20 @@ export const WebSocketDisconnectedMessage: React.FC<
           <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center">
             <HelpCircle className="w-6 h-6 text-amber-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            WebSocket Connection Issue
-          </h2>
+          <h2 className="text-xl font-bold text-white">Connection Issue</h2>
           <p className="text-slate-400 text-center text-sm max-w-md">
-            You have trading channels available, but we couldn't establish a
-            real-time connection to the market maker. Prices may not be current.
+            You have trading channels available, but we're having trouble
+            maintaining a real-time connection to the market maker. The app will
+            automatically try to reconnect.
           </p>
+
+          <button
+            className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            onClick={handleRefreshConnection}
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Refresh Connection
+          </button>
 
           <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
             <h3 className="text-sm font-semibold text-slate-200 mb-2 flex items-center gap-2">
@@ -411,19 +440,6 @@ export const WebSocketDisconnectedMessage: React.FC<
               </p>
             </div>
           )}
-
-          <div className="flex gap-4 pt-3 justify-center">
-            <button
-              className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl 
-                     font-medium transition-colors flex items-center gap-2 text-sm"
-              onClick={onMakerChange}
-            >
-              <div className="w-4 h-4 flex items-center justify-center">
-                <RefreshCcw className="w-4 h-4" />
-              </div>
-              Reconnect
-            </button>
-          </div>
         </div>
       </div>
     </div>

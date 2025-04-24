@@ -43,6 +43,11 @@ export const WALLET_HISTORY_TRADES_PATH = makePath([
   'trades',
 ])
 
+export const WALLET_HISTORY_ASSETS_PATH = makePath([
+  WALLET_HISTORY_PATH,
+  'assets',
+])
+
 export const CHANNELS_PATH = makePath(['channels'])
 
 export const CREATE_NEW_CHANNEL_PATH = makePath(['create-new-channel'])

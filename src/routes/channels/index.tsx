@@ -91,7 +91,6 @@ export const Component: React.FC = () => {
     nodeApi.endpoints.listChannels.useLazyQuery()
   const [listAssets, listAssetsResponse] =
     nodeApi.endpoints.listAssets.useLazyQuery()
-  const [closeChannel] = nodeApi.endpoints.closeChannel.useLazyQuery()
   const navigate = useNavigate()
   const [assets, setAssets] = useState<Record<string, Asset>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -235,18 +234,6 @@ export const Component: React.FC = () => {
     (sum, channel) => sum + Math.floor(channel.outbound_balance_msat / 1000),
     0
   )
-
-  const handleCloseChannel = async (channelId: string, peerPubkey: string) => {
-    try {
-      await closeChannel({
-        channel_id: channelId,
-        peer_pubkey: peerPubkey,
-      })
-      refreshData()
-    } catch (error) {
-      console.error('Error closing channel:', error)
-    }
-  }
 
   // Toggle filter option
   const toggleFilter = (filter: FilterOption) => {
@@ -508,7 +495,7 @@ export const Component: React.FC = () => {
                   asset={asset}
                   channel={channel}
                   key={channel.channel_id}
-                  onClose={handleCloseChannel}
+                  onClose={refreshData}
                 />
               )
             })}

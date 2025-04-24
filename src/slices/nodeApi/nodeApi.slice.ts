@@ -45,6 +45,8 @@ interface Balance {
   settled: number
   future: number
   spendable: number
+  offchain_outbound?: number
+  offchain_inbound?: number
 }
 
 export interface NiaAsset {
@@ -68,6 +70,7 @@ interface ListAssetsResponse {
 interface CloseChannelRequest {
   channel_id: string
   peer_pubkey: string
+  force?: boolean
 }
 
 export interface Channel {
@@ -273,8 +276,35 @@ interface ListPaymentsResponse {
     asset_id: string | null
     payment_hash: string
     inbound: boolean
-    status: string
+    status: HTLCStatus
+    created_at: number
+    updated_at: number
+    payee_pubkey: string
   }[]
+}
+
+interface ListTransfersRequest {
+  asset_id: string
+}
+
+export interface Transfer {
+  idx: number
+  created_at: number
+  updated_at: number
+  status: 'WaitingCounterparty' | 'WaitingConfirmations' | 'Settled' | 'Failed'
+  amount: number
+  kind: 'Issuance' | 'ReceiveBlind' | 'ReceiveWitness' | 'Send'
+  txid: string
+  recipient_id?: string
+  transport_endpoints?: Array<{
+    endpoint: string
+    transport_type: string
+    used: boolean
+  }>
+}
+
+interface ListTransfersResponse {
+  transfers: Transfer[]
 }
 
 interface TakerRequest {
@@ -530,7 +560,7 @@ export const nodeApi = createApi({
       query: (body) => ({
         body: {
           channel_id: body.channel_id,
-          force: false,
+          force: body.force === true,
           peer_pubkey: body.peer_pubkey,
         },
         method: 'POST',
@@ -659,6 +689,13 @@ export const nodeApi = createApi({
         body,
         method: 'POST',
         url: '/listtransactions',
+      }),
+    }),
+    listTransfers: builder.query<ListTransfersResponse, ListTransfersRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/listtransfers',
       }),
     }),
     listUnspents: builder.query<ListUnspentsResponse, ListUnspentsRequest>({

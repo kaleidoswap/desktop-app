@@ -77,15 +77,31 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-      - name: Install GitHub CLI
+      - name: Create manifest file
         run: |
-          if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
-            brew install gh
-          else
-            type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-            && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-            && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-            && sudo apt update \
-            && sudo apt install gh -y
-          fi 
+          echo "Creating manifest.txt for signing..."
+          echo "Build timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > manifest.txt
+          echo "Git commit: ${{ github.sha }}" >> manifest.txt
+          echo "Build platform: ${{ matrix.platform }}" >> manifest.txt
+          echo "Architecture target: ${{ matrix.args }}" >> manifest.txt
+          echo "" >> manifest.txt
+          echo "File checksums (SHA256):" >> manifest.txt
+          
+          cd ${{ steps.tauri_build.outputs.artifactPath }}/../
+          for file in *.{dmg,AppImage,deb,msi,exe}; do
+            if [ -f "$file" ]; then
+              CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
+              echo "$file: $CHECKSUM" >> ../../manifest.txt
+            fi
+          done
+          
+          cat ../../manifest.txt
+
+      - name: Upload manifest.txt
+        uses: actions/upload-artifact@v3
+        with:
+          name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
+          path: manifest.txt
+          if-no-files-found: error
+
+     

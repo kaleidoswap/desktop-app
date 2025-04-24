@@ -66,24 +66,24 @@ export const Step1 = ({ onNext }: Props) => {
   }, [assetId, onNext, isNewAsset])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-      <div className="flex flex-col items-center mb-8">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
+      <div className="flex flex-col items-center mb-6">
         {selectedAsset?.asset_id === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-12 h-12 mb-4" src={btcLogo} />
+          <img alt="Bitcoin" className="w-10 h-10 mb-3" src={btcLogo} />
         ) : (
-          <img alt="RGB Asset" className="w-12 h-12 mb-4" src={rgbLogo} />
+          <img alt="RGB Asset" className="w-10 h-10 mb-3" src={rgbLogo} />
         )}
-        <h3 className="text-3xl font-bold text-white mb-2">Select Asset</h3>
-        <p className="text-slate-400 text-center max-w-md">
+        <h3 className="text-2xl font-bold text-white mb-2">Select Asset</h3>
+        <p className="text-slate-400 text-center max-w-md text-sm">
           Choose the asset you want to deposit into your wallet
         </p>
       </div>
 
-      <div className="space-y-6 max-w-xl mx-auto">
+      <div className="space-y-4 max-w-xl mx-auto">
         {/* Asset Selector */}
         <div className="relative">
           <button
-            className="w-full p-4 bg-slate-800/50 rounded-xl border border-slate-700 
+            className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700 
                      hover:border-blue-500/50 transition-all duration-200
                      flex items-center justify-between text-left"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -91,18 +91,18 @@ export const Step1 = ({ onNext }: Props) => {
             <div className="flex items-center gap-3">
               {selectedAsset && !isNewAsset ? (
                 <>
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
                     {selectedAsset.asset_id === BTC_ASSET_ID ? (
-                      <img alt="Bitcoin" className="w-6 h-6" src={btcLogo} />
+                      <img alt="Bitcoin" className="w-5 h-5" src={btcLogo} />
                     ) : (
-                      <img alt="RGB Asset" className="w-6 h-6" src={rgbLogo} />
+                      <img alt="RGB Asset" className="w-5 h-5" src={rgbLogo} />
                     )}
                   </div>
                   <div>
                     <div className="font-medium text-white">
                       {selectedAsset.ticker}
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-xs text-slate-400">
                       {selectedAsset.name || 'Asset'}
                     </div>
                   </div>
@@ -123,15 +123,16 @@ export const Step1 = ({ onNext }: Props) => {
           {isDropdownOpen && (
             <div
               className="absolute mt-2 w-full bg-slate-800 rounded-xl border border-slate-700 
-                          shadow-xl z-50 max-h-[400px] overflow-y-auto"
+                          shadow-xl z-50 max-h-[250px] overflow-y-auto custom-scrollbar"
             >
-              <div className="p-3 border-b border-slate-700">
+              <div className="sticky top-0 p-2 border-b border-slate-700 bg-slate-800 z-10">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
-                    className="w-full pl-10 pr-4 py-2 bg-slate-900/50 rounded-lg border border-slate-600 
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-1.5 bg-slate-900/50 rounded-lg border border-slate-600 
                              text-white placeholder:text-slate-500 focus:border-blue-500 
-                             focus:ring-1 focus:ring-blue-500"
+                             focus:ring-1 focus:ring-blue-500 text-sm"
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search assets..."
                     type="text"
@@ -140,45 +141,62 @@ export const Step1 = ({ onNext }: Props) => {
                 </div>
               </div>
 
-              <div className="py-2">
+              <div className="py-1">
                 {/* Add New Asset Button - Now at the top */}
                 <button
-                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 
-                           text-blue-500 transition-colors duration-200 border-b border-slate-700"
+                  className="w-full px-3 py-2 flex items-center gap-2 hover:bg-blue-500/10 
+                           text-blue-500 transition-colors duration-200 border-b border-slate-700 text-sm sticky top-[52px] z-10 bg-slate-800/95 backdrop-blur-sm"
                   onClick={handleAddNewAsset}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                   <span>Add New Asset</span>
                 </button>
 
-                {filteredAssets.map((asset) => (
-                  <button
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-blue-500/10 
-                             transition-colors duration-200"
-                    key={asset.asset_id}
-                    onClick={() => handleAssetSelect(asset)}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      {asset.asset_id === BTC_ASSET_ID ? (
-                        <img alt="Bitcoin" className="w-5 h-5" src={btcLogo} />
-                      ) : (
-                        <img
-                          alt="RGB Asset"
-                          className="w-5 h-5"
-                          src={rgbLogo}
-                        />
-                      )}
+                <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  {filteredAssets.length === 0 ? (
+                    <div className="p-3 text-center text-slate-500 text-sm">
+                      No assets found matching "{searchQuery}"
                     </div>
-                    <div className="text-left">
-                      <div className="font-medium text-white">
-                        {asset.ticker}
-                      </div>
-                      <div className="text-sm text-slate-400">
-                        {asset.name || 'Asset'}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                  ) : (
+                    filteredAssets.map((asset) => (
+                      <button
+                        className="w-full px-3 py-2 flex items-center gap-3 hover:bg-blue-500/10 
+                                 transition-colors duration-200 text-sm"
+                        key={asset.asset_id}
+                        onClick={() => handleAssetSelect(asset)}
+                      >
+                        <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
+                          {asset.asset_id === BTC_ASSET_ID ? (
+                            <img
+                              alt="Bitcoin"
+                              className="w-4 h-4"
+                              src={btcLogo}
+                            />
+                          ) : (
+                            <img
+                              alt="RGB Asset"
+                              className="w-4 h-4"
+                              src={rgbLogo}
+                            />
+                          )}
+                        </div>
+                        <div className="text-left flex-1">
+                          <div className="font-medium text-white flex items-center justify-between">
+                            <span>{asset.ticker}</span>
+                            {asset.asset_id === assetId && (
+                              <span className="text-blue-400 text-xs bg-blue-500/10 px-1.5 py-0.5 rounded-lg">
+                                Selected
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 truncate">
+                            {asset.name || 'Asset'}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -186,22 +204,22 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* New Asset Input */}
         {isNewAsset && (
-          <div className="space-y-4 animate-fadeIn">
-            <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-              <p className="text-blue-400 text-sm">
+          <div className="space-y-3 animate-fadeIn">
+            <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+              <p className="text-blue-400 text-xs">
                 If you don't know the asset ID, you can proceed without entering
                 it. The system will generate a deposit address that can receive
                 any RGB asset.
               </p>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-400">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-400">
                 Asset ID (optional)
               </label>
               <input
-                className="w-full px-4 py-3 bg-slate-800/50 rounded-xl border border-slate-700 
+                className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                         placeholder:text-slate-600"
+                         placeholder:text-slate-600 text-sm"
                 onChange={(e) => setAssetId(e.target.value)}
                 placeholder="Enter asset ID (optional)"
                 type="text"
@@ -212,9 +230,9 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* Continue Button */}
         <button
-          className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white 
+          className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white 
                    rounded-xl font-medium transition-colors flex items-center 
-                   justify-center gap-2"
+                   justify-center gap-2 sticky bottom-0"
           onClick={handleSubmit}
         >
           Continue

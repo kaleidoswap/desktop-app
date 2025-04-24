@@ -176,70 +176,33 @@ export const createSwapAssetsHandler = (
     isFrom: boolean
   ) => Promise<number>,
   updateMinMaxAmounts: () => Promise<void>,
-  setFromAmount: (
-    amount: number,
-    fromAsset: string,
-    percentageOfMax?: number
-  ) => Promise<string | null>,
   setMaxFromAmount: (amount: number) => void
 ) => {
   return async () => {
     if (selectedPair) {
       const fromAsset = form.getValues().fromAsset
       const toAsset = form.getValues().toAsset
+      const fromAmount = form.getValues().from
+      const toAmount = form.getValues().to
+
+      logger.info(
+        `Swapping assets: from=${fromAsset}(${fromAmount}) to=${toAsset}(${toAmount})`
+      )
 
       // Swap the assets in the form
       form.setValue('fromAsset', toAsset)
       form.setValue('toAsset', fromAsset)
 
-      // Calculate the min order size for the new from asset (which was previously toAsset)
-      let minOrderSize = selectedPair.min_order_size
+      // Set the new from amount to the old to amount
+      form.setValue('from', toAmount)
 
-      // Check if the pair is inverted after swapping
-      const isInverted =
-        selectedPair.quote_asset === toAsset &&
-        selectedPair.base_asset === fromAsset
-
-      // If the pair is inverted after the swap, adjust the min order size
-      // This is mimicking what updateMinMaxAmounts does with the rate calculation
-      if (isInverted) {
-        try {
-          // We need to manually calculate the rate here since the pairFeed doesn't update immediately
-          // This is a simplified version that might need adjustment
-          const price =
-            form.getValues().to && form.getValues().from
-              ? parseFloat(form.getValues().to) /
-                parseFloat(form.getValues().from)
-              : 1
-
-          if (price > 0) {
-            minOrderSize = selectedPair.min_order_size / price
-          }
-
-          logger.debug(
-            `Calculated min order size for inverted pair: ${minOrderSize}`
-          )
-        } catch (error) {
-          logger.error('Error calculating inverted min order size:', error)
-        }
-      }
+      // Don't set the to amount - it will be recalculated by the updateToAmount effect
+      // Clear it temporarily to avoid showing stale data
+      // form.setValue('to', '')
 
       // Recalculate max amount for the new fromAsset (which was previously toAsset)
       const newMaxAmount = await calculateMaxTradableAmount(toAsset, true)
       setMaxFromAmount(newMaxAmount)
-
-      // Calculate the amount to set - minimum between available amount and min tradable amount
-      const amountToSet = Math.min(newMaxAmount, minOrderSize)
-
-      // Calculate percentage of max for the UI slider
-      const percentageOfMax = Math.min(100, (amountToSet / newMaxAmount) * 100)
-
-      logger.info(
-        `Swapping assets: Setting from amount to min(${newMaxAmount}, ${minOrderSize}) = ${amountToSet} ${toAsset} (${percentageOfMax}% of max)`
-      )
-
-      // Set the amount using helper function with the appropriate percentage
-      await setFromAmount(amountToSet, toAsset, percentageOfMax)
 
       // Make sure to call updateMinMaxAmounts after all the changes
       // This will ensure state is properly updated for future operations

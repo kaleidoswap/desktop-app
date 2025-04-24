@@ -12,75 +12,8 @@ import { useAppSelector } from '../../app/store/hooks'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
+import { CloseChannelModal } from '../CloseChannelModal'
 import { LiquidityBar } from '../LiquidityBar'
-
-interface ModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  children: React.ReactNode
-}
-
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  children,
-}) => {
-  if (!isOpen) return null
-
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-gray-800 rounded-lg p-6 max-w-sm w-full shadow-xl border border-gray-700/50">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Confirm Action</h3>
-          <button
-            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-            }}
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        {children}
-        <div className="flex justify-end space-x-4 mt-6">
-          <button
-            className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 active:bg-gray-500 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-            }}
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 transition-colors shadow-sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onConfirm()
-            }}
-            type="button"
-          >
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 interface InfoModalProps {
   isOpen: boolean
@@ -206,7 +139,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
 
 interface ChannelCardProps {
   channel: any
-  onClose: (channelId: string, peerPubkey: string) => void
+  onClose?: () => void
   asset: any
 }
 
@@ -231,14 +164,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   onClose,
   asset,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
-
-  const handleCloseChannel = async () => {
-    onClose(channel.channel_id, channel.peer_pubkey)
-    setIsModalOpen(false)
-  }
 
   const assetPrecision = asset?.precision || 8
 
@@ -259,6 +187,18 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
     <div className="bg-slate-900/70 hover:bg-slate-800/80 text-white rounded-lg shadow-md p-4 border border-slate-700/30 transition-all duration-200 relative">
       {/* Status indicator */}
       <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-slate-600/40 to-transparent"></div>
+
+      {/* Usability dot indicator */}
+      <div className="absolute top-2 right-2 flex items-center">
+        <div
+          className={`w-2 h-2 rounded-full ${channel.is_usable ? 'bg-emerald-400' : 'bg-red-400'}`}
+        />
+      </div>
+
+      {/* Unusable overlay */}
+      {!channel.is_usable && (
+        <div className="absolute inset-0 bg-red-900/10 rounded-lg pointer-events-none" />
+      )}
 
       {/* Channel header */}
       <div className="flex justify-between items-center mb-3">
@@ -396,7 +336,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           className="flex-1 py-1.5 px-3 bg-red-900/20 hover:bg-red-900/30 transition-colors rounded-md text-xs text-red-300 border border-red-900/20"
           onClick={(e) => {
             e.stopPropagation()
-            setIsModalOpen(true)
+            setIsCloseModalOpen(true)
           }}
           type="button"
         >
@@ -415,13 +355,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         onClose={() => setIsInfoModalOpen(false)}
       />
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleCloseChannel}
-      >
-        <p>Are you sure you want to close this channel?</p>
-      </Modal>
+      <CloseChannelModal
+        channelId={channel.channel_id}
+        isOpen={isCloseModalOpen}
+        onClose={() => setIsCloseModalOpen(false)}
+        onSuccess={onClose}
+        peerPubkey={channel.peer_pubkey}
+      />
     </div>
   )
 }

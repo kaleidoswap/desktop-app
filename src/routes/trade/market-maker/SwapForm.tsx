@@ -81,11 +81,50 @@ export const SwapForm: React.FC<SwapFormProps> = ({
   const hasZeroAmount =
     !fromAmount || fromAmount === '0' || !toAmount || toAmount === '0'
 
+  // Handle keyDown events
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Only handle Enter key
+    if (e.key === 'Enter') {
+      // Check if this is an input field where Enter is expected behavior
+      const target = e.target as HTMLElement
+      const isInputField =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+
+      // If not in a field that needs Enter for its own purpose
+      if (!isInputField) {
+        // Always prevent default Enter behavior to avoid unwanted form submission
+        e.preventDefault()
+
+        // Only proceed with submission if all conditions are met
+        if (
+          hasChannels &&
+          hasTradablePairs &&
+          !isSwapInProgress &&
+          !isToAmountLoading &&
+          !isPriceLoading &&
+          wsConnected &&
+          !hasZeroAmount &&
+          !errorMessage
+        ) {
+          console.log('Enter key pressed - calling onSubmit')
+          e.stopPropagation()
+          onSubmit()
+        } else {
+          console.log('Enter key pressed but form is not valid for submission')
+        }
+      }
+    }
+  }
+
   return (
     <div className="swap-form-container w-full max-w-2xl">
       <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 shadow-lg w-full">
         <div className="p-4">
-          <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            className="space-y-3"
+            onKeyDown={handleKeyDown}
+            onSubmit={form.handleSubmit(onSubmit)}
+          >
             <SwapInputField
               asset={form.getValues().fromAsset}
               assetOptions={fromAssetOptions}

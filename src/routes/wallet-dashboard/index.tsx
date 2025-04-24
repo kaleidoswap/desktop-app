@@ -49,7 +49,6 @@ export const Component = () => {
   const [listChannels, listChannelsResponse] =
     nodeApi.endpoints.listChannels.useLazyQuery()
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
-  const [closeChannel] = nodeApi.endpoints.closeChannel.useLazyQuery()
   const [refreshTransfers] =
     nodeApi.endpoints.refreshRgbTransfers.useLazyQuery()
   const [assetBalances, setAssetBalances] = useState<
@@ -104,7 +103,7 @@ export const Component = () => {
 
   useEffect(() => {
     refreshData()
-    const intervalId = setInterval(refreshData, 10000)
+    const intervalId = setInterval(refreshData, 5000)
     return () => clearInterval(intervalId)
   }, [refreshData])
 
@@ -164,14 +163,6 @@ export const Component = () => {
     (sum, channel) => sum + channel.capacity_sat,
     0
   )
-
-  const handleCloseChannel = async (channelId: string, peerPubkey: string) => {
-    await closeChannel({
-      channel_id: channelId,
-      peer_pubkey: peerPubkey,
-    })
-    refreshData()
-  }
 
   const isLoading =
     btcBalanceResponse.isLoading || listChannelsResponse.isLoading
@@ -460,7 +451,14 @@ export const Component = () => {
 
           {assetsResponse.data?.nia.map((asset) => (
             <AssetRow
-              asset={asset}
+              asset={{
+                ...asset,
+                balance: {
+                  future: assetBalances[asset.asset_id]?.onChain || 0,
+                  settled: assetBalances[asset.asset_id]?.onChain || 0,
+                  spendable: assetBalances[asset.asset_id]?.onChain || 0,
+                },
+              }}
               isLoading={!assetBalances[asset.asset_id]}
               key={asset.asset_id}
               offChainBalance={assetBalances[asset.asset_id]?.offChain || 0}
@@ -480,7 +478,7 @@ export const Component = () => {
                   asset={asset}
                   channel={channel}
                   key={channel.channel_id}
-                  onClose={handleCloseChannel}
+                  onClose={refreshData}
                 />
               )
             })}

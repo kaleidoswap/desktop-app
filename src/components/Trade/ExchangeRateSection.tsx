@@ -1,3 +1,4 @@
+import { RefreshCw } from 'lucide-react'
 import React, { useCallback, useState, useEffect, useRef } from 'react'
 
 import { SATOSHIS_PER_BTC } from '../../helpers/number'
@@ -138,6 +139,7 @@ interface ExchangeRateSectionProps {
   bitcoinUnit: string
   formatAmount: (amount: number, asset: string) => string
   getAssetPrecision: (asset: string) => number
+  onReconnect?: () => void
 }
 
 export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
@@ -149,6 +151,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   bitcoinUnit,
   formatAmount,
   getAssetPrecision,
+  onReconnect,
 }) => {
   const [showPriceUpdate, setShowPriceUpdate] = useState(false)
   const [prevPrice, setPrevPrice] = useState<number | null>(null)
@@ -158,6 +161,8 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   const [showTimestampOverlay, setShowTimestampOverlay] = useState(false)
   const [formattedTimeDiff, setFormattedTimeDiff] = useState<string>('')
   const [isPriceFresh, setIsPriceFresh] = useState(true)
+  const [isReconnecting, setIsReconnecting] = useState(false)
+  const autoReconnectTimeoutRef = useRef<number | null>(null)
 
   // Store the previous selectedPairFeed in a ref to detect changes
   const prevSelectedPairFeedRef = useRef<any>(null)
@@ -180,6 +185,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       setShowPriceUpdate(true)
       setLastQuoteTimestamp(Date.now())
       setIsPriceFresh(true)
+      setIsReconnecting(false)
 
       // Reset animation after it completes
       const timer = setTimeout(() => {
@@ -195,6 +201,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       if (prevFeed.price === currentFeed.price) {
         setLastQuoteTimestamp(Date.now())
         setIsPriceFresh(true)
+        setIsReconnecting(false)
       }
     }
 
@@ -207,6 +214,29 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       }
     }
   }, [selectedPairFeed, prevPrice, lastQuoteTimestamp])
+
+  // Auto-reconnect logic when price gets stale
+  useEffect(() => {
+    if (
+      !isPriceFresh &&
+      !isReconnecting &&
+      onReconnect &&
+      autoReconnectTimeoutRef.current === null
+    ) {
+      // Wait for 10 seconds before attempting an automatic reconnection
+      autoReconnectTimeoutRef.current = setTimeout(() => {
+        handleReconnect()
+        autoReconnectTimeoutRef.current = null
+      }, 10000)
+    }
+
+    return () => {
+      if (autoReconnectTimeoutRef.current) {
+        clearTimeout(autoReconnectTimeoutRef.current)
+        autoReconnectTimeoutRef.current = null
+      }
+    }
+  }, [isPriceFresh, isReconnecting, onReconnect])
 
   // Update the formatted time difference every second and check price freshness
   useEffect(() => {
@@ -229,6 +259,20 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
 
     return () => clearInterval(intervalId)
   }, [lastQuoteTimestamp])
+
+  const handleReconnect = () => {
+    if (onReconnect && !isReconnecting) {
+      setIsReconnecting(true)
+      onReconnect()
+
+      // Reset reconnecting state after a timeout if it doesn't succeed
+      setTimeout(() => {
+        if (!isPriceFresh) {
+          setIsReconnecting(false)
+        }
+      }, 5000)
+    }
+  }
 
   if (!selectedPair) return null
 
@@ -271,7 +315,22 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
                 </div>
               )}
             </div>
+
             <span>{isPriceFresh ? 'Live Price' : 'Price Not Updated'}</span>
+
+            {/* Refresh button when price is not fresh */}
+            {!isPriceFresh && onReconnect && (
+              <button
+                className="ml-2 p-1 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors"
+                disabled={isReconnecting}
+                onClick={handleReconnect}
+                title="Reconnect to price feed"
+              >
+                <RefreshCw
+                  className={`w-3 h-3 text-white ${isReconnecting ? 'animate-spin' : ''}`}
+                />
+              </button>
+            )}
           </div>
         </div>
 

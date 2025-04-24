@@ -70,8 +70,10 @@ import {
   SwapDetails as SwapDetailsType,
 } from './swapUtils'
 import { Fields } from './types'
+import { subscribeToPairFeed } from './websocketUtils'
 
 const MSATS_PER_SAT = 1000
+const RGB_HTLC_MIN_SAT = 3000
 
 export const Component = () => {
   const dispatch = useAppDispatch()
@@ -276,8 +278,9 @@ export const Component = () => {
         }
 
         const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        setMaxOutboundHtlcSat(maxHtlcLimit)
-        return maxHtlcLimit
+        const maxTradableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
+        setMaxOutboundHtlcSat(maxTradableAmount)
+        return maxTradableAmount
       } else {
         const assetInfo = assetsList.find((a) => a.ticker === asset)
         if (!assetInfo) {
@@ -372,7 +375,6 @@ export const Component = () => {
         form,
         calculateMaxTradableAmount,
         updateMinMaxAmounts,
-        setFromAmount,
         setMaxFromAmount
       ),
     [
@@ -888,6 +890,7 @@ export const Component = () => {
                 fromAsset={form.getValues().fromAsset}
                 getAssetPrecision={getAssetPrecisionWrapper}
                 isPriceLoading={isPriceLoading}
+                onReconnect={handleReconnectToMaker}
                 selectedPair={selectedPair}
                 selectedPairFeed={selectedPairFeed}
                 toAsset={form.getValues().toAsset}
@@ -1001,10 +1004,10 @@ export const Component = () => {
         .filter((asset) => asset !== excludeAsset)
         .map((asset) => ({
           // Don't disable any assets in the dropdown
-disabled: false,
-          
-ticker: displayAsset(asset),
-          
+          disabled: false,
+
+          ticker: displayAsset(asset),
+
           value: asset,
         }))
 
@@ -1183,11 +1186,42 @@ ticker: displayAsset(asset),
     }
   }, [makerConnectionUrl, wsConnected])
 
+  // Add the reconnect handler and pass it to ExchangeRateSection
+  const handleReconnectToMaker = async () => {
+    try {
+      // Try to reconnect the WebSocket
+      const reconnected = Boolean(await retryConnection())
+
+      if (reconnected) {
+        console.log('Successfully reconnected to market maker')
+        // Re-subscribe to the current pair if needed
+        if (selectedPair) {
+          const pairString = `${selectedPair.base_asset}/${selectedPair.quote_asset}`
+          subscribeToPairFeed(pairString)
+        }
+      } else {
+        console.error('Failed to reconnect to market maker')
+        toast.error('Failed to reconnect to price feed. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error reconnecting to market maker:', error)
+      toast.error('Failed to reconnect to price feed. Please try again.')
+    }
+  }
+
   return (
     <div className="container mx-auto">
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
+        <div className="flex flex-col justify-center items-center h-64 gap-4">
           <Loader />
+          <div className="text-center">
+            <p className="text-blue-400 font-medium">
+              Connecting to Market Maker
+            </p>
+            <p className="text-slate-400 text-sm mt-1">
+              Fetching available trading pairs and checking channel balances...
+            </p>
+          </div>
         </div>
       ) : !hasValidChannelsForTrading ? (
         <div className="w-full flex justify-center">

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 
 import { RootRoute } from '../../routes/root'
 
@@ -22,6 +22,7 @@ import {
   WALLET_HISTORY_PATH,
   WALLET_HISTORY_TRADES_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
+  WALLET_HISTORY_ASSETS_PATH,
   CREATEUTXOS_PATH,
 } from './paths'
 
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
       {
         children: [
           {
+            element: <Navigate replace to={WALLET_HISTORY_DEPOSITS_PATH} />,
+            index: true,
+          },
+          {
             lazy: () => import('../../routes/wallet-history/deposits'),
             path: WALLET_HISTORY_DEPOSITS_PATH,
           },
@@ -85,6 +90,10 @@ export const router = createBrowserRouter([
           {
             lazy: () => import('../../routes/wallet-history/swaps'),
             path: WALLET_HISTORY_TRADES_PATH,
+          },
+          {
+            lazy: () => import('../../routes/wallet-history/assets'),
+            path: WALLET_HISTORY_ASSETS_PATH,
           },
         ],
         lazy: () => import('../../routes/wallet-history'),

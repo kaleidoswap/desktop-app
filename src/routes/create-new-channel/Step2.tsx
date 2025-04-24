@@ -24,7 +24,7 @@ interface Props {
 }
 
 interface FormFields {
-  capacitySat: number
+  capacitySat: string
   pubKeyAndAddress: string
   assetAmount: number
   assetId: string
@@ -33,10 +33,12 @@ interface FormFields {
 }
 
 const Step2Schema = NewChannelFormSchema.omit({
+  capacitySat: true,
   pubKeyAndAddress: true,
 }).extend({
   assetId: z.string().optional(),
   assetTicker: z.string().optional(),
+  capacitySat: z.string(),
   pubKeyAndAddress: z.string(),
 })
 
@@ -67,7 +69,7 @@ export const Step2 = ({
         assetAmount: formData.assetAmount || 0,
         assetId: formData.assetId || '',
         assetTicker: formData.assetTicker || '',
-        capacitySat: formData.capacitySat || 0,
+        capacitySat: formData.capacitySat.toString(),
         fee: formData.fee || 'medium',
         pubKeyAndAddress: formData.pubKeyAndAddress,
       },
@@ -93,18 +95,13 @@ export const Step2 = ({
           (balance.data?.colored.spendable || 0)
         const newMaxCapacity = Math.min(MAX_CHANNEL_CAPACITY, totalSpendable)
         setMaxCapacity(newMaxCapacity)
-
-        // Don't set a default value for capacitySat
-        // if (!formData.capacitySat) {
-        //   setValue('capacitySat', MIN_CHANNEL_CAPACITY)
-        // }
       } catch (error) {
         console.error('Error fetching BTC balance:', error)
       }
     }
 
     fetchBtcBalance()
-  }, [btcBalance, formData.capacitySat, setValue])
+  }, [btcBalance, setValue])
 
   useEffect(() => {
     if (
@@ -133,6 +130,7 @@ export const Step2 = ({
           )
           if (asset) {
             setSelectedAsset(asset)
+            setAddAsset(true)
           }
         }
       } else {
@@ -158,8 +156,7 @@ export const Step2 = ({
     // Don't enforce minimum values during typing
     const sanitized = value.replace(/[^0-9.]/g, '')
     if (sanitized === '') {
-      // Allow empty input for better UX
-      setValue('capacitySat', 0)
+      setValue('capacitySat', '')
       onFormUpdate({ capacitySat: 0 })
       return
     }
@@ -169,21 +166,12 @@ export const Step2 = ({
 
     // Only enforce maximum constraint
     if (numValue > maxCapacity) {
-      setValue('capacitySat', maxCapacity)
+      setValue('capacitySat', maxCapacity.toString())
       onFormUpdate({ capacitySat: maxCapacity })
-
-      // Show toast notification
-      toast.info(
-        `Channel capacity limited to maximum: ${formatNumber(maxCapacity)} sats`,
-        {
-          autoClose: 3000,
-          position: 'bottom-right',
-        }
-      )
       return
     }
 
-    setValue('capacitySat', numValue)
+    setValue('capacitySat', sanitized)
     onFormUpdate({ capacitySat: numValue })
   }
 
@@ -261,7 +249,8 @@ export const Step2 = ({
 
   const onSubmit: SubmitHandler<FormFields> = (data) => {
     // Check if capacity is empty or zero
-    if (!data.capacitySat) {
+    const parsedCapacity = parseFloat(data.capacitySat || '0')
+    if (!parsedCapacity) {
       toast.error('Please enter a channel capacity.', {
         autoClose: 5000,
         position: 'bottom-right',
@@ -270,7 +259,7 @@ export const Step2 = ({
     }
 
     // Check if capacity is below minimum
-    if (data.capacitySat < MIN_CHANNEL_CAPACITY) {
+    if (parsedCapacity < MIN_CHANNEL_CAPACITY) {
       toast.error(
         `Channel capacity must be at least ${formatNumber(MIN_CHANNEL_CAPACITY)} sats.`,
         {
@@ -303,7 +292,11 @@ export const Step2 = ({
     }
 
     // All validations passed, proceed with form submission
-    onFormUpdate(data)
+    onFormUpdate({
+      ...data,
+      assetAmount: data.assetAmount || 0,
+      capacitySat: parsedCapacity,
+    })
     onNext()
   }
 
@@ -347,28 +340,29 @@ export const Step2 = ({
               onChange={(e) => handleCapacityChange(e.target.value)}
               placeholder="Enter amount in sats"
               type="text"
-              value={capacitySat ? formatNumber(capacitySat) : ''}
+              value={capacitySat ? formatNumber(parseFloat(capacitySat)) : ''}
             />
             <span className="text-sm text-gray-400">
               {formatNumber(maxCapacity)} max
             </span>
           </div>
-          <input
-            className="w-full mt-2"
-            max={maxCapacity}
-            min={MIN_CHANNEL_CAPACITY}
-            onChange={(e) => handleCapacityChange(e.target.value)}
-            type="range"
-            value={
-              typeof capacitySat === 'number'
-                ? capacitySat.toString()
-                : MIN_CHANNEL_CAPACITY.toString()
-            }
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>Min: {formatNumber(MIN_CHANNEL_CAPACITY)}</span>
-            <span>Max: {formatNumber(maxCapacity)}</span>
-          </div>
+          {capacitySat && parseFloat(capacitySat) > 0 && (
+            <>
+              <input
+                className="w-full mt-2"
+                max={maxCapacity}
+                min={MIN_CHANNEL_CAPACITY}
+                onChange={(e) => handleCapacityChange(e.target.value)}
+                step={1000}
+                type="range"
+                value={parseFloat(capacitySat)}
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Min: {formatNumber(MIN_CHANNEL_CAPACITY)}</span>
+                <span>Max: {formatNumber(maxCapacity)}</span>
+              </div>
+            </>
+          )}
           {formState.errors.capacitySat && (
             <p className="text-red-500 text-sm mt-1">
               {formState.errors.capacitySat.message}
@@ -565,7 +559,7 @@ export const Step2 = ({
               >
                 <div className="font-medium capitalize">{speed}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {`${feeRates[speed] / 1000} sat/vB`}
+                  {`${feeRates[speed]} sat/vB`}
                 </div>
               </button>
             ))}

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { toast } from 'react-toastify'
 
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
@@ -18,7 +18,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   const [ticker, setTicker] = useState('')
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
-  const [precision, setPrecision] = useState('8')
+  const [precision, setPrecision] = useState('0')
   const [isLoading, setIsLoading] = useState(false)
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
@@ -26,9 +26,35 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
   const [issueAsset] = nodeApi.endpoints.issueNiaAsset.useLazyQuery()
 
+  // Calculate the actual amount that will be issued with decimal places
+  const actualAmount = useMemo(() => {
+    if (
+      !amount ||
+      isNaN(Number(amount)) ||
+      !precision ||
+      isNaN(Number(precision))
+    ) {
+      return '0'
+    }
+
+    // Convert to base units (add zeros based on precision)
+    const baseAmount = Number(amount) * Math.pow(10, Number(precision))
+    return baseAmount.toString()
+  }, [amount, precision])
+
+  // Format preview amount with decimal places
+  const previewAmount = useMemo(() => {
+    if (!amount || isNaN(Number(amount))) {
+      return '0'
+    }
+
+    // Display with appropriate decimal places
+    return Number(amount).toFixed(Number(precision))
+  }, [amount, precision])
+
   const issueAssetOperation = async () => {
     return await issueAsset({
-      amounts: [Number(amount)],
+      amounts: [Number(actualAmount)],
       name,
       precision: Number(precision),
       ticker: ticker.toUpperCase(),
@@ -148,6 +174,12 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
               />
             </div>
 
+            {amount && (
+              <p className="mt-2 text-sm text-slate-400">
+                You will issue:{' '}
+                <span className="text-white font-medium">{previewAmount}</span>
+              </p>
+            )}
             <button
               className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 
                        text-white rounded-xl font-medium transition-colors

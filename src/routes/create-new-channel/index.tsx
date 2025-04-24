@@ -1,13 +1,16 @@
+import { AlertTriangle, RefreshCw, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { TRADE_PATH, WALLET_DASHBOARD_PATH } from '../../app/router/paths'
+import { CHANNELS_PATH } from '../../app/router/paths'
+import { useAppDispatch } from '../../app/store/hooks'
 import { CreateUTXOModal } from '../../components/CreateUTXOModal'
 import { Spinner } from '../../components/Spinner'
 import { MIN_CHANNEL_CAPACITY } from '../../constants'
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
 import { TNewChannelForm } from '../../slices/channel/channel.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { uiSliceActions } from '../../slices/ui/ui.slice'
 
 import { FormError } from './FormError'
 import { Step1 } from './Step1'
@@ -16,9 +19,9 @@ import { Step3 } from './Step3'
 import { Step4 } from './Step4'
 
 const DEFAULT_FEE_RATES = {
-  fast: 3000,
-  medium: 2000,
-  slow: 1000,
+  fast: 3,
+  medium: 2,
+  slow: 1,
 }
 
 const initialFormState: TNewChannelForm = {
@@ -37,6 +40,7 @@ export const Component = () => {
   const [formData, setFormData] = useState<TNewChannelForm>(initialFormState)
 
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
 
   const [openChannel] = nodeApi.endpoints.openChannel.useLazyQuery()
   const [getBtcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
@@ -78,9 +82,9 @@ export const Component = () => {
           estimateFee({ blocks: 1 }).unwrap(),
         ])
         setFeeRates({
-          fast: fastFee.fee_rate * 1000,
-          medium: mediumFee.fee_rate * 1000,
-          slow: slowFee.fee_rate * 1000,
+          fast: fastFee.fee_rate,
+          medium: mediumFee.fee_rate,
+          slow: slowFee.fee_rate,
         })
       } catch (e) {
         setFormError('Failed to fetch fee rates. Please try again.')
@@ -218,16 +222,43 @@ export const Component = () => {
     <>
       <div className="max-w-screen-lg w-full bg-blue-darkest/80 backdrop-blur-sm rounded-2xl border border-white/5 shadow-2xl px-8 py-12">
         {insufficientBalance ? (
-          <div className="text-center p-8 animate-fadeIn">
-            <FormError
-              message={`Insufficient balance to open a channel. You need at least ${MIN_CHANNEL_CAPACITY} satoshis.`}
-            />
-            <button
-              className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center"
-              onClick={() => navigate(WALLET_DASHBOARD_PATH)}
-            >
-              Go to Dashboard
-            </button>
+          <div className="flex flex-col items-center justify-center p-10 animate-fadeIn">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-3">
+              Insufficient Balance
+            </h3>
+            <p className="text-gray-300 mb-6 text-center max-w-md">
+              You need at least{' '}
+              <span className="font-medium text-white">
+                {MIN_CHANNEL_CAPACITY} satoshis
+              </span>{' '}
+              to open a channel. Please fund your wallet first.
+            </p>
+            <div className="flex gap-4">
+              <button
+                className="px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center gap-2"
+                onClick={() =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: undefined,
+                      type: 'deposit',
+                    })
+                  )
+                }
+              >
+                <Wallet className="h-5 w-5" />
+                Deposit
+              </button>
+              <button
+                className="px-5 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition text-white font-medium flex items-center gap-2"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="h-5 w-5" />
+                Refresh
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -265,7 +296,7 @@ export const Component = () => {
             {step === 4 && (
               <Step4
                 error={channelOpeningError}
-                onFinish={() => navigate(TRADE_PATH)}
+                onFinish={() => navigate(CHANNELS_PATH)}
                 onRetry={() => setStep(3)}
               />
             )}
