@@ -98,10 +98,8 @@ jobs:
           cat ../../manifest.txt
 
       - name: Upload manifest.txt
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
           path: manifest.txt
           if-no-files-found: error
-
-     
