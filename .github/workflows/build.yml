@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - build
+      - test-build
     tags:
-      - 'v*'  
+      - 'v*'
+      - 'test-v*'
   workflow_dispatch:
 
 jobs:
@@ -35,7 +37,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev 
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -65,16 +67,23 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # test key
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         id: tauri_build
         with:
-          tagName: v${{ env.VERSION }}
-          releaseName: 'App v${{ env.VERSION }}'
+          tagName: ${{ github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest' }}
+          releaseName: ${{ github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__' }}
           releaseBody: |
             Release v${{ env.VERSION }}
             
             See the assets to download and install this version.
-            
-            SHA256 checksums are included in the manifest files.
+
+            Changes in this version:
+            - Built from ${{ github.ref == 'refs/heads/test-build' && 'test-build' || 'build' }} branch
+            - Includes macOS (Intel + Apple Silicon) and Linux builds
+
+            SHA256 checksums will be provided separately.
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
@@ -90,20 +99,33 @@ jobs:
           echo "Architecture target: ${{ matrix.args }}" >> manifest.txt
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
-          
-          cd ${{ steps.tauri_build.outputs.artifactPath }}/../
-          for file in *.{dmg,AppImage,deb,msi,exe}; do
+
+          artifact_paths="${{ steps.tauri_build.outputs.artifactPaths }}"
+          artifact_paths=$(echo "$artifact_paths" | tr -d '[]' | tr ',' ' ' | tr -d '"')
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            CHECKSUM_CMD="sha256sum"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            CHECKSUM_CMD="shasum -a 256"
+          else
+            echo "Unsupported OS: $RUNNER_OS"
+            exit 1
+          fi
+
+          for file in $artifact_paths; do
+            # if [[ "$file" =~ \.(dmg|AppImage|deb|msi|exe)$ ]] && [ -f "$file" ]; then
             if [ -f "$file" ]; then
-              CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
-              echo "$file: $CHECKSUM" >> $GITHUB_WORKSPACE/manifest.txt
+              CHECKSUM=$($CHECKSUM_CMD "$file" | awk '{print $1}')
+              filename=$(basename "$file")
+              echo "$filename: $CHECKSUM" >> manifest.txt
             fi
           done
-          
-          cat $GITHUB_WORKSPACE/manifest.txt
+
+          cat manifest.txt
 
       - name: Upload manifest.txt
         uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}
           path: manifest.txt
-          if-no-files-found: error 
+          if-no-files-found: error

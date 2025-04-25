@@ -42,3 +42,6 @@ tauri-plugin-opener = "2"
 # DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
 default = []
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
