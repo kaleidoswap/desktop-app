@@ -91,7 +91,7 @@ You can install the app in two ways:
 #### Common Prerequisites
 
 - **Tauri 1.6.0**  
-  Make sure you have installed all the [official Tauri prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites) (Rust, Node.js, npm, pnpm).
+  Make sure you have installed all the [official Tauri prerequisites](https://tauri.app/start/prerequisites/) (Rust, Node.js, npm, pnpm).
 - **Repository**  
   ```sh
   git clone https://github.com/kaleidoswap/desktop-app
