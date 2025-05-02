@@ -308,9 +308,11 @@ export const Step3: React.FC<StepProps> = ({
 
   // Calculate available liquidity
   const channels = listChannelsResponse?.data?.channels || []
-  const outboundLiquidity = channels.reduce(
-    (sum, channel) => sum + channel.outbound_balance_msat / 1000,
-    0
+  // Update to use max sendable amount (max HTLC limit) instead of outbound balance
+  const outboundLiquidity = Math.max(
+    ...(channels.map(
+      (channel) => channel.next_outbound_htlc_limit_msat / 1000
+    ) || [0])
   )
   const vanillaChainBalance = btcBalanceResponse.data?.vanilla.spendable || 0
   const coloredChainBalance = btcBalanceResponse.data?.colored.spendable || 0
@@ -554,7 +556,11 @@ export const Step3: React.FC<StepProps> = ({
                 {/* Balance Section */}
                 <div className="bg-slate-800/50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Available Balance:</span>
+                    <span className="text-slate-400">
+                      {paymentMethod === 'lightning'
+                        ? 'Max Sendable:'
+                        : 'Available Balance:'}
+                    </span>
                     <span className="text-white font-medium">
                       {paymentMethod === 'lightning'
                         ? `${formatBitcoinAmount(outboundLiquidity, bitcoinUnit)}`
@@ -683,7 +689,11 @@ export const Step3: React.FC<StepProps> = ({
                   {bitcoinUnit}
                 </span>
                 <span className="text-gray-400 mx-2">|</span>
-                <span className="text-gray-400">Available: </span>
+                <span className="text-gray-400">
+                  {paymentMethod === 'lightning'
+                    ? 'Max Sendable:'
+                    : 'Available:'}{' '}
+                </span>
                 <span className="text-white font-medium">
                   {paymentMethod === 'lightning'
                     ? `${formatBitcoinAmount(outboundLiquidity, bitcoinUnit)}`
@@ -708,7 +718,11 @@ export const Step3: React.FC<StepProps> = ({
                 </span>
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Available:</span>
+                <span className="text-sm text-gray-400">
+                  {paymentMethod === 'lightning'
+                    ? 'Max Sendable:'
+                    : 'Available:'}
+                </span>
                 {isLoadingData ? (
                   <div className="flex items-center gap-2">
                     <ClipLoader color="#3B82F6" size={16} />
