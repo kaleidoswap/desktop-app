@@ -137,16 +137,39 @@ export const getAssetPrecision = (
   bitcoinUnit: string,
   assets?: NiaAsset[]
 ): number => {
-  if (asset === 'BTC') {
-    return bitcoinUnit === 'BTC' ? 8 : 0
+  // Normalize asset ticker to uppercase for case-insensitive comparison
+  const normalizedAsset = asset.toUpperCase()
+
+  // Handle Bitcoin precision based on unit
+  if (normalizedAsset === 'BTC') {
+    return getBitcoinPrecision(bitcoinUnit)
   }
 
-  if (!assets) {
-    return 8 // Default precision if assets list not provided
+  // If assets array is provided, look for the asset's precision
+  if (assets && assets.length > 0) {
+    const assetInfo = assets.find(
+      (a) => a.ticker.toUpperCase() === normalizedAsset
+    )
+    if (assetInfo && typeof assetInfo.precision === 'number') {
+      return assetInfo.precision
+    }
   }
 
-  const assetInfo = assets.find((a) => a.ticker === asset)
-  return assetInfo ? assetInfo.precision : 8
+  // Default precision if asset not found or assets list not provided
+  return 8
+}
+
+export const getBitcoinPrecision = (bitcoinUnit: string): number => {
+  switch (bitcoinUnit.toUpperCase()) {
+    case 'SAT':
+      return 0
+    case 'MSAT':
+      return 3
+    case 'BTC':
+      return 8
+    default:
+      return 8
+  }
 }
 
 /**
@@ -224,8 +247,8 @@ export const calculateExchangeRate = (
   isInverted?: boolean
 ): number => {
   // If size is not provided (or is 0), assume price is already the correct rate
-  const rate = size && size !== 0 ? price / size : price;
-  return isInverted ? 1 / rate : rate;
+  const rate = size && size !== 0 ? price / size : price
+  return isInverted ? 1 / rate : rate
 }
 
 /**

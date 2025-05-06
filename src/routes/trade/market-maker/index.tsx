@@ -58,9 +58,7 @@ import { hasTradableChannels, logChannelDiagnostics } from './channelUtils'
 
 // Import our utility modules
 import { getValidationError } from './errorMessages'
-import {
-  createFromAmountChangeHandler,
-} from './formUtils'
+import { createFromAmountChangeHandler } from './formUtils'
 import {
   createQuoteRequestHandler,
   startQuoteRequestTimer,
@@ -119,9 +117,9 @@ export const Component = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [fees, setFees] = useState({
     baseFee: 0,
-    variableFee: 0,
-    totalFee: 0,
     feeRate: 0,
+    totalFee: 0,
+    variableFee: 0,
   })
 
   const [isSwapInProgress, setIsSwapInProgress] = useState(false)
@@ -140,83 +138,89 @@ export const Component = () => {
   )
   const wsConnected = useAppSelector((state) => state.pairs.wsConnected)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
-  
+
   // Define parseAssetAmount early to avoid initialization error in quoteResponse
-  const parseAssetAmount = (amount: string | undefined | null, asset: string): number => {
+  const parseAssetAmount = (
+    amount: string | undefined | null,
+    asset: string
+  ): number => {
     return parseAssetAmountWithPrecision(amount, asset, bitcoinUnit, assets)
   }
-  
+
   // Replace selectedPairFeed with direct price tracking
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null)
 
   // Create a ref to track the quote response
-  const lastQuoteResponseRef = useRef<any>(null);
-  const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0);
-  const [loadingResetKey, setLoadingResetKey] = useState(0);
+  const lastQuoteResponseRef = useRef<any>(null)
+  const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
+  const [loadingResetKey, setLoadingResetKey] = useState(0)
 
   // Get the quote response from Redux based on our current form values
   const quoteResponse = useAppSelector((state) => {
-    const fromAsset = form.getValues().fromAsset;
-    const toAsset = form.getValues().toAsset;
-    const fromAmount = parseAssetAmount(form.getValues().from, fromAsset);
-    
+    const fromAsset = form.getValues().fromAsset
+    const toAsset = form.getValues().toAsset
+    const fromAmount = parseAssetAmount(form.getValues().from, fromAsset)
+
     if (fromAsset && toAsset && fromAmount > 0) {
-      const key = `${fromAsset}/${toAsset}/${fromAmount}`;
-      const quote = state.pairs.quotes[key];
-      
+      const key = `${fromAsset}/${toAsset}/${fromAmount}`
+      const quote = state.pairs.quotes[key]
+
       // If we have a new quote that's different from the last one, track it
-      if (quote && (!lastQuoteResponseRef.current || 
+      if (
+        quote &&
+        (!lastQuoteResponseRef.current ||
           quote.to_amount !== lastQuoteResponseRef.current.to_amount ||
-          quote.timestamp !== lastQuoteResponseRef.current.timestamp)) {
-        lastQuoteResponseRef.current = quote;
-        
+          quote.timestamp !== lastQuoteResponseRef.current.timestamp)
+      ) {
+        lastQuoteResponseRef.current = quote
+
         // Avoid calling setState during render by using requestAnimationFrame
         window.requestAnimationFrame(() => {
-          setQuoteResponseTimestamp(Date.now());
-          
+          setQuoteResponseTimestamp(Date.now())
+
           // Update the price from the quote
           if (quote.price) {
-            setCurrentPrice(quote.price);
+            setCurrentPrice(quote.price)
           }
-        });
-        
-        logger.debug(`New quote received for ${key}: ${quote.to_amount}`);
+        })
+
+        logger.debug(`New quote received for ${key}: ${quote.to_amount}`)
       }
-      
-      return quote;
+
+      return quote
     }
-    return null;
-  });
+    return null
+  })
 
   // Add state for quote validity tracking
-  const [hasValidQuote, setHasValidQuote] = useState(false);
-  const [quoteExpiresAt, setQuoteExpiresAt] = useState<number | null>(null);
-  const [quoteAge, setQuoteAge] = useState<number>(0);
+  const [hasValidQuote, setHasValidQuote] = useState(false)
+  const [quoteExpiresAt, setQuoteExpiresAt] = useState<number | null>(null)
+  const [quoteAge, setQuoteAge] = useState<number>(0)
 
   // Update quote validity every second
   useEffect(() => {
     if (!quoteExpiresAt) {
-      setHasValidQuote(false);
-      return;
+      setHasValidQuote(false)
+      return
     }
 
     const checkValidity = () => {
-      const now = Date.now();
-      const expiresAtMs = quoteExpiresAt * 1000; // Convert to ms if in seconds
-      const isExpired = now >= expiresAtMs;
-      const ageMs = Math.max(0, now - (quoteResponseTimestamp || 0));
-      
-      setQuoteAge(Math.floor(ageMs / 1000)); // Age in seconds
-      setHasValidQuote(!isExpired);
-    };
+      const now = Date.now()
+      const expiresAtMs = quoteExpiresAt * 1000 // Convert to ms if in seconds
+      const isExpired = now >= expiresAtMs
+      const ageMs = Math.max(0, now - (quoteResponseTimestamp || 0))
+
+      setQuoteAge(Math.floor(ageMs / 1000)) // Age in seconds
+      setHasValidQuote(!isExpired)
+    }
 
     // Check immediately
-    checkValidity();
-    
+    checkValidity()
+
     // Then set up an interval
-    const interval = setInterval(checkValidity, 1000);
-    return () => clearInterval(interval);
-  }, [quoteExpiresAt, quoteResponseTimestamp]);
+    const interval = setInterval(checkValidity, 1000)
+    return () => clearInterval(interval)
+  }, [quoteExpiresAt, quoteResponseTimestamp])
 
   const [listChannels] = nodeApi.endpoints.listChannels.useLazyQuery()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
@@ -272,75 +276,85 @@ export const Component = () => {
   useEffect(() => {
     if (quoteResponse) {
       // Log the entire quote response for debugging
-      logger.info('Processing quote response:', quoteResponse, 'timestamp:', quoteResponseTimestamp);
-      
+      logger.info(
+        'Processing quote response:',
+        quoteResponse,
+        'timestamp:',
+        quoteResponseTimestamp
+      )
+
       // Immediately reset all loading states to avoid UI stuck in loading state
-      setIsToAmountLoading(false);
-      setIsQuoteLoading(false);
-      setIsPriceLoading(false);
-      
+      setIsToAmountLoading(false)
+      setIsQuoteLoading(false)
+      setIsPriceLoading(false)
+
       // The quote response structure has to_amount (not taker_to_amount)
-      const toAmount = quoteResponse.to_amount;
-      
+      const toAmount = quoteResponse.to_amount
+
       if (toAmount !== undefined && toAmount !== null) {
         // Format the amount according to the asset precision
-        const formattedAmount = formatAmount(toAmount, form.getValues().toAsset);
-        logger.info(`Setting "to" field to: ${formattedAmount} (raw: ${toAmount})`);
-        
+        let formattedAmount
+        if (form.getValues().toAsset === 'BTC') {
+          formattedAmount = formatAssetAmountWithPrecision(
+            toAmount,
+            form.getValues().toAsset,
+            'MSAT',
+            assets
+          )
+        } else {
+          formattedAmount = formatAmount(toAmount, form.getValues().toAsset)
+        }
+        logger.info(
+          `Setting "to" field to: ${formattedAmount} (raw: ${toAmount})`
+        )
+
         // Set the to amount from the quote
-        form.setValue(
-          'to',
-          formattedAmount,
-          { shouldValidate: true }
-        );
-        
+        form.setValue('to', formattedAmount, { shouldValidate: true })
+
         // Store the RFQ ID from the quote response if available
         if (quoteResponse.rfq_id) {
-          logger.debug(`Setting RFQ ID from quote: ${quoteResponse.rfq_id}`);
-          form.setValue('rfq_id', quoteResponse.rfq_id);
+          logger.debug(`Setting RFQ ID from quote: ${quoteResponse.rfq_id}`)
+          form.setValue('rfq_id', quoteResponse.rfq_id)
         }
-        
+
         // Set fees information
         setFees({
           baseFee: quoteResponse.base_fee || 0,
-          variableFee: quoteResponse.variable_fee || 0,
-          totalFee: quoteResponse.final_fee || 0,
           feeRate: quoteResponse.fee_rate || 0,
-        });
-        
+          totalFee: quoteResponse.final_fee || 0,
+          variableFee: quoteResponse.variable_fee || 0,
+        })
+
         // Set quote validity information
-        setQuoteExpiresAt(quoteResponse.expires_at || null);
-        setHasValidQuote(true);
-        
+        setQuoteExpiresAt(quoteResponse.expires_at || null)
+        setHasValidQuote(true)
+
         // Update loading states - make sure to do this in a way that doesn't trigger infinite updates
         window.requestAnimationFrame(() => {
           // Force a re-render to ensure loading states are reflected
-          setLoadingResetKey(prev => prev + 1);
-        });
-        
-        logger.info(`Updated "to" amount from quote response: ${toAmount} -> ${formattedAmount}`);
+          setLoadingResetKey((prev) => prev + 1)
+        })
+
+        logger.info(
+          `Updated "to" amount from quote response: ${toAmount} -> ${formattedAmount}`
+        )
       } else {
-        logger.error('Quote response missing to_amount:', quoteResponse);
+        logger.error('Quote response missing to_amount:', quoteResponse)
         // Handle error case - set loading to false to avoid getting stuck
-        setHasValidQuote(false);
-        setQuoteExpiresAt(null);
-        
+        setHasValidQuote(false)
+        setQuoteExpiresAt(null)
+
         window.requestAnimationFrame(() => {
-          setLoadingResetKey(prev => prev + 1);
-        });
+          setLoadingResetKey((prev) => prev + 1)
+        })
       }
     }
-  // Remove quoteResponseTimestamp from dependencies to prevent infinite loop
-  }, [quoteResponse, form, formatAmount]);
+    // Remove quoteResponseTimestamp from dependencies to prevent infinite loop
+  }, [quoteResponse, form, formatAmount])
 
   // Update quote request handler
   const requestQuote = useMemo(
-    () =>
-      createQuoteRequestHandler(
-        form,
-        parseAssetAmount,
-        setIsQuoteLoading
-      ),
+    () => createQuoteRequestHandler(form, parseAssetAmount, setIsQuoteLoading),
     [form, parseAssetAmount]
   )
 
@@ -365,13 +379,13 @@ export const Component = () => {
     (fromAmount: string) => {
       const fromAsset = form.getValues().fromAsset
       const toAsset = form.getValues().toAsset
-      
+
       if (!fromAsset || !toAsset || !fromAmount || fromAmount === '0') {
         form.setValue('to', '')
         setIsToAmountLoading(false)
         return
       }
-      
+
       // Request a new quote via WebSocket
       setIsToAmountLoading(true)
       requestQuote()
@@ -448,11 +462,15 @@ export const Component = () => {
 
         let maxAssetAmount = 0
         if (isFrom) {
-          const localAmounts = assetChannels.map((c: Channel) => c.asset_local_amount)
+          const localAmounts = assetChannels.map(
+            (c: Channel) => c.asset_local_amount
+          )
           maxAssetAmount =
             localAmounts.length > 0 ? Math.max(...localAmounts) : 0
         } else {
-          const remoteAmounts = assetChannels.map((c: Channel) => c.asset_remote_amount)
+          const remoteAmounts = assetChannels.map(
+            (c: Channel) => c.asset_remote_amount
+          )
           maxAssetAmount =
             remoteAmounts.length > 0 ? Math.max(...remoteAmounts) : 0
         }
@@ -891,90 +909,121 @@ export const Component = () => {
   useEffect(() => {
     if (selectedPair) {
       // We have a pair selected, request quotes directly instead of relying on selectedPairFeed
-      setIsPriceLoading(false);
-      const fromAmount = form.getValues().from;
-      
+      setIsPriceLoading(false)
+      const fromAmount = form.getValues().from
+
       if (fromAmount) {
-        setIsToAmountLoading(true);
-        requestQuote();
+        setIsToAmountLoading(true)
+        requestQuote()
       }
     } else {
       // No selected pair, clear "to" amount
-      form.setValue('to', '');
-      setIsPriceLoading(true);
+      form.setValue('to', '')
+      setIsPriceLoading(true)
     }
-  }, [form, selectedPair, requestQuote]);
+  }, [form, selectedPair, requestQuote])
 
   // Set up quote request timer when component mounts or when assets change
   useEffect(() => {
     if (form.getValues().fromAsset && form.getValues().toAsset && wsConnected) {
       // Start quote request timer with increased interval to reduce load
       startQuoteRequestTimer(requestQuote, 8000) // Increased from default 5000ms to 8000ms
-      
+
       // Request an initial quote
       requestQuote()
-      
+
       return () => {
         // Stop timer when component unmounts or assets change
         stopQuoteRequestTimer()
       }
     }
-  }, [form.getValues().fromAsset, form.getValues().toAsset, wsConnected, requestQuote]);
+  }, [
+    form.getValues().fromAsset,
+    form.getValues().toAsset,
+    wsConnected,
+    requestQuote,
+  ])
 
   // Update effect to request quote when from amount changes
   useEffect(() => {
-    const fromAmount = form.watch('from');
-    const fromAsset = form.watch('fromAsset');
-    const toAsset = form.watch('toAsset');
-    
+    const fromAmount = form.watch('from')
+    const fromAsset = form.watch('fromAsset')
+    const toAsset = form.watch('toAsset')
+
     // Only request quote if we have all required values
     if (fromAmount && fromAsset && toAsset && wsConnected) {
       // Even if no selected pair, we should still try to get a quote
       // Wrap state updates in requestAnimationFrame to avoid infinite update loops
       window.requestAnimationFrame(() => {
-        setIsToAmountLoading(true);
-        setIsQuoteLoading(true);
-        
+        setIsToAmountLoading(true)
+        setIsQuoteLoading(true)
+
         // Short timeout to ensure state updates are applied before requesting quote
         setTimeout(() => {
-          requestQuote();
-        }, 0);
-      });
+          requestQuote()
+        }, 0)
+      })
     } else if (!fromAmount || fromAmount === '0') {
       // Clear "to" amount when "from" is empty
-      form.setValue('to', '');
-      
+      form.setValue('to', '')
+
       // Wrap state updates in requestAnimationFrame to avoid race conditions
       window.requestAnimationFrame(() => {
-        setIsToAmountLoading(false);
-        setIsQuoteLoading(false);
-      });
+        setIsToAmountLoading(false)
+        setIsQuoteLoading(false)
+      })
     }
-  }, [form, wsConnected, requestQuote]);
+  }, [form, wsConnected, requestQuote])
 
   // Render a fees section
   const renderFeesSection = () => {
-    if (!fees.totalFee) return null;
-    
+    if (!fees.totalFee) return null
+
     return (
       <div className="mt-2 p-3 bg-slate-800/80 rounded-lg">
         <h3 className="text-slate-300 text-sm font-medium mb-1">Fees</h3>
         <div className="grid grid-cols-2 gap-1 text-xs">
           <span className="text-slate-400">Base fee:</span>
-          <span className="text-slate-200 text-right">{formatAmount(fees.baseFee, 'BTC')} {displayAsset('BTC')}</span>
-          
+          <span className="text-slate-200 text-right">
+            {formatAssetAmountWithPrecision(
+              fees.baseFee,
+              'BTC',
+              'MSAT',
+              assets
+            )}{' '}
+            {displayAsset('BTC')}
+          </span>
+
           <span className="text-slate-400">Variable fee:</span>
-          <span className="text-slate-200 text-right">{formatAmount(fees.variableFee, 'BTC')} {displayAsset('BTC')}</span>
-          
+          <span className="text-slate-200 text-right">
+            {formatAssetAmountWithPrecision(
+              fees.variableFee,
+              'BTC',
+              'MSAT',
+              assets
+            )}{' '}
+            {displayAsset('BTC')}
+          </span>
+
           <span className="text-slate-400">Total fee:</span>
-          <span className="text-slate-200 text-right">{formatAmount(fees.totalFee, 'BTC')} {displayAsset('BTC')}</span>
-          
+          <span className="text-slate-200 text-right">
+            {formatAssetAmountWithPrecision(
+              fees.totalFee,
+              'BTC',
+              'MSAT',
+              assets
+            )}{' '}
+            {displayAsset('BTC')}
+          </span>
+
           <span className="text-slate-400">Fee rate:</span>
-          <span className="text-slate-200 text-right">{(fees.feeRate * 100).toFixed(2)}%</span>
+          <span className="text-slate-200 text-right">
+            {(fees.feeRate * 100).toFixed(2)}%
+          </span>
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   // Render the swap form UI
   const renderSwapForm = () => (
@@ -983,11 +1032,15 @@ export const Component = () => {
         <div className="border-b border-slate-700/70 px-4 pt-4 pb-3">
           <div className="flex justify-between items-center">
             <MakerSelector hasNoPairs={false} onMakerChange={refreshAmounts} />
-            
+
             {/* WebSocket connection status indicator */}
             <div className="flex items-center space-x-2 ml-2">
-              <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className={`text-xs ${wsConnected ? 'text-green-400' : 'text-red-400'}`}>
+              <div
+                className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`}
+              ></div>
+              <span
+                className={`text-xs ${wsConnected ? 'text-green-400' : 'text-red-400'}`}
+              >
                 {wsConnected ? 'Connected' : 'Disconnected'}
               </span>
               {!wsConnected && (
@@ -1024,7 +1077,8 @@ export const Component = () => {
                   parseAssetAmount,
                   setDebouncedFromAmount
                 )
-                const quoteHandler = createAmountChangeQuoteHandler(requestQuote)
+                const quoteHandler =
+                  createAmountChangeQuoteHandler(requestQuote)
                 baseHandler(e)
                 quoteHandler(e)
               }}
@@ -1087,19 +1141,25 @@ export const Component = () => {
                   selectedPair={selectedPair}
                   toAsset={form.getValues().toAsset}
                 />
-                
+
                 {/* Quote freshness indicator */}
                 {quoteResponse && (
-                  <div className={`mt-2 p-2 rounded-lg flex items-center justify-between ${hasValidQuote ? 'bg-green-900/20 border border-green-800/30' : 'bg-yellow-900/20 border border-yellow-800/30'}`}>
+                  <div
+                    className={`mt-2 p-2 rounded-lg flex items-center justify-between ${hasValidQuote ? 'bg-green-900/20 border border-green-800/30' : 'bg-yellow-900/20 border border-yellow-800/30'}`}
+                  >
                     <div className="flex items-center">
-                      <div className={`w-2 h-2 rounded-full mr-2 ${hasValidQuote ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
-                      <span className={`text-xs ${hasValidQuote ? 'text-green-400' : 'text-yellow-400'}`}>
-                        {hasValidQuote 
-                          ? `Quote valid (${quoteAge}s ago)` 
+                      <div
+                        className={`w-2 h-2 rounded-full mr-2 ${hasValidQuote ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}
+                      ></div>
+                      <span
+                        className={`text-xs ${hasValidQuote ? 'text-green-400' : 'text-yellow-400'}`}
+                      >
+                        {hasValidQuote
+                          ? `Quote valid (${quoteAge}s ago)`
                           : 'Quote expired - update price'}
                       </span>
                     </div>
-                    <button 
+                    <button
                       className="text-xs px-2 py-1 rounded bg-blue-600/30 text-blue-400 hover:bg-blue-600/50"
                       onClick={() => requestQuote()}
                       type="button"
@@ -1300,7 +1360,6 @@ export const Component = () => {
     try {
       // Try to reconnect the WebSocket
       const reconnected = Boolean(await retryConnection())
-
     } catch (error) {
       console.error('Error reconnecting to market maker:', error)
       toast.error('Failed to reconnect to price feed. Please try again.')

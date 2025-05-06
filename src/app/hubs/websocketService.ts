@@ -129,15 +129,15 @@ class WebSocketService {
     // For quote requests, try to replace an existing request for the same asset pair
     if (action === 'quote_request' && payload.from_asset && payload.to_asset) {
       const pairKey = `${payload.from_asset}/${payload.to_asset}`
-      
+
       // Find any existing quote request for this pair
       const existingIndex = this.messageQueue.findIndex(
-        (msg) => 
-          msg.action === 'quote_request' && 
-          msg.payload.from_asset === payload.from_asset && 
+        (msg) =>
+          msg.action === 'quote_request' &&
+          msg.payload.from_asset === payload.from_asset &&
           msg.payload.to_asset === payload.to_asset
       )
-      
+
       // If found, replace it instead of adding a new message
       if (existingIndex >= 0) {
         this.messageQueue[existingIndex] = {
@@ -146,13 +146,15 @@ class WebSocketService {
           priority,
           timestamp: Date.now(),
         }
-        logger.debug(`WebSocketService: Replaced existing quote request for ${pairKey}`)
-        
+        logger.debug(
+          `WebSocketService: Replaced existing quote request for ${pairKey}`
+        )
+
         // Start processing if not already running
         if (!this.processingQueue) {
           this.processMessageQueue()
         }
-        
+
         return true
       }
     }
@@ -429,7 +431,7 @@ class WebSocketService {
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data)
-      
+
       // Log the raw data for debugging
       logger.debug('WebSocketService: Received message data:', data)
 
@@ -441,29 +443,46 @@ class WebSocketService {
         if (this.dispatch) {
           if (data.data) {
             // Ensure data contains all required fields
-            logger.debug('WebSocketService: Processing quote response data:', data.data)
-            
+            logger.debug(
+              'WebSocketService: Processing quote response data:',
+              data.data
+            )
+
             // Make sure we have the necessary fields
-            if (data.data.from_asset && data.data.to_asset && data.data.to_amount !== undefined) {
-              logger.info(`WebSocketService: Received valid quote: with ID: ${data.data.rfq_id} - ${data.data.from_amount} ${data.data.from_asset} -> ${data.data.to_amount} ${data.data.to_asset}`)
+            if (
+              data.data.from_asset &&
+              data.data.to_asset &&
+              data.data.to_amount !== undefined
+            ) {
+              logger.info(
+                `WebSocketService: Received valid quote: with ID: ${data.data.rfq_id} - ${data.data.from_amount} ${data.data.from_asset} -> ${data.data.to_amount} ${data.data.to_asset}`
+              )
               this.dispatch(updateQuote(data.data))
             } else {
-              logger.error('WebSocketService: Malformed quote response - missing required fields:', data.data)
+              logger.error(
+                'WebSocketService: Malformed quote response - missing required fields:',
+                data.data
+              )
             }
           } else if (data.error) {
-            logger.error(`WebSocketService: Quote response error: ${data.error}`)
+            logger.error(
+              `WebSocketService: Quote response error: ${data.error}`
+            )
           } else {
-            logger.error('WebSocketService: Invalid quote response format - missing data')
+            logger.error(
+              'WebSocketService: Invalid quote response format - missing data'
+            )
           }
         } else {
-          logger.warn('WebSocketService: Redux dispatch not set, cannot update quote')
+          logger.warn(
+            'WebSocketService: Redux dispatch not set, cannot update quote'
+          )
         }
-        
+
         // Reset rate limit and track success
         resetRateLimitBackoff()
         trackMessageSuccess()
       } else if (data.action === 'pong') {
-        logger.debug('WebSocketService: Received pong response')
         // Reset rate limit and track success
         resetRateLimitBackoff()
         trackMessageSuccess()
@@ -485,7 +504,7 @@ class WebSocketService {
   /**
    * Store trading pairs we're interested in
    * This is now just a client-side tracker since we're using request-response pattern
-   * 
+   *
    * @param pair Trading pair to track (e.g. BTC/USD)
    */
   public subscribeToPair(pair: string): void {
@@ -499,19 +518,23 @@ class WebSocketService {
     if (this.socket?.readyState === WebSocket.OPEN) {
       // Extract the assets from the pair string
       const [fromAsset, toAsset] = pair.split('/')
-      
+
       if (!fromAsset || !toAsset) {
         logger.error(`Invalid pair format: ${pair}`)
         return
       }
-      
+
       // The server only supports 'ping' and 'quote_request' actions
       // Use a quote request with minimal amount to initialize pricing
-      this.queueMessage('quote_request', { 
-        from_asset: fromAsset, 
-        to_asset: toAsset, 
-        from_amount: 1000 
-      }, 2)
+      this.queueMessage(
+        'quote_request',
+        {
+          from_amount: 1000,
+          from_asset: fromAsset,
+          to_asset: toAsset,
+        },
+        2
+      )
 
       if (this.dispatch) {
         this.dispatch(subscribeToPair(pair))
@@ -538,7 +561,7 @@ class WebSocketService {
     // Note: We don't need to send anything to the server when unsubscribing
     // since the server doesn't track subscriptions. We just need to update
     // our local state and stop sending quote requests for this pair.
-    
+
     if (this.dispatch) {
       this.dispatch(unsubscribeFromPair(pair))
     }
@@ -633,20 +656,6 @@ class WebSocketService {
   }
 
   /**
-   * Verify current subscription state and repair if needed
-   */
-  public verifySubscriptions(): void {
-    if (!this.isConnected()) {
-      logger.warn(
-        'WebSocketService: Cannot verify subscriptions while disconnected'
-      )
-      return
-    }
-
-    this.syncSubscriptions()
-  }
-
-  /**
    * Get connection diagnostic information
    */
   public getDiagnostics(): any {
@@ -669,25 +678,37 @@ class WebSocketService {
 
   /**
    * Request a quote for swapping from one asset to another
-   * 
+   *
    * @param fromAsset The asset to swap from
    * @param toAsset The asset to swap to
    * @param fromAmount The amount to swap
    * @returns A promise that resolves to true if the quote request was sent successfully
    */
-  public requestQuote(fromAsset: string, toAsset: string, fromAmount: number): boolean {
+  public requestQuote(
+    fromAsset: string,
+    toAsset: string,
+    fromAmount: number
+  ): boolean {
     if (!this.isConnected()) {
-      logger.debug('WebSocketService: Cannot request quote, socket not connected');
-      return false;
+      logger.debug(
+        'WebSocketService: Cannot request quote, socket not connected'
+      )
+      return false
     }
 
-    logger.debug(`WebSocketService: Requesting quote for ${fromAmount} ${fromAsset} -> ${toAsset}`);
-    
-    return this.queueMessage('quote_request', {
-      from_amount: fromAmount,
-      from_asset: fromAsset,
-      to_asset: toAsset
-    }, 4); // Higher priority than normal messages but lower than connection management
+    logger.debug(
+      `WebSocketService: Requesting quote for ${fromAmount} ${fromAsset} -> ${toAsset}`
+    )
+
+    return this.queueMessage(
+      'quote_request',
+      {
+        from_amount: fromAmount,
+        from_asset: fromAsset,
+        to_asset: toAsset,
+      },
+      4
+    ) // Higher priority than normal messages but lower than connection management
   }
 
   /**
@@ -790,7 +811,6 @@ class WebSocketService {
         // Direct ping (not queued) for more reliability
         if (this.socket) {
           this.socket.send(JSON.stringify({ action: 'ping' }))
-          logger.debug('WebSocketService: Sent ping message')
         }
       } catch (err) {
         logger.error('WebSocketService: Failed to send ping', err)
@@ -812,21 +832,25 @@ class WebSocketService {
           if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({ action: 'ping' }))
             logger.debug('WebSocketService: Sent emergency ping')
-            
+
             // For each pair, send a quote request
             if (this.subscribedPairs.size > 0) {
-              this.subscribedPairs.forEach(pair => {
+              this.subscribedPairs.forEach((pair) => {
                 const [fromAsset, toAsset] = pair.split('/')
                 if (fromAsset && toAsset) {
-                  this.socket?.send(JSON.stringify({
-                    action: 'quote_request',
-                    from_asset: fromAsset,
-                    to_asset: toAsset,
-                    from_amount: 1000
-                  }))
+                  this.socket?.send(
+                    JSON.stringify({
+                      action: 'quote_request',
+                      from_amount: 1000,
+                      from_asset: fromAsset,
+                      to_asset: toAsset,
+                    })
+                  )
                 }
               })
-              logger.debug(`WebSocketService: Sent emergency quote requests for ${this.subscribedPairs.size} pairs`)
+              logger.debug(
+                `WebSocketService: Sent emergency quote requests for ${this.subscribedPairs.size} pairs`
+              )
             }
           }
 
@@ -969,16 +993,6 @@ class WebSocketService {
       // Attempt reconnection
       this.connect()
     }, delay)
-  }
-
-  /**
-   * Empty method for backward compatibility
-   * @deprecated
-   */
-  private syncSubscriptions(): void {
-    // This method is kept for backward compatibility but does nothing
-    // as the server doesn't support subscription management anymore
-    logger.debug('WebSocketService: syncSubscriptions no longer needed with current API')
   }
 }
 
