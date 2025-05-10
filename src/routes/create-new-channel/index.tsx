@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw, Wallet } from 'lucide-react'
+import { AlertTriangle, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -250,13 +250,6 @@ export const Component = () => {
               >
                 <Wallet className="h-5 w-5" />
                 Deposit
-              </button>
-              <button
-                className="px-5 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition text-white font-medium flex items-center gap-2"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-5 w-5" />
-                Refresh
               </button>
             </div>
           </div>
