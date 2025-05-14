@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { BTC_ASSET_ID } from '../../../../../constants'
 import { formatBitcoinAmount, msatToSat } from '../../../../../helpers/number'
-import { ConfirmationModalProps, HTLCStatus , AssetOption } from '../types'
+import { ConfirmationModalProps, HTLCStatus, AssetOption } from '../types'
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   pendingData,
@@ -29,9 +29,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const [showOverlay, setShowOverlay] = useState(false)
 
   useEffect(() => {
-    if (paymentStatus === HTLCStatus.Failed) {
-      setShowOverlay(true)
+    async function handleShowOverlay() {
+      if (paymentStatus === HTLCStatus.Failed) {
+        setShowOverlay(true)
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+        setShowOverlay(false)
+      }
     }
+
+    handleShowOverlay()
   }, [paymentStatus])
 
   const getBtcAmount = () => {
