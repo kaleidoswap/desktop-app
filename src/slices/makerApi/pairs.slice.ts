@@ -8,21 +8,26 @@ interface PriceData {
   rfq_id: string
 }
 
-interface QuoteResponse {
-  from_asset: string
-  to_asset: string
-  from_amount: number
-  to_amount: number
-  taker_to_amount: number
-  price: number
+export interface FeeDetails {
   base_fee: number
   variable_fee: number
-  final_fee: number
   fee_rate: number
+  fee_asset: string
+  final_fee: number
+  fee_asset_precision: number
+}
+
+interface QuoteResponse {
+  rfq_id: string
+  from_asset: string
+  from_amount: number
+  to_asset: string
+  to_amount: number
+  price: number
   price_precision: number
   timestamp: number
   expires_at: number
-  rfq_id: string
+  fee: FeeDetails
 }
 
 export interface PairsState {
@@ -58,16 +63,6 @@ export const pairsSlice = createSlice({
     setWsConnected: (state, action: PayloadAction<boolean>) => {
       state.wsConnected = action.payload
     },
-    subscribeToPair: (state, action: PayloadAction<string>) => {
-      if (!state.subscribedPairs.includes(action.payload)) {
-        state.subscribedPairs.push(action.payload)
-      }
-    },
-    unsubscribeFromPair: (state, action: PayloadAction<string>) => {
-      state.subscribedPairs = state.subscribedPairs.filter(
-        (pair) => pair !== action.payload
-      )
-    },
     updatePrice: (state, action: PayloadAction<any>) => {
       const { pair, price, size, rfq_id } = action.payload
       state.feed[pair] = { price, rfq_id, size }
@@ -80,13 +75,7 @@ export const pairsSlice = createSlice({
   },
 })
 
-export const {
-  setTradingPairs,
-  setWsConnected,
-  subscribeToPair,
-  unsubscribeFromPair,
-  updatePrice,
-  updateQuote,
-} = pairsSlice.actions
+export const { setTradingPairs, setWsConnected, updatePrice, updateQuote } =
+  pairsSlice.actions
 
 export const pairsReducer = pairsSlice.reducer
