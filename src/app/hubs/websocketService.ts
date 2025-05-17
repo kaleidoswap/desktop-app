@@ -10,12 +10,7 @@ import {
   isConnectionHealthy,
   addJitter,
 } from '../../routes/trade/market-maker/websocketUtils'
-import {
-  setWsConnected,
-  subscribeToPair,
-  unsubscribeFromPair,
-  updateQuote,
-} from '../../slices/makerApi/pairs.slice'
+import { setWsConnected, updateQuote } from '../../slices/makerApi/pairs.slice'
 import { logger } from '../../utils/logger'
 
 // Import utility functions for rate limit handling
@@ -247,10 +242,6 @@ class WebSocketService {
 
             // Reset backoff on successful sends (after a delay)
             setTimeout(() => resetRateLimitBackoff(), 2000)
-
-            logger.debug(
-              `WebSocketService: Sent ${message.action} message from queue`
-            )
           } catch (error) {
             // Track message failure and leave in queue if it's a high priority message
             trackMessageFailure(error)
@@ -499,74 +490,6 @@ class WebSocketService {
       logger.error('WebSocketService: Error parsing message', error)
       trackMessageFailure('Error parsing message')
     }
-  }
-
-  /**
-   * Store trading pairs we're interested in
-   * This is now just a client-side tracker since we're using request-response pattern
-   *
-   * @param pair Trading pair to track (e.g. BTC/USD)
-   */
-  public subscribeToPair(pair: string): void {
-    if (!pair) {
-      logger.error('WebSocketService subscribeToPair: No pair provided')
-      return
-    }
-
-    this.subscribedPairs.add(pair)
-
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      // Extract the assets from the pair string
-      const [fromAsset, toAsset] = pair.split('/')
-
-      if (!fromAsset || !toAsset) {
-        logger.error(`Invalid pair format: ${pair}`)
-        return
-      }
-
-      // The server only supports 'ping' and 'quote_request' actions
-      // Use a quote request with minimal amount to initialize pricing
-      this.queueMessage(
-        'quote_request',
-        {
-          from_amount: 1000,
-          from_asset: fromAsset,
-          to_asset: toAsset,
-        },
-        2
-      )
-
-      if (this.dispatch) {
-        this.dispatch(subscribeToPair(pair))
-      }
-
-      logger.info(`WebSocketService: Subscribed to ${pair}`)
-    } else {
-      logger.info(
-        `WebSocketService: Socket not ready, ${pair} will be subscribed upon reconnection`
-      )
-    }
-  }
-
-  /**
-   * Remove a pair from our tracking
-   *
-   * @param pair Trading pair to remove
-   */
-  public unsubscribeFromPair(pair: string): void {
-    if (!pair) return
-
-    this.subscribedPairs.delete(pair)
-
-    // Note: We don't need to send anything to the server when unsubscribing
-    // since the server doesn't track subscriptions. We just need to update
-    // our local state and stop sending quote requests for this pair.
-
-    if (this.dispatch) {
-      this.dispatch(unsubscribeFromPair(pair))
-    }
-
-    logger.info(`WebSocketService: Unsubscribed from ${pair}`)
   }
 
   /**

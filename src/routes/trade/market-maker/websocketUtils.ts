@@ -3,7 +3,6 @@ import { Dispatch } from '@reduxjs/toolkit'
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { logger } from '../../../utils/logger'
 
-
 // Rate limiting backoff parameters
 let rateLimit = {
   attempts: 0,
@@ -206,40 +205,6 @@ export function addJitter(delay: number, jitterFactor: number = 0.3): number {
   // Add random jitter between -jitterFactor and +jitterFactor of the delay
   const jitter = (Math.random() * 2 - 1) * jitterFactor * delay
   return Math.max(0, delay + jitter)
-}
-
-/**
- * Subscribe to a trading pair feed
- *
- * @param pair Trading pair string in format "BTC/USD"
- */
-export const subscribeToPairFeed = (pair: string): void => {
-  // Log information about the subscription attempt
-  logger.info(`Subscribing to trading pair feed: ${pair}`)
-
-  try {
-    // Extract the assets from the pair string
-    const [fromAsset, toAsset] = pair.split('/')
-    
-    if (!fromAsset || !toAsset) {
-      logger.error(`Invalid pair format: ${pair}`)
-      return
-    }
-    
-    // The WebSocket API now only supports 'ping' and 'quote_request' actions
-    // Instead of using the 'subscribe' action which is no longer supported,
-    // we send a quote request with a minimal amount to get initial pricing
-    // This will be used to update the UI
-    const success = webSocketService.requestQuote(fromAsset, toAsset, 1000)
-    
-    if (success) {
-      logger.debug(`Sent initial quote request for pair: ${pair}`)
-    } else {
-      logger.warn(`Failed to send initial quote request for pair: ${pair}`)
-    }
-  } catch (error) {
-    logger.error(`Error subscribing to pair feed: ${pair}`, error)
-  }
 }
 
 /**
