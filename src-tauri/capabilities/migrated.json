@@ -31,6 +31,7 @@
     "shell:default",
     "clipboard-manager:default",
     "opener:default",
-    "opener:default"
+    "opener:default",
+    "log:default"
   ]
 }
