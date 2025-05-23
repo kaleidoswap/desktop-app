@@ -100,3 +100,5 @@ export { AssetOption, AssetSelect, ExchangeRateDisplay }
 export { ManualSwapForm } from './ManualSwapForm'
 export { NostrP2P } from './NostrP2P'
 export { TradeForm } from './TradeForm'
+export { FeeSection } from './FeeSection'
+export { TakerSwapForm } from './TakerSwapForm'

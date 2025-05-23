@@ -6,7 +6,7 @@ import { useAssetIcon } from '../../helpers/utils'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { ArrowDownIcon } from '../../icons/ArrowDown'
 
-interface AssetOptionProps {
+export interface AssetOptionProps {
   ticker?: string
 }
 
@@ -95,7 +95,7 @@ Select.defaultProps = {
   theme: 'dark',
 }
 
-interface AssetSelectProps {
+export interface AssetSelectProps {
   options: Array<{ value: string; label: string; ticker?: string }>
   value: string
   onChange: (value: string) => void
@@ -116,3 +116,14 @@ export const AssetSelect: React.FC<AssetSelectProps> = ({
     theme="dark"
   />
 )
+
+export interface AssetComponentsProps {
+  // Define any props needed for the component
+  children?: React.ReactNode
+}
+
+export const AssetComponents: React.FC<AssetComponentsProps> = ({
+  children,
+}) => {
+  return <>{children}</>
+}

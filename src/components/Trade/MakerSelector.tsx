@@ -142,7 +142,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
       <div className="relative" ref={dropdownRef}>
         <div className="flex flex-col gap-1 mb-1">
           <div className="flex items-center justify-between mb-1">
-            <label className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <label className="text-sm font-semibold text-slate-300 uppercase tracking-wider mr-2">
               Market Maker
             </label>
             {wsConnected ? (
@@ -275,8 +275,8 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     'group flex items-center gap-3 w-full px-4 py-3 rounded-lg',
                     'transition-all duration-200',
                     url === currentUrl
-                      ? 'bg-blue-600/20 hover:bg-blue-600/30 border-l-2 border-blue-500'
-                      : 'hover:bg-slate-700/50 border-l-2 border-transparent',
+                      ? 'bg-blue-600/30 hover:bg-blue-600/40 border-l-2 border-blue-500'
+                      : 'hover:bg-slate-700/60 border-l-2 border-transparent',
                     'hover:scale-[1.01] active:scale-[0.99]'
                   )}
                   key={url}
@@ -304,7 +304,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     </span>
                   </div>
                   {url === nodeSettings.default_maker_url && (
-                    <Star className="w-4 h-4 text-blue-400 fill-current flex-shrink-0" />
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-500 flex-shrink-0" />
                   )}
                 </button>
               ))}
@@ -313,7 +313,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                 <div className="p-3 border-t border-slate-700/50 mt-2">
                   <div className="flex items-center gap-2">
                     <input
-                      className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                       onChange={(e) => setNewMakerUrl(e.target.value)}
                       onKeyDown={(e) =>
                         e.key === 'Enter' && handleAddNewMaker()
@@ -332,7 +332,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                 </div>
               ) : (
                 <button
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-blue-400 hover:text-blue-300 border-t border-slate-700/50 mt-2 transition-colors hover:bg-slate-700/30 rounded-lg"
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-blue-400 hover:text-blue-300 border-t border-slate-700/50 mt-2 transition-colors hover:bg-slate-700/50 rounded-lg"
                   onClick={() => setIsAddingNew(true)}
                 >
                   <Plus className="w-4 h-4 flex-shrink-0" />
@@ -341,7 +341,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
               )}
 
               <button
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm text-slate-400 hover:text-slate-300 transition-colors hover:bg-slate-700/30 rounded-lg"
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm text-slate-400 hover:text-slate-300 transition-colors hover:bg-slate-700/50 rounded-lg"
                 onClick={() =>
                   openUrl('https://docs.kaleidoswap.com/api/market-maker')
                 }

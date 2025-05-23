@@ -137,16 +137,39 @@ export const getAssetPrecision = (
   bitcoinUnit: string,
   assets?: NiaAsset[]
 ): number => {
-  if (asset === 'BTC') {
-    return bitcoinUnit === 'BTC' ? 8 : 0
+  // Normalize asset ticker to uppercase for case-insensitive comparison
+  const normalizedAsset = asset.toUpperCase()
+
+  // Handle Bitcoin precision based on unit
+  if (normalizedAsset === 'BTC') {
+    return getBitcoinPrecision(bitcoinUnit)
   }
 
-  if (!assets) {
-    return 8 // Default precision if assets list not provided
+  // If assets array is provided, look for the asset's precision
+  if (assets && assets.length > 0) {
+    const assetInfo = assets.find(
+      (a) => a.ticker.toUpperCase() === normalizedAsset
+    )
+    if (assetInfo && typeof assetInfo.precision === 'number') {
+      return assetInfo.precision
+    }
   }
 
-  const assetInfo = assets.find((a) => a.ticker === asset)
-  return assetInfo ? assetInfo.precision : 8
+  // Default precision if asset not found or assets list not provided
+  return 8
+}
+
+export const getBitcoinPrecision = (bitcoinUnit: string): number => {
+  switch (bitcoinUnit.toUpperCase()) {
+    case 'SAT':
+      return 0
+    case 'MSAT':
+      return 3
+    case 'BTC':
+      return 8
+    default:
+      return 8
+  }
 }
 
 /**
@@ -214,16 +237,17 @@ export const parseAssetAmountWithPrecision = (
 /**
  * Calculates the exchange rate between two assets
  * @param price The price from the feed
- * @param size The size from the feed
+ * @param size The size from the feed (optional in newer versions)
  * @param isInverted Whether the pair is inverted from the user's perspective
  * @returns The calculated exchange rate
  */
 export const calculateExchangeRate = (
   price: number,
-  size: number,
-  isInverted: boolean
+  size?: number,
+  isInverted?: boolean
 ): number => {
-  const rate = price / size
+  // If size is not provided (or is 0), assume price is already the correct rate
+  const rate = size && size !== 0 ? price / size : price
   return isInverted ? 1 / rate : rate
 }
 
@@ -271,4 +295,82 @@ export const formatNumberWithCommas = (value: string | number): string => {
  *  */
 export const parseNumberWithCommas = (value: string): string => {
   return value.replace(/[^\d.]/g, '')
+}
+
+/**
+ * Calculates and formats the exchange rate for display, handling inversion, precision, and bitcoin units.
+ * @param fromAsset The asset being sent
+ * @param toAsset The asset being received
+ * @param price The price value (from WebSocket)
+ * @param selectedPair The selected trading pair (with base/quote info)
+ * @param bitcoinUnit The bitcoin unit (BTC, SAT, etc.)
+ * @param getAssetPrecision Function to get asset precision
+ * @returns Formatted exchange rate string
+ */
+export const calculateAndFormatRate = (
+  fromAsset: string,
+  toAsset: string,
+  price: number | null,
+  selectedPair: { base_asset: string; quote_asset: string } | null,
+  bitcoinUnit: string,
+  getAssetPrecision: (asset: string) => number
+): string => {
+  if (!price || !selectedPair) return 'Price not available'
+
+  let rate = price
+  let displayFromAsset = fromAsset
+  let displayToAsset = toAsset
+
+  const isInverted =
+    fromAsset === selectedPair.quote_asset &&
+    toAsset === selectedPair.base_asset
+
+  // Get precisions for both assets
+  const fromPrecision = getAssetPrecision(displayFromAsset)
+  const toPrecision = getAssetPrecision(displayToAsset)
+
+  let fromUnit = displayFromAsset === 'BTC' ? bitcoinUnit : displayFromAsset
+  let toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
+
+  // Calculate the rate considering asset precisions
+  if (isInverted) {
+    // When inverted, we need to show how many fromAsset units per toAsset unit
+    // First convert price to base units, then invert and scale by precision difference
+    const basePrice = price / Math.pow(10, toPrecision)
+    rate = (1 / basePrice) * Math.pow(10, fromPrecision - toPrecision)
+  } else {
+    // When not inverted, we need to show how many toAsset units per fromAsset unit
+    // The price is already in the correct units, just need to adjust for display
+    rate = price / Math.pow(10, toPrecision)
+  }
+
+  // Handle SAT unit conversion if needed
+  if (fromUnit === 'SAT') {
+    rate = rate / SATOSHIS_PER_BTC
+  } else if (toUnit === 'SAT') {
+    rate = rate * SATOSHIS_PER_BTC
+  }
+
+  // Determine the appropriate precision for display
+  // For small rates (< 0.01), use more precision
+  // For large rates, use less precision but at least 2 decimal places
+  let displayPrecision = 2
+  if (rate < 0.01) {
+    displayPrecision = Math.min(Math.max(fromPrecision, toPrecision), 8)
+  } else if (rate < 1) {
+    displayPrecision = 4
+  } else if (rate < 100) {
+    displayPrecision = 2
+  } else {
+    displayPrecision = 0
+  }
+
+  // Format the rate with the determined precision
+  const formattedRate = new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: displayPrecision,
+    minimumFractionDigits: displayPrecision,
+    useGrouping: true,
+  }).format(rate)
+
+  return formattedRate
 }

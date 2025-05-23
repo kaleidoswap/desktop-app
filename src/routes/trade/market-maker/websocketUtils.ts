@@ -3,25 +3,6 @@ import { Dispatch } from '@reduxjs/toolkit'
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { logger } from '../../../utils/logger'
 
-// Track last subscription time and requests
-const subscriptionState = {
-  backoffMultiplier: 1.5,
-  // Minimum time between subscriptions (milliseconds)
-consecutiveRateLimitErrors: 0,
-  
-// Maximum backoff interval in milliseconds
-currentBackoff: 500, 
-  
-
-lastSubscriptionTime: 0,
-  
-
-maxBackoffInterval: 5000,
-  
-minInterval: 500, 
-  pendingSubscriptions: new Map<string, number>(), // Start with the min interval
-}
-
 // Rate limiting backoff parameters
 let rateLimit = {
   attempts: 0,
@@ -224,50 +205,6 @@ export function addJitter(delay: number, jitterFactor: number = 0.3): number {
   // Add random jitter between -jitterFactor and +jitterFactor of the delay
   const jitter = (Math.random() * 2 - 1) * jitterFactor * delay
   return Math.max(0, delay + jitter)
-}
-
-/**
- * Subscribe to a trading pair's price feed with rate limiting
- * This function debounces multiple subscription requests to the same pair
- * and ensures we don't exceed the server's rate limit
- * @param pair The trading pair to subscribe to (e.g. "BTC/USD")
- */
-export const subscribeToPairFeed = (pair: string): void => {
-  if (!pair) {
-    logger.error('Cannot subscribe to empty pair')
-    return
-  }
-
-  // Cancel any pending subscription for this pair
-  if (subscriptionState.pendingSubscriptions.has(pair)) {
-    clearTimeout(subscriptionState.pendingSubscriptions.get(pair))
-    subscriptionState.pendingSubscriptions.delete(pair)
-  }
-
-  const now = Date.now()
-  const timeSinceLastSubscription = now - subscriptionState.lastSubscriptionTime
-  const currentDelay = subscriptionState.currentBackoff
-
-  // If we've recently sent a subscription request, delay this one
-  if (timeSinceLastSubscription < currentDelay) {
-    const delay = currentDelay - timeSinceLastSubscription
-    logger.debug(
-      `Delaying subscription to ${pair} by ${delay}ms to avoid rate limiting`
-    )
-
-    // Set a timeout to subscribe after the delay
-    const timeoutId = setTimeout(() => {
-      subscriptionState.pendingSubscriptions.delete(pair)
-      subscriptionState.lastSubscriptionTime = Date.now()
-      webSocketService.subscribeToPair(pair)
-    }, delay)
-
-    subscriptionState.pendingSubscriptions.set(pair, timeoutId)
-  } else {
-    // If enough time has passed, subscribe immediately
-    subscriptionState.lastSubscriptionTime = now
-    webSocketService.subscribeToPair(pair)
-  }
 }
 
 /**
