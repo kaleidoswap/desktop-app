@@ -1077,13 +1077,24 @@ export const Component = () => {
 
     try {
       // Use the service's reconnect method
-      const success = webSocketService.reconnect()
+      const reconnectInitiated = webSocketService.reconnect()
 
-      if (success) {
-        // Refresh pairs after reconnection
-        await fetchAndSetPairs()
-        toast.success('Successfully reconnected to market maker')
+      if (reconnectInitiated) {
+        // Wait a moment for the connection to establish
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        // Check if the connection was successful
+        if (webSocketService.isConnected()) {
+          // Refresh pairs after successful reconnection
+          await fetchAndSetPairs()
+          toast.success('Successfully reconnected to market maker')
+        } else {
+          // If not connected after delay, try again
+          logger.warn('WebSocket reconnection initiated but not connected yet')
+          toast.warning('Reconnection in progress. Please wait...')
+        }
       } else {
+        logger.error('Failed to initiate WebSocket reconnection')
         toast.error('Failed to reconnect. Please try again.')
       }
     } catch (error) {
@@ -1091,7 +1102,11 @@ export const Component = () => {
       toast.error('Failed to reconnect to market maker')
     } finally {
       // Refresh amounts after reconnection attempt
-      await refreshAmounts()
+      try {
+        await refreshAmounts()
+      } catch (error) {
+        logger.error('Error refreshing amounts after reconnection:', error)
+      }
       setIsLoading(false)
     }
   }, [fetchAndSetPairs, refreshAmounts])
@@ -1393,10 +1408,7 @@ export const Component = () => {
 
     // Handler for when the page gains focus
     const handleFocus = async () => {
-      logger.debug('Application window gained focus')
-
-      // If the page was in the background and the WebSocket is disconnected, reconnect
-      if (wasInBackground && !wsConnected && makerConnectionUrl) {
+      if (wasInBackground && !wsConnected) {
         logger.info(
           'Application was in background and WebSocket is disconnected, attempting to reconnect'
         )
@@ -1404,9 +1416,17 @@ export const Component = () => {
 
         try {
           // Attempt to reconnect
-          const success = webSocketService.reconnect()
-          if (success) {
-            logger.info('Successfully reconnected WebSocket after page focus')
+          const reconnectInitiated = webSocketService.reconnect()
+          if (reconnectInitiated) {
+            logger.info(
+              'Successfully initiated WebSocket reconnect after page focus'
+            )
+            // Wait a moment and check if connected
+            setTimeout(() => {
+              if (webSocketService.isConnected()) {
+                logger.info('WebSocket reconnected after page focus')
+              }
+            }, 1000)
           }
         } catch (error) {
           logger.error('Error reconnecting WebSocket after page focus:', error)

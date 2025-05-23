@@ -100,6 +100,12 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
           {(fees.feeRate * 100).toFixed(2)}%
         </span>
       </div>
+
+      <div className="mt-2 pt-2 border-t border-slate-700/50">
+        <p className="text-slate-400 text-xs">
+          ℹ️ Fees are already subtracted from the "to" amount shown above
+        </p>
+      </div>
     </div>
   )
 }

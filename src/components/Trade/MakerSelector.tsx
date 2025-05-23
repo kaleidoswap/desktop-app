@@ -118,13 +118,30 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   const handleRefreshConnection = async () => {
     try {
       setIsLoading(true)
-      webSocketService.reconnect()
-      toast.info('Reconnecting to maker...', {
-        icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
-      })
 
-      if (onMakerChange) {
-        await onMakerChange()
+      // Use the service's reconnect method
+      const reconnectInitiated = webSocketService.reconnect()
+
+      if (reconnectInitiated) {
+        toast.info('Reconnecting to maker...', {
+          icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
+        })
+
+        // Wait a moment for the connection to establish
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        // Check if the connection was successful
+        if (webSocketService.isConnected()) {
+          if (onMakerChange) {
+            await onMakerChange()
+          }
+          toast.success('Successfully reconnected to market maker')
+        } else {
+          // If not connected after delay, show warning
+          toast.warning('Reconnection in progress. Please wait...')
+        }
+      } else {
+        toast.error('Failed to initiate reconnection. Please try again.')
       }
     } catch (error) {
       console.error('Failed to refresh connection:', error)
