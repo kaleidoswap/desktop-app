@@ -10,27 +10,59 @@ import { Fields } from './types'
  *
  * @param form Form instance from react-hook-form
  * @param getAssetPrecision Function to get asset precision
- * @param parseAssetAmount Function to parse asset amount
- * @param setDebouncedFromAmount Function to set debounced from amount
+ * @param parseAssetAmount Optional function to parse asset amount
+ * @param setDebouncedFromAmount Optional function to set debounced from amount
  */
 export const createFromAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  setDebouncedFromAmount: (value: string) => void
+  setDebouncedFromAmount?: (value: string) => void
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const fromAsset = form.getValues().fromAsset
+
+    // Get current cursor position before formatting
+    const cursorPosition = e.target.selectionStart || 0
+
+    // Count commas before cursor position to adjust cursor later
+    const commasBeforeCursor = (
+      value.substring(0, cursorPosition).match(/,/g) || []
+    ).length
 
     // Format input to ensure correct number format
     const formattedValue = formatNumericInput(
       value,
       getAssetPrecision(fromAsset)
     )
+
+    // Set the formatted value in the form
     form.setValue('from', formattedValue, { shouldValidate: true })
 
-    // Store the debounced value for later processing
-    setDebouncedFromAmount(formattedValue)
+    // Store the debounced value for later processing if provided
+    if (setDebouncedFromAmount) {
+      setDebouncedFromAmount(formattedValue)
+    }
+
+    // Schedule cursor position adjustment for after React re-renders the input
+    setTimeout(() => {
+      const input = document.querySelector(
+        'input[value="' + formattedValue + '"]'
+      ) as HTMLInputElement
+      if (input) {
+        // Count new commas before the original cursor position
+        const newCommasBeforeCursor = (
+          formattedValue.substring(0, cursorPosition).match(/,/g) || []
+        ).length
+
+        // Adjust cursor position based on difference in commas
+        const newPosition =
+          cursorPosition + (newCommasBeforeCursor - commasBeforeCursor)
+
+        // Set cursor position
+        input.setSelectionRange(newPosition, newPosition)
+      }
+    }, 0)
   }
 }
 
@@ -39,7 +71,6 @@ export const createFromAmountChangeHandler = (
  *
  * @param form Form instance from react-hook-form
  * @param getAssetPrecision Function to get asset precision
- * @param parseAssetAmount Function to parse asset amount
  * @param setDebouncedToAmount Function to set debounced to amount
  */
 export const createToAmountChangeHandler = (
@@ -67,25 +98,49 @@ export const createToAmountChangeHandler = (
  * @param precision Decimal precision
  */
 const formatNumericInput = (value: string, precision: number): string => {
-  // Remove any character that is not a digit or a dot
-  let formatted = value.replace(/[^\d.]/g, '')
+  // Remove any character that is not a digit, dot, or comma
+  let cleaned = value.replace(/[^\d.,]/g, '')
+
+  // Replace commas with empty string to handle values with thousand separators
+  cleaned = cleaned.replace(/,/g, '')
 
   // Replace multiple dots with a single dot
-  const dotCount = (formatted.match(/\./g) || []).length
+  const dotCount = (cleaned.match(/\./g) || []).length
   if (dotCount > 1) {
-    const firstDotIndex = formatted.indexOf('.')
-    formatted =
-      formatted.slice(0, firstDotIndex + 1) +
-      formatted.slice(firstDotIndex + 1).replace(/\./g, '')
+    const firstDotIndex = cleaned.indexOf('.')
+    cleaned =
+      cleaned.slice(0, firstDotIndex + 1) +
+      cleaned.slice(firstDotIndex + 1).replace(/\./g, '')
   }
 
   // Ensure the decimal part doesn't exceed the precision
-  if (formatted.includes('.')) {
-    const [whole, decimal] = formatted.split('.')
-    formatted = `${whole}.${decimal.slice(0, precision)}`
+  if (cleaned.includes('.')) {
+    const [whole, decimal] = cleaned.split('.')
+    cleaned = `${whole}.${decimal.slice(0, precision)}`
   }
 
-  return formatted
+  // If value is not empty, try to format with comma thousand separators
+  if (cleaned && !cleaned.endsWith('.')) {
+    try {
+      // Parse the cleaned value to a number
+      const numValue = parseFloat(cleaned)
+      if (!isNaN(numValue)) {
+        // Format the whole part with commas
+        if (cleaned.includes('.')) {
+          const [whole, decimal] = cleaned.split('.')
+          const formattedWhole = parseInt(whole).toLocaleString('en-US')
+          return `${formattedWhole}.${decimal}`
+        } else {
+          return parseInt(cleaned).toLocaleString('en-US')
+        }
+      }
+    } catch (e) {
+      // Fall back to the cleaned value if formatting fails
+      return cleaned
+    }
+  }
+
+  return cleaned
 }
 
 /**

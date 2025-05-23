@@ -296,3 +296,81 @@ export const formatNumberWithCommas = (value: string | number): string => {
 export const parseNumberWithCommas = (value: string): string => {
   return value.replace(/[^\d.]/g, '')
 }
+
+/**
+ * Calculates and formats the exchange rate for display, handling inversion, precision, and bitcoin units.
+ * @param fromAsset The asset being sent
+ * @param toAsset The asset being received
+ * @param price The price value (from WebSocket)
+ * @param selectedPair The selected trading pair (with base/quote info)
+ * @param bitcoinUnit The bitcoin unit (BTC, SAT, etc.)
+ * @param getAssetPrecision Function to get asset precision
+ * @returns Formatted exchange rate string
+ */
+export const calculateAndFormatRate = (
+  fromAsset: string,
+  toAsset: string,
+  price: number | null,
+  selectedPair: { base_asset: string; quote_asset: string } | null,
+  bitcoinUnit: string,
+  getAssetPrecision: (asset: string) => number
+): string => {
+  if (!price || !selectedPair) return 'Price not available'
+
+  let rate = price
+  let displayFromAsset = fromAsset
+  let displayToAsset = toAsset
+
+  const isInverted =
+    fromAsset === selectedPair.quote_asset &&
+    toAsset === selectedPair.base_asset
+
+  // Get precisions for both assets
+  const fromPrecision = getAssetPrecision(displayFromAsset)
+  const toPrecision = getAssetPrecision(displayToAsset)
+
+  let fromUnit = displayFromAsset === 'BTC' ? bitcoinUnit : displayFromAsset
+  let toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
+
+  // Calculate the rate considering asset precisions
+  if (isInverted) {
+    // When inverted, we need to show how many fromAsset units per toAsset unit
+    // First convert price to base units, then invert and scale by precision difference
+    const basePrice = price / Math.pow(10, toPrecision)
+    rate = (1 / basePrice) * Math.pow(10, fromPrecision - toPrecision)
+  } else {
+    // When not inverted, we need to show how many toAsset units per fromAsset unit
+    // The price is already in the correct units, just need to adjust for display
+    rate = price / Math.pow(10, toPrecision)
+  }
+
+  // Handle SAT unit conversion if needed
+  if (fromUnit === 'SAT') {
+    rate = rate / SATOSHIS_PER_BTC
+  } else if (toUnit === 'SAT') {
+    rate = rate * SATOSHIS_PER_BTC
+  }
+
+  // Determine the appropriate precision for display
+  // For small rates (< 0.01), use more precision
+  // For large rates, use less precision but at least 2 decimal places
+  let displayPrecision = 2
+  if (rate < 0.01) {
+    displayPrecision = Math.min(Math.max(fromPrecision, toPrecision), 8)
+  } else if (rate < 1) {
+    displayPrecision = 4
+  } else if (rate < 100) {
+    displayPrecision = 2
+  } else {
+    displayPrecision = 0
+  }
+
+  // Format the rate with the determined precision
+  const formattedRate = new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: displayPrecision,
+    minimumFractionDigits: displayPrecision,
+    useGrouping: true,
+  }).format(rate)
+
+  return formattedRate
+}

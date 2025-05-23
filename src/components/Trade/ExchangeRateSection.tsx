@@ -1,9 +1,13 @@
-import { RefreshCw } from 'lucide-react'
-import React, { useCallback, useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
-import { SATOSHIS_PER_BTC } from '../../helpers/number'
+import { calculateAndFormatRate } from '../../helpers/number'
 import { SparkIcon } from '../../icons/Spark'
+import {
+  mapAssetIdToTicker,
+  isAssetId,
+} from '../../routes/trade/market-maker/assetUtils'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
+import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 import { AssetOption } from './AssetComponents'
 
@@ -33,6 +37,7 @@ interface ExchangeRateDisplayProps {
   formatAmount: (amount: number, asset: string) => string
   getAssetPrecision: (asset: string) => number
   priceUpdated: boolean
+  assets?: NiaAsset[]
 }
 
 export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
@@ -43,80 +48,48 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   bitcoinUnit,
   getAssetPrecision,
   priceUpdated,
+  assets = [],
 }) => {
-  const calculateAndFormatRate = useCallback(
-    (
-      fromAsset: string,
-      toAsset: string,
-      price: number | null,
-      selectedPair: { base_asset: string; quote_asset: string } | null
-    ) => {
-      if (!price || !selectedPair) return 'Price not available'
+  // Get display tickers for assets (especially important for RGB assets)
+  const fromDisplayTicker =
+    isAssetId(fromAsset) && assets.length > 0
+      ? mapAssetIdToTicker(fromAsset, assets)
+      : fromAsset
 
-      // Use price directly as the exchange rate
-      let rate = price
-      let displayFromAsset = fromAsset
-      let displayToAsset = toAsset
+  const toDisplayTicker =
+    isAssetId(toAsset) && assets.length > 0
+      ? mapAssetIdToTicker(toAsset, assets)
+      : toAsset
 
-      const isInverted =
-        fromAsset === selectedPair.quote_asset &&
-        toAsset === selectedPair.base_asset
+  // Get display asset names (e.g., BTC -> SAT if bitcoin unit is SAT)
+  const fromDisplayAsset =
+    fromDisplayTicker === 'BTC' ? bitcoinUnit : fromDisplayTicker
+  const toDisplayAsset =
+    toDisplayTicker === 'BTC' ? bitcoinUnit : toDisplayTicker
 
-      const precision = !isInverted
-        ? getAssetPrecision(displayToAsset)
-        : getAssetPrecision(displayFromAsset)
-
-      let fromUnit = displayFromAsset === 'BTC' ? bitcoinUnit : displayFromAsset
-      let toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
-
-      if (
-        (fromUnit === 'SAT' && !isInverted) ||
-        (toUnit === 'SAT' && isInverted)
-      ) {
-        rate = rate / SATOSHIS_PER_BTC
-      }
-
-      // Apply inversion if needed
-      rate = isInverted ? 1 / rate : rate;
-
-      const formattedRate = new Intl.NumberFormat('en-US', {
-        maximumFractionDigits: precision > 4 ? precision : 4,
-        minimumFractionDigits: precision,
-        useGrouping: true,
-      }).format(
-        parseFloat(
-          (rate / Math.pow(10, precision)).toFixed(
-            precision > 4 ? precision : 4
-          )
-        )
-      )
-
-      return (
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-white font-medium">1</span>
-            <AssetOption ticker={fromUnit} />
-          </div>
-          <span className="text-slate-400">=</span>
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`text-white font-medium ${priceUpdated ? 'text-update-flash' : ''}`}
-            >
-              {formattedRate}
-            </span>
-            <AssetOption ticker={toUnit} />
-          </div>
-        </div>
-      )
-    },
-    [bitcoinUnit, getAssetPrecision, priceUpdated]
-  )
-
-  const displayRate = calculateAndFormatRate(
-    fromAsset,
-    toAsset,
-    price,
-    selectedPair
+  const displayRate = (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-white font-medium">1</span>
+        <AssetOption ticker={fromDisplayAsset} />
+      </div>
+      <span className="text-slate-400">=</span>
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`text-white font-medium ${priceUpdated ? 'text-update-flash' : ''}`}
+        >
+          {calculateAndFormatRate(
+            fromAsset,
+            toAsset,
+            price,
+            selectedPair,
+            bitcoinUnit,
+            getAssetPrecision
+          )}
+        </span>
+        <AssetOption ticker={toDisplayAsset} />
+      </div>
+    </div>
   )
 
   return <div className="flex-1 text-base">{displayRate}</div>
@@ -131,7 +104,7 @@ interface ExchangeRateSectionProps {
   bitcoinUnit: string
   formatAmount: (amount: number, asset: string) => string
   getAssetPrecision: (asset: string) => number
-  onReconnect?: () => void
+  assets?: NiaAsset[]
 }
 
 export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
@@ -143,7 +116,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   bitcoinUnit,
   formatAmount,
   getAssetPrecision,
-  onReconnect,
+  assets = [],
 }) => {
   const [showPriceUpdate, setShowPriceUpdate] = useState(false)
   const [prevPrice, setPrevPrice] = useState<number | null>(null)
@@ -153,8 +126,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   const [showTimestampOverlay, setShowTimestampOverlay] = useState(false)
   const [formattedTimeDiff, setFormattedTimeDiff] = useState<string>('')
   const [isPriceFresh, setIsPriceFresh] = useState(true)
-  const [isReconnecting, setIsReconnecting] = useState(false)
-  const autoReconnectTimeoutRef = useRef<number | null>(null)
 
   // Store the previous price in a ref to detect changes
   const prevPriceRef = useRef<number | null>(null)
@@ -176,7 +147,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       setShowPriceUpdate(true)
       setLastQuoteTimestamp(Date.now())
       setIsPriceFresh(true)
-      setIsReconnecting(false)
 
       // Reset animation after it completes
       const timer = setTimeout(() => {
@@ -187,11 +157,14 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
     }
 
     // Check if the price changed (new quote received)
-    if (prevStoredPrice !== null && currentPrice !== null && prevStoredPrice !== currentPrice) {
+    if (
+      prevStoredPrice !== null &&
+      currentPrice !== null &&
+      prevStoredPrice !== currentPrice
+    ) {
       // If the price changed, update the timestamp
       setLastQuoteTimestamp(Date.now())
       setIsPriceFresh(true)
-      setIsReconnecting(false)
     }
 
     // Update previous price and set initial timestamp if first load
@@ -203,28 +176,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       }
     }
   }, [price, prevPrice, lastQuoteTimestamp])
-
-  // Auto-reconnect logic when price gets stale
-  useEffect(() => {
-    if (
-      !isPriceFresh &&
-      !isReconnecting &&
-      autoReconnectTimeoutRef.current === null
-    ) {
-      // Wait for 10 seconds before attempting an automatic reconnection
-      autoReconnectTimeoutRef.current = setTimeout(() => {
-        handleReconnect()
-        autoReconnectTimeoutRef.current = null
-      }, 10000)
-    }
-
-    return () => {
-      if (autoReconnectTimeoutRef.current) {
-        clearTimeout(autoReconnectTimeoutRef.current)
-        autoReconnectTimeoutRef.current = null
-      }
-    }
-  }, [isPriceFresh, isReconnecting])
 
   // Update the formatted time difference every second and check price freshness
   useEffect(() => {
@@ -247,20 +198,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
 
     return () => clearInterval(intervalId)
   }, [lastQuoteTimestamp])
-
-  const handleReconnect = () => {
-    if (onReconnect && !isReconnecting) {
-      setIsReconnecting(true)
-      onReconnect()
-
-      // Reset reconnecting state after a timeout if it doesn't succeed
-      setTimeout(() => {
-        if (!isPriceFresh) {
-          setIsReconnecting(false)
-        }
-      }, 5000)
-    }
-  }
 
   if (!selectedPair) return null
 
@@ -305,20 +242,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
             </div>
 
             <span>{isPriceFresh ? 'Live Price' : 'Price Not Updated'}</span>
-
-            {/* Refresh button when price is not fresh */}
-            {!isPriceFresh && onReconnect && (
-              <button
-                className="ml-2 p-1 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors"
-                disabled={isReconnecting}
-                onClick={handleReconnect}
-                title="Reconnect to price feed"
-              >
-                <RefreshCw
-                  className={`w-3 h-3 text-white ${isReconnecting ? 'animate-spin' : ''}`}
-                />
-              </button>
-            )}
           </div>
         </div>
 
@@ -333,6 +256,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
           ) : (
             <div className="flex-1 flex items-center justify-between">
               <ExchangeRateDisplay
+                assets={assets}
                 bitcoinUnit={bitcoinUnit}
                 formatAmount={formatAmount}
                 fromAsset={fromAsset}

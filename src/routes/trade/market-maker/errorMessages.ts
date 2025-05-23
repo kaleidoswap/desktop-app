@@ -1,5 +1,9 @@
+import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+
+import { mapAssetIdToTicker, isAssetId } from './assetUtils'
+
 /**
- * Generates validation error messages for the swap form
+ * Gets a validation error message for the current form state
  */
 export const getValidationError = (
   fromAmount: number,
@@ -11,53 +15,75 @@ export const getValidationError = (
   fromAsset: string,
   toAsset: string,
   formatAmount: (amount: number, asset: string) => string,
-  displayAsset: (asset: string) => string
+  displayAsset: (asset: string) => string,
+  assets: NiaAsset[] = []
 ): string | null => {
-  // Check for zero amounts when a swap is attempted
-  if (fromAmount === 0 || toAmount === 0) {
-    return 'Cannot swap zero amounts. Please enter a valid amount.'
+  // Convert asset IDs to tickers for display in error messages
+  const fromDisplayAsset =
+    isAssetId(fromAsset) && assets.length > 0
+      ? mapAssetIdToTicker(fromAsset, assets)
+      : fromAsset
+
+  const toDisplayAsset =
+    isAssetId(toAsset) && assets.length > 0
+      ? mapAssetIdToTicker(toAsset, assets)
+      : toAsset
+
+  // Zero amounts
+  if (fromAmount === 0) {
+    return 'Please enter an amount to send.'
   }
 
-  // Validate from amount against minimum requirement
-  if (fromAmount > 0 && fromAmount < minFromAmount) {
-    return `The amount you're trying to send (${formatAmount(
-      fromAmount,
-      fromAsset
-    )} ${displayAsset(fromAsset)}) is too small. Minimum required: ${formatAmount(
+  if (toAmount === 0) {
+    return 'The received amount cannot be zero. Try a different amount.'
+  }
+
+  // Minimum amount check
+  if (fromAmount < minFromAmount) {
+    return `The minimum order size is ${formatAmount(
       minFromAmount,
-      fromAsset
-    )} ${displayAsset(fromAsset)}`
+      fromDisplayAsset
+    )} ${displayAsset(fromDisplayAsset)}.`
   }
 
-  // Validate from amount against maximum limit
+  // Maximum amount check
   if (fromAmount > maxFromAmount) {
-    return `Insufficient balance. You're trying to send ${formatAmount(
-      fromAmount,
-      fromAsset
-    )} ${displayAsset(fromAsset)}, but you only have ${formatAmount(
+    return `You can only send up to ${formatAmount(
       maxFromAmount,
-      fromAsset
-    )} ${displayAsset(fromAsset)} available.`
+      fromDisplayAsset
+    )} ${displayAsset(fromDisplayAsset)}.`
   }
 
-  // Validate to amount against maximum limit
   if (toAmount > maxToAmount) {
-    return `The amount you're trying to receive (${formatAmount(
-      toAmount,
-      toAsset
-    )} ${displayAsset(toAsset)}) exceeds the maximum receivable amount. Maximum: ${formatAmount(
+    return `You can only receive up to ${formatAmount(
       maxToAmount,
-      toAsset
-    )} ${displayAsset(toAsset)}`
+      toDisplayAsset
+    )} ${displayAsset(toDisplayAsset)}.`
   }
 
-  // Validate against HTLC limit for BTC
+  // HTLC limit for BTC
   if (fromAsset === 'BTC' && fromAmount > maxOutboundHtlcSat) {
-    return `The amount exceeds the maximum HTLC limit. Maximum: ${formatAmount(
+    return `Due to channel constraints, you can only send up to ${formatAmount(
       maxOutboundHtlcSat,
-      fromAsset
-    )} ${displayAsset(fromAsset)}`
+      'BTC'
+    )} ${displayAsset('BTC')} in a single transaction.`
   }
 
   return null
+}
+
+/**
+ * Gets a specific validation error for a given field
+ * @param field The field name
+ * @param errors The current validation errors
+ */
+export const getFieldError = (
+  field: string,
+  errors: Record<string, any>
+): string => {
+  if (!errors[field]) {
+    return ''
+  }
+
+  return errors[field].message
 }

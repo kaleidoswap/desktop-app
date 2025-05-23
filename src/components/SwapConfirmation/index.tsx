@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import React from 'react'
 
+import { calculateAndFormatRate } from '../../helpers/number'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { AssetOption } from '../Trade'
 
@@ -15,7 +16,6 @@ interface SwapConfirmationProps {
   exchangeRate: number
   selectedPair: TradingPair | null
   bitcoinUnit: string
-  formatAmount: (amount: number, asset: string) => string
   getAssetPrecision: (asset: string) => number
   isLoading?: boolean
 }
@@ -29,8 +29,9 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
   toAmount,
   toAsset,
   exchangeRate,
+  selectedPair,
   bitcoinUnit,
-  formatAmount,
+  getAssetPrecision,
   isLoading = false,
 }) => {
   if (!isOpen) return null
@@ -92,7 +93,14 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
                 <span className="text-slate-400">=</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-white font-medium">
-                    {formatAmount(exchangeRate, toAsset)}
+                    {calculateAndFormatRate(
+                      fromAsset,
+                      toAsset,
+                      exchangeRate,
+                      selectedPair,
+                      bitcoinUnit,
+                      getAssetPrecision
+                    )}
                   </span>
                   <AssetOption ticker={getDisplayAsset(toAsset)} />
                 </div>

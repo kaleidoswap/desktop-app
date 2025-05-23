@@ -4,6 +4,8 @@ import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
 import { Channel, NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../utils/logger'
 
+const MSATS_PER_SAT = 1000
+
 /**
  * Finds a complementary asset for a given asset from available trading pairs
  */
@@ -239,29 +241,36 @@ export const getAvailableAssets = (
  * Creates a handler for fetching and setting trading pairs
  */
 export const createFetchAndSetPairsHandler = (
-  getPairs: any,
-  dispatch: any,
-  getAvailableAssets: () => string[],
+  getPairs: () => Promise<{ data?: { pairs: TradingPair[] } }>,
+  dispatch: (action: any) => void,
+  getAvailableAssetsParam: () => string[],
   form: any,
   formatAmount: (amount: number, asset: string) => string,
-  setTradingPairs: (pairs: any[]) => void,
+  setTradingPairs: (pairs: TradingPair[]) => void,
   setTradablePairs: (pairs: TradingPair[]) => void,
   setSelectedPair: (pair: TradingPair | null) => void
 ) => {
   return async () => {
     try {
       const getPairsResponse = await getPairs()
-      if (!('data' in getPairsResponse) || !getPairsResponse.data) {
-        throw new Error('Failed to fetch trading pairs data')
+      if (
+        !('data' in getPairsResponse) ||
+        !getPairsResponse.data ||
+        !getPairsResponse.data.pairs
+      ) {
+        throw new Error(
+          'Failed to fetch trading pairs data or data is malformed'
+        )
       }
 
-      dispatch(setTradingPairs(getPairsResponse.data.pairs))
-      const availableAssets = getAvailableAssets()
+      const allPairs: TradingPair[] = getPairsResponse.data.pairs
+      dispatch(setTradingPairs(allPairs))
 
-      // Filter pairs where at least one asset is in user's channels or is BTC
-      const filteredPairs = getPairsResponse.data.pairs.filter(
+      const availableAssets = getAvailableAssetsParam()
+
+      const filteredPairs = allPairs.filter(
         (pair: TradingPair) =>
-          availableAssets.includes(pair.base_asset) ||
+          availableAssets.includes(pair.base_asset) &&
           availableAssets.includes(pair.quote_asset)
       )
 
@@ -289,7 +298,11 @@ export const createFetchAndSetPairsHandler = (
       form.setValue('toAsset', toAsset)
 
       // Set initial amount to minimum order size
-      const defaultMinAmount = selectedPair.min_order_size
+      let defaultMinAmount = selectedPair.min_base_order_size
+      // Convert from millisats to sats for BTC
+      if (fromAsset === 'BTC') {
+        defaultMinAmount = defaultMinAmount / MSATS_PER_SAT
+      }
       const formattedAmount = formatAmount(defaultMinAmount, fromAsset)
       form.setValue('from', formattedAmount)
 
@@ -301,4 +314,85 @@ export const createFetchAndSetPairsHandler = (
       toast.error('Failed to fetch trading pairs')
     }
   }
+}
+
+/**
+ * Maps an asset ID to its ticker symbol
+ * This is crucial for UI display, as users should see tickers not asset IDs
+ *
+ * @param assetId The full asset ID (e.g., "rgb:Dg!Mttpk-NSLmSJF-iDdTsdE-mnAg5$V-KqWib!Y-kkWETBE")
+ * @param assets List of assets to map from
+ * @returns The ticker symbol (e.g., "USDT") or a shortened version of the asset ID if not found
+ */
+export const mapAssetIdToTicker = (
+  assetId: string,
+  assets: NiaAsset[]
+): string => {
+  // Return BTC as is
+  if (assetId === 'BTC') {
+    return assetId
+  }
+
+  // Try to find the asset in the assets list
+  const asset = assets.find((a) => a.asset_id === assetId)
+  if (asset && asset.ticker) {
+    return asset.ticker
+  }
+
+  // If we can't find a mapping, create a shortened display version
+  if (assetId.startsWith('rgb:')) {
+    // Display just "RGB" and first 6 chars to keep it manageable
+    return `RGB:${assetId.slice(4, 10)}...`
+  }
+
+  // For any other asset type, shorten display
+  return `${assetId.slice(0, 10)}...`
+}
+
+/**
+ * Maps a ticker symbol to its full asset ID
+ * This is needed for WebSocket communication where we must use asset IDs
+ *
+ * @param ticker The ticker symbol (e.g., "USDT")
+ * @param assets List of assets to map from
+ * @returns The full asset ID or the original ticker if not found
+ */
+export const mapTickerToAssetId = (
+  ticker: string,
+  assets: NiaAsset[]
+): string => {
+  // Return BTC as is
+  if (ticker === 'BTC' || ticker === 'SAT') {
+    return 'BTC'
+  }
+
+  // Try to find the asset in the assets list
+  const asset = assets.find((a) => a.ticker === ticker)
+  if (asset && asset.asset_id) {
+    return asset.asset_id
+  }
+
+  // If we can't find a mapping, return the ticker (may be an asset ID already)
+  return ticker
+}
+
+/**
+ * Checks if a string is likely an asset ID rather than a ticker
+ * Used to determine if we need to convert for display
+ *
+ * @param assetString The string to check
+ * @returns True if it appears to be an asset ID
+ */
+export const isAssetId = (assetString: string): boolean => {
+  // RGB assets start with "rgb:"
+  if (assetString.startsWith('rgb:')) {
+    return true
+  }
+
+  // Asset IDs tend to be long
+  if (assetString.length > 20) {
+    return true
+  }
+
+  return false
 }

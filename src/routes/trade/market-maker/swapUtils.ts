@@ -101,8 +101,7 @@ export const createSwapExecutor = (
   execSwap: any,
   setSwapRecapDetails: (details: SwapDetails) => void,
   setShowRecap: (show: boolean) => void,
-  setErrorMessage: (message: string | null) => void,
-  setIsSwapInProgress: (inProgress: boolean) => void
+  setErrorMessage: (message: string | null) => void
 ) => {
   return async (data: Fields): Promise<void> => {
     let toastId: string | number | null = null
@@ -110,17 +109,23 @@ export const createSwapExecutor = (
     let errorMessage: string | null = null
 
     const clearToastAndTimeout = () => {
-      if (toastId !== null) {
-        toast.dismiss(toastId)
+      try {
+        if (toastId !== null) {
+          toast.dismiss(toastId)
+        }
+      } catch (e) {
+        logger.error('Error dismissing toast:', e)
       }
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId)
+      try {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId)
+        }
+      } catch (e) {
+        logger.error('Error clearing timeout:', e)
       }
-      setIsSwapInProgress(false)
     }
 
     try {
-      setIsSwapInProgress(true)
       toastId = toast.loading('(1/3) Initializing swap...', {
         autoClose: false,
       })
@@ -291,7 +296,6 @@ export const createSwapExecutor = (
         pauseOnHover: true,
       })
 
-      setIsSwapInProgress(false)
       if (timeoutId !== null) {
         clearTimeout(timeoutId)
         timeoutId = null
