@@ -27,7 +27,6 @@ import {
   getAssetPrecision,
   formatAssetAmountWithPrecision,
   parseAssetAmountWithPrecision,
-  calculateExchangeRate,
   getDisplayAsset,
   satToMsat,
 } from '../../../helpers/number'
@@ -139,7 +138,9 @@ export const Component = () => {
   const [tradablePairs, setTradablePairs] = useState<TradingPair[]>([])
   const [selectedPair, setSelectedPair] = useState<TradingPair | null>(null)
   const [pubKey, setPubKey] = useState('')
-  const [selectedSize, setSelectedSize] = useState(100)
+  const [selectedSize, setSelectedSize] = useState<number | undefined>(
+    undefined
+  )
   const [hasEnoughBalance, setHasEnoughBalance] = useState(true)
 
   const [minFromAmount, setMinFromAmount] = useState(0)
@@ -159,8 +160,13 @@ export const Component = () => {
   })
 
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false)
+  const [isPairsLoading, setIsPairsLoading] = useState(true)
+  const [isChannelsLoaded, setIsChannelsLoaded] = useState(false)
+  const [isAssetsLoaded, setIsAssetsLoaded] = useState(false)
   const [hasValidChannelsForTrading, setHasValidChannelsForTrading] =
     useState(false)
+  const [isWebSocketInitialized, setIsWebSocketInitialized] = useState(false)
   const [debouncedFromAmount, setDebouncedFromAmount] = useState('')
 
   const [showRecap, setShowRecap] = useState<boolean>(false)
@@ -189,6 +195,109 @@ export const Component = () => {
     return pendingOrWaitingMaker || pendingOrWaitingTaker
   }, [swapsData])
 
+  // Track successful swaps and show toast notifications
+  const previousSwapsRef = useRef<typeof swapsData>()
+
+  useEffect(() => {
+    if (!swapsData) {
+      previousSwapsRef.current = swapsData
+      return
+    }
+
+    const prevSwaps = previousSwapsRef.current
+    if (!prevSwaps) {
+      previousSwapsRef.current = swapsData
+      return
+    }
+
+    const currentSwaps = swapsData
+
+    // Check for newly succeeded swaps in both maker and taker arrays
+    const checkForSuccessfulSwaps = (
+      prevSwapArray: any[],
+      currentSwapArray: any[],
+      swapType: 'maker' | 'taker'
+    ) => {
+      currentSwapArray.forEach((currentSwap) => {
+        const prevSwap = prevSwapArray.find(
+          (swap) => swap.payment_hash === currentSwap.payment_hash
+        )
+
+        // Check if swap status changed to succeeded
+        if (
+          prevSwap &&
+          prevSwap.status !== SwapStatus.Succeeded &&
+          currentSwap.status === SwapStatus.Succeeded
+        ) {
+          // Create a more detailed success message
+          const getAssetTicker = (assetId: string | null) => {
+            if (!assetId || assetId === 'BTC') return 'BTC'
+            const asset = assets.find((a) => a.asset_id === assetId)
+            return asset?.ticker || assetId.slice(0, 8) + '...'
+          }
+
+          const fromTicker = getAssetTicker(currentSwap.from_asset)
+          const toTicker = getAssetTicker(currentSwap.to_asset)
+
+          let message = `Swap completed successfully! ${swapType === 'maker' ? 'Made' : 'Took'} trade`
+
+          // Add asset details if available
+          if (currentSwap.qty_from && currentSwap.qty_to) {
+            // Format amounts properly
+            let formattedFromAmount = currentSwap.qty_from
+            let formattedToAmount = currentSwap.qty_to
+
+            // Handle BTC conversion from millisats to sats if needed
+            if (currentSwap.from_asset === 'BTC' || fromTicker === 'BTC') {
+              formattedFromAmount = Math.round(
+                currentSwap.qty_from / MSATS_PER_SAT
+              )
+            }
+            if (currentSwap.to_asset === 'BTC' || toTicker === 'BTC') {
+              formattedToAmount = Math.round(currentSwap.qty_to / MSATS_PER_SAT)
+            }
+
+            // Use formatAmount to add proper number formatting with commas
+            const displayFromAmount = formatAmount(
+              formattedFromAmount,
+              fromTicker
+            )
+            const displayToAmount = formatAmount(formattedToAmount, toTicker)
+
+            // Get display asset names (handles SAT vs BTC based on user preference)
+            const displayFromAsset = displayAsset(fromTicker)
+            const displayToAsset = displayAsset(toTicker)
+
+            message += ` - ${displayFromAmount} ${displayFromAsset} → ${displayToAmount} ${displayToAsset}`
+          }
+
+          message += ` (${currentSwap.payment_hash.slice(0, 8)}...)`
+
+          // Show success toast
+          toast.success(message, {
+            autoClose: 5000,
+            closeOnClick: true,
+            draggable: true,
+            hideProgressBar: false,
+            pauseOnHover: true,
+            position: 'top-right',
+          })
+
+          logger.info(
+            `Swap ${currentSwap.payment_hash} completed successfully as ${swapType}`
+          )
+        }
+      })
+    }
+
+    // Check both maker and taker swaps
+    checkForSuccessfulSwaps(prevSwaps.maker, currentSwaps.maker, 'maker')
+    checkForSuccessfulSwaps(prevSwaps.taker, currentSwaps.taker, 'taker')
+
+    // Update the ref with current data
+    previousSwapsRef.current = swapsData
+  }, [swapsData, assets])
+
   const makerConnectionUrl = useAppSelector(
     (state) => state.nodeSettings.data.default_maker_url
   )
@@ -209,9 +318,8 @@ export const Component = () => {
   // Create a ref to track the quote response
   const lastQuoteResponseRef = useRef<any>(null)
   const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
-  const [loadingResetKey, setLoadingResetKey] = useState(0)
 
-  // Get the quote response from Redux based on our current form values
+  // Optimize the quote response selector to prevent unnecessary updates
   const quoteResponse = useAppSelector((state) => {
     const fromAsset = form.getValues().fromAsset
     const toAsset = form.getValues().toAsset
@@ -263,80 +371,89 @@ export const Component = () => {
       }
     }
 
-    // If we have a new quote that's different from the last one, track it
-    if (
-      quote &&
-      (!lastQuoteResponseRef.current ||
-        quote.to_amount !== lastQuoteResponseRef.current.to_amount ||
-        quote.timestamp !== lastQuoteResponseRef.current.timestamp)
-    ) {
-      lastQuoteResponseRef.current = quote
+    return quote
+  })
 
-      // Avoid calling setState during render by using requestAnimationFrame
+  // Process quote response updates in a separate effect to batch state updates
+  useEffect(() => {
+    if (!quoteResponse) return
+
+    // Check if this is a new quote that's different from the last one
+    const isNewQuote =
+      !lastQuoteResponseRef.current ||
+      quoteResponse.to_amount !== lastQuoteResponseRef.current.to_amount ||
+      quoteResponse.timestamp !== lastQuoteResponseRef.current.timestamp
+
+    if (isNewQuote) {
+      lastQuoteResponseRef.current = quoteResponse
+
+      // Use requestAnimationFrame to batch updates and prevent render loops
       window.requestAnimationFrame(() => {
         setQuoteResponseTimestamp(Date.now())
         setIsToAmountLoading(false)
         setIsPriceLoading(false)
+        setIsQuoteLoading(false) // Clear quote loading when we receive a response
 
         // Update the price from the quote
-        if (quote.price) {
-          setCurrentPrice(quote.price)
-          logger.debug(`Updated price to: ${quote.price}`)
+        if (quoteResponse.price) {
+          setCurrentPrice(quoteResponse.price)
+          logger.debug(`Updated price to: ${quoteResponse.price}`)
         }
 
         // Update the fees
-        if (quote.fee) {
+        if (quoteResponse.fee) {
           setFees({
-            baseFee: quote.fee.base_fee,
-            feeRate: quote.fee.fee_rate,
-            totalFee: quote.fee.final_fee,
-            variableFee: quote.fee.variable_fee,
+            baseFee: quoteResponse.fee.base_fee,
+            feeRate: quoteResponse.fee.fee_rate,
+            totalFee: quoteResponse.fee.final_fee,
+            variableFee: quoteResponse.fee.variable_fee,
           })
           logger.debug(
-            `Updated fees: base=${quote.fee.base_fee}, rate=${quote.fee.fee_rate}, total=${quote.fee.final_fee}`
+            `Updated fees: base=${quoteResponse.fee.base_fee}, rate=${quoteResponse.fee.fee_rate}, total=${quoteResponse.fee.final_fee}`
           )
         }
 
         // Update quote validity tracking
         setHasValidQuote(true)
-        setQuoteExpiresAt(quote.expires_at || null)
+        setQuoteExpiresAt(quoteResponse.expires_at || null)
 
         // Format and update the 'to' field with the received amount
-        const toTickerForUI = mapAssetIdToTicker(quote.to_asset, assets)
+        const toTickerForUI = mapAssetIdToTicker(quoteResponse.to_asset, assets)
 
         // If to_asset is BTC, convert from millisats to sats
-        let displayToAmount = quote.to_amount
-        if (quote.to_asset === 'BTC' || toTickerForUI === 'BTC') {
+        let displayToAmount = quoteResponse.to_amount
+        if (quoteResponse.to_asset === 'BTC' || toTickerForUI === 'BTC') {
           displayToAmount = Math.round(displayToAmount / MSATS_PER_SAT)
           logger.debug(
-            `Converting BTC to_amount from ${quote.to_amount} millisats to ${displayToAmount} sats`
+            `Converting BTC to_amount from ${quoteResponse.to_amount} millisats to ${displayToAmount} sats`
           )
         }
 
         const formattedToAmount = formatAmount(displayToAmount, toTickerForUI)
+
         form.setValue('to', formattedToAmount)
 
+        logger.debug(
+          `Setting 'to' form value to ${formattedToAmount} (raw: ${quoteResponse.to_amount})`
+        )
+
         // Important: Save the RFQ ID from the quote to use when executing the swap
-        if (quote.rfq_id) {
-          form.setValue('rfq_id', quote.rfq_id)
-          logger.debug(`Saved RFQ ID: ${quote.rfq_id} for later swap execution`)
+        if (quoteResponse.rfq_id) {
+          form.setValue('rfq_id', quoteResponse.rfq_id)
+          logger.debug(
+            `Saved RFQ ID: ${quoteResponse.rfq_id} for later swap execution`
+          )
         }
 
         logger.debug(
-          `Setting 'to' form value to ${formattedToAmount} (raw: ${quote.to_amount})`
+          `New quote received: ${quoteResponse.to_amount}, updating UI`
         )
 
         // Clear any validation errors if we got a valid quote
         setErrorMessage(null)
       })
-
-      logger.debug(
-        `New quote received for ${key}: ${quote.to_amount}, updating UI`
-      )
     }
-
-    return quote
-  })
+  }, [quoteResponse, form, assets])
 
   // Add state for quote validity tracking
   const [hasValidQuote, setHasValidQuote] = useState(false)
@@ -386,6 +503,14 @@ export const Component = () => {
     }
   )
 
+  // Track when assets data is loaded from the query
+  useEffect(() => {
+    if (assetsData && assetsData.nia) {
+      setAssets(assetsData.nia)
+      setIsAssetsLoaded(true)
+    }
+  }, [assetsData])
+
   const getAssetPrecisionWrapper = useCallback(
     (asset: string): number => {
       return getAssetPrecision(asset, bitcoinUnit, assets)
@@ -428,100 +553,11 @@ export const Component = () => {
     [assets, bitcoinUnit]
   )
 
-  // Add updateToAmount implementation
-  const updateToAmount = useCallback(
-    (amount: number, asset: string) => {
-      const formattedAmount = formatAmount(amount, asset)
-      form.setValue('to', formattedAmount)
-      // Reset loading state
-      setIsToAmountLoading(false)
-      // Increment loading reset key to force re-render of to-field
-      setLoadingResetKey((prev) => prev + 1)
-    },
-    [form, formatAmount]
-  )
-
-  // Add a dedicated effect to process the quote response and update the RFQ ID
-  useEffect(() => {
-    if (quoteResponse && quoteResponseTimestamp > 0) {
-      setIsPriceLoading(false)
-      setIsToAmountLoading(false)
-
-      // Use updateToAmount to set the quoted amount
-      if (quoteResponse.to_amount) {
-        let toAmount = quoteResponse.to_amount
-
-        // If to_asset is BTC, convert from millisats to sats
-        if (
-          quoteResponse.to_asset === 'BTC' ||
-          form.getValues().toAsset === 'BTC'
-        ) {
-          toAmount = Math.round(toAmount / MSATS_PER_SAT)
-          logger.debug(
-            `Converting BTC to_amount from ${quoteResponse.to_amount} millisats to ${toAmount} sats`
-          )
-        }
-
-        updateToAmount(toAmount, form.getValues().toAsset)
-
-        // Check if the quoted amount exceeds maximum receivable amount
-        if (toAmount > maxToAmount) {
-          const formattedMaxToAmount = formatAmount(
-            maxToAmount,
-            form.getValues().toAsset
-          )
-          const displayedAsset = displayAsset(form.getValues().toAsset)
-          const errorMsg = `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
-          logger.warn(
-            `Quote exceeds maximum receivable amount: ${toAmount} > ${maxToAmount}`
-          )
-          setErrorMessage(errorMsg)
-        } else {
-          // Clear any error message about exceeding maximum receivable amount if it exists
-          const currentErrorMessage = errorMessage || ''
-          if (currentErrorMessage.includes(`You can only receive up to`)) {
-            setErrorMessage(null)
-          }
-        }
-      }
-
-      // Always update the RFQ ID from the current quote to ensure we have the latest
-      if (quoteResponse.rfq_id) {
-        form.setValue('rfq_id', quoteResponse.rfq_id)
-      }
-    }
-  }, [
-    quoteResponseTimestamp,
-    quoteResponse,
-    form,
-    updateToAmount,
-    maxToAmount,
-    formatAmount,
-    displayAsset,
-    errorMessage,
-  ])
-
   // Update quote request handler
   const requestQuote = useMemo(
     () => createQuoteRequestHandler(form, parseAssetAmount, assets),
     [form, parseAssetAmount, assets]
   )
-
-  // Calculate rate using a memoized function
-  const calculateRate = useCallback(() => {
-    if (currentPrice !== null && selectedPair) {
-      const isCurrentPairInverted = isPairInverted(
-        form.getValues().fromAsset,
-        form.getValues().toAsset
-      )
-      return calculateExchangeRate(
-        currentPrice,
-        1, // Size doesn't matter for rate calculation
-        isCurrentPairInverted
-      )
-    }
-    return 1
-  }, [currentPrice, selectedPair, form, isPairInverted])
 
   // Replace the original setFromAmount function with the enhanced one
   const setFromAmount = useCallback(
@@ -546,7 +582,9 @@ export const Component = () => {
     const handler = createSizeClickHandler(form, maxFromAmount, setFromAmount)
     return (size: number) => {
       setSelectedSize(size) // Use setSelectedSize when size is clicked
-      return handler(size)
+      // When a size button is clicked, we explicitly pass the size percentage
+      // to setFromAmount so it can also update the selectedSize state.
+      return handler(size, size)
     }
   }, [form, maxFromAmount, setFromAmount])
 
@@ -666,7 +704,10 @@ export const Component = () => {
 
       // If there's no fromAmount set, initialize it with a reasonable default value
       const currentFromAmount = form.getValues().from
-      if (!currentFromAmount || parseFloat(currentFromAmount) === 0) {
+      if (
+        !currentFromAmount ||
+        parseFloat(currentFromAmount.replace(/,/g, '')) === 0
+      ) {
         // Use 25% of max as a reasonable starting amount
         const maxFromAmount = newMaxFromAmount / 1000
         const initialAmount = Math.min(
@@ -680,7 +721,7 @@ export const Component = () => {
         // Format and set the initial amount
         const formattedAmount = formatAmount(initialAmount, fromAsset)
         form.setValue('from', formattedAmount, { shouldValidate: true })
-        setSelectedSize(25) // Set to 25% by default
+        // setSelectedSize(25) // Set to 25% by default // REMOVE THIS LINE
 
         // Request a quote with this initial amount
         setTimeout(() => requestQuote(), 100)
@@ -714,7 +755,7 @@ export const Component = () => {
           `Setting initial "from" amount to ${formattedAmount} ${fromAsset}`
         )
         form.setValue('from', formattedAmount, { shouldValidate: true })
-        setSelectedSize(25) // Set to 25% by default
+        // setSelectedSize(25) // Set to 25% by default // REMOVE THIS LINE
 
         // Request a quote with this initial amount
         setTimeout(() => requestQuote(), 100)
@@ -883,35 +924,35 @@ export const Component = () => {
     ]
   )
 
-  // Update error message when amounts change
+  // Update error message when amounts change - use subscription instead of watch
   useEffect(() => {
-    const fromAmount = parseAssetAmount(
-      form.watch('from'),
-      form.watch('fromAsset')
-    )
-    const toAmount = parseAssetAmount(form.watch('to'), form.watch('toAsset'))
+    const subscription = form.watch((value) => {
+      const fromAmount = parseAssetAmount(
+        value.from || '',
+        value.fromAsset || ''
+      )
+      const toAmount = parseAssetAmount(value.to || '', value.toAsset || '')
 
-    // Use our utility function to generate error messages
-    const errorMsg = getValidationError(
-      fromAmount,
-      toAmount,
-      minFromAmount,
-      maxFromAmount,
-      maxToAmount,
-      max_outbound_htlc_sat,
-      form.watch('fromAsset'),
-      form.watch('toAsset'),
-      formatAmount,
-      displayAsset,
-      assets
-    )
+      // Use our utility function to generate error messages
+      const errorMsg = getValidationError(
+        fromAmount,
+        toAmount,
+        minFromAmount,
+        maxFromAmount,
+        maxToAmount,
+        max_outbound_htlc_sat,
+        value.fromAsset || '',
+        value.toAsset || '',
+        formatAmount,
+        displayAsset,
+        assets
+      )
 
-    setErrorMessage(errorMsg)
+      setErrorMessage(errorMsg)
+    })
+
+    return () => subscription.unsubscribe()
   }, [
-    form.watch('from'),
-    form.watch('to'),
-    form.watch('fromAsset'),
-    form.watch('toAsset'),
     minFromAmount,
     maxFromAmount,
     maxToAmount,
@@ -920,6 +961,7 @@ export const Component = () => {
     formatAmount,
     displayAsset,
     assets,
+    form,
   ])
 
   // Create handler for asset changes
@@ -940,18 +982,25 @@ export const Component = () => {
         formatAmount,
         setTradingPairs,
         setTradablePairs,
-        setSelectedPair
+        setSelectedPair,
+        setIsPairsLoading
       ),
     [getPairs, dispatch, getAvailableAssets, form, formatAmount]
   )
 
   // Initialize WebSocket connection
   useEffect(() => {
+    // Skip if already initialized to prevent multiple initializations
+    if (isWebSocketInitialized) {
+      return
+    }
+
     // Skip if no maker URL is provided
     if (!makerConnectionUrl) {
-      logger.warn(
+      logger.info(
         'No maker connection URL provided. WebSocket initialization skipped.'
       )
+      setIsWebSocketInitialized(true) // Mark as initialized (skipped)
       return
     }
 
@@ -981,6 +1030,7 @@ export const Component = () => {
         logger.warn(
           'No tradable channels with assets found. WebSocket initialization skipped.'
         )
+        setIsWebSocketInitialized(true) // Also mark as initialized if skipped due to no tradable assets
         return
       }
 
@@ -1029,13 +1079,40 @@ export const Component = () => {
       } finally {
         if (isMounted) {
           setIsLoading(false)
+          setIsWebSocketInitialized(true) // CRITICAL: Mark as initialized here
         }
       }
     }
 
-    // Initialize WebSocket if we have channels and assets data
-    if (channels.length > 0 && assets.length > 0) {
+    // Initialize WebSocket if we have channels and assets data, and a pubkey
+    // Adding pubKey to the condition as it's used for clientId
+    // Also check if we have tradable pairs available before attempting WebSocket connection
+    if (
+      channels.length > 0 &&
+      assets.length > 0 &&
+      pubKey &&
+      tradablePairs.length > 0
+    ) {
       initWebSocket()
+    } else if (channels.length > 0 && assets.length > 0 && !pubKey) {
+      // If pubKey is not yet available but other conditions are met,
+      // still mark WebSocket as initialized to not block UI indefinitely.
+      // This might happen if nodeInfo takes longer but we don't want to hang.
+      logger.warn(
+        'pubKey not available for WebSocket client ID, but proceeding to mark WS as initialized attempt.'
+      )
+      setIsWebSocketInitialized(true)
+    } else if (
+      channels.length > 0 &&
+      assets.length > 0 &&
+      pubKey &&
+      tradablePairs.length === 0
+    ) {
+      // If we have channels and assets but no tradable pairs, mark WebSocket as initialized (skipped)
+      logger.info(
+        'No tradable pairs available, skipping WebSocket initialization'
+      )
+      setIsWebSocketInitialized(true)
     }
 
     // Clean up function
@@ -1047,7 +1124,15 @@ export const Component = () => {
         'WebSocket initialization component unmounting - connection maintained by service'
       )
     }
-  }, [makerConnectionUrl, pubKey, dispatch, channels, assets, selectedPair])
+  }, [
+    makerConnectionUrl,
+    pubKey,
+    dispatch,
+    channels,
+    assets,
+    tradablePairs,
+    isWebSocketInitialized,
+  ])
 
   // Restore the effect to update min and max amounts when selected pair changes
   useEffect(() => {
@@ -1111,6 +1196,45 @@ export const Component = () => {
     }
   }, [fetchAndSetPairs, refreshAmounts])
 
+  // Handle maker URL changes - re-fetch pairs when maker changes
+  useEffect(() => {
+    // Only run if we have initial data loaded and a maker URL
+    if (isInitialDataLoaded && makerConnectionUrl) {
+      logger.info(
+        `Maker URL changed to: ${makerConnectionUrl}, resetting state and re-fetching trading pairs`
+      )
+
+      // Reset maker-specific state
+      setSelectedPair(null)
+      setCurrentPrice(null)
+      setFees({
+        baseFee: 0,
+        feeRate: 0,
+        totalFee: 0,
+        variableFee: 0,
+      })
+      setErrorMessage(null)
+      setIsToAmountLoading(true)
+      setIsPriceLoading(true)
+      setIsQuoteLoading(false)
+      setHasValidQuote(false)
+      setQuoteExpiresAt(null)
+      setQuoteAge(0)
+
+      // Reset min/max amounts since they're specific to the maker's pairs
+      setMinFromAmount(0)
+      setMaxFromAmount(0)
+      setMaxToAmount(0)
+
+      // Clear form amounts but keep assets
+      form.setValue('to', '')
+      form.setValue('rfq_id', '')
+
+      // Re-fetch trading pairs from the new maker
+      fetchAndSetPairs()
+    }
+  }, [makerConnectionUrl, isInitialDataLoaded, fetchAndSetPairs, form])
+
   // Fetch initial data
   useEffect(() => {
     const setup = async () => {
@@ -1145,6 +1269,7 @@ export const Component = () => {
         if ('data' in listChannelsResponse && listChannelsResponse.data) {
           const channelsList = listChannelsResponse.data.channels
           setChannels(channelsList)
+          setIsChannelsLoaded(true)
 
           // Check if there's at least one channel with a market maker supported asset
           const hasValidChannels = channelsList.some(
@@ -1166,11 +1291,13 @@ export const Component = () => {
 
         if (assetsData) {
           setAssets(assetsData.nia)
+          setIsAssetsLoaded(true)
         }
 
         await fetchAndSetPairs()
 
         logger.info('Initial data fetched successfully')
+        setIsInitialDataLoaded(true)
       } catch (error) {
         logger.error('Error during setup:', error)
         toast.error(
@@ -1233,53 +1360,64 @@ export const Component = () => {
     requestQuote,
   ])
 
-  // Update effect to request quote when from amount changes
+  // Update effect to request quote when from amount changes - use subscription instead of watch
   useEffect(() => {
-    const fromAmount = form.watch('from')
-    const fromAsset = form.watch('fromAsset')
-    const toAsset = form.watch('toAsset')
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'from' || name === 'fromAsset' || name === 'toAsset') {
+        const fromAmount = value.from
+        const fromAsset = value.fromAsset
+        const toAsset = value.toAsset
 
-    // Only request quote if we have all required values
-    if (fromAmount && fromAsset && toAsset && wsConnected) {
-      // Even if no selected pair, we should still try to get a quote
-      // Wrap state updates in requestAnimationFrame to avoid infinite update loops
-      window.requestAnimationFrame(() => {
-        setIsToAmountLoading(true)
-        setIsQuoteLoading(true)
+        // Only request quote if we have all required values
+        if (fromAmount && fromAsset && toAsset && wsConnected) {
+          // Only set loading states if we don't already have a valid quote
+          if (!hasValidQuote) {
+            setIsToAmountLoading(true)
+            setIsPriceLoading(true)
+          }
 
-        // Short timeout to ensure state updates are applied before requesting quote
-        setTimeout(() => {
+          // Don't set isQuoteLoading here - let the requestQuote function handle it
+          // This prevents the "Getting Latest Quote" message from showing unnecessarily
           requestQuote()
-        }, 0)
-      })
-    } else if (!fromAmount || fromAmount === '0') {
-      // Clear "to" amount when "from" is empty
-      form.setValue('to', '')
-
-      // Wrap state updates in requestAnimationFrame to avoid race conditions
-      window.requestAnimationFrame(() => {
-        setIsToAmountLoading(false)
-        setIsQuoteLoading(false)
-      })
-    }
-  }, [form, wsConnected, requestQuote])
-
-  // Create a debounced effect for from amount changes
-  useEffect(() => {
-    if (debouncedFromAmount !== form.watch('from')) {
-      const timer = setTimeout(() => {
-        // Use debouncedFromAmount in comparison
-        if (
-          debouncedFromAmount &&
-          form.watch('fromAsset') &&
-          form.watch('toAsset')
-        ) {
-          requestQuote()
+        } else if (!fromAmount || fromAmount === '0') {
+          // Clear "to" amount when "from" is empty
+          form.setValue('to', '')
+          setIsToAmountLoading(false)
+          setIsQuoteLoading(false)
+          setHasValidQuote(false)
         }
-      }, 500)
-      return () => clearTimeout(timer)
-    }
-  }, [debouncedFromAmount, form, requestQuote])
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [form, wsConnected, requestQuote, hasValidQuote])
+
+  // Create a debounced effect for from amount changes - optimized to reduce re-renders
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'from') {
+        const currentFromAmount = value.from
+        if (debouncedFromAmount !== currentFromAmount) {
+          const timer = setTimeout(() => {
+            setDebouncedFromAmount(currentFromAmount || '')
+            // Only request quote if we have valid values and are connected
+            if (
+              currentFromAmount &&
+              currentFromAmount !== '0' &&
+              value.fromAsset &&
+              value.toAsset &&
+              wsConnected
+            ) {
+              requestQuote()
+            }
+          }, 500)
+          return () => clearTimeout(timer)
+        }
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [debouncedFromAmount, form, requestQuote, wsConnected])
 
   // Function to copy error details to clipboard
   const copyToClipboard = (text: string) => {
@@ -1330,22 +1468,39 @@ export const Component = () => {
     [tradablePairs]
   )
 
+  // Cache for asset options logging to prevent excessive debug logs
+  const lastAssetOptionsLog = useRef<{ [key: string]: number }>({})
+  const ASSET_LOG_THROTTLE_MS = 3000 // Only log every 3 seconds
+
   // Update the getAssetOptions function to map asset IDs to tickers for UI display
   const getAssetOptions = useCallback(
     (excludeAsset: string) => {
       const availableAssets = getAvailableAssets()
-      logger.debug(
-        `Available assets for trading: ${JSON.stringify(availableAssets)}`
-      )
+
+      // Throttle debug logging to prevent spam
+      const now = Date.now()
+      const logKey = `assets-${excludeAsset}`
+      const shouldLog =
+        !lastAssetOptionsLog.current[logKey] ||
+        now - lastAssetOptionsLog.current[logKey] > ASSET_LOG_THROTTLE_MS
+
+      if (shouldLog) {
+        lastAssetOptionsLog.current[logKey] = now
+        logger.debug(
+          `Available assets for trading: ${JSON.stringify(availableAssets)}`
+        )
+      }
 
       // Get all unique assets from tradable pairs
       const allPairAssets = tradablePairs
         .flatMap((pair) => [pair.base_asset, pair.quote_asset])
         .filter((asset, index, self) => self.indexOf(asset) === index)
 
-      logger.debug(
-        `All assets from tradable pairs: ${JSON.stringify(allPairAssets)}`
-      )
+      if (shouldLog) {
+        logger.debug(
+          `All assets from tradable pairs: ${JSON.stringify(allPairAssets)}`
+        )
+      }
 
       // Ensure we're comparing by ticker if excludeAsset is a ticker
       const excludeAssetId = mapTickerToAssetId(excludeAsset, assets)
@@ -1373,9 +1528,11 @@ export const Component = () => {
           }
         })
 
-      logger.debug(
-        `Tradable asset options (excluding ${excludeAsset}): ${JSON.stringify(tradableAssets)}`
-      )
+      if (shouldLog) {
+        logger.debug(
+          `Tradable asset options (excluding ${excludeAsset}): ${JSON.stringify(tradableAssets)}`
+        )
+      }
 
       return tradableAssets
     },
@@ -1415,8 +1572,21 @@ export const Component = () => {
         wasInBackground = false
 
         try {
-          // Attempt to reconnect
-          const reconnectInitiated = webSocketService.reconnect()
+          // Check if we have the required connection parameters
+          if (!makerConnectionUrl || !pubKey) {
+            logger.warn(
+              'Cannot reconnect WebSocket: missing connection parameters'
+            )
+            return
+          }
+
+          // Attempt to reconnect using the WebSocketService with proper parameters
+          const reconnectInitiated = webSocketService.init(
+            makerConnectionUrl,
+            pubKey,
+            dispatch
+          )
+
           if (reconnectInitiated) {
             logger.info(
               'Successfully initiated WebSocket reconnect after page focus'
@@ -1443,12 +1613,15 @@ export const Component = () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [makerConnectionUrl, wsConnected])
+  }, [makerConnectionUrl, pubKey, dispatch, wsConnected])
 
   // Update SwapButton to use isQuoteLoading
   const handleReconnectToMaker = async () => {
     try {
-      setIsQuoteLoading(true)
+      // Only show loading if we don't have a valid quote
+      if (!hasValidQuote) {
+        setIsQuoteLoading(true)
+      }
       // Try to reconnect the WebSocket
       const reconnected = Boolean(await retryConnection())
       if (reconnected) {
@@ -1531,246 +1704,393 @@ export const Component = () => {
 
   // Render the swap form UI
   const renderSwapForm = () => (
-    <div className="swap-form-container w-full max-w-xl">
-      <div className="bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-2xl border border-slate-700/70 shadow-xl w-full">
-        <div className="border-b border-slate-700/70 px-4 py-3">
-          <div className="flex justify-between items-center">
-            <MakerSelector hasNoPairs={false} onMakerChange={refreshAmounts} />
+    <div className="w-full max-w-5xl mx-auto">
+      {/* Main Trading Interface */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Left Column - Trading Form */}
+        <div className="lg:col-span-3">
+          <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
+            {/* Compact Header */}
+            <div className="border-b border-slate-700/70 px-4 py-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  <h2 className="text-base font-semibold text-white">
+                    Market Maker Trading
+                  </h2>
+                </div>
 
-            {/* WebSocket connection status indicator */}
-            <div className="flex items-center space-x-2">
-              {!wsConnected && (
-                <button
-                  className="text-xs px-2 py-1 rounded bg-blue-600/30 text-blue-400 hover:bg-blue-600/50"
-                  onClick={handleReconnectToMaker}
-                  type="button"
-                >
-                  Reconnect
-                </button>
-              )}
+                <div className="flex items-center space-x-2">
+                  <MakerSelector
+                    hasNoPairs={false}
+                    onMakerChange={refreshAmounts}
+                  />
+
+                  {/* WebSocket connection status */}
+                  {!wsConnected && (
+                    <button
+                      className="text-xs px-2 py-1 rounded-md bg-blue-600/30 text-blue-400 hover:bg-blue-600/50 transition-colors border border-blue-500/30"
+                      onClick={handleReconnectToMaker}
+                      type="button"
+                    >
+                      Reconnect
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Trading Form */}
+            <div className="p-4">
+              <form
+                className="space-y-4"
+                onSubmit={form.handleSubmit(onSubmit)}
+              >
+                {/* From Asset Section */}
+                <SwapInputField
+                  asset={form.getValues().fromAsset}
+                  assetOptions={fromAssetOptions}
+                  availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
+                  availableAmountLabel="Available:"
+                  disabled={
+                    !hasChannels || !hasTradablePairs || isSwapInProgress
+                  }
+                  formatAmount={formatAmount}
+                  getDisplayAsset={displayAsset}
+                  label="You Send"
+                  maxAmount={maxFromAmount}
+                  maxHtlcAmount={max_outbound_htlc_sat}
+                  minAmount={minFromAmount}
+                  onAmountChange={(e) => {
+                    const baseHandler = createFromAmountChangeHandler(
+                      form,
+                      getAssetPrecisionWrapper
+                    )
+                    const quoteHandler =
+                      createAmountChangeQuoteHandler(requestQuote)
+                    baseHandler(e)
+                    setDebouncedFromAmount(e.target.value || '')
+                    quoteHandler(e)
+                  }}
+                  onAssetChange={(value) =>
+                    handleAssetChange('fromAsset', value)
+                  }
+                  onRefresh={refreshAmounts}
+                  onSizeClick={onSizeClick}
+                  selectedSize={selectedSize}
+                  showMaxHtlc
+                  showMinAmount
+                  showSizeButtons
+                  value={form.getValues().from}
+                />
+
+                {/* Swap Direction Button */}
+                <div className="flex justify-center py-2">
+                  <button
+                    className={`p-2 rounded-full bg-slate-800 border-2 transition-all transform hover:scale-105 hover:rotate-180 duration-300
+                      ${
+                        hasChannels && hasTradablePairs && !isSwapInProgress
+                          ? 'border-blue-500/50 hover:border-blue-500 cursor-pointer'
+                          : 'border-slate-700 opacity-50 cursor-not-allowed'
+                      }`}
+                    onClick={() =>
+                      hasChannels &&
+                      hasTradablePairs &&
+                      !isSwapInProgress &&
+                      onSwapAssets()
+                    }
+                    type="button"
+                  >
+                    <SwapIcon />
+                  </button>
+                </div>
+
+                {/* To Asset Section */}
+                <SwapInputField
+                  asset={form.getValues().toAsset}
+                  assetOptions={toAssetOptions}
+                  availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
+                  availableAmountLabel="Can receive up to:"
+                  disabled={
+                    !hasChannels || !hasTradablePairs || isSwapInProgress
+                  }
+                  formatAmount={formatAmount}
+                  getDisplayAsset={displayAsset}
+                  isLoading={isToAmountLoading}
+                  label="You Receive (Estimated)"
+                  maxAmount={maxToAmount}
+                  onAssetChange={(value) => handleAssetChange('toAsset', value)}
+                  readOnly={true}
+                  value={form.getValues().to || ''}
+                />
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <div
+                    className={`${
+                      errorMessage.includes('You can only receive up to')
+                        ? 'bg-orange-500/10 border border-orange-500/20'
+                        : 'bg-red-500/10 border border-red-500/20'
+                    } rounded-lg px-3 py-2 backdrop-blur-sm`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span
+                          className={`${
+                            errorMessage.includes('You can only receive up to')
+                              ? 'text-orange-500'
+                              : 'text-red-500'
+                          } font-medium text-sm block`}
+                        >
+                          {errorMessage.includes('You can only receive up to')
+                            ? 'Max Receivable Exceeded'
+                            : 'Trade Error'}
+                        </span>
+                        <span
+                          className={`${
+                            errorMessage.includes('You can only receive up to')
+                              ? 'text-orange-400/90'
+                              : 'text-red-400/90'
+                          } text-xs leading-relaxed block mt-1`}
+                        >
+                          {errorMessage}
+                        </span>
+                      </div>
+                      <button
+                        className="p-1 hover:bg-red-500/10 rounded transition-colors flex-shrink-0"
+                        onClick={() => copyToClipboard(errorMessage)}
+                        title="Copy error message"
+                      >
+                        <Copy className="w-3 h-3 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <SwapButton
+                  errorMessage={errorMessage}
+                  hasChannels={hasChannels}
+                  hasTradablePairs={hasTradablePairs}
+                  hasValidQuote={hasValidQuote}
+                  isPriceLoading={isPriceLoading}
+                  isQuoteLoading={isQuoteLoading}
+                  isSwapInProgress={isSwapInProgress}
+                  isToAmountLoading={isToAmountLoading}
+                  wsConnected={wsConnected}
+                />
+              </form>
             </div>
           </div>
         </div>
 
-        <div className="p-3.5">
-          <form className="space-y-3" onSubmit={form.handleSubmit(onSubmit)}>
-            <SwapInputField
-              asset={form.getValues().fromAsset}
-              assetOptions={fromAssetOptions}
-              availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
-              availableAmountLabel="Available:"
-              disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
-              formatAmount={formatAmount}
-              getDisplayAsset={displayAsset}
-              label="You Send"
-              maxAmount={maxFromAmount}
-              maxHtlcAmount={max_outbound_htlc_sat}
-              minAmount={minFromAmount}
-              onAmountChange={(e) => {
-                const baseHandler = createFromAmountChangeHandler(
-                  form,
-                  getAssetPrecisionWrapper
-                )
-                const quoteHandler =
-                  createAmountChangeQuoteHandler(requestQuote)
-                baseHandler(e)
-                // Manually set debounced value after handling the input
-                setDebouncedFromAmount(e.target.value)
-                quoteHandler(e)
-              }}
-              onAssetChange={(value) => handleAssetChange('fromAsset', value)}
-              onRefresh={refreshAmounts}
-              onSizeClick={onSizeClick}
-              selectedSize={selectedSize}
-              showMaxHtlc
-              showMinAmount
-              showSizeButtons
-              value={form.getValues().from}
-            />
+        {/* Right Column - Trading Information */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Combined Rate & Quote Status Card */}
+          {selectedPair && (
+            <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
+              <div className="p-4">
+                {/* Exchange Rate Section */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-white mb-3 flex items-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></div>
+                    Exchange Rate
+                  </h3>
+                  <ExchangeRateSection
+                    assets={assets}
+                    bitcoinUnit={bitcoinUnit}
+                    formatAmount={formatAmount}
+                    fromAsset={form.getValues().fromAsset}
+                    getAssetPrecision={getAssetPrecisionWrapper}
+                    isPriceLoading={isPriceLoading}
+                    price={currentPrice}
+                    selectedPair={selectedPair}
+                    toAsset={form.getValues().toAsset}
+                  />
+                </div>
 
-            <div className="flex justify-center -my-1">
-              <button
-                className={`p-1.5 rounded-lg bg-slate-800 border transition-all transform hover:scale-110
-                  ${
-                    hasChannels && hasTradablePairs && !isSwapInProgress
-                      ? 'border-blue-500/50 hover:border-blue-500 cursor-pointer'
-                      : 'border-slate-700 opacity-50 cursor-not-allowed'
-                  }`}
-                onClick={() =>
-                  hasChannels &&
-                  hasTradablePairs &&
-                  !isSwapInProgress &&
-                  onSwapAssets()
-                }
-                type="button"
-              >
-                <SwapIcon />
-              </button>
-            </div>
-
-            <SwapInputField
-              asset={form.getValues().toAsset}
-              assetOptions={toAssetOptions}
-              availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
-              availableAmountLabel="Can receive up to:"
-              disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
-              formatAmount={formatAmount}
-              getDisplayAsset={displayAsset}
-              isLoading={isToAmountLoading}
-              key={`to-field-${loadingResetKey}`}
-              label="You Receive (Estimated)"
-              maxAmount={maxToAmount}
-              onAssetChange={(value) => handleAssetChange('toAsset', value)}
-              readOnly={true}
-              value={form.getValues().to || ''}
-            />
-
-            {selectedPair && (
-              <>
-                <ExchangeRateSection
-                  assets={assets}
-                  bitcoinUnit={bitcoinUnit}
-                  formatAmount={formatAmount}
-                  fromAsset={form.getValues().fromAsset}
-                  getAssetPrecision={getAssetPrecisionWrapper}
-                  isPriceLoading={isPriceLoading}
-                  price={currentPrice}
-                  selectedPair={selectedPair}
-                  toAsset={form.getValues().toAsset}
-                />
-
-                {/* Quote freshness indicator */}
+                {/* Quote Status Section */}
                 {quoteResponse && (
-                  <div
-                    className={`mt-2 px-3 py-2 rounded-lg flex items-center justify-between ${hasValidQuote ? 'bg-green-900/20 border border-green-800/30' : 'bg-yellow-900/20 border border-yellow-800/30'}`}
-                  >
-                    <div className="flex items-center">
+                  <div className="border-t border-slate-700/50 pt-4">
+                    <h3 className="text-sm font-semibold text-white mb-3 flex items-center">
                       <div
-                        className={`w-2 h-2 rounded-full mr-2 ${hasValidQuote ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}
+                        className={`w-1.5 h-1.5 rounded-full mr-2 ${hasValidQuote ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}
                       ></div>
-                      <span
-                        className={`text-xs ${hasValidQuote ? 'text-green-400' : 'text-yellow-400'}`}
-                      >
-                        {hasValidQuote
-                          ? `Quote valid (${quoteAge}s ago)`
-                          : 'Quote expired - update price'}
-                      </span>
-                    </div>
-                    <button
-                      className="text-xs px-2 py-1 rounded bg-blue-600/30 text-blue-400 hover:bg-blue-600/50"
-                      onClick={() => requestQuote()}
-                      type="button"
+                      Quote Status
+                    </h3>
+                    <div
+                      className={`p-3 rounded-lg flex items-center justify-between ${hasValidQuote ? 'bg-green-900/20 border border-green-800/30' : 'bg-yellow-900/20 border border-yellow-800/30'}`}
                     >
-                      Refresh
-                    </button>
+                      <div className="flex items-center">
+                        <div
+                          className={`w-2 h-2 rounded-full mr-2 ${hasValidQuote ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}
+                        ></div>
+                        <div>
+                          <span
+                            className={`text-xs font-medium ${hasValidQuote ? 'text-green-400' : 'text-yellow-400'}`}
+                          >
+                            {hasValidQuote ? 'Quote Valid' : 'Quote Expired'}
+                          </span>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {hasValidQuote
+                              ? `Updated ${quoteAge}s ago`
+                              : 'Please refresh for current price'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        className="px-3 py-1.5 rounded-md bg-blue-600/30 text-blue-400 hover:bg-blue-600/50 transition-colors text-xs font-medium"
+                        onClick={() => requestQuote()}
+                        type="button"
+                      >
+                        Refresh
+                      </button>
+                    </div>
                   </div>
                 )}
-              </>
-            )}
-
-            <FeeSection
-              assets={assets}
-              bitcoinUnit={bitcoinUnit}
-              displayAsset={displayAsset}
-              fees={fees}
-              quoteResponse={quoteResponse}
-              toAsset={form.getValues().toAsset}
-            />
-
-            {errorMessage && (
-              <div
-                className={`${
-                  errorMessage.includes('You can only receive up to')
-                    ? 'bg-orange-500/10 border border-orange-500/20'
-                    : 'bg-red-500/10 border border-red-500/20'
-                } rounded-lg px-3 py-2.5 mt-2.5`}
-              >
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`${
-                        errorMessage.includes('You can only receive up to')
-                          ? 'text-orange-500'
-                          : 'text-red-500'
-                      } font-medium`}
-                    >
-                      {errorMessage.includes('You can only receive up to')
-                        ? 'Max Receivable Exceeded'
-                        : 'Trade Error'}
-                    </span>
-                    <button
-                      className="p-1 hover:bg-red-500/10 rounded transition-colors"
-                      onClick={() => copyToClipboard(errorMessage)}
-                      title="Copy error message"
-                    >
-                      <Copy className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
-                  <span
-                    className={`${
-                      errorMessage.includes('You can only receive up to')
-                        ? 'text-orange-400/90'
-                        : 'text-red-400/90'
-                    } text-sm leading-relaxed`}
-                  >
-                    {errorMessage}
-                  </span>
-                </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <SwapButton
-              errorMessage={errorMessage}
-              hasChannels={hasChannels}
-              hasTradablePairs={hasTradablePairs}
-              hasValidQuote={hasValidQuote}
-              isPriceLoading={isPriceLoading}
-              isQuoteLoading={isQuoteLoading}
-              isSwapInProgress={isSwapInProgress}
-              isToAmountLoading={isToAmountLoading}
-              wsConnected={wsConnected}
-            />
-          </form>
+          {/* Fee Information Card */}
+          <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
+            <div className="p-4">
+              <h3 className="text-sm font-semibold text-white mb-3 flex items-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></div>
+                Fee Breakdown
+              </h3>
+              <FeeSection
+                assets={assets}
+                bitcoinUnit={bitcoinUnit}
+                displayAsset={displayAsset}
+                fees={fees}
+                quoteResponse={quoteResponse}
+                toAsset={form.getValues().toAsset}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
 
+  // Determine if we're still in a loading state - be more comprehensive
+  const isStillLoading =
+    isLoading || // True during the main setup fetchData
+    !isInitialDataLoaded ||
+    !isChannelsLoaded ||
+    !isAssetsLoaded ||
+    isPairsLoading || // True until fetchAndSetPairs completes
+    // Only wait for WebSocket if we have tradable channels AND a maker URL
+    (!!makerConnectionUrl &&
+      hasTradableChannels(channels) &&
+      !isWebSocketInitialized)
+  // Removed the problematic condition that was waiting for pairs when WebSocket is connected
+  // If we have no tradable pairs, we should show the appropriate message, not keep loading
+
+  // Debug logging for loading states
+  useEffect(() => {
+    logger.debug('Loading states:', {
+      hasChannels: channels.length > 0,
+      hasTradableChannels: hasTradableChannels(channels),
+      hasValidChannelsForTrading,
+      isAssetsLoaded,
+      isChannelsLoaded,
+      isInitialDataLoaded,
+      isLoading,
+      isPairsLoading,
+      isStillLoading,
+      isWebSocketInitialized,
+      makerConnectionUrl: !!makerConnectionUrl,
+      // Additional debug info
+      shouldWaitForWebSocket:
+        !!makerConnectionUrl &&
+        hasTradableChannels(channels) &&
+        !isWebSocketInitialized,
+
+      tradablePairsCount: tradablePairs.length,
+
+      wsConnected,
+    })
+  }, [
+    isLoading,
+    isInitialDataLoaded,
+    isChannelsLoaded,
+    isAssetsLoaded,
+    isPairsLoading,
+    hasValidChannelsForTrading,
+    isWebSocketInitialized,
+    wsConnected,
+    makerConnectionUrl,
+    tradablePairs.length,
+    isStillLoading,
+    channels,
+  ])
+
+  // Determine if we should show the "no trading channels" message
+  const shouldShowNoChannelsMessage =
+    !isStillLoading &&
+    (!makerConnectionUrl || // Case 1: No maker URL configured
+      !hasValidChannelsForTrading || // Case 2: Initial setup deemed no valid channels
+      (tradablePairs.length === 0 &&
+        !isPairsLoading &&
+        isWebSocketInitialized) || // Case 3: No pairs and not loading and WS init done
+      // Case 4: Maker URL exists, WS init done, not connected, AND no physical tradable channels
+      (!!makerConnectionUrl &&
+        isWebSocketInitialized &&
+        !wsConnected &&
+        !hasTradableChannels(channels)))
+
+  // Determine if we should show the WebSocket disconnected message
+  const shouldShowWSDisconnectedMessage =
+    !isStillLoading &&
+    !!makerConnectionUrl && // Maker URL must exist
+    isWebSocketInitialized && // WebSocket initialization must have been attempted
+    !wsConnected && // WebSocket is currently not connected
+    hasTradableChannels(channels) && // Physical tradable channels exist
+    hasValidChannelsForTrading // Trading was deemed possible based on initial channel/pair checks
+
   return (
-    <div className="container px-2 mx-auto">
-      {isLoading ? (
+    <div className="w-full h-full">
+      {isStillLoading ? (
         <div className="flex flex-col justify-center items-center h-64 gap-4">
-          <Loader />
-          <div className="text-center">
-            <p className="text-blue-400 font-medium">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-lg"></div>
+            <div className="relative">
+              <Loader />
+            </div>
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-blue-400 font-semibold text-base">
               Connecting to Market Maker
             </p>
-            <p className="text-slate-400 text-sm mt-1">
-              Fetching available trading pairs and checking channel balances...
+            <p className="text-slate-400 text-sm max-w-md">
+              {isLoading
+                ? 'Fetching initial data...'
+                : !isChannelsLoaded
+                  ? 'Loading channel information...'
+                  : !isAssetsLoaded
+                    ? 'Loading asset information...'
+                    : isPairsLoading
+                      ? 'Loading trading pairs...'
+                      : !!makerConnectionUrl && !isWebSocketInitialized
+                        ? 'Establishing WebSocket connection...'
+                        : 'Finalizing setup...'}
             </p>
+            <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+            </div>
           </div>
         </div>
-      ) : !hasValidChannelsForTrading ? (
-        <div className="w-full flex justify-center">
-          <NoTradingChannelsMessage
-            {...createTradingChannelsMessageProps(
-              assets,
-              tradablePairs,
-              hasEnoughBalance,
-              navigate,
-              refreshAmounts
-            )}
-          />
-        </div>
-      ) : !wsConnected && hasTradableChannels(channels) ? (
-        <div className="w-full flex justify-center">
+      ) : shouldShowWSDisconnectedMessage ? (
+        <div className="w-full flex justify-center py-4">
           <WebSocketDisconnectedMessage
             makerUrl={makerConnectionUrl}
             onMakerChange={retryConnection}
           />
         </div>
-      ) : !wsConnected || tradablePairs.length === 0 ? (
-        <div className="w-full flex justify-center">
+      ) : shouldShowNoChannelsMessage ? (
+        <div className="w-full flex justify-center py-4">
           <NoTradingChannelsMessage
             {...createTradingChannelsMessageProps(
               assets,
@@ -1782,14 +2102,12 @@ export const Component = () => {
           />
         </div>
       ) : (
-        <div className="w-full flex justify-center py-1">
-          {renderSwapForm()}
-        </div>
+        <div className="w-full py-4 px-3">{renderSwapForm()}</div>
       )}
 
       <SwapConfirmation
         bitcoinUnit={bitcoinUnit}
-        exchangeRate={calculateRate()}
+        exchangeRate={currentPrice || 0}
         fromAmount={form.getValues().from}
         fromAsset={form.getValues().fromAsset}
         getAssetPrecision={getAssetPrecisionWrapper}

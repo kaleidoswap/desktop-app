@@ -58,7 +58,7 @@ export const createSizeClickHandler = (
     percentageOfMax?: number
   ) => Promise<string | null>
 ) => {
-  return async (size: number) => {
+  return async (size: number, percentageOfMax?: number) => {
     try {
       const fromAsset = form.getValues().fromAsset
 
@@ -76,7 +76,11 @@ export const createSizeClickHandler = (
       )
 
       // Ensure both form value and debounced value are updated
-      const formattedAmount = await setFromAmount(amount, fromAsset, size)
+      const formattedAmount = await setFromAmount(
+        amount,
+        fromAsset,
+        percentageOfMax
+      )
 
       // Important: Make sure the formattedAmount isn't null before using it
       if (formattedAmount) {
@@ -107,7 +111,7 @@ export const createRefreshAmountsHandler = (
     isFrom: boolean
   ) => Promise<number>,
   updateMinMaxAmounts: () => Promise<void>,
-  selectedSize: number,
+  selectedSize: number | undefined,
   setFromAmount: (
     amount: number,
     fromAsset: string,
@@ -133,10 +137,12 @@ export const createRefreshAmountsHandler = (
       setMaxToAmount(newMaxToAmount)
 
       // Calculate the percentage of max based on selectedSize
-      const newFromAmount = (newMaxFromAmount * selectedSize) / 100
-
-      // Set from amount using helper function, maintain same percentage
-      await setFromAmount(newFromAmount, fromAsset, selectedSize)
+      // Only set amount if a size is actually selected
+      if (selectedSize !== undefined) {
+        const newFromAmount = (newMaxFromAmount * selectedSize) / 100
+        // Set from amount using helper function, maintain same percentage
+        await setFromAmount(newFromAmount, fromAsset, selectedSize)
+      }
       await updateMinMaxAmounts()
     } catch (error) {
       logger.error('Error refreshing amounts:', error)

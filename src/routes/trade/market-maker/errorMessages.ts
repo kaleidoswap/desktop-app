@@ -3,6 +3,32 @@ import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 import { mapAssetIdToTicker, isAssetId } from './assetUtils'
 
 /**
+ * Error message constants for asset conflicts
+ */
+export const ASSET_CONFLICT_MESSAGES = {
+  CONFLICT_WARNING: (ticker: string) =>
+    `Warning: Multiple versions of "${ticker}" detected. Only one version will be available for trading.`,
+
+  MULTIPLE_CONFLICTS: (
+    conflictCount: number,
+    excludedPairs: number,
+    validPairs: number
+  ) =>
+    `Found ${conflictCount} asset conflicts. Excluded ${excludedPairs} trading pairs. ` +
+    `${validPairs} valid pairs available for trading.`,
+
+  NO_TRADABLE_PAIRS:
+    'No tradable pairs available with this market maker. The maker does not offer trading pairs for assets you have channels with.',
+
+  NO_VALID_PAIRS:
+    'No valid trading pairs available after filtering asset conflicts.',
+
+  TICKER_CONFLICT: (ticker: string, assetIds: string[], pairCount: number) =>
+    `Asset conflict detected: "${ticker}" has multiple asset IDs (${assetIds.join(', ')}). ` +
+    `${pairCount} trading pairs excluded for safety.`,
+} as const
+
+/**
  * Gets a validation error message for the current form state
  */
 export const getValidationError = (

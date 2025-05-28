@@ -35,7 +35,6 @@ export interface TradeContextProps {
   formatAmount: (amount: number, asset: string) => string
   parseAssetAmount: (amount: string | undefined | null, asset: string) => number
   displayAsset: (asset: string) => string
-  calculateRate: () => number
   updateToAmount: (fromAmount: string) => void
   setFromAmount: (
     amount: number,

@@ -1,8 +1,6 @@
 import { ChangeEvent } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 
-import { logger } from '../../../utils/logger'
-
 import { Fields } from './types'
 
 /**
@@ -167,93 +165,4 @@ export const formatNumberWithCommas = (value: number | string): string => {
 export const parseFormattedNumber = (value: string): string => {
   // Remove all non-numeric characters except decimal point
   return value.replace(/[^\d.]/g, '')
-}
-
-/**
- * Creates a debounced handler for updating the "to" amount based on "from" changes
- */
-export const createDebouncedFromEffectHandler = (
-  debouncedFromAmount: string,
-  previousFromAmount: string | undefined,
-  updatePending: boolean,
-  updateToAmount: (amount: string) => void,
-  setIsToAmountLoading: (isLoading: boolean) => void,
-  setUpdatePending: (isPending: boolean) => void
-) => {
-  // Skip if the amount is invalid or not changed
-  if (
-    !debouncedFromAmount ||
-    debouncedFromAmount.endsWith('.') ||
-    updatePending ||
-    debouncedFromAmount === previousFromAmount
-  ) {
-    return () => {}
-  }
-
-  setUpdatePending(true)
-
-  return () => {
-    const timer = setTimeout(() => {
-      // Only show "calculating" UI if request takes more than 200ms
-      const loadingTimer = setTimeout(() => {
-        setIsToAmountLoading(true)
-      }, 200)
-
-      updateToAmount(debouncedFromAmount)
-
-      clearTimeout(loadingTimer)
-      setIsToAmountLoading(false)
-      setUpdatePending(false)
-    }, 300)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }
-}
-
-/**
- * Creates a debounced handler for updating the "from" amount based on "to" changes
- */
-export const createDebouncedToEffectHandler = (
-  debouncedToAmount: string,
-  previousToAmount: string | undefined,
-  updatePending: boolean,
-  calculateRate: () => number,
-  form: any,
-  parseAssetAmount: (
-    amount: string | undefined | null,
-    asset: string
-  ) => number,
-  formatAmount: (amount: number, asset: string) => string,
-  setUpdatePending: (isPending: boolean) => void
-) => {
-  if (!debouncedToAmount || debouncedToAmount.endsWith('.') || updatePending) {
-    return () => {}
-  }
-
-  setUpdatePending(true)
-
-  return () => {
-    const timer = setTimeout(() => {
-      if (debouncedToAmount !== previousToAmount) {
-        try {
-          const rate = calculateRate()
-          const fromAmount =
-            parseAssetAmount(debouncedToAmount, form.getValues().toAsset) / rate
-          form.setValue(
-            'from',
-            formatAmount(fromAmount, form.getValues().fromAsset)
-          )
-        } catch (error) {
-          logger.error('Error calculating from amount:', error)
-        }
-      }
-      setUpdatePending(false)
-    }, 300)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }
 }
