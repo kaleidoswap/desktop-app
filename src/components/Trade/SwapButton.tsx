@@ -44,27 +44,44 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     return 'Swap Now'
   }
 
+  const isDisabled =
+    !wsConnected ||
+    isQuoteLoading ||
+    isToAmountLoading ||
+    isPriceLoading ||
+    !!errorMessage ||
+    !hasChannels ||
+    !hasTradablePairs ||
+    isSwapInProgress ||
+    hasZeroAmount ||
+    !hasValidQuote
+
+  const isLoading =
+    isQuoteLoading || isToAmountLoading || isPriceLoading || isSwapInProgress
+
   return (
-    <button
-      className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900/50
-               text-white rounded-lg font-medium transition-colors flex items-center 
-               justify-center gap-2 disabled:cursor-not-allowed text-base min-h-[48px]
-               disabled:text-slate-300"
-      disabled={
-        !wsConnected ||
-        isQuoteLoading ||
-        isToAmountLoading ||
-        isPriceLoading ||
-        !!errorMessage ||
-        !hasChannels ||
-        !hasTradablePairs ||
-        isSwapInProgress ||
-        hasZeroAmount ||
-        !hasValidQuote
-      }
-      type="submit"
-    >
-      {getButtonText()}
-    </button>
+    <div className="relative">
+      {/* Glow effect for enabled state */}
+      {!isDisabled && (
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-purple-500/30 rounded-xl blur-lg opacity-75"></div>
+      )}
+
+      <button
+        className={`relative w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 
+                   flex items-center justify-center gap-3 min-h-[56px] border-2 backdrop-blur-sm
+                   ${
+                     isDisabled
+                       ? 'bg-slate-800/50 border-slate-700/50 text-slate-400 cursor-not-allowed'
+                       : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 border-blue-500/50 hover:border-blue-400 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                   }`}
+        disabled={isDisabled}
+        type="submit"
+      >
+        {isLoading && (
+          <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+        )}
+        <span>{getButtonText()}</span>
+      </button>
+    </div>
   )
 }

@@ -15,9 +15,14 @@ import {
   ORDER_CHANNEL_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
+import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
 import { MakerSelector } from './MakerSelector'
+import {
+  TradablePairsDisplay,
+  SupportedAssetsDisplay,
+} from './TradablePairsDisplay'
 
 interface NoChannelsMessageProps {
   onNavigate: (path: string) => void
@@ -104,6 +109,7 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
 interface MakerAssetInfo {
   supportedAssets: string[]
   registryUrl: string
+  tradingPairs: TradingPair[]
 }
 
 interface UserAssetInfo {
@@ -126,7 +132,7 @@ interface NoTradingChannelsMessageProps {
 export const NoTradingChannelsMessage: React.FC<
   NoTradingChannelsMessageProps
 > = ({ makerInfo, userInfo, actions }) => {
-  const { supportedAssets, registryUrl } = makerInfo
+  const { supportedAssets, registryUrl, tradingPairs } = makerInfo
   const { ownedAssets, hasEnoughBalance } = userInfo
   const { recommendedAction, onNavigate, onMakerChange } = actions
 
@@ -215,61 +221,60 @@ export const NoTradingChannelsMessage: React.FC<
             Refresh
           </button>
 
-          <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-200 mb-3.5 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-blue-400" />
-              Quick Start Guide
-            </h3>
-            <ul className="text-sm text-slate-300 space-y-3.5">
-              <li className="flex items-center gap-3 rounded-lg">
-                <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
-                  1
-                </div>
-                <div className="flex-1 flex items-center">
-                  <button
-                    className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1.5 font-medium py-1"
-                    onClick={() => openUrl(registryUrl)}
-                  >
-                    Check supported assets and pairs
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </li>
-              <li className="flex items-center gap-3 rounded-lg">
-                <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
-                  2
-                </div>
-                <div className="flex-1">
-                  {supportedAssets.length > 0 ? (
-                    <>
-                      This maker supports:{' '}
-                      <span className="text-emerald-400 font-medium">
-                        {supportedAssets.slice(0, 3).join(', ')}
-                      </span>
-                      {supportedAssets.length > 3 && (
-                        <span className="text-emerald-400 font-medium">
-                          ...
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      Buy a channel from an LSP or open one directly with your
-                      assets
-                    </>
-                  )}
-                </div>
-              </li>
-              <li className="flex items-center gap-3 rounded-lg">
-                <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
-                  3
-                </div>
-                <div className="flex-1">
-                  Return to start trading once your channel is active
-                </div>
-              </li>
-            </ul>
-          </div>
+          {/* Display trading pairs if available */}
+          {tradingPairs.length > 0 ? (
+            <div className="space-y-4 w-full max-w-lg">
+              <TradablePairsDisplay
+                maxPairsToShow={4}
+                pairs={tradingPairs}
+                title="Available Trading Pairs"
+              />
+              <SupportedAssetsDisplay
+                pairs={tradingPairs}
+                title="Supported Assets"
+              />
+            </div>
+          ) : (
+            <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-200 mb-3.5 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-blue-400" />
+                Quick Start Guide
+              </h3>
+              <ul className="text-sm text-slate-300 space-y-3.5">
+                <li className="flex items-center gap-3 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
+                    1
+                  </div>
+                  <div className="flex-1 flex items-center">
+                    <button
+                      className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1.5 font-medium py-1"
+                      onClick={() => openUrl(registryUrl)}
+                    >
+                      Check supported assets and pairs
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    Buy a channel from an LSP or open one directly with your
+                    assets
+                  </div>
+                </li>
+                <li className="flex items-center gap-3 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/30 text-blue-300 flex items-center justify-center flex-shrink-0 text-[11px] font-medium border border-blue-500/20 shadow-inner">
+                    3
+                  </div>
+                  <div className="flex-1">
+                    Return to start trading once your channel is active
+                  </div>
+                </li>
+              </ul>
+            </div>
+          )}
 
           <div className="flex gap-4 pt-3 justify-center">
             {primaryAction === 'buy' ? (
@@ -325,7 +330,7 @@ export const NoTradingChannelsMessage: React.FC<
 
 export const createTradingChannelsMessageProps = (
   assets: { ticker: string; asset_id: string }[],
-  tradablePairs: { base_asset: string; quote_asset: string }[],
+  tradablePairs: TradingPair[],
   hasEnoughBalance: boolean,
   onNavigate: (path: string) => void,
   onMakerChange: () => Promise<void>
@@ -351,6 +356,7 @@ export const createTradingChannelsMessageProps = (
     makerInfo: {
       registryUrl,
       supportedAssets,
+      tradingPairs: tradablePairs,
     },
     userInfo: {
       hasEnoughBalance,

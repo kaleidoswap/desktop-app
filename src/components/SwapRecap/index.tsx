@@ -69,10 +69,10 @@ const getStatusConfig = (status: string | undefined) => {
       }
     default:
       return {
-        bg: 'bg-slate-500/10',
-        color: 'text-slate-500',
-        icon: AlertCircle,
-        message: 'Unknown status',
+        bg: 'bg-amber-500/10',
+        color: 'text-amber-500',
+        icon: Clock,
+        message: 'Waiting for maker to process swap...',
       }
   }
 }
@@ -193,7 +193,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                     ${getStatusConfig(currentSwap?.status).color} 
                     ${getStatusConfig(currentSwap?.status).bg}`}
                 >
-                  {currentSwap?.status || 'Unknown'}
+                  {currentSwap?.status || 'Waiting'}
                 </span>
               </div>
 
@@ -296,7 +296,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                     ? 'bg-slate-700/50 text-slate-300'
                     : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/20'
               } active:scale-[0.98]`}
-            onClick={handleClose}
+            onClick={isInProgress ? undefined : handleClose}
           >
             {isSucceeded ? (
               <>

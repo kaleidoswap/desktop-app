@@ -31,7 +31,6 @@ interface TradeFormProps {
   onSubmit: () => void
   updateMinMaxAmounts: () => Promise<void>
   parseAssetAmount: (amount: string, asset: string) => number
-  calculateRate: () => number
 }
 
 export const TradeForm: React.FC<TradeFormProps> = ({
@@ -57,7 +56,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   onSubmit,
   updateMinMaxAmounts,
   parseAssetAmount,
-  calculateRate,
 }) => {
   const [isFromAmountLoading, setIsFromAmountLoading] = useState(false)
   const [isToAmountLoading, setIsToAmountLoading] = useState(false)
@@ -103,7 +101,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     updateMinMaxAmounts,
     parseAssetAmount,
     formatAmount,
-    calculateRate,
   ])
 
   return (

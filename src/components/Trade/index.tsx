@@ -11,45 +11,54 @@ interface SelectProps {
   active?: string
   options: Array<{ value: string; ticker?: string }>
   onSelect: (value: string) => void
-  theme: 'light' | 'dark'
+  theme?: 'light' | 'dark'
   disabled?: boolean
 }
 
-const Select: React.FC<SelectProps> = (props) => {
+const Select: React.FC<SelectProps> = ({
+  active,
+  options,
+  onSelect,
+  disabled = false,
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
 
   useOnClickOutside(menuRef, () => setIsOpen(false))
 
-  const active = props.options.find((option) => option.value === props.active)
+  const activeOption = options.find((option) => option.value === active)
 
   return (
     <div className="relative" ref={menuRef}>
       <div
         className={twJoin(
-          'flex items-center justify-between px-4 py-3 rounded cursor-pointer min-w-[8rem] w-auto',
-          props.theme === 'dark' ? 'bg-blue-dark' : 'bg-section-lighter',
-          props.disabled ? 'opacity-50 cursor-not-allowed' : ''
+          'flex items-center justify-between px-4 py-4 rounded-xl cursor-pointer min-w-[120px] w-auto border transition-all duration-200',
+          'bg-slate-900/70 border-slate-600/50 hover:border-slate-500/70 backdrop-blur-sm',
+          disabled
+            ? 'opacity-50 cursor-not-allowed hover:border-slate-600/50'
+            : ''
         )}
-        onClick={() => !props.disabled && setIsOpen((state) => !state)}
+        onClick={() => !disabled && setIsOpen((state) => !state)}
       >
-        <AssetOption ticker={active?.ticker} />
-        <ArrowDownIcon />
+        <AssetOption ticker={activeOption?.ticker} />
+        <ArrowDownIcon
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </div>
 
-      {!props.disabled && (
+      {!disabled && (
         <ul
           className={twJoin(
-            'absolute top-full left-0 z-50 min-w-full w-auto bg-section-lighter divide-y divide-divider rounded shadow-lg overflow-visible',
+            'absolute top-full left-0 z-50 min-w-full w-auto mt-2 bg-slate-800/95 backdrop-blur-sm border border-slate-600/50 divide-y divide-slate-700/50 rounded-xl shadow-xl overflow-hidden',
             !isOpen ? 'hidden' : 'block'
           )}
         >
-          {props.options.map((option) => (
+          {options.map((option) => (
             <li
-              className="px-4 py-3 cursor-pointer hover:bg-divider first:rounded-t last:rounded-b whitespace-nowrap"
+              className="px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors duration-150 whitespace-nowrap"
               key={option.value}
               onClick={() => {
-                props.onSelect(option.value)
+                onSelect(option.value)
                 setIsOpen(false)
               }}
               title={option.ticker || option.value}
@@ -61,10 +70,6 @@ const Select: React.FC<SelectProps> = (props) => {
       )}
     </div>
   )
-}
-
-Select.defaultProps = {
-  theme: 'dark',
 }
 
 interface AssetSelectProps {
@@ -102,3 +107,7 @@ export { NostrP2P } from './NostrP2P'
 export { TradeForm } from './TradeForm'
 export { FeeSection } from './FeeSection'
 export { TakerSwapForm } from './TakerSwapForm'
+export {
+  TradablePairsDisplay,
+  SupportedAssetsDisplay,
+} from './TradablePairsDisplay'
