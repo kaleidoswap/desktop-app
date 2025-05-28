@@ -549,10 +549,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   }, [lspOptions])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-6">
+    <div className="w-full">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Configure Your Channel
           </h2>
           <p className="text-gray-400 mt-2">Set up your channel parameters</p>
@@ -562,60 +562,60 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           </p>
         </div>
 
-        <div className="flex justify-between mb-8">
+        <div className="flex justify-between mb-4">
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               1
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Connect LSP</p>
-              <p className="text-sm text-gray-400">Completed</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Connect LSP</p>
+              <p className="text-xs text-gray-400">Completed</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700">
               <div className="h-1 bg-blue-500 w-1/2"></div>
             </div>
           </div>
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
               2
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Configure</p>
-              <p className="text-sm text-gray-400">Current step</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Configure</p>
+              <p className="text-xs text-gray-400">Current step</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700"></div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               3
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Payment</p>
-              <p className="text-sm text-gray-400">Next step</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Payment</p>
+              <p className="text-xs text-gray-400">Next step</p>
             </div>
           </div>
         </div>
 
         <form
-          className="bg-gray-900 text-white p-8 rounded-lg shadow-lg"
+          className="bg-gray-900 text-white p-4 rounded-lg shadow-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <h3 className="text-3xl font-bold mb-6 text-center">
+          <h3 className="text-2xl font-bold mb-4 text-center">
             Request an RGB Channel from LSP
           </h3>
-          <h4 className="text-xl font-semibold mb-8 text-center text-gray-300">
+          <h4 className="text-lg font-semibold mb-4 text-center text-gray-300">
             Select asset and amount for the requested channel
           </h4>
 
           {isLoading ? (
             <div className="text-center">Loading...</div>
           ) : (
-            <div className="space-y-8">
-              <div className="bg-gray-800 p-6 rounded-lg">
+            <div className="space-y-4">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Channel Capacity (sats)
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -659,7 +659,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Your Channel Liquidity (sats)
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -718,7 +718,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Channel Lock Duration
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -752,7 +752,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="flex items-center space-x-3 mb-4">
                   <input
                     checked={addAsset}
@@ -876,7 +876,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             </div>
           )}
 
-          <div className="flex justify-between space-x-4 mt-10">
+          <div className="flex justify-between space-x-4 mt-6">
             <button
               className="px-6 py-3 rounded-lg text-lg font-bold bg-gray-600 hover:bg-gray-700 transition-colors"
               onClick={onBack}

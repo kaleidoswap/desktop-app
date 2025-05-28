@@ -1,8 +1,11 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import { Info } from 'lucide-react'
 import { useCallback, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
+import { CHANNELS_PATH } from '../../app/router/paths'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   makerApi,
@@ -31,6 +34,7 @@ interface AssetInfo {
 }
 
 export const Component = () => {
+  const navigate = useNavigate()
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -358,7 +362,24 @@ export const Component = () => {
   )
 
   return (
-    <div className="max-w-screen-lg w-full bg-blue-dark py-8 rounded px-14 pt-20 pb-8 relative">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white relative">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+        <div>
+          <h1 className="text-xl font-bold">Buy a Channel from LSP</h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Purchase a Lightning Network channel from a Lightning Service
+            Provider
+          </p>
+        </div>
+        <button
+          className="px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 transition text-gray-200 font-medium flex items-center"
+          onClick={() => navigate(CHANNELS_PATH)}
+        >
+          ← Back to Channels
+        </button>
+      </div>
+
       {loading && (
         <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader color={'#123abc'} loading={loading} size={50} />
@@ -387,6 +408,16 @@ export const Component = () => {
           orderId={orderId ?? undefined}
           paymentStatus={paymentStatus || 'error'}
         />
+      </div>
+
+      {/* Info Section */}
+      <div className="flex items-center space-x-2 text-sm text-gray-400 mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+        <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
+        <p>
+          LSP channels provide instant liquidity without requiring you to manage
+          on-chain transactions. The LSP handles channel opening and provides
+          inbound liquidity for receiving payments.
+        </p>
       </div>
     </div>
   )

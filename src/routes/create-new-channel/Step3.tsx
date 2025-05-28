@@ -7,7 +7,6 @@ import {
   Activity,
   TagIcon,
   Users,
-  Loader,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -223,25 +222,22 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
       <div className="flex justify-between mt-8">
         <Button
-          icon={<ChevronLeft className="w-4 h-4" />}
+          icon={<ChevronLeft className="w-5 h-5" />}
           onClick={onBack}
+          size="lg"
           variant="secondary"
         >
           Back
         </Button>
 
         <Button
-          className="transition-all duration-300"
           disabled={!hasValidNodeInfo || isSubmitting}
-          icon={
-            isSubmitting ? (
-              <Loader className="w-4 h-4 animate-spin" />
-            ) : (
-              <ArrowRight className="w-4 h-4" />
-            )
-          }
+          icon={<ArrowRight className="w-5 h-5" />}
           iconPosition="right"
+          isLoading={isSubmitting}
           onClick={handleOpenChannel}
+          size="lg"
+          variant="primary"
         >
           {isSubmitting ? 'Opening...' : 'Open Channel'}
         </Button>

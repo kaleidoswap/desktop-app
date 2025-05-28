@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 
 import { Spinner } from '../../components/Spinner'
+import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { isValidPubkeyAndAddress } from '../../helpers/address'
 import { KaleidoswapBoxIcon } from '../../icons/KaleidoswapBox'
@@ -260,31 +261,30 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       </div>
 
       <div className="flex justify-end mt-8">
-        <button
-          className="px-8 py-3 rounded-lg text-lg font-bold text-white
-            bg-blue-600 hover:bg-blue-700
-            transform transition-all duration-200
-            focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
-            shadow-lg hover:shadow-xl
-            flex items-center"
+        <Button
           disabled={!formState.isValid}
+          icon={
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M9 5l7 7-7 7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+              />
+            </svg>
+          }
+          iconPosition="right"
+          size="lg"
           type="submit"
+          variant="primary"
         >
           Next
-          <svg
-            className="w-5 h-5 ml-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 5l7 7-7 7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Connection Dialog */}
@@ -308,27 +308,24 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
             )}
 
             <div className="flex justify-end space-x-4">
-              <button
-                className="px-6 py-2 rounded-lg font-medium
-                  bg-gray-700 hover:bg-gray-600 text-gray-300
-                  transform transition-all duration-200
-                  focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+              <Button
                 onClick={() => setShowConnectionDialog(false)}
+                size="md"
                 type="button"
+                variant="secondary"
               >
                 Cancel
-              </button>
-              <button
-                className="px-6 py-2 rounded-lg font-medium text-white
-                  bg-blue-600 hover:bg-blue-700
-                  transform transition-all duration-200
-                  focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              </Button>
+              <Button
                 disabled={isConnecting}
+                isLoading={isConnecting}
                 onClick={handleConnect}
+                size="md"
                 type="button"
+                variant="primary"
               >
                 Connect
-              </button>
+              </Button>
             </div>
           </div>
         </div>

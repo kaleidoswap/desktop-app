@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { z } from 'zod'
 
 import { Select } from '../../components/Select'
+import { Button } from '../../components/ui'
 import { MAX_CHANNEL_CAPACITY, MIN_CHANNEL_CAPACITY } from '../../constants'
 import {
   NewChannelFormSchema,
@@ -568,56 +569,53 @@ export const Step2 = ({
       </div>
 
       <div className="flex justify-between mt-8">
-        <button
-          className="px-8 py-3 rounded-lg text-lg font-bold
-            bg-gray-700 hover:bg-gray-600 text-gray-300
-            transform transition-all duration-200
-            focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50
-            shadow-md hover:shadow-lg
-            flex items-center"
+        <Button
+          icon={
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M15 19l-7-7 7-7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+              />
+            </svg>
+          }
           onClick={onBack}
+          size="lg"
           type="button"
+          variant="secondary"
         >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M15 19l-7-7 7-7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
           Back
-        </button>
+        </Button>
 
-        <button
-          className="px-8 py-3 rounded-lg text-lg font-bold text-white
-            bg-blue-600 hover:bg-blue-700
-            transform transition-all duration-200
-            focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
-            shadow-lg hover:shadow-xl
-            flex items-center"
+        <Button
+          icon={
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M9 5l7 7-7 7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+              />
+            </svg>
+          }
+          iconPosition="right"
+          size="lg"
           type="submit"
+          variant="primary"
         >
           Next
-          <svg
-            className="w-5 h-5 ml-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 5l7 7-7 7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        </button>
+        </Button>
       </div>
 
       {!formState.isSubmitSuccessful && formState.isSubmitted && (

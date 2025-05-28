@@ -74,7 +74,7 @@ export const Step4 = ({
   const config = statusConfig[paymentStatus as keyof typeof statusConfig]
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4">
+    <div className="flex flex-col items-center justify-center w-full text-white p-4">
       <div
         className={`${config.bgColor} border ${config.borderColor} rounded-xl shadow-2xl p-10 max-w-md w-full text-center`}
       >

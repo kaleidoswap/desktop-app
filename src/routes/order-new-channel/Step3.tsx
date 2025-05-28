@@ -466,7 +466,7 @@ export const Step3: React.FC<StepProps> = ({
 
   if (!order.payment || (!order.payment.bolt11 && !order.payment.onchain)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800 text-white">
+      <div className="flex flex-col items-center justify-center w-full text-white">
         <h3 className="text-2xl font-semibold mb-4">
           Error: Invalid order data
         </h3>
@@ -962,7 +962,7 @@ export const Step3: React.FC<StepProps> = ({
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-6">
+    <div className="w-full">
       <div className="max-w-3xl mx-auto">
         {/* Header with Flow Description */}
         <div className="text-center mb-8">
