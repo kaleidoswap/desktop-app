@@ -232,33 +232,69 @@ impl NodeProcess {
                     let window_clone = Arc::clone(&window_for_thread);
                     std::thread::spawn(move || {
                         let reader = BufReader::new(stdout);
-                        for line in reader.lines() {
-                            if let Ok(line) = line {
-                                println!("Node stdout: {}", line);
-                                logs_clone.lock().unwrap().push(line.clone());
-                                if let Some(win) = &*window_clone.lock().unwrap() {
-                                    let _ = win.emit("node-log", line);
+                        for line_result in reader.lines() {
+                            match line_result {
+                                Ok(line) => {
+                                    println!("Node stdout: {}", line);
+                                    logs_clone.lock().unwrap().push(line.clone());
+                                    if let Some(win) = &*window_clone.lock().unwrap() {
+                                        let _ = win.emit("node-log", line);
+                                    }
+                                }
+                                Err(e) => {
+                                    let err_msg = format!("Error reading from node stdout: {}", e);
+                                    println!("{}", err_msg);
+                                    logs_clone.lock().unwrap().push(err_msg.clone());
+                                    // Consider emitting critical I/O errors to frontend
+                                    // if let Some(win) = &*window_clone.lock().unwrap() {
+                                    //     let _ = win.emit("node-error", err_msg);
+                                    // }
                                 }
                             }
                         }
                     });
+                } else {
+                    println!("Warning: child.stdout was None. Cannot capture stdout from node process.");
+                    logs_for_thread.lock().unwrap().push(
+                        "Warning: child.stdout was None. Cannot capture stdout from node process."
+                            .to_string(),
+                    );
                 }
+
                 // Capture stderr
                 if let Some(stderr) = child.stderr.take() {
                     let logs_clone = Arc::clone(&logs_for_thread);
                     let window_clone = Arc::clone(&window_for_thread);
                     std::thread::spawn(move || {
                         let reader = BufReader::new(stderr);
-                        for line in reader.lines() {
-                            if let Ok(line) = line {
-                                println!("Node stderr: {}", line);
-                                logs_clone.lock().unwrap().push(format!("Error: {}", line));
-                                if let Some(win) = &*window_clone.lock().unwrap() {
-                                    let _ = win.emit("node-error", line);
+                        for line_result in reader.lines() {
+                            match line_result {
+                                Ok(line) => {
+                                    println!("Node stderr: {}", line);
+                                    let error_line = format!("Error: {}", line);
+                                    logs_clone.lock().unwrap().push(error_line.clone());
+                                    if let Some(win) = &*window_clone.lock().unwrap() {
+                                        let _ = win.emit("node-error", line); // Emit original line as error
+                                    }
+                                }
+                                Err(e) => {
+                                    let err_msg = format!("Error reading from node stderr: {}", e);
+                                    println!("{}", err_msg);
+                                    logs_clone.lock().unwrap().push(err_msg.clone());
+                                    // Emit critical I/O errors to frontend
+                                    if let Some(win) = &*window_clone.lock().unwrap() {
+                                        let _ = win.emit("node-error", err_msg);
+                                    }
                                 }
                             }
                         }
                     });
+                } else {
+                    println!("Warning: child.stderr was None. Cannot capture stderr from node process.");
+                    logs_for_thread.lock().unwrap().push(
+                        "Warning: child.stderr was None. Cannot capture stderr from node process."
+                            .to_string(),
+                    );
                 }
             }
             drop(child_option); // Release the lock
@@ -494,15 +530,17 @@ impl NodeProcess {
             path
         } else {
             // In production mode, get the resource path from the app handle
-            let app_handle = self.app_handle.lock().unwrap();
-            let app_handle = app_handle.as_ref().ok_or_else(|| {
+            let app_handle_guard = self.app_handle.lock().unwrap();
+            let app_handle = app_handle_guard.as_ref().ok_or_else(|| {
                 "App handle not set. Make sure to call set_window first.".to_string()
             })?;
 
-            let resource_dir = app_handle
-                .path()
-                .resource_dir()
-                .or_else(|_| Err("Failed to get resource directory".to_string()))?;
+            let resource_dir = app_handle.path().resource_dir().map_err(|e| {
+                format!(
+                    "Failed to get resource directory: {}. Please ensure the application is correctly bundled.",
+                    e
+                )
+            })?;
 
             // Platform-specific binary path resolution
             let binary_path = if cfg!(target_os = "macos") {
@@ -546,7 +584,7 @@ impl NodeProcess {
                 }
             }
             return Err(format!(
-                "rgb-lightning-node executable not found at: {:?}",
+                "rgb-lightning-node executable not found at: {:?}. Please check the installation and path.",
                 executable_path
             ));
         }
@@ -620,7 +658,10 @@ impl NodeProcess {
                 Ok(child)
             }
             Err(e) => {
-                let err = format!("Failed to spawn rgb-lightning-node process: {}", e);
+                let err = format!(
+                    "Failed to spawn rgb-lightning-node process at {:?}: {}",
+                    executable_path, e
+                );
                 println!("{}", err);
                 Err(err)
             }

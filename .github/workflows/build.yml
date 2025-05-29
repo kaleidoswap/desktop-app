@@ -57,6 +57,29 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      # New steps for building rgb-lightning-node
+      - name: Build rgb-lightning-node binary
+        run: |
+          if [[ "${{ matrix.platform }}" == "macos-latest" && "${{ matrix.args }}" == "--target aarch64-apple-darwin" ]]; then
+            make build-arm-macos
+          elif [[ "${{ matrix.platform }}" == "macos-latest" && "${{ matrix.args }}" == "--target x86_64-apple-darwin" ]]; then
+            make build-x86-macos
+          elif [[ "${{ matrix.platform }}" == "ubuntu-22.04" ]]; then
+            # This assumes ubuntu-22.04 is for x86_64, which is typical for GitHub runners
+            make build-x86-linux
+          else
+            echo "Unsupported platform/args combination for rgb-lightning-node build"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Verify rgb-lightning-node binary
+        run: |
+          ls -l bin/rgb-lightning-node
+          file bin/rgb-lightning-node
+        shell: bash
+      # End of new steps
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
