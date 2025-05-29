@@ -117,6 +117,45 @@ help:
 	@echo "  make run-debug   - Update repo, compile in debug mode and run the program"
 	@echo "  make clean       - Clean the build files"
 	@echo "  make test        - Update repo and run the tests"
+	@echo "  make build-arm-macos - Build the project for aarch64 macOS (Apple Silicon)"
+	@echo "  make build-x86-macos - Build the project for x86_64 macOS (Intel)"
+	@echo "  make build-x86-linux - Build the project for x86_64 Linux"
 	@echo "  make help        - Show this help message"
 
-.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build
+check_arm_macos_target:
+	@rustup target list --installed | grep aarch64-apple-darwin > /dev/null || \
+		(echo "Error: Rust target aarch64-apple-darwin not installed." && \
+		 echo "Please install it by running: rustup target add aarch64-apple-darwin" && \
+		 exit 1)
+
+build-arm-macos: check_dependencies check_cargo_env update_repo check_arm_macos_target
+	cd $(PROJECT_DIR) && $(CARGO) build --target aarch64-apple-darwin --manifest-path $(PROJECT_DIR)/Cargo.toml
+	@mkdir -p $(BIN_DIR)
+	@cp $(PROJECT_DIR)/target/aarch64-apple-darwin/debug/$(PROJECT_NAME) $(BIN_DIR)/$(PROJECT_NAME)
+	@echo "Successfully built aarch64 macOS binary at $(BIN_DIR)/$(PROJECT_NAME)"
+
+check_x86_macos_target:
+	@rustup target list --installed | grep x86_64-apple-darwin > /dev/null || \
+		(echo "Error: Rust target x86_64-apple-darwin not installed." && \
+		 echo "Please install it by running: rustup target add x86_64-apple-darwin" && \
+		 exit 1)
+
+build-x86-macos: check_dependencies check_cargo_env update_repo check_x86_macos_target
+	cd $(PROJECT_DIR) && $(CARGO) build --target x86_64-apple-darwin --manifest-path $(PROJECT_DIR)/Cargo.toml
+	@mkdir -p $(BIN_DIR)
+	@cp $(PROJECT_DIR)/target/x86_64-apple-darwin/debug/$(PROJECT_NAME) $(BIN_DIR)/$(PROJECT_NAME)
+	@echo "Successfully built x86_64 macOS binary at $(BIN_DIR)/$(PROJECT_NAME)"
+
+check_x86_linux_target:
+	@rustup target list --installed | grep x86_64-unknown-linux-gnu > /dev/null || \
+		(echo "Error: Rust target x86_64-unknown-linux-gnu not installed." && \
+		 echo "Please install it by running: rustup target add x86_64-unknown-linux-gnu" && \
+		 exit 1)
+
+build-x86-linux: check_dependencies check_cargo_env update_repo check_x86_linux_target
+	cd $(PROJECT_DIR) && $(CARGO) build --target x86_64-unknown-linux-gnu --manifest-path $(PROJECT_DIR)/Cargo.toml
+	@mkdir -p $(BIN_DIR)
+	@cp $(PROJECT_DIR)/target/x86_64-unknown-linux-gnu/debug/$(PROJECT_NAME) $(BIN_DIR)/$(PROJECT_NAME)
+	@echo "Successfully built x86_64 Linux binary at $(BIN_DIR)/$(PROJECT_NAME)"
+
+.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build check_arm_macos_target build-arm-macos check_x86_macos_target build-x86-macos check_x86_linux_target build-x86-linux
