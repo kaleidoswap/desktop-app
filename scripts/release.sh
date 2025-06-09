@@ -43,8 +43,8 @@ if [ "$CURRENT_BRANCH" != "dev" ]; then
     fi
 fi
 
-# Check for uncommitted changes
-if ! git diff-index --quiet HEAD --; then
+# Check for uncommitted changes in working directory
+if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "Error: You have uncommitted changes. Please commit or stash them first."
     exit 1
 fi
