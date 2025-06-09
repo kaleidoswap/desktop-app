@@ -65,9 +65,14 @@ rm -f src-tauri/tauri.conf.json.bak src-tauri/Cargo.toml.bak
 
 echo "Version updated to $VERSION"
 
-# Commit the version changes
+# Commit the version changes (only if there are changes to commit)
 git add src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
-git commit -m "Release $TAG_PREFIX$VERSION"
+if ! git diff-index --quiet HEAD --; then
+    git commit -m "Release $TAG_PREFIX$VERSION"
+    echo "Committed version changes"
+else
+    echo "No version changes to commit (version already at $VERSION)"
+fi
 
 # Create and push the tag (force push to allow re-pushing if pipeline failed)
 git tag -f "$TAG_PREFIX$VERSION"
