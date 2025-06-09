@@ -69,9 +69,9 @@ echo "Version updated to $VERSION"
 git add src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
 git commit -m "Release $TAG_PREFIX$VERSION"
 
-# Create and push the tag
+# Create and push the tag (force push to allow re-pushing if pipeline failed)
 git tag -f "$TAG_PREFIX$VERSION"
-git push origin "$TAG_PREFIX$VERSION"
+git push -f origin "$TAG_PREFIX$VERSION"
 
 echo "✅ Release tag $TAG_PREFIX$VERSION created and pushed!"
 echo "🚀 GitHub Actions will now build and create the release."
