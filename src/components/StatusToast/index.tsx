@@ -145,7 +145,7 @@ export const StatusToast: React.FC<{
 }> = ({ assets }) => {
   const { addNotification, removeNotification } = useNotification()
   const swapStates = useRef<Record<string, SwapNotificationState>>({})
-  const autoRemoveTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({})
+  const autoRemoveTimeoutsRef = useRef<Record<string, number>>({})
 
   // Clear any existing timeouts when component unmounts
   useEffect(() => {
@@ -231,7 +231,7 @@ export const StatusToast: React.FC<{
                 }
               },
               5000
-            )
+            ) as unknown as number
 
             if (swap.status === 'Succeeded') {
               toast.success('Swap succeeded')
