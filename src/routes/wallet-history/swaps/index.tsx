@@ -10,6 +10,7 @@ import {
 import React, { useState, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
+import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, IconButton, Badge, Card, Alert } from '../../../components/ui'
@@ -37,12 +38,16 @@ const formatAmount = (
     // Convert millisats to sats or BTC
     const sats = amount / 1000
     if (bitcoinUnit === 'SAT') {
-      return sats.toLocaleString('en-US', { maximumFractionDigits: 0 })
+      return sats.toLocaleString('en-US', {
+        maximumFractionDigits: 0,
+        useGrouping: true,
+      })
     } else {
       const btc = sats / 100000000
       return btc.toLocaleString('en-US', {
         maximumFractionDigits: 8,
         minimumFractionDigits: 8,
+        useGrouping: true,
       })
     }
   } else {
@@ -50,6 +55,8 @@ const formatAmount = (
     const formattedAmount = amount / Math.pow(10, precision)
     return formattedAmount.toLocaleString('en-US', {
       maximumFractionDigits: precision,
+      minimumFractionDigits: 0,
+      useGrouping: true,
     })
   }
 }
@@ -57,10 +64,6 @@ const formatAmount = (
 const formatSwapDate = (timestamp: number | null): string => {
   if (!timestamp) return 'N/A'
   return formatDate(timestamp)
-}
-
-const truncateHash = (hash: string) => {
-  return `${hash.substring(0, 8)}...${hash.substring(hash.length - 8)}`
 }
 
 const copyToClipboard = (text: string, message: string) => {
@@ -135,37 +138,43 @@ const SwapRow: React.FC<{
         className={`border-b border-gray-700/50 hover:bg-gray-700/20 cursor-pointer ${isExpanded ? 'bg-gray-700/30' : ''}`}
         onClick={onClick}
       >
-        <td className={COL_CLASS_NAME}>
-          <Badge variant={swap.type === 'maker' ? 'info' : 'primary'}>
+        <td className={twJoin(COL_CLASS_NAME, 'w-20')}>
+          <Badge size="sm" variant={swap.type === 'maker' ? 'info' : 'primary'}>
             {swap.type === 'maker' ? 'Maker' : 'Taker'}
           </Badge>
         </td>
-        <td className={COL_CLASS_NAME}>
-          <div className="flex items-center">
-            <span className="text-red-500">{fromAmount}</span>
-            <span className="mx-1 text-gray-400">{fromAssetTicker}</span>
-            <ArrowRight className="w-3 h-3 mx-1 text-gray-400" />
-            <span className="text-green-500">{toAmount}</span>
-            <span className="ml-1 text-gray-400">{toAssetTicker}</span>
+        <td className={twJoin(COL_CLASS_NAME, 'w-48')}>
+          <div className="flex items-center flex-wrap gap-1">
+            <span className="text-red-500 font-semibold text-sm">
+              {fromAmount}
+            </span>
+            <span className="text-gray-400 text-xs">{fromAssetTicker}</span>
+            <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            <span className="text-green-500 font-semibold text-sm">
+              {toAmount}
+            </span>
+            <span className="text-gray-400 text-xs">{toAssetTicker}</span>
           </div>
         </td>
-        <td className={COL_CLASS_NAME}>
-          <Badge variant={getStatusBadgeVariant(swap.status)}>
+        <td className={twJoin(COL_CLASS_NAME, 'w-24')}>
+          <Badge size="sm" variant={getStatusBadgeVariant(swap.status)}>
             {swap.status}
           </Badge>
         </td>
-        <td className={COL_CLASS_NAME}>
-          {formatSwapDate(
-            swap.completed_at || swap.initiated_at || swap.requested_at
-          )}
+        <td className={twJoin(COL_CLASS_NAME, 'w-32')}>
+          <span className="text-sm text-slate-300">
+            {formatSwapDate(
+              swap.completed_at || swap.initiated_at || swap.requested_at
+            )}
+          </span>
         </td>
-        <td className={COL_CLASS_NAME}>
-          <div className="flex items-center">
-            <span className="text-xs text-gray-400 truncate max-w-[120px]">
-              {truncateHash(swap.payment_hash)}
+        <td className={twJoin(COL_CLASS_NAME, 'min-w-0')}>
+          <div className="flex items-center min-w-0">
+            <span className="text-xs text-gray-400 truncate font-mono mr-2">
+              {swap.payment_hash}
             </span>
             <button
-              className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+              className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
                 copyToClipboard(
@@ -173,8 +182,9 @@ const SwapRow: React.FC<{
                   'Payment hash copied to clipboard'
                 )
               }}
+              title="Copy payment hash"
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-3 h-3" />
             </button>
           </div>
         </td>
@@ -596,14 +606,16 @@ export const Component: React.FC = () => {
         </div>
       ) : (
         <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <table className="w-full">
+          <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="text-left text-xs text-gray-400 border-b border-gray-700">
-                <th className={COL_CLASS_NAME}>Type</th>
-                <th className={COL_CLASS_NAME}>Swap</th>
-                <th className={COL_CLASS_NAME}>Status</th>
-                <th className={COL_CLASS_NAME}>Date</th>
-                <th className={COL_CLASS_NAME}>Payment Hash</th>
+              <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
+                <th className={twJoin(COL_CLASS_NAME, 'w-20')}>Type</th>
+                <th className={twJoin(COL_CLASS_NAME, 'w-48')}>Swap</th>
+                <th className={twJoin(COL_CLASS_NAME, 'w-24')}>Status</th>
+                <th className={twJoin(COL_CLASS_NAME, 'w-32')}>Date</th>
+                <th className={twJoin(COL_CLASS_NAME, 'min-w-0')}>
+                  Payment Hash
+                </th>
               </tr>
             </thead>
             <tbody>

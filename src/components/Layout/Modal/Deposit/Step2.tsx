@@ -12,7 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../../../app/store/hooks'
@@ -20,8 +20,18 @@ import btcLogo from '../../../../assets/bitcoin-logo.svg'
 import rgbLogo from '../../../../assets/rgb-symbol-color.svg'
 import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
 import { BTC_ASSET_ID } from '../../../../constants'
+import {
+  formatAssetAmountWithPrecision,
+  parseAssetAmountWithPrecision,
+  getAssetPrecision,
+  getDisplayAsset,
+} from '../../../../helpers/number'
 import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
-import { nodeApi, Network } from '../../../../slices/nodeApi/nodeApi.slice'
+import {
+  nodeApi,
+  Network,
+  Channel,
+} from '../../../../slices/nodeApi/nodeApi.slice'
 
 interface Props {
   assetId?: string
@@ -29,12 +39,16 @@ interface Props {
   onNext: VoidFunction
 }
 
+const MSATS_PER_SAT = 1000
+const RGB_HTLC_MIN_SAT = 3000
+
 export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [network, setNetwork] = useState<'on-chain' | 'lightning'>('on-chain')
   const [address, setAddress] = useState<string>()
   const [loading, setLoading] = useState<boolean>(false)
   const [amount, setAmount] = useState<string>('')
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
+  const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
@@ -51,6 +65,58 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       skip: !address?.startsWith('ln') || network !== 'lightning',
     }
   )
+
+  // Fetch channels data to calculate HTLC limits
+  const { data: channelsData } = nodeApi.useListChannelsQuery(undefined, {
+    pollingInterval: 3000,
+    refetchOnFocus: false,
+    refetchOnMountOrArgChange: true,
+  })
+
+  const channels = useMemo(() => channelsData?.channels || [], [channelsData])
+
+  // Calculate max deposit amount based on HTLC limits (similar to market maker)
+  const calculateMaxDepositAmount = useCallback(
+    (asset: string): number => {
+      if (asset === 'BTC') {
+        if (channels.length === 0) {
+          return 0
+        }
+
+        const channelHtlcLimits = channels.map(
+          (c: Channel) => c.next_outbound_htlc_limit_msat / MSATS_PER_SAT
+        )
+
+        if (
+          channelHtlcLimits.length === 0 ||
+          Math.max(...channelHtlcLimits) <= 0
+        ) {
+          return 0
+        }
+
+        const maxHtlcLimit = Math.max(...channelHtlcLimits)
+        const maxDepositableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
+        return Math.max(0, maxDepositableAmount)
+      } else {
+        // For RGB assets, we still need to consider the BTC HTLC limits
+        // since RGB transfers require BTC for fees
+        return calculateMaxDepositAmount('BTC')
+      }
+    },
+    [channels]
+  )
+
+  // Update max amounts when network or asset changes
+  useEffect(() => {
+    if (network === 'lightning' && assetId) {
+      const maxAmount = calculateMaxDepositAmount(
+        assetId === BTC_ASSET_ID ? 'BTC' : assetId
+      )
+      setMaxDepositAmount(maxAmount)
+    } else {
+      setMaxDepositAmount(0)
+    }
+  }, [network, assetId, calculateMaxDepositAmount])
 
   // Reset address when switching networks
   useEffect(() => {
@@ -87,13 +153,84 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   // Add network info query
   const { data: networkInfo } = nodeApi.endpoints.networkInfo.useQuery()
 
-  // Handle amount input change with validation
+  // Format amount helper
+  const formatAmount = useCallback(
+    (amount: number, asset: string) => {
+      return formatAssetAmountWithPrecision(
+        amount,
+        asset,
+        bitcoinUnit,
+        assetList?.nia
+      )
+    },
+    [bitcoinUnit, assetList?.nia]
+  )
+
+  // Parse amount helper
+  const parseAmount = useCallback(
+    (amount: string, asset: string) => {
+      return parseAssetAmountWithPrecision(
+        amount,
+        asset,
+        bitcoinUnit,
+        assetList?.nia
+      )
+    },
+    [bitcoinUnit, assetList?.nia]
+  )
+
+  // Enhanced amount input change handler with formatting
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    // Allow empty value or positive numbers
-    if (value === '' || parseFloat(value) > 0) {
-      setAmount(value)
+    let value = e.target.value
+
+    // Remove all non-digit and non-decimal characters except commas
+    value = value.replace(/[^\d.,]/g, '')
+
+    // Remove commas for processing
+    const cleanValue = value.replace(/,/g, '')
+
+    // Handle multiple decimal points - keep only the first one
+    const parts = cleanValue.split('.')
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts.slice(1).join('')
+    } else {
+      value = cleanValue
     }
+
+    // Get asset precision for validation
+    const asset = assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+    const precision = getAssetPrecision(asset, bitcoinUnit, assetList?.nia)
+
+    // Limit decimal places based on asset precision
+    const decimalParts = value.split('.')
+    if (decimalParts.length === 2 && decimalParts[1].length > precision) {
+      value = decimalParts[0] + '.' + decimalParts[1].substring(0, precision)
+    }
+
+    // Format with comma separators but only for the integer part
+    const formattedValue =
+      value.split('.').length === 2
+        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+          '.' +
+          value.split('.')[1]
+        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+    // Validate against max deposit amount for lightning
+    if (network === 'lightning' && maxDepositAmount > 0) {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue) && numValue > 0) {
+        // Convert to base units and check against max
+        const baseUnits = parseAmount(value, asset)
+        const maxBaseUnits = parseAmount(maxDepositAmount.toString(), asset)
+
+        if (baseUnits > maxBaseUnits) {
+          // Don't update if it exceeds the limit
+          return
+        }
+      }
+    }
+
+    setAmount(formattedValue)
   }
 
   const generateRgbInvoice = async () => {
@@ -133,21 +270,26 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     setLoading(true)
     try {
       if (network === 'lightning') {
-        if (!amount || parseFloat(amount) <= 0) {
+        if (!amount || parseFloat(amount.replace(/,/g, '')) <= 0) {
           toast.error('Please enter a valid positive amount')
           setLoading(false)
           return
         }
+
+        // Parse the amount properly, removing commas
+        const cleanAmount = amount.replace(/,/g, '')
+        const numericAmount = parseFloat(cleanAmount)
+
         const res = await lnInvoice(
           assetId === BTC_ASSET_ID
             ? {
                 amt_msat:
                   bitcoinUnit === 'SAT'
-                    ? Number(amount) * 1000
-                    : Number(amount) * Math.pow(10, 8) * 1000,
+                    ? numericAmount * 1000
+                    : numericAmount * Math.pow(10, 8) * 1000,
               }
             : {
-                asset_amount: Number(amount),
+                asset_amount: numericAmount,
                 asset_id: assetId,
               }
         )
@@ -371,29 +513,90 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {/* Amount Input for Lightning */}
         {network === 'lightning' && (
           <div className="space-y-1 animate-fadeIn">
-            <label className="text-xs font-medium text-slate-400">Amount</label>
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-medium text-slate-400">
+                Amount
+              </label>
+              {maxDepositAmount > 0 && (
+                <div className="text-xs text-slate-400">
+                  Max:{' '}
+                  {formatAmount(
+                    maxDepositAmount,
+                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                  )}{' '}
+                  {getDisplayAsset(
+                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
+                    bitcoinUnit
+                  )}
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <input
                 autoFocus
                 className="flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
                          placeholder:text-slate-600 transition-all duration-200 text-sm"
-                min="0.000001"
+                inputMode="decimal"
                 onChange={handleAmountChange}
-                placeholder="Enter amount"
-                step="any"
-                type="number"
+                placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
+                type="text"
                 value={amount}
               />
               <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
-                {assetId === BTC_ASSET_ID ? bitcoinUnit : assetTicker}
+                {assetId === BTC_ASSET_ID
+                  ? getDisplayAsset('BTC', bitcoinUnit)
+                  : assetTicker}
               </div>
             </div>
+
+            {/* Validation and info messages */}
+            {amount &&
+              parseFloat(amount.replace(/,/g, '')) > 0 &&
+              maxDepositAmount > 0 && (
+                <div className="mt-2">
+                  {parseAmount(
+                    amount,
+                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                  ) >
+                    parseAmount(
+                      maxDepositAmount.toString(),
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                    ) && (
+                    <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                      <p className="text-xs text-red-400">
+                        <span className="font-medium">Error:</span> Amount
+                        exceeds maximum deposit limit of{' '}
+                        {formatAmount(
+                          maxDepositAmount,
+                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                        )}{' '}
+                        {getDisplayAsset(
+                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
+                          bitcoinUnit
+                        )}
+                        .
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
             {assetId && assetId !== BTC_ASSET_ID && (
               <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
                 <p className="text-xs text-blue-400">
                   <span className="font-medium">Note:</span> 3,000 sats required
                   for RGB asset transfers.
+                </p>
+              </div>
+            )}
+
+            {maxDepositAmount === 0 && (
+              <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                <p className="text-xs text-yellow-400">
+                  <span className="font-medium">Warning:</span> No active
+                  Lightning channels found. Lightning deposits are not
+                  available.
                 </p>
               </div>
             )}
@@ -405,7 +608,23 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             className="w-full py-2.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
                      text-white rounded-xl font-medium transition-all duration-200 
                      flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-            disabled={loading || (network === 'lightning' && !amount)}
+            disabled={
+              loading ||
+              (network === 'lightning' &&
+                (!amount || parseFloat(amount.replace(/,/g, '')) <= 0)) ||
+              (network === 'lightning' &&
+                maxDepositAmount > 0 &&
+                amount &&
+                parseAmount(
+                  amount,
+                  assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                ) >
+                  parseAmount(
+                    maxDepositAmount.toString(),
+                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                  )) ||
+              (network === 'lightning' && maxDepositAmount === 0)
+            }
             onClick={generateAddress}
           >
             {loading ? (

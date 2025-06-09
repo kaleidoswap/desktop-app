@@ -14,6 +14,8 @@ import {
   getAssetPrecision,
   formatBitcoinAmount,
   formatAssetAmountWithPrecision,
+  parseAssetAmountWithPrecision,
+  getDisplayAsset,
 } from '../../../../../helpers/number'
 import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
 import { WithdrawFormProps, AssetOption } from '../types'
@@ -22,6 +24,9 @@ import { BalanceDisplay } from './BalanceDisplay'
 import { LightningInvoiceDetails } from './LightningInvoiceDetails'
 import { PaymentStatus } from './PaymentStatus'
 import { RGBInvoiceDetails } from './RGBInvoiceDetails'
+
+const MSATS_PER_SAT = 1000
+const RGB_HTLC_MIN_SAT = 3000
 
 // WithdrawForm component for rendering the form
 const WithdrawForm: React.FC<WithdrawFormProps> = ({
@@ -69,6 +74,95 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
     // Otherwise, show all assets
     return true
   })
+
+  // Calculate max withdraw amount based on HTLC limits for Lightning
+  const calculateMaxWithdrawAmount = (asset: string): number => {
+    if (
+      (addressType === 'lightning' || addressType === 'lightning-address') &&
+      asset === 'BTC'
+    ) {
+      // For Lightning BTC withdrawals, use the HTLC limit
+      const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
+      const maxWithdrawable = maxHtlcSat - RGB_HTLC_MIN_SAT
+      return Math.max(0, Math.min(maxWithdrawable, assetBalance))
+    }
+    // For on-chain or RGB withdrawals, use the full balance
+    return assetBalance
+  }
+
+  // Format amount helper
+  const formatAmount = (amount: number, asset: string) => {
+    return formatAssetAmountWithPrecision(
+      amount,
+      asset,
+      bitcoinUnit,
+      assets.data?.nia
+    )
+  }
+
+  // Parse amount helper
+  const parseAmount = (amount: string, asset: string) => {
+    return parseAssetAmountWithPrecision(
+      amount,
+      asset,
+      bitcoinUnit,
+      assets.data?.nia
+    )
+  }
+
+  // Enhanced amount input change handler with formatting
+  const handleAmountInputChange = (
+    field: any,
+    rawValue: string,
+    precision: number,
+    ticker: string
+  ) => {
+    // Remove all non-digit and non-decimal characters except commas
+    let value = rawValue.replace(/[^\d.,]/g, '')
+
+    // Remove commas for processing
+    const cleanValue = value.replace(/,/g, '')
+
+    // Handle multiple decimal points - keep only the first one
+    const parts = cleanValue.split('.')
+    if (parts.length > 2) {
+      value = parts[0] + '.' + parts.slice(1).join('')
+    } else {
+      value = cleanValue
+    }
+
+    // Limit decimal places based on asset precision
+    const decimalParts = value.split('.')
+    if (decimalParts.length === 2 && decimalParts[1].length > precision) {
+      value = decimalParts[0] + '.' + decimalParts[1].substring(0, precision)
+    }
+
+    // Format with comma separators but only for the integer part
+    const formattedValue =
+      value.split('.').length === 2
+        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+          '.' +
+          value.split('.')[1]
+        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+    // Validate against max withdraw amount for lightning
+    const maxWithdrawable = calculateMaxWithdrawAmount(ticker)
+    if (maxWithdrawable > 0 && value) {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue) && numValue > 0) {
+        // Convert to base units and check against max
+        const baseUnits = parseAmount(value, ticker)
+        const maxBaseUnits = parseAmount(maxWithdrawable.toString(), ticker)
+
+        if (baseUnits > maxBaseUnits) {
+          // Don't update if it exceeds the limit
+          return
+        }
+      }
+    }
+
+    field.onChange(formattedValue)
+  }
 
   if (isDecodingInvoice) {
     return (
@@ -182,13 +276,26 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       {(addressType === 'lightning' || addressType === 'lightning-address') &&
         !validationError && (
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 text-sm">
-                Max Lightning Outbound Capacity:
-              </span>
-              <span className="text-white font-medium">
-                {(maxLightningCapacity / 1000).toLocaleString()} sat
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">
+                  Max Lightning Capacity:
+                </span>
+                <span className="text-white font-medium">
+                  {(maxLightningCapacity / 1000).toLocaleString()} sat
+                </span>
+              </div>
+              {assetId === BTC_ASSET_ID && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 text-sm">
+                    Max Withdrawable (after fees):
+                  </span>
+                  <span className="text-blue-400 font-medium">
+                    {formatAmount(calculateMaxWithdrawAmount('BTC'), 'BTC')}{' '}
+                    {getDisplayAsset('BTC', bitcoinUnit)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -330,18 +437,36 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   <label className="text-xs font-medium text-slate-400">
                     Amount
                   </label>
-                  <button
-                    className="text-blue-500 text-xs hover:text-blue-400"
-                    onClick={() => {
-                      // Make sure the max value is not less than the minimum required amount
-                      const minAmount = getMinAmount()
-                      const maxAmount = Math.max(assetBalance, minAmount)
-                      setValue('amount', maxAmount)
-                    }}
-                    type="button"
-                  >
-                    Max
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {addressType === 'lightning-address' &&
+                      assetId === BTC_ASSET_ID && (
+                        <div className="text-xs text-slate-400">
+                          Max:{' '}
+                          {formatAmount(
+                            calculateMaxWithdrawAmount('BTC'),
+                            'BTC'
+                          )}{' '}
+                          {getDisplayAsset('BTC', bitcoinUnit)}
+                        </div>
+                      )}
+                    <button
+                      className="text-blue-500 text-xs hover:text-blue-400"
+                      onClick={() => {
+                        // Use the appropriate max value based on address type
+                        const currentAssetInfo = assets.data?.nia.find(
+                          (a: NiaAsset) => a.asset_id === assetId
+                        )
+                        const ticker =
+                          currentAssetInfo?.ticker ||
+                          (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
+                        const maxAmount = calculateMaxWithdrawAmount(ticker)
+                        setValue('amount', maxAmount)
+                      }}
+                      type="button"
+                    >
+                      Max
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Controller
@@ -361,6 +486,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         assets.data?.nia
                       )
 
+                      const maxWithdrawable = calculateMaxWithdrawAmount(ticker)
+
                       return (
                         <input
                           className={`flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border text-sm
@@ -376,44 +503,37 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                             let finalValue = field.value
                             const minAmt = getMinAmount()
 
-                            // Try parsing the string value
+                            // Try parsing the string value, removing commas
                             let numValue = parseFloat(
                               String(finalValue).replace(/,/g, '')
                             )
 
                             if (isNaN(numValue) || numValue < minAmt) {
                               numValue = minAmt // Set to min if invalid or below min
-                            } else if (numValue > assetBalance) {
-                              numValue = assetBalance // Set to max if above max
+                            } else if (numValue > maxWithdrawable) {
+                              numValue = maxWithdrawable // Set to max withdrawable if above max
                             }
 
-                            // Update the field with the final numeric value
-                            // Check if it actually changed to avoid unnecessary re-renders
-                            if (field.value !== numValue) {
-                              field.onChange(numValue)
+                            // Format the final value with commas
+                            const formattedFinalValue = formatAmount(
+                              numValue,
+                              ticker
+                            )
+
+                            // Update the field with the formatted value
+                            if (field.value !== formattedFinalValue) {
+                              field.onChange(formattedFinalValue)
                             }
                           }}
                           onChange={(e) => {
-                            const rawValue = e.target.value
-
-                            // Basic filter: allow digits and one decimal point
-                            let filteredValue = rawValue.replace(/[^\d.]/g, '')
-                            const parts = filteredValue.split('.')
-                            if (parts.length > 2) {
-                              filteredValue =
-                                parts[0] + '.' + parts.slice(1).join('')
-                            }
-
-                            // Handle precision limit
-                            if (parts[1] && parts[1].length > precision) {
-                              filteredValue =
-                                parts[0] + '.' + parts[1].slice(0, precision)
-                            }
-
-                            // Update the form state with the filtered string
-                            field.onChange(filteredValue)
+                            handleAmountInputChange(
+                              field,
+                              e.target.value,
+                              precision,
+                              ticker
+                            )
                           }}
-                          placeholder={`Enter amount (${precision} decimals max)`}
+                          placeholder={`Enter amount (max ${maxWithdrawable > 0 ? formatAmount(maxWithdrawable, ticker) : 'N/A'})`}
                           type="text"
                           value={
                             field.value === undefined || field.value === null
@@ -435,24 +555,30 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                             )) || // Must parse to a number
                           'Please enter a valid number',
                         maxValue: (value) => {
-                          // First, check if we're dealing with BTC or another asset
-                          if (assetId === BTC_ASSET_ID) {
-                            // For Bitcoin, we need to parse the input value
-                            const inputValue = parseFloat(
-                              String(value).replace(/,/g, '')
-                            )
+                          // Get the current asset info
+                          const currentAssetInfo = assets.data?.nia.find(
+                            (a: NiaAsset) => a.asset_id === assetId
+                          )
+                          const ticker =
+                            currentAssetInfo?.ticker ||
+                            (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
+                          const maxWithdrawable =
+                            calculateMaxWithdrawAmount(ticker)
 
-                            // Simple direct comparison - assetBalance should already be in the right unit (satoshis)
+                          const inputValue = parseFloat(
+                            String(value).replace(/,/g, '')
+                          )
+
+                          if (
+                            addressType === 'lightning-address' &&
+                            assetId === BTC_ASSET_ID
+                          ) {
                             return (
                               (!isNaN(inputValue) &&
-                                inputValue <= assetBalance) ||
-                              'Amount exceeds available balance'
+                                inputValue <= maxWithdrawable) ||
+                              `Amount exceeds max withdrawable (${formatAmount(maxWithdrawable, ticker)} ${getDisplayAsset(ticker, bitcoinUnit)})`
                             )
                           } else {
-                            // Simple direct comparison
-                            const inputValue = parseFloat(
-                              String(value).replace(/,/g, '')
-                            )
                             return (
                               (!isNaN(inputValue) &&
                                 inputValue <= assetBalance) ||
@@ -483,6 +609,19 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                     {errors.amount.message}
                   </p>
                 )}
+
+                {/* Show HTLC limit warning for Lightning withdrawals */}
+                {addressType === 'lightning-address' &&
+                  assetId === BTC_ASSET_ID &&
+                  maxLightningCapacity > 0 && (
+                    <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <p className="text-xs text-blue-400">
+                        <span className="font-medium">Lightning Limit:</span>{' '}
+                        Max withdrawable amount is limited by your channel
+                        capacity and HTLC limits.
+                      </p>
+                    </div>
+                  )}
               </div>
             )}
 

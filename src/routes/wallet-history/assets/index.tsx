@@ -208,8 +208,10 @@ export const Component = () => {
     if (!selectedAsset) return amount.toString()
 
     const formattedAmount = amount / Math.pow(10, selectedAsset.precision)
-    return formattedAmount.toLocaleString(undefined, {
+    return formattedAmount.toLocaleString('en-US', {
       maximumFractionDigits: selectedAsset.precision,
+      minimumFractionDigits: 0,
+      useGrouping: true,
     })
   }
 
@@ -387,16 +389,16 @@ export const Component = () => {
               <LoadingPlaceholder />
             </div>
           ) : filteredTransfers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
+              <table className="w-full min-w-[800px]">
                 <thead>
-                  <tr className="text-left text-xs text-gray-400 border-b border-gray-700">
-                    <th className="py-3 px-4">Type</th>
-                    <th className="py-3 px-4">Amount</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Transaction ID</th>
-                    <th className="py-3 px-4"></th>
+                  <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
+                    <th className="py-3 px-4 w-20">Type</th>
+                    <th className="py-3 px-4 w-32">Amount</th>
+                    <th className="py-3 px-4 w-24">Status</th>
+                    <th className="py-3 px-4 w-32">Date</th>
+                    <th className="py-3 px-4 min-w-0">Transaction ID</th>
+                    <th className="py-3 px-4 w-12"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,35 +415,54 @@ export const Component = () => {
                           )
                         }
                       >
-                        <td className="py-3 px-4">
-                          <Badge variant={getKindBadgeVariant(transfer.kind)}>
+                        <td className="py-3 px-4 w-20">
+                          <Badge
+                            size="sm"
+                            variant={getKindBadgeVariant(transfer.kind)}
+                          >
                             {getKindLabel(transfer.kind)}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className={getKindColor(transfer.kind)}>
+                        <td className="py-3 px-4 w-32">
+                          <span
+                            className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
+                          >
                             {transfer.kind === 'Send' ? '-' : '+'}
                             {formatAmount(transfer.amount)}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 w-24">
                           <Badge
+                            size="sm"
                             variant={getStatusBadgeVariant(transfer.status)}
                           >
                             {transfer.status}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-300">
+                        <td className="py-3 px-4 w-32 text-sm text-slate-300">
                           {formatDate(transfer.created_at * 1000)}
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center">
-                            <span className="text-xs text-gray-400 truncate max-w-[120px]">
+                        <td className="py-3 px-4 min-w-0">
+                          <div className="flex items-center min-w-0">
+                            <span className="text-xs text-gray-400 truncate font-mono mr-2">
                               {transfer.txid}
                             </span>
+                            <button
+                              className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(
+                                  transfer.txid,
+                                  'Transaction ID copied to clipboard'
+                                )
+                              }}
+                              title="Copy transaction ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3 px-4 w-12 text-right">
                           <button className="text-gray-400 hover:text-gray-200">
                             {showTxDetails ===
                             `${transfer.txid}-${transfer.idx}` ? (

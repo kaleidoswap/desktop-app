@@ -25,9 +25,16 @@ const formatBitcoinAmount = (
 ): string => {
   const amountDecimal = new Decimal(amount)
   if (bitcoinUnit === 'SAT') {
-    return amountDecimal.toFixed(0)
+    return amountDecimal.toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 0,
+      useGrouping: true,
+    })
   } else {
-    return amountDecimal.div(100000000).toFixed(8)
+    return amountDecimal.div(100000000).toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 8,
+      minimumFractionDigits: 8,
+      useGrouping: true,
+    })
   }
 }
 
@@ -47,7 +54,14 @@ const formatAssetAmount = (
 
   // Convert to decimal and format with proper precision
   const amountDecimal = new Decimal(amount)
-  return amountDecimal.div(Math.pow(10, precision)).toFixed(precision)
+  return amountDecimal
+    .div(Math.pow(10, precision))
+    .toNumber()
+    .toLocaleString('en-US', {
+      maximumFractionDigits: precision,
+      minimumFractionDigits: 0,
+      useGrouping: true,
+    })
 }
 
 interface DepositProps {
@@ -90,48 +104,49 @@ const Deposit: React.FC<DepositProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-12 border-b border-slate-700 items-center text-base font-medium p-4 sm:p-0 hover:bg-slate-800/30 transition-colors">
-      <div
-        className={twJoin(COL_CLASS_NAME, 'flex items-center sm:col-span-1')}
-      >
+    <div className="grid grid-cols-12 border-b border-slate-700 items-center text-sm font-medium hover:bg-slate-800/30 transition-colors">
+      <div className={twJoin(COL_CLASS_NAME, 'flex items-center col-span-1')}>
         {type === 'on-chain' ? (
           <Badge
-            icon={<Chain className="w-4 h-4" />}
+            icon={<Chain className="w-3 h-3" />}
             size="sm"
             variant="primary"
           >
             On-chain
           </Badge>
         ) : (
-          <Badge icon={<Zap className="w-4 h-4" />} size="sm" variant="info">
+          <Badge icon={<Zap className="w-3 h-3" />} size="sm" variant="info">
             Off-chain
           </Badge>
         )}
       </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-        {displayAsset}
+      <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>
+        <span className="font-medium">{displayAsset}</span>
       </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {formattedAmount}
+      <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>
+        <span className="font-semibold text-white">{formattedAmount}</span>
       </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {timestamp ? formatDate(timestamp * 1000) : 'N/A'}
+      <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>
+        <span className="text-slate-300">
+          {timestamp ? formatDate(timestamp * 1000) : 'N/A'}
+        </span>
       </div>
       <div
         className={twJoin(
           COL_CLASS_NAME,
-          'col-span-1 sm:col-span-5 truncate text-slate-400 flex items-center'
+          'col-span-5 text-slate-400 flex items-center min-w-0'
         )}
       >
-        <span className="truncate">{txId}</span>
+        <span className="truncate mr-2 font-mono text-xs">{txId}</span>
         <button
-          className="ml-2 text-slate-500 hover:text-slate-300 transition-colors"
+          className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
           onClick={() => copyToClipboard(txId)}
+          title="Copy transaction ID"
         >
-          <Copy className="w-4 h-4" />
+          <Copy className="w-3 h-3" />
         </button>
       </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}>
+      <div className={twJoin(COL_CLASS_NAME, 'col-span-1 text-right')}>
         <Badge variant="success">Completed</Badge>
       </div>
     </div>
@@ -427,26 +442,16 @@ export const Component: React.FC = () => {
         </div>
       ) : (
         <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <div className="min-w-max">
-            <div className="grid grid-cols-1 sm:grid-cols-12 font-medium text-slate-400 border-b border-slate-700 py-2">
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Type
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Asset
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Amount
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Date
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-5')}>
+          <div className="min-w-[800px]">
+            <div className="grid grid-cols-12 font-medium text-slate-400 border-b border-slate-700 py-2 text-sm">
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>Type</div>
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>Asset</div>
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>Amount</div>
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>Date</div>
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-5')}>
                 Transaction ID
               </div>
-              <div
-                className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}
-              >
+              <div className={twJoin(COL_CLASS_NAME, 'col-span-1 text-right')}>
                 Status
               </div>
             </div>

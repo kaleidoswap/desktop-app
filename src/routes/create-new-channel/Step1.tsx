@@ -175,11 +175,10 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="text-center mb-10">
         <h3 className="text-3xl font-bold text-white mb-4">
-          Open a Channel - Step 1
+          Peer Connection - Step 1
         </h3>
         <p className="text-gray-400">
-          Open channels to other nodes on the network to start using the
-          Lightning Network.
+          Enter the connection details for the node you want to connect with.
         </p>
       </div>
 

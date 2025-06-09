@@ -27,7 +27,7 @@ const TABS = [
   {
     color: 'red',
     icon: <ArrowUp className="w-5 h-5" />,
-    label: 'Withdrawals',
+    label: 'Payments & Withdrawals',
     path: WALLET_HISTORY_WITHDRAWALS_PATH,
   },
   {
@@ -87,8 +87,8 @@ export const Component = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Wallet History</h1>
         <p className="text-slate-400">
-          View your transaction history, including deposits, withdrawals, and
-          swaps.
+          View your transaction history, including deposits, payments,
+          withdrawals, and swaps.
         </p>
       </div>
 

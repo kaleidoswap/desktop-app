@@ -225,22 +225,6 @@ export const Component = () => {
   return (
     <>
       <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
-          <div>
-            <h1 className="text-xl font-bold">Open a New Channel</h1>
-            <p className="text-gray-400 text-sm mt-1">
-              Create a direct Lightning Network channel with another node
-            </p>
-          </div>
-          <button
-            className="px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 transition text-gray-200 font-medium flex items-center"
-            onClick={() => navigate(CHANNELS_PATH)}
-          >
-            ← Back to Channels
-          </button>
-        </div>
-
         {/* Step Progress Indicator */}
         {!insufficientBalance && (
           <div className="flex justify-between mb-4">

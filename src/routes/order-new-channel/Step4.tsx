@@ -172,7 +172,7 @@ export const Step4 = ({
         <button
           className={`px-6 py-4 rounded-lg text-lg font-bold ${
             paymentStatus === 'success'
-              ? 'bg-green-600 hover:bg-green-700'
+              ? 'bg-green-700 hover:bg-green-800'
               : paymentStatus === 'error'
                 ? 'bg-red-600 hover:bg-red-700'
                 : paymentStatus === 'expired'
