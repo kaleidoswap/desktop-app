@@ -1,10 +1,6 @@
 import React from 'react'
 
 import { BTC_ASSET_ID } from '../../../../../constants'
-import {
-  formatAssetAmountWithPrecision,
-  formatBitcoinAmount,
-} from '../../../../../helpers/number'
 import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
 import { BalanceDisplayProps } from '../types'
 
@@ -22,7 +18,11 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
         <div className="flex justify-between items-center">
           <span className="text-slate-400 text-sm">Available BTC Balance:</span>
           <span className="text-white font-medium">
-            {formatBitcoinAmount(assetBalance, bitcoinUnit)} {bitcoinUnit}
+            {/* assetBalance is now always in satoshis, so convert for display */}
+            {bitcoinUnit === 'SAT'
+              ? assetBalance.toLocaleString()
+              : (assetBalance / 100000000).toFixed(8)}{' '}
+            {bitcoinUnit}
           </span>
         </div>
       </div>
@@ -40,6 +40,10 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
     )
     if (assetInfo) {
       const ticker = assetInfo.ticker
+      const precision = assetInfo.precision || 8
+      // Convert raw balance to display units
+      const displayBalance = assetBalance / Math.pow(10, precision)
+
       return (
         <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-4">
           <div className="flex justify-between items-center">
@@ -47,13 +51,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
               Available {ticker} Balance:
             </span>
             <span className="text-white font-medium">
-              {formatAssetAmountWithPrecision(
-                assetBalance,
-                ticker,
-                bitcoinUnit,
-                assets.data?.nia
-              )}{' '}
-              {ticker}
+              {displayBalance.toFixed(precision)} {ticker}
             </span>
           </div>
         </div>

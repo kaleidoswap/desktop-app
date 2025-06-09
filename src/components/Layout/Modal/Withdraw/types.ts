@@ -14,7 +14,7 @@ export enum HTLCStatus {
 // Form field interface
 export interface Fields {
   address: string
-  amount: number
+  amount: number | string
   fee_rate: string
   asset_id: string
   network: 'on-chain' | 'lightning'
@@ -118,6 +118,7 @@ export interface WithdrawFormProps {
   form: any
   addressType: AddressType
   validationError: string | null
+  clearValidationError: () => void
   isDecodingInvoice: boolean
   showAssetDropdown: boolean
   decodedInvoice: DecodeInvoiceResponse | null

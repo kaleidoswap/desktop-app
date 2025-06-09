@@ -259,12 +259,8 @@ export const WithdrawModalContent: React.FC = () => {
         setValidationError(
           'Payment is still pending after 60 seconds. Please check the status manually or try again.'
         )
-        // Close the modal after timeout
+        // Go back to the form instead of closing the modal
         setShowConfirmation(false)
-        setPendingData(null)
-        setTimeout(() => {
-          dispatch(uiSliceActions.setModal({ type: 'none' }))
-        }, 1500)
       }, POLLING_TIMEOUT_MS)
 
       // Cleanup function when effect is cleaned up
@@ -680,20 +676,44 @@ export const WithdrawModalContent: React.FC = () => {
             dispatch(uiSliceActions.setModal({ type: 'none' }))
           } else {
             console.log('Payment failed immediately:', res.status)
+            const failureMsg = `Payment failed immediately with status: ${res.status}`
+
+            // Reset all states and go back to form to allow editing
             setIsPollingStatus(false)
             setIsConfirming(false)
-            const failureMsg = `Payment failed immediately with status: ${res.status}`
-            setValidationError(failureMsg)
+            setPaymentStatus(null)
+            setShowConfirmation(false) // Go back to form
+            setValidationError(failureMsg) // Show error in form
           }
         } catch (error: any) {
           console.error('Lightning payment error:', error)
-          const errorMessage =
-            (error as ApiError)?.data?.error ||
-            (error instanceof Error ? error.message : 'Unknown payment error')
-          setValidationError(`Lightning payment failed: ${errorMessage}`)
+
+          // Extract detailed error information for Lightning payments
+          let errorMessage = 'Unknown payment error'
+
+          if (error?.data?.error) {
+            errorMessage = error.data.error
+          } else if (error?.data?.message) {
+            errorMessage = error.data.message
+          } else if (error?.message) {
+            errorMessage = error.message
+          } else if (typeof error === 'string') {
+            errorMessage = error
+          }
+
+          const fullErrorMessage = `Lightning payment failed: ${errorMessage}`
+
+          // Also show in toast for immediate visibility
+          toast.error(fullErrorMessage, {
+            autoClose: 8000,
+          })
+
+          // Reset all states and go back to form to allow editing
           setIsConfirming(false)
-          setPaymentStatus(HTLCStatus.Failed)
           setIsPollingStatus(false)
+          setPaymentStatus(null) // Clear payment status to prevent overlay
+          setShowConfirmation(false) // Go back to form
+          setValidationError(fullErrorMessage) // Show error in form
         }
       } else if (pendingData.network === 'on-chain') {
         if (pendingData.asset_id === BTC_ASSET_ID) {
@@ -797,6 +817,7 @@ export const WithdrawModalContent: React.FC = () => {
           })
         }
 
+        // Only close modal on successful withdrawal
         setShowConfirmation(false)
         setPendingData(null)
         setIsConfirming(false)
@@ -806,14 +827,40 @@ export const WithdrawModalContent: React.FC = () => {
         }, 1500)
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Withdrawal failed'
-      toast.error(errorMessage, {
-        autoClose: 5000,
-      })
-      setIsConfirming(false)
-      if (pendingData?.network === 'on-chain') {
-        setValidationError(errorMessage)
+      console.error('Withdrawal error:', error)
+
+      // Extract more detailed error information
+      let errorMessage = 'Withdrawal failed'
+
+      if (error?.data?.error) {
+        // API error with detailed message
+        errorMessage = error.data.error
+      } else if (error?.data?.message) {
+        // Alternative API error format
+        errorMessage = error.data.message
+      } else if (error?.message) {
+        // Standard error message
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        // String error
+        errorMessage = error
       }
+
+      // Show detailed error in toast
+      toast.error(`Withdrawal failed: ${errorMessage}`, {
+        autoClose: 8000, // Longer time for reading detailed errors
+      })
+
+      // Reset all confirmation states to allow user to go back and edit
+      setIsConfirming(false)
+      setIsPollingStatus(false)
+      setPaymentStatus(null) // Clear payment status to prevent overlay from showing
+
+      // Go back to the form to allow user to edit the amount
+      setShowConfirmation(false)
+
+      // Always set validation error to show in the form
+      setValidationError(errorMessage)
     }
   }, [
     pendingData,
@@ -864,6 +911,11 @@ export const WithdrawModalContent: React.FC = () => {
     setValue(name as keyof Fields, value)
   }
 
+  // Function to clear validation errors - helps users fix errors more easily
+  const clearValidationError = useCallback(() => {
+    setValidationError(null)
+  }, [])
+
   return (
     <>
       <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
@@ -913,6 +965,7 @@ export const WithdrawModalContent: React.FC = () => {
                 assets={assets}
                 availableAssets={availableAssets}
                 bitcoinUnit={bitcoinUnit}
+                clearValidationError={clearValidationError}
                 customFee={customFee}
                 decodedInvoice={decodedInvoice}
                 decodedRgbInvoice={decodedRgbInvoice}
@@ -947,14 +1000,15 @@ export const WithdrawModalContent: React.FC = () => {
               className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
                        flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"
               onClick={() => {
+                // Reset all states
                 setShowConfirmation(false)
-                setIsConfirming(false) // Ensure confirming state is reset
-                // If polling was active and user cancels, stop polling
-                if (isPollingStatus) {
-                  setIsPollingStatus(false)
-                  setPaymentStatus(null) // Reset payment status
-                  setValidationError(null) // Clear polling errors
-                }
+                setIsConfirming(false)
+                setIsPollingStatus(false)
+                setPaymentStatus(null)
+                setValidationError(null)
+
+                // Close the modal
+                dispatch(uiSliceActions.setModal({ type: 'none' }))
               }}
               type="button"
             >
