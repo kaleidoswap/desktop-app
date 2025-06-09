@@ -67,26 +67,39 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # test key
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         id: tauri_build
         with:
-          tagName: ${{ github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest' }}
-          releaseName: ${{ github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__' }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
-            Release v${{ env.VERSION }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
             
             See the assets to download and install this version.
 
             Changes in this version:
-            - Built from ${{ github.ref == 'refs/heads/test-build' && 'test-build' || 'build' }} branch
+            - Built from ${{ startsWith(github.ref, 'refs/tags/') && 'tag' || (github.ref == 'refs/heads/test-build' && 'test-build' || 'build') }} ${{ github.ref_name }}
             - Includes macOS (Intel + Apple Silicon) and Linux builds
+            - Signed and ready for auto-update
 
             SHA256 checksums will be provided separately.
-          releaseDraft: true
-          prerelease: false
+          releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+          prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: false
           args: ${{ matrix.args }}
+
+      - name: Update latest release tag
+        if: startsWith(github.ref, 'refs/tags/v') && !startsWith(github.ref, 'refs/tags/test-v')
+        run: |
+          # Delete existing latest tag and recreate it pointing to current tag
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -d latest || true
+          git push origin :refs/tags/latest || true
+          git tag latest
+          git push origin latest
 
       - name: Create manifest file
         run: |
