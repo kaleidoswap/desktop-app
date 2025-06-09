@@ -18,10 +18,10 @@ if [ -z "$VERSION" ]; then
 fi
 
 # Validate version format (x.y.z)
-# if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-#     echo "Error: Version must be in format x.y.z (e.g., 0.1.3)"
-#     exit 1
-# fi
+if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: Version must be in format x.y.z (e.g., 0.1.3)"
+    exit 1
+fi
 
 # Determine tag prefix
 if [ "$TEST_FLAG" = "--test" ]; then
