@@ -960,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "desktop-app"
-version = "0.0.3"
+version = "0.1.1-beta.1"
 dependencies = [
  "async-trait",
  "dotenv",
