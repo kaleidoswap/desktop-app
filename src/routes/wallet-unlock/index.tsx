@@ -1,5 +1,15 @@
 import { invoke } from '@tauri-apps/api/core'
-import { ChevronDown, ArrowLeft, Eye, EyeOff, Lock } from 'lucide-react'
+import {
+  ChevronDown,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Shield,
+  Server,
+  Globe,
+  Zap,
+} from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
@@ -88,16 +98,33 @@ export const Component = () => {
         shouldRetry = false
       } catch (e: any) {
         const error = e as NodeApiError
+
+        // Handle network/connection errors with more specific messages
         if (
           typeof error.status === 'string' &&
           error?.status === 'FETCH_ERROR'
         ) {
           if (doubleFetchErrorFlag) {
-            const errorMessage =
-              error.data?.error || 'Connection error occurred'
+            let errorMessage = error.data?.error || 'Connection error occurred'
+
+            // Provide more specific error messages for common CORS/network issues
+            if (
+              errorMessage.includes('CORS') ||
+              errorMessage.includes('Cross-origin')
+            ) {
+              errorMessage =
+                'CORS Error: Cannot connect to the node due to browser security restrictions. This usually means the node is redirecting to a login page or has authentication issues.'
+            } else if (
+              errorMessage.includes('Connection failed') ||
+              errorMessage.includes('Network error')
+            ) {
+              errorMessage =
+                'Network Error: Cannot connect to the node. Please ensure the node is running and accessible at the configured URL.'
+            }
+
             setUnlockError(errorMessage)
             toast.error(errorMessage, {
-              autoClose: 5000,
+              autoClose: 8000,
               position: 'top-right',
             })
             shouldRetry = false
@@ -106,6 +133,31 @@ export const Component = () => {
             doubleFetchErrorFlag = true
             continue
           }
+        }
+
+        // Handle specific status codes
+        if (error?.status === 0) {
+          const errorMessage =
+            'Connection Error: Cannot reach the node. This may be due to CORS policy blocking the request, network connectivity issues, or the node being offline.'
+          setUnlockError(errorMessage)
+          toast.error(errorMessage, {
+            autoClose: 8000,
+            position: 'top-right',
+          })
+          shouldRetry = false
+          continue
+        }
+
+        if (error?.status === 302) {
+          const errorMessage =
+            'Authentication Required. Please check if the node requires authentication or if there are CORS configuration issues.'
+          setUnlockError(errorMessage)
+          toast.error(errorMessage, {
+            autoClose: 8000,
+            position: 'top-right',
+          })
+          shouldRetry = false
+          continue
         }
 
         if (
@@ -133,10 +185,28 @@ export const Component = () => {
           navigate(WALLET_DASHBOARD_PATH)
           shouldRetry = false
         } else {
-          const errorMessage = error.data?.error || 'An error occurred'
+          // Provide better error messages for common scenarios
+          let errorMessage = error.data?.error || 'An error occurred'
+
+          if (
+            errorMessage.includes('Authentication required') ||
+            errorMessage.includes('redirecting to a login page')
+          ) {
+            errorMessage =
+              'Authentication Issue: The node requires authentication or has CORS configuration problems. Please check your node setup.'
+          } else if (
+            errorMessage.includes('The provided password is incorrect')
+          ) {
+            errorMessage =
+              'Incorrect password. Please check your wallet password and try again.'
+          } else if (errorMessage === 'An error occurred') {
+            errorMessage =
+              'Unknown Error: Unable to unlock the wallet. Please check your node connection and configuration.'
+          }
+
           setUnlockError(errorMessage)
           toast.error(errorMessage, {
-            autoClose: 5000,
+            autoClose: 8000,
             position: 'top-right',
           })
           shouldRetry = false
@@ -173,221 +243,266 @@ export const Component = () => {
     })
   }
 
-  const SimpleConnectionDetails = () => {
+  const ConnectionDetailsCard = () => {
     const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
 
     return (
-      <div className="mb-6">
+      <div className="mb-8">
         <button
-          className="w-full flex items-center justify-between p-3 bg-transparent text-gray-300 border border-gray-700/50 rounded-lg"
+          className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-slate-800/40 to-slate-700/40 backdrop-blur-sm text-slate-200 border border-slate-600/30 rounded-xl hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
           onClick={() => setIsConnectionDetailsOpen(!isConnectionDetailsOpen)}
         >
           <span className="flex items-center">
-            <svg
-              className="w-5 h-5 mr-2 text-blue-500"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <rect
-                height="18"
-                rx="2"
-                stroke="currentColor"
-                strokeWidth="2"
-                width="18"
-                x="3"
-                y="3"
-              />
-              <line
-                stroke="currentColor"
-                strokeWidth="2"
-                x1="8"
-                x2="16"
-                y1="10"
-                y2="10"
-              />
-              <line
-                stroke="currentColor"
-                strokeWidth="2"
-                x1="8"
-                x2="16"
-                y1="14"
-                y2="14"
-              />
-            </svg>
-            Connection Details
+            <div className="p-2 bg-blue-500/20 rounded-lg mr-3 group-hover:bg-blue-500/30 transition-colors">
+              <Server className="w-5 h-5 text-blue-400" />
+            </div>
+            <span className="font-medium">Connection Details</span>
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-transform duration-200 ${
+            className={`w-5 h-5 transition-all duration-300 text-slate-400 group-hover:text-blue-400 ${
               isConnectionDetailsOpen ? 'rotate-180' : ''
             }`}
           />
         </button>
 
-        {isConnectionDetailsOpen && (
-          <div className="mt-2 p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg text-gray-300 text-sm space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-500 mb-1">Node Host</p>
-                <p>{rpcConfig.host}</p>
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            isConnectionDetailsOpen
+              ? 'max-h-96 opacity-100 mt-3'
+              : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="p-5 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm border border-slate-600/30 rounded-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm font-medium">Node URL</p>
+                  <p className="text-slate-200 font-mono text-sm">
+                    {nodeSettings.node_url}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-gray-500 mb-1">Port</p>
-                <p>{rpcConfig.port}</p>
+              <div className="w-full h-[1px] bg-slate-700 my-4" />
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Zap className="w-4 h-4 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm font-medium">
+                    Bitcoind RPC
+                  </p>
+                  <p className="text-slate-200 font-mono text-sm">
+                    {rpcConfig.host}:{rpcConfig.port}
+                  </p>
+                </div>
               </div>
             </div>
-            <div>
-              <p className="text-gray-500 mb-1">Indexer URL</p>
-              <p className="break-all">{nodeSettings.indexer_url}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-1">Proxy Endpoint</p>
-              <p className="break-all">{nodeSettings.proxy_endpoint}</p>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-orange-500/20 rounded-lg mt-0.5">
+                  <Server className="w-4 h-4 text-orange-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-slate-400 text-sm font-medium mb-1">
+                    Indexer URL
+                  </p>
+                  <p className="text-slate-200 font-mono text-sm break-all bg-slate-800/50 p-2 rounded-lg">
+                    {nodeSettings.indexer_url}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-cyan-500/20 rounded-lg mt-0.5">
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-slate-400 text-sm font-medium mb-1">
+                    RGB Proxy Endpoint
+                  </p>
+                  <p className="text-slate-200 font-mono text-sm break-all bg-slate-800/50 p-2 rounded-lg">
+                    {nodeSettings.proxy_endpoint}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     )
   }
 
   const renderUnlockForm = () => (
-    <Card className="w-full max-w-md mx-auto bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
-      <div className="flex flex-col items-center pt-12 pb-6">
-        <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center mb-6">
-          <Lock className="w-10 h-10 text-white" />
+    <div className="w-full max-w-lg mx-auto">
+      {/* Header Section */}
+      <div className="text-center mb-8">
+        <div className="relative inline-block mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
+          <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl">
+            <Shield className="w-12 h-12 text-white" />
+          </div>
         </div>
 
-        <h2 className="text-2xl font-semibold text-white text-center">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent mb-3">
           Unlock Your Wallet
-        </h2>
-        <p className="text-gray-400 text-center mt-2">
-          Enter your password to access your wallet
+        </h1>
+        <p className="text-slate-400 text-lg">
+          Enter your password to securely access your wallet
         </p>
       </div>
 
-      <div className="px-6 pb-8">
-        <form
-          className="space-y-6"
-          onSubmit={unlockForm.handleSubmit(onSubmit)}
-        >
-          {/* Connection details dropdown */}
-          <SimpleConnectionDetails />
+      {/* Main Card */}
+      <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
+        <div className="p-8">
+          <form
+            className="space-y-6"
+            onSubmit={unlockForm.handleSubmit(onSubmit)}
+          >
+            {/* Connection details */}
+            <ConnectionDetailsCard />
 
-          {/* Password field */}
-          <div className="space-y-2">
-            <label
-              className="block text-sm font-medium text-gray-300"
-              htmlFor="password"
-            >
-              Password
-            </label>
+            {/* Password field */}
+            <div className="space-y-3">
+              <label
+                className="block text-sm font-semibold text-slate-300 mb-2"
+                htmlFor="password"
+              >
+                Wallet Password
+              </label>
 
-            <div className="relative">
-              <input
-                className="w-full px-4 py-3 bg-gray-800/70 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-                id="password"
-                placeholder="Enter your wallet password"
-                type={isPasswordVisible ? 'text' : 'password'}
-                {...unlockForm.register('password', {
-                  required: 'Password is required',
-                })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    unlockForm.handleSubmit(onSubmit)()
-                  }
-                }}
-              />
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center">
+                  <div className="absolute left-4 z-10">
+                    <Lock className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <input
+                    className="w-full pl-12 pr-12 py-4 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-500 font-medium"
+                    id="password"
+                    placeholder="Enter your secure password"
+                    type={isPasswordVisible ? 'text' : 'password'}
+                    {...unlockForm.register('password', {
+                      required: 'Password is required',
+                    })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        unlockForm.handleSubmit(onSubmit)()
+                      }
+                    }}
+                  />
+
+                  <button
+                    className="absolute right-4 text-slate-400 hover:text-blue-400 transition-colors duration-200 z-10"
+                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                    type="button"
+                  >
+                    {isPasswordVisible ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {unlockForm.formState.errors.password && (
+                <div className="flex items-center space-x-2 text-red-400 text-sm">
+                  <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+                  <p>{unlockForm.formState.errors.password.message}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Error messages */}
+            {errors.length > 0 && (
+              <div className="p-4 bg-gradient-to-r from-red-900/40 to-red-800/40 border border-red-500/30 rounded-xl backdrop-blur-sm">
+                <div className="text-sm text-red-300 space-y-1">
+                  {errors.map((error, index) => (
+                    <div className="flex items-center space-x-2" key={index}>
+                      <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+                      <p>{error}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="pt-4 space-y-4">
+              <Button
+                className="w-full relative group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 overflow-hidden"
+                disabled={isUnlocking}
+                type="submit"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                <span className="relative flex items-center justify-center">
+                  <Shield className="w-5 h-5 mr-2" />
+                  Unlock Wallet
+                </span>
+              </Button>
 
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                className="w-full flex items-center justify-center text-slate-400 hover:text-white py-3 bg-transparent hover:bg-slate-800/30 rounded-xl transition-all duration-300 group"
+                onClick={handleBack}
                 type="button"
               >
-                {isPasswordVisible ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+                Back to Wallet Setup
               </button>
             </div>
-
-            {unlockForm.formState.errors.password && (
-              <p className="text-sm text-red-400">
-                {unlockForm.formState.errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Error messages */}
-          {errors.length > 0 && (
-            <div className="p-3 bg-red-900/30 border border-red-700/50 rounded-lg">
-              <div className="text-sm text-red-300">
-                {errors.map((error, index) => (
-                  <p key={index}>{error}</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="pt-2 space-y-4">
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg flex items-center justify-center"
-              disabled={isUnlocking}
-              type="submit"
-            >
-              Unlock Wallet
-            </Button>
-
-            <button
-              className="w-full flex items-center justify-center text-gray-400 hover:text-white py-2 bg-transparent"
-              onClick={handleBack}
-              type="button"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Wallet Setup
-            </button>
-          </div>
-        </form>
-      </div>
-    </Card>
-  )
-
-  const SimpleModal = () => (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-        <div className="p-6">
-          <h3 className="text-xl font-semibold text-white mb-2">
-            Initialize Wallet
-          </h3>
-          <p className="text-gray-300 mb-6">
-            Wallet is not initialized. Would you like to initialize it now?
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button
-              className="border-gray-600 text-gray-300"
-              onClick={() => setShowInitModal(false)}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-blue-600 text-white"
-              onClick={() => {
-                setShowInitModal(false)
-                navigate(WALLET_SETUP_PATH)
-              }}
-            >
-              Initialize
-            </Button>
-          </div>
+          </form>
         </div>
       </Card>
     </div>
   )
 
+  const ModernModal = () => (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-md">
+        <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl border border-slate-600/30 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Initialize Wallet
+              </h3>
+              <p className="text-slate-300 leading-relaxed">
+                Your wallet hasn't been initialized yet. Would you like to set
+                it up now?
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700/50 py-3 rounded-xl transition-all duration-200"
+                onClick={() => setShowInitModal(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                onClick={() => {
+                  setShowInitModal(false)
+                  navigate(WALLET_SETUP_PATH)
+                }}
+              >
+                Initialize
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+
   return (
-    <Layout className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
+    <Layout className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {isUnlocking ? (
         <SetupLayout
           centered={true}
@@ -405,11 +520,16 @@ export const Component = () => {
         </SetupLayout>
       ) : (
         <div className="flex items-center justify-center min-h-screen px-4 py-12">
-          {renderUnlockForm()}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+          <div className="absolute inset-0">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+          </div>
+          <div className="relative z-10 w-full">{renderUnlockForm()}</div>
         </div>
       )}
 
-      {showInitModal && <SimpleModal />}
+      {showInitModal && <ModernModal />}
     </Layout>
   )
 }

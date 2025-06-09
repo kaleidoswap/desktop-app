@@ -496,26 +496,102 @@ const dynamicBaseQuery: BaseQueryFn<
 
     if (result.error) {
       const err = result.error as FetchBaseQueryError
+
+      // Handle specific error types with better messages
+      let errorMessage = 'Unknown error'
+      let errorStatus = err.status as number
+
+      if (err.status === 'FETCH_ERROR') {
+        errorMessage =
+          'Connection failed: Unable to connect to the node. Please check if the node is running and accessible.'
+        errorStatus = 0
+      } else if (err.status === 'TIMEOUT_ERROR') {
+        errorMessage =
+          'Request timeout: The node took too long to respond. Please try again.'
+        errorStatus = 408
+      } else if (err.status === 'PARSING_ERROR') {
+        errorMessage =
+          'Response parsing error: Received invalid response from the node.'
+        errorStatus = 502
+      } else if (err.status === 'CUSTOM_ERROR') {
+        errorMessage = 'Network error: Unable to communicate with the node.'
+        errorStatus = 500
+      } else if (typeof err.data === 'string') {
+        errorMessage = err.data
+      } else if (err.data && typeof err.data === 'object') {
+        if ((err.data as any)?.error) {
+          errorMessage = (err.data as any).error
+        } else if ((err.data as any)?.message) {
+          errorMessage = (err.data as any).message
+        }
+      }
+
+      // Handle specific HTTP status codes with meaningful messages
+      if (typeof err.status === 'number') {
+        if (err.status === 0) {
+          errorMessage =
+            'Network error: Cannot connect to the node. This may be due to CORS policy, network connectivity issues, or the node being offline.'
+        } else if (err.status === 302) {
+          errorMessage =
+            'Authentication required: The node is redirecting to a login page. Please check your node authentication settings.'
+        } else if (err.status === 403) {
+          errorMessage =
+            (err.data as any)?.error ||
+            'Access denied: Your request was forbidden by the node.'
+        } else if (err.status === 404) {
+          errorMessage =
+            'Endpoint not found: The requested API endpoint does not exist on the node.'
+        } else if (err.status === 500) {
+          errorMessage =
+            'Internal server error: The node encountered an error while processing your request.'
+        } else if (err.status >= 500) {
+          errorMessage =
+            'Server error: The node is experiencing technical difficulties.'
+        }
+      }
+
       return {
         error: {
           data: {
-            error:
-              typeof err.data === 'string'
-                ? err.data
-                : (err.data as any)?.error || 'Unknown error',
+            error: errorMessage,
           },
-          status: err.status as number,
+          status: errorStatus,
         },
       }
     }
 
     return result
   } catch (error) {
+    let errorMessage = 'Unknown error occurred'
+
+    if (error instanceof Error) {
+      // Handle common error patterns
+      if (error.message.includes('CORS')) {
+        errorMessage =
+          'CORS error: Cross-origin request blocked. The frontend cannot access the node due to security restrictions. Please check your node configuration.'
+      } else if (
+        error.message.includes('NetworkError') ||
+        error.message.includes('Failed to fetch')
+      ) {
+        errorMessage =
+          'Network error: Cannot connect to the node. Please verify the node is running and accessible.'
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout: The node took too long to respond.'
+      } else if (error.message.includes('ERR_CONNECTION_REFUSED')) {
+        errorMessage =
+          'Connection refused: The node is not accepting connections. Please check if the node is running.'
+      } else if (error.message.includes('ERR_NETWORK_CHANGED')) {
+        errorMessage =
+          'Network changed: Your network connection changed during the request. Please try again.'
+      } else {
+        errorMessage = `Connection error: ${error.message}`
+      }
+    }
+
     return {
       error: {
         data: {
-          error:
-            error instanceof Error ? error.message : 'Unknown error occurred',
+          error: errorMessage,
         },
         status: 500,
       },
