@@ -52,16 +52,16 @@ fi
 echo "Updating version to $VERSION..."
 
 # Update version in tauri.conf.json
-sed -i.bak "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
 
 # Update version in Cargo.toml
-sed -i.bak "s/version = \".*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+sed -i.bak "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
 # Remove backup files
-rm src-tauri/tauri.conf.json.bak src-tauri/Cargo.toml.bak
+rm -f src-tauri/tauri.conf.json.bak src-tauri/Cargo.toml.bak
 
 # Update Cargo.lock
-cd src-tauri && cargo check && cd ..
+(cd src-tauri && cargo check)
 
 echo "Version updated to $VERSION"
 
