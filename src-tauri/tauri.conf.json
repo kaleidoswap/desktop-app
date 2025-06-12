@@ -27,7 +27,7 @@
   },
   "productName": "KaleidoSwap",
   "mainBinaryName": "KaleidoSwap",
-  "version": "0.1.3",
+  "version": "0.1.0",
   "identifier": "com.kaleidoswap.dev",
   "plugins": {
     "updater": {

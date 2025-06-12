@@ -1,6 +1,5 @@
-import { invoke } from '@tauri-apps/api/core'
 import { AlertCircle, Loader2 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 
 import {
@@ -9,54 +8,33 @@ import {
   WALLET_UNLOCK_PATH,
 } from '../../app/router/paths'
 import { Layout } from '../../components/Layout'
-import { Updater } from '../../components/Updater'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 export const RootRoute = () => {
-  const [updateChecked, setUpdateChecked] = useState(false)
   const navigate = useNavigate()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   useEffect(() => {
-    const closeSplashscreen = async () => {
-      try {
-        // Wait for DOM to be fully ready
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        await invoke('close_splashscreen')
-      } catch (error) {
-        console.error('Failed to close splashscreen:', error)
-      }
-    }
-
-    // Call it when component mounts
-    closeSplashscreen()
-  }, [])
-
-  useEffect(() => {
     async function run() {
-      if (updateChecked) {
-        const nodeInfoResponse = await nodeInfo()
-        const error: any = nodeInfoResponse.error
+      const nodeInfoResponse = await nodeInfo()
+      const error: any = nodeInfoResponse.error
 
-        if (nodeInfoResponse.isError) {
-          if (error.status !== 400) {
-            navigate(WALLET_UNLOCK_PATH)
-          } else {
-            navigate(WALLET_SETUP_PATH)
-          }
+      if (nodeInfoResponse.isError) {
+        if (error.status !== 400) {
+          navigate(WALLET_UNLOCK_PATH)
         } else {
-          navigate(WALLET_DASHBOARD_PATH)
+          navigate(WALLET_SETUP_PATH)
         }
+      } else {
+        navigate(WALLET_DASHBOARD_PATH)
       }
     }
     run()
-  }, [navigate, nodeInfo, updateChecked])
+  }, [navigate, nodeInfo])
 
   return (
     <Layout>
-      {!updateChecked ? (
-        <Updater setUpdateChecked={setUpdateChecked} />
-      ) : nodeInfoResponse.isSuccess ? (
+      {nodeInfoResponse.isSuccess ? (
         <Outlet />
       ) : nodeInfoResponse.isError ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">

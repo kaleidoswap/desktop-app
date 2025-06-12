@@ -10,10 +10,11 @@ import {
   Bell,
   HelpCircle,
   User,
+  RefreshCw,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { toast, ToastContainer } from 'react-toastify'
+import { ToastContainer } from 'react-toastify'
 
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
@@ -23,9 +24,10 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
-import { NotificationProvider, useNotification } from '../NotificationSystem'
+import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
 import { SupportModal } from '../SupportModal'
+import { useUpdate } from '../UpdateChecker'
 
 import 'react-toastify/dist/ReactToastify.min.css'
 import {
@@ -379,7 +381,9 @@ export const Layout = (props: Props) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const { toggleNotificationPanel, notifications } = useNotification()
+  const { toggleNotificationPanel, notifications, addNotification } =
+    useNotification()
+  const { hasSkippedUpdate, skippedVersion, checkForUpdates } = useUpdate()
 
   useOnClickOutside(channelMenuRef, () => setIsChannelMenuOpen(false))
   useOnClickOutside(transactionMenuRef, () => setIsTransactionMenuOpen(false))
@@ -404,15 +408,23 @@ export const Layout = (props: Props) => {
 
       if (lockResponse !== undefined || lockResponse === null) {
         dispatch(nodeSettingsActions.resetNodeSettings())
-        toast.success('Logout successful')
+        addNotification({
+          autoClose: 3000,
+          message: 'You have been logged out successfully.',
+          title: 'Logout Successful',
+          type: 'success',
+        })
         navigate(WALLET_SETUP_PATH)
       } else {
         throw new Error('Node lock unsuccessful')
       }
     } catch (error) {
-      toast.error(
-        `Logout failed: ${error instanceof Error ? error.message : ''}. Redirecting anyway.`
-      )
+      addNotification({
+        autoClose: 5000,
+        message: `Logout failed: ${error instanceof Error ? error.message : ''}. Redirecting anyway.`,
+        title: 'Logout Failed',
+        type: 'error',
+      })
       navigate(WALLET_SETUP_PATH)
     } finally {
       setIsLoggingOut(false)
@@ -475,7 +487,12 @@ export const Layout = (props: Props) => {
         highestBlockDeposit &&
         highestBlockDeposit?.confirmation_time?.height > lastDeposit
       ) {
-        toast.info('Deposit received')
+        addNotification({
+          autoClose: 5000,
+          message: 'A new deposit has been confirmed.',
+          title: 'Deposit Received',
+          type: 'success',
+        })
         setLastDeposit(highestBlockDeposit?.confirmation_time?.height)
       }
     }
@@ -533,105 +550,102 @@ export const Layout = (props: Props) => {
   }
 
   return (
-    <NotificationProvider>
-      <div className={props.className}>
-        <ShutdownAnimation isVisible={isShuttingDown} status={shutdownStatus} />
+    <div className={props.className}>
+      <ShutdownAnimation isVisible={isShuttingDown} status={shutdownStatus} />
 
-        {!shouldHideNavbar ? (
-          <div className="min-h-screen flex">
-            {/* Sidebar Navigation */}
-            <div
-              className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/10
+      {!shouldHideNavbar ? (
+        <div className="min-h-screen flex">
+          {/* Sidebar Navigation */}
+          <div
+            className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/10
                         transition-all duration-300 ease-in-out z-30
                         ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}
-            >
-              {/* Logo and collapse button */}
-              <div className="flex items-center justify-between py-3 px-4 border-b border-divider/10">
-                <img
-                  alt="KaleidoSwap"
-                  className={`cursor-pointer transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10' : 'h-8'}`}
-                  onClick={() => {
-                    // Only navigate to wallet setup when sidebar is not collapsed
-                    if (!isSidebarCollapsed) {
-                      navigate(WALLET_SETUP_PATH)
-                    }
-                  }}
-                  src={logo}
-                />
+          >
+            {/* Logo and collapse button */}
+            <div className="flex items-center justify-between py-3 px-4 border-b border-divider/10">
+              <img
+                alt="KaleidoSwap"
+                className={`cursor-pointer transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10' : 'h-8'}`}
+                onClick={() => {
+                  // Only navigate to wallet setup when sidebar is not collapsed
+                  if (!isSidebarCollapsed) {
+                    navigate(WALLET_SETUP_PATH)
+                  }
+                }}
+                src={logo}
+              />
 
-                <button
-                  className="p-2 rounded-lg text-gray-400 hover:text-white 
+              <button
+                className="p-2 rounded-lg text-gray-400 hover:text-white 
                            hover:bg-blue-darker transition-colors duration-200"
-                  onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                >
-                  {isSidebarCollapsed ? (
-                    <ChevronRight size={18} />
-                  ) : (
-                    <ChevronLeft size={18} />
-                  )}
-                </button>
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              >
+                {isSidebarCollapsed ? (
+                  <ChevronRight size={18} />
+                ) : (
+                  <ChevronLeft size={18} />
+                )}
+              </button>
+            </div>
+
+            {/* Main navigation */}
+            <div className="flex-1 overflow-y-auto pt-4 px-3">
+              <div className={`space-y-1 ${isSidebarCollapsed ? '' : 'mb-8'}`}>
+                {MAIN_NAV_ITEMS.map((item) => {
+                  const isActive = location.pathname.startsWith(item.to)
+                  return (
+                    <SidebarNavItem
+                      isActive={isActive}
+                      isCollapsed={isSidebarCollapsed}
+                      item={item}
+                      key={item.to}
+                    />
+                  )
+                })}
               </div>
 
-              {/* Main navigation */}
-              <div className="flex-1 overflow-y-auto pt-4 px-3">
-                <div
-                  className={`space-y-1 ${isSidebarCollapsed ? '' : 'mb-8'}`}
-                >
-                  {MAIN_NAV_ITEMS.map((item) => {
-                    const isActive = location.pathname.startsWith(item.to)
-                    return (
-                      <SidebarNavItem
-                        isActive={isActive}
-                        isCollapsed={isSidebarCollapsed}
-                        item={item}
-                        key={item.to}
-                      />
-                    )
-                  })}
-                </div>
-
-                {/* Quick action buttons */}
-                {!isSidebarCollapsed && (
-                  <>
-                    <div className="mb-6">
-                      <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Quick Actions
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
+              {/* Quick action buttons */}
+              {!isSidebarCollapsed && (
+                <>
+                  <div className="mb-6">
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Quick Actions
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
                                    text-white rounded-lg py-2.5 px-3 transition-all duration-200
                                    border border-cyan/10 hover:border-cyan/30 group"
-                          onClick={() => handleTransactionAction('deposit')}
-                        >
-                          <div className="p-1 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20 transition-colors">
-                            <ArrowDownLeft className="w-4 h-4" />
-                          </div>
-                          <span className="font-medium text-sm">Deposit</span>
-                        </button>
-                        <button
-                          className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
+                        onClick={() => handleTransactionAction('deposit')}
+                      >
+                        <div className="p-1 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20 transition-colors">
+                          <ArrowDownLeft className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium text-sm">Deposit</span>
+                      </button>
+                      <button
+                        className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
                                    text-white rounded-lg py-2.5 px-3 transition-all duration-200
                                    border border-purple/10 hover:border-purple/30 group"
-                          onClick={() => handleTransactionAction('withdraw')}
-                        >
-                          <div className="p-1 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20 transition-colors">
-                            <ArrowUpRight className="w-4 h-4" />
-                          </div>
-                          <span className="font-medium text-sm">Withdraw</span>
-                        </button>
-                      </div>
+                        onClick={() => handleTransactionAction('withdraw')}
+                      >
+                        <div className="p-1 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20 transition-colors">
+                          <ArrowUpRight className="w-4 h-4" />
+                        </div>
+                        <span className="font-medium text-sm">Withdraw</span>
+                      </button>
                     </div>
+                  </div>
 
-                    {/* Channel management section */}
-                    <div className="mb-6">
-                      <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                        Channels
-                      </h3>
-                      <div className="space-y-1">
-                        {CHANNEL_MENU_ITEMS.map((item) => (
-                          <NavLink
-                            className={({ isActive }) => `
+                  {/* Channel management section */}
+                  <div className="mb-6">
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Channels
+                    </h3>
+                    <div className="space-y-1">
+                      {CHANNEL_MENU_ITEMS.map((item) => (
+                        <NavLink
+                          className={({ isActive }) => `
                               flex items-center space-x-3 px-4 py-2 rounded-lg text-sm
                               ${
                                 isActive
@@ -640,186 +654,214 @@ export const Layout = (props: Props) => {
                               }
                               transition-colors duration-200
                             `}
-                            key={item.to}
-                            to={item.to}
-                          >
-                            <div>{item.icon}</div>
-                            <span>{item.label}</span>
-                          </NavLink>
-                        ))}
-                      </div>
+                          key={item.to}
+                          to={item.to}
+                        >
+                          <div>{item.icon}</div>
+                          <span>{item.label}</span>
+                        </NavLink>
+                      ))}
                     </div>
-                  </>
-                )}
-              </div>
-
-              {/* User profile section */}
-              <div className="p-3 border-t border-divider/10">
-                <UserProfile
-                  isCollapsed={isSidebarCollapsed}
-                  onLogout={() => setShowLogoutModal(true)}
-                  onSupportClick={() => setShowSupportModal(true)}
-                />
-              </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Main content */}
-            <main
-              className={`flex-1 min-h-screen bg-background transition-all duration-300
+            {/* User profile section */}
+            <div className="p-3 border-t border-divider/10">
+              <UserProfile
+                isCollapsed={isSidebarCollapsed}
+                onLogout={() => setShowLogoutModal(true)}
+                onSupportClick={() => setShowSupportModal(true)}
+              />
+            </div>
+          </div>
+
+          {/* Main content */}
+          <main
+            className={`flex-1 min-h-screen bg-background transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}
-            >
-              {/* Top bar with notifications */}
-              <div className="sticky top-0 z-20 bg-blue-darkest/80 backdrop-blur-sm border-b border-divider/10 px-6 py-2">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    {(() => {
-                      // Get the current page icon and title
-                      const mainNavItem = MAIN_NAV_ITEMS.find((item) =>
-                        location.pathname.startsWith(item.to)
+          >
+            {/* Top bar with notifications */}
+            <div className="sticky top-0 z-20 bg-blue-darkest/80 backdrop-blur-sm border-b border-divider/10 px-6 py-2">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  {(() => {
+                    // Get the current page icon and title
+                    const mainNavItem = MAIN_NAV_ITEMS.find((item) =>
+                      location.pathname.startsWith(item.to)
+                    )
+
+                    const pageConfig = PAGE_CONFIG[location.pathname]
+                    const icon = pageConfig?.icon || mainNavItem?.icon
+                    const title =
+                      pageConfig?.title || mainNavItem?.label || 'Dashboard'
+
+                    return (
+                      <>
+                        <div className="text-cyan mr-3">{icon}</div>
+                        <h1 className="text-xl font-semibold text-white">
+                          {title}
+                        </h1>
+                      </>
+                    )
+                  })()}
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  {/* Support button in header */}
+                  <button
+                    aria-label="Support"
+                    className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
+                    onClick={() => setShowSupportModal(true)}
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                  </button>
+
+                  {/* Manual update check button */}
+                  <button
+                    aria-label="Check for updates"
+                    className={`relative p-2 rounded-lg hover:bg-blue-darker transition-colors ${
+                      hasSkippedUpdate
+                        ? 'text-amber-400 hover:text-amber-300'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      console.log(
+                        `[${new Date().toISOString()}] Update button clicked, hasSkippedUpdate =`,
+                        hasSkippedUpdate
                       )
+                      checkForUpdates()
+                    }}
+                    title={
+                      hasSkippedUpdate
+                        ? `Update ${skippedVersion} is available`
+                        : 'Check for updates'
+                    }
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    {hasSkippedUpdate && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                    )}
+                  </button>
 
-                      const pageConfig = PAGE_CONFIG[location.pathname]
-                      const icon = pageConfig?.icon || mainNavItem?.icon
-                      const title =
-                        pageConfig?.title || mainNavItem?.label || 'Dashboard'
+                  {/* Notifications bell */}
+                  <button
+                    aria-label="Toggle notifications"
+                    className="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggleNotificationPanel()
+                    }}
+                  >
+                    <Bell className="w-5 h-5" />
+                    {notifications.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan text-white text-xs flex items-center justify-center rounded-full">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </button>
 
-                      return (
-                        <>
-                          <div className="text-cyan mr-3">{icon}</div>
-                          <h1 className="text-xl font-semibold text-white">
-                            {title}
-                          </h1>
-                        </>
-                      )
-                    })()}
-                  </div>
+                  {/* Quick action dropdown menus - only show on smaller screens */}
+                  <div className="md:hidden flex items-center space-x-2">
+                    <DropdownMenu
+                      icon={<Activity className="w-5 h-5" />}
+                      isOpen={isChannelMenuOpen}
+                      items={CHANNEL_MENU_ITEMS}
+                      menuRef={channelMenuRef}
+                      onItemClick={() => {}} // Add empty function to satisfy the type
+                      setIsOpen={setIsChannelMenuOpen}
+                      title="Channels"
+                    />
 
-                  <div className="flex items-center space-x-4">
-                    {/* Support button in header */}
-                    <button
-                      aria-label="Support"
-                      className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
-                      onClick={() => setShowSupportModal(true)}
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                    </button>
+                    <DropdownMenu
+                      icon={<ArrowDownLeft className="w-5 h-5" />}
+                      isOpen={isTransactionMenuOpen}
+                      items={TRANSACTION_MENU_ITEMS}
+                      menuRef={transactionMenuRef}
+                      onItemClick={(item: any) =>
+                        handleTransactionAction(item.action)
+                      }
+                      setIsOpen={setIsTransactionMenuOpen}
+                      title="Transactions"
+                    />
 
-                    {/* Notifications bell */}
-                    <button
-                      aria-label="Toggle notifications"
-                      className="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        toggleNotificationPanel()
-                      }}
-                    >
-                      <Bell className="w-5 h-5" />
-                      {notifications.length > 0 && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan text-white text-xs flex items-center justify-center rounded-full">
-                          {notifications.length}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Quick action dropdown menus - only show on smaller screens */}
-                    <div className="md:hidden flex items-center space-x-2">
-                      <DropdownMenu
-                        icon={<Activity className="w-5 h-5" />}
-                        isOpen={isChannelMenuOpen}
-                        items={CHANNEL_MENU_ITEMS}
-                        menuRef={channelMenuRef}
-                        onItemClick={() => {}} // Add empty function to satisfy the type
-                        setIsOpen={setIsChannelMenuOpen}
-                        title="Channels"
-                      />
-
-                      <DropdownMenu
-                        icon={<ArrowDownLeft className="w-5 h-5" />}
-                        isOpen={isTransactionMenuOpen}
-                        items={TRANSACTION_MENU_ITEMS}
-                        menuRef={transactionMenuRef}
-                        onItemClick={(item: any) =>
-                          handleTransactionAction(item.action)
+                    {/* Support dropdown for mobile */}
+                    <DropdownMenu
+                      icon={<HelpCircle className="w-5 h-5" />}
+                      isOpen={isSupportMenuOpen}
+                      items={[
+                        {
+                          action: 'support',
+                          icon: <HelpCircle className="w-4 h-4" />,
+                          label: 'Get Help & Support',
+                        },
+                        ...SUPPORT_RESOURCES.map((resource) => ({
+                          icon: resource.icon,
+                          label: resource.name,
+                          to: '#', // Placeholder - we'll handle this in the click handler
+                          url: resource.url, // Custom property to store the URL
+                        })),
+                      ]}
+                      menuRef={supportMenuRef}
+                      onItemClick={(item: NavItem | string) => {
+                        if (item === 'support') {
+                          setShowSupportModal(true)
+                        } else if (typeof item !== 'string' && item.url) {
+                          openExternalLink(item.url)
                         }
-                        setIsOpen={setIsTransactionMenuOpen}
-                        title="Transactions"
-                      />
-
-                      {/* Support dropdown for mobile */}
-                      <DropdownMenu
-                        icon={<HelpCircle className="w-5 h-5" />}
-                        isOpen={isSupportMenuOpen}
-                        items={[
-                          {
-                            action: 'support',
-                            icon: <HelpCircle className="w-4 h-4" />,
-                            label: 'Get Help & Support',
-                          },
-                          ...SUPPORT_RESOURCES.map((resource) => ({
-                            icon: resource.icon,
-                            label: resource.name,
-                            to: '#', // Placeholder - we'll handle this in the click handler
-                            url: resource.url, // Custom property to store the URL
-                          })),
-                        ]}
-                        menuRef={supportMenuRef}
-                        onItemClick={(item: NavItem | string) => {
-                          if (item === 'support') {
-                            setShowSupportModal(true)
-                          } else if (typeof item !== 'string' && item.url) {
-                            openExternalLink(item.url)
-                          }
-                        }}
-                        setIsOpen={setIsSupportMenuOpen}
-                        title="Help & Support"
-                      />
-                    </div>
+                      }}
+                      setIsOpen={setIsSupportMenuOpen}
+                      title="Help & Support"
+                    />
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Main content area */}
-              <div className="p-3 h-[calc(100vh-56px)] overflow-auto">
-                {props.children}
-              </div>
-            </main>
-          </div>
-        ) : (
-          // For setup and other paths that hide the navbar
-          <div className="min-h-screen">{props.children}</div>
-        )}
+            {/* Main content area */}
+            <div className="p-3 h-[calc(100vh-56px)] overflow-auto">
+              {props.children}
+            </div>
+          </main>
+        </div>
+      ) : (
+        // For setup and other paths that hide the navbar
+        <div className="min-h-screen">{props.children}</div>
+      )}
 
-        {/* Support Modal */}
-        <SupportModal
-          isOpen={showSupportModal}
-          onClose={() => setShowSupportModal(false)}
-        />
+      {/* Support Modal */}
+      <SupportModal
+        isOpen={showSupportModal}
+        onClose={() => setShowSupportModal(false)}
+      />
 
-        {/* Logout Modal */}
-        <LogoutModal
-          isLoggingOut={isLoggingOut}
-          isOpen={showLogoutModal}
-          onClose={() => setShowLogoutModal(false)}
-          onConfirm={handleLogout}
-        />
+      {/* Logout Modal */}
+      <LogoutModal
+        isLoggingOut={isLoggingOut}
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+      />
 
-        <ToastContainer
-          autoClose={5000}
-          closeOnClick={false}
-          draggable={false}
-          hideProgressBar={false}
-          newestOnTop={false}
-          pauseOnFocusLoss={false}
-          pauseOnHover={true}
-          position="bottom-right"
-          rtl={false}
-          theme="dark"
-        />
+      <ToastContainer
+        autoClose={5000}
+        closeOnClick={false}
+        draggable={false}
+        hideProgressBar={false}
+        newestOnTop={false}
+        pauseOnFocusLoss={false}
+        pauseOnHover={true}
+        position="bottom-right"
+        rtl={false}
+        theme="dark"
+      />
 
-        {/* Add LayoutModal for deposit/withdraw functionality */}
-        <LayoutModal />
-      </div>
-    </NotificationProvider>
+      {/* Add LayoutModal for deposit/withdraw functionality */}
+      <LayoutModal />
+    </div>
   )
 }

@@ -1,7 +1,5 @@
 import { ArrowLeft, XCircle, Shield, CheckCircle2, Loader2 } from 'lucide-react'
 
-import { Button } from '../ui'
-
 interface UnlockingProgressProps {
   isUnlocking: boolean
   errorMessage?: string
@@ -16,34 +14,38 @@ export const UnlockingProgress = ({
   onCancel,
 }: UnlockingProgressProps) => {
   const steps = [
-    { icon: Shield, title: 'Decrypting wallet' },
-    { icon: Loader2, title: 'Synchronizing Bitcoin blockchain' },
-    { icon: CheckCircle2, title: 'Connecting to RGB proxy' },
-    { icon: CheckCircle2, title: 'Connecting to Lightning' },
+    { icon: Shield, status: 'completed', title: 'Decrypting wallet' },
+    {
+      icon: Loader2,
+      status: 'current',
+      title: 'Synchronizing Bitcoin blockchain',
+    },
+    { icon: CheckCircle2, status: 'pending', title: 'Connecting to RGB proxy' },
+    { icon: CheckCircle2, status: 'pending', title: 'Connecting to Lightning' },
   ]
 
   return (
-    <div className="flex items-center justify-center h-full w-full p-8">
-      <div className="w-full max-w-4xl flex flex-col items-center">
+    <div className="flex items-center justify-center min-h-screen w-full p-4">
+      <div className="w-full max-w-5xl flex flex-col items-center justify-center space-y-6">
         {/* Main Progress Section */}
-        <div className="relative mb-12">
+        <div className="relative">
           {/* Background Glow Effects */}
-          <div className="absolute inset-0 -m-8">
+          <div className="absolute inset-0 -m-6">
             <div
-              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-20 ${
+              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-3xl opacity-20 ${
                 errorMessage ? 'bg-red-500' : 'bg-blue-500'
               } animate-pulse`}
             ></div>
             <div
-              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full blur-2xl opacity-30 ${
+              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full blur-2xl opacity-30 ${
                 errorMessage ? 'bg-red-400' : 'bg-purple-500'
               } animate-pulse`}
               style={{ animationDelay: '1s' }}
             ></div>
           </div>
 
-          {/* Enhanced Progress Ring */}
-          <div className="relative w-40 h-40 mb-8">
+          {/* Enhanced Progress Ring - Better size */}
+          <div className="relative w-28 h-28">
             {/* Outer decorative rings */}
             <div
               className={`absolute inset-0 rounded-full border-2 ${
@@ -51,7 +53,7 @@ export const UnlockingProgress = ({
               }`}
             />
             <div
-              className={`absolute inset-2 rounded-full border border-dashed ${
+              className={`absolute inset-1 rounded-full border border-dashed ${
                 errorMessage ? 'border-red-400/30' : 'border-blue-400/30'
               } animate-[spin_8s_linear_infinite]`}
             />
@@ -66,7 +68,7 @@ export const UnlockingProgress = ({
             />
 
             {/* Inner glowing circle */}
-            <div className="absolute inset-0 m-auto w-20 h-20">
+            <div className="absolute inset-0 m-auto w-16 h-16">
               <div
                 className={`w-full h-full rounded-full relative overflow-hidden ${
                   errorMessage
@@ -80,9 +82,9 @@ export const UnlockingProgress = ({
                 )}
 
                 {errorMessage ? (
-                  <XCircle className="w-10 h-10 text-white relative z-10" />
+                  <XCircle className="w-8 h-8 text-white relative z-10" />
                 ) : (
-                  <Shield className="w-10 h-10 text-white relative z-10" />
+                  <Shield className="w-8 h-8 text-white relative z-10" />
                 )}
               </div>
             </div>
@@ -90,13 +92,13 @@ export const UnlockingProgress = ({
             {/* Floating particles */}
             {!errorMessage && (
               <>
-                <div className="absolute top-4 right-8 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-[float_3s_ease-in-out_infinite]"></div>
+                <div className="absolute top-2 right-5 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-[float_3s_ease-in-out_infinite]"></div>
                 <div
-                  className="absolute bottom-6 left-6 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-40 animate-[float_3s_ease-in-out_infinite]"
+                  className="absolute bottom-4 left-4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-40 animate-[float_3s_ease-in-out_infinite]"
                   style={{ animationDelay: '1s' }}
                 ></div>
                 <div
-                  className="absolute top-8 left-4 w-1 h-1 bg-blue-300 rounded-full opacity-50 animate-[float_3s_ease-in-out_infinite]"
+                  className="absolute top-5 left-2 w-1 h-1 bg-blue-300 rounded-full opacity-50 animate-[float_3s_ease-in-out_infinite]"
                   style={{ animationDelay: '2s' }}
                 ></div>
               </>
@@ -105,10 +107,10 @@ export const UnlockingProgress = ({
         </div>
 
         {/* Status Text Section */}
-        <div className="text-center space-y-8 w-full">
-          <div className="space-y-4">
+        <div className="text-center space-y-4 w-full">
+          <div className="space-y-2">
             <h2
-              className={`text-4xl font-bold ${
+              className={`text-3xl font-bold ${
                 errorMessage
                   ? 'bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent'
                   : 'bg-gradient-to-r from-blue-400 via-blue-300 to-purple-400 bg-clip-text text-transparent'
@@ -121,7 +123,7 @@ export const UnlockingProgress = ({
                   : 'Preparing Wallet'}
             </h2>
 
-            <p className="text-slate-400 text-lg max-w-md mx-auto leading-relaxed">
+            <p className="text-slate-400 text-base max-w-lg mx-auto leading-relaxed">
               {errorMessage
                 ? 'We encountered an issue while unlocking your wallet'
                 : isUnlocking
@@ -133,16 +135,16 @@ export const UnlockingProgress = ({
           {/* Error Message Display */}
           {errorMessage && (
             <div className="max-w-2xl mx-auto animate-[fadeIn_0.5s_ease-out]">
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-red-900/40 to-red-800/30 backdrop-blur-sm border border-red-500/30 shadow-lg">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-red-900/40 to-red-800/30 backdrop-blur-sm border border-red-500/30 shadow-lg">
                 <div className="flex items-start space-x-3">
-                  <div className="p-2 bg-red-500/20 rounded-lg mt-1">
-                    <XCircle className="w-5 h-5 text-red-400" />
+                  <div className="p-2 bg-red-500/20 rounded-lg mt-0.5">
+                    <XCircle className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="flex-1 text-left">
-                    <h4 className="font-semibold text-red-200 mb-2">
+                    <h4 className="font-semibold text-red-200 mb-1">
                       Error Details
                     </h4>
-                    <p className="text-red-300 leading-relaxed">
+                    <p className="text-red-300 text-sm leading-relaxed">
                       {errorMessage}
                     </p>
                   </div>
@@ -151,68 +153,165 @@ export const UnlockingProgress = ({
             </div>
           )}
 
-          {/* Progress Steps */}
+          {/* Progress Steps - Modern design */}
           {isUnlocking && !errorMessage && (
-            <div className="space-y-6 animate-[fadeIn_0.5s_ease-out] max-w-4xl mx-auto">
-              <h3 className="text-xl font-semibold text-slate-300 mb-6">
+            <div className="space-y-5 animate-[fadeIn_0.5s_ease-out] max-w-4xl mx-auto">
+              <h3 className="text-lg font-semibold text-slate-300 mb-6">
                 Processing Steps
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {steps.map((step, index) => {
-                  const Icon = step.icon
-                  return (
-                    <div
-                      className="group flex items-center space-x-4 p-5 rounded-xl bg-gradient-to-r from-slate-800/60 to-slate-700/40 backdrop-blur-sm border border-slate-600/30 hover:border-blue-500/30 transition-all duration-500 animate-[slideInUp_0.6s_ease-out]"
-                      key={step.title}
-                      style={{ animationDelay: `${index * 200}ms` }}
-                    >
-                      {/* Step Icon */}
-                      <div className="relative">
-                        <div className="p-3 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl border border-blue-500/20 group-hover:border-blue-400/40 transition-all duration-300">
-                          <Icon className="w-6 h-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
-                        </div>
-                        {/* Active indicator */}
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse border-2 border-slate-800"></div>
-                      </div>
+              {/* Modern step indicators */}
+              <div className="relative px-8">
+                {/* Progress line background */}
+                <div className="absolute top-8 left-16 right-16 h-0.5 bg-slate-700/50 rounded-full"></div>
 
-                      {/* Step Content */}
-                      <div className="flex-1">
-                        <h4 className="font-medium text-slate-200 group-hover:text-white transition-colors">
-                          {step.title}
-                        </h4>
-                        <div className="mt-2 h-1 bg-slate-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite]"></div>
+                {/* Active progress line */}
+                <div
+                  className="absolute top-8 left-16 h-0.5 bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-500 rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${(1 / (steps.length - 1)) * 100}%` }}
+                ></div>
+
+                <div className="flex items-start justify-between">
+                  {steps.map((step, index) => {
+                    const Icon = step.icon
+                    const isCompleted = step.status === 'completed'
+                    const isCurrent = step.status === 'current'
+                    const isPending = step.status === 'pending'
+
+                    return (
+                      <div
+                        className="flex flex-col items-center space-y-3 flex-1 animate-[slideInUp_0.6s_ease-out]"
+                        key={step.title}
+                        style={{ animationDelay: `${index * 150}ms` }}
+                      >
+                        {/* Step circle container */}
+                        <div className="relative">
+                          {/* Step circle */}
+                          <div
+                            className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
+                              isCompleted
+                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30 scale-110'
+                                : isCurrent
+                                  ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/30 animate-pulse'
+                                  : 'bg-gradient-to-br from-slate-700 to-slate-600 shadow-lg'
+                            } border-2 ${
+                              isCompleted || isCurrent
+                                ? 'border-white/20'
+                                : 'border-slate-500/30'
+                            }`}
+                          >
+                            {/* Step number badge */}
+                            <div
+                              className={`absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                isCompleted
+                                  ? 'bg-emerald-600 border-emerald-400'
+                                  : isCurrent
+                                    ? 'bg-blue-600 border-blue-400'
+                                    : 'bg-slate-800 border-slate-600'
+                              }`}
+                            >
+                              <span className="text-xs font-bold text-white">
+                                {index + 1}
+                              </span>
+                            </div>
+
+                            {/* Icon */}
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-7 h-7 text-white" />
+                            ) : (
+                              <Icon
+                                className={`w-7 h-7 transition-colors ${
+                                  isCurrent
+                                    ? 'text-white animate-pulse'
+                                    : isPending
+                                      ? 'text-slate-400'
+                                      : 'text-white'
+                                }`}
+                              />
+                            )}
+
+                            {/* Loading spinner for current step */}
+                            {isCurrent && (
+                              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/60 animate-spin"></div>
+                            )}
+
+                            {/* Success checkmark overlay */}
+                            {isCompleted && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Step content */}
+                        <div className="text-center space-y-2 max-w-28">
+                          {/* Step title */}
+                          <h4
+                            className={`font-semibold text-sm transition-colors leading-tight ${
+                              isCompleted
+                                ? 'text-emerald-300'
+                                : isCurrent
+                                  ? 'text-white'
+                                  : 'text-slate-400'
+                            }`}
+                          >
+                            {step.title}
+                          </h4>
+
+                          {/* Step status indicator */}
+                          <div className="flex flex-col items-center space-y-2">
+                            {isCompleted && (
+                              <div className="flex items-center space-x-1 text-emerald-400">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span className="text-xs font-medium">
+                                  Completed
+                                </span>
+                              </div>
+                            )}
+                            {isCurrent && (
+                              <div className="flex flex-col items-center space-y-2">
+                                <div className="flex items-center space-x-1 text-blue-400">
+                                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                  <span className="text-xs font-medium">
+                                    In Progress
+                                  </span>
+                                </div>
+                                {/* Progress bar for current step */}
+                                <div className="w-24 h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite] shadow-sm shadow-blue-400/50"></div>
+                                </div>
+                              </div>
+                            )}
+                            {isPending && (
+                              <div className="flex items-center space-x-1 text-slate-500">
+                                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                                <span className="text-xs font-medium">
+                                  Pending
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
 
-              {/* Enhanced Info Card */}
+              {/* Security Notice - Simplified */}
               <div
-                className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-blue-900/30 via-slate-800/40 to-purple-900/30 backdrop-blur-sm border border-blue-500/20 animate-[fadeIn_0.5s_ease-out]"
+                className="mt-6 p-3 rounded-xl bg-gradient-to-br from-blue-900/30 via-slate-800/40 to-purple-900/30 backdrop-blur-sm border border-blue-500/20 animate-[fadeIn_0.5s_ease-out] max-w-2xl mx-auto"
                 style={{ animationDelay: '800ms' }}
               >
-                <div className="flex items-start space-x-4">
-                  <div className="p-2 bg-blue-500/20 rounded-lg">
-                    <Shield className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <h4 className="font-semibold text-blue-200 mb-2">
-                      Security Notice
-                    </h4>
-                    <p className="text-slate-300 mb-3 leading-relaxed">
-                      Please keep the application open while we complete the
-                      secure unlock process.
-                    </p>
-                    <p className="text-slate-400 text-sm leading-relaxed">
-                      Note: If your node has been offline for some time,
-                      blockchain synchronization may take several minutes to
-                      complete.
-                    </p>
-                  </div>
+                <div className="flex items-center justify-center space-x-2 text-center">
+                  <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                  <p className="text-slate-300 text-sm">
+                    Keep the application open during the unlock process.
+                    Blockchain sync may take several minutes.
+                  </p>
                 </div>
               </div>
             </div>
@@ -221,26 +320,25 @@ export const UnlockingProgress = ({
           {/* Action Buttons */}
           {(onBack || onCancel) && (
             <div
-              className="mt-12 flex justify-center gap-4 animate-[fadeIn_0.5s_ease-out]"
+              className="mt-6 flex justify-center gap-4 animate-[fadeIn_0.5s_ease-out]"
               style={{ animationDelay: '1000ms' }}
             >
               {onBack && (
-                <Button
-                  className="px-6 py-3 bg-slate-800/60 hover:bg-slate-700/60 text-slate-300 hover:text-white border border-slate-600/50 hover:border-slate-500 rounded-xl transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm"
+                <button
+                  className="group px-5 py-2.5 bg-gradient-to-r from-slate-700/80 to-slate-600/80 hover:from-slate-600/80 hover:to-slate-500/80 text-slate-300 hover:text-white border border-slate-500/50 hover:border-slate-400/60 rounded-lg transition-all duration-300 flex items-center space-x-2 backdrop-blur-sm shadow-lg hover:shadow-xl"
                   onClick={onBack}
-                  variant="outline"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Setup</span>
-                </Button>
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
+                  <span className="font-medium">Back to Setup</span>
+                </button>
               )}
 
               {onCancel && (
                 <button
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 flex items-center space-x-2 font-semibold ${
+                  className={`px-5 py-2.5 rounded-lg transition-all duration-300 flex items-center space-x-2 font-semibold shadow-lg hover:shadow-xl ${
                     errorMessage
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg hover:shadow-xl'
-                      : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-lg hover:shadow-xl hover:shadow-red-500/25'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white hover:shadow-blue-500/25'
+                      : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white hover:shadow-red-500/25'
                   }`}
                   onClick={onCancel}
                 >

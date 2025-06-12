@@ -2,6 +2,8 @@ import { CheckCircle, AlertCircle, Clock, X, Bell } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { UpdateModal } from './UpdateModal'
+
 export type NotificationType =
   | 'success'
   | 'error'
@@ -86,7 +88,8 @@ const NotificationItem: React.FC<{
   notification: Notification
   onClose: () => void
   inPanel?: boolean
-}> = ({ notification, onClose, inPanel = false }) => {
+  onNotificationClick?: (notification: Notification) => void
+}> = ({ notification, onClose, inPanel = false, onNotificationClick }) => {
   const {
     icon: Icon,
     containerClass,
@@ -95,6 +98,8 @@ const NotificationItem: React.FC<{
   } = getNotificationConfig(notification.type)
   const [progress, setProgress] = useState(100)
   const progressInterval = useRef<number>()
+
+  const isUpdateNotification = notification.data?.update
 
   useEffect(() => {
     if (notification.autoClose && notification.showProgress) {
@@ -124,7 +129,12 @@ const NotificationItem: React.FC<{
 
   return (
     <div
-      className={`${inPanel ? 'border-b border-divider/10' : 'rounded-xl shadow-lg'} ${containerClass} backdrop-blur-md`}
+      className={`${inPanel ? 'border-b border-divider/10' : 'rounded-xl shadow-lg'} ${containerClass} backdrop-blur-md ${isUpdateNotification ? 'cursor-pointer hover:bg-gray-500/10' : ''}`}
+      onClick={
+        isUpdateNotification && onNotificationClick
+          ? () => onNotificationClick(notification)
+          : undefined
+      }
       role="alert"
     >
       <div className="p-4">
@@ -180,7 +190,14 @@ const NotificationPanel: React.FC<{
   onClose: () => void
   onClearAll: () => void
   onRemoveNotification: (id: string) => void
-}> = ({ notifications, onClose, onClearAll, onRemoveNotification }) => {
+  onNotificationClick: (notification: Notification) => void
+}> = ({
+  notifications,
+  onClose,
+  onClearAll,
+  onRemoveNotification,
+  onNotificationClick,
+}) => {
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-blue-darkest border-l border-divider/10 shadow-xl z-50">
       <div className="flex flex-col h-full">
@@ -218,6 +235,7 @@ const NotificationPanel: React.FC<{
                   key={notification.id}
                   notification={notification}
                   onClose={() => onRemoveNotification(notification.id)}
+                  onNotificationClick={onNotificationClick}
                 />
               ))}
             </div>
@@ -233,6 +251,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const [selectedUpdateModal, setSelectedUpdateModal] = useState<any>(null)
   const notificationTimers = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({})
@@ -283,6 +302,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsNotificationPanelOpen((prev) => !prev)
   }
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.data?.update) {
+      setSelectedUpdateModal(notification.data.update)
+      setIsNotificationPanelOpen(false)
+    }
+  }
+
   useEffect(() => {
     return () => {
       Object.values(notificationTimers.current).forEach(clearTimeout)
@@ -329,9 +355,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                 notifications={notifications}
                 onClearAll={clearNotifications}
                 onClose={toggleNotificationPanel}
+                onNotificationClick={handleNotificationClick}
                 onRemoveNotification={removeNotification}
               />
             </>
+          )}
+          {/* Update Modal */}
+          {selectedUpdateModal && (
+            <UpdateModal
+              isOpen={true}
+              onClose={() => setSelectedUpdateModal(null)}
+              update={selectedUpdateModal}
+            />
           )}
         </>,
         document.body
