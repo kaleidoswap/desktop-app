@@ -498,7 +498,20 @@ export const createFetchAndSetPairsHandler = (
   setSelectedPair: (pair: TradingPair | null) => void,
   setIsPairsLoading?: (loading: boolean) => void
 ) => {
+  // Add a static flag to prevent multiple simultaneous calls
+  let isCurrentlyFetching = false
+
   return async () => {
+    // Prevent multiple simultaneous calls
+    if (isCurrentlyFetching) {
+      logger.debug(
+        'fetchAndSetPairs already in progress, skipping duplicate call'
+      )
+      return
+    }
+
+    isCurrentlyFetching = true
+
     if (setIsPairsLoading) {
       setIsPairsLoading(true)
     }
@@ -655,6 +668,7 @@ export const createFetchAndSetPairsHandler = (
       logger.error('Error fetching pairs:', error)
       toast.error('Failed to fetch trading pairs')
     } finally {
+      isCurrentlyFetching = false
       if (setIsPairsLoading) {
         setIsPairsLoading(false)
       }

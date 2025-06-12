@@ -14,8 +14,8 @@ import { Fields } from './types'
 
 interface SwapFormProps {
   form: UseFormReturn<Fields>
-  fromAssetOptions: { ticker: string; value: string }[]
-  toAssetOptions: { ticker: string; value: string }[]
+  fromAssetOptions: { ticker: string; value: string; assetId?: string }[]
+  toAssetOptions: { ticker: string; value: string; assetId?: string }[]
   formatAmount: (amount: number, asset: string) => string
   displayAsset: (asset: string) => string
   onSizeClick: (size: number) => void
@@ -145,6 +145,7 @@ export const SwapForm: React.FC<SwapFormProps> = ({
               showMaxHtlc
               showMinAmount
               showSizeButtons
+              useEnhancedSelector={true}
               value={form.getValues().from}
             />
 
@@ -181,6 +182,7 @@ export const SwapForm: React.FC<SwapFormProps> = ({
               maxAmount={maxToAmount}
               onAmountChange={handleToAmountChange}
               onAssetChange={(value) => handleAssetChange('toAsset', value)}
+              useEnhancedSelector={true}
               value={form.getValues().to}
             />
 

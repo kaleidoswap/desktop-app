@@ -3,6 +3,7 @@ import React, { useEffect } from 'react'
 
 import { logger } from '../../utils/logger'
 
+import { EnhancedAssetSelect, AssetOptionData } from './EnhancedAssetSelect'
 import { SizeButtons } from './SizeButtons'
 
 import { AssetSelect } from './index'
@@ -23,7 +24,7 @@ interface SwapInputFieldProps {
   disabled: boolean
   value: string
   asset: string
-  assetOptions: { ticker: string; value: string }[]
+  assetOptions: { ticker: string; value: string; assetId?: string }[]
   onAmountChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
   onAssetChange: (value: string) => void
   onRefresh?: () => void
@@ -35,6 +36,7 @@ interface SwapInputFieldProps {
   selectedSize?: number | undefined
   onSizeClick?: (size: number) => void
   readOnly?: boolean
+  useEnhancedSelector?: boolean
 }
 
 export const SwapInputField: React.FC<SwapInputFieldProps> = ({
@@ -60,6 +62,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   selectedSize,
   onSizeClick,
   readOnly = false,
+  useEnhancedSelector = true,
 }) => {
   // Log component rendering for debugging
   useEffect(() => {
@@ -70,6 +73,16 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
 
   // Force definite boolean value for isLoading to avoid any undefined being treated as falsy
   const isLoadingState = isLoading === true
+
+  // Convert asset options to enhanced format
+  const enhancedAssetOptions: AssetOptionData[] = assetOptions.map(
+    (option) => ({
+      assetId: option.assetId || option.value,
+      label: option.ticker,
+      ticker: option.ticker,
+      value: option.value,
+    })
+  )
 
   return (
     <div className="space-y-3 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 shadow-lg">
@@ -131,13 +144,25 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
             value={value}
           />
         )}
-        <div className="flex-shrink-0 sm:w-auto w-full">
-          <AssetSelect
-            disabled={disabled}
-            onChange={onAssetChange}
-            options={assetOptions}
-            value={asset}
-          />
+        <div className="flex-shrink-0 sm:w-auto w-full sm:max-w-[160px]">
+          {useEnhancedSelector ? (
+            <EnhancedAssetSelect
+              className="w-full"
+              disabled={disabled}
+              onChange={onAssetChange}
+              options={enhancedAssetOptions}
+              placeholder="Select asset"
+              searchPlaceholder="Search for assets..."
+              value={asset}
+            />
+          ) : (
+            <AssetSelect
+              disabled={disabled}
+              onChange={onAssetChange}
+              options={assetOptions}
+              value={asset}
+            />
+          )}
         </div>
       </div>
 

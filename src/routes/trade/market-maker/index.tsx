@@ -1519,12 +1519,24 @@ export const Component = () => {
             ? mapAssetIdToTicker(asset, assets)
             : asset
 
+          // Get the asset ID for this asset
+          const assetId = isAssetId(asset)
+            ? asset
+            : mapTickerToAssetId(asset, assets)
+
           return {
-            // Don't disable any assets in the dropdown
-            disabled: false,
-            ticker: displayTicker,
+            
+            // Include asset ID for enhanced selector
+assetId: assetId,
+            
+// Don't disable any assets in the dropdown
+disabled: false,
+            
+            
+ticker: displayTicker,
+            
             // Store the actual asset value (which might be an ID or ticker)
-            value: asset,
+value: asset,
           }
         })
 
@@ -1781,6 +1793,7 @@ export const Component = () => {
                   showMaxHtlc
                   showMinAmount
                   showSizeButtons
+                  useEnhancedSelector={true}
                   value={form.getValues().from}
                 />
 
@@ -1821,6 +1834,7 @@ export const Component = () => {
                   maxAmount={maxToAmount}
                   onAssetChange={(value) => handleAssetChange('toAsset', value)}
                   readOnly={true}
+                  useEnhancedSelector={true}
                   value={form.getValues().to || ''}
                 />
 

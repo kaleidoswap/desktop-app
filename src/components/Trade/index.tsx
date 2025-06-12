@@ -102,6 +102,7 @@ export { ExchangeRateSection } from './ExchangeRateSection'
 export { SwapButton } from './SwapButton'
 export { MakerSelector } from './MakerSelector'
 export { AssetOption, AssetSelect, ExchangeRateDisplay }
+export { EnhancedAssetSelect } from './EnhancedAssetSelect'
 export { ManualSwapForm } from './ManualSwapForm'
 export { NostrP2P } from './NostrP2P'
 export { TradeForm } from './TradeForm'
