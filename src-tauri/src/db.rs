@@ -20,6 +20,15 @@ pub struct Account {
     pub ldk_peer_listening_port: String,
 }
 
+#[derive(Debug, Serialize, Clone)]
+pub struct ChannelOrder {
+    pub id: i32,
+    pub order_id: String,
+    pub created_at: String,
+    pub status: String,
+    pub payload: String,
+}
+
 // Check if a database file exists, and create one if it does not.
 pub fn init() {
     // Create database file if it doesn't exist
@@ -50,6 +59,17 @@ pub fn init() {
         (),
     )
     .unwrap();
+    // Add ChannelOrders table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
+            'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+            'order_id' TEXT NOT NULL,
+            'created_at' TEXT NOT NULL,
+            'status' TEXT NOT NULL,
+            'payload' TEXT NOT NULL
+        );",
+        (),
+    ).unwrap();
 }
 
 // Create the database file.
@@ -274,4 +294,30 @@ pub fn check_account_exists(name: &str) -> Result<bool, rusqlite::Error> {
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM Accounts WHERE name = ?")?;
     let count: i64 = stmt.query_row([name], |row| row.get(0))?;
     Ok(count > 0)
+}
+
+pub fn insert_channel_order(order_id: String, status: String, payload: String, created_at: String) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "INSERT INTO ChannelOrders (order_id, created_at, status, payload) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![order_id, created_at, status, payload],
+    )
+}
+
+pub fn get_channel_orders() -> Result<Vec<ChannelOrder>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let mut stmt = conn.prepare("SELECT id, order_id, created_at, status, payload FROM ChannelOrders ORDER BY created_at DESC")?;
+    let orders = stmt
+        .query_map([], |row| {
+            Ok(ChannelOrder {
+                id: row.get(0)?,
+                order_id: row.get(1)?,
+                created_at: row.get(2)?,
+                status: row.get(3)?,
+                payload: row.get(4)?,
+            })
+        })?
+        .map(|res| res.unwrap())
+        .collect();
+    Ok(orders)
 }

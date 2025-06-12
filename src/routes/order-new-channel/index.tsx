@@ -1,4 +1,5 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import { invoke } from '@tauri-apps/api/core'
 import { Info } from 'lucide-react'
 import { useCallback, useState, useEffect } from 'react'
 import { ClipLoader } from 'react-spinners'
@@ -35,6 +36,7 @@ export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
+  const [orderPayload, setOrderPayload] = useState<any>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<
     'success' | 'error' | 'expired' | null
@@ -69,6 +71,29 @@ export const Component = () => {
 
         if (paymentJustReceived) {
           setPaymentReceived(true)
+
+          console.log('Payment just received! Saving order to database...')
+          console.log('Order ID:', orderId)
+          console.log('Order payload:', orderPayload)
+          console.log('Order data:', orderData)
+
+          // Save the order to the database when payment is received
+          if (orderPayload) {
+            try {
+              await invoke('insert_channel_order', {
+                createdAt: orderData?.created_at || new Date().toISOString(),
+                orderId: orderId,
+                payload: JSON.stringify(orderPayload),
+                status: orderData?.order_state || 'paid',
+              })
+              console.log('Order saved to database successfully!')
+            } catch (error) {
+              console.error('Error saving order to database:', error)
+            }
+          } else {
+            console.log('No order payload available to save')
+          }
+
           // Start the 3-minute timeout only after payment is received
           timeoutId = setTimeout(
             () => {
@@ -120,7 +145,7 @@ export const Component = () => {
         if (timeoutId) clearTimeout(timeoutId)
       }
     }
-  }, [orderId, getOrderRequest, step, paymentReceived])
+  }, [orderId, getOrderRequest, step, paymentReceived, orderPayload])
 
   const onSubmitStep1 = useCallback(
     async (data: { connectionUrl: string; success: boolean }) => {
@@ -287,6 +312,7 @@ export const Component = () => {
             throw new Error('Could not get order id')
           }
           setOrderId(orderId)
+          setOrderPayload(payload)
           setStep(3)
         }
       } catch (error) {

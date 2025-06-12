@@ -12,6 +12,7 @@ import { twJoin } from 'tailwind-merge'
 
 import {
   WALLET_HISTORY_ASSETS_PATH,
+  WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
   WALLET_HISTORY_TRADES_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
@@ -41,6 +42,12 @@ const TABS = [
     icon: <Coins className="w-5 h-5" />,
     label: 'Assets',
     path: WALLET_HISTORY_ASSETS_PATH,
+  },
+  {
+    color: 'orange',
+    icon: <ArrowDownUp className="w-5 h-5" />,
+    label: 'Channel Orders',
+    path: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   },
 ]
 

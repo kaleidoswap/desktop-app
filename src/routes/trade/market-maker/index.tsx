@@ -1447,8 +1447,6 @@ export const Component = () => {
   // Update the getAssetOptions function to map asset IDs to tickers for UI display
   const getAssetOptions = useCallback(
     (excludeAsset: string) => {
-      const availableAssets = getAvailableAssets()
-
       // Get all unique assets from tradable pairs
       const allPairAssets = tradablePairs
         .flatMap((pair) => [pair.base_asset, pair.quote_asset])

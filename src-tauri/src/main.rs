@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use db::Account;
+use db::{Account, ChannelOrder};
 use dotenv::dotenv;
 use rgb_node::NodeProcess;
 use std::env;
@@ -150,7 +150,10 @@ fn main() {
             get_node_logs,
             save_logs_to_file,
             is_node_running,
-            get_running_node_account
+            get_running_node_account,
+            // ChannelOrders commands
+            insert_channel_order,
+            get_channel_orders,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -393,4 +396,14 @@ fn get_running_node_account(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
 ) -> Option<String> {
     node_process.lock().unwrap().get_current_account()
+}
+
+#[tauri::command]
+fn insert_channel_order(order_id: String, status: String, payload: String, created_at: String) -> Result<usize, String> {
+    db::insert_channel_order(order_id, status, payload, created_at).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_channel_orders() -> Result<Vec<ChannelOrder>, String> {
+    db::get_channel_orders().map_err(|e| e.to_string())
 }
