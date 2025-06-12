@@ -243,24 +243,36 @@ export const createSwapAssetsHandler = (
         `Swapping assets: from=${fromAsset}(${fromAmount}) to=${toAsset}(${toAmount})`
       )
 
-      // Swap the assets in the form
+      // Store the current toAmount before clearing it
+      const previousToAmount = toAmount
+
+      // Clear both amounts first to avoid validation errors during swap
+      form.setValue('to', '')
+      form.setValue('from', '')
+
+      // Swap the assets in the form atomically
       form.setValue('fromAsset', toAsset)
       form.setValue('toAsset', fromAsset)
 
-      // Set the new from amount to the old to amount
-      form.setValue('from', toAmount)
+      // Wait for min/max amounts to be updated for the new asset configuration
+      await updateMinMaxAmounts()
 
-      // Don't set the to amount - it will be recalculated by the updateToAmount effect
-      // Clear it temporarily to avoid showing stale data
-      // form.setValue('to', '')
-
-      // Recalculate max amount for the new fromAsset (which was previously toAsset)
+      // Get the new max amount for validation
       const newMaxAmount = await calculateMaxTradableAmount(toAsset, true)
       setMaxFromAmount(newMaxAmount)
 
-      // Make sure to call updateMinMaxAmounts after all the changes
-      // This will ensure state is properly updated for future operations
-      await updateMinMaxAmounts()
+      // Only set the new from amount if we had a valid previous toAmount
+      if (
+        previousToAmount &&
+        previousToAmount !== '' &&
+        previousToAmount !== '0'
+      ) {
+        // Set the new from amount (which was previously the to amount)
+        form.setValue('from', previousToAmount)
+      } else {
+        // If we didn't have a valid toAmount, clear the fromAmount
+        form.setValue('from', '')
+      }
     }
   }
 }

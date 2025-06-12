@@ -42,8 +42,14 @@ export const getValidationError = (
   toAsset: string,
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
-  assets: NiaAsset[] = []
+  assets: NiaAsset[] = [],
+  isToAmountLoading: boolean = false
 ): string | null => {
+  // Don't show validation errors while the quote is loading
+  if (isToAmountLoading) {
+    return null
+  }
+
   // Convert asset IDs to tickers for display in error messages
   const fromDisplayAsset =
     isAssetId(fromAsset) && assets.length > 0
@@ -55,12 +61,13 @@ export const getValidationError = (
       ? mapAssetIdToTicker(toAsset, assets)
       : toAsset
 
-  // Zero amounts
+  // Zero amounts - only check fromAmount during loading
   if (fromAmount === 0) {
     return 'Please enter an amount to send.'
   }
 
-  if (toAmount === 0) {
+  // Only validate toAmount if we're not loading
+  if (!isToAmountLoading && toAmount === 0) {
     return 'The received amount cannot be zero. Try a different amount.'
   }
 
@@ -80,7 +87,8 @@ export const getValidationError = (
     )} ${displayAsset(fromDisplayAsset)}.`
   }
 
-  if (toAmount > maxToAmount) {
+  // Only check maxToAmount if we're not loading
+  if (!isToAmountLoading && toAmount > maxToAmount) {
     return `You can only receive up to ${formatAmount(
       maxToAmount,
       toDisplayAsset

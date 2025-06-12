@@ -38,13 +38,16 @@ export const createQuoteRequestHandler = (
 
     // Skip if either asset is not set
     if (!fromAssetTicker || !toAssetTicker) {
-      logger.debug('Quote request skipped: fromAsset or toAsset not set.')
+      return
+    }
+
+    // Skip if assets are the same (prevents "Cannot swap an asset for itself" errors)
+    if (fromAssetTicker === toAssetTicker) {
       return
     }
 
     // Skip if amount is not set or is zero
     if (!fromAmountStr || fromAmountStr === '0') {
-      logger.debug('Quote request skipped: fromAmount not set or zero.')
       form.setValue('to', '') // Clear 'to' field if 'from' is empty
       return
     }
@@ -52,7 +55,6 @@ export const createQuoteRequestHandler = (
     // Parse the amount
     const fromAmount = parseAssetAmount(fromAmountStr, fromAssetTicker)
     if (fromAmount <= 0) {
-      logger.debug('Quote request skipped: fromAmount is zero or negative.')
       return
     }
 
@@ -63,10 +65,7 @@ export const createQuoteRequestHandler = (
     if (quoteKey === lastRequestedQuoteKey) {
       const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
       if (timeSinceLastRequest < 1000) {
-        // 1 second duplicate protection
-        logger.debug(
-          `Quote request skipped: duplicate request for ${quoteKey} within 1s.`
-        )
+        // 1 second duplicate protection - no need to log this frequently
         return
       }
     }
@@ -121,15 +120,15 @@ const sendQuoteRequest = (
   let amountForRequest = fromAmount
   if (fromAssetTicker === 'BTC') {
     amountForRequest = fromAmount * 1000
-    logger.debug(
-      `BTC fromAmount: ${fromAmount} sats, converted to ${amountForRequest} msats for request.`
-    )
   }
 
   try {
-    logger.debug(
-      `Requesting quote: ${fromDisplayTicker} (${fromAssetId}) -> ${toDisplayTicker} (${toAssetId}), Amount for request: ${amountForRequest}`
-    )
+    // Only log if assets are different to avoid spam during swapping
+    if (fromAssetTicker !== toAssetTicker) {
+      logger.debug(
+        `Requesting quote: ${fromDisplayTicker} -> ${toDisplayTicker}, Amount: ${amountForRequest}`
+      )
+    }
     // Send the quote request using resolved asset IDs and the potentially adjusted amount
     const success = webSocketService.requestQuote(
       fromAssetId,

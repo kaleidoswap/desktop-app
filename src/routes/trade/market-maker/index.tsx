@@ -239,7 +239,7 @@ export const Component = () => {
           const fromTicker = getAssetTicker(currentSwap.from_asset)
           const toTicker = getAssetTicker(currentSwap.to_asset)
 
-          let message = `Swap completed successfully! ${swapType === 'maker' ? 'Made' : 'Took'} trade`
+          let message = `Swap completed successfully!`
 
           // Add asset details if available
           if (currentSwap.qty_from && currentSwap.qty_to) {
@@ -397,7 +397,6 @@ export const Component = () => {
         // Update the price from the quote
         if (quoteResponse.price) {
           setCurrentPrice(quoteResponse.price)
-          logger.debug(`Updated price to: ${quoteResponse.price}`)
         }
 
         // Update the fees
@@ -408,9 +407,6 @@ export const Component = () => {
             totalFee: quoteResponse.fee.final_fee,
             variableFee: quoteResponse.fee.variable_fee,
           })
-          logger.debug(
-            `Updated fees: base=${quoteResponse.fee.base_fee}, rate=${quoteResponse.fee.fee_rate}, total=${quoteResponse.fee.final_fee}`
-          )
         }
 
         // Update quote validity tracking
@@ -424,30 +420,16 @@ export const Component = () => {
         let displayToAmount = quoteResponse.to_amount
         if (quoteResponse.to_asset === 'BTC' || toTickerForUI === 'BTC') {
           displayToAmount = Math.round(displayToAmount / MSATS_PER_SAT)
-          logger.debug(
-            `Converting BTC to_amount from ${quoteResponse.to_amount} millisats to ${displayToAmount} sats`
-          )
         }
 
         const formattedToAmount = formatAmount(displayToAmount, toTickerForUI)
 
         form.setValue('to', formattedToAmount)
 
-        logger.debug(
-          `Setting 'to' form value to ${formattedToAmount} (raw: ${quoteResponse.to_amount})`
-        )
-
         // Important: Save the RFQ ID from the quote to use when executing the swap
         if (quoteResponse.rfq_id) {
           form.setValue('rfq_id', quoteResponse.rfq_id)
-          logger.debug(
-            `Saved RFQ ID: ${quoteResponse.rfq_id} for later swap execution`
-          )
         }
-
-        logger.debug(
-          `New quote received: ${quoteResponse.to_amount}, updating UI`
-        )
 
         // Clear any validation errors if we got a valid quote
         setErrorMessage(null)
@@ -683,10 +665,6 @@ export const Component = () => {
       const newMaxFromAmount = await calculateMaxTradableAmount(fromAsset, true)
       const newMaxToAmount = await calculateMaxTradableAmount(toAsset, false)
 
-      logger.debug(
-        `Updated max amounts - From: ${newMaxFromAmount} ${fromAsset}, To: ${newMaxToAmount} ${toAsset}`
-      )
-
       setMaxFromAmount(newMaxFromAmount)
       setMaxToAmount(newMaxToAmount)
 
@@ -741,21 +719,13 @@ export const Component = () => {
   // Add a new effect to initialize the UI with a default "to" amount when pair is selected
   useEffect(() => {
     if (selectedPair && minFromAmount > 0 && !form.getValues().to) {
-      logger.debug(
-        `Initializing UI with default values for pair ${selectedPair.base_asset}/${selectedPair.quote_asset}`
-      )
-
       // If there's no "from" amount yet, set a default
       if (!form.getValues().from) {
         const fromAsset = form.getValues().fromAsset
         const initialAmount = Math.max(minFromAmount * 2, maxFromAmount * 0.25)
         const formattedAmount = formatAmount(initialAmount, fromAsset)
 
-        logger.debug(
-          `Setting initial "from" amount to ${formattedAmount} ${fromAsset}`
-        )
         form.setValue('from', formattedAmount, { shouldValidate: true })
-        // setSelectedSize(25) // Set to 25% by default // REMOVE THIS LINE
 
         // Request a quote with this initial amount
         setTimeout(() => requestQuote(), 100)
@@ -837,8 +807,6 @@ export const Component = () => {
         (!currentFromAsset || currentFromAsset === 'BTC') &&
         !currentToAsset
       ) {
-        logger.debug('Attempting to restore last used pair and assets')
-
         // Try to load last assets from localStorage
         const lastAssets = loadLastAssets()
 
@@ -859,10 +827,6 @@ export const Component = () => {
             )
 
             if (pairExists) {
-              logger.debug(
-                `Restoring last assets: from=${lastAssets.fromAsset}, to=${lastAssets.toAsset}`
-              )
-
               // Set the assets in the form
               form.setValue('fromAsset', lastAssets.fromAsset)
               form.setValue('toAsset', lastAssets.toAsset)
@@ -945,7 +909,8 @@ export const Component = () => {
         value.toAsset || '',
         formatAmount,
         displayAsset,
-        assets
+        assets,
+        isToAmountLoading
       )
 
       setErrorMessage(errorMsg)
@@ -962,6 +927,7 @@ export const Component = () => {
     displayAsset,
     assets,
     form,
+    isToAmountLoading,
   ])
 
   // Create handler for asset changes
@@ -1341,7 +1307,10 @@ export const Component = () => {
 
   // Set up quote request timer when component mounts or when assets change
   useEffect(() => {
-    if (form.getValues().fromAsset && form.getValues().toAsset && wsConnected) {
+    const fromAsset = form.getValues().fromAsset
+    const toAsset = form.getValues().toAsset
+
+    if (fromAsset && toAsset && fromAsset !== toAsset && wsConnected) {
       // Start quote request timer with increased interval to reduce load
       startQuoteRequestTimer(requestQuote, 8000) // Increased from default 5000ms to 8000ms
 
@@ -1368,8 +1337,14 @@ export const Component = () => {
         const fromAsset = value.fromAsset
         const toAsset = value.toAsset
 
-        // Only request quote if we have all required values
-        if (fromAmount && fromAsset && toAsset && wsConnected) {
+        // Only request quote if we have all required values and assets are different
+        if (
+          fromAmount &&
+          fromAsset &&
+          toAsset &&
+          fromAsset !== toAsset &&
+          wsConnected
+        ) {
           // Only set loading states if we don't already have a valid quote
           if (!hasValidQuote) {
             setIsToAmountLoading(true)
@@ -1400,12 +1375,13 @@ export const Component = () => {
         if (debouncedFromAmount !== currentFromAmount) {
           const timer = setTimeout(() => {
             setDebouncedFromAmount(currentFromAmount || '')
-            // Only request quote if we have valid values and are connected
+            // Only request quote if we have valid values, assets are different, and are connected
             if (
               currentFromAmount &&
               currentFromAmount !== '0' &&
               value.fromAsset &&
               value.toAsset &&
+              value.fromAsset !== value.toAsset &&
               wsConnected
             ) {
               requestQuote()
@@ -1468,39 +1444,15 @@ export const Component = () => {
     [tradablePairs]
   )
 
-  // Cache for asset options logging to prevent excessive debug logs
-  const lastAssetOptionsLog = useRef<{ [key: string]: number }>({})
-  const ASSET_LOG_THROTTLE_MS = 3000 // Only log every 3 seconds
-
   // Update the getAssetOptions function to map asset IDs to tickers for UI display
   const getAssetOptions = useCallback(
     (excludeAsset: string) => {
       const availableAssets = getAvailableAssets()
 
-      // Throttle debug logging to prevent spam
-      const now = Date.now()
-      const logKey = `assets-${excludeAsset}`
-      const shouldLog =
-        !lastAssetOptionsLog.current[logKey] ||
-        now - lastAssetOptionsLog.current[logKey] > ASSET_LOG_THROTTLE_MS
-
-      if (shouldLog) {
-        lastAssetOptionsLog.current[logKey] = now
-        logger.debug(
-          `Available assets for trading: ${JSON.stringify(availableAssets)}`
-        )
-      }
-
       // Get all unique assets from tradable pairs
       const allPairAssets = tradablePairs
         .flatMap((pair) => [pair.base_asset, pair.quote_asset])
         .filter((asset, index, self) => self.indexOf(asset) === index)
-
-      if (shouldLog) {
-        logger.debug(
-          `All assets from tradable pairs: ${JSON.stringify(allPairAssets)}`
-        )
-      }
 
       // Ensure we're comparing by ticker if excludeAsset is a ticker
       const excludeAssetId = mapTickerToAssetId(excludeAsset, assets)
@@ -1525,26 +1477,18 @@ export const Component = () => {
             : mapTickerToAssetId(asset, assets)
 
           return {
-            
             // Include asset ID for enhanced selector
-assetId: assetId,
-            
-// Don't disable any assets in the dropdown
-disabled: false,
-            
-            
-ticker: displayTicker,
-            
+            assetId: assetId,
+
+            // Don't disable any assets in the dropdown
+            disabled: false,
+
+            ticker: displayTicker,
+
             // Store the actual asset value (which might be an ID or ticker)
-value: asset,
+            value: asset,
           }
         })
-
-      if (shouldLog) {
-        logger.debug(
-          `Tradable asset options (excluding ${excludeAsset}): ${JSON.stringify(tradableAssets)}`
-        )
-      }
 
       return tradableAssets
     },
@@ -1765,7 +1709,10 @@ value: asset,
                   availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
                   availableAmountLabel="Available:"
                   disabled={
-                    !hasChannels || !hasTradablePairs || isSwapInProgress
+                    !hasChannels ||
+                    !hasTradablePairs ||
+                    isSwapInProgress ||
+                    showConfirmation
                   }
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
