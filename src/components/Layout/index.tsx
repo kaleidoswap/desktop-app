@@ -23,6 +23,7 @@ import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
+import { AppVersion } from '../AppVersion'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -40,8 +41,9 @@ import {
   HIDE_NAVBAR_PATHS,
   NavItem,
 } from './config'
-import { LayoutModal } from './Modal'
 import { openUrl } from '@tauri-apps/plugin-opener'
+
+import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -385,6 +387,9 @@ export const Layout = (props: Props) => {
     useNotification()
   const { hasSkippedUpdate, skippedVersion, checkForUpdates } = useUpdate()
 
+  // Check if there are any update notifications
+  const hasUpdateNotification = notifications.some((n) => n.data?.update)
+
   useOnClickOutside(channelMenuRef, () => setIsChannelMenuOpen(false))
   useOnClickOutside(transactionMenuRef, () => setIsTransactionMenuOpen(false))
   useOnClickOutside(supportMenuRef, () => setIsSupportMenuOpen(false))
@@ -498,7 +503,7 @@ export const Layout = (props: Props) => {
     }
 
     checkDeposits()
-  }, [data, error, shouldPoll, lastDeposit, isFetching])
+  }, [data, error, shouldPoll, lastDeposit, isFetching, addNotification])
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -675,6 +680,14 @@ export const Layout = (props: Props) => {
                 onSupportClick={() => setShowSupportModal(true)}
               />
             </div>
+
+            {/* App version info */}
+            <div className="px-3 pb-3 relative">
+              <AppVersion
+                className="border-t border-divider/10 pt-2"
+                isCollapsed={isSidebarCollapsed}
+              />
+            </div>
           </div>
 
           {/* Main content */}
@@ -722,7 +735,7 @@ export const Layout = (props: Props) => {
                   <button
                     aria-label="Check for updates"
                     className={`relative p-2 rounded-lg hover:bg-blue-darker transition-colors ${
-                      hasSkippedUpdate
+                      hasUpdateNotification || hasSkippedUpdate
                         ? 'text-amber-400 hover:text-amber-300'
                         : 'text-gray-400 hover:text-white'
                     }`}
@@ -731,18 +744,22 @@ export const Layout = (props: Props) => {
                       e.stopPropagation()
                       console.log(
                         `[${new Date().toISOString()}] Update button clicked, hasSkippedUpdate =`,
-                        hasSkippedUpdate
+                        hasSkippedUpdate,
+                        ', hasUpdateNotification =',
+                        hasUpdateNotification
                       )
                       checkForUpdates()
                     }}
                     title={
-                      hasSkippedUpdate
-                        ? `Update ${skippedVersion} is available`
-                        : 'Check for updates'
+                      hasUpdateNotification
+                        ? 'Update available - check notifications'
+                        : hasSkippedUpdate
+                          ? `Update ${skippedVersion} is available`
+                          : 'Check for updates'
                     }
                   >
                     <RefreshCw className="w-5 h-5" />
-                    {hasSkippedUpdate && (
+                    {(hasSkippedUpdate || hasUpdateNotification) && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                     )}
                   </button>

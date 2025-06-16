@@ -28,6 +28,7 @@ import { webSocketService } from '../../app/hubs/websocketService'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
+import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
 import {
   ModalType,
@@ -872,6 +873,11 @@ export const Component: React.FC = () => {
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* App Version Info */}
+            <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-gray-700">
+              <AppVersion showDetailed={true} />
             </div>
           </div>
         </div>
