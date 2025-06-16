@@ -6,6 +6,7 @@ import {
   Loader as LoaderIcon,
   Zap,
   Settings,
+  Trash2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -54,6 +55,7 @@ const AVAILABLE_COLUMNS = [
   { key: 'asset_id', label: 'Asset ID', type: 'payload' },
   { key: 'lsp_asset_amount', label: 'LSP Asset Amount', type: 'payload' },
   { key: 'client_asset_amount', label: 'Client Asset Amount', type: 'payload' },
+  { key: 'actions', label: 'Actions', type: 'default' },
 ]
 
 const DEFAULT_COLUMNS = [
@@ -62,6 +64,7 @@ const DEFAULT_COLUMNS = [
   'amount_paid',
   'fees_paid',
   'status',
+  'actions',
 ]
 
 const ChannelOrderRow: React.FC<{
@@ -69,7 +72,8 @@ const ChannelOrderRow: React.FC<{
   orderStatus: string
   orderData?: Lsps1CreateOrderResponse
   selectedColumns: string[]
-}> = ({ order, orderStatus, orderData, selectedColumns }) => {
+  onDelete: (orderId: string) => Promise<void>
+}> = ({ order, orderStatus, orderData, selectedColumns, onDelete }) => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard
       .writeText(text)
@@ -181,6 +185,18 @@ const ChannelOrderRow: React.FC<{
         return <span className="text-slate-300">{getCreatedAt()}</span>
       case 'status':
         return getStatusBadge(orderStatus)
+      case 'actions':
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <button
+              className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+              onClick={() => onDelete(order.order_id)}
+              title="Delete order"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )
       default:
         return (
           <span className="text-slate-300">
@@ -194,7 +210,7 @@ const ChannelOrderRow: React.FC<{
     <tr className="border-b border-gray-700/50 hover:bg-gray-700/20 text-sm">
       {selectedColumns.map((columnKey) => (
         <td
-          className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' ? 'text-right' : ''}`}
+          className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' || columnKey === 'actions' ? 'text-right' : ''}`}
           key={columnKey}
         >
           {getCellValue(columnKey)}
@@ -273,6 +289,27 @@ export const Component = () => {
     setRefreshing(true)
     await fetchOrders()
     setRefreshing(false)
+  }
+
+  const handleDelete = async (orderId: string) => {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this channel order? This action cannot be undone.'
+      )
+    ) {
+      return
+    }
+
+    try {
+      await invoke('delete_channel_order', { orderId })
+      toast.success('Channel order deleted successfully')
+      await fetchOrders() // Refresh the list
+    } catch (err) {
+      console.error('Error deleting channel order:', err)
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to delete channel order'
+      )
+    }
   }
 
   const handleColumnToggle = (columnKey: string) => {
@@ -417,7 +454,7 @@ export const Component = () => {
                   )
                   return (
                     <th
-                      className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' ? 'text-right' : ''}`}
+                      className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' || columnKey === 'actions' ? 'text-right' : ''}`}
                       key={columnKey}
                     >
                       {column?.label || columnKey}
@@ -430,6 +467,7 @@ export const Component = () => {
               {filteredOrders.map((order) => (
                 <ChannelOrderRow
                   key={order.id}
+                  onDelete={handleDelete}
                   order={order}
                   orderData={orderData[order.order_id]}
                   orderStatus={orderStatuses[order.order_id] || 'Unknown'}

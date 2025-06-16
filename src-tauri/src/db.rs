@@ -321,3 +321,11 @@ pub fn get_channel_orders() -> Result<Vec<ChannelOrder>, rusqlite::Error> {
         .collect();
     Ok(orders)
 }
+
+pub fn delete_channel_order(order_id: String) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "DELETE FROM ChannelOrders WHERE order_id = ?1",
+        rusqlite::params![order_id],
+    )
+}

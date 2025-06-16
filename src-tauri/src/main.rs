@@ -154,6 +154,7 @@ fn main() {
             // ChannelOrders commands
             insert_channel_order,
             get_channel_orders,
+            delete_channel_order,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -406,4 +407,9 @@ fn insert_channel_order(order_id: String, status: String, payload: String, creat
 #[tauri::command]
 fn get_channel_orders() -> Result<Vec<ChannelOrder>, String> {
     db::get_channel_orders().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_channel_order(order_id: String) -> Result<usize, String> {
+    db::delete_channel_order(order_id).map_err(|e| e.to_string())
 }
