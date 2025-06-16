@@ -10,7 +10,11 @@ import {
   isConnectionHealthy,
   addJitter,
 } from '../../routes/trade/market-maker/websocketUtils'
-import { setWsConnected, updateQuote } from '../../slices/makerApi/pairs.slice'
+import {
+  setWsConnected,
+  updateQuote,
+  clearQuote,
+} from '../../slices/makerApi/pairs.slice'
 import { logger } from '../../utils/logger'
 
 // Import utility functions for rate limit handling
@@ -97,6 +101,13 @@ class WebSocketService {
   private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 8000 // Reduced from 15000ms to 8000ms
   private missedHeartbeats: number = 0
   private readonly MAX_MISSED_HEARTBEATS = 2 // Reduced from 3 to 2 for faster failure detection
+
+  // Track last quote request for error handling
+  private lastQuoteRequest: {
+    fromAsset: string
+    toAsset: string
+    fromAmount: number
+  } | null = null
 
   private constructor() {
     logger.info('WebSocketService instance created')
@@ -717,6 +728,14 @@ class WebSocketService {
             logger.error(
               `WebSocketService: Quote response error: ${data.error}`
             )
+
+            // Clear the quote for the failed request
+            if (this.lastQuoteRequest && this.dispatch) {
+              this.dispatch(clearQuote(this.lastQuoteRequest))
+              logger.debug(
+                `WebSocketService: Cleared failed quote for ${this.lastQuoteRequest.fromAsset}/${this.lastQuoteRequest.toAsset}/${this.lastQuoteRequest.fromAmount}`
+              )
+            }
           } else {
             logger.error(
               'WebSocketService: Invalid quote response format - missing data'
@@ -742,6 +761,18 @@ class WebSocketService {
         // Handle rate limit errors specifically
         if (data.error.includes('Rate limit exceeded')) {
           handleRateLimitError()
+        }
+
+        // If this is a quote calculation error (like minimum amount not met), clear the quote
+        if (
+          data.error.includes('Failed to calculate quote') &&
+          this.lastQuoteRequest &&
+          this.dispatch
+        ) {
+          this.dispatch(clearQuote(this.lastQuoteRequest))
+          logger.debug(
+            `WebSocketService: Cleared failed quote due to calculation error for ${this.lastQuoteRequest.fromAsset}/${this.lastQuoteRequest.toAsset}/${this.lastQuoteRequest.fromAmount}`
+          )
         }
       }
     } catch (error) {
@@ -1002,6 +1033,9 @@ class WebSocketService {
     logger.debug(
       `WebSocketService: Requesting quote for ${fromAmount} ${fromAsset} -> ${toAsset}`
     )
+
+    // Track this request for error handling
+    this.lastQuoteRequest = { fromAmount, fromAsset, toAsset }
 
     return this.queueMessage(
       'quote_request',

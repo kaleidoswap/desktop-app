@@ -376,7 +376,20 @@ export const Component = () => {
 
   // Process quote response updates in a separate effect to batch state updates
   useEffect(() => {
-    if (!quoteResponse) return
+    if (!quoteResponse) {
+      // Quote was cleared (likely due to an error), clear the UI state
+      window.requestAnimationFrame(() => {
+        form.setValue('to', '')
+        form.setValue('rfq_id', '')
+        setHasValidQuote(false)
+        setQuoteExpiresAt(null)
+        setQuoteAge(0)
+        setIsToAmountLoading(false)
+        setIsPriceLoading(false)
+        setIsQuoteLoading(false)
+      })
+      return
+    }
 
     // Check if this is a new quote that's different from the last one
     const isNewQuote =

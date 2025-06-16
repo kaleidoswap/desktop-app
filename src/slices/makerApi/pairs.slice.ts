@@ -54,6 +54,18 @@ export const pairsSlice = createSlice({
   initialState,
   name: 'pairs',
   reducers: {
+    clearQuote: (
+      state,
+      action: PayloadAction<{
+        fromAsset: string
+        toAsset: string
+        fromAmount: number
+      }>
+    ) => {
+      const { fromAsset, toAsset, fromAmount } = action.payload
+      const key = `${fromAsset}/${toAsset}/${fromAmount}`
+      delete state.quotes[key]
+    },
     setTradingPairs: (state, action: PayloadAction<TradingPair[]>) => {
       state.values = action.payload
       state.assets = [
@@ -75,7 +87,12 @@ export const pairsSlice = createSlice({
   },
 })
 
-export const { setTradingPairs, setWsConnected, updatePrice, updateQuote } =
-  pairsSlice.actions
+export const {
+  setTradingPairs,
+  setWsConnected,
+  updatePrice,
+  updateQuote,
+  clearQuote,
+} = pairsSlice.actions
 
 export const pairsReducer = pairsSlice.reducer
