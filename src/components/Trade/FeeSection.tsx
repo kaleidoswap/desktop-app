@@ -1,4 +1,5 @@
-import React from 'react'
+import { ChevronDown, ChevronUp, Info } from 'lucide-react'
+import React, { useState } from 'react'
 
 import { formatAssetAmountWithPrecision } from '../../helpers/number'
 import { mapAssetIdToTicker } from '../../routes/trade/market-maker/assetUtils'
@@ -28,6 +29,8 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
   assets,
   displayAsset,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   if (!fees.totalFee) return null
 
   const formatFeeAmount = (amount: number) => {
@@ -76,35 +79,119 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
     }
   }
 
+  const feeAssetDisplay = getFeeAssetDisplay()
+
   return (
-    <div className="mt-2 p-3 bg-slate-800/80 rounded-lg">
-      <h3 className="text-slate-300 text-sm font-medium mb-1">Fees</h3>
-      <div className="grid grid-cols-2 gap-1 text-xs">
-        <span className="text-slate-400">Base fee:</span>
-        <span className="text-slate-200 text-right">
-          {formatFeeAmount(fees.baseFee)} {getFeeAssetDisplay()}
-        </span>
+    <div className="group">
+      <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-lg hover:shadow-xl transition-all duration-300">
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-700/20">
+          <button
+            className="w-full flex items-center justify-between text-left hover:text-white transition-colors"
+            onClick={() => setIsExpanded(!isExpanded)}
+            type="button"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500"></div>
+              <h3 className="text-base font-semibold text-slate-200">
+                Fee Breakdown
+              </h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-lg font-bold text-white">
+                  {formatFeeAmount(fees.totalFee)} {feeAssetDisplay}
+                </div>
+                <div className="text-sm text-slate-400">
+                  {(fees.feeRate * 100).toFixed(2)}% of trade
+                </div>
+              </div>
+              <div className="p-1 rounded-lg bg-slate-700/50 text-slate-400 group-hover:bg-slate-600/50 transition-colors">
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </div>
+            </div>
+          </button>
+        </div>
 
-        <span className="text-slate-400">Variable fee:</span>
-        <span className="text-slate-200 text-right">
-          {formatFeeAmount(fees.variableFee)} {getFeeAssetDisplay()}
-        </span>
+        {/* Expandable Content */}
+        <div
+          className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-0'}`}
+        >
+          <div className="p-5 space-y-4">
+            {/* Fee Breakdown */}
+            <div className="grid grid-cols-1 gap-3">
+              <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-slate-300 font-medium">Base Fee</span>
+                  <div className="group/tooltip relative">
+                    <Info className="w-4 h-4 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-xs text-slate-200 rounded-lg w-64 hidden group-hover/tooltip:block shadow-xl border border-slate-600/50 z-40">
+                      Fixed fee charged regardless of transaction amount
+                    </div>
+                  </div>
+                </div>
+                <span className="text-white font-semibold">
+                  {formatFeeAmount(fees.baseFee)} {feeAssetDisplay}
+                </span>
+              </div>
 
-        <span className="text-slate-400">Total fee:</span>
-        <span className="text-slate-200 text-right">
-          {formatFeeAmount(fees.totalFee)} {getFeeAssetDisplay()}
-        </span>
+              <div className="flex items-center justify-between p-3 bg-slate-800/40 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                  <span className="text-slate-300 font-medium">
+                    Variable Fee
+                  </span>
+                  <div className="group/tooltip relative">
+                    <Info className="w-4 h-4 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-xs text-slate-200 rounded-lg w-64 hidden group-hover/tooltip:block shadow-xl border border-slate-600/50 z-40">
+                      Percentage-based fee calculated on transaction amount
+                    </div>
+                  </div>
+                </div>
+                <span className="text-white font-semibold">
+                  {formatFeeAmount(fees.variableFee)} {feeAssetDisplay}
+                </span>
+              </div>
+            </div>
 
-        <span className="text-slate-400">Fee rate:</span>
-        <span className="text-slate-200 text-right">
-          {(fees.feeRate * 100).toFixed(2)}%
-        </span>
-      </div>
+            {/* Total Summary */}
+            <div className="p-4 bg-gradient-to-r from-slate-700/40 to-slate-800/40 rounded-xl border border-slate-600/30">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-300 font-semibold">Total Fee</span>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-white">
+                    {formatFeeAmount(fees.totalFee)} {feeAssetDisplay}
+                  </div>
+                  <div className="text-sm text-slate-400">
+                    {(fees.feeRate * 100).toFixed(2)}% of trade value
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div className="mt-2 pt-2 border-t border-slate-700/50">
-        <p className="text-slate-400 text-xs">
-          ℹ️ Fees are already subtracted from the "to" amount shown above
-        </p>
+            {/* Important Notice */}
+            <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2"></div>
+                <div className="flex-1">
+                  <p className="text-blue-200 text-sm font-medium mb-1">
+                    Fee Deduction
+                  </p>
+                  <p className="text-blue-300/80 text-sm leading-relaxed">
+                    Fees are automatically deducted from the amount you receive.
+                    The displayed "You Receive" amount already accounts for all
+                    fees.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

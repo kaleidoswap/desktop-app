@@ -1,4 +1,3 @@
-import { Copy } from 'lucide-react'
 import React from 'react'
 import { UseFormReturn } from 'react-hook-form'
 
@@ -72,7 +71,6 @@ export const SwapForm: React.FC<SwapFormProps> = ({
   refreshAmounts,
   getAssetPrecision,
   bitcoinUnit,
-  copyToClipboard,
   onSubmit,
 }) => {
   // Check if either amount is zero or empty
@@ -118,44 +116,68 @@ export const SwapForm: React.FC<SwapFormProps> = ({
 
   return (
     <div className="swap-form-container w-full max-w-2xl">
-      <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 shadow-lg w-full">
-        <div className="p-4">
+      {/* Main Swap Card */}
+      <div className="bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-3xl border border-slate-700/30 shadow-2xl w-full overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-700/30 bg-gradient-to-r from-slate-800/50 to-slate-900/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
+              <h2 className="text-lg font-semibold text-white">Swap</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`}
+              ></div>
+              <span className="text-xs text-slate-400">
+                {wsConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="p-6">
           <form
-            className="space-y-3"
+            className="space-y-6"
             onKeyDown={handleKeyDown}
             onSubmit={form.handleSubmit(onSubmit)}
           >
-            <SwapInputField
-              asset={form.getValues().fromAsset}
-              assetOptions={fromAssetOptions}
-              availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
-              availableAmountLabel="Available:"
-              disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
-              formatAmount={formatAmount}
-              getDisplayAsset={displayAsset}
-              label="You Send"
-              maxAmount={maxFromAmount}
-              maxHtlcAmount={max_outbound_htlc_sat}
-              minAmount={minFromAmount}
-              onAmountChange={handleFromAmountChange}
-              onAssetChange={(value) => handleAssetChange('fromAsset', value)}
-              onRefresh={refreshAmounts}
-              onSizeClick={onSizeClick}
-              selectedSize={selectedSize}
-              showMaxHtlc
-              showMinAmount
-              showSizeButtons
-              useEnhancedSelector={true}
-              value={form.getValues().from}
-            />
+            {/* From Input */}
+            <div className="space-y-1">
+              <SwapInputField
+                asset={form.getValues().fromAsset}
+                assetOptions={fromAssetOptions}
+                availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
+                availableAmountLabel="Available:"
+                disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
+                formatAmount={formatAmount}
+                getDisplayAsset={displayAsset}
+                label="You Send"
+                maxAmount={maxFromAmount}
+                maxHtlcAmount={max_outbound_htlc_sat}
+                minAmount={minFromAmount}
+                onAmountChange={handleFromAmountChange}
+                onAssetChange={(value) => handleAssetChange('fromAsset', value)}
+                onRefresh={refreshAmounts}
+                onSizeClick={onSizeClick}
+                selectedSize={selectedSize}
+                showMaxHtlc
+                showMinAmount
+                showSizeButtons
+                useEnhancedSelector={true}
+                value={form.getValues().from}
+              />
+            </div>
 
-            <div className="flex justify-center my-0">
+            {/* Swap Button */}
+            <div className="flex justify-center -my-3 relative z-10">
               <button
-                className={`p-1.5 rounded-lg bg-slate-800 border transition-all transform hover:scale-110
+                className={`group p-3 rounded-2xl border-4 border-slate-800 bg-gradient-to-br from-slate-800 to-slate-900 transition-all duration-300 hover:scale-110 active:scale-95
                   ${
                     hasChannels && hasTradablePairs && !isSwapInProgress
-                      ? 'border-blue-500/50 hover:border-blue-500 cursor-pointer'
-                      : 'border-slate-700 opacity-50 cursor-not-allowed'
+                      ? 'hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer'
+                      : 'opacity-50 cursor-not-allowed'
                   }`}
                 onClick={() =>
                   hasChannels &&
@@ -165,72 +187,78 @@ export const SwapForm: React.FC<SwapFormProps> = ({
                 }
                 type="button"
               >
-                <SwapIcon />
+                <div className="relative">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="relative w-5 h-5 text-slate-300 group-hover:text-white transition-colors">
+                    <SwapIcon />
+                  </div>
+                </div>
               </button>
             </div>
 
-            <SwapInputField
-              asset={form.getValues().toAsset}
-              assetOptions={toAssetOptions}
-              availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
-              availableAmountLabel="Can receive up to:"
-              disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
-              formatAmount={formatAmount}
-              getDisplayAsset={displayAsset}
-              isLoading={isToAmountLoading}
-              label="You Receive (Estimated)"
-              maxAmount={maxToAmount}
-              onAmountChange={handleToAmountChange}
-              onAssetChange={(value) => handleAssetChange('toAsset', value)}
-              useEnhancedSelector={true}
-              value={form.getValues().to}
-            />
-
-            {selectedPair && (
-              <ExchangeRateSection
-                bitcoinUnit={bitcoinUnit}
+            {/* To Input */}
+            <div className="space-y-1">
+              <SwapInputField
+                asset={form.getValues().toAsset}
+                assetOptions={toAssetOptions}
+                availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
+                availableAmountLabel="Can receive up to:"
+                disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
                 formatAmount={formatAmount}
-                fromAsset={form.getValues().fromAsset}
-                getAssetPrecision={getAssetPrecision}
-                isPriceLoading={isPriceLoading}
-                price={price}
-                selectedPair={selectedPair}
-                toAsset={form.getValues().toAsset}
+                getDisplayAsset={displayAsset}
+                isLoading={isToAmountLoading}
+                label="You Receive (Estimated)"
+                maxAmount={maxToAmount}
+                onAmountChange={handleToAmountChange}
+                onAssetChange={(value) => handleAssetChange('toAsset', value)}
+                useEnhancedSelector={true}
+                value={form.getValues().to}
               />
+            </div>
+
+            {/* Exchange Rate Section */}
+            {selectedPair && (
+              <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/30">
+                <ExchangeRateSection
+                  bitcoinUnit={bitcoinUnit}
+                  formatAmount={formatAmount}
+                  fromAsset={form.getValues().fromAsset}
+                  getAssetPrecision={getAssetPrecision}
+                  isPriceLoading={isPriceLoading}
+                  price={price}
+                  selectedPair={selectedPair}
+                  toAsset={form.getValues().toAsset}
+                />
+              </div>
             )}
 
+            {/* Error Message */}
             {errorMessage && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mt-4">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-red-500 font-medium">
-                      Trade Error
-                    </span>
-                    <button
-                      className="p-1 hover:bg-red-500/10 rounded transition-colors"
-                      onClick={() => copyToClipboard(errorMessage)}
-                      title="Copy error message"
-                    >
-                      <Copy className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
-                  <span className="text-red-400/90 text-sm leading-relaxed">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <p className="text-red-400 text-sm font-medium">
                     {errorMessage}
-                  </span>
+                  </p>
                 </div>
               </div>
             )}
 
-            <SwapButton
-              errorMessage={errorMessage}
-              hasChannels={hasChannels}
-              hasTradablePairs={hasTradablePairs}
-              hasZeroAmount={hasZeroAmount}
-              isPriceLoading={isPriceLoading}
-              isSwapInProgress={isSwapInProgress}
-              isToAmountLoading={isToAmountLoading}
-              wsConnected={wsConnected}
-            />
+            {/* Submit Button */}
+            <div className="pt-2">
+              <SwapButton
+                errorMessage={errorMessage}
+                hasChannels={hasChannels}
+                hasTradablePairs={hasTradablePairs}
+                hasValidQuote={!!selectedPair && !!price}
+                hasZeroAmount={hasZeroAmount}
+                isPriceLoading={isPriceLoading}
+                isSwapInProgress={isSwapInProgress}
+                isToAmountLoading={isToAmountLoading}
+                wsConnected={wsConnected}
+              />
+            </div>
           </form>
         </div>
       </div>

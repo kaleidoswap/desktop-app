@@ -954,64 +954,49 @@ export const Component = () => {
     [getPairs, dispatch, getAvailableAssets, form, formatAmount]
   )
 
-  // Initialize WebSocket connection
+  // WebSocket initialization effect - optimized for faster connections
   useEffect(() => {
-    // Skip if already initialized to prevent multiple initializations
-    if (isWebSocketInitialized) {
-      return
-    }
-
-    // Skip if no maker URL is provided
-    if (!makerConnectionUrl) {
-      logger.info(
-        'No maker connection URL provided. WebSocket initialization skipped.'
-      )
-      setIsWebSocketInitialized(true) // Mark as initialized (skipped)
-      return
-    }
-
-    // Log connection attempt
-    logger.info(
-      `Attempting to initialize WebSocket connection to ${makerConnectionUrl}`
-    )
-
-    // Track if component is mounted
     let isMounted = true
 
     // Function to initialize WebSocket
     const initWebSocket = async () => {
-      // Check for valid channels before attempting to connect
-      const tradableAssetIds = channels
-        .filter(
-          (channel) =>
-            channel.ready &&
-            (channel.outbound_balance_msat > 0 ||
-              channel.inbound_balance_msat > 0) &&
-            channel.asset_id
-        )
-        .map((channel) => channel.asset_id as string)
-        .filter((id, index, self) => self.indexOf(id) === index)
+      // Start WebSocket connection as soon as we have basic requirements
+      // Don't wait for trading pairs - they can be fetched after connection
+      const hasBasicRequirements = channels.length > 0 && assets.length > 0
 
-      if (tradableAssetIds.length === 0) {
-        logger.warn(
-          'No tradable channels with assets found. WebSocket initialization skipped.'
-        )
-        setIsWebSocketInitialized(true) // Also mark as initialized if skipped due to no tradable assets
+      if (!hasBasicRequirements) {
+        logger.warn('Basic requirements not met for WebSocket initialization')
         return
       }
 
-      // Set loading state
+      // Check for any tradable channels (don't require specific assets)
+      const hasAnyTradableChannels = channels.some(
+        (channel) =>
+          channel.ready &&
+          (channel.outbound_balance_msat > 0 ||
+            channel.inbound_balance_msat > 0) &&
+          channel.asset_id
+      )
+
+      if (!hasAnyTradableChannels) {
+        logger.warn(
+          'No tradable channels found. WebSocket initialization skipped.'
+        )
+        setIsWebSocketInitialized(true)
+        return
+      }
+
+      // Set loading state immediately
       if (isMounted) {
         setIsLoading(true)
       }
 
       try {
-        // Create client ID based on pubkey or timestamp if not available
+        // Create client ID - use pubKey if available, otherwise use timestamp
         const clientId = pubKey || `client-${Date.now()}`
 
-        // Log connection attempt with detailed info
         logger.info(
-          `Initializing WebSocket connection to ${makerConnectionUrl} with client ID ${clientId} and ${tradableAssetIds.length} tradable assets`
+          `Initializing WebSocket connection to ${makerConnectionUrl} with client ID ${clientId}`
         )
 
         // Initialize the connection through the service
@@ -1023,6 +1008,16 @@ export const Component = () => {
 
         if (success) {
           logger.info('WebSocket initialization successful')
+
+          // Fetch trading pairs after connection is established
+          if (tradablePairs.length === 0) {
+            fetchAndSetPairs().catch((error) => {
+              logger.error(
+                'Error fetching pairs after WebSocket connection:',
+                error
+              )
+            })
+          }
 
           // Log WebSocket diagnostics
           const diagnostics = webSocketService.getDiagnostics()
@@ -1045,47 +1040,25 @@ export const Component = () => {
       } finally {
         if (isMounted) {
           setIsLoading(false)
-          setIsWebSocketInitialized(true) // CRITICAL: Mark as initialized here
+          setIsWebSocketInitialized(true)
         }
       }
     }
 
-    // Initialize WebSocket if we have channels and assets data, and a pubkey
-    // Adding pubKey to the condition as it's used for clientId
-    // Also check if we have tradable pairs available before attempting WebSocket connection
-    if (
-      channels.length > 0 &&
-      assets.length > 0 &&
-      pubKey &&
-      tradablePairs.length > 0
-    ) {
+    // Initialize WebSocket as soon as we have channels and assets
+    // Don't wait for pubKey or tradablePairs to reduce connection time
+    if (channels.length > 0 && assets.length > 0 && !isWebSocketInitialized) {
       initWebSocket()
-    } else if (channels.length > 0 && assets.length > 0 && !pubKey) {
-      // If pubKey is not yet available but other conditions are met,
-      // still mark WebSocket as initialized to not block UI indefinitely.
-      // This might happen if nodeInfo takes longer but we don't want to hang.
-      logger.warn(
-        'pubKey not available for WebSocket client ID, but proceeding to mark WS as initialized attempt.'
-      )
-      setIsWebSocketInitialized(true)
-    } else if (
-      channels.length > 0 &&
-      assets.length > 0 &&
-      pubKey &&
-      tradablePairs.length === 0
-    ) {
-      // If we have channels and assets but no tradable pairs, mark WebSocket as initialized (skipped)
-      logger.info(
-        'No tradable pairs available, skipping WebSocket initialization'
-      )
-      setIsWebSocketInitialized(true)
+    } else if (channels.length === 0 || assets.length === 0) {
+      // Reset initialization flag if basic data is not available
+      if (isWebSocketInitialized) {
+        setIsWebSocketInitialized(false)
+      }
     }
 
     // Clean up function
     return () => {
       isMounted = false
-      // Note: We don't close the WebSocket connection on component unmount
-      // The webSocketService manages its own lifecycle and will be reused across the app
       logger.info(
         'WebSocket initialization component unmounting - connection maintained by service'
       )
@@ -1096,8 +1069,9 @@ export const Component = () => {
     dispatch,
     channels,
     assets,
-    tradablePairs,
     isWebSocketInitialized,
+    fetchAndSetPairs,
+    tradablePairs.length,
   ])
 
   // Restore the effect to update min and max amounts when selected pair changes
@@ -1912,22 +1886,14 @@ export const Component = () => {
           )}
 
           {/* Fee Information Card */}
-          <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
-            <div className="p-4">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></div>
-                Fee Breakdown
-              </h3>
-              <FeeSection
-                assets={assets}
-                bitcoinUnit={bitcoinUnit}
-                displayAsset={displayAsset}
-                fees={fees}
-                quoteResponse={quoteResponse}
-                toAsset={form.getValues().toAsset}
-              />
-            </div>
-          </div>
+          <FeeSection
+            assets={assets}
+            bitcoinUnit={bitcoinUnit}
+            displayAsset={displayAsset}
+            fees={fees}
+            quoteResponse={quoteResponse}
+            toAsset={form.getValues().toAsset}
+          />
         </div>
       </div>
     </div>

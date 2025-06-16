@@ -53,13 +53,13 @@ class WebSocketService {
   private dispatch: Dispatch | null = null
   private reconnectAttempts: number = 0
   private maxReconnectAttempts: number = 8 // Increased from 5
-  private reconnectInterval: number = 5000
+  private reconnectInterval: number = 2000 // Reduced from 5000ms to 2000ms for faster reconnection
   private subscribedPairs: Set<string> = new Set()
   private isReconnecting: boolean = false
   private heartbeatInterval: number | null = null
   private lastHeartbeatResponse: number = 0
-  private heartbeatTimeout: number = 20000 // Increased from 15000
-  private heartbeatIntervalMs: number = 10000 // Increased from 8000
+  private heartbeatTimeout: number = 10000 // Reduced from 20000ms to 10000ms for faster detection
+  private heartbeatIntervalMs: number = 5000 // Reduced from 10000ms to 5000ms for more frequent heartbeats
   private networkOnlineHandler: (() => void) | null = null
   private networkOfflineHandler: (() => void) | null = null
 
@@ -67,7 +67,7 @@ class WebSocketService {
   private messageQueue: QueuedMessage[] = []
   private processingQueue: boolean = false
   private maxQueueSize: number = 200
-  private messageProcessInterval: number = 300
+  private messageProcessInterval: number = 200 // Reduced from 300ms to 200ms for faster processing
   private messageProcessTimer: number | null = null
   private lastMessageSent: number = 0
 
@@ -89,14 +89,14 @@ class WebSocketService {
   }
 
   // Circuit breaker settings
-  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5
-  private readonly CIRCUIT_BREAKER_TIMEOUT = 30000 // 30 seconds
+  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3 // Reduced from 5 to 3 for faster detection
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 15000 // Reduced from 30000ms to 15000ms for faster recovery
 
   // Connection health monitoring
   private connectionHealthCheckInterval: number | null = null
-  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 15000 // 15 seconds
+  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 8000 // Reduced from 15000ms to 8000ms
   private missedHeartbeats: number = 0
-  private readonly MAX_MISSED_HEARTBEATS = 3
+  private readonly MAX_MISSED_HEARTBEATS = 2 // Reduced from 3 to 2 for faster failure detection
 
   private constructor() {
     logger.info('WebSocketService instance created')
@@ -610,11 +610,29 @@ class WebSocketService {
       // Create new WebSocket
       this.socket = new WebSocket(fullWsUrl)
 
+      // Set up connection timeout to fail fast if server is not responding
+      const connectionTimeout = setTimeout(() => {
+        if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+          logger.warn('WebSocketService: Connection timeout - closing socket')
+          this.socket.close(1006, 'Connection timeout')
+          this.recordConnectionFailure()
+        }
+      }, 5000) // 5 second timeout for initial connection
+
       // Set up event handlers
-      this.socket.onopen = this.handleOpen.bind(this)
+      this.socket.onopen = () => {
+        clearTimeout(connectionTimeout)
+        this.handleOpen()
+      }
       this.socket.onmessage = this.handleMessage.bind(this)
-      this.socket.onclose = this.handleClose.bind(this)
-      this.socket.onerror = this.handleError.bind(this)
+      this.socket.onclose = (event) => {
+        clearTimeout(connectionTimeout)
+        this.handleClose(event)
+      }
+      this.socket.onerror = (event) => {
+        clearTimeout(connectionTimeout)
+        this.handleError(event)
+      }
 
       return true
     } catch (error) {
@@ -939,8 +957,8 @@ class WebSocketService {
       messageQueueSize: this.messageQueue.length,
       processingQueue: this.processingQueue,
       reconnectAttempts: this.reconnectAttempts,
-      url: this.url,
       subscribedPairs: Array.from(this.subscribedPairs),
+      url: this.url,
     }
 
     // Add stability and circuit breaker information

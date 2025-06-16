@@ -1,7 +1,7 @@
+import { TrendingUp, Clock, RefreshCw } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 
 import { calculateAndFormatRate } from '../../helpers/number'
-import { SparkIcon } from '../../icons/Spark'
 import {
   mapAssetIdToTicker,
   isAssetId,
@@ -17,12 +17,11 @@ const formatTimeDifference = (timestamp: number): string => {
   const diffInSeconds = Math.floor((now - timestamp) / 1000)
 
   if (diffInSeconds < 5) return 'just now'
-  if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
-  if (diffInSeconds < 120) return '1 minute ago'
-  if (diffInSeconds < 3600)
-    return `${Math.floor(diffInSeconds / 60)} minutes ago`
-  if (diffInSeconds < 7200) return '1 hour ago'
-  return `${Math.floor(diffInSeconds / 3600)} hours ago`
+  if (diffInSeconds < 60) return `${diffInSeconds}s ago`
+  if (diffInSeconds < 120) return '1m ago'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 7200) return '1h ago'
+  return `${Math.floor(diffInSeconds / 3600)}h ago`
 }
 
 // Constants for price freshness
@@ -38,6 +37,8 @@ interface ExchangeRateDisplayProps {
   getAssetPrecision: (asset: string) => number
   priceUpdated: boolean
   assets?: NiaAsset[]
+  lastQuoteTimestamp?: number | null
+  isPriceFresh?: boolean
 }
 
 export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
@@ -49,6 +50,8 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   getAssetPrecision,
   priceUpdated,
   assets = [],
+  lastQuoteTimestamp,
+  isPriceFresh = true,
 }) => {
   // Get display tickers for assets (especially important for RGB assets)
   const fromDisplayTicker =
@@ -67,32 +70,74 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   const toDisplayAsset =
     toDisplayTicker === 'BTC' ? bitcoinUnit : toDisplayTicker
 
-  const displayRate = (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5">
-        <span className="text-white font-medium">1</span>
-        <AssetOption ticker={fromDisplayAsset} />
+  const formattedRate = calculateAndFormatRate(
+    fromAsset,
+    toAsset,
+    price,
+    selectedPair,
+    bitcoinUnit,
+    getAssetPrecision
+  )
+
+  return (
+    <div className="space-y-4">
+      {/* Main Rate Display */}
+      <div className="flex items-center justify-center">
+        <div className="flex items-center gap-3 text-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-white font-bold">1</span>
+            <AssetOption ticker={fromDisplayAsset} />
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-green-500" />
+            <span className="text-slate-400 font-medium">=</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-white font-bold transition-all duration-300 ${
+                priceUpdated ? 'text-green-400 scale-105' : ''
+              }`}
+            >
+              {formattedRate}
+            </span>
+            <AssetOption ticker={toDisplayAsset} />
+          </div>
+        </div>
       </div>
-      <span className="text-slate-400">=</span>
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`text-white font-medium ${priceUpdated ? 'text-update-flash' : ''}`}
-        >
-          {calculateAndFormatRate(
-            fromAsset,
-            toAsset,
-            price,
-            selectedPair,
-            bitcoinUnit,
-            getAssetPrecision
-          )}
-        </span>
-        <AssetOption ticker={toDisplayAsset} />
+
+      {/* Status Information */}
+      <div className="flex items-center justify-between text-sm bg-slate-800/30 rounded-xl px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Clock className="w-3 h-3 text-slate-500" />
+          <span className="text-slate-500">Updated:</span>
+          <span className="text-slate-300 font-medium">
+            {lastQuoteTimestamp
+              ? formatTimeDifference(lastQuoteTimestamp)
+              : 'Never'}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+              isPriceFresh
+                ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+            }`}
+          >
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                isPriceFresh ? 'bg-green-500' : 'bg-amber-500'
+              }`}
+            ></div>
+            <span className="text-xs font-semibold">
+              {isPriceFresh ? 'Live' : 'Stale'}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )
-
-  return <div className="flex-1 text-base">{displayRate}</div>
 }
 
 interface ExchangeRateSectionProps {
@@ -123,8 +168,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   const [lastQuoteTimestamp, setLastQuoteTimestamp] = useState<number | null>(
     null
   )
-  const [showTimestampOverlay, setShowTimestampOverlay] = useState(false)
-  const [formattedTimeDiff, setFormattedTimeDiff] = useState<string>('')
   const [isPriceFresh, setIsPriceFresh] = useState(true)
 
   // Store the previous price in a ref to detect changes
@@ -182,8 +225,6 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
     if (lastQuoteTimestamp === null) return
 
     const updateFormattedTime = () => {
-      setFormattedTimeDiff(formatTimeDifference(lastQuoteTimestamp))
-
       // Check if price is fresh (less than threshold)
       const now = Date.now()
       const timeSinceLastUpdate = now - lastQuoteTimestamp
@@ -199,80 +240,44 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
     return () => clearInterval(intervalId)
   }, [lastQuoteTimestamp])
 
-  if (!selectedPair) return null
+  // Don't render if no price data
+  if (!selectedPair || price === null) {
+    return (
+      <div className="flex items-center justify-center py-8 text-slate-400">
+        <div className="flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Loading exchange rate...</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="exchange-rate-section relative">
-      <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-1 mb-1">
-        <div className="w-1 h-1 rounded-full bg-emerald-500" />
-        Best Exchange Rate Available
-      </div>
-      <div className="bg-slate-800/50 rounded-lg p-2 space-y-1.5">
-        <div className="flex justify-between items-center text-xs text-slate-400">
-          <span>Exchange Rate</span>
-          <div className="flex items-center gap-1 relative">
-            {/* Status indicator dot */}
-            <div
-              className="relative"
-              onMouseEnter={() => setShowTimestampOverlay(true)}
-              onMouseLeave={() => setShowTimestampOverlay(false)}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${isPriceFresh ? 'bg-emerald-500/50 animate-pulse' : 'bg-red-500/50'}`}
-              />
+    <div className="relative">
+      {/* Rate Display */}
+      <ExchangeRateDisplay
+        assets={assets}
+        bitcoinUnit={bitcoinUnit}
+        formatAmount={formatAmount}
+        fromAsset={fromAsset}
+        getAssetPrecision={getAssetPrecision}
+        isPriceFresh={isPriceFresh}
+        lastQuoteTimestamp={lastQuoteTimestamp}
+        price={price}
+        priceUpdated={showPriceUpdate}
+        selectedPair={selectedPair}
+        toAsset={toAsset}
+      />
 
-              {/* Timestamp Tooltip */}
-              {showTimestampOverlay && lastQuoteTimestamp && (
-                <div className="absolute right-0 top-5 z-10 w-48 bg-slate-900 border border-slate-700 rounded-md shadow-lg p-2 text-left">
-                  <div className="text-white text-xs font-medium">
-                    Last Quote Received
-                  </div>
-                  <div
-                    className={`text-xs ${isPriceFresh ? 'text-emerald-400' : 'text-red-400'}`}
-                  >
-                    {formattedTimeDiff}
-                  </div>
-                  {lastQuoteTimestamp && (
-                    <div className="text-xs text-slate-400 mt-0.5">
-                      {new Date(lastQuoteTimestamp).toLocaleTimeString()}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <span>{isPriceFresh ? 'Live Price' : 'Price Not Updated'}</span>
+      {/* Loading State Overlay */}
+      {isPriceLoading && (
+        <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-3 text-slate-300">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span className="font-medium">Updating rate...</span>
           </div>
         </div>
-
-        <div className="flex items-center justify-between gap-2">
-          {isPriceLoading ? (
-            <div
-              className="flex-1 px-3 py-1.5 bg-slate-900/50 rounded-lg border border-slate-700 
-                         text-slate-400 min-h-[32px] flex items-center text-sm"
-            >
-              Loading exchange rate...
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-between">
-              <ExchangeRateDisplay
-                assets={assets}
-                bitcoinUnit={bitcoinUnit}
-                formatAmount={formatAmount}
-                fromAsset={fromAsset}
-                getAssetPrecision={getAssetPrecision}
-                price={price}
-                priceUpdated={showPriceUpdate}
-                selectedPair={selectedPair}
-                toAsset={toAsset}
-              />
-              <div className="flex items-center gap-2">
-                <SparkIcon color="#fff" />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }

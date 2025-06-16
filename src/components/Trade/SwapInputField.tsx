@@ -4,7 +4,6 @@ import React, { useEffect } from 'react'
 import { logger } from '../../utils/logger'
 
 import { EnhancedAssetSelect, AssetOptionData } from './EnhancedAssetSelect'
-import { SizeButtons } from './SizeButtons'
 
 import { AssetSelect } from './index'
 
@@ -85,145 +84,184 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   )
 
   return (
-    <div className="space-y-3 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm rounded-lg p-3 border border-slate-700/50 shadow-lg">
-      {/* Header Section */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className="w-1 h-1 rounded-full bg-blue-500"></div>
-          <h3 className="text-sm font-semibold text-white">{label}</h3>
-        </div>
-        {availableAmount && (
-          <div
-            className={`flex items-center gap-1.5 text-xs text-slate-400 ${amountAnimationClass}`}
-          >
-            <span className="font-medium">
-              {availableAmountLabel}{' '}
-              <span className="text-slate-300">{availableAmount}</span>
-            </span>
-            {onRefresh && (
-              <button
-                className="p-1 rounded hover:bg-slate-700/50 transition-colors group"
-                disabled={disabled}
-                onClick={onRefresh}
-                title="Refresh amounts"
-                type="button"
+    <div className="group">
+      {/* Main Container */}
+      <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-700/30 shadow-lg hover:shadow-xl hover:border-slate-600/50 transition-all duration-300">
+        {/* Header Section */}
+        <div className="px-5 py-4 border-b border-slate-700/20">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
+              <h3 className="text-base font-semibold text-white">{label}</h3>
+            </div>
+            {availableAmount && (
+              <div
+                className={`flex items-center gap-2 text-sm text-slate-400 ${amountAnimationClass}`}
               >
-                <RefreshCw
-                  className={`w-3 h-3 group-hover:text-blue-400 transition-colors ${isLoadingState ? 'animate-spin text-blue-400' : ''}`}
-                />
-              </button>
+                <span className="font-medium">
+                  {availableAmountLabel}{' '}
+                  <span className="text-slate-200 font-semibold">
+                    {availableAmount}
+                  </span>
+                </span>
+                {onRefresh && (
+                  <button
+                    className="p-1.5 rounded-lg hover:bg-slate-700/60 transition-all duration-200 group/refresh"
+                    disabled={disabled}
+                    onClick={onRefresh}
+                    title="Refresh amounts"
+                    type="button"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 text-slate-400 group-hover/refresh:text-blue-400 transition-all duration-200 ${
+                        isLoadingState ? 'animate-spin text-blue-400' : ''
+                      }`}
+                    />
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Input Section */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        {isLoadingState && (!readOnly || !value) ? (
-          <div
-            className={`flex-1 px-3 py-3 bg-slate-900/70 rounded-lg border border-slate-600/50 
-                     text-slate-400 min-h-[48px] flex items-center justify-center text-sm font-medium
-                     backdrop-blur-sm ${amountAnimationClass}`}
-          >
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span>{isLoadingLabel}</span>
+        {/* Input Section */}
+        <div className="p-5">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Amount Input */}
+            <div className="flex-1">
+              {isLoadingState && (!readOnly || !value) ? (
+                <div
+                  className={`px-4 py-4 bg-slate-900/50 rounded-xl border border-slate-600/40 
+                           text-slate-400 h-14 flex items-center justify-center text-base font-medium
+                           backdrop-blur-sm ${amountAnimationClass}`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span>{isLoadingLabel}</span>
+                  </div>
+                </div>
+              ) : (
+                <input
+                  className={`w-full px-4 py-4 bg-slate-900/50 rounded-xl border border-slate-600/40 
+                         text-white text-xl font-semibold focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20
+                         placeholder:text-slate-500 h-14 backdrop-blur-sm transition-all duration-200
+                         hover:border-slate-500/60 focus:outline-none
+                         ${readOnly ? 'bg-slate-800/40 text-slate-300 cursor-default' : ''} ${inputAnimationClass}`}
+                  disabled={disabled}
+                  onChange={onAmountChange}
+                  placeholder="0.00"
+                  readOnly={readOnly}
+                  type="text"
+                  value={value}
+                />
+              )}
+            </div>
+
+            {/* Asset Selector */}
+            <div className="flex-shrink-0 lg:w-48">
+              {useEnhancedSelector ? (
+                <EnhancedAssetSelect
+                  className="w-full h-14"
+                  disabled={disabled}
+                  onChange={onAssetChange}
+                  options={enhancedAssetOptions}
+                  placeholder="Select asset"
+                  searchPlaceholder="Search for assets..."
+                  value={asset}
+                />
+              ) : (
+                <AssetSelect
+                  disabled={disabled}
+                  onChange={onAssetChange}
+                  options={assetOptions}
+                  value={asset}
+                />
+              )}
             </div>
           </div>
-        ) : (
-          <input
-            className={`flex-1 px-3 py-3 bg-slate-900/70 rounded-lg border border-slate-600/50 
-                   text-white text-base font-medium focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20
-                   placeholder:text-slate-500 min-h-[48px] backdrop-blur-sm transition-all duration-200
-                   ${readOnly ? 'bg-slate-800/50 text-slate-300 cursor-default' : 'hover:border-slate-500/70'} ${inputAnimationClass}`}
-            disabled={disabled}
-            onChange={onAmountChange}
-            placeholder="0.00"
-            readOnly={readOnly}
-            type="text"
-            value={value}
-          />
-        )}
-        <div className="flex-shrink-0 sm:w-auto w-full sm:max-w-[160px]">
-          {useEnhancedSelector ? (
-            <EnhancedAssetSelect
-              className="w-full"
-              disabled={disabled}
-              onChange={onAssetChange}
-              options={enhancedAssetOptions}
-              placeholder="Select asset"
-              searchPlaceholder="Search for assets..."
-              value={asset}
-            />
-          ) : (
-            <AssetSelect
-              disabled={disabled}
-              onChange={onAssetChange}
-              options={assetOptions}
-              value={asset}
-            />
-          )}
-        </div>
-      </div>
 
-      {/* Footer Section */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-          {showMinAmount && minAmount && (
-            <div className={`text-slate-400 ${amountAnimationClass}`}>
-              <span className="text-slate-500">Min:</span>{' '}
-              <span className="font-medium text-slate-300">
-                {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
-              </span>
-            </div>
-          )}
-          {showMaxHtlc && maxHtlcAmount && asset === 'BTC' && (
-            <div className="relative group">
-              <span
-                className={`text-slate-400 cursor-help border-b border-dotted border-slate-500 hover:text-slate-300 transition-colors ${amountAnimationClass}`}
-              >
-                <span className="text-slate-500">Max HTLC:</span>{' '}
-                <span className="font-medium">
-                  {formatAmount(maxHtlcAmount, 'BTC')} {getDisplayAsset('BTC')}
+          {/* Size Buttons */}
+          {showSizeButtons && selectedSize !== undefined && onSizeClick && (
+            <div className="mt-5 pt-5 border-t border-slate-700/20">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-semibold text-slate-200">
+                  Quick Amount
                 </span>
-              </span>
-              <div
-                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 
-                        bg-slate-800/95 backdrop-blur-sm text-xs text-slate-200 rounded-lg w-64 hidden group-hover:block
-                        shadow-xl border border-slate-600/50 z-20"
-              >
-                <div className="relative">
-                  <div className="text-left space-y-1">
-                    <p className="font-medium text-white">
-                      Maximum HTLC Amount
-                    </p>
-                    <p className="text-slate-300">
-                      Maximum amount that can be sent in a single payment
-                      (HTLC).
-                    </p>
-                    <p className="text-slate-400 text-xs">
-                      This value considers both your available balance and
-                      channel capacity limits.
-                    </p>
-                  </div>
-                  <div
-                    className="absolute w-1.5 h-1.5 bg-slate-800 rotate-45 
-                            left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2
-                            border-r border-b border-slate-600/50"
-                  ></div>
-                </div>
+                <span className="text-xs text-slate-500">
+                  Select percentage of available balance
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[25, 50, 75, 100].map((percentage) => (
+                  <button
+                    className={`px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 border-2
+                      ${
+                        selectedSize === percentage
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 border-blue-500/50 text-white shadow-lg'
+                          : 'bg-slate-800/50 border-slate-600/40 text-slate-300 hover:bg-slate-700/60 hover:border-slate-500/60 hover:text-white'
+                      }
+                      ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
+                    `}
+                    disabled={disabled}
+                    key={percentage}
+                    onClick={() => onSizeClick(percentage)}
+                    type="button"
+                  >
+                    {percentage}%
+                  </button>
+                ))}
               </div>
             </div>
           )}
         </div>
 
-        {showSizeButtons && onSizeClick && (
-          <div className="flex-shrink-0">
-            <SizeButtons
-              disabled={disabled}
-              onSizeClick={onSizeClick}
-              selectedSize={selectedSize}
-            />
+        {/* Footer Section */}
+        {(showMinAmount || showMaxHtlc) && (
+          <div className="px-5 pb-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              {showMinAmount && minAmount && (
+                <div className={`text-slate-400 ${amountAnimationClass}`}>
+                  <span className="text-slate-500">Min:</span>{' '}
+                  <span className="font-medium text-slate-200">
+                    {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
+                  </span>
+                </div>
+              )}
+              {showMaxHtlc && maxHtlcAmount && asset === 'BTC' && (
+                <div className="relative group/tooltip">
+                  <span
+                    className={`text-slate-400 cursor-help border-b border-dotted border-slate-500 hover:text-slate-200 transition-colors ${amountAnimationClass}`}
+                  >
+                    <span className="text-slate-500">Max HTLC:</span>{' '}
+                    <span className="font-medium">
+                      {formatAmount(maxHtlcAmount, 'BTC')}{' '}
+                      {getDisplayAsset('BTC')}
+                    </span>
+                  </span>
+                  <div
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-4 py-3 
+                            bg-slate-800/95 backdrop-blur-sm text-sm text-slate-200 rounded-xl w-72 hidden group-hover/tooltip:block
+                            shadow-2xl border border-slate-600/50 z-30"
+                  >
+                    <div className="relative">
+                      <div className="text-left space-y-2">
+                        <p className="font-semibold text-white">
+                          Maximum HTLC Amount
+                        </p>
+                        <p className="text-slate-300 leading-relaxed">
+                          The maximum amount that can be processed in a single
+                          Hash Time-Locked Contract (HTLC) transaction. This
+                          limit is set by your Lightning Network channel
+                          configuration.
+                        </p>
+                      </div>
+                      {/* Tooltip Arrow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800/95"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
