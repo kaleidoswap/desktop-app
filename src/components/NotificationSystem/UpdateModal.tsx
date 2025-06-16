@@ -62,6 +62,14 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     setIsInstalling(true)
     setError(null)
 
+    // Add timeout protection like the old Updater
+    const timeoutId = setTimeout(() => {
+      console.log('Update timeout - resetting state')
+      setError('Update process timed out. Please try again.')
+      setIsInstalling(false)
+      setCompleted(false)
+    }, 300000) // 5 minutes timeout
+
     try {
       console.log('Starting update installation...')
       await update.downloadAndInstall((event) => {
@@ -74,22 +82,37 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             )
             break
           case 'Progress':
-            setDownloaded(event.data.chunkLength)
+            // Fix: Accumulate downloaded bytes instead of just setting chunk length
+            setDownloaded((prev) => {
+              const newDownloaded = prev + event.data.chunkLength
+              console.log('Total downloaded:', newDownloaded)
+              return newDownloaded
+            })
             console.log(`Downloaded chunk: ${event.data.chunkLength}`)
             break
           case 'Finished':
-            setCompleted(true)
+            clearTimeout(timeoutId)
             // Clear the skipped and notified versions since update is being installed
             localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
             localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
-            console.log('Update download finished')
+            console.log('Update download finished - restarting application')
+
+            // Automatically restart the application after download completes
+            setTimeout(() => {
+              relaunch()
+            }, 1000) // Small delay to ensure UI updates and logs are processed
+
+            setCompleted(true)
             break
         }
       })
+      console.log('Download and install completed successfully')
     } catch (error) {
       console.error('Update installation error:', error)
+      clearTimeout(timeoutId)
       setError('Failed to install update. Please try again later.')
       setIsInstalling(false)
+      setCompleted(false)
     }
   }
 
@@ -103,26 +126,31 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               <CheckCircle2 className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-3">
-              Update Ready! 🎉
+              Update Complete! 🎉
             </h2>
             <p className="text-green-100/80 text-sm leading-relaxed mb-2">
               Version{' '}
               <span className="font-semibold text-green-200">
                 {update.version}
               </span>{' '}
-              has been downloaded successfully.
+              has been installed successfully.
             </p>
             <p className="text-green-100/60 text-xs mb-8">
-              Restart the application to enjoy the latest features and
-              improvements.
+              The application is restarting automatically to apply the update...
             </p>
-            <button
-              className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-green-500/25 transform hover:scale-[1.02] flex items-center justify-center gap-2"
-              onClick={() => relaunch()}
-            >
-              <RefreshCw className="w-5 h-5" />
-              Restart Now
-            </button>
+
+            {/* Loading indicator for restart */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <RefreshCw className="w-5 h-5 text-green-400 animate-spin" />
+              <span className="text-sm text-green-200">Restarting...</span>
+            </div>
+
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+              <p className="text-xs text-green-100/70">
+                If the application doesn't restart automatically within a few
+                seconds, please restart it manually to apply the update.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -158,38 +186,118 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </p>
 
             <div className="space-y-4">
-              <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full transition-all duration-300 ease-out shadow-lg"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              <div className="flex justify-between text-sm text-purple-200/80">
-                <span>{progress}%</span>
-                <span>
-                  {downloadedSize} / {totalSize}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <div className="flex space-x-1">
-                  <div
-                    className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                    style={{ animationDelay: '0ms' }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                    style={{ animationDelay: '150ms' }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                    style={{ animationDelay: '300ms' }}
-                  ></div>
+              {/* Enhanced Progress Section with Circular Indicator */}
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                {/* Circular Progress Ring */}
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <svg
+                    className="w-24 h-24 transform -rotate-90"
+                    viewBox="0 0 100 100"
+                  >
+                    {/* Background circle */}
+                    <circle
+                      className="text-white/10"
+                      cx="50"
+                      cy="50"
+                      fill="none"
+                      r="45"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                    />
+                    {/* Progress circle */}
+                    <circle
+                      className="transition-all duration-500 ease-out drop-shadow-lg"
+                      cx="50"
+                      cy="50"
+                      fill="none"
+                      r="45"
+                      stroke="url(#progressGradient)"
+                      strokeDasharray={`${2 * Math.PI * 45}`}
+                      strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
+                      strokeLinecap="round"
+                      strokeWidth="8"
+                    />
+                    <defs>
+                      <linearGradient
+                        id="progressGradient"
+                        x1="0%"
+                        x2="100%"
+                        y1="0%"
+                        y2="100%"
+                      >
+                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="100%" stopColor="#6366f1" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  {/* Percentage in center */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">
+                      {progress}%
+                    </span>
+                  </div>
                 </div>
-                <span className="text-xs text-purple-200/60 ml-2">
-                  {progress < 100 ? 'Downloading...' : 'Installing...'}
-                </span>
+
+                {/* Download info */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-purple-200/80">Downloaded</span>
+                    <span className="font-medium text-purple-100">
+                      {downloadedSize} / {totalSize}
+                    </span>
+                  </div>
+
+                  {/* Linear Progress Bar */}
+                  <div className="relative">
+                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-400 via-purple-300 to-indigo-400 rounded-full transition-all duration-300 ease-out relative"
+                        style={{ width: `${progress}%` }}
+                      >
+                        {/* Animated shine effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-full animate-pulse"></div>
+                        {/* Moving highlight */}
+                        <div className="absolute right-0 top-0 w-4 h-full bg-gradient-to-l from-white/60 to-transparent rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status indicator */}
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <div className="flex space-x-1">
+                      <div
+                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '0ms' }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '150ms' }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '300ms' }}
+                      ></div>
+                    </div>
+                    <span className="text-xs text-purple-200/60 ml-2">
+                      {progress < 100 ? 'Downloading...' : 'Installing...'}
+                    </span>
+                  </div>
+
+                  {/* Emergency cancel button for stuck states */}
+                  <div className="mt-6 pt-4 border-t border-white/10">
+                    <button
+                      className="w-full px-4 py-2 text-purple-200/60 hover:text-purple-100 text-xs transition-all duration-200 rounded-lg hover:bg-white/10"
+                      onClick={() => {
+                        console.log('User cancelled update')
+                        setIsInstalling(false)
+                        setCompleted(false)
+                        setError('Update cancelled by user')
+                      }}
+                    >
+                      Having issues? Click to cancel and try again
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
