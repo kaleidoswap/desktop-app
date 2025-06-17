@@ -13,11 +13,6 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-const UPDATE_STORAGE_KEYS = {
-  NOTIFIED_VERSION: 'kaleidoswap_notified_update_version',
-  SKIPPED_VERSION: 'kaleidoswap_skipped_update_version',
-}
-
 interface UpdateModalProps {
   isOpen: boolean
   onClose: () => void
@@ -120,9 +115,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           case 'Finished':
             console.log('Download finished event')
             clearTimeout(timeoutId)
-            // Clear the skipped and notified versions since update is being installed
-            localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
-            localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
+            // Clear the skipped version since update is being installed
             console.log(
               'Update download finished - will restart application in 2 seconds'
             )
@@ -149,8 +142,6 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           'No Finished event received, assuming update completed successfully'
         )
         clearTimeout(timeoutId)
-        localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
-        localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
         setCompleted(true)
         setIsInstalling(false)
 

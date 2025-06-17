@@ -1,28 +1,42 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
 import { Update, check } from '@tauri-apps/plugin-updater'
-import { useState, useEffect, createContext, useContext, useRef } from 'react'
+import { useEffect, createContext, useContext, useRef } from 'react'
 
 import { NotificationProvider, useNotification } from '../NotificationSystem'
 
-const UPDATE_STORAGE_KEYS = {
-  LAST_CHECK: 'kaleidoswap_last_update_check',
-  NOTIFIED_VERSION: 'kaleidoswap_notified_update_version',
-  SKIPPED_VERSION: 'kaleidoswap_skipped_update_version',
+// Helper function to compare semantic versions properly
+const isVersionNewer = (
+  newVersion: string,
+  currentVersion: string
+): boolean => {
+  const parseVersion = (version: string) => {
+    return version
+      .replace(/^v/, '')
+      .split('.')
+      .map((num) => parseInt(num, 10))
+  }
+
+  const newParts = parseVersion(newVersion)
+  const currentParts = parseVersion(currentVersion)
+
+  for (let i = 0; i < Math.max(newParts.length, currentParts.length); i++) {
+    const newPart = newParts[i] || 0
+    const currentPart = currentParts[i] || 0
+
+    if (newPart > currentPart) return true
+    if (newPart < currentPart) return false
+  }
+
+  return false // Versions are equal
 }
 
 interface UpdateContextType {
-  hasSkippedUpdate: boolean
-  skippedVersion: string | null
   checkForUpdates: () => void
-  clearSkippedUpdate: () => void
 }
 
 const UpdateContext = createContext<UpdateContextType>({
   checkForUpdates: () => {},
-  clearSkippedUpdate: () => {},
-  hasSkippedUpdate: false,
-  skippedVersion: null,
 })
 
 export const useUpdate = () => {
@@ -34,10 +48,6 @@ export const useUpdate = () => {
 }
 
 const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
-  const [skippedVersion, setSkippedVersion] = useState<string | null>(null)
-  const [hasAvailableSkippedUpdate, setHasAvailableSkippedUpdate] =
-    useState(false)
-
   // Add refs to prevent infinite loops
   const hasPerformedInitialCheck = useRef(false)
   const updateCheckInProgress = useRef(false)
@@ -100,7 +110,10 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
           })
 
           // Check if the available version is actually newer than current
-          const isActuallyNewer = _update.version !== currentVersion
+          const isActuallyNewer = isVersionNewer(
+            _update.version,
+            currentVersion
+          )
           console.log('Is update actually newer?', isActuallyNewer, {
             available: _update.version,
             current: currentVersion,
@@ -128,49 +141,24 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
 
       if (_update) {
         console.log('Update available:', _update.version)
-        const skippedVersion = localStorage.getItem(
-          UPDATE_STORAGE_KEYS.SKIPPED_VERSION
-        )
-        const notifiedVersion = localStorage.getItem(
-          UPDATE_STORAGE_KEYS.NOTIFIED_VERSION
-        )
 
         console.log('Update state check:', {
           availableVersion: _update.version,
-          notifiedVersion,
-          skippedVersion,
-          willShowNotification: notifiedVersion !== _update.version,
         })
 
-        // Always add notification for available updates, never block the app
+        // Add notification for new updates
         console.log('New update found, adding notification')
-        setHasAvailableSkippedUpdate(skippedVersion === _update.version)
 
-        // Only add notification if we haven't already notified about this version
-        if (notifiedVersion !== _update.version) {
-          localStorage.setItem(
-            UPDATE_STORAGE_KEYS.NOTIFIED_VERSION,
-            _update.version
-          )
-          addNotification({
-            data: { update: _update },
-            message:
-              skippedVersion === _update.version
-                ? `Version ${_update.version} is available (previously skipped). Click to install now.`
-                : `Version ${_update.version} is available. Click to install now.`,
-            title: 'Update Available',
-            type: 'info',
-            // Don't auto-close so user can click it later
-          })
-          console.log('Update notification added successfully')
-        } else {
-          console.log(
-            'Skipping notification - already notified about this version'
-          )
-        }
+        addNotification({
+          data: { update: _update },
+          message: `Version ${_update.version} is available. Click to install now.`,
+          title: 'Update Available',
+          type: 'info',
+          // Don't auto-close so user can click it later
+        })
+        console.log('Update notification added successfully')
       } else {
         console.log('No update available')
-        setHasAvailableSkippedUpdate(false)
       }
     }
 
@@ -248,16 +236,10 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
 
     if (_update) {
       console.log('Manual check found update:', _update.version)
-      // Clear the notified version so user can see the update modal
-      localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
-      const wasSkipped =
-        localStorage.getItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION) ===
-        _update.version
-      setHasAvailableSkippedUpdate(wasSkipped)
 
       addNotification({
         data: { update: _update },
-        message: `Version ${_update.version} is available for download. ${wasSkipped ? 'This update was previously skipped.' : 'Click to install now.'}`,
+        message: `Version ${_update.version} is available for download. Click to install now.`,
         title: 'Update Found',
         type: 'info',
         // Don't auto-close so user can click it later
@@ -265,7 +247,6 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
       console.log('Manual update notification added successfully')
     } else {
       console.log('Manual check: no updates available')
-      setHasAvailableSkippedUpdate(false)
       addNotification({
         autoClose: 3000,
         message: 'You are running the latest version.',
@@ -275,18 +256,8 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  const clearSkippedUpdate = () => {
-    localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
-    localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
-    setSkippedVersion(null)
-    setHasAvailableSkippedUpdate(false)
-  }
-
   const contextValue: UpdateContextType = {
     checkForUpdates,
-    clearSkippedUpdate,
-    hasSkippedUpdate: hasAvailableSkippedUpdate,
-    skippedVersion,
   }
 
   // No blocking UI for updates - app always loads, notifications only
