@@ -385,7 +385,7 @@ export const Layout = (props: Props) => {
 
   const { toggleNotificationPanel, notifications, addNotification } =
     useNotification()
-  const { hasSkippedUpdate, skippedVersion, checkForUpdates } = useUpdate()
+  const { checkForUpdates } = useUpdate()
 
   // Check if there are any update notifications
   const hasUpdateNotification = notifications.some((n) => n.data?.update)
@@ -735,7 +735,7 @@ export const Layout = (props: Props) => {
                   <button
                     aria-label="Check for updates"
                     className={`relative p-2 rounded-lg hover:bg-blue-darker transition-colors ${
-                      hasUpdateNotification || hasSkippedUpdate
+                      hasUpdateNotification
                         ? 'text-amber-400 hover:text-amber-300'
                         : 'text-gray-400 hover:text-white'
                     }`}
@@ -744,7 +744,6 @@ export const Layout = (props: Props) => {
                       e.stopPropagation()
                       console.log(
                         `[${new Date().toISOString()}] Update button clicked, hasSkippedUpdate =`,
-                        hasSkippedUpdate,
                         ', hasUpdateNotification =',
                         hasUpdateNotification
                       )
@@ -753,13 +752,11 @@ export const Layout = (props: Props) => {
                     title={
                       hasUpdateNotification
                         ? 'Update available - check notifications'
-                        : hasSkippedUpdate
-                          ? `Update ${skippedVersion} is available`
-                          : 'Check for updates'
+                        : 'Check for updates'
                     }
                   >
                     <RefreshCw className="w-5 h-5" />
-                    {(hasSkippedUpdate || hasUpdateNotification) && (
+                    {hasUpdateNotification && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                     )}
                   </button>
