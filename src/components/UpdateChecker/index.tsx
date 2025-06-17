@@ -98,6 +98,20 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
             currentVersion,
             updateDate: _update.date, // First 100 chars of release notes
           })
+
+          // Check if the available version is actually newer than current
+          const isActuallyNewer = _update.version !== currentVersion
+          console.log('Is update actually newer?', isActuallyNewer, {
+            available: _update.version,
+            current: currentVersion,
+          })
+
+          if (!isActuallyNewer) {
+            console.log(
+              'Available version is not newer than current, skipping notification'
+            )
+            _update = null // Treat as no update available
+          }
         } else {
           console.log('No update available - app is up to date')
         }
