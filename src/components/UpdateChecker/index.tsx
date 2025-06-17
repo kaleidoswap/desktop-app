@@ -11,6 +11,32 @@ const UPDATE_STORAGE_KEYS = {
   SKIPPED_VERSION: 'kaleidoswap_skipped_update_version',
 }
 
+// Helper function to compare semantic versions
+const isVersionNewer = (
+  newVersion: string,
+  currentVersion: string
+): boolean => {
+  const parseVersion = (version: string) => {
+    return version
+      .replace(/^v/, '')
+      .split('.')
+      .map((num) => parseInt(num, 10))
+  }
+
+  const newParts = parseVersion(newVersion)
+  const currentParts = parseVersion(currentVersion)
+
+  for (let i = 0; i < Math.max(newParts.length, currentParts.length); i++) {
+    const newPart = newParts[i] || 0
+    const currentPart = currentParts[i] || 0
+
+    if (newPart > currentPart) return true
+    if (newPart < currentPart) return false
+  }
+
+  return false // Versions are equal
+}
+
 interface UpdateContextType {
   hasSkippedUpdate: boolean
   skippedVersion: string | null
@@ -59,6 +85,9 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   useEffect(() => {
+    // Clear any stale notifications first
+    clearStaleNotifications()
+
     const checkForUpdate = async () => {
       // Prevent multiple simultaneous checks and repeated initial checks
       if (hasPerformedInitialCheck.current || updateCheckInProgress.current) {
@@ -100,7 +129,10 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
           })
 
           // Check if the available version is actually newer than current
-          const isActuallyNewer = _update.version !== currentVersion
+          const isActuallyNewer = isVersionNewer(
+            _update.version,
+            currentVersion
+          )
           console.log('Is update actually newer?', isActuallyNewer, {
             available: _update.version,
             current: currentVersion,
@@ -223,6 +255,24 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
           currentVersion,
           updateDate: _update.date,
         })
+
+        // Check if the available version is actually newer than current
+        const isActuallyNewer = isVersionNewer(_update.version, currentVersion)
+        console.log(
+          'Manual check - Is update actually newer?',
+          isActuallyNewer,
+          {
+            available: _update.version,
+            current: currentVersion,
+          }
+        )
+
+        if (!isActuallyNewer) {
+          console.log(
+            'Manual check - Available version is not newer than current, treating as no update'
+          )
+          _update = null // Treat as no update available
+        }
       }
     } catch (e) {
       console.error('Manual update check failed:', e)
@@ -278,8 +328,42 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
   const clearSkippedUpdate = () => {
     localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
     localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
+    localStorage.removeItem(UPDATE_STORAGE_KEYS.LAST_CHECK) // Also clear last check time
     setSkippedVersion(null)
     setHasAvailableSkippedUpdate(false)
+    console.log('Cleared all update-related localStorage data')
+  }
+
+  // Add function to clear stale notifications if they match current version
+  const clearStaleNotifications = async () => {
+    try {
+      const currentVersion = await getVersion()
+      const notifiedVersion = localStorage.getItem(
+        UPDATE_STORAGE_KEYS.NOTIFIED_VERSION
+      )
+      const skippedVersion = localStorage.getItem(
+        UPDATE_STORAGE_KEYS.SKIPPED_VERSION
+      )
+
+      // If we've been notified about the current version, clear it
+      if (notifiedVersion === currentVersion) {
+        localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
+        console.log(
+          'Cleared stale notification for current version:',
+          currentVersion
+        )
+      }
+
+      // If we've skipped the current version, clear it too
+      if (skippedVersion === currentVersion) {
+        localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
+        setSkippedVersion(null)
+        setHasAvailableSkippedUpdate(false)
+        console.log('Cleared stale skip for current version:', currentVersion)
+      }
+    } catch (e) {
+      console.warn('Failed to clear stale notifications:', e)
+    }
   }
 
   const contextValue: UpdateContextType = {
