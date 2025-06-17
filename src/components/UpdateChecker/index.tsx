@@ -31,32 +31,6 @@ const isVersionNewer = (
   return false // Versions are equal
 }
 
-// Helper function to compare semantic versions
-const isVersionNewer = (
-  newVersion: string,
-  currentVersion: string
-): boolean => {
-  const parseVersion = (version: string) => {
-    return version
-      .replace(/^v/, '')
-      .split('.')
-      .map((num) => parseInt(num, 10))
-  }
-
-  const newParts = parseVersion(newVersion)
-  const currentParts = parseVersion(currentVersion)
-
-  for (let i = 0; i < Math.max(newParts.length, currentParts.length); i++) {
-    const newPart = newParts[i] || 0
-    const currentPart = currentParts[i] || 0
-
-    if (newPart > currentPart) return true
-    if (newPart < currentPart) return false
-  }
-
-  return false // Versions are equal
-}
-
 interface UpdateContextType {
   checkForUpdates: () => void
 }
@@ -95,9 +69,6 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   useEffect(() => {
-    // Clear any stale notifications first
-    clearStaleNotifications()
-
     const checkForUpdate = async () => {
       // Prevent multiple simultaneous checks and repeated initial checks
       if (hasPerformedInitialCheck.current || updateCheckInProgress.current) {
