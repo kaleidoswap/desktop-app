@@ -1,3 +1,4 @@
+import { getVersion } from '@tauri-apps/api/app'
 import { invoke } from '@tauri-apps/api/core'
 import { Update, check } from '@tauri-apps/plugin-updater'
 import { useState, useEffect, createContext, useContext, useRef } from 'react'
@@ -61,6 +62,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     const checkForUpdate = async () => {
       // Prevent multiple simultaneous checks and repeated initial checks
       if (hasPerformedInitialCheck.current || updateCheckInProgress.current) {
+        console.log('Update check skipped - already performed or in progress')
         return
       }
 
@@ -68,13 +70,43 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
       hasPerformedInitialCheck.current = true
 
       console.log('Starting initial update check...')
+      console.log(
+        'Update endpoint configured:',
+        'https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json'
+      )
+
+      // Get current app version dynamically
+      let currentVersion = '0.1.0' // fallback
+      try {
+        currentVersion = await getVersion()
+        console.log('Current app version:', currentVersion)
+      } catch (e) {
+        console.warn('Failed to get current version, using fallback:', e)
+      }
+
       let _update: Update | null = null
 
       try {
         _update = await check({ timeout: 10000 })
         console.log('Initial update check result:', _update)
+
+        // Add detailed logging for debugging
+        if (_update) {
+          console.log('Update details:', {
+            availableVersion: _update.version,
+            body: _update.body?.substring(0, 100) + '...',
+            currentVersion,
+            updateDate: _update.date, // First 100 chars of release notes
+          })
+        } else {
+          console.log('No update available - app is up to date')
+        }
       } catch (e) {
         console.error('Initial update check failed:', e)
+        console.error('Error details:', {
+          message: e instanceof Error ? e.message : 'Unknown error',
+          stack: e instanceof Error ? e.stack : undefined,
+        })
         updateCheckInProgress.current = false
         return
       }
@@ -88,6 +120,13 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         const notifiedVersion = localStorage.getItem(
           UPDATE_STORAGE_KEYS.NOTIFIED_VERSION
         )
+
+        console.log('Update state check:', {
+          availableVersion: _update.version,
+          notifiedVersion,
+          skippedVersion,
+          willShowNotification: notifiedVersion !== _update.version,
+        })
 
         // Always add notification for available updates, never block the app
         console.log('New update found, adding notification')
@@ -109,6 +148,11 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
             type: 'info',
             // Don't auto-close so user can click it later
           })
+          console.log('Update notification added successfully')
+        } else {
+          console.log(
+            'Skipping notification - already notified about this version'
+          )
         }
       } else {
         console.log('No update available')
@@ -137,6 +181,20 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     console.log(
       `[${new Date().toISOString()}] Manual update check triggered...`
     )
+    console.log(
+      'Checking endpoint:',
+      'https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json'
+    )
+
+    // Get current app version dynamically
+    let currentVersion = '0.1.0' // fallback
+    try {
+      currentVersion = await getVersion()
+      console.log('Current app version (manual check):', currentVersion)
+    } catch (e) {
+      console.warn('Failed to get current version, using fallback:', e)
+    }
+
     lastCheckTime.current = now
     updateCheckInProgress.current = true
     let _update: Update | null = null
@@ -144,10 +202,24 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     try {
       _update = await check({ timeout: 10000 })
       console.log('Manual update check result:', _update)
+
+      if (_update) {
+        console.log('Manual check update details:', {
+          availableVersion: _update.version,
+          currentVersion,
+          updateDate: _update.date,
+        })
+      }
     } catch (e) {
       console.error('Manual update check failed:', e)
+      console.error('Manual check error details:', {
+        endpoint:
+          'https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json',
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined,
+      })
       addNotification({
-        message: 'Failed to check for updates. Please try again later.',
+        message: `Failed to check for updates: ${e instanceof Error ? e.message : 'Unknown error'}. Please try again later.`,
         title: 'Update Check Failed',
         type: 'error',
         // Remove autoClose so error notifications persist until manually dismissed
@@ -176,6 +248,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         type: 'info',
         // Don't auto-close so user can click it later
       })
+      console.log('Manual update notification added successfully')
     } else {
       console.log('Manual check: no updates available')
       setHasAvailableSkippedUpdate(false)

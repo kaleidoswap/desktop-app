@@ -61,56 +61,113 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   const handleInstall = async () => {
     setIsInstalling(true)
     setError(null)
+    setDownloaded(0)
+    setContentLength(undefined)
+    setCompleted(false)
 
-    // Add timeout protection like the old Updater
+    // Add timeout protection like the old Updater - but with better error handling
     const timeoutId = setTimeout(() => {
-      console.log('Update timeout - resetting state')
-      setError('Update process timed out. Please try again.')
+      console.log('Update timeout - resetting state after 5 minutes')
+      setError(
+        'Update process timed out after 5 minutes. Please check your internet connection and try again.'
+      )
       setIsInstalling(false)
       setCompleted(false)
     }, 300000) // 5 minutes timeout
 
     try {
-      console.log('Starting update installation...')
+      console.log('Starting update installation...', {
+        timestamp: new Date().toISOString(),
+        version: update.version,
+      })
+
       await update.downloadAndInstall((event) => {
+        console.log(
+          'Download event received:',
+          event.event,
+          'data' in event ? event.data : 'no data'
+        )
         switch (event.event) {
           case 'Started':
-            setContentLength(event.data.contentLength)
-            setDownloaded(0)
-            console.log(
-              `Update download started, content length: ${event.data.contentLength}`
-            )
+            console.log('Download started event')
+            if ('data' in event && event.data) {
+              setContentLength(event.data.contentLength)
+              setDownloaded(0)
+              console.log(
+                `Update download started, content length: ${event.data.contentLength} bytes (${((event.data.contentLength || 0) / 1024 / 1024).toFixed(2)} MB)`
+              )
+            }
             break
           case 'Progress':
+            console.log(
+              'Download progress event:',
+              'data' in event ? event.data : 'no data'
+            )
             // Fix: Accumulate downloaded bytes instead of just setting chunk length
-            setDownloaded((prev) => {
-              const newDownloaded = prev + event.data.chunkLength
-              console.log('Total downloaded:', newDownloaded)
-              return newDownloaded
-            })
-            console.log(`Downloaded chunk: ${event.data.chunkLength}`)
+            if ('data' in event && event.data) {
+              setDownloaded((prev) => {
+                const newDownloaded = prev + event.data.chunkLength
+                const progress = contentLength
+                  ? Math.round((newDownloaded / contentLength) * 100)
+                  : 0
+                console.log(
+                  `Downloaded chunk: ${event.data.chunkLength} bytes, Total: ${newDownloaded} bytes (${progress}%)`
+                )
+                return newDownloaded
+              })
+            }
             break
           case 'Finished':
+            console.log('Download finished event')
             clearTimeout(timeoutId)
             // Clear the skipped and notified versions since update is being installed
             localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
             localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
-            console.log('Update download finished - restarting application')
+            console.log(
+              'Update download finished - will restart application in 2 seconds'
+            )
+
+            // Show completion state briefly before restart
+            setCompleted(true)
+            setIsInstalling(false)
 
             // Automatically restart the application after download completes
             setTimeout(() => {
+              console.log('Restarting application...')
               relaunch()
-            }, 1000) // Small delay to ensure UI updates and logs are processed
-
-            setCompleted(true)
+            }, 2000) // 2 second delay to show completion state
             break
         }
       })
+
+      // Fallback: If we reach here without getting a 'Finished' event, assume success
+      console.log(
+        'Update installation function completed, checking if UI needs fallback update'
+      )
+      if (!completed) {
+        console.log(
+          'No Finished event received, assuming update completed successfully'
+        )
+        clearTimeout(timeoutId)
+        localStorage.removeItem(UPDATE_STORAGE_KEYS.SKIPPED_VERSION)
+        localStorage.removeItem(UPDATE_STORAGE_KEYS.NOTIFIED_VERSION)
+        setCompleted(true)
+        setIsInstalling(false)
+
+        setTimeout(() => {
+          console.log('Restarting application via fallback...')
+          relaunch()
+        }, 2000)
+      }
       console.log('Download and install completed successfully')
-    } catch (error) {
-      console.error('Update installation error:', error)
+    } catch (err) {
+      console.error('Download/install error:', err)
       clearTimeout(timeoutId)
-      setError('Failed to install update. Please try again later.')
+      const errorMessage =
+        err instanceof Error ? err.message : 'Unknown error occurred'
+      setError(
+        `Failed to install update: ${errorMessage}. Please try again or download manually from GitHub.`
+      )
       setIsInstalling(false)
       setCompleted(false)
     }
