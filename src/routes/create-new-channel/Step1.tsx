@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { useState } from 'react'
+import { Users, CheckCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 
 import { Spinner } from '../../components/Spinner'
@@ -30,6 +31,12 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
   const [showConnectionDialog, setShowConnectionDialog] = useState(false)
   const [selectedPeerInfo, setSelectedPeerInfo] = useState<string>('')
   const [isConnecting, setIsConnecting] = useState(false)
+  const [connectedPeers, setConnectedPeers] = useState<
+    Array<{ pubkey: string }>
+  >([])
+  const [loadingPeers, setLoadingPeers] = useState(true)
+  const [selectedFromConnected, setSelectedFromConnected] = useState<string>('')
+
   const [getNetworkInfo] = nodeApi.endpoints.networkInfo.useLazyQuery()
   const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
   const [listPeers] = nodeApi.endpoints.listPeers.useLazyQuery()
@@ -42,23 +49,52 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       mode: 'onChange',
       resolver: zodResolver(
         NewChannelFormSchema.pick({ pubKeyAndAddress: true }).refine(
-          (data) => isValidPubkeyAndAddress(data.pubKeyAndAddress),
+          (data) => {
+            // Allow pubkey-only for connected peers or full address format
+            const isPubkeyOnly =
+              data.pubKeyAndAddress.length === 66 &&
+              /^[0-9a-f]+$/i.test(data.pubKeyAndAddress)
+            return (
+              isPubkeyOnly || isValidPubkeyAndAddress(data.pubKeyAndAddress)
+            )
+          },
           {
             message:
-              'Invalid peer format. Expected: <66-char-hex-pubkey>@hostname:port',
+              'Invalid peer format. Expected: <66-char-hex-pubkey>@hostname:port or valid pubkey',
             path: ['pubKeyAndAddress'],
           }
         )
       ),
     })
 
+  // Load connected peers on component mount
+  useEffect(() => {
+    const loadConnectedPeers = async () => {
+      setLoadingPeers(true)
+      try {
+        const peers = await listPeers().unwrap()
+        setConnectedPeers(peers.peers || [])
+      } catch (error) {
+        console.error('Failed to load connected peers:', error)
+      } finally {
+        setLoadingPeers(false)
+      }
+    }
+
+    loadConnectedPeers()
+  }, [listPeers])
+
   const onSubmit: SubmitHandler<FormFields> = async (data) => {
     // Clear any previous errors
     setLocalError('')
 
-    if (!isValidPubkeyAndAddress(data.pubKeyAndAddress)) {
+    const isPubkeyOnly =
+      data.pubKeyAndAddress.length === 66 &&
+      /^[0-9a-f]+$/i.test(data.pubKeyAndAddress)
+
+    if (!isPubkeyOnly && !isValidPubkeyAndAddress(data.pubKeyAndAddress)) {
       setLocalError(
-        'Invalid peer format. Expected format: <66-char-hex-pubkey>@hostname:port'
+        'Invalid peer format. Expected format: <66-char-hex-pubkey>@hostname:port or valid pubkey'
       )
       return
     }
@@ -68,7 +104,13 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       pubKeyAndAddress: data.pubKeyAndAddress,
     })
 
-    // Then check connection
+    // If it's a pubkey-only (from connected peers), we can proceed directly
+    if (isPubkeyOnly) {
+      onNext()
+      return
+    }
+
+    // For full address format, check connection
     const isConnected = await checkPeerConnection(data.pubKeyAndAddress)
 
     if (!isConnected) {
@@ -78,6 +120,20 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
     }
 
     // If already connected, proceed to next step
+    onNext()
+  }
+
+  const handleSelectConnectedPeer = (pubkey: string) => {
+    setSelectedFromConnected(pubkey)
+    // For connected peers, we only have the pubkey, so we use it as the peer info
+    // This will work for existing connections but won't include address info
+    const peerInfo = pubkey
+    setValue('pubKeyAndAddress', peerInfo)
+    onFormUpdate({
+      pubKeyAndAddress: peerInfo,
+    })
+
+    // Since the peer is already connected, we can proceed directly
     onNext()
   }
 
@@ -136,7 +192,8 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
   const checkPeerConnection = async (peerInfo: string) => {
     try {
       const peers = await listPeers().unwrap()
-      const [pubkey] = peerInfo.split('@')
+      // Handle both pubkey-only and pubkey@host:port formats
+      const pubkey = peerInfo.includes('@') ? peerInfo.split('@')[0] : peerInfo
       return peers.peers.some((peer) => peer.pubkey === pubkey)
     } catch (error) {
       return false
@@ -178,11 +235,65 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           Peer Connection - Step 1
         </h3>
         <p className="text-gray-400">
-          Enter the connection details for the node you want to connect with.
+          Select from connected peers or enter new connection details.
         </p>
       </div>
 
+      {/* Connected Peers Section */}
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="w-5 h-5 text-blue-500" />
+          <h4 className="text-lg font-semibold text-white">Connected Peers</h4>
+        </div>
+
+        {loadingPeers ? (
+          <div className="flex items-center justify-center py-4">
+            <Spinner color="#3B82F6" size={24} />
+            <span className="ml-2 text-gray-400">
+              Loading connected peers...
+            </span>
+          </div>
+        ) : connectedPeers.length > 0 ? (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {connectedPeers.map((peer) => (
+              <div
+                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                  selectedFromConnected === peer.pubkey
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-gray-600 bg-gray-700/50 hover:border-blue-400 hover:bg-blue-500/5'
+                }`}
+                key={peer.pubkey}
+                onClick={() => handleSelectConnectedPeer(peer.pubkey)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-mono text-gray-300 truncate">
+                      {peer.pubkey}
+                    </div>
+                  </div>
+                  {selectedFromConnected === peer.pubkey && (
+                    <CheckCircle className="w-5 h-5 text-blue-500 ml-2" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-gray-400">
+            No peers currently connected. You can connect to a new peer below.
+          </div>
+        )}
+      </div>
+
+      {/* Separator */}
+      <div className="text-center py-4 font-medium text-gray-400">or</div>
+
+      {/* Manual Peer Connection Section */}
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8">
+        <h4 className="text-lg font-semibold text-white mb-4">
+          Connect to New Peer
+        </h4>
+
         <Controller
           control={control}
           name="pubKeyAndAddress"
@@ -205,6 +316,10 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                   }
                   if (localError) {
                     setLocalError('')
+                  }
+                  // Clear selected from connected when manually typing
+                  if (selectedFromConnected) {
+                    setSelectedFromConnected('')
                   }
                   // Update form data as user types
                   onFormUpdate({
@@ -251,38 +366,18 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
             </span>
           </div>
         )}
-
-        {localError && (
-          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500">
-            {localError}
-          </div>
-        )}
       </div>
 
-      <div className="flex justify-end mt-8">
+      <div className="mt-8 flex justify-between">
+        <div></div>
         <Button
-          disabled={!formState.isValid}
-          icon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M9 5l7 7-7 7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-              />
-            </svg>
-          }
-          iconPosition="right"
-          size="lg"
+          disabled={!formData.pubKeyAndAddress && !selectedFromConnected}
+          isLoading={isLoading}
+          size="md"
           type="submit"
           variant="primary"
         >
-          Next
+          Continue
         </Button>
       </div>
 

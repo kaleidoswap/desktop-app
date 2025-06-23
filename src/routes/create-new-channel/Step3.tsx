@@ -53,14 +53,18 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
   // Validate if we have the required data
   const hasValidNodeInfo = useMemo(() => {
-    const isValid = !!(
+    // Check if we have a valid pubkey-only format (66 hex chars) or full address format
+    const isPubkeyOnly =
+      formData.pubKeyAndAddress?.length === 66 &&
+      /^[0-9a-f]+$/i.test(formData.pubKeyAndAddress)
+    const isFullAddress = !!(
       connectionDetails.pubKey &&
       connectionDetails.host &&
       connectionDetails.port &&
       formData.pubKeyAndAddress
     )
 
-    return isValid
+    return isPubkeyOnly || isFullAddress
   }, [connectionDetails, formData.pubKeyAndAddress])
 
   // Determine if this is an asset channel
@@ -155,12 +159,16 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                       Node ID:
                     </span>
                     <span className="text-sm text-white font-mono truncate">
-                      {formatPubKey(connectionDetails.pubKey)}
+                      {formatPubKey(
+                        connectionDetails.pubKey || formData.pubKeyAndAddress
+                      )}
                     </span>
                     <button
                       className="ml-2 text-blue-400 hover:text-blue-300 p-1 hover:bg-slate-700/50 rounded transition-colors"
                       onClick={() =>
-                        navigator.clipboard.writeText(connectionDetails.pubKey)
+                        navigator.clipboard.writeText(
+                          connectionDetails.pubKey || formData.pubKeyAndAddress
+                        )
                       }
                       title="Copy full pubkey"
                       type="button"
@@ -168,12 +176,23 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                       <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-xs text-slate-400 mr-2">Host:</span>
-                    <span className="text-sm text-white font-mono">
-                      {connectionDetails.host}:{connectionDetails.port}
-                    </span>
-                  </div>
+                  {connectionDetails.host && connectionDetails.port ? (
+                    <div className="flex items-center">
+                      <span className="text-xs text-slate-400 mr-2">Host:</span>
+                      <span className="text-sm text-white font-mono">
+                        {connectionDetails.host}:{connectionDetails.port}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <span className="text-xs text-slate-400 mr-2">
+                        Status:
+                      </span>
+                      <span className="text-sm text-green-400">
+                        Already Connected
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="text-red-500 text-sm">
