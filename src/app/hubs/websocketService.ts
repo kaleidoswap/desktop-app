@@ -56,8 +56,8 @@ class WebSocketService {
   private clientId: string = ''
   private dispatch: Dispatch | null = null
   private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 8 // Increased from 5
-  private reconnectInterval: number = 2000 // Reduced from 5000ms to 2000ms for faster reconnection
+  private maxReconnectAttempts: number = 3 // Reduced from 8 to 3 to prevent connection spam
+  private reconnectInterval: number = 5000 // Increased from 2000ms to 5000ms to reduce connection frequency
   private subscribedPairs: Set<string> = new Set()
   private isReconnecting: boolean = false
   private heartbeatInterval: number | null = null
@@ -108,6 +108,16 @@ class WebSocketService {
     toAsset: string
     fromAmount: number
   } | null = null
+
+  // Add connection readiness tracking
+  private isConnectionReady: boolean = false
+  private connectionReadyPromise: Promise<boolean> | null = null
+  private connectionReadyResolvers: Array<(value: boolean) => void> = []
+  private readonly CONNECTION_READY_TIMEOUT = 10000 // 10 second timeout for connection readiness
+
+  // Connection cooldown to prevent rapid reconnections
+  private lastCloseTime: number = 0
+  private readonly CONNECTION_COOLDOWN = 2000 // 2 second cooldown between connections
 
   private constructor() {
     logger.info('WebSocketService instance created')
@@ -519,6 +529,17 @@ class WebSocketService {
       return false
     }
 
+    // Check connection cooldown to prevent rapid reconnections
+    const now = Date.now()
+    if (now - this.lastCloseTime < this.CONNECTION_COOLDOWN) {
+      const remainingCooldown =
+        this.CONNECTION_COOLDOWN - (now - this.lastCloseTime)
+      logger.debug(
+        `WebSocketService: Connection cooldown active, waiting ${remainingCooldown}ms`
+      )
+      return false
+    }
+
     // Skip if already connected to the same URL
     const cleanUrl = url.replace(/\/+$/, '')
     if (
@@ -528,6 +549,18 @@ class WebSocketService {
     ) {
       logger.info(
         'WebSocketService: Already connected to the same URL, skipping initialization'
+      )
+      return true
+    }
+
+    // Skip if we're currently connecting to the same URL to prevent multiple connection attempts
+    if (
+      this.socket &&
+      this.socket.readyState === WebSocket.CONNECTING &&
+      this.url === cleanUrl
+    ) {
+      logger.info(
+        'WebSocketService: Already connecting to the same URL, skipping initialization'
       )
       return true
     }
@@ -683,6 +716,19 @@ class WebSocketService {
 
     // Dismiss any circuit breaker notifications
     toast.dismiss('circuit-breaker-open')
+
+    // Mark connection as ready after a short delay to ensure stability
+    setTimeout(() => {
+      this.isConnectionReady = true
+
+      // Resolve any pending connection ready promises
+      this.connectionReadyResolvers.forEach((resolve) => resolve(true))
+      this.connectionReadyResolvers = []
+
+      logger.info(
+        'WebSocketService: Connection marked as ready for communication'
+      )
+    }, 500) // 500ms delay to ensure connection stability
   }
 
   /**
@@ -808,8 +854,20 @@ class WebSocketService {
         return
       }
 
-      // For CONNECTING or OPEN states, try to close cleanly first
-      this.socket.close(1006, 'Error event occurred')
+      // For CONNECTING state, wait a moment before closing to avoid premature close
+      if (readyState === WebSocket.CONNECTING) {
+        logger.debug(
+          'WebSocketService: Socket still connecting during error, waiting before close'
+        )
+        setTimeout(() => {
+          if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+            this.socket.close(1006, 'Error during connection')
+          }
+        }, 200)
+      } else if (readyState === WebSocket.OPEN) {
+        // For OPEN state, close immediately
+        this.socket.close(1006, 'Error event occurred')
+      }
     } catch (err) {
       logger.warn('WebSocketService: Error during socket cleanup', err)
     } finally {
@@ -825,6 +883,13 @@ class WebSocketService {
     logger.info(
       `WebSocketService: Disconnected with code ${event.code}, reason: ${event.reason || 'No reason provided'}`
     )
+
+    // Mark connection as not ready immediately
+    this.isConnectionReady = false
+
+    // Reject any pending connection ready promises
+    this.connectionReadyResolvers.forEach((resolve) => resolve(false))
+    this.connectionReadyResolvers = []
 
     if (this.dispatch) {
       this.dispatch(setWsConnected(false))
@@ -845,6 +910,7 @@ class WebSocketService {
       toast.warning(
         'Connection to maker was lost. Attempting to reconnect...',
         {
+          autoClose: 5000,
           toastId: 'websocket-lost-connection',
         }
       )
@@ -853,6 +919,7 @@ class WebSocketService {
         'WebSocketService: Server error (code 1011) - The server encountered an error'
       )
       toast.error('Server error detected. Attempting to reconnect...', {
+        autoClose: 5000,
         toastId: 'websocket-server-error',
       })
     }
@@ -874,6 +941,16 @@ class WebSocketService {
     this.connectionInitialized = false
     this.isReconnecting = false
 
+    // Record close time for cooldown
+    this.lastCloseTime = Date.now()
+
+    // Reset connection readiness
+    this.isConnectionReady = false
+
+    // Reject any pending connection ready promises
+    this.connectionReadyResolvers.forEach((resolve) => resolve(false))
+    this.connectionReadyResolvers = []
+
     // Clear heartbeat and message processing
     this.stopHeartbeat()
 
@@ -887,15 +964,28 @@ class WebSocketService {
     // Clear subscribed pairs
     this.subscribedPairs.clear()
 
-    // Close socket connection
+    // Close socket connection with better state handling
     if (this.socket) {
       try {
-        if (
-          this.socket.readyState === WebSocket.OPEN ||
-          this.socket.readyState === WebSocket.CONNECTING
-        ) {
+        const readyState = this.socket.readyState
+
+        if (readyState === WebSocket.OPEN) {
           this.socket.close(1000, 'Connection closed by client')
+        } else if (readyState === WebSocket.CONNECTING) {
+          // For connecting sockets, wait a moment before forcing close
+          logger.debug(
+            'WebSocketService: Socket still connecting, waiting before close'
+          )
+          setTimeout(() => {
+            if (
+              this.socket &&
+              this.socket.readyState === WebSocket.CONNECTING
+            ) {
+              this.socket.close(1006, 'Connection timeout during close')
+            }
+          }, 100)
         }
+        // For CLOSING or CLOSED states, don't attempt to close again
       } catch (error) {
         logger.debug('WebSocketService: Error closing socket', error)
       }
@@ -1011,23 +1101,82 @@ class WebSocketService {
   }
 
   /**
+   * Wait for the connection to be ready for communication
+   * @param timeout Maximum time to wait in milliseconds
+   * @returns Promise that resolves to true if connected, false if timeout
+   */
+  public async waitForConnection(
+    timeout: number = this.CONNECTION_READY_TIMEOUT
+  ): Promise<boolean> {
+    // If already connected and ready, return immediately
+    if (this.isConnected() && this.isConnectionReady) {
+      return true
+    }
+
+    // If not connected at all, return false immediately
+    if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
+      return false
+    }
+
+    // If connecting, wait for connection to be established
+    if (this.socket.readyState === WebSocket.CONNECTING) {
+      return new Promise((resolve) => {
+        const timeoutId = setTimeout(() => {
+          // Remove this resolver from the list
+          this.connectionReadyResolvers = this.connectionReadyResolvers.filter(
+            (r) => r !== resolve
+          )
+          resolve(false)
+        }, timeout)
+
+        const resolver = (connected: boolean) => {
+          clearTimeout(timeoutId)
+          resolve(connected)
+        }
+
+        this.connectionReadyResolvers.push(resolver)
+      })
+    }
+
+    return this.isConnected() && this.isConnectionReady
+  }
+
+  /**
+   * Check if the connection is ready for communication
+   */
+  public isConnectionReadyForCommunication(): boolean {
+    return this.isConnected() && this.isConnectionReady
+  }
+
+  /**
    * Request a quote for swapping from one asset to another
+   * Now includes connection readiness checking
    *
    * @param fromAsset The asset to swap from
    * @param toAsset The asset to swap to
    * @param fromAmount The amount to swap
    * @returns A promise that resolves to true if the quote request was sent successfully
    */
-  public requestQuote(
+  public async requestQuote(
     fromAsset: string,
     toAsset: string,
     fromAmount: number
-  ): boolean {
-    if (!this.isConnected()) {
+  ): Promise<boolean> {
+    // Check if connection is ready for communication
+    if (!this.isConnectionReadyForCommunication()) {
       logger.debug(
-        'WebSocketService: Cannot request quote, socket not connected'
+        'WebSocketService: Connection not ready for quote request, waiting...'
       )
-      return false
+
+      // Try to wait for connection to be ready
+      const isReady = await this.waitForConnection(5000) // 5 second timeout
+
+      if (!isReady) {
+        logger.debug(
+          'WebSocketService: Connection not ready after waiting, cannot request quote'
+        )
+        return false
+      }
     }
 
     logger.debug(
@@ -1199,6 +1348,7 @@ class WebSocketService {
       toast.warning(
         'Network connection unavailable. Will reconnect when online.',
         {
+          autoClose: 5000,
           toastId: 'websocket-network-offline',
         }
       )
@@ -1260,6 +1410,28 @@ class WebSocketService {
       // Attempt reconnection
       this.connect()
     }, delay)
+  }
+
+  /**
+   * Reset circuit breaker and connection state when manually switching makers
+   */
+  public resetForNewMaker(): void {
+    logger.info('WebSocketService: Resetting connection state for new maker')
+
+    // Reset circuit breaker
+    this.resetCircuitBreaker()
+
+    // Reset reconnection attempts
+    this.reconnectAttempts = 0
+    this.isReconnecting = false
+
+    // Reset connection state
+    this.connectionInitialized = false
+
+    // Clear any existing connection
+    if (this.socket) {
+      this.close()
+    }
   }
 }
 

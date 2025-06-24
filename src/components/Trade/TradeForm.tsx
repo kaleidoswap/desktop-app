@@ -132,6 +132,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
             showMaxHtlc
             showMinAmount
             showSizeButtons
+            useEnhancedSelector={true}
             value={form.getValues().from}
           />
 
@@ -163,6 +164,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
             maxAmount={maxToAmount}
             onAmountChange={handleToAmountChange}
             onAssetChange={(value) => handleAssetChange('toAsset', value)}
+            useEnhancedSelector={true}
             value={form.getValues().to}
           />
         </form>

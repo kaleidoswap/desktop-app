@@ -1,4 +1,4 @@
-import { Copy } from 'lucide-react'
+import { Copy, HelpCircle } from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
@@ -16,6 +16,7 @@ import {
   SwapButton,
   MakerSelector,
   FeeSection,
+  QuickAmountSection,
 } from '../../../components/Trade'
 import {
   NoTradingChannelsMessage,
@@ -174,6 +175,10 @@ export const Component = () => {
     useState<SwapDetailsType | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
+  // Component mount state management
+  const isMountedRef = useRef(false)
+  const initializationRef = useRef(false)
+
   // Fetch list of swaps and poll for updates
   const { data: swapsData } = nodeApi.useListSwapsQuery(undefined, {
     pollingInterval: 5000, // Poll every 5 seconds
@@ -197,6 +202,9 @@ export const Component = () => {
 
   // Track successful swaps and show toast notifications
   const previousSwapsRef = useRef<typeof swapsData>()
+
+  // Track last reconnection attempt to prevent rapid reconnections
+  const lastReconnectAttemptRef = useRef(0)
 
   useEffect(() => {
     if (!swapsData) {
@@ -378,16 +386,20 @@ export const Component = () => {
   useEffect(() => {
     if (!quoteResponse) {
       // Quote was cleared (likely due to an error), clear the UI state
-      window.requestAnimationFrame(() => {
-        form.setValue('to', '')
-        form.setValue('rfq_id', '')
-        setHasValidQuote(false)
-        setQuoteExpiresAt(null)
-        setQuoteAge(0)
-        setIsToAmountLoading(false)
-        setIsPriceLoading(false)
-        setIsQuoteLoading(false)
-      })
+      try {
+        window.requestAnimationFrame(() => {
+          form.setValue('to', '')
+          form.setValue('rfq_id', '')
+          setHasValidQuote(false)
+          setQuoteExpiresAt(null)
+          setQuoteAge(0)
+          setIsToAmountLoading(false)
+          setIsPriceLoading(false)
+          setIsQuoteLoading(false)
+        })
+      } catch (error) {
+        logger.error('Error clearing quote response UI state:', error)
+      }
       return
     }
 
@@ -967,14 +979,40 @@ export const Component = () => {
     [getPairs, dispatch, getAvailableAssets, form, formatAmount]
   )
 
-  // WebSocket initialization effect - optimized for faster connections
+  // WebSocket initialization effect - scoped to market maker page only with debouncing
   useEffect(() => {
-    let isMounted = true
+    isMountedRef.current = true
+    let initTimeoutId: number | null = null
 
-    // Function to initialize WebSocket
+    // Function to initialize WebSocket with debouncing
     const initWebSocket = async () => {
+      // Prevent multiple initializations using refs for stability
+      if (initializationRef.current || !isMountedRef.current) {
+        logger.debug(
+          'WebSocket initialization skipped: already initializing or component unmounted'
+        )
+        return
+      }
+
+      // Check if circuit breaker is active - don't try to connect if it is
+      const diagnostics = webSocketService.getDiagnostics()
+      if (diagnostics.circuitBreakerOpen) {
+        logger.warn(
+          'WebSocket initialization skipped: circuit breaker is active. Wait for it to reset or switch makers.'
+        )
+        if (isMountedRef.current) {
+          setIsWebSocketInitialized(true) // Mark as "initialized" to prevent retry loop
+        }
+        return
+      }
+
+      // Only proceed if we have pubKey (required for consistent client ID)
+      if (!pubKey) {
+        logger.warn('WebSocket initialization requires pubKey as client ID')
+        return
+      }
+
       // Start WebSocket connection as soon as we have basic requirements
-      // Don't wait for trading pairs - they can be fetched after connection
       const hasBasicRequirements = channels.length > 0 && assets.length > 0
 
       if (!hasBasicRequirements) {
@@ -995,22 +1033,61 @@ export const Component = () => {
         logger.warn(
           'No tradable channels found. WebSocket initialization skipped.'
         )
-        setIsWebSocketInitialized(true)
+        if (isMountedRef.current) {
+          setIsWebSocketInitialized(true)
+        }
         return
       }
 
+      // Check if we're already connected with the same client ID to prevent duplicate connections
+      if (webSocketService.isConnected()) {
+        logger.info('WebSocket already connected, skipping initialization')
+        if (isMountedRef.current) {
+          setIsWebSocketInitialized(true)
+          setIsLoading(false)
+
+          // Ensure we have pairs if connected but no pairs loaded
+          if (tradablePairs.length === 0) {
+            setTimeout(async () => {
+              try {
+                await fetchAndSetPairs()
+              } catch (error) {
+                logger.error(
+                  'Error fetching pairs on existing connection:',
+                  error
+                )
+              }
+            }, 500)
+          }
+        }
+        return
+      }
+
+      // Mark as initialized to prevent re-runs
+      initializationRef.current = true
+      logger.debug('Starting WebSocket initialization process')
+
       // Set loading state immediately
-      if (isMounted) {
+      if (isMountedRef.current) {
         setIsLoading(true)
       }
 
       try {
-        // Create client ID - use pubKey if available, otherwise use timestamp
-        const clientId = pubKey || `client-${Date.now()}`
+        // Use pubkey[:16]-uuid format for client ID
+        const pubKeyPrefix = pubKey.slice(0, 16)
+        const uuid = crypto.randomUUID()
+        const clientId = `${pubKeyPrefix}-${uuid}`
 
         logger.info(
-          `Initializing WebSocket connection to ${makerConnectionUrl} with client ID ${clientId}`
+          `Initializing WebSocket connection to ${makerConnectionUrl} with pubKey as client ID: ${clientId.slice(0, 16)}...`
         )
+
+        // Validate the makerConnectionUrl before attempting connection
+        try {
+          new URL(makerConnectionUrl)
+        } catch (urlError) {
+          throw new Error(`Invalid maker URL: ${makerConnectionUrl}`)
+        }
 
         // Initialize the connection through the service
         const success = webSocketService.init(
@@ -1023,68 +1100,182 @@ export const Component = () => {
           logger.info('WebSocket initialization successful')
 
           // Fetch trading pairs after connection is established
-          if (tradablePairs.length === 0) {
-            fetchAndSetPairs().catch((error) => {
-              logger.error(
-                'Error fetching pairs after WebSocket connection:',
-                error
-              )
-            })
-          }
+          // Use a timeout to wait for connection to be fully ready before fetching pairs
+          setTimeout(async () => {
+            if (tradablePairs.length === 0 && isMountedRef.current) {
+              try {
+                await fetchAndSetPairs()
+              } catch (pairsError) {
+                logger.error(
+                  'Error fetching pairs after WebSocket connection:',
+                  pairsError
+                )
+                // Don't fail the whole initialization if pairs fetch fails
+                if (isMountedRef.current) {
+                  toast.warning(
+                    'Connected to maker but failed to load trading pairs. Try refreshing.'
+                  )
+                }
+              }
+            }
+          }, 1000) // 1 second delay to ensure connection stability
 
           // Log WebSocket diagnostics
           const diagnostics = webSocketService.getDiagnostics()
           logger.info('WebSocket connection diagnostics:', diagnostics)
         } else {
           logger.error('WebSocket initialization failed')
-          if (isMounted) {
+          if (isMountedRef.current) {
             toast.error(
-              'Could not connect to market maker. Trading may be limited.'
+              'Could not connect to market maker. Check the maker URL and try again.',
+              {
+                autoClose: 5000,
+                toastId: 'websocket-connection-failed',
+              }
             )
           }
         }
       } catch (error) {
         logger.error('Error during WebSocket initialization:', error)
-        if (isMounted) {
+        if (isMountedRef.current) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error'
           toast.error(
-            'Error connecting to market maker. Please try again later.'
+            `Connection error: ${errorMessage}. Please check settings and try again.`,
+            {
+              autoClose: 5000,
+              toastId: 'websocket-initialization-error',
+            }
           )
         }
       } finally {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setIsLoading(false)
           setIsWebSocketInitialized(true)
         }
       }
     }
 
-    // Initialize WebSocket as soon as we have channels and assets
-    // Don't wait for pubKey or tradablePairs to reduce connection time
-    if (channels.length > 0 && assets.length > 0 && !isWebSocketInitialized) {
-      initWebSocket()
-    } else if (channels.length === 0 || assets.length === 0) {
-      // Reset initialization flag if basic data is not available
-      if (isWebSocketInitialized) {
-        setIsWebSocketInitialized(false)
+    // Debounced initialization to prevent rapid reconnections
+    const debouncedInit = () => {
+      if (initTimeoutId) {
+        clearTimeout(initTimeoutId)
       }
+
+      initTimeoutId = window.setTimeout(() => {
+        initWebSocket()
+        initTimeoutId = null
+      }, 300) // Reduced debounce time for more responsive maker switching
     }
 
-    // Clean up function
-    return () => {
-      isMounted = false
-      logger.info(
-        'WebSocket initialization component unmounting - connection maintained by service'
+    // Only initialize if we have all required data and haven't initialized yet
+    // Also check if we're already connected to prevent double initialization
+    if (
+      channels.length > 0 &&
+      assets.length > 0 &&
+      pubKey &&
+      makerConnectionUrl &&
+      !isWebSocketInitialized &&
+      !webSocketService.isConnected()
+    ) {
+      // Additional validation before initialization
+      try {
+        new URL(makerConnectionUrl)
+        logger.info('Scheduling WebSocket initialization with debouncing')
+        debouncedInit()
+      } catch (urlError) {
+        logger.error(
+          `Invalid maker URL detected: ${makerConnectionUrl}`,
+          urlError
+        )
+        if (isMountedRef.current) {
+          setErrorMessage(
+            `Invalid maker URL: ${makerConnectionUrl}. Please check your settings.`
+          )
+          setIsWebSocketInitialized(true) // Prevent retry loop
+        }
+      }
+    } else if (channels.length === 0 || assets.length === 0) {
+      // Don't reset initialization flag if basic data is not available
+      // This prevents reconnection loops when data is temporarily unavailable
+      logger.debug(
+        'Basic data not available, skipping WebSocket initialization'
+      )
+    } else if (!pubKey) {
+      logger.warn('WebSocket initialization skipped: pubKey not available')
+    } else if (!makerConnectionUrl) {
+      logger.warn('WebSocket initialization skipped: maker URL not configured')
+    } else if (webSocketService.isConnected()) {
+      logger.debug(
+        'WebSocket already connected, ensuring initialization state is set'
+      )
+      if (isMountedRef.current && !isWebSocketInitialized) {
+        setIsWebSocketInitialized(true)
+      }
+    } else if (isWebSocketInitialized) {
+      logger.debug(
+        'WebSocket initialization already completed, but not connected - potential connection issue'
       )
     }
+
+    // Clean up function - disconnect WebSocket when leaving market maker page
+    return () => {
+      isMountedRef.current = false
+
+      // Clear any pending initialization
+      if (initTimeoutId) {
+        clearTimeout(initTimeoutId)
+        initTimeoutId = null
+      }
+
+      // Only log and disconnect if we actually initialized the connection
+      if (initializationRef.current || isWebSocketInitialized) {
+        logger.info(
+          'Market maker component unmounting - disconnecting WebSocket'
+        )
+
+        // Add a small delay to prevent rapid close/reconnect cycles
+        // This helps when the component is rapidly mounting/unmounting
+        setTimeout(() => {
+          // Double-check that we're still unmounted before closing
+          if (!isMountedRef.current) {
+            // Close the WebSocket connection when leaving the market maker page
+            webSocketService.close()
+          }
+        }, 500) // 500ms delay
+
+        // Reset WebSocket initialization state immediately
+        setIsWebSocketInitialized(false)
+        initializationRef.current = false
+      }
+    }
   }, [
+    // Use only essential, stable dependencies to prevent re-mounting loops
     makerConnectionUrl,
     pubKey,
-    dispatch,
-    channels,
-    assets,
+    // Remove dynamic arrays and use only their lengths
+    channels.length > 0,
+    assets.length > 0,
+    // Remove isWebSocketInitialized from dependencies to prevent loops
+  ])
+
+  // Separate effect to handle channels and assets changes without reinitializing WebSocket
+  useEffect(() => {
+    // Only update state if WebSocket is already initialized
+    if (isWebSocketInitialized && channels.length > 0 && assets.length > 0) {
+      // Fetch pairs if we don't have them yet
+      if (tradablePairs.length === 0) {
+        fetchAndSetPairs().catch((error) => {
+          logger.error('Error fetching pairs after data update:', error)
+        })
+      }
+    }
+  }, [
+    channels.length,
+    assets.length,
     isWebSocketInitialized,
-    fetchAndSetPairs,
     tradablePairs.length,
+    fetchAndSetPairs,
   ])
 
   // Restore the effect to update min and max amounts when selected pair changes
@@ -1095,9 +1286,11 @@ export const Component = () => {
   }, [selectedPair, updateMinMaxAmounts])
 
   // Add a window beforeunload event listener to clean up connections when closing the app
+  // Note: This is redundant since the main cleanup happens in the WebSocket init effect
+  // but kept for safety in case of abrupt app closure
   useEffect(() => {
     const handleBeforeUnload = () => {
-      logger.info('App closing, cleaning up WebSocket connection')
+      logger.info('App closing, ensuring WebSocket connection is cleaned up')
       webSocketService.close()
     }
 
@@ -1108,36 +1301,119 @@ export const Component = () => {
     }
   }, [])
 
-  // Simplified retryConnection function
+  // Add a more robust page visibility API listener to handle when page becomes hidden/visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        logger.debug('Page became hidden, WebSocket remains connected')
+        // Don't close WebSocket when page is hidden - just log it
+      } else {
+        logger.debug('Page became visible, checking WebSocket connection')
+        // Check if we need to reconnect after page becomes visible
+        if (
+          isWebSocketInitialized &&
+          !webSocketService.isConnected() &&
+          makerConnectionUrl
+        ) {
+          logger.info(
+            'Page visible and WebSocket disconnected, attempting to reconnect'
+          )
+          // Use a small delay to avoid rapid reconnection attempts
+          setTimeout(() => {
+            if (!webSocketService.isConnected()) {
+              webSocketService.reconnect()
+            }
+          }, 1000)
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [isWebSocketInitialized, makerConnectionUrl])
+
+  // Throttled retry connection function to prevent rapid reconnections
   const retryConnection = useCallback(async () => {
+    // Prevent rapid reconnection attempts
+    const now = Date.now()
+    const RECONNECT_THROTTLE_MS = 5000 // 5 seconds minimum between reconnection attempts
+
+    if (now - lastReconnectAttemptRef.current < RECONNECT_THROTTLE_MS) {
+      logger.warn('Reconnection attempt throttled, please wait')
+      toast.warning('Please wait before attempting to reconnect', {
+        autoClose: 3000,
+        toastId: 'reconnection-throttled',
+      })
+      return
+    }
+
+    lastReconnectAttemptRef.current = now
+
     logger.info('Manually reconnecting WebSocket...')
     setIsLoading(true)
 
     try {
+      // Ensure we have the required pubKey for consistent client ID
+      if (!pubKey) {
+        logger.error('Cannot reconnect: pubKey required for client ID')
+        toast.error('Cannot reconnect: Node information not available', {
+          autoClose: 5000,
+          toastId: 'reconnection-no-pubkey',
+        })
+        return
+      }
+
       // Use the service's reconnect method
       const reconnectInitiated = webSocketService.reconnect()
 
       if (reconnectInitiated) {
-        // Wait a moment for the connection to establish
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        // Wait for the connection to be ready for communication
+        const isReady = await webSocketService.waitForConnection(5000) // 5 second timeout
 
-        // Check if the connection was successful
-        if (webSocketService.isConnected()) {
+        // Check if the connection was successful and ready
+        if (isReady && webSocketService.isConnectionReadyForCommunication()) {
           // Refresh pairs after successful reconnection
           await fetchAndSetPairs()
-          toast.success('Successfully reconnected to market maker')
+          toast.success('Successfully reconnected to market maker', {
+            autoClose: 3000,
+            toastId: 'websocket-reconnection-success',
+          })
+          logger.info(
+            'WebSocket reconnection successful and ready for communication'
+          )
+        } else if (webSocketService.isConnected()) {
+          // Connected but not ready yet
+          logger.warn(
+            'WebSocket reconnected but not ready for communication yet'
+          )
+          toast.warning('Reconnection in progress. Please wait...', {
+            autoClose: 3000,
+            toastId: 'websocket-reconnection-progress',
+          })
         } else {
-          // If not connected after delay, try again
-          logger.warn('WebSocket reconnection initiated but not connected yet')
-          toast.warning('Reconnection in progress. Please wait...')
+          // Not connected at all
+          logger.warn('WebSocket reconnection failed to establish connection')
+          toast.warning('Reconnection failed. Please try again.', {
+            autoClose: 5000,
+            toastId: 'websocket-reconnection-failed',
+          })
         }
       } else {
         logger.error('Failed to initiate WebSocket reconnection')
-        toast.error('Failed to reconnect. Please try again.')
+        toast.error('Failed to reconnect. Please try again later.', {
+          autoClose: 5000,
+          toastId: 'websocket-reconnection-initiation-failed',
+        })
       }
     } catch (error) {
       logger.error('Error during manual WebSocket reconnection:', error)
-      toast.error('Failed to reconnect to market maker')
+      toast.error('Failed to reconnect to market maker', {
+        autoClose: 5000,
+        toastId: 'websocket-reconnection-error',
+      })
     } finally {
       // Refresh amounts after reconnection attempt
       try {
@@ -1147,7 +1423,7 @@ export const Component = () => {
       }
       setIsLoading(false)
     }
-  }, [fetchAndSetPairs, refreshAmounts])
+  }, [fetchAndSetPairs, refreshAmounts, pubKey])
 
   // Handle maker URL changes - re-fetch pairs when maker changes
   useEffect(() => {
@@ -1298,11 +1574,13 @@ export const Component = () => {
     const toAsset = form.getValues().toAsset
 
     if (fromAsset && toAsset && fromAsset !== toAsset && wsConnected) {
-      // Start quote request timer with increased interval to reduce load
-      startQuoteRequestTimer(requestQuote, 8000) // Increased from default 5000ms to 8000ms
+      // Start quote request timer with increased interval to reduce server load
+      startQuoteRequestTimer(requestQuote, 12000) // Increased from 8000ms to 12000ms to reduce server load
 
-      // Request an initial quote
-      requestQuote()
+      // Request an initial quote with a slight delay to prevent rapid requests
+      setTimeout(() => {
+        requestQuote()
+      }, 500)
 
       return () => {
         // Stop timer when component unmounts or assets change
@@ -1354,7 +1632,7 @@ export const Component = () => {
     return () => subscription.unsubscribe()
   }, [form, wsConnected, requestQuote, hasValidQuote])
 
-  // Create a debounced effect for from amount changes - optimized to reduce re-renders
+  // Create a debounced effect for from amount changes - optimized to reduce re-renders and server load
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'from') {
@@ -1373,7 +1651,7 @@ export const Component = () => {
             ) {
               requestQuote()
             }
-          }, 500)
+          }, 1000) // Increased from 500ms to 1000ms to reduce server load
           return () => clearTimeout(timer)
         }
       }
@@ -1491,57 +1769,89 @@ export const Component = () => {
     [getAssetOptions, form.getValues().fromAsset, tradablePairs]
   )
 
-  // Add a window focus event listener to reconnect when the user tabs back to the app
+  // Add a window focus event listener to reconnect when the user tabs back to the market maker page
   useEffect(() => {
     if (!makerConnectionUrl) return
 
     // Track if the page has been in the background
     let wasInBackground = false
+    let reconnectTimeoutId: number | null = null
 
     // Handler for when the page loses focus
     const handleBlur = () => {
-      logger.debug('Application window lost focus')
+      logger.debug('Market maker page lost focus')
       wasInBackground = true
+      // Clear any pending reconnect attempts
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId)
+        reconnectTimeoutId = null
+      }
     }
 
     // Handler for when the page gains focus
     const handleFocus = async () => {
-      if (wasInBackground && !wsConnected) {
+      if (wasInBackground && !wsConnected && isWebSocketInitialized) {
+        // Throttle focus-based reconnections to prevent rapid attempts
+        const now = Date.now()
+        if (now - lastReconnectAttemptRef.current < 5000) {
+          // Increased from 3000 to 5000
+          logger.debug('Focus-based reconnection throttled')
+          wasInBackground = false
+          return
+        }
+
         logger.info(
-          'Application was in background and WebSocket is disconnected, attempting to reconnect'
+          'Market maker page was in background and WebSocket is disconnected, scheduling reconnect'
         )
         wasInBackground = false
+        lastReconnectAttemptRef.current = now
 
-        try {
-          // Check if we have the required connection parameters
-          if (!makerConnectionUrl || !pubKey) {
-            logger.warn(
-              'Cannot reconnect WebSocket: missing connection parameters'
+        // Add a delay before attempting reconnection to let things stabilize
+        reconnectTimeoutId = window.setTimeout(async () => {
+          try {
+            // Check if we have the required connection parameters and are still on the market maker page
+            if (!makerConnectionUrl || !pubKey) {
+              logger.warn(
+                'Cannot reconnect WebSocket: missing connection parameters (pubKey required)'
+              )
+              return
+            }
+
+            // Double-check that we're still disconnected before attempting reconnect
+            if (webSocketService.isConnected()) {
+              logger.info(
+                'WebSocket already connected, skipping focus-based reconnect'
+              )
+              return
+            }
+
+            // Use the service's reconnect method for better reliability
+            const reconnectInitiated = webSocketService.reconnect()
+
+            if (reconnectInitiated) {
+              logger.info(
+                'Successfully initiated WebSocket reconnect after page focus'
+              )
+              // Wait a moment and check if connected
+              setTimeout(() => {
+                if (webSocketService.isConnected()) {
+                  logger.info('WebSocket reconnected after page focus')
+                } else {
+                  logger.warn(
+                    'WebSocket reconnect initiated but not connected yet'
+                  )
+                }
+              }, 2000)
+            }
+          } catch (error) {
+            logger.error(
+              'Error reconnecting WebSocket after page focus:',
+              error
             )
-            return
+          } finally {
+            reconnectTimeoutId = null
           }
-
-          // Attempt to reconnect using the WebSocketService with proper parameters
-          const reconnectInitiated = webSocketService.init(
-            makerConnectionUrl,
-            pubKey,
-            dispatch
-          )
-
-          if (reconnectInitiated) {
-            logger.info(
-              'Successfully initiated WebSocket reconnect after page focus'
-            )
-            // Wait a moment and check if connected
-            setTimeout(() => {
-              if (webSocketService.isConnected()) {
-                logger.info('WebSocket reconnected after page focus')
-              }
-            }, 1000)
-          }
-        } catch (error) {
-          logger.error('Error reconnecting WebSocket after page focus:', error)
-        }
+        }, 2000) // 2 second delay before attempting reconnect
       }
 
       wasInBackground = false
@@ -1553,8 +1863,13 @@ export const Component = () => {
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      // Clean up any pending reconnect
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId)
+        reconnectTimeoutId = null
+      }
     }
-  }, [makerConnectionUrl, pubKey, dispatch, wsConnected])
+  }, [makerConnectionUrl, pubKey, wsConnected, isWebSocketInitialized])
 
   // Update SwapButton to use isQuoteLoading
   const handleReconnectToMaker = async () => {
@@ -1563,18 +1878,36 @@ export const Component = () => {
       if (!hasValidQuote) {
         setIsQuoteLoading(true)
       }
-      // Try to reconnect the WebSocket
-      const reconnected = Boolean(await retryConnection())
+
+      // Reset the circuit breaker and try to reconnect
+      webSocketService.resetForNewMaker()
+
+      // Reinitialize the WebSocket connection
+      const pubKeyPrefix = pubKey.slice(0, 16)
+      const uuid = crypto.randomUUID()
+      const clientId = `${pubKeyPrefix}-${uuid}`
+
+      const reconnected = webSocketService.init(
+        makerConnectionUrl,
+        clientId,
+        dispatch
+      )
+
       if (reconnected) {
         logger.info('Successfully reconnected to market maker')
         // Request a fresh quote after reconnection
-        requestQuote()
+        setTimeout(() => {
+          requestQuote()
+        }, 1000) // Wait for connection to stabilize
       } else {
         logger.error('Failed to reconnect to market maker')
       }
     } catch (error) {
       console.error('Error reconnecting to market maker:', error)
-      toast.error('Failed to reconnect to price feed. Please try again.')
+      toast.error('Failed to reconnect to price feed. Please try again.', {
+        autoClose: 5000,
+        toastId: 'market-maker-reconnection-failed',
+      })
     } finally {
       setIsQuoteLoading(false)
     }
@@ -1645,25 +1978,36 @@ export const Component = () => {
 
   // Render the swap form UI
   const renderSwapForm = () => (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto pb-8">
       {/* Main Trading Interface */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Left Column - Trading Form */}
         <div className="lg:col-span-3">
           <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
-            {/* Compact Header */}
+            {/* Enhanced Header with Connection Status */}
             <div className="border-b border-slate-700/70 px-4 py-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      wsConnected
+                        ? 'bg-green-500 animate-pulse'
+                        : 'bg-red-500 animate-pulse'
+                    }`}
+                  ></div>
                   <h2 className="text-base font-semibold text-white">
                     Market Maker Trading
                   </h2>
+                  {!wsConnected && (
+                    <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded-full">
+                      Connection Lost
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <MakerSelector
-                    hasNoPairs={false}
+                    hasNoPairs={!hasTradablePairs}
                     onMakerChange={refreshAmounts}
                   />
 
@@ -1832,6 +2176,30 @@ export const Component = () => {
 
         {/* Right Column - Trading Information */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Quick Amount Section - Always Visible */}
+          {hasChannels && hasTradablePairs && (
+            <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
+              <div className="p-4">
+                <QuickAmountSection
+                  availableAmount={
+                    maxFromAmount > 0
+                      ? `${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`
+                      : undefined
+                  }
+                  className="mb-4"
+                  disabled={
+                    !hasChannels ||
+                    !hasTradablePairs ||
+                    isSwapInProgress ||
+                    showConfirmation
+                  }
+                  onSizeClick={onSizeClick}
+                  selectedSize={selectedSize}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Combined Rate & Quote Status Card */}
           {selectedPair && (
             <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
@@ -1928,7 +2296,7 @@ export const Component = () => {
 
   // Debug logging for loading states
   useEffect(() => {
-    logger.debug('Loading states:', {
+    const debugInfo = {
       hasChannels: channels.length > 0,
       hasTradableChannels: hasTradableChannels(channels),
       hasValidChannelsForTrading,
@@ -1940,6 +2308,10 @@ export const Component = () => {
       isStillLoading,
       isWebSocketInitialized,
       makerConnectionUrl: !!makerConnectionUrl,
+      makerUrl: makerConnectionUrl
+        ? new URL(makerConnectionUrl).hostname
+        : 'none',
+      pubKeyAvailable: !!pubKey,
       // Additional debug info
       shouldWaitForWebSocket:
         !!makerConnectionUrl &&
@@ -1947,9 +2319,24 @@ export const Component = () => {
         !isWebSocketInitialized,
 
       tradablePairsCount: tradablePairs.length,
-
       wsConnected,
-    })
+      wsConnectionState: webSocketService.isConnected()
+        ? 'connected'
+        : 'disconnected',
+    }
+
+    logger.debug('Market Maker Page Loading States:', debugInfo)
+
+    // Log important state changes
+    if (!wsConnected && makerConnectionUrl && isWebSocketInitialized) {
+      logger.warn(
+        'WebSocket initialized but not connected - potential connection issue'
+      )
+    }
+
+    if (tradablePairs.length === 0 && wsConnected) {
+      logger.warn('Connected to maker but no trading pairs available')
+    }
   }, [
     isLoading,
     isInitialDataLoaded,
@@ -1963,6 +2350,7 @@ export const Component = () => {
     tradablePairs.length,
     isStillLoading,
     channels,
+    pubKey,
   ])
 
   // Determine if we should show the "no trading channels" message
@@ -1989,7 +2377,7 @@ export const Component = () => {
     hasValidChannelsForTrading // Trading was deemed possible based on initial channel/pair checks
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full min-h-full overflow-y-auto">
       {isStillLoading ? (
         <div className="flex flex-col justify-center items-center h-64 gap-4">
           <div className="relative">
@@ -2024,20 +2412,35 @@ export const Component = () => {
         <div className="w-full flex justify-center py-4">
           <WebSocketDisconnectedMessage
             makerUrl={makerConnectionUrl}
-            onMakerChange={retryConnection}
+            onMakerChange={refreshAmounts}
           />
         </div>
       ) : shouldShowNoChannelsMessage ? (
         <div className="w-full flex justify-center py-4">
-          <NoTradingChannelsMessage
-            {...createTradingChannelsMessageProps(
-              assets,
-              tradablePairs,
-              hasEnoughBalance,
-              navigate,
-              refreshAmounts
-            )}
-          />
+          <div className="space-y-4">
+            <NoTradingChannelsMessage
+              {...createTradingChannelsMessageProps(
+                assets,
+                tradablePairs,
+                hasEnoughBalance,
+                navigate,
+                refreshAmounts
+              )}
+            />
+            {/* Additional helpful message for switching makers */}
+            <div className="max-w-2xl mx-auto bg-slate-900/30 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4">
+              <div className="flex items-center gap-3 text-slate-400">
+                <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                  <HelpCircle className="w-4 h-4 text-blue-400" />
+                </div>
+                <p className="text-sm">
+                  No compatible trading pairs found with this market maker. Try
+                  switching to a different maker above or create channels with
+                  supported assets.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="w-full py-4 px-3">{renderSwapForm()}</div>

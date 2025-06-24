@@ -12,7 +12,6 @@ import React, { useState, useMemo, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
 import { twJoin } from 'tailwind-merge'
-import { v4 as uuidv4 } from 'uuid'
 
 import { webSocketService } from '../../app/hubs/websocketService'
 import { useAppSelector } from '../../app/store/hooks'
@@ -55,8 +54,11 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   const handleMakerChange = async (url: string) => {
     try {
       setIsLoading(true)
-      webSocketService.close()
 
+      // Reset WebSocket state and circuit breaker for new maker
+      webSocketService.resetForNewMaker()
+
+      // Update the maker URL in settings immediately
       dispatch(
         nodeSettingsActions.setNodeSettings({
           ...nodeSettings,
@@ -64,23 +66,48 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         })
       )
 
-      const clientId = uuidv4()
-      const baseUrl = url.endsWith('/') ? url : `${url}/`
-      webSocketService.init(baseUrl, clientId, dispatch)
-
-      toast.info('Connecting to new maker...', {
+      toast.info('Switching to new maker...', {
+        autoClose: 3000,
         icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
+        toastId: 'switching-maker',
       })
 
-      if (onMakerChange) {
-        await onMakerChange()
-      }
+      // Wait a moment for the reset to complete, then trigger reconnection
+      setTimeout(async () => {
+        try {
+          // The WebSocket initialization will be triggered by the useEffect in the main component
+          // due to the makerConnectionUrl change
+
+          // Wait a bit for the connection to establish
+          setTimeout(() => {
+            if (webSocketService.isConnected()) {
+              toast.success('Successfully reconnected to market maker', {
+                autoClose: 3000,
+                toastId: 'maker-selector-reconnection-success',
+              })
+            }
+          }, 2000)
+        } catch (reconnectError) {
+          console.error('Error during reconnection:', reconnectError)
+          toast.warning('Reconnection in progress. Please wait...', {
+            autoClose: 3000,
+            toastId: 'maker-reconnection-progress',
+          })
+        }
+      }, 500)
     } catch (error) {
       console.error('Failed to change maker:', error)
-      toast.error('Failed to change maker')
+      toast.error('Failed to change maker', {
+        autoClose: 5000,
+        toastId: 'maker-change-failed',
+      })
     } finally {
+      // Close the dropdown and reset loading state
       setIsOpen(false)
-      setIsLoading(false)
+      // Only set loading to false after a delay to allow connection to establish
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 2000)
     }
   }
 
@@ -111,7 +138,10 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
       setNewMakerUrl('')
       setIsAddingNew(false)
     } catch (error) {
-      toast.error('Invalid URL format')
+      toast.error('Invalid URL format', {
+        autoClose: 5000,
+        toastId: 'invalid-maker-url',
+      })
     }
   }
 
@@ -124,7 +154,9 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
 
       if (reconnectInitiated) {
         toast.info('Reconnecting to maker...', {
+          autoClose: 3000,
           icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
+          toastId: 'maker-reconnecting',
         })
 
         // Wait a moment for the connection to establish
@@ -135,17 +167,29 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
           if (onMakerChange) {
             await onMakerChange()
           }
-          toast.success('Successfully reconnected to market maker')
+          toast.success('Successfully reconnected to market maker', {
+            autoClose: 3000,
+            toastId: 'maker-selector-reconnection-success',
+          })
         } else {
           // If not connected after delay, show warning
-          toast.warning('Reconnection in progress. Please wait...')
+          toast.warning('Reconnection in progress. Please wait...', {
+            autoClose: 3000,
+            toastId: 'maker-reconnection-progress',
+          })
         }
       } else {
-        toast.error('Failed to initiate reconnection. Please try again.')
+        toast.error('Failed to initiate reconnection. Please try again.', {
+          autoClose: 5000,
+          toastId: 'maker-reconnection-initiation-failed',
+        })
       }
     } catch (error) {
       console.error('Failed to refresh connection:', error)
-      toast.error('Failed to reconnect to maker')
+      toast.error('Failed to reconnect to maker', {
+        autoClose: 5000,
+        toastId: 'maker-refresh-connection-failed',
+      })
     } finally {
       setIsLoading(false)
     }
@@ -193,11 +237,9 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     : 'bg-slate-800/80 border-slate-600/50 hover:bg-slate-700'
                   : 'bg-red-500/5 border-red-500/30 hover:bg-red-500/10',
                 hasNoPairs ? 'animate-pulse' : '',
-                'hover:scale-[1.02] active:scale-[0.98]',
-                isLoading ? 'opacity-70 pointer-events-none' : ''
+                'hover:scale-[1.02] active:scale-[0.98]'
               )}
-              disabled={isLoading}
-              onClick={() => !isLoading && setIsOpen(!isOpen)}
+              onClick={() => setIsOpen(!isOpen)}
               type="button"
             >
               <div className="flex items-center gap-3 min-w-0">

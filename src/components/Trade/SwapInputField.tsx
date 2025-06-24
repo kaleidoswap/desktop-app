@@ -3,7 +3,8 @@ import React, { useEffect } from 'react'
 
 import { logger } from '../../utils/logger'
 
-import { EnhancedAssetSelect, AssetOptionData } from './EnhancedAssetSelect'
+import { AssetOptionData } from './AssetSelectionModal'
+import { AssetSelectWithModal } from './AssetSelectWithModal'
 
 import { AssetSelect } from './index'
 
@@ -126,7 +127,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
 
         {/* Input Section */}
         <div className="p-5">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col xl:flex-row gap-4">
             {/* Amount Input */}
             <div className="flex-1">
               {isLoadingState && (!readOnly || !value) ? (
@@ -158,15 +159,17 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
             </div>
 
             {/* Asset Selector */}
-            <div className="flex-shrink-0 lg:w-48">
+            <div className="flex-shrink-0 lg:w-64 xl:w-72">
               {useEnhancedSelector ? (
-                <EnhancedAssetSelect
+                <AssetSelectWithModal
                   className="w-full h-14"
                   disabled={disabled}
+                  fieldLabel={label}
                   onChange={onAssetChange}
                   options={enhancedAssetOptions}
                   placeholder="Select asset"
-                  searchPlaceholder="Search for assets..."
+                  searchPlaceholder="Search by ticker or asset ID..."
+                  title="Select Asset"
                   value={asset}
                 />
               ) : (
@@ -181,26 +184,26 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
           </div>
 
           {/* Size Buttons */}
-          {showSizeButtons && selectedSize !== undefined && onSizeClick && (
-            <div className="mt-5 pt-5 border-t border-slate-700/20">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-slate-200">
+          {showSizeButtons && onSizeClick && (
+            <div className="mt-4 pt-4 border-t border-slate-700/20">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-slate-300">
                   Quick Amount
                 </span>
-                <span className="text-xs text-slate-500">
-                  Select percentage of available balance
+                <span className="text-xs text-slate-500 hidden sm:block">
+                  % of available
                 </span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[25, 50, 75, 100].map((percentage) => (
                   <button
-                    className={`px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 border-2
+                    className={`px-2 py-2 rounded-lg font-medium text-sm transition-all duration-200 border
                       ${
                         selectedSize === percentage
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 border-blue-500/50 text-white shadow-lg'
-                          : 'bg-slate-800/50 border-slate-600/40 text-slate-300 hover:bg-slate-700/60 hover:border-slate-500/60 hover:text-white'
+                          ? 'bg-blue-600/20 border-blue-500/60 text-blue-400 shadow-md shadow-blue-500/20'
+                          : 'bg-slate-800/60 border-slate-600/40 text-slate-400 hover:bg-slate-700/60 hover:border-slate-500/60 hover:text-slate-300'
                       }
-                      ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105 active:scale-95'}
+                      ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02] active:scale-95'}
                     `}
                     disabled={disabled}
                     key={percentage}

@@ -7,6 +7,8 @@ import {
   Wallet,
   ExternalLink,
   RefreshCcw,
+  Globe,
+  Clock,
 } from 'lucide-react'
 import React from 'react'
 
@@ -383,67 +385,119 @@ export const WebSocketDisconnectedMessage: React.FC<
   }
 
   return (
-    <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-amber-700/30 overflow-hidden">
-      <div className="border-b border-slate-700/50 px-4 pt-3 pb-2">
-        <MakerSelector hasNoPairs={false} onMakerChange={onMakerChange} />
-      </div>
-      <div className="p-6">
-        <div className="flex flex-col items-center space-y-3">
-          <div className="w-12 h-12 bg-amber-500/10 rounded-full flex items-center justify-center">
-            <HelpCircle className="w-6 h-6 text-amber-500" />
+    <div className="max-w-3xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 overflow-hidden shadow-xl">
+      {/* Simplified Header */}
+      <div className="border-b border-slate-700/50 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            <h2 className="text-lg font-bold text-white">
+              Market Maker Connection Lost
+            </h2>
           </div>
-          <h2 className="text-xl font-bold text-white">Connection Issue</h2>
-          <p className="text-slate-400 text-center text-sm max-w-md">
-            You have trading channels available, but we're having trouble
-            maintaining a real-time connection to the market maker. The app will
-            automatically try to reconnect.
-          </p>
+        </div>
+      </div>
+
+      {/* Market Maker Selector Section */}
+      <div className="bg-slate-800/40 border-b border-slate-700/50 px-6 py-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              MARKET MAKER
+            </h3>
+            <p className="text-xs text-slate-400">
+              If the current maker is unavailable, switch to another one to
+              continue trading
+            </p>
+          </div>
+          <div className="flex-shrink-0">
+            <MakerSelector hasNoPairs={false} onMakerChange={onMakerChange} />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6">
+        <div className="flex flex-col items-center space-y-6">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+            <div className="relative">
+              <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500/30 rounded-full animate-ping"></div>
+            </div>
+          </div>
+
+          <div className="text-center space-y-3">
+            <h3 className="text-xl font-bold text-white">Connection Issue</h3>
+            <p className="text-slate-300 text-center max-w-md leading-relaxed">
+              Your trading channels are available, but we're having trouble
+              maintaining a real-time connection to the market maker.
+              <br />
+              <span className="text-slate-400 text-sm">
+                This prevents live price updates and trading.
+              </span>
+            </p>
+          </div>
 
           <button
-            className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-red-500/25 hover:scale-105"
             onClick={handleRefreshConnection}
           >
-            <RefreshCcw className="w-4 h-4" />
-            Refresh Connection
+            <RefreshCcw className="w-5 h-5" />
+            Retry Connection
           </button>
 
-          <div className="mt-2 p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-200 mb-2 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-amber-400" />
-              Troubleshooting Tips
-            </h3>
-            <ul className="text-sm text-slate-300 space-y-3">
-              <li className="flex items-start gap-2.5 rounded-lg">
-                <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0 text-[10px] font-medium border border-amber-500/10 shadow-inner mt-0.5">
-                  1
-                </div>
-                <div className="flex-1">Check your internet connection</div>
-              </li>
-              <li className="flex items-start gap-2.5 rounded-lg">
-                <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0 text-[10px] font-medium border border-amber-500/10 shadow-inner mt-0.5">
-                  2
-                </div>
-                <div className="flex-1">
-                  Try selecting a different market maker
-                </div>
-              </li>
-              <li className="flex items-start gap-2.5 rounded-lg">
-                <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0 text-[10px] font-medium border border-amber-500/10 shadow-inner mt-0.5">
-                  3
-                </div>
-                <div className="flex-1">Wait a few minutes and try again</div>
-              </li>
-            </ul>
+          {/* Troubleshooting Grid */}
+          <div className="grid grid-cols-3 gap-4 w-full max-w-lg mt-8">
+            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/20">
+                <Globe className="w-5 h-5 text-blue-400" />
+              </div>
+              <h4 className="text-sm font-semibold text-blue-300 mb-1">
+                Network
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Check your internet connection
+              </p>
+            </div>
+
+            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+              <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-500/20">
+                <RefreshCcw className="w-5 h-5 text-yellow-400" />
+              </div>
+              <h4 className="text-sm font-semibold text-yellow-300 mb-1">
+                Switch Maker
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Try a different market maker above
+              </p>
+            </div>
+
+            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+              <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-green-500/20">
+                <Clock className="w-5 h-5 text-green-400" />
+              </div>
+              <h4 className="text-sm font-semibold text-green-300 mb-1">
+                Wait
+              </h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Server may be temporarily busy
+              </p>
+            </div>
           </div>
 
           {makerUrl && (
-            <div className="w-full pt-1">
-              <p className="text-xs text-slate-500 text-center">
-                Attempting to connect to:{' '}
-                <span className="text-amber-400/90 font-mono text-xs break-all">
-                  {makerUrl}
-                </span>
-              </p>
+            <div className="w-full pt-6 border-t border-slate-700/30">
+              <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/40">
+                <p className="text-xs text-slate-400 text-center">
+                  Current maker:{' '}
+                  <span className="text-red-400 font-mono break-all">
+                    {makerUrl}
+                  </span>
+                </p>
+              </div>
             </div>
           )}
         </div>

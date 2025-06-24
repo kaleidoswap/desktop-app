@@ -86,14 +86,19 @@ export const createQuoteRequestHandler = (
     }
 
     // Send the request immediately, passing tickers and the assets list
-    sendQuoteRequest(fromAssetTicker, toAssetTicker, fromAmount, assets)
+    // Handle async request without blocking
+    sendQuoteRequest(fromAssetTicker, toAssetTicker, fromAmount, assets).catch(
+      (error) => {
+        logger.error('Error in async quote request:', error)
+      }
+    )
   }
 }
 
 /**
  * Helper function to actually send the quote request
  */
-const sendQuoteRequest = (
+const sendQuoteRequest = async (
   fromAssetTicker: string,
   toAssetTicker: string,
   fromAmount: number, // This fromAmount is in standard units (e.g., sats for BTC, base units for RGB)
@@ -129,8 +134,10 @@ const sendQuoteRequest = (
         `Requesting quote: ${fromDisplayTicker} -> ${toDisplayTicker}, Amount: ${amountForRequest}`
       )
     }
+
     // Send the quote request using resolved asset IDs and the potentially adjusted amount
-    const success = webSocketService.requestQuote(
+    // Now using await since requestQuote is async and includes connection readiness checking
+    const success = await webSocketService.requestQuote(
       fromAssetId,
       toAssetId,
       amountForRequest
@@ -138,11 +145,25 @@ const sendQuoteRequest = (
 
     if (!success) {
       logger.warn('Failed to send quote request via WebSocket service')
+
+      // Check if WebSocket is not ready for communication
+      if (!webSocketService.isConnectionReadyForCommunication()) {
+        logger.debug('WebSocket connection not ready for quote requests')
+        // Don't show error toast for connection readiness issues, as they're temporary
+        return
+      }
+
       // Show error toast only if it's been 5+ seconds since the last similar error toast
-      toast.error('Failed to send quote request via WebSocket service', {
-        autoClose: 3000,
-        toastId: 'quote-request-exception',
-      })
+      if (Date.now() - lastQuoteErrorToastTime > 5000) {
+        toast.error(
+          'Failed to send quote request. Connection may be unstable.',
+          {
+            autoClose: 3000,
+            toastId: 'quote-request-failed',
+          }
+        )
+        lastQuoteErrorToastTime = Date.now()
+      }
     }
   } catch (error) {
     logger.error('Error in sendQuoteRequest:', error)

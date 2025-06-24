@@ -120,7 +120,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
   const isWaiting = currentSwap?.status?.toLowerCase() === 'waiting'
   const isSucceeded = currentSwap?.status?.toLowerCase() === 'succeeded'
   const isExpired = currentSwap?.status?.toLowerCase() === 'expired'
-  const isInProgress = isPending || isWaiting
+  // If currentSwap is null/undefined, assume it's still in progress (waiting for initial status)
+  const isInProgress =
+    isPending || isWaiting || !currentSwap || (!isSucceeded && !isExpired)
 
   const handleClose = useCallback(() => {
     onClose()
@@ -293,9 +295,10 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                 isExpired
                   ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/20'
                   : isInProgress
-                    ? 'bg-slate-700/50 text-slate-300'
+                    ? 'bg-slate-700/50 text-slate-300 cursor-not-allowed opacity-75'
                     : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/20'
-              } active:scale-[0.98]`}
+              } ${!isInProgress ? 'active:scale-[0.98]' : ''}`}
+            disabled={isInProgress}
             onClick={isInProgress ? undefined : handleClose}
           >
             {isSucceeded ? (
