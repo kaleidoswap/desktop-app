@@ -385,7 +385,7 @@ export const Component = () => {
   )
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white relative">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white relative min-h-fit">
       {loading && (
         <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader color={'#123abc'} loading={loading} size={50} />

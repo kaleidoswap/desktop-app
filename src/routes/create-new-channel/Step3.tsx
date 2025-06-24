@@ -8,7 +8,7 @@ import {
   TagIcon,
   Users,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 import BitcoinLogo from '../../assets/bitcoin-logo.svg'
 import {
@@ -19,6 +19,7 @@ import {
   Badge,
 } from '../../components/ui'
 import { TNewChannelForm } from '../../slices/channel/channel.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface Props {
   error?: string
@@ -40,6 +41,29 @@ const formatPubKey = (pubKey: string) => {
 
 export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [assetPrecision, setAssetPrecision] = useState<number>(8) // Default to 8 decimals
+
+  const [takerAssets] = nodeApi.endpoints.listAssets.useLazyQuery()
+
+  // Fetch asset precision when we have an assetId
+  useEffect(() => {
+    if (formData.assetId) {
+      takerAssets()
+        .unwrap()
+        .then((response) => {
+          const asset = response.nia.find(
+            (a) => a.asset_id === formData.assetId
+          )
+          if (asset) {
+            setAssetPrecision(asset.precision)
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching asset information:', error)
+          // Keep default precision of 8 if fetch fails
+        })
+    }
+  }, [formData.assetId, takerAssets])
 
   // Parse the peer connection string using useMemo to persist the values
   const connectionDetails = useMemo(() => {
@@ -75,6 +99,22 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
       formData.assetTicker
     )
   }, [formData.assetId, formData.assetAmount, formData.assetTicker])
+
+  // Format asset amount with proper precision
+  const formatAssetAmount = useMemo(() => {
+    if (!isAssetChannel) return '0'
+
+    // For precision 0, the amount is already in base units, no division needed
+    if (assetPrecision === 0) {
+      return formData.assetAmount.toLocaleString('en-US')
+    }
+
+    const divisor = Math.pow(10, assetPrecision)
+    const displayAmount = formData.assetAmount / divisor
+
+    // Use the asset's precision for formatting, but don't show unnecessary trailing zeros
+    return displayAmount.toFixed(assetPrecision).replace(/\.?0+$/, '')
+  }, [formData.assetAmount, assetPrecision, isAssetChannel])
 
   const handleOpenChannel = () => {
     setIsSubmitting(true)
@@ -138,7 +178,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 {isAssetChannel && (
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-cyan text-sm font-medium">
-                      {formData.assetAmount} {formData.assetTicker}
+                      {formatAssetAmount} {formData.assetTicker}
                     </span>
                   </div>
                 )}
@@ -232,7 +272,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
               <p className="text-xs text-slate-400">
                 This channel will include both Bitcoin liquidity and RGB asset
                 allocation. The RGB asset ({formData.assetTicker}) will be
-                allocated with {formData.assetAmount} units.
+                allocated with {formatAssetAmount} units.
               </p>
             </div>
           </div>

@@ -837,7 +837,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main content area */}
-            <div className="p-3 h-[calc(100vh-56px)] overflow-auto">
+            <div className="p-3 min-h-[calc(100vh-56px)] overflow-y-auto">
               {props.children}
             </div>
           </main>

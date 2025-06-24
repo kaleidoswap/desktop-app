@@ -33,7 +33,8 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
     // For channel creation with no uncolored UTXOs, always use 1 UTXO
     if (
       operationType === 'channel' &&
-      error?.includes(ERROR_NOT_ENOUGH_UNCOLORED)
+      (error?.includes(ERROR_NOT_ENOUGH_UNCOLORED) ||
+        error?.includes('No uncolored UTXOs available'))
     ) {
       return 1
     }
@@ -43,8 +44,13 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
     // For channel creation with no uncolored UTXOs, use the channel capacity
     if (
       operationType === 'channel' &&
-      error?.includes(ERROR_NOT_ENOUGH_UNCOLORED)
+      (error?.includes(ERROR_NOT_ENOUGH_UNCOLORED) ||
+        error?.includes('No uncolored UTXOs available'))
     ) {
+      console.log(
+        'CreateUTXOModal: Detected channel UTXO error, using channelCapacity:',
+        channelCapacity
+      )
       return channelCapacity || DEFAULT_UTXO_SIZE
     }
     // Default size for issuing an asset
@@ -52,6 +58,10 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       return DEFAULT_UTXO_SIZE
     }
     // For channel, use the channel capacity
+    console.log(
+      'CreateUTXOModal: Using channelCapacity for regular channel operation:',
+      channelCapacity
+    )
     return channelCapacity || DEFAULT_UTXO_SIZE
   })
 
@@ -80,6 +90,23 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       getBtcBalance({ skip_sync: false })
     }
   }, [isOpen, estimateFee, getBtcBalance])
+
+  // Update UTXO size when channelCapacity changes
+  useEffect(() => {
+    if (
+      channelCapacity &&
+      channelCapacity > 0 &&
+      operationType === 'channel' &&
+      (error?.includes(ERROR_NOT_ENOUGH_UNCOLORED) ||
+        error?.includes('No uncolored UTXOs available'))
+    ) {
+      console.log(
+        'CreateUTXOModal: Updating UTXO size based on channelCapacity:',
+        channelCapacity
+      )
+      setUtxoSize(channelCapacity)
+    }
+  }, [channelCapacity, operationType, error])
 
   const toggleAdvanced = () => {
     setShowAdvanced((prev) => !prev)

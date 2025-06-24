@@ -7,6 +7,8 @@ import {
   Zap,
   Settings,
   Trash2,
+  AlertTriangle,
+  X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -220,6 +222,74 @@ const ChannelOrderRow: React.FC<{
   )
 }
 
+// Confirmation Modal Component
+const DeleteConfirmationModal: React.FC<{
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  orderId: string
+}> = ({ isOpen, onClose, onConfirm, orderId }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 rounded-xl border border-slate-700/70 shadow-xl max-w-md w-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-700/70">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-500/10">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">
+              Delete Channel Order
+            </h3>
+          </div>
+          <button
+            aria-label="Close modal"
+            className="p-2 rounded-full hover:bg-slate-800 text-gray-400 hover:text-white transition-colors"
+            onClick={onClose}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          <p className="text-slate-300 mb-4">
+            Are you sure you want to delete this channel order? This action
+            cannot be undone.
+          </p>
+          <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">Order ID:</span>
+              <span className="text-sm font-mono text-white break-all">
+                {orderId}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700/70">
+          <button
+            className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            onClick={onConfirm}
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Order
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const Component = () => {
   const [orders, setOrders] = useState<ChannelOrder[]>([])
   const [loading, setLoading] = useState(true)
@@ -233,6 +303,8 @@ export const Component = () => {
   const [selectedColumns, setSelectedColumns] =
     useState<string[]>(DEFAULT_COLUMNS)
   const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
 
   const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
 
@@ -292,24 +364,32 @@ export const Component = () => {
   }
 
   const handleDelete = async (orderId: string) => {
-    if (
-      !window.confirm(
-        'Are you sure you want to delete this channel order? This action cannot be undone.'
-      )
-    ) {
-      return
-    }
+    setOrderToDelete(orderId)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!orderToDelete) return
 
     try {
-      await invoke('delete_channel_order', { orderId })
+      await invoke('delete_channel_order', { orderId: orderToDelete })
       toast.success('Channel order deleted successfully')
       await fetchOrders() // Refresh the list
+      setShowDeleteModal(false)
+      setOrderToDelete(null)
     } catch (err) {
       console.error('Error deleting channel order:', err)
       toast.error(
         err instanceof Error ? err.message : 'Failed to delete channel order'
       )
+      setShowDeleteModal(false)
+      setOrderToDelete(null)
     }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setOrderToDelete(null)
   }
 
   const handleColumnToggle = (columnKey: string) => {
@@ -478,6 +558,14 @@ export const Component = () => {
           </table>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        orderId={orderToDelete || ''}
+      />
     </Card>
   )
 }

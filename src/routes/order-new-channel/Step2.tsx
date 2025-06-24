@@ -2,16 +2,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { twJoin } from 'tailwind-merge'
 import * as z from 'zod'
 
 import { useAppDispatch } from '../../app/store/hooks'
-import { AssetSelector } from '../../components/AssetSelector'
+import defaultIcon from '../../assets/rgb-symbol-color.svg'
 import { Select } from '../../components/Select'
+import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   formatNumberWithCommas,
   parseNumberWithCommas,
 } from '../../helpers/number'
+import { useAssetIcon } from '../../helpers/utils'
 import {
   orderChannelSliceActions,
   OrderChannelFormSchema,
@@ -240,6 +243,13 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
   const assetId = watch('assetId')
 
+  // Asset icon hook
+  const selectedAssetInfo = assetId ? assetMap[assetId] : null
+  const [assetIconSrc, setAssetIconSrc] = useAssetIcon(
+    selectedAssetInfo?.ticker || '',
+    defaultIcon
+  )
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -401,8 +411,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         if (assetInfo) {
           const minAssetAmount =
             assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
+          const maxAssetAmount =
+            assetInfo.max_channel_amount / Math.pow(10, assetInfo.precision)
           const parsedAmount = parseFloat(assetAmount || '0')
 
+          // Validate minimum amount
           if (
             (parsedAmount !== 0 && isNaN(parsedAmount)) ||
             (parsedAmount > 0 && parsedAmount < minAssetAmount)
@@ -416,6 +429,18 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 position: 'bottom-right',
               }
             )
+          }
+
+          // Validate maximum amount and PREVENT submission if exceeded
+          if (parsedAmount > maxAssetAmount) {
+            toast.error(
+              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Please enter a valid amount before proceeding.`,
+              {
+                autoClose: 5000,
+                position: 'bottom-right',
+              }
+            )
+            return // PREVENT form submission
           }
         }
       }
@@ -518,18 +543,6 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
       assetMap,
     ]
   )
-
-  const getAssetMaxAmount = useCallback(() => {
-    if (!assetId || !assetMap[assetId]) return 0
-    const { max_channel_amount, precision } = assetMap[assetId]
-    return max_channel_amount / Math.pow(10, precision)
-  }, [assetId, assetMap])
-
-  const getAssetMinAmount = useCallback(() => {
-    if (!assetId || !assetMap[assetId]) return 0
-    const { min_channel_amount, precision } = assetMap[assetId]
-    return min_channel_amount / Math.pow(10, precision)
-  }, [assetId, assetMap])
 
   const getChannelExpiryOptions = useCallback(() => {
     const options = [
@@ -828,44 +841,332 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                               </span>
                             </span>
                           </label>
-                          <AssetSelector
-                            assetMap={assetMap}
+                          <Controller
                             control={control}
                             name="assetId"
+                            render={({ field }) => (
+                              <AssetSelectWithModal
+                                className="w-full"
+                                fieldLabel="Choose an RGB asset for your LSP channel"
+                                onChange={field.onChange}
+                                options={Object.entries(assetMap).map(
+                                  ([assetId, assetInfo]) => ({
+                                    assetId: assetId,
+                                    label: assetInfo.name,
+                                    name: assetInfo.name,
+                                    ticker: assetInfo.ticker,
+                                    value: assetId,
+                                  })
+                                )}
+                                placeholder="Select an RGB asset"
+                                searchPlaceholder="Search by name, ticker or asset ID..."
+                                title="Select RGB Asset"
+                                value={field.value}
+                              />
+                            )}
                           />
                         </div>
 
                         {assetId && (
-                          <div>
-                            <NumberInput
-                              className="group transition-all duration-300 hover:translate-x-1"
-                              error={formState.errors.assetAmount?.message}
-                              label={`Asset Amount (${assetMap[assetId]?.ticker || ''})`}
-                              max={getAssetMaxAmount()}
-                              min={getAssetMinAmount()}
-                              onChange={(value) =>
-                                setValue('assetAmount', value)
-                              }
-                              onSliderChange={(e) =>
-                                setValue('assetAmount', e.target.value)
-                              }
-                              placeholder="Enter amount"
-                              precision={getAssetPrecision(assetId)}
-                              showSlider
-                              sliderStep={
-                                1 / Math.pow(10, getAssetPrecision(assetId))
-                              }
-                              sliderValue={
-                                watch('assetAmount')
-                                  ? parseFloat(
-                                      parseNumberWithCommas(
-                                        watch('assetAmount')
-                                      ) || '0'
-                                    )
-                                  : getAssetMinAmount()
-                              }
-                              value={watch('assetAmount')}
-                            />
+                          <div className="space-y-4">
+                            {/* Enhanced Asset Amount Input */}
+                            <div className="space-y-3">
+                              <label className="text-sm font-medium text-slate-300">
+                                Asset Amount
+                              </label>
+
+                              {assetMap[assetId] && (
+                                <div className="space-y-4">
+                                  {/* Enhanced Asset Preview Card */}
+                                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                                    {/* Asset Header with Icon */}
+                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700/50">
+                                      <img
+                                        alt={assetMap[assetId].ticker}
+                                        className="w-10 h-10 rounded-full border-2 border-slate-600/50"
+                                        onError={() =>
+                                          setAssetIconSrc(defaultIcon)
+                                        }
+                                        src={assetIconSrc}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg font-semibold text-white">
+                                            {assetMap[assetId].ticker}
+                                          </span>
+                                          <span className="text-sm text-slate-400">
+                                            ({assetMap[assetId].name})
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                          {assetMap[assetId].precision} decimal
+                                          places
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {/* Maximum Amount */}
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-slate-400">
+                                          Maximum Amount
+                                        </div>
+                                        <div className="text-sm font-medium text-green-400">
+                                          {(() => {
+                                            const maxAmount =
+                                              assetMap[assetId]
+                                                .max_channel_amount /
+                                              Math.pow(
+                                                10,
+                                                assetMap[assetId].precision
+                                              )
+                                            return formatNumberWithCommas(
+                                              maxAmount.toString()
+                                            )
+                                          })()}{' '}
+                                          {assetMap[assetId].ticker}
+                                        </div>
+                                      </div>
+
+                                      {/* Asset ID */}
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-slate-400">
+                                          Asset ID
+                                        </div>
+                                        <div
+                                          className="text-xs font-mono text-slate-300 break-all bg-slate-900/50 p-2 rounded border border-slate-700/30"
+                                          title={assetMap[assetId].asset_id}
+                                        >
+                                          {assetMap[assetId].asset_id}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Improved Amount Input */}
+                                  <div className="space-y-2">
+                                    <input
+                                      className={twJoin(
+                                        'w-full px-4 py-3 bg-slate-900/70 border rounded-xl',
+                                        'text-white text-lg font-medium placeholder:text-slate-500',
+                                        'border-slate-600/50 hover:border-slate-500/70',
+                                        'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
+                                        'transition-all duration-200'
+                                      )}
+                                      inputMode="decimal"
+                                      onBlur={(e) => {
+                                        // Validate max amount when user finishes typing
+                                        const value = e.target.value
+                                        if (value && assetMap[assetId]) {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const numValue = parseFloat(value)
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue > maxAssetAmount
+                                          ) {
+                                            setValue(
+                                              'assetAmount',
+                                              maxAssetAmount.toString()
+                                            )
+                                            toast.warn(
+                                              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Value has been adjusted.`,
+                                              {
+                                                autoClose: 4000,
+                                                position: 'bottom-right',
+                                              }
+                                            )
+                                          }
+                                        }
+                                      }}
+                                      onChange={(e) => {
+                                        const value = e.target.value
+                                        // Allow empty input
+                                        if (value === '') {
+                                          setValue('assetAmount', '')
+                                          return
+                                        }
+
+                                        // Prevent alpha characters - only allow numbers, decimal point
+                                        if (!/^[\d.]*$/.test(value)) {
+                                          return // Reject input with letters or special chars
+                                        }
+
+                                        // Basic decimal validation
+                                        const decimalRegex =
+                                          assetMap[assetId].precision > 0
+                                            ? new RegExp(
+                                                `^\\d*\\.?\\d{0,${assetMap[assetId].precision}}$`
+                                              )
+                                            : /^\d*$/
+
+                                        if (decimalRegex.test(value)) {
+                                          // Check against maximum amount before setting value
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const numValue = parseFloat(value)
+
+                                          // Prevent typing amounts that exceed maximum
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue > maxAssetAmount
+                                          ) {
+                                            // Don't update the input if it would exceed max
+                                            toast.warn(
+                                              `Maximum amount is ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}`,
+                                              {
+                                                autoClose: 2000,
+                                                position: 'bottom-right',
+                                              }
+                                            )
+                                            return
+                                          }
+
+                                          setValue('assetAmount', value)
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        // Prevent entering non-numeric characters via keyboard
+                                        const allowedKeys = [
+                                          'Backspace',
+                                          'Delete',
+                                          'Tab',
+                                          'Escape',
+                                          'Enter',
+                                          'ArrowLeft',
+                                          'ArrowRight',
+                                          'ArrowUp',
+                                          'ArrowDown',
+                                          'Home',
+                                          'End',
+                                        ]
+
+                                        // Allow Ctrl/Cmd combinations
+                                        if (e.ctrlKey || e.metaKey) {
+                                          return
+                                        }
+
+                                        // Allow decimal point only if precision > 0 and not already present
+                                        if (
+                                          e.key === '.' &&
+                                          assetMap[assetId].precision > 0 &&
+                                          !watch('assetAmount').includes('.')
+                                        ) {
+                                          return
+                                        }
+
+                                        // Allow numbers
+                                        if (/^\d$/.test(e.key)) {
+                                          return
+                                        }
+
+                                        // Allow special keys
+                                        if (allowedKeys.includes(e.key)) {
+                                          return
+                                        }
+
+                                        // Prevent all other keys
+                                        e.preventDefault()
+                                      }}
+                                      placeholder={`0.${'0'.repeat(assetMap[assetId].precision)}`}
+                                      type="text"
+                                      value={watch('assetAmount')}
+                                    />
+
+                                    {/* Quick amount buttons */}
+                                    <div className="flex gap-2">
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white',
+                                          'border border-slate-600/30 hover:border-slate-500/50'
+                                        )}
+                                        onClick={() =>
+                                          setValue('assetAmount', '')
+                                        }
+                                        type="button"
+                                      >
+                                        Clear
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                          'border border-blue-500/30 hover:border-blue-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = (
+                                            maxAssetAmount * 0.25
+                                          ).toFixed(assetInfo.precision)
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        25%
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                          'border border-blue-500/30 hover:border-blue-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = (
+                                            maxAssetAmount * 0.5
+                                          ).toFixed(assetInfo.precision)
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        50%
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300',
+                                          'border border-green-500/30 hover:border-green-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = maxAssetAmount.toFixed(
+                                            assetInfo.precision
+                                          )
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        Max (
+                                        {(() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          return formatNumberWithCommas(
+                                            maxAssetAmount.toString()
+                                          )
+                                        })()}
+                                        )
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </>

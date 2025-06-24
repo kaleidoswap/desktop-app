@@ -2,11 +2,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { twJoin } from 'tailwind-merge'
 import { z } from 'zod'
 
-import { Select } from '../../components/Select'
+import { useAppSelector } from '../../app/store/hooks'
+import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { Button } from '../../components/ui'
 import { MAX_CHANNEL_CAPACITY, MIN_CHANNEL_CAPACITY } from '../../constants'
+import {
+  parseAssetAmountWithPrecision,
+  formatAssetAmountWithPrecision,
+} from '../../helpers/number'
+import { useAssetIcon } from '../../helpers/utils'
 import {
   NewChannelFormSchema,
   TNewChannelForm,
@@ -28,6 +36,7 @@ interface FormFields {
   capacitySat: string
   pubKeyAndAddress: string
   assetAmount: number
+  assetAmountDisplay: string // For display purposes with precision
   assetId: string
   assetTicker: string
   fee: 'slow' | 'medium' | 'fast'
@@ -37,8 +46,9 @@ const Step2Schema = NewChannelFormSchema.omit({
   capacitySat: true,
   pubKeyAndAddress: true,
 }).extend({
+  assetAmountDisplay: z.string().optional(),
   assetId: z.string().optional(),
-  assetTicker: z.string().optional(),
+  assetTicker: z.string().optional(), // Display amount with proper precision
   capacitySat: z.string(),
   pubKeyAndAddress: z.string(),
 })
@@ -57,6 +67,30 @@ export const Step2 = ({
     Record<string, number>
   >({})
   const [selectedAsset, setSelectedAsset] = useState<NiaAsset | null>(null)
+  const [assetAmountInput, setAssetAmountInput] = useState('')
+
+  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+
+  // Asset icon hook
+  const [assetIconSrc, setAssetIconSrc] = useAssetIcon(
+    selectedAsset?.ticker || '',
+    defaultIcon
+  )
+
+  // Initialize input when asset changes
+  useEffect(() => {
+    if (selectedAsset && formData.assetAmount > 0) {
+      const displayAmount = formatAssetAmountWithPrecision(
+        formData.assetAmount,
+        selectedAsset.ticker,
+        bitcoinUnit,
+        [selectedAsset]
+      )
+      setAssetAmountInput(displayAmount)
+    } else {
+      setAssetAmountInput('')
+    }
+  }, [selectedAsset, formData.assetAmount, bitcoinUnit])
 
   const [takerAssets, takerAssetsResponse] =
     nodeApi.endpoints.listAssets.useLazyQuery()
@@ -68,6 +102,7 @@ export const Step2 = ({
       defaultValues: {
         ...formData,
         assetAmount: formData.assetAmount || 0,
+        assetAmountDisplay: '', // Will be set when asset is selected
         assetId: formData.assetId || '',
         assetTicker: formData.assetTicker || '',
         capacitySat: formData.capacitySat.toString(),
@@ -176,41 +211,6 @@ export const Step2 = ({
     onFormUpdate({ capacitySat: numValue })
   }
 
-  const handleAssetAmountChange = (value: string) => {
-    // Don't enforce minimum values during typing
-    const sanitized = value.replace(/[^0-9.]/g, '')
-    if (sanitized === '') {
-      setValue('assetAmount', 0)
-      onFormUpdate({ assetAmount: 0 })
-      return
-    }
-
-    const numValue = parseFloat(sanitized)
-    if (isNaN(numValue)) return
-
-    // Only enforce maximum constraint
-    const maxAmount = selectedAsset
-      ? maxAssetAmountMap[selectedAsset.asset_id] || 0
-      : 0
-    if (numValue > maxAmount) {
-      setValue('assetAmount', maxAmount)
-      onFormUpdate({ assetAmount: maxAmount })
-
-      // Show toast notification
-      toast.info(
-        `Asset amount limited to maximum: ${formatNumber(maxAmount)} ${selectedAsset?.ticker || ''}`,
-        {
-          autoClose: 3000,
-          position: 'bottom-right',
-        }
-      )
-      return
-    }
-
-    setValue('assetAmount', numValue)
-    onFormUpdate({ assetAmount: numValue })
-  }
-
   const handleFeeChange = (fee: 'slow' | 'medium' | 'fast') => {
     setValue('fee', fee)
     onFormUpdate({ fee })
@@ -290,6 +290,27 @@ export const Step2 = ({
         }
       )
       return
+    }
+
+    // Check if asset amount exceeds maximum available
+    if (addAsset && data.assetId && selectedAsset) {
+      const maxAmount = maxAssetAmountMap[selectedAsset.asset_id] || 0
+      if (data.assetAmount > maxAmount) {
+        const maxDisplayAmount = formatAssetAmountWithPrecision(
+          maxAmount,
+          selectedAsset.ticker,
+          bitcoinUnit,
+          [selectedAsset]
+        )
+        toast.error(
+          `Asset amount exceeds maximum available: ${maxDisplayAmount} ${selectedAsset.ticker}`,
+          {
+            autoClose: 5000,
+            position: 'bottom-right',
+          }
+        )
+        return
+      }
     }
 
     // All validations passed, proceed with form submission
@@ -408,18 +429,24 @@ export const Step2 = ({
                     name="assetId"
                     render={({ field }) => (
                       <>
-                        <Select
-                          {...field}
-                          active={field.value}
-                          onSelect={(value) => {
+                        <AssetSelectWithModal
+                          className="w-full"
+                          fieldLabel="Choose an RGB asset for your channel"
+                          onChange={(value) => {
                             field.onChange(value)
                             handleAssetSelect(value)
                           }}
                           options={availableAssets.map((a: NiaAsset) => ({
-                            label: a.ticker,
+                            assetId: a.asset_id,
+                            label: a.name,
+                            name: a.name,
+                            ticker: a.ticker,
                             value: a.asset_id,
                           }))}
-                          theme="dark"
+                          placeholder="Select an RGB asset"
+                          searchPlaceholder="Search by name, ticker or asset ID..."
+                          title="Select RGB Asset"
+                          value={field.value}
                         />
 
                         {!field.value && addAsset && (
@@ -432,80 +459,410 @@ export const Step2 = ({
                       </>
                     )}
                   />
-
-                  {selectedAsset && (
-                    <div className="mt-4 grid grid-cols-2 gap-4">
-                      <div className="bg-gray-800/50 p-4 rounded-lg">
-                        <div className="text-xs text-gray-400">
-                          Available Balance
-                        </div>
-                        <div className="text-lg text-white font-medium mt-1">
-                          {formatNumber(
-                            maxAssetAmountMap[selectedAsset.asset_id] || 0
-                          )}
-                        </div>
-                      </div>
-                      <div className="bg-gray-800/50 p-4 rounded-lg">
-                        <div className="text-xs text-gray-400">Asset Name</div>
-                        <div className="text-lg text-white font-medium mt-1">
-                          {selectedAsset.ticker}
-                        </div>
-                      </div>
-                      <div className="col-span-2 bg-gray-800/50 p-4 rounded-lg">
-                        <div className="text-xs text-gray-400">Asset ID</div>
-                        <div className="text-sm text-white font-mono mt-1 break-all">
-                          {selectedAsset.asset_id}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {selectedAsset && (
-                  <div className="bg-gray-900/50 p-6 rounded-lg">
-                    <div className="flex justify-between items-center mb-3">
-                      <label className="block text-sm font-medium text-gray-400">
+                  <div className="bg-gray-900/50 p-6 rounded-lg space-y-4">
+                    {/* Enhanced Asset Amount Input */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-slate-300">
                         Asset Amount
                       </label>
-                      <span className="text-xs text-gray-500">
-                        Max:{' '}
-                        {formatNumber(
-                          maxAssetAmountMap[selectedAsset.asset_id] || 0
-                        )}
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      <input
-                        className="w-full rounded bg-blue-dark px-4 py-3 outline-none text-white"
-                        onChange={(e) =>
-                          handleAssetAmountChange(e.target.value)
-                        }
-                        placeholder="Enter asset amount"
-                        type="text"
-                        value={
-                          currentAssetAmount
-                            ? formatNumber(currentAssetAmount)
-                            : ''
-                        }
-                      />
-                      <input
-                        className="w-full"
-                        max={maxAssetAmountMap[selectedAsset.asset_id] || 0}
-                        min={0}
-                        onChange={(e) =>
-                          handleAssetAmountChange(e.target.value)
-                        }
-                        type="range"
-                        value={currentAssetAmount.toString()}
-                      />
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>0</span>
-                        <span>
-                          {formatNumber(
-                            maxAssetAmountMap[selectedAsset.asset_id] || 0
-                          )}
-                        </span>
-                      </div>
+
+                      {selectedAsset ? (
+                        <div className="space-y-4">
+                          {/* Asset Preview Card */}
+                          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                            {/* Asset Header with Icon */}
+                            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700/50">
+                              <img
+                                alt={selectedAsset.ticker}
+                                className="w-10 h-10 rounded-full border-2 border-slate-600/50"
+                                onError={() => setAssetIconSrc(defaultIcon)}
+                                src={assetIconSrc}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-semibold text-white">
+                                    {selectedAsset.ticker}
+                                  </span>
+                                  <span className="text-sm text-slate-400">
+                                    ({selectedAsset.name})
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {selectedAsset.precision} decimal places
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Asset Info */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400">
+                                    Full Asset ID:
+                                  </span>
+                                </div>
+                                <div
+                                  className="text-xs font-mono text-slate-300 break-all bg-slate-900/50 p-2 rounded border border-slate-700/30"
+                                  title={selectedAsset.asset_id}
+                                >
+                                  {selectedAsset.asset_id}
+                                </div>
+                              </div>
+
+                              {/* Balance Info */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400">
+                                    Available:
+                                  </span>
+                                  <span className="text-sm font-medium text-green-400">
+                                    {selectedAsset.balance
+                                      ? formatAssetAmountWithPrecision(
+                                          selectedAsset.balance.spendable,
+                                          selectedAsset.ticker,
+                                          bitcoinUnit,
+                                          [selectedAsset]
+                                        )
+                                      : '0'}{' '}
+                                    {selectedAsset.ticker}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-400">
+                                    Max for Channels:
+                                  </span>
+                                  <span className="text-sm text-blue-400 font-medium">
+                                    {formatAssetAmountWithPrecision(
+                                      maxAssetAmountMap[
+                                        selectedAsset.asset_id
+                                      ] || 0,
+                                      selectedAsset.ticker,
+                                      bitcoinUnit,
+                                      [selectedAsset]
+                                    )}{' '}
+                                    {selectedAsset.ticker}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Amount Input */}
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-300">
+                              Amount ({selectedAsset.ticker})
+                            </label>
+                            <input
+                              className={twJoin(
+                                'w-full px-4 py-3 bg-slate-900/70 border rounded-xl',
+                                'text-white text-lg font-medium placeholder:text-slate-500',
+                                'border-slate-600/50 hover:border-slate-500/70',
+                                'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
+                                'transition-all duration-200'
+                              )}
+                              inputMode="decimal"
+                              onBlur={(e) => {
+                                // Only when user finishes typing, convert to proper format and validate
+                                const value = e.target.value
+                                if (value && selectedAsset) {
+                                  const numValue = parseFloat(value)
+                                  if (!isNaN(numValue) && numValue > 0) {
+                                    // Convert to raw amount for API
+                                    const rawAmount =
+                                      parseAssetAmountWithPrecision(
+                                        value,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
+
+                                    // Validate against max available balance
+                                    const maxAmount =
+                                      maxAssetAmountMap[
+                                        selectedAsset.asset_id
+                                      ] || 0
+                                    if (rawAmount > maxAmount) {
+                                      // Set to max amount and show notification
+                                      const maxDisplayAmount =
+                                        formatAssetAmountWithPrecision(
+                                          maxAmount,
+                                          selectedAsset.ticker,
+                                          bitcoinUnit,
+                                          [selectedAsset]
+                                        )
+
+                                      setAssetAmountInput(maxDisplayAmount)
+                                      setValue('assetAmount', maxAmount)
+                                      onFormUpdate({ assetAmount: maxAmount })
+
+                                      toast.warn(
+                                        `Amount exceeds maximum available: ${maxDisplayAmount} ${selectedAsset.ticker}. Value has been adjusted.`,
+                                        {
+                                          autoClose: 4000,
+                                          position: 'bottom-right',
+                                        }
+                                      )
+                                      return
+                                    }
+
+                                    setValue('assetAmount', rawAmount)
+                                    onFormUpdate({ assetAmount: rawAmount })
+                                  } else {
+                                    setValue('assetAmount', 0)
+                                    onFormUpdate({ assetAmount: 0 })
+                                  }
+                                } else {
+                                  setValue('assetAmount', 0)
+                                  onFormUpdate({ assetAmount: 0 })
+                                }
+                              }}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                // Allow empty input
+                                if (value === '') {
+                                  setAssetAmountInput('')
+                                  setValue('assetAmount', 0)
+                                  onFormUpdate({ assetAmount: 0 })
+                                  return
+                                }
+
+                                // Prevent alpha characters - only allow numbers, decimal point
+                                if (!/^[\d.]*$/.test(value)) {
+                                  return // Reject input with letters or special chars
+                                }
+
+                                // Basic decimal validation - allow typing naturally
+                                const decimalRegex =
+                                  selectedAsset.precision > 0
+                                    ? new RegExp(
+                                        `^\\d*\\.?\\d{0,${selectedAsset.precision}}$`
+                                      )
+                                    : /^\d*$/
+
+                                if (decimalRegex.test(value)) {
+                                  setAssetAmountInput(value)
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                // Prevent entering non-numeric characters via keyboard
+                                const allowedKeys = [
+                                  'Backspace',
+                                  'Delete',
+                                  'Tab',
+                                  'Escape',
+                                  'Enter',
+                                  'ArrowLeft',
+                                  'ArrowRight',
+                                  'ArrowUp',
+                                  'ArrowDown',
+                                  'Home',
+                                  'End',
+                                ]
+
+                                // Allow Ctrl/Cmd combinations (copy, paste, select all, etc.)
+                                if (e.ctrlKey || e.metaKey) {
+                                  return
+                                }
+
+                                // Allow decimal point only if precision > 0 and not already present
+                                if (
+                                  e.key === '.' &&
+                                  selectedAsset.precision > 0 &&
+                                  !assetAmountInput.includes('.')
+                                ) {
+                                  return
+                                }
+
+                                // Allow numbers
+                                if (/^\d$/.test(e.key)) {
+                                  return
+                                }
+
+                                // Allow special keys
+                                if (allowedKeys.includes(e.key)) {
+                                  return
+                                }
+
+                                // Prevent all other keys
+                                e.preventDefault()
+                              }}
+                              placeholder={`0.${'0'.repeat(selectedAsset.precision)}`}
+                              type="text"
+                              value={assetAmountInput}
+                            />
+
+                            {/* Quick amount buttons */}
+                            <div className="flex gap-2">
+                              <button
+                                className={twJoin(
+                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                  'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white',
+                                  'border border-slate-600/30 hover:border-slate-500/50'
+                                )}
+                                onClick={() => {
+                                  setAssetAmountInput('')
+                                  setValue('assetAmount', 0)
+                                  onFormUpdate({ assetAmount: 0 })
+                                }}
+                                type="button"
+                              >
+                                Clear
+                              </button>
+                              <button
+                                className={twJoin(
+                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                  'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                  'border border-blue-500/30 hover:border-blue-500/50'
+                                )}
+                                onClick={() => {
+                                  const maxAmount =
+                                    maxAssetAmountMap[selectedAsset.asset_id] ||
+                                    0
+                                  const displayAmount =
+                                    formatAssetAmountWithPrecision(
+                                      maxAmount * 0.25,
+                                      selectedAsset.ticker,
+                                      bitcoinUnit,
+                                      [selectedAsset]
+                                    )
+                                  setAssetAmountInput(displayAmount)
+                                  setValue('assetAmount', maxAmount * 0.25)
+                                  onFormUpdate({
+                                    assetAmount: maxAmount * 0.25,
+                                  })
+                                }}
+                                type="button"
+                              >
+                                25%
+                              </button>
+                              <button
+                                className={twJoin(
+                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                  'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                  'border border-blue-500/30 hover:border-blue-500/50'
+                                )}
+                                onClick={() => {
+                                  const maxAmount =
+                                    maxAssetAmountMap[selectedAsset.asset_id] ||
+                                    0
+                                  const displayAmount =
+                                    formatAssetAmountWithPrecision(
+                                      maxAmount * 0.5,
+                                      selectedAsset.ticker,
+                                      bitcoinUnit,
+                                      [selectedAsset]
+                                    )
+                                  setAssetAmountInput(displayAmount)
+                                  setValue('assetAmount', maxAmount * 0.5)
+                                  onFormUpdate({ assetAmount: maxAmount * 0.5 })
+                                }}
+                                type="button"
+                              >
+                                50%
+                              </button>
+                              <button
+                                className={twJoin(
+                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                  'bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300',
+                                  'border border-green-500/30 hover:border-green-500/50'
+                                )}
+                                onClick={() => {
+                                  const maxAmount =
+                                    maxAssetAmountMap[selectedAsset.asset_id] ||
+                                    0
+                                  const displayAmount =
+                                    formatAssetAmountWithPrecision(
+                                      maxAmount,
+                                      selectedAsset.ticker,
+                                      bitcoinUnit,
+                                      [selectedAsset]
+                                    )
+                                  setAssetAmountInput(displayAmount)
+                                  setValue('assetAmount', maxAmount)
+                                  onFormUpdate({ assetAmount: maxAmount })
+                                }}
+                                type="button"
+                              >
+                                Max
+                              </button>
+                            </div>
+
+                            {formState.errors.assetAmount && (
+                              <div className="text-sm text-red-400">
+                                {formState.errors.assetAmount.message}
+                              </div>
+                            )}
+
+                            {/* Validation feedback and helper text */}
+                            <div className="space-y-1">
+                              {assetAmountInput && selectedAsset && (
+                                <div className="text-xs">
+                                  {(() => {
+                                    const inputValue =
+                                      parseFloat(assetAmountInput) || 0
+                                    const rawInputAmount =
+                                      parseAssetAmountWithPrecision(
+                                        assetAmountInput,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
+                                    const maxAmount =
+                                      maxAssetAmountMap[
+                                        selectedAsset.asset_id
+                                      ] || 0
+                                    const maxDisplayAmount =
+                                      formatAssetAmountWithPrecision(
+                                        maxAmount,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
+
+                                    if (inputValue <= 0) {
+                                      return null
+                                    } else if (rawInputAmount > maxAmount) {
+                                      return (
+                                        <span className="text-red-400 flex items-center gap-1">
+                                          ⚠️ Exceeds maximum available (
+                                          {maxDisplayAmount}{' '}
+                                          {selectedAsset.ticker})
+                                        </span>
+                                      )
+                                    } else if (
+                                      rawInputAmount >
+                                      maxAmount * 0.9
+                                    ) {
+                                      return (
+                                        <span className="text-orange-400 flex items-center gap-1">
+                                          ⚡ Near maximum limit (
+                                          {maxDisplayAmount}{' '}
+                                          {selectedAsset.ticker})
+                                        </span>
+                                      )
+                                    } else {
+                                      return (
+                                        <span className="text-green-400 flex items-center gap-1">
+                                          ✅ Valid amount
+                                        </span>
+                                      )
+                                    }
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-900/50 border border-slate-600/50 rounded-xl p-6 text-center">
+                          <div className="text-slate-400 text-sm">
+                            Please select an asset first to enter an amount
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

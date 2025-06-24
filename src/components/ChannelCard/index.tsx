@@ -68,12 +68,12 @@ const InfoModal: React.FC<InfoModalProps> = ({
   ]
 
   if (channel.asset_id) {
-    const assetPrecision = asset?.precision || 8
+    const assetPrecision = asset?.precision ?? 8
     const formatAssetAmount = (amount: number) => {
       const factor = Math.pow(10, assetPrecision)
       return (amount / factor).toLocaleString(undefined, {
         maximumFractionDigits: assetPrecision,
-        minimumFractionDigits: assetPrecision,
+        minimumFractionDigits: assetPrecision > 0 ? 1 : 0,
       })
     }
 
@@ -168,7 +168,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
 
-  const assetPrecision = asset?.precision || 8
+  const assetPrecision = asset?.precision ?? 8
 
   const formatAssetAmount = (amount: number) => {
     const factor = Math.pow(10, assetPrecision)

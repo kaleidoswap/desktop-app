@@ -1,18 +1,38 @@
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
+import { webSocketService } from '../../app/hubs/websocketService'
 import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
   WALLET_UNLOCK_PATH,
+  TRADE_MARKET_MAKER_PATH,
 } from '../../app/router/paths'
 import { Layout } from '../../components/Layout'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 export const RootRoute = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
+
+  // WebSocket cleanup when leaving market maker page
+  useEffect(() => {
+    const currentPath = location.pathname
+
+    // Clean up WebSocket connection when NOT on market maker page
+    if (
+      currentPath !== TRADE_MARKET_MAKER_PATH &&
+      webSocketService.isConnected()
+    ) {
+      logger.info(
+        `Route changed from market maker to ${currentPath}, cleaning up WebSocket connection`
+      )
+      webSocketService.close()
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     async function run() {

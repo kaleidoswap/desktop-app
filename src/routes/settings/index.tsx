@@ -24,7 +24,6 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { webSocketService } from '../../app/hubs/websocketService'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
@@ -283,10 +282,9 @@ export const Component: React.FC = () => {
 
       await updates()
 
-      // Update websocket connection if maker URL changed
-      if (data.defaultMakerUrl !== nodeSettings.default_maker_url) {
-        webSocketService.updateUrl(data.defaultMakerUrl)
-      }
+      // Note: WebSocket connection management is handled by the market maker page
+      // We just update the settings here - the market maker page will detect the change
+      // and reconnect automatically if needed
 
       // Check if node connection settings were changed
       const nodeSettingsChanged =

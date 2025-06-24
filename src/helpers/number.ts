@@ -174,7 +174,7 @@ export const getBitcoinPrecision = (bitcoinUnit: string): number => {
 
 /**
  * Formats an amount for a specific asset with proper precision
- * @param amount The amount to format
+ * @param amount The amount to format (in base units)
  * @param asset The asset ticker
  * @param bitcoinUnit The bitcoin unit (BTC or SAT)
  * @param assets List of assets with precision information
@@ -187,6 +187,19 @@ export const formatAssetAmountWithPrecision = (
   assets?: NiaAsset[]
 ): string => {
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
+
+  // For precision 0, the amount is already in base units, no division needed
+  // Example: amount = 3000, precision = 0 -> display as "3,000"
+  if (precision === 0) {
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+      useGrouping: true,
+    }).format(amount)
+  }
+
+  // For assets with precision > 0, divide by 10^precision to get display units
+  // Example: amount = 300000000, precision = 8 -> display as "3.00000000"
   const divisor = Math.pow(10, precision)
   const formattedAmount = (amount / divisor).toFixed(precision)
 
@@ -199,11 +212,11 @@ export const formatAssetAmountWithPrecision = (
 
 /**
  * Parses a string amount for a specific asset with proper precision
- * @param amount The amount string to parse
+ * @param amount The amount string to parse (display format)
  * @param asset The asset ticker
  * @param bitcoinUnit The bitcoin unit (BTC or SAT)
  * @param assets List of assets with precision information
- * @returns Parsed amount as a number
+ * @returns Parsed amount as a number (in base units)
  */
 export const parseAssetAmountWithPrecision = (
   amount: string | undefined | null,
@@ -212,7 +225,6 @@ export const parseAssetAmountWithPrecision = (
   assets?: NiaAsset[]
 ): number => {
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
-  const multiplier = Math.pow(10, precision)
 
   // Handle undefined, null or empty string
   if (!amount) {
@@ -220,6 +232,7 @@ export const parseAssetAmountWithPrecision = (
   }
 
   try {
+    // Remove commas and other formatting characters but preserve digits, decimal point and minus sign
     const cleanAmount = amount.replace(/[^\d.-]/g, '')
     const parsedAmount = parseFloat(cleanAmount)
 
@@ -228,6 +241,15 @@ export const parseAssetAmountWithPrecision = (
       return 0
     }
 
+    // For precision 0, the display value is already in base units
+    // Example: input "3,000" -> clean "3000" -> return 3000
+    if (precision === 0) {
+      return Math.round(parsedAmount)
+    }
+
+    // For assets with precision > 0, multiply by 10^precision to get base units
+    // Example: input "3.00000000" -> clean "3.00000000" -> return 300000000
+    const multiplier = Math.pow(10, precision)
     return Math.round(parsedAmount * multiplier)
   } catch (error) {
     return 0
