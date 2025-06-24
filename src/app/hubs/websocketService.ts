@@ -111,7 +111,6 @@ class WebSocketService {
 
   // Add connection readiness tracking
   private isConnectionReady: boolean = false
-  private connectionReadyPromise: Promise<boolean> | null = null
   private connectionReadyResolvers: Array<(value: boolean) => void> = []
   private readonly CONNECTION_READY_TIMEOUT = 10000 // 10 second timeout for connection readiness
 
