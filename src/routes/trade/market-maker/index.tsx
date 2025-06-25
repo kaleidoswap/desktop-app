@@ -2086,30 +2086,6 @@ export const Component = () => {
 
         {/* Right Column - Trading Information */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Quick Amount Section - Always Visible */}
-          {hasChannels && hasTradablePairs && (
-            <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
-              <div className="p-4">
-                <QuickAmountSection
-                  availableAmount={
-                    maxFromAmount > 0
-                      ? `${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`
-                      : undefined
-                  }
-                  className="mb-4"
-                  disabled={
-                    !hasChannels ||
-                    !hasTradablePairs ||
-                    isSwapInProgress ||
-                    showConfirmation
-                  }
-                  onSizeClick={onSizeClick}
-                  selectedSize={selectedSize}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Combined Rate & Quote Status Card */}
           {selectedPair && (
             <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-md rounded-xl border border-slate-700/70 shadow-xl">
