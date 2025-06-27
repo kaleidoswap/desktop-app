@@ -81,7 +81,7 @@ You can install the app in two ways:
    gpg --verify Kaleido-Swap_0.0.1_x64.dmg.sig Kaleido-Swap_0.0.1_x64.dmg
 
    # For Windows
-   gpg --verify Kaleido-Swap_0.0.1_x64-setup.exe.sig Kaleido-Swap_0.0.1_x64-setup.exe
+   gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
    ```
 5. Verify the SHA256 checksum of the binary.
 6. Run the app by executing the binary.
@@ -124,11 +124,18 @@ You can install the app in two ways:
    ```
 2. **Build the Tauri app**:  
    ```sh
-   tauri build
+   # For current platform
+   pnpm run tauri:build
+   
+   # For Windows specifically
+   pnpm run tauri:build:windows
+   
+   # Using Make
+   make build-app
    ```
 3. **Run Kaleidoswap in development mode**:  
    ```sh
-   tauri dev
+   pnpm run tauri:dev
    ```
 
 ## Usage 💡
