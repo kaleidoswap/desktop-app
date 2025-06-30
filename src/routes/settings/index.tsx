@@ -121,11 +121,20 @@ export const Component: React.FC = () => {
 
   const [nodeLogs, setNodeLogs] = useState<string[]>([])
   const [maxLogEntries, setMaxLogEntries] = useState(200)
+  const [logsFetchRetries, setLogsFetchRetries] = useState(0)
+  const [isLogsFetchDisabled, setIsLogsFetchDisabled] = useState(false)
+  const maxLogsFetchRetries = 3
 
   const fetchNodeLogs = async () => {
+    // Skip if too many failures
+    if (isLogsFetchDisabled) {
+      return
+    }
+
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Logs fetch timeout')), 5000)
+      const timeoutPromise = new Promise(
+        (_, reject) =>
+          setTimeout(() => reject(new Error('Logs fetch timeout')), 8000) // Increased timeout to 8 seconds
       )
 
       const logsPromise = invoke<string[]>('get_node_logs')
@@ -138,9 +147,29 @@ export const Component: React.FC = () => {
 
       if (logs && Array.isArray(logs)) {
         setNodeLogs(logs)
+        // Reset retry count on success
+        setLogsFetchRetries(0)
+        setIsLogsFetchDisabled(false)
       }
     } catch (error) {
       console.error('Failed to fetch node logs:', error)
+
+      // Increment retry count and implement backoff
+      const newRetryCount = logsFetchRetries + 1
+      setLogsFetchRetries(newRetryCount)
+
+      if (newRetryCount >= maxLogsFetchRetries) {
+        console.warn(
+          'Too many log fetch failures, disabling polling for 2 minutes'
+        )
+        setIsLogsFetchDisabled(true)
+        // Re-enable after 2 minutes
+        setTimeout(() => {
+          setIsLogsFetchDisabled(false)
+          setLogsFetchRetries(0)
+        }, 120000) // 2 minutes
+      }
+
       // Don't update state on error to avoid UI flickering
     }
   }
@@ -162,8 +191,8 @@ export const Component: React.FC = () => {
 
     loadInitialData()
 
-    // Set up polling with a cleanup function
-    const logsInterval = setInterval(fetchNodeLogs, 10000) // Poll logs every 10 seconds
+    // Set up polling with a cleanup function - reduced frequency to improve performance
+    const logsInterval = setInterval(fetchNodeLogs, 30000) // Poll logs every 30 seconds
 
     return () => {
       clearInterval(logsInterval)
@@ -442,13 +471,13 @@ export const Component: React.FC = () => {
   const nodeInfoState = nodeApi.endpoints.nodeInfo.useQueryState()
   const isNodeRunning = nodeInfoState.isSuccess
 
-  // Separate useEffect for node info polling
+  // Separate useEffect for node info polling - reduced frequency to improve performance
   useEffect(() => {
     nodeInfo()
 
     const interval = setInterval(() => {
       nodeInfo()
-    }, 10000)
+    }, 60000) // Poll node info every 60 seconds instead of 10 seconds
 
     return () => clearInterval(interval)
   }, [nodeInfo])

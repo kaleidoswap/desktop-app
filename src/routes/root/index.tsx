@@ -18,11 +18,9 @@ export const RootRoute = () => {
   const location = useLocation()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
-  // WebSocket cleanup when leaving market maker page
   useEffect(() => {
     const currentPath = location.pathname
 
-    // Clean up WebSocket connection when NOT on market maker page
     if (
       currentPath !== TRADE_MARKET_MAKER_PATH &&
       webSocketService.isConnected()
@@ -33,6 +31,18 @@ export const RootRoute = () => {
       webSocketService.close()
     }
   }, [location.pathname])
+
+  // Cleanup WebSocket on component unmount (app closing)
+  useEffect(() => {
+    return () => {
+      if (webSocketService.isConnected()) {
+        logger.info(
+          'Root component unmounting - cleaning up WebSocket connections'
+        )
+        webSocketService.close()
+      }
+    }
+  }, [])
 
   useEffect(() => {
     async function run() {

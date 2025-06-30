@@ -528,6 +528,16 @@ class WebSocketService {
       return false
     }
 
+    // Route validation - only allow WebSocket connections on the market maker page
+    // This prevents unnecessary connections and improves overall app performance
+    const currentPath = window.location.pathname
+    if (currentPath !== '/market-maker') {
+      logger.warn(
+        `WebSocketService init: Blocked connection attempt from ${currentPath}. WebSocket connections are only allowed on the market maker page.`
+      )
+      return false
+    }
+
     // Check connection cooldown to prevent rapid reconnections
     const now = Date.now()
     if (now - this.lastCloseTime < this.CONNECTION_COOLDOWN) {
@@ -737,8 +747,10 @@ class WebSocketService {
     try {
       const data = JSON.parse(event.data)
 
-      // Log the raw data for debugging
-      logger.debug('WebSocketService: Received message data:', data)
+      // Log the raw data for debugging (only for non-heartbeat messages to reduce noise)
+      if (data.action !== 'pong') {
+        logger.debug('WebSocketService: Received message data:', data)
+      }
 
       // Always update heartbeat timestamp when we receive any message
       this.lastHeartbeatResponse = Date.now()
@@ -1036,6 +1048,26 @@ class WebSocketService {
    */
   public reconnect(): boolean {
     logger.info('WebSocketService: Manual reconnection requested')
+
+    // Route validation - only allow reconnections on the market maker page
+    const currentPath = window.location.pathname
+    if (currentPath !== '/market-maker') {
+      logger.warn(
+        `WebSocketService reconnect: Blocked reconnection attempt from ${currentPath}. WebSocket connections are only allowed on the market maker page.`
+      )
+      return false
+    }
+
+    // Check cooldown to prevent rapid reconnection attempts
+    const now = Date.now()
+    if (now - this.lastCloseTime < this.CONNECTION_COOLDOWN) {
+      const remainingCooldown =
+        this.CONNECTION_COOLDOWN - (now - this.lastCloseTime)
+      logger.warn(
+        `WebSocketService reconnect: Connection cooldown active. Please wait ${remainingCooldown}ms before reconnecting.`
+      )
+      return false
+    }
 
     if (this.url && this.clientId && this.dispatch) {
       this.reconnectAttempts = 0

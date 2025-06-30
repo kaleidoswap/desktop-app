@@ -41,7 +41,7 @@ class Logger {
   }
 }
 
-// Create a singleton instance of the logger
-const logger = new Logger(LogLevel.DEBUG)
+// Create a singleton instance of the logger with INFO level to reduce console noise
+const logger = new Logger(LogLevel.INFO)
 
 export { logger, LogLevel }
