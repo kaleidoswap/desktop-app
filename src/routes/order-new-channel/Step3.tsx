@@ -20,27 +20,18 @@ import {
   QRCodePayment,
   PaymentStatusDisplay,
   WalletPaymentSection,
+  OrderProcessingDisplay,
 } from './components'
 
-// PaymentWaiting component
-interface PaymentWaitingProps {
-  paymentURI: string
+// Countdown Timer Component
+interface CountdownTimerProps {
   expiresAt: string
-  currentPayment: any
-  bitcoinUnit: string
-  paymentMethod: 'lightning' | 'onchain'
-  order: Lsps1CreateOrderResponse | null
-  handleCopy: () => void
+  onExpiry?: () => void
 }
 
-const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
-  paymentURI,
+const CountdownTimer: React.FC<CountdownTimerProps> = ({
   expiresAt,
-  currentPayment,
-  bitcoinUnit,
-  paymentMethod,
-  order,
-  handleCopy,
+  onExpiry,
 }) => {
   const expiryDate = new Date(expiresAt)
   const now = new Date()
@@ -50,12 +41,16 @@ const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
   const [countdown, setCountdown] = useState(initialSecondsRef.current)
 
   useEffect(() => {
-    if (countdown <= 0) return
+    if (countdown <= 0) {
+      onExpiry?.()
+      return
+    }
 
     const intervalId = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(intervalId)
+          onExpiry?.()
           return 0
         }
         return prev - 1
@@ -63,7 +58,7 @@ const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
     }, 1000)
 
     return () => clearInterval(intervalId)
-  }, [])
+  }, [countdown, onExpiry])
 
   const formatCountdown = (seconds: number) => {
     const minutes = Math.floor(seconds / 60)
@@ -71,6 +66,67 @@ const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
+  return (
+    <div className="bg-gray-800/70 p-4 rounded-xl border border-gray-700">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm text-gray-400">Payment Expires In</h4>
+        <div className="flex items-center">
+          <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+          <span className="text-white font-mono bg-gray-700/70 px-3 py-1 rounded-lg text-lg">
+            {formatCountdown(countdown)}
+          </span>
+        </div>
+      </div>
+
+      <div className="w-full bg-gray-700/50 rounded-full h-2">
+        <div
+          className="h-2 rounded-full transition-all duration-1000 ease-linear"
+          style={{
+            backgroundColor:
+              countdown < 60
+                ? '#EF4444'
+                : countdown < 180
+                  ? '#F59E0B'
+                  : '#3B82F6',
+            width: `${(countdown / initialSecondsRef.current) * 100}%`,
+          }}
+        ></div>
+      </div>
+
+      {countdown < 180 && (
+        <div className="mt-3 flex items-start">
+          <div className="text-yellow-400 mr-2 mt-0.5">
+            <Info size={16} />
+          </div>
+          <p className="text-gray-400 text-xs">
+            {countdown < 60
+              ? 'Payment expires soon!'
+              : 'Payment expiring soon.'}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// PaymentWaiting component
+interface PaymentWaitingProps {
+  paymentURI: string
+  currentPayment: any
+  bitcoinUnit: string
+  paymentMethod: 'lightning' | 'onchain'
+  order: Lsps1CreateOrderResponse | null
+  handleCopy: () => void
+}
+
+const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
+  paymentURI,
+  currentPayment,
+  bitcoinUnit,
+  paymentMethod,
+  order,
+  handleCopy,
+}) => {
   return (
     <div className="w-full space-y-6">
       {/* QR Code Section */}
@@ -93,30 +149,6 @@ const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
             <div className="flex items-center ml-auto">
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
               <span className="text-blue-400 text-sm">Waiting for payment</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Time Remaining:</span>
-              <span className="text-white font-mono bg-gray-700/70 px-3 py-1 rounded text-lg">
-                {formatCountdown(countdown)}
-              </span>
-            </div>
-
-            <div className="w-full bg-gray-700/50 rounded-full h-3">
-              <div
-                className="h-3 rounded-full transition-all duration-1000 ease-linear"
-                style={{
-                  backgroundColor:
-                    countdown < 60
-                      ? '#EF4444'
-                      : countdown < 180
-                        ? '#F59E0B'
-                        : '#3B82F6',
-                  width: `${(countdown / initialSecondsRef.current) * 100}%`,
-                }}
-              ></div>
             </div>
           </div>
         </div>
@@ -143,6 +175,8 @@ interface StepProps {
   loading: boolean
   order: Lsps1CreateOrderResponse | null
   paymentStatus: 'success' | 'error' | 'expired' | null
+  orderPayload?: any
+  paymentReceived?: boolean
 }
 
 const feeRates = [
@@ -157,6 +191,8 @@ export const Step3: React.FC<StepProps> = ({
   loading,
   order,
   paymentStatus,
+  orderPayload,
+  paymentReceived = false,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'onchain'>(
     'lightning'
@@ -164,7 +200,13 @@ export const Step3: React.FC<StepProps> = ({
   const [useWalletFunds, setUseWalletFunds] = useState(true)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
 
-  type PaymentStateType = 'waiting' | 'success' | 'error' | 'expired' | null
+  type PaymentStateType =
+    | 'waiting'
+    | 'processing'
+    | 'success'
+    | 'error'
+    | 'expired'
+    | null
   const [localPaymentState, setLocalPaymentState] =
     useState<PaymentStateType>(null)
   const [isOrderExpired, setIsOrderExpired] = useState(false)
@@ -282,6 +324,19 @@ export const Step3: React.FC<StepProps> = ({
     }
   }, [paymentStatus, localPaymentState])
 
+  // Handle external payment detection (QR code payments)
+  useEffect(() => {
+    if (paymentReceived && localPaymentState === 'waiting') {
+      setLocalPaymentState('processing')
+    }
+  }, [paymentReceived, localPaymentState])
+
+  // Callback for when countdown expires
+  const handleCountdownExpiry = useCallback(() => {
+    setIsOrderExpired(true)
+    setLocalPaymentState('expired')
+  }, [])
+
   // Function to handle wallet payment
   const handleWalletPayment = async () => {
     setIsProcessingWalletPayment(true)
@@ -303,7 +358,7 @@ export const Step3: React.FC<StepProps> = ({
         }
 
         toast.success('Lightning payment initiated successfully!')
-        setLocalPaymentState('success')
+        setLocalPaymentState('processing')
       } else if (paymentMethod === 'onchain' && order?.payment?.onchain) {
         const feeRate =
           selectedFee === 'custom'
@@ -322,7 +377,7 @@ export const Step3: React.FC<StepProps> = ({
         }
 
         toast.success('On-chain payment sent successfully!')
-        setLocalPaymentState('success')
+        setLocalPaymentState('processing')
       }
 
       setShowWalletConfirmation(false)
@@ -448,6 +503,16 @@ export const Step3: React.FC<StepProps> = ({
           </div>
         </div>
 
+        {/* Payment Processing State */}
+        {localPaymentState === 'processing' && (
+          <OrderProcessingDisplay
+            bitcoinUnit={bitcoinUnit}
+            currentPayment={currentPayment}
+            orderId={order?.order_id}
+            paymentMethod={paymentMethod}
+          />
+        )}
+
         {/* Payment Success State */}
         {(localPaymentState === 'success' || paymentStatus === 'success') && (
           <PaymentStatusDisplay
@@ -479,7 +544,8 @@ export const Step3: React.FC<StepProps> = ({
         )}
 
         {/* Main Payment Interface */}
-        {localPaymentState !== 'success' &&
+        {localPaymentState !== 'processing' &&
+          localPaymentState !== 'success' &&
           paymentStatus !== 'success' &&
           localPaymentState !== 'error' &&
           localPaymentState !== 'expired' && (
@@ -491,6 +557,7 @@ export const Step3: React.FC<StepProps> = ({
                   bitcoinUnit={bitcoinUnit}
                   currentPayment={currentPayment}
                   order={order}
+                  orderPayload={orderPayload}
                 />
 
                 {/* Payment Interface */}
@@ -515,6 +582,20 @@ export const Step3: React.FC<StepProps> = ({
                     selectedFee={selectedFee}
                     useWalletFunds={useWalletFunds}
                   />
+                  {/* Countdown Timer - Always visible */}
+                  {(order?.payment?.bolt11?.expires_at ||
+                    order?.payment?.onchain?.expires_at) && (
+                    <div className="mb-6">
+                      <CountdownTimer
+                        expiresAt={
+                          order?.payment?.bolt11?.expires_at ||
+                          order?.payment?.onchain?.expires_at ||
+                          ''
+                        }
+                        onExpiry={handleCountdownExpiry}
+                      />
+                    </div>
+                  )}
 
                   {/* QR Code Payment */}
                   {!useWalletFunds && (
@@ -523,11 +604,6 @@ export const Step3: React.FC<StepProps> = ({
                         <PaymentWaiting
                           bitcoinUnit={bitcoinUnit}
                           currentPayment={currentPayment}
-                          expiresAt={
-                            order?.payment?.bolt11?.expires_at ||
-                            order?.payment?.onchain?.expires_at ||
-                            ''
-                          }
                           handleCopy={handleCopy}
                           order={order}
                           paymentMethod={paymentMethod}
@@ -553,16 +629,18 @@ export const Step3: React.FC<StepProps> = ({
           )}
 
         {/* Footer */}
-        {localPaymentState !== 'success' && paymentStatus !== 'success' && (
-          <div className="flex justify-center mt-6">
-            <button
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-              onClick={onBack}
-            >
-              Back
-            </button>
-          </div>
-        )}
+        {localPaymentState !== 'processing' &&
+          localPaymentState !== 'success' &&
+          paymentStatus !== 'success' && (
+            <div className="flex justify-center mt-6">
+              <button
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                onClick={onBack}
+              >
+                Back
+              </button>
+            </div>
+          )}
       </div>
 
       {/* Wallet Confirmation Modal */}

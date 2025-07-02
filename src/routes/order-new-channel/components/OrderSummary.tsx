@@ -12,6 +12,7 @@ interface OrderSummaryProps {
   bitcoinUnit: string
   currentPayment: any
   assetInfo: NiaAsset | null
+  orderPayload?: any
 }
 
 const formatAssetAmount = (
@@ -27,6 +28,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   bitcoinUnit,
   currentPayment,
   assetInfo,
+  orderPayload,
 }) => {
   const totalCapacity = order.lsp_balance_sat + order.client_balance_sat
 
@@ -50,51 +52,120 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       </div>
 
       <div className="space-y-4">
-        {/* Channel Info */}
+        {/* Channel Info (Confirmed) */}
         <div className="bg-gray-900/50 rounded-xl p-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-gray-400">Total Capacity</span>
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm text-gray-400">Confirmed Channel</span>
             <span className="text-white font-bold">
               {formatBitcoinAmount(totalCapacity, bitcoinUnit)} {bitcoinUnit}
             </span>
           </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>
-              Your: {formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)}
-            </span>
-            <span>
-              LSP: {formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)}
-            </span>
+
+          {/* Liquidity Bar */}
+          <div className="mb-3">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Your Liquidity</span>
+              <span>LSP Liquidity</span>
+            </div>
+            <div className="relative h-3 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
+                style={{
+                  width: `${(order.client_balance_sat / totalCapacity) * 100}%`,
+                }}
+              ></div>
+              <div
+                className="absolute right-0 top-0 h-full bg-gradient-to-l from-purple-500 to-purple-400 transition-all duration-300"
+                style={{
+                  width: `${(order.lsp_balance_sat / totalCapacity) * 100}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="flex justify-between text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-gray-400">Your:</span>
+              <span className="text-blue-400 font-medium">
+                {formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)}{' '}
+                {bitcoinUnit}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400">LSP:</span>
+              <span className="text-purple-400 font-medium">
+                {formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)}{' '}
+                {bitcoinUnit}
+              </span>
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            </div>
           </div>
         </div>
 
-        {/* Asset Info (Compact) */}
-        {order?.asset_id && assetInfo && (
+        {/* Asset Info from Original Request */}
+        {orderPayload?.asset_id && assetInfo && (
           <div className="bg-gray-900/50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">RGB Asset</span>
+              <span className="text-sm text-gray-400">Requested RGB Asset</span>
               <span className="px-2 py-1 bg-blue-500/10 rounded text-blue-400 text-xs">
                 {assetInfo.ticker}
               </span>
             </div>
-            <div className="text-white font-medium text-sm">
+            <div className="text-white font-medium text-sm mb-2">
               {assetInfo.name}
             </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-500 mb-2">
+              <span className="text-gray-400">Asset ID:</span>{' '}
+              {orderPayload.asset_id.slice(0, 16)}...
+            </div>
+            <div className="flex justify-between text-xs text-gray-500">
               <span>
-                Your:{' '}
+                Requested Amount:{' '}
                 {formatAssetAmount(
-                  order.client_asset_amount,
+                  orderPayload.lsp_asset_amount,
                   assetInfo.precision
-                )}
-              </span>
-              <span>
-                LSP:{' '}
-                {formatAssetAmount(order.lsp_asset_amount, assetInfo.precision)}
+                )}{' '}
+                {assetInfo.ticker}
               </span>
             </div>
           </div>
         )}
+
+        {/* Asset Info (From Order Response) */}
+        {order?.asset_id &&
+          assetInfo &&
+          order.asset_id !== orderPayload?.asset_id && (
+            <div className="bg-gray-900/50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-400">
+                  Confirmed RGB Asset
+                </span>
+                <span className="px-2 py-1 bg-green-500/10 rounded text-green-400 text-xs">
+                  {assetInfo.ticker}
+                </span>
+              </div>
+              <div className="text-white font-medium text-sm">
+                {assetInfo.name}
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>
+                  Your:{' '}
+                  {formatAssetAmount(
+                    order.client_asset_amount,
+                    assetInfo.precision
+                  )}
+                </span>
+                <span>
+                  LSP:{' '}
+                  {formatAssetAmount(
+                    order.lsp_asset_amount,
+                    assetInfo.precision
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
 
         {/* Cost Breakdown */}
         <div className="bg-gray-900/50 rounded-xl p-4">
@@ -135,7 +206,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         </div>
 
         {/* Expiry Info */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+        {/* <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
           <div className="flex items-center gap-2 text-sm text-blue-400">
             <Clock className="w-4 h-4" />
             <span>
@@ -151,7 +222,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
               )}
             </span>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   )

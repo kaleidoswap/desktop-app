@@ -67,7 +67,7 @@ export const Step4 = ({
       icon: <CheckCircle className="text-green-500 mb-6" size={80} />,
       message:
         'Your payment has been received and the channel is being opened.',
-      title: 'Payment Completed!',
+      title: 'Order Completed!',
     },
   }
 
