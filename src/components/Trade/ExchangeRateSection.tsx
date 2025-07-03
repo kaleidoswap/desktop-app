@@ -80,19 +80,19 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Main Rate Display */}
       <div className="flex items-center justify-center">
-        <div className="flex items-center gap-3 text-lg">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 text-base">
+          <div className="flex items-center gap-1.5">
             <span className="text-white font-bold">1</span>
             <AssetOption ticker={fromDisplayAsset} />
           </div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-green-500" />
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-green-500" />
             <span className="text-slate-400 font-medium">=</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span
               className={`text-white font-bold transition-all duration-300 ${
                 priceUpdated ? 'text-green-400 scale-105' : ''
@@ -106,8 +106,8 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
       </div>
 
       {/* Status Information */}
-      <div className="flex items-center justify-between text-sm bg-slate-800/30 rounded-xl px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between text-xs bg-slate-800/30 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-1.5">
           <Clock className="w-3 h-3 text-slate-500" />
           <span className="text-slate-500">Updated:</span>
           <span className="text-slate-300 font-medium">
@@ -117,16 +117,16 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border ${
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
               isPriceFresh
                 ? 'bg-green-500/10 text-green-400 border-green-500/30'
                 : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
             }`}
           >
             <div
-              className={`w-1.5 h-1.5 rounded-full ${
+              className={`w-1 h-1 rounded-full ${
                 isPriceFresh ? 'bg-green-500' : 'bg-amber-500'
               }`}
             ></div>
