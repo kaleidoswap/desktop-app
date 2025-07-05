@@ -57,6 +57,21 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: Setup MSVC environment (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Verify MSVC compiler (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Checking for cl.exe compiler..."
+          where cl.exe
+          cl.exe
+          echo "MSVC compiler found and working"
+        shell: cmd
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
