@@ -10,6 +10,9 @@
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "preview": "vite preview",
     "tauri": "tauri",
+    "tauri:build": "tauri build",
+    "tauri:build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "tauri:dev": "tauri dev",
     "prepare": "husky install"
   },
   "dependencies": {

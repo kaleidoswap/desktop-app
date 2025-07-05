@@ -23,6 +23,14 @@
         "bundleMediaFramework": true
       }
     },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": {
+        "language": "en-US"
+      }
+    },
     "createUpdaterArtifacts": true
   },
   "productName": "KaleidoSwap",
