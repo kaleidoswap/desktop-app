@@ -38,11 +38,13 @@ export interface PairsState {
   ticker: Record<string, number>
   subscribedPairs: string[]
   wsConnected: boolean
+  quoteError: string | null
 }
 
 const initialState: PairsState = {
   assets: [],
   feed: {},
+  quoteError: null,
   quotes: {},
   subscribedPairs: [],
   ticker: {},
@@ -66,6 +68,12 @@ export const pairsSlice = createSlice({
       const key = `${fromAsset}/${toAsset}/${fromAmount}`
       delete state.quotes[key]
     },
+    clearQuoteError: (state) => {
+      state.quoteError = null
+    },
+    setQuoteError: (state, action: PayloadAction<string>) => {
+      state.quoteError = action.payload
+    },
     setTradingPairs: (state, action: PayloadAction<TradingPair[]>) => {
       state.values = action.payload
       state.assets = [
@@ -83,6 +91,8 @@ export const pairsSlice = createSlice({
       const quote = action.payload
       const key = `${quote.from_asset}/${quote.to_asset}/${quote.from_amount}`
       state.quotes[key] = quote
+      // Clear any previous quote error when we get a successful quote
+      state.quoteError = null
     },
   },
 })
@@ -93,6 +103,8 @@ export const {
   updatePrice,
   updateQuote,
   clearQuote,
+  clearQuoteError,
+  setQuoteError,
 } = pairsSlice.actions
 
 export const pairsReducer = pairsSlice.reducer

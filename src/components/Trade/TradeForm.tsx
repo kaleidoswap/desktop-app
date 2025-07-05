@@ -107,7 +107,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     <div className="swap-form-container w-full max-w-2xl">
       <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4 shadow-lg w-full">
         <div className="mb-2">
-          <MakerSelector hasNoPairs={false} onMakerChange={refreshData} />
+          <MakerSelector onMakerChange={refreshData} />
         </div>
 
         <form className="space-y-3" onSubmit={onSubmit}>
@@ -164,6 +164,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
             maxAmount={maxToAmount}
             onAmountChange={handleToAmountChange}
             onAssetChange={(value) => handleAssetChange('toAsset', value)}
+            onRefresh={refreshAmounts}
             useEnhancedSelector={true}
             value={form.getValues().to}
           />

@@ -11,7 +11,6 @@ import {
 import React, { useState, useMemo, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
-import { twJoin } from 'tailwind-merge'
 
 import { webSocketService } from '../../app/hubs/websocketService'
 import { useAppSelector } from '../../app/store/hooks'
@@ -19,13 +18,11 @@ import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 
 interface MakerSelectorProps {
-  hasNoPairs?: boolean
   onMakerChange: () => Promise<void>
   show?: boolean
 }
 
 export const MakerSelector: React.FC<MakerSelectorProps> = ({
-  hasNoPairs = false,
   onMakerChange,
   show = true,
 }) => {

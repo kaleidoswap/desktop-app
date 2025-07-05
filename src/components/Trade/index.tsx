@@ -94,10 +94,8 @@ const AssetSelect: React.FC<AssetSelectProps> = ({
   />
 )
 
-export { NoChannelsMessage } from './NoChannelsMessage'
 export { Header } from './Header'
 export { SizeButtons } from './SizeButtons'
-export { QuickAmountSection } from './QuickAmountSection'
 export { SwapInputField } from './SwapInputField'
 export { ExchangeRateSection } from './ExchangeRateSection'
 export { SwapButton } from './SwapButton'
@@ -113,3 +111,10 @@ export {
   TradablePairsDisplay,
   SupportedAssetsDisplay,
 } from './TradablePairsDisplay'
+export {
+  ConnectionTimeoutMessage,
+  NoChannelsMessage,
+  NoTradingChannelsMessage,
+  WebSocketDisconnectedMessage,
+  createTradingChannelsMessageProps,
+} from './NoChannelsMessage'

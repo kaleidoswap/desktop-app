@@ -56,14 +56,14 @@ class WebSocketService {
   private clientId: string = ''
   private dispatch: Dispatch | null = null
   private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 3 // Reduced from 8 to 3 to prevent connection spam
-  private reconnectInterval: number = 5000 // Increased from 2000ms to 5000ms to reduce connection frequency
+  private maxReconnectAttempts: number = 5 // Increased from 3 to 5 for better reliability
+  private reconnectInterval: number = 8000 // Increased from 5000ms to 8000ms to reduce connection frequency
   private subscribedPairs: Set<string> = new Set()
   private isReconnecting: boolean = false
   private heartbeatInterval: number | null = null
   private lastHeartbeatResponse: number = 0
-  private heartbeatTimeout: number = 10000 // Reduced from 20000ms to 10000ms for faster detection
-  private heartbeatIntervalMs: number = 5000 // Reduced from 10000ms to 5000ms for more frequent heartbeats
+  private heartbeatTimeout: number = 15000 // Increased from 10000ms to 15000ms for more stable connections
+  private heartbeatIntervalMs: number = 8000 // Increased from 5000ms to 8000ms for less frequent heartbeats
   private networkOnlineHandler: (() => void) | null = null
   private networkOfflineHandler: (() => void) | null = null
 
@@ -71,7 +71,7 @@ class WebSocketService {
   private messageQueue: QueuedMessage[] = []
   private processingQueue: boolean = false
   private maxQueueSize: number = 200
-  private messageProcessInterval: number = 200 // Reduced from 300ms to 200ms for faster processing
+  private messageProcessInterval: number = 300 // Increased from 200ms to 300ms to reduce processing frequency
   private messageProcessTimer: number | null = null
   private lastMessageSent: number = 0
 
@@ -93,14 +93,14 @@ class WebSocketService {
   }
 
   // Circuit breaker settings
-  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 3 // Reduced from 5 to 3 for faster detection
-  private readonly CIRCUIT_BREAKER_TIMEOUT = 15000 // Reduced from 30000ms to 15000ms for faster recovery
+  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5 // Increased from 3 to 5 for more tolerance
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 30000 // Increased from 15000ms to 30000ms for better recovery
 
   // Connection health monitoring
   private connectionHealthCheckInterval: number | null = null
-  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 8000 // Reduced from 15000ms to 8000ms
+  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 15000 // Increased from 8000ms to 15000ms for less frequent health checks
   private missedHeartbeats: number = 0
-  private readonly MAX_MISSED_HEARTBEATS = 2 // Reduced from 3 to 2 for faster failure detection
+  private readonly MAX_MISSED_HEARTBEATS = 3 // Increased from 2 to 3 for more tolerance
 
   // Track last quote request for error handling
   private lastQuoteRequest: {
@@ -116,7 +116,7 @@ class WebSocketService {
 
   // Connection cooldown to prevent rapid reconnections
   private lastCloseTime: number = 0
-  private readonly CONNECTION_COOLDOWN = 2000 // 2 second cooldown between connections
+  private readonly CONNECTION_COOLDOWN = 5000 // 5 second cooldown between connections to prevent rapid reconnections
 
   private constructor() {
     logger.info('WebSocketService instance created')
@@ -820,16 +820,26 @@ class WebSocketService {
           handleRateLimitError()
         }
 
-        // If this is a quote calculation error (like minimum amount not met), clear the quote
-        if (
-          data.error.includes('Failed to calculate quote') &&
-          this.lastQuoteRequest &&
-          this.dispatch
-        ) {
+        // If this is a quote-related error, clear the quote and signal the UI
+        const isQuoteError =
+          data.error.includes('Failed to calculate quote') ||
+          data.error.includes('equivalent base amount must be between') ||
+          data.error.includes('No tradable pair found') ||
+          data.error.includes('Invalid asset') ||
+          data.error.includes('quote') // Generic quote error detection
+
+        if (isQuoteError && this.lastQuoteRequest && this.dispatch) {
           this.dispatch(clearQuote(this.lastQuoteRequest))
           logger.debug(
-            `WebSocketService: Cleared failed quote due to calculation error for ${this.lastQuoteRequest.fromAsset}/${this.lastQuoteRequest.toAsset}/${this.lastQuoteRequest.fromAmount}`
+            `WebSocketService: Cleared failed quote due to error for ${this.lastQuoteRequest.fromAsset}/${this.lastQuoteRequest.toAsset}/${this.lastQuoteRequest.fromAmount}`
           )
+
+          // Also dispatch a quote error action to immediately signal UI components
+          // that there was an error and loading states should be reset
+          this.dispatch({
+            payload: data.error,
+            type: 'pairs/setQuoteError',
+          })
         }
       }
     } catch (error) {

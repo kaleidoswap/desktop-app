@@ -29,6 +29,51 @@ export const ASSET_CONFLICT_MESSAGES = {
 } as const
 
 /**
+ * Parse amount validation error from WebSocket and return user-friendly message
+ */
+export const parseAmountValidationError = (
+  errorMessage: string,
+  formatAmount: (amount: number, asset: string) => string,
+  displayAsset: (asset: string) => string,
+  assets: NiaAsset[] = []
+): string | null => {
+  // Pattern to match: "For pair BTC/USDT, the amount must be between X and Y but got Z"
+  const amountErrorPattern =
+    /For pair ([^,]+), the amount must be between (\d+) and (\d+) but got (\d+)/
+  const match = errorMessage.match(amountErrorPattern)
+
+  if (match) {
+    const [, pairStr, minStr, maxStr, gotStr] = match
+    const [fromAsset, _toAsset] = pairStr.split('/')
+    const minAmount = parseInt(minStr, 10)
+    const maxAmount = parseInt(maxStr, 10)
+    const gotAmount = parseInt(gotStr, 10)
+
+    // Convert asset IDs to tickers for display
+    const fromDisplayAsset =
+      isAssetId(fromAsset) && assets.length > 0
+        ? mapAssetIdToTicker(fromAsset, assets)
+        : fromAsset
+
+    // Determine which asset is the constraint (since we know the user is setting fromAsset)
+    const constraintAsset = fromDisplayAsset
+
+    if (gotAmount < minAmount) {
+      return `The minimum order size for ${displayAsset(constraintAsset)} is ${formatAmount(minAmount, constraintAsset)}.`
+    } else if (gotAmount > maxAmount) {
+      return `The maximum order size for ${displayAsset(constraintAsset)} is ${formatAmount(maxAmount, constraintAsset)}.`
+    }
+  }
+
+  // Fallback for other amount-related errors
+  if (errorMessage.includes('amount must be between')) {
+    return 'Invalid amount. Please check the minimum and maximum order sizes for this trading pair.'
+  }
+
+  return null
+}
+
+/**
  * Gets a validation error message for the current form state
  */
 export const getValidationError = (
@@ -43,10 +88,12 @@ export const getValidationError = (
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
   assets: NiaAsset[] = [],
-  isToAmountLoading: boolean = false
+  isToAmountLoading: boolean = false,
+  isQuoteLoading: boolean = false,
+  isPriceLoading: boolean = false
 ): string | null => {
-  // Don't show validation errors while the quote is loading
-  if (isToAmountLoading) {
+  // Don't show validation errors while any quote-related loading is happening
+  if (isToAmountLoading || isQuoteLoading || isPriceLoading) {
     return null
   }
 

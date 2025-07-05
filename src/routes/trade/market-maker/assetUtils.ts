@@ -502,13 +502,15 @@ export const getAssetConflictsForTicker = (
 export const createFetchAndSetPairsHandler = (
   getPairs: () => Promise<{ data?: { pairs: TradingPair[] } }>,
   dispatch: (action: any) => void,
-  getAvailableAssetsParam: () => string[],
+  channels: Channel[],
+  assets: NiaAsset[],
   form: any,
   formatAmount: (amount: number, asset: string) => string,
   setTradingPairs: (pairs: TradingPair[]) => void,
   setTradablePairs: (pairs: TradingPair[]) => void,
   setSelectedPair: (pair: TradingPair | null) => void,
-  setIsPairsLoading?: (loading: boolean) => void
+  setIsPairsLoading?: (loading: boolean) => void,
+  showUserError: boolean = true
 ) => {
   // Add a static flag to prevent multiple simultaneous calls
   let isCurrentlyFetching = false
@@ -577,11 +579,11 @@ export const createFetchAndSetPairsHandler = (
 
       dispatch(setTradingPairs(validatedPairs))
 
-      const availableAssetIds = getAvailableAssetsParam()
+      const availableAssetIds = getAvailableAssets(channels, assets)
 
       // Debug logging to understand the mismatch
-      logger.debug('Available asset IDs from channels:', availableAssetIds)
-      logger.debug(
+      logger.info('Available asset IDs from channels:', availableAssetIds)
+      logger.info(
         'Trading pairs asset IDs:',
         validatedPairs.map((p) => ({
           base: p.base_asset_id,
@@ -636,14 +638,19 @@ export const createFetchAndSetPairsHandler = (
           logger.warn(
             'No tradable pairs found for available assets - asset IDs do not match between channels and maker pairs'
           )
-          logger.debug('Available asset IDs:', availableAssetIds)
-          logger.debug(
+          logger.info('Available asset IDs:', availableAssetIds.join(', '))
+          logger.info(
             'Pair asset IDs needed:',
             validatedPairs
-              .map((p) => [p.base_asset_id, p.quote_asset_id])
-              .flat()
+              .map((p) => `${p.base_asset_id}/${p.quote_asset_id}`)
+              .join(', ')
           )
-          // toast.error(ASSET_CONFLICT_MESSAGES.NO_TRADABLE_PAIRS)
+          // Show a clear toast error to the user ONLY if showUserError is true
+          if (showUserError) {
+            toast.error(
+              "No tradable pairs found. Your available assets do not match the market maker's supported pairs."
+            )
+          }
         }
         return
       }
@@ -767,4 +774,191 @@ export const isAssetId = (assetString: string): boolean => {
   }
 
   return false
+}
+
+/**
+ * Get default maker URLs including reliable fallbacks
+ */
+export const getDefaultMakerUrls = (primaryUrl: string): string[] => {
+  const urls = [primaryUrl]
+
+  // Add localhost as fallback if not already the primary
+  if (
+    primaryUrl !== 'http://localhost:8000' &&
+    primaryUrl !== 'http://localhost:8000/'
+  ) {
+    urls.push('http://localhost:8000')
+  }
+
+  // Add other reliable fallbacks (only include known working URLs)
+  // Note: Only add URLs that are generally accessible and working
+  // Staging/regtest APIs that are frequently down should not be included here
+
+  // Remove duplicates and return
+  return [...new Set(urls)]
+}
+
+/**
+ * Quick health check for a maker URL to test basic connectivity
+ */
+export const checkMakerHealth = async (
+  makerUrl: string,
+  timeoutMs: number = 5000
+): Promise<{
+  healthy: boolean
+  responseTime?: number
+  error?: string
+  status?: number
+}> => {
+  const startTime = Date.now()
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+      // Try to fetch a basic endpoint first (health check or pairs)
+      const response = await fetch(`${makerUrl}/api/v1/market/pairs`, {
+        // Use GET instead of HEAD as many APIs don't support HEAD
+headers: {
+          Accept: 'application/json',
+        },
+        
+method: 'GET', 
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeout)
+      const responseTime = Date.now() - startTime
+
+      return {
+        error: response.ok ? undefined : `HTTP ${response.status}`,
+        healthy: response.ok,
+        responseTime,
+        status: response.status,
+      }
+    } catch (fetchError) {
+      clearTimeout(timeout)
+      throw fetchError
+    }
+  } catch (error) {
+    const responseTime = Date.now() - startTime
+    let errorMessage = 'Unknown error'
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = 'Timeout'
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network unreachable'
+      } else {
+        errorMessage = error.message
+      }
+    }
+
+    return {
+      error: errorMessage,
+      healthy: false,
+      responseTime,
+    }
+  }
+}
+
+/**
+ * Fetch trading pairs from maker via HTTP API (without WebSocket)
+ */
+export const fetchMakerTradingPairs = async (
+  makerUrl: string
+): Promise<{
+  success: boolean
+  pairs: TradingPair[]
+  error?: string
+  status?: number
+}> => {
+  try {
+    logger.info(`Fetching trading pairs from maker: ${makerUrl}`)
+
+    // Add timeout for the fetch request
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    try {
+      const response = await fetch(`${makerUrl}/api/v1/market/pairs`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+
+        // Provide more specific error messages
+        if (response.status === 404) {
+          errorMessage =
+            'API endpoint not found - maker may be offline or incompatible'
+        } else if (response.status === 503) {
+          errorMessage = 'Maker service temporarily unavailable'
+        } else if (response.status >= 500) {
+          errorMessage = 'Maker server error - please try again later'
+        } else if (response.status === 403) {
+          errorMessage = 'Access denied to maker API'
+        }
+
+        return {
+          error: errorMessage,
+          pairs: [],
+          status: response.status,
+          success: false,
+        }
+      }
+
+      const data = await response.json()
+
+      if (!data.pairs || !Array.isArray(data.pairs)) {
+        throw new Error('Invalid response format: missing pairs array')
+      }
+
+      logger.info(
+        `Successfully fetched ${data.pairs.length} trading pairs from maker`
+      )
+
+      return {
+        pairs: data.pairs,
+        status: response.status,
+        success: true,
+      }
+    } catch (fetchError) {
+      clearTimeout(timeout)
+      throw fetchError
+    }
+  } catch (error) {
+    let errorMessage = 'Unknown error'
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        errorMessage = 'Connection timeout - maker took too long to respond'
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage =
+          'Network error - unable to reach maker (check internet connection)'
+      } else if (error.message.includes('NetworkError')) {
+        errorMessage = 'Network error - maker may be offline'
+      } else {
+        errorMessage = error.message
+      }
+    }
+
+    logger.error(
+      `Failed to fetch trading pairs from maker ${makerUrl}:`,
+      errorMessage
+    )
+
+    return {
+      error: errorMessage,
+      pairs: [],
+      success: false,
+    }
+  }
 }

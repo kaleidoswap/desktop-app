@@ -9,10 +9,46 @@ import { logger } from '../../../utils/logger'
 import { mapAssetIdToTicker, mapTickerToAssetId } from './assetUtils'
 import { Fields } from './types'
 
-let quoteRequestTimer: any | null = null
+// Timing control variables for quote requests - updated to 500ms as requested
 let lastQuoteRequestTime = 0
 let lastRequestedQuoteKey = ''
-let lastQuoteErrorToastTime = 0 // Added to track the last time the specific error toast was shown
+let lastQuoteErrorToastTime = 0
+let quoteRequestTimer: any = null
+let globalDebouncedQuoteTimer: any = null
+const QUOTE_REQUEST_DEBOUNCE_MS = 500 // Changed from 1000ms to 500ms as requested
+const QUOTE_REQUEST_RATE_LIMIT_MS = 2000 // Increased from 1000ms to 2000ms for rate limiting
+const ERROR_TOAST_COOLDOWN_MS = 8000 // Increased from 5000ms to 8000ms for less toast spam
+
+/**
+ * Global debounced quote request function that ensures all quote requests
+ * are properly debounced regardless of where they originate
+ */
+export const debouncedQuoteRequest = (
+  requestQuoteFn: () => Promise<void>,
+  delay: number = QUOTE_REQUEST_DEBOUNCE_MS
+) => {
+  // Clear any existing timer
+  if (globalDebouncedQuoteTimer) {
+    clearTimeout(globalDebouncedQuoteTimer)
+  }
+
+  // Set new timer
+  globalDebouncedQuoteTimer = setTimeout(() => {
+    requestQuoteFn().catch((error) => {
+      logger.error('Error in debounced quote request:', error)
+    })
+  }, delay)
+}
+
+/**
+ * Clear any pending debounced quote requests
+ */
+export const clearDebouncedQuoteRequest = () => {
+  if (globalDebouncedQuoteTimer) {
+    clearTimeout(globalDebouncedQuoteTimer)
+    globalDebouncedQuoteTimer = null
+  }
+}
 
 /**
  * Creates a function to handle requesting quotes from the market maker
@@ -21,6 +57,9 @@ let lastQuoteErrorToastTime = 0 // Added to track the last time the specific err
  * @param form Form instance from react-hook-form
  * @param parseAssetAmount Function to parse asset amount
  * @param assets List of NiaAsset objects
+ * @param setIsQuoteLoading Function to set quote loading state
+ * @param setIsToAmountLoading Function to set to amount loading state
+ * @param hasValidQuote Optional function to check if there's already a valid quote
  * @returns A function that can be called to request a quote
  */
 export const createQuoteRequestHandler = (
@@ -29,7 +68,10 @@ export const createQuoteRequestHandler = (
     amount: string | undefined | null,
     asset: string
   ) => number,
-  assets: NiaAsset[]
+  assets: NiaAsset[],
+  setIsQuoteLoading?: (loading: boolean) => void,
+  setIsToAmountLoading?: (loading: boolean) => void,
+  hasValidQuote?: () => boolean
 ) => {
   return async () => {
     const fromAssetTicker = form.getValues().fromAsset
@@ -58,14 +100,27 @@ export const createQuoteRequestHandler = (
       return
     }
 
+    // Only set loading states if we don't already have a valid quote
+    // This prevents blocking users who have valid quotes while background updates happen
+    const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
+
+    if (!currentlyHasValidQuote) {
+      if (setIsQuoteLoading) {
+        setIsQuoteLoading(true)
+      }
+      if (setIsToAmountLoading) {
+        setIsToAmountLoading(true)
+      }
+    }
+
     // Create a unique key for this quote request (using tickers for consistency with previous logic)
     const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}`
 
     // Skip if this is the exact same quote we just requested
     if (quoteKey === lastRequestedQuoteKey) {
       const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
-      if (timeSinceLastRequest < 1000) {
-        // 1 second duplicate protection - no need to log this frequently
+      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
+        // Rate limiting - no need to log this frequently
         return
       }
     }
@@ -75,8 +130,7 @@ export const createQuoteRequestHandler = (
       logger.warn(
         'Quote request skipped: assets list is not available or empty.'
       )
-      if (Date.now() - lastQuoteErrorToastTime > 10000) {
-        // Show less frequently
+      if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
         toast.warn('Asset data is not yet loaded. Cannot request quotes.', {
           toastId: 'assets-not-loaded',
         })
@@ -153,12 +207,12 @@ const sendQuoteRequest = async (
         return
       }
 
-      // Show error toast only if it's been 5+ seconds since the last similar error toast
-      if (Date.now() - lastQuoteErrorToastTime > 5000) {
+      // Show error toast only if it's been enough time since the last similar error toast
+      if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
         toast.error(
           'Failed to send quote request. Connection may be unstable.',
           {
-            autoClose: 3000,
+            autoClose: 4000, // Increased from 3000ms to 4000ms
             toastId: 'quote-request-failed',
           }
         )
@@ -167,9 +221,9 @@ const sendQuoteRequest = async (
     }
   } catch (error) {
     logger.error('Error in sendQuoteRequest:', error)
-    if (Date.now() - lastQuoteErrorToastTime > 5000) {
+    if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
       toast.error('An unexpected error occurred while requesting the quote.', {
-        autoClose: 3000,
+        autoClose: 4000, // Increased from 3000ms to 4000ms
         toastId: 'quote-request-exception',
       })
       lastQuoteErrorToastTime = Date.now()
@@ -181,11 +235,11 @@ const sendQuoteRequest = async (
  * Starts a timer to request quotes periodically
  *
  * @param requestQuote Function to request a quote
- * @param intervalMs Interval in milliseconds (default: 5000)
+ * @param intervalMs Interval in milliseconds (default: 15000)
  */
 export const startQuoteRequestTimer = (
   requestQuote: () => Promise<void>,
-  intervalMs: number = 5000 // Increased from 3000 to 5000
+  intervalMs: number = 15000 // Increased from 10000ms to 15000ms for less aggressive refreshing
 ): void => {
   // Clear any existing timer
   if (quoteRequestTimer) {
@@ -211,10 +265,16 @@ export const stopQuoteRequestTimer = (): void => {
  * with debouncing to avoid excessive requests while typing
  *
  * @param requestQuote Function to request a quote
+ * @param setIsQuoteLoading Function to set quote loading state
+ * @param setIsToAmountLoading Function to set to amount loading state
+ * @param hasValidQuote Optional function to check if there's already a valid quote
  * @returns A function that can be called when the form amount changes
  */
 export const createAmountChangeQuoteHandler = (
-  requestQuote: () => Promise<void>
+  requestQuote: () => Promise<void>,
+  setIsQuoteLoading?: (loading: boolean) => void,
+  setIsToAmountLoading?: (loading: boolean) => void,
+  hasValidQuote?: () => boolean
 ) => {
   let debounceTimer: any = null
 
@@ -227,8 +287,29 @@ export const createAmountChangeQuoteHandler = (
     // Request a quote whenever the amount changes
     const value = e.target.value
     if (value && value !== '0') {
-      // Use a longer timeout to avoid too many requests while typing
-      debounceTimer = setTimeout(requestQuote, 500) // Increased from 300 to 500
+      // Only set loading states if we don't have a valid quote
+      // This allows users to keep trading with current quotes while new ones load
+      const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
+
+      if (!currentlyHasValidQuote) {
+        if (setIsQuoteLoading) {
+          setIsQuoteLoading(true)
+        }
+        if (setIsToAmountLoading) {
+          setIsToAmountLoading(true)
+        }
+      }
+
+      // Use the defined constant for consistent debouncing
+      debounceTimer = setTimeout(requestQuote, QUOTE_REQUEST_DEBOUNCE_MS)
+    } else {
+      // If amount is cleared, also clear loading states
+      if (setIsQuoteLoading) {
+        setIsQuoteLoading(false)
+      }
+      if (setIsToAmountLoading) {
+        setIsToAmountLoading(false)
+      }
     }
   }
 }
