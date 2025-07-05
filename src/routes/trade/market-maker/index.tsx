@@ -1440,7 +1440,7 @@ export const Component = () => {
 
   // Auto-refresh amounts every 30 seconds
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null
+    let intervalId: number | any = null
 
     // Only start auto-refresh if we have a selected pair and WebSocket is connected
     if (selectedPair && wsConnected && !isSwapInProgress) {
