@@ -48,8 +48,13 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
       return '0'
     }
 
+    // Clamp precision between 0 and 10
+    let safePrecision = Number(precision)
+    if (isNaN(safePrecision) || safePrecision < 0) safePrecision = 0
+    if (safePrecision > 10) safePrecision = 10
+
     // Display with appropriate decimal places
-    return Number(amount).toFixed(Number(precision))
+    return Number(amount).toFixed(safePrecision)
   }, [amount, precision])
 
   const issueAssetOperation = async () => {
@@ -166,12 +171,24 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
                 max="18"
                 min="0"
-                onChange={(e) => setPrecision(e.target.value)}
+                onChange={(e) => {
+                  // removing fraction inputs
+                  let val = e.target.value
+                  const floored = Math.floor(Number(val))
+                  setPrecision(String(floored))
+                }}
                 placeholder="8"
                 required
+                step="1"
                 type="number"
                 value={precision}
               />
+              {(Number(precision) > 10 || Number(precision) < 0) &&
+                precision !== '' && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Precision value must be between 0 and 10.
+                  </p>
+                )}
             </div>
 
             {amount && (
