@@ -407,7 +407,7 @@ export const WithdrawModalContent: React.FC = () => {
             )
             setAddressType('invalid')
           }
-        } else if (input.startsWith('bc')) {
+        } else if (input.startsWith('bc') || input.startsWith('tb')) {
           // Bitcoin address
           setAddressType('bitcoin')
           setValue('network', 'on-chain')
