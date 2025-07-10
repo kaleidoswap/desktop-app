@@ -82,6 +82,7 @@ export const WithdrawModalContent: React.FC = () => {
       address: '',
       amount: 0,
       asset_id: BTC_ASSET_ID,
+      donation: false,
       fee_rate: 'normal',
       network: 'on-chain',
     },
@@ -375,7 +376,30 @@ export const WithdrawModalContent: React.FC = () => {
                   `Error: You don't have the requested asset: ${decodedRgb.asset_id.substring(0, 8)}... Cannot proceed with payment.`
                 )
               } else {
+                // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
+                if (decodedRgb.amount) {
+                  const assetInfo = assets.data?.nia.find(
+                    (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
+                  )
+                  const ticker = assetInfo?.ticker || 'Unknown'
+                  const precision = assetInfo?.precision || 8
+                  const formattedAmount =
+                    decodedRgb.amount / Math.pow(10, precision)
+
+                  // Get the actual RGB asset balance
+                  const rgbBalance = assetInfo?.balance.spendable || 0
+                  const formattedBalance = rgbBalance / Math.pow(10, precision)
+
+                  if (decodedRgb.amount > rgbBalance) {
+                    setValue('amount', formattedBalance)
+                    setValidationError(
+                      `Warning: The invoice requested ${formattedAmount} ${ticker} but your balance is only ${formattedBalance} ${ticker}. Adjusted to maximum sendable amount.`
+                    )
+                  } else {
+                    setValue('amount', formattedAmount)
+                  }
+                }
               }
             } else {
               const firstRgbAsset = availableAssets.find(
@@ -386,18 +410,6 @@ export const WithdrawModalContent: React.FC = () => {
                 await fetchAssetBalance(firstRgbAsset.value)
               } else {
                 setValidationError('Warning: No RGB assets available to send.')
-              }
-            }
-
-            if (decodedRgb.amount) {
-              await fetchAssetBalance(decodedRgb.asset_id || BTC_ASSET_ID)
-              if (decodedRgb.amount > assetBalance) {
-                setValue('amount', assetBalance)
-                setValidationError(
-                  `Warning: The invoice requested ${decodedRgb.amount} but your balance is only ${assetBalance}. Adjusted to maximum sendable amount.`
-                )
-              } else {
-                setValue('amount', decodedRgb.amount)
               }
             }
           } catch (error) {
@@ -780,6 +792,7 @@ export const WithdrawModalContent: React.FC = () => {
                   ? decodedRgbInvoice.amount
                   : rawAmount,
               asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
+              donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
@@ -796,6 +809,7 @@ export const WithdrawModalContent: React.FC = () => {
             res = await sendAsset({
               amount: rawAmount,
               asset_id: pendingData.asset_id,
+              donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[

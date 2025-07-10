@@ -904,6 +904,46 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 />
               </div>
             )}
+
+          {/* Donation Toggle for RGB Invoices */}
+          {addressType === 'rgb' && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-medium text-slate-400">
+                    Send as Gift/Donation
+                  </label>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Gift transfers allow instant sending without receiver
+                    validation. Useful for tips and giveaways. Use with caution.
+                  </p>
+                </div>
+                <Controller
+                  control={control}
+                  name="donation"
+                  render={({ field }) => (
+                    <button
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                                ${
+                                  field.value ? 'bg-blue-500' : 'bg-slate-700'
+                                }`}
+                      onClick={() => field.onChange(!field.value)}
+                      type="button"
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                  ${
+                                    field.value
+                                      ? 'translate-x-6'
+                                      : 'translate-x-1'
+                                  }`}
+                      />
+                    </button>
+                  )}
+                />
+              </div>
+            </div>
+          )}
         </>
       )}
 

@@ -19,6 +19,7 @@ export interface Fields {
   asset_id: string
   network: 'on-chain' | 'lightning'
   decodedInvoice?: DecodeInvoiceResponse | null
+  donation?: boolean // Whether this is a gift/donation transfer (RGB only)
 }
 
 // Fee estimation interface
