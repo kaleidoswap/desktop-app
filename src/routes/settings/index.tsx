@@ -53,6 +53,7 @@ interface FormFields {
   proxyEndpoint: string
   makerUrls: string[]
   defaultMakerUrl: string
+  bearerToken: string
 }
 
 export const Component: React.FC = () => {
@@ -63,6 +64,23 @@ export const Component: React.FC = () => {
   )
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
+
+  // All state declarations in one place
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+  const [logsFetchRetries, setLogsFetchRetries] = useState(0)
+  const [isLogsFetchDisabled, setIsLogsFetchDisabled] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalLogs, setTotalLogs] = useState(0)
+  const [nodeLogs, setNodeLogs] = useState<string[]>([])
+  const [maxLogEntries, setMaxLogEntries] = useState(200)
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
+  const [showShutdownConfirmation, setShowShutdownConfirmation] =
+    useState(false)
+  const [isShuttingDown, setIsShuttingDown] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
+  const maxLogsFetchRetries = 3
 
   // Replace showModal with unified modal state
   const [modal, setModal] = useState<{
@@ -81,18 +99,13 @@ export const Component: React.FC = () => {
     type: ModalType.NONE,
   })
 
-  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
-  const [showShutdownConfirmation, setShowShutdownConfirmation] =
-    useState(false)
-  const [isShuttingDown, setIsShuttingDown] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-
   const [shutdown] = nodeApi.endpoints.shutdown.useLazyQuery()
   const [lock] = nodeApi.endpoints.lock.useLazyQuery()
 
   const { control, handleSubmit, reset, watch, setValue } = useForm<FormFields>(
     {
       defaultValues: {
+        bearerToken: nodeSettings.bearer_token || '',
         bitcoinUnit,
         defaultMakerUrl: nodeSettings.default_maker_url || '',
         indexerUrl: nodeSettings.indexer_url || '',
@@ -119,12 +132,6 @@ export const Component: React.FC = () => {
     selectBackupFolder,
   } = useBackup({ nodeSettings })
 
-  const [nodeLogs, setNodeLogs] = useState<string[]>([])
-  const [maxLogEntries, setMaxLogEntries] = useState(200)
-  const [logsFetchRetries, setLogsFetchRetries] = useState(0)
-  const [isLogsFetchDisabled, setIsLogsFetchDisabled] = useState(false)
-  const maxLogsFetchRetries = 3
-
   const fetchNodeLogs = async () => {
     // Skip if too many failures
     if (isLogsFetchDisabled) {
@@ -132,27 +139,35 @@ export const Component: React.FC = () => {
     }
 
     try {
-      const timeoutPromise = new Promise(
-        (_, reject) =>
-          setTimeout(() => reject(new Error('Logs fetch timeout')), 8000) // Increased timeout to 8 seconds
+      setIsLoadingLogs(true)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Logs fetch timeout')), 8000)
       )
 
-      const logsPromise = invoke<string[]>('get_node_logs')
+      const logsPromise = invoke<{ logs: string[]; total: number }>(
+        'get_node_logs',
+        {
+          page: currentPage,
+          pageSize: maxLogEntries,
+        }
+      )
 
       // Race between the fetch and the timeout
-      const logs = (await Promise.race([
-        logsPromise,
-        timeoutPromise,
-      ])) as string[]
+      const result = (await Promise.race([logsPromise, timeoutPromise])) as {
+        logs: string[]
+        total: number
+      }
 
-      if (logs && Array.isArray(logs)) {
-        setNodeLogs(logs)
+      if (result && result.logs && Array.isArray(result.logs)) {
+        setNodeLogs(result.logs)
+        setTotalLogs(result.total)
         // Reset retry count on success
         setLogsFetchRetries(0)
         setIsLogsFetchDisabled(false)
       }
     } catch (error) {
       console.error('Failed to fetch node logs:', error)
+      toast.error('Failed to load logs. Retrying...')
 
       // Increment retry count and implement backoff
       const newRetryCount = logsFetchRetries + 1
@@ -163,18 +178,17 @@ export const Component: React.FC = () => {
           'Too many log fetch failures, disabling polling for 2 minutes'
         )
         setIsLogsFetchDisabled(true)
+        toast.error('Log loading temporarily disabled due to errors')
         // Re-enable after 2 minutes
         setTimeout(() => {
           setIsLogsFetchDisabled(false)
           setLogsFetchRetries(0)
         }, 120000) // 2 minutes
       }
-
-      // Don't update state on error to avoid UI flickering
+    } finally {
+      setIsLoadingLogs(false)
     }
   }
-
-  const [isLoading, setIsLoading] = useState(true)
 
   // Optimize the useEffect for data loading
   useEffect(() => {
@@ -201,6 +215,7 @@ export const Component: React.FC = () => {
 
   useEffect(() => {
     reset({
+      bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
@@ -281,6 +296,7 @@ export const Component: React.FC = () => {
         await invoke('update_account', {
           daemonListeningPort: currentAccount.daemon_listening_port,
           datapath: currentAccount.datapath,
+          bearerToken: data.bearerToken || null,
           defaultLspUrl: data.lspUrl,
           defaultMakerUrl: data.defaultMakerUrl,
           indexerUrl: data.indexerUrl,
@@ -296,6 +312,7 @@ export const Component: React.FC = () => {
         dispatch(
           nodeSettingsActions.setNodeSettings({
             ...currentAccount,
+            bearer_token: data.bearerToken || null,
             daemon_listening_port: currentAccount.daemon_listening_port,
             default_lsp_url: data.lspUrl,
             default_maker_url: data.defaultMakerUrl,
@@ -382,8 +399,6 @@ export const Component: React.FC = () => {
     }
   }
 
-  const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
-
   const handleLogout = async () => {
     setShowLogoutConfirmation(true)
   }
@@ -411,6 +426,7 @@ export const Component: React.FC = () => {
 
   const handleUndo = () => {
     reset({
+      bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
@@ -779,6 +795,24 @@ export const Component: React.FC = () => {
                       </div>
                     )}
                   />
+                  {/* Bearer Token Field */}
+                  <Controller
+                    control={control}
+                    name="bearerToken"
+                    render={({ field }) => (
+                      <div className="group transition-all duration-300 hover:translate-x-1">
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                          Bearer Token
+                        </label>
+                        <input
+                          {...field}
+                          className="block w-full pl-10 pr-12 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          placeholder="Enter bearer token for remote node authentication"
+                          type="text"
+                        />
+                      </div>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -928,14 +962,16 @@ export const Component: React.FC = () => {
                     <span className="text-sm text-gray-400">Show</span>
                     <select
                       className="bg-transparent text-white text-sm focus:outline-none focus:ring-0 border-0"
-                      onChange={(e) => setMaxLogEntries(Number(e.target.value))}
+                      onChange={(e) => {
+                        setMaxLogEntries(Number(e.target.value))
+                        setCurrentPage(1) // Reset to first page when changing page size
+                      }}
                       value={maxLogEntries}
                     >
+                      <option value="50">50</option>
                       <option value="100">100</option>
                       <option value="200">200</option>
                       <option value="500">500</option>
-                      <option value="1000">1000</option>
-                      <option value="5000">5000</option>
                     </select>
                     <span className="text-sm text-gray-400">entries</span>
                   </div>
@@ -944,22 +980,28 @@ export const Component: React.FC = () => {
                   <div className="flex gap-1.5">
                     <button
                       className="p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
-                      disabled={nodeLogs.length === 0}
+                      disabled={nodeLogs.length === 0 || isLoadingLogs}
                       onClick={handleExportLogs}
                       title="Export logs"
                     >
                       <Download className="w-4 h-4" />
                     </button>
                     <button
-                      className="p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors border border-gray-600"
-                      onClick={fetchNodeLogs}
+                      className={`p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors border border-gray-600 ${
+                        isLoadingLogs ? 'animate-spin' : ''
+                      }`}
+                      disabled={isLoadingLogs}
+                      onClick={() => {
+                        setCurrentPage(1)
+                        fetchNodeLogs()
+                      }}
                       title="Refresh logs"
                     >
                       <RefreshCw className="w-4 h-4" />
                     </button>
                     <button
                       className="p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
-                      disabled={nodeLogs.length === 0}
+                      disabled={nodeLogs.length === 0 || isLoadingLogs}
                       onClick={() => setNodeLogs([])}
                       title="Clear logs"
                     >
@@ -970,20 +1012,54 @@ export const Component: React.FC = () => {
               </div>
             </div>
 
-            {/* Logs display area */}
             <div className="bg-gray-900/95">
               <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700/50 bg-gray-800/50">
                 <span className="text-sm font-medium text-gray-300">
                   Live Node Logs
                 </span>
-                <span className="text-xs text-gray-500">
-                  Showing {Math.min(maxLogEntries, nodeLogs.length)} of{' '}
-                  {nodeLogs.length} entries
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-gray-500">
+                    Page {currentPage} of{' '}
+                    {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} (
+                    {totalLogs} total entries)
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-2 py-1 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      disabled={currentPage === 1 || isLoadingLogs}
+                      onClick={() => {
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      className="px-2 py-1 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      disabled={
+                        currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
+                        isLoadingLogs
+                      }
+                      onClick={() => {
+                        setCurrentPage((prev) => prev + 1)
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="h-[500px] overflow-auto">
-                {nodeLogs.length === 0 ? (
+              <div className="h-[500px] overflow-auto relative">
+                {isLoadingLogs ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-gray-400">
+                        Loading logs...
+                      </span>
+                    </div>
+                  </div>
+                ) : nodeLogs.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-gray-500">
                     <span className="flex items-center gap-2">
                       <Activity className="w-4 h-4" />
