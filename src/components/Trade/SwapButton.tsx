@@ -1,4 +1,15 @@
+import {
+  Loader2,
+  AlertCircle,
+  Zap,
+  Ban,
+  Wallet,
+  RefreshCw,
+  Plug,
+  Clock,
+} from 'lucide-react'
 import React from 'react'
+import { twJoin } from 'tailwind-merge'
 
 interface SwapButtonProps {
   wsConnected: boolean
@@ -28,13 +39,11 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   const getButtonText = () => {
     if (!wsConnected) return 'Connecting...'
     if (isQuoteLoading && !hasValidQuote) return 'Getting Latest Quote...'
-    // Prioritize valid quote - if we have one, don't show loading states
     if (!hasValidQuote && (isToAmountLoading || isPriceLoading))
       return 'Preparing Swap...'
     if (!hasChannels) return 'No Channels Available'
     if (!hasTradablePairs) return 'No Tradable Pairs'
     if (errorMessage) {
-      // Special handling for exceed max receivable error
       if (errorMessage.includes('You can only receive up to')) {
         return 'Exceeds Max Receivable'
       }
@@ -47,23 +56,22 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   }
 
   const getButtonIcon = () => {
-    if (!wsConnected) return '🔌'
-    if (isLoading) return '⏳'
-    if (!hasChannels) return '📡'
-    if (!hasTradablePairs) return '🚫'
-    if (errorMessage) return '⚠️'
-    if (hasZeroAmount) return '💰'
-    if (isSwapInProgress) return '🔄'
-    if (!hasValidQuote) return '⏱️'
-    // Show refresh icon if quote is loading in background but we have a valid quote
-    if (isQuoteLoading && hasValidQuote) return '🔄'
-    return '⚡'
+    if (!wsConnected) return <Plug className="w-5 h-5" />
+    if (isLoading) return <Loader2 className="w-5 h-5 animate-spin" />
+    if (!hasChannels) return <Ban className="w-5 h-5" />
+    if (!hasTradablePairs) return <Ban className="w-5 h-5" />
+    if (errorMessage) return <AlertCircle className="w-5 h-5" />
+    if (hasZeroAmount) return <Wallet className="w-5 h-5" />
+    if (isSwapInProgress) return <RefreshCw className="w-5 h-5 animate-spin" />
+    if (!hasValidQuote) return <Clock className="w-5 h-5" />
+    if (isQuoteLoading && hasValidQuote)
+      return <RefreshCw className="w-5 h-5 animate-spin" />
+    return <Zap className="w-5 h-5" />
   }
 
   const isDisabled =
     !wsConnected ||
-    (isQuoteLoading && !hasValidQuote) || // Only block on quote loading if no valid quote exists
-    // Only block on loading states if we don't have a valid quote
+    (isQuoteLoading && !hasValidQuote) ||
     (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
     !!errorMessage ||
     !hasChannels ||
@@ -73,8 +81,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     !hasValidQuote
 
   const isLoading =
-    (isQuoteLoading && !hasValidQuote) || // Only show loading if no valid quote exists
-    // Only show loading for amount/price loading if we don't have a valid quote
+    (isQuoteLoading && !hasValidQuote) ||
     (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
     isSwapInProgress
 
@@ -90,44 +97,77 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   const buttonVariant = getButtonVariant()
 
   const getButtonStyles = () => {
-    const baseStyles = `relative w-full py-3.5 px-5 rounded-xl font-bold text-base transition-all duration-300 
-                       flex items-center justify-center gap-2.5 min-h-[56px] border-2 backdrop-blur-sm
-                       focus:outline-none focus:ring-4 transform-gpu`
+    const baseStyles = twJoin(
+      'relative w-full py-4 px-6 rounded-2xl font-bold text-base',
+      'transition-all duration-300 ease-out',
+      'flex items-center justify-center gap-3',
+      'min-h-[60px] border-2 backdrop-blur-xl',
+      'focus:outline-none focus:ring-4 transform-gpu',
+      'tracking-wide'
+    )
 
-    switch (buttonVariant) {
-      case 'error':
-        return `${baseStyles} bg-gradient-to-r from-red-600/80 to-red-700/80 border-red-500/50 text-red-100
-                hover:from-red-500/80 hover:to-red-600/80 hover:border-red-400/60 cursor-not-allowed
-                focus:ring-red-500/30`
-      case 'warning':
-        return `${baseStyles} bg-gradient-to-r from-amber-600/80 to-orange-600/80 border-amber-500/50 text-amber-100
-                cursor-not-allowed focus:ring-amber-500/30`
-      case 'disabled':
-        return `${baseStyles} bg-gradient-to-r from-slate-800/60 to-slate-900/60 border-slate-700/40 text-slate-400 
-                cursor-not-allowed focus:ring-slate-500/20`
-      case 'success':
-        return `${baseStyles} bg-gradient-to-r from-blue-600 to-purple-600 border-blue-500/50 text-white 
-                hover:from-blue-500 hover:to-purple-500 hover:border-blue-400/70 hover:scale-[1.02] 
-                active:scale-[0.98] cursor-pointer shadow-lg hover:shadow-xl hover:shadow-blue-500/25
-                focus:ring-blue-500/40`
-      default:
-        return baseStyles
+    const variants = {
+      disabled: twJoin(
+        baseStyles,
+        'bg-gradient-to-br from-slate-800/80 via-slate-800/70 to-slate-900/80',
+        'border-slate-700/40',
+        'text-slate-400',
+        'cursor-not-allowed',
+        'focus:ring-slate-500/20',
+        'shadow-lg shadow-slate-900/30'
+      ),
+      error: twJoin(
+        baseStyles,
+        'bg-gradient-to-br from-red-600/90 via-red-600/80 to-red-700/90',
+        'border-red-500/50',
+        'text-red-50',
+        'cursor-not-allowed',
+        'focus:ring-red-500/30',
+        'shadow-lg shadow-red-900/20'
+      ),
+      success: twJoin(
+        baseStyles,
+        'bg-gradient-to-br from-blue-600/90 via-blue-600/80 to-purple-600/90',
+        'border-blue-500/50',
+        'text-white',
+        'hover:from-blue-500/90 hover:via-blue-500/80 hover:to-purple-500/90',
+        'hover:border-blue-400/70',
+        'hover:scale-[1.02]',
+        'active:scale-[0.98]',
+        'cursor-pointer',
+        'shadow-lg hover:shadow-xl',
+        'hover:shadow-blue-500/25',
+        'focus:ring-blue-500/40'
+      ),
+      warning: twJoin(
+        baseStyles,
+        'bg-gradient-to-br from-amber-600/90 via-amber-600/80 to-orange-600/90',
+        'border-amber-500/50',
+        'text-amber-50',
+        'cursor-not-allowed',
+        'focus:ring-amber-500/30',
+        'shadow-lg shadow-amber-900/20'
+      ),
     }
+
+    return variants[buttonVariant]
   }
 
   return (
     <div className="relative group">
-      {/* Enhanced Glow Effect for Ready State */}
+      {/* Enhanced Glow Effects */}
       {buttonVariant === 'success' && (
         <>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 to-purple-500/40 rounded-xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 via-blue-400/20 to-purple-500/30 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-purple-400/10 to-purple-400/20 rounded-2xl blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100"></div>
         </>
       )}
 
-      {/* Progress Background for Loading States */}
+      {/* Loading State Background Animation */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent rounded-xl animate-pulse"></div>
+        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer"></div>
+        </div>
       )}
 
       <button
@@ -136,20 +176,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
         disabled={isDisabled}
         type="submit"
       >
-        {/* Loading Spinner */}
-        {isLoading && (
-          <div className="relative">
-            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-5 h-5 border-2 border-current/30 rounded-full"></div>
-          </div>
-        )}
-
         {/* Button Icon */}
-        {!isLoading && (
-          <span aria-hidden="true" className="text-lg" role="img">
-            {getButtonIcon()}
-          </span>
-        )}
+        <span className="transition-transform duration-300 group-hover:scale-110">
+          {getButtonIcon()}
+        </span>
 
         {/* Button Text */}
         <span className="font-bold tracking-wide">{getButtonText()}</span>
@@ -157,16 +187,16 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
         {/* Background Quote Refresh Indicator */}
         {isQuoteLoading && hasValidQuote && buttonVariant === 'success' && (
           <div className="absolute top-2 right-2">
-            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-blue-400/80 rounded-full animate-pulse"></div>
           </div>
         )}
 
-        {/* Success State Sparkle Effect */}
+        {/* Success State Sparkle Effects */}
         {buttonVariant === 'success' && !isLoading && (
-          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-            <div className="absolute top-2 right-2 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animation-delay-100"></div>
-            <div className="absolute top-3 right-7 w-0.5 h-0.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animation-delay-200"></div>
-            <div className="absolute bottom-2.5 left-3 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animation-delay-300"></div>
+          <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+            <div className="absolute top-2 right-3 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100"></div>
+            <div className="absolute top-4 right-8 w-1 h-1 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200"></div>
+            <div className="absolute bottom-3 left-4 w-1.5 h-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-300"></div>
           </div>
         )}
       </button>

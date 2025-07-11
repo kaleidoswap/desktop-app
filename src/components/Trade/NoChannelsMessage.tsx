@@ -199,192 +199,182 @@ export const NoTradingChannelsMessage: React.FC<
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none"></div>
 
       {/* Main Content Area */}
-      <div className="flex-1 relative z-10 flex items-center justify-center p-6">
-        <div className="w-full max-w-6xl mx-auto">
-          {/* Market Maker Selector */}
-          <div className="mb-8">
+      <div className="flex-1 relative z-10 flex flex-col items-center justify-start p-6">
+        <div className="w-full max-w-6xl">
+          {/* Market Maker Selector - Now at the top level */}
+          <div className="relative z-50 mb-8">
             <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl max-w-md mx-auto">
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-cyan-400/2 to-transparent rounded-3xl pointer-events-none"></div>
-              <div className="relative flex items-center justify-between">
+              <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
                   <h3 className="text-lg font-bold text-white">Market Maker</h3>
                 </div>
-                <MakerSelector onMakerChange={onMakerChange} />
+                <div className="flex-shrink-0">
+                  <MakerSelector onMakerChange={onMakerChange} />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-blue-500/20 rounded-3xl flex items-center justify-center border border-blue-500/30 backdrop-blur-sm shadow-2xl">
-                <div className="relative">
-                  <Link className="w-10 h-10 text-blue-400" />
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500/30 rounded-full animate-pulse"></div>
+          {/* Content Container - Lower z-index than maker selector */}
+          <div className="relative z-40">
+            {/* Hero Section */}
+            <div className="text-center mb-12">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-blue-500/20 rounded-3xl flex items-center justify-center border border-blue-500/30 backdrop-blur-sm shadow-2xl">
+                  <div className="relative">
+                    <Link className="w-10 h-10 text-blue-400" />
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500/30 rounded-full animate-pulse"></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4">
-              No Trading Channels Available
-            </h1>
+              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4">
+                No Trading Channels Available
+              </h1>
 
-            <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-8">
-              {getRecommendationMessage()}
-            </p>
+              <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-8">
+                {getRecommendationMessage()}
+              </p>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              {primaryAction === 'buy' ? (
-                <>
-                  <button
-                    className="group relative px-10 py-4 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:shadow-emerald-500/25 hover:scale-105 backdrop-blur-sm min-w-[200px]"
-                    onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <ShoppingCart className="w-6 h-6 relative z-10" />
-                    <span className="relative z-10">Buy Channel</span>
-                  </button>
-                  {recommendedAction === 'both' && (
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                {primaryAction === 'buy' ? (
+                  <>
                     <button
-                      className="group relative px-10 py-4 border-2 border-blue-500/70 hover:border-blue-400 text-blue-400 hover:text-blue-300 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-blue-500/25 hover:scale-105 backdrop-blur-sm hover:bg-blue-500/10 min-w-[200px]"
-                      onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
-                    >
-                      <Plus className="w-6 h-6" />
-                      Open Channel
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <button
-                    className="group relative px-10 py-4 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:shadow-blue-500/25 hover:scale-105 backdrop-blur-sm min-w-[200px]"
-                    onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <Plus className="w-6 h-6 relative z-10" />
-                    <span className="relative z-10">Open Channel</span>
-                  </button>
-                  {recommendedAction === 'both' && (
-                    <button
-                      className="group relative px-10 py-4 border-2 border-emerald-500/70 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-emerald-500/25 hover:scale-105 backdrop-blur-sm hover:bg-emerald-500/10 min-w-[200px]"
+                      className="group relative px-10 py-4 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:shadow-emerald-500/25 hover:scale-105 backdrop-blur-sm min-w-[200px]"
                       onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
                     >
-                      <ShoppingCart className="w-6 h-6" />
-                      Buy Channel
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <ShoppingCart className="w-6 h-6 relative z-10" />
+                      <span className="relative z-10">Buy Channel</span>
                     </button>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Refresh Button */}
-            <button
-              className="group relative px-8 py-3 bg-gradient-to-r from-slate-700/80 via-slate-600/60 to-slate-700/80 hover:from-slate-600 hover:to-slate-500 text-white rounded-xl font-medium transition-all duration-300 flex items-center gap-3 shadow-xl hover:shadow-slate-500/25 hover:scale-105 backdrop-blur-sm mx-auto"
-              onClick={async () => {
-                try {
-                  await onMakerChange()
-                } catch (error) {
-                  console.error('Failed to refresh channels:', error)
-                }
-              }}
-            >
-              <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-              Refresh Connection
-            </button>
-          </div>
-
-          {/* Information Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {tradingPairs.length > 0 ? (
-              <>
-                <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-purple-400/2 to-transparent rounded-3xl pointer-events-none"></div>
-                  <div className="relative">
-                    <TradablePairsDisplay
-                      maxPairsToShow={8}
-                      pairs={tradingPairs}
-                      title="Available Trading Pairs"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-cyan-400/2 to-transparent rounded-3xl pointer-events-none"></div>
-                  <div className="relative">
-                    <SupportedAssetsDisplay
-                      pairs={tradingPairs}
-                      title="Supported Assets"
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="lg:col-span-2">
-                <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-8 shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-blue-400/2 to-transparent rounded-3xl pointer-events-none"></div>
-                  <div className="relative">
-                    <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-blue-500/30 shadow-2xl">
-                        <HelpCircle className="w-8 h-8 text-blue-400" />
-                      </div>
-                      <h3 className="text-3xl font-bold text-white mb-3 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
-                        Quick Start Guide
-                      </h3>
-                      <p className="text-slate-400 text-lg leading-relaxed">
-                        Follow these steps to start trading with RGB assets
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/25 to-blue-500/30 text-blue-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-blue-500/40 shadow-lg">
-                          1
-                        </div>
-                        <button
-                          className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-2 font-semibold text-lg group-hover:scale-105 transition-all duration-300 mb-2"
-                          onClick={() => openUrl(registryUrl)}
-                        >
-                          Check supported assets
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
-                        <p className="text-slate-400 text-sm">
-                          Visit the registry to see what assets this maker
-                          supports
-                        </p>
-                      </div>
-
-                      <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500/30 via-green-500/25 to-emerald-500/30 text-emerald-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-emerald-500/40 shadow-lg">
-                          2
-                        </div>
-                        <h4 className="font-semibold text-lg text-white mb-2">
-                          Create Your Channel
-                        </h4>
-                        <p className="text-slate-400 text-sm">
-                          Buy a channel from an LSP or open one directly with
-                          your assets
-                        </p>
-                      </div>
-
-                      <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/25 to-purple-500/30 text-purple-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-purple-500/40 shadow-lg">
-                          3
-                        </div>
-                        <h4 className="font-semibold text-lg text-white mb-2">
-                          Start Trading
-                        </h4>
-                        <p className="text-slate-400 text-sm">
-                          Return here once your channel is active to begin
-                          trading
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    {recommendedAction === 'both' && (
+                      <button
+                        className="group relative px-10 py-4 border-2 border-blue-500/70 hover:border-blue-400 text-blue-400 hover:text-blue-300 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-blue-500/25 hover:scale-105 backdrop-blur-sm hover:bg-blue-500/10 min-w-[200px]"
+                        onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
+                      >
+                        <Plus className="w-6 h-6" />
+                        Open Channel
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="group relative px-10 py-4 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-2xl hover:shadow-blue-500/25 hover:scale-105 backdrop-blur-sm min-w-[200px]"
+                      onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <Plus className="w-6 h-6 relative z-10" />
+                      <span className="relative z-10">Open Channel</span>
+                    </button>
+                    {recommendedAction === 'both' && (
+                      <button
+                        className="group relative px-10 py-4 border-2 border-emerald-500/70 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 rounded-2xl font-bold text-xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-emerald-500/25 hover:scale-105 backdrop-blur-sm hover:bg-emerald-500/10 min-w-[200px]"
+                        onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
+                      >
+                        <ShoppingCart className="w-6 h-6" />
+                        Buy Channel
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
-            )}
+
+              {/* Information Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12">
+                {tradingPairs.length > 0 ? (
+                  <>
+                    <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-purple-400/2 to-transparent rounded-3xl pointer-events-none"></div>
+                      <div className="relative">
+                        <TradablePairsDisplay
+                          maxPairsToShow={8}
+                          pairs={tradingPairs}
+                          title="Available Trading Pairs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-cyan-400/2 to-transparent rounded-3xl pointer-events-none"></div>
+                      <div className="relative">
+                        <SupportedAssetsDisplay
+                          pairs={tradingPairs}
+                          title="Supported Assets"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="lg:col-span-2">
+                    <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-8 shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-blue-400/2 to-transparent rounded-3xl pointer-events-none"></div>
+                      <div className="relative">
+                        <div className="text-center mb-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 via-cyan-500/15 to-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-blue-500/30 shadow-2xl">
+                            <HelpCircle className="w-8 h-8 text-blue-400" />
+                          </div>
+                          <h3 className="text-3xl font-bold text-white mb-3 bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
+                            Quick Start Guide
+                          </h3>
+                          <p className="text-slate-400 text-lg leading-relaxed">
+                            Follow these steps to start trading with RGB assets
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/30 via-cyan-500/25 to-blue-500/30 text-blue-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-blue-500/40 shadow-lg">
+                              1
+                            </div>
+                            <button
+                              className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-2 font-semibold text-lg group-hover:scale-105 transition-all duration-300 mb-2"
+                              onClick={() => openUrl(registryUrl)}
+                            >
+                              Check supported assets
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                            <p className="text-slate-400 text-sm">
+                              Visit the registry to see what assets this maker
+                              supports
+                            </p>
+                          </div>
+
+                          <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500/30 via-green-500/25 to-emerald-500/30 text-emerald-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-emerald-500/40 shadow-lg">
+                              2
+                            </div>
+                            <h4 className="font-semibold text-lg text-white mb-2">
+                              Create Your Channel
+                            </h4>
+                            <p className="text-slate-400 text-sm">
+                              Buy a channel from an LSP or open one directly
+                              with your assets
+                            </p>
+                          </div>
+
+                          <div className="group text-center p-6 rounded-2xl hover:bg-slate-800/40 transition-all duration-300">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 via-pink-500/25 to-purple-500/30 text-purple-300 flex items-center justify-center mx-auto mb-4 text-xl font-bold border border-purple-500/40 shadow-lg">
+                              3
+                            </div>
+                            <h4 className="font-semibold text-lg text-white mb-2">
+                              Start Trading
+                            </h4>
+                            <p className="text-slate-400 text-sm">
+                              Return here once your channel is active to begin
+                              trading
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
