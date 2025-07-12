@@ -86,6 +86,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          # Skip rgb-lightning-node build on Windows since it's not supported
+          BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
         with:
           tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}

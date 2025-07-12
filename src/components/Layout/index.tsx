@@ -732,7 +732,7 @@ export const Layout = (props: Props) => {
                   </button>
 
                   {/* Manual update check button */}
-                  <button
+                  {/* <button
                     aria-label="Check for updates"
                     className={`relative p-2 rounded-lg hover:bg-blue-darker transition-colors ${
                       hasUpdateNotification
@@ -759,7 +759,7 @@ export const Layout = (props: Props) => {
                     {hasUpdateNotification && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                     )}
-                  </button>
+                  </button> */}
 
                   {/* Notifications bell */}
                   <button

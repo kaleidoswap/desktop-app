@@ -47,9 +47,24 @@ export const Component = () => {
   // Check if the node is already unlocked when the component mounts
   useEffect(() => {
     const checkNodeStatus = async () => {
-      const nodeInfoRes = await nodeInfo()
-      if (nodeInfoRes.isSuccess) {
-        navigate(WALLET_DASHBOARD_PATH)
+      try {
+        const nodeInfoRes = await nodeInfo()
+        if (nodeInfoRes.isSuccess) {
+          navigate(WALLET_DASHBOARD_PATH)
+        }
+      } catch (error: any) {
+        // Only show error toast if it's not a FETCH_ERROR (connection error)
+        // as we expect connection errors when node is not running
+        if (error?.status !== 'FETCH_ERROR') {
+          toast.error(
+            'Failed to check node status: ' +
+              (error.message || 'Unknown error'),
+            {
+              autoClose: 5000,
+              position: 'top-right',
+            }
+          )
+        }
       }
     }
     checkNodeStatus()
@@ -97,87 +112,77 @@ export const Component = () => {
 
         shouldRetry = false
       } catch (e: any) {
+        // Handle Tauri timeout error (60 seconds)
+        if (
+          e?.message?.includes('timeout') ||
+          e?.message?.includes('Timeout')
+        ) {
+          // If we get a timeout error, continue retrying
+          await new Promise((res) => setTimeout(res, 2000)) // Wait 2 seconds before retrying
+          continue
+        }
+
+        let errorMessage: string
         const error = e as NodeApiError
 
-        // Handle network/connection errors with more specific messages
+        if (error?.data?.error) {
+          errorMessage = error.data.error
+        } else if (e instanceof Error) {
+          errorMessage = e.message
+        } else {
+          errorMessage = 'An unknown error occurred'
+        }
+
+        // Handle network/connection errors
         if (
           typeof error.status === 'string' &&
           error?.status === 'FETCH_ERROR'
         ) {
+          errorMessage =
+            'Connection failed: Unable to connect to the node. Please check if the node is running and accessible.'
           if (doubleFetchErrorFlag) {
-            let errorMessage = error.data?.error || 'Connection error occurred'
-
-            // Provide more specific error messages for common CORS/network issues
-            if (
-              errorMessage.includes('CORS') ||
-              errorMessage.includes('Cross-origin')
-            ) {
-              errorMessage =
-                'CORS Error: Cannot connect to the node due to browser security restrictions. This usually means the node is redirecting to a login page or has authentication issues.'
-            } else if (
-              errorMessage.includes('Connection failed') ||
-              errorMessage.includes('Network error')
-            ) {
-              errorMessage =
-                'Network Error: Cannot connect to the node. Please ensure the node is running and accessible at the configured URL.'
-            }
-
             setUnlockError(errorMessage)
             toast.error(errorMessage, {
-              autoClose: 8000,
+              autoClose: 5000,
               position: 'top-right',
             })
             shouldRetry = false
             continue
           } else {
+            // First fetch error, wait and retry
+            await new Promise((res) => setTimeout(res, 2000))
             doubleFetchErrorFlag = true
             continue
           }
         }
 
-        // Handle specific status codes
-        if (error?.status === 0) {
-          const errorMessage =
-            'Connection Error: Cannot reach the node. This may be due to CORS policy blocking the request, network connectivity issues, or the node being offline.'
-          setUnlockError(errorMessage)
-          toast.error(errorMessage, {
-            autoClose: 8000,
-            position: 'top-right',
-          })
-          shouldRetry = false
-          continue
-        }
-
-        if (error?.status === 302) {
-          const errorMessage =
-            'Authentication Required. Please check if the node requires authentication or if there are CORS configuration issues.'
-          setUnlockError(errorMessage)
-          toast.error(errorMessage, {
-            autoClose: 8000,
-            position: 'top-right',
-          })
-          shouldRetry = false
-          continue
-        }
-
+        // Handle node state change
         if (
           error?.status === 403 &&
-          error?.data.error ===
-            'Cannot call other APIs while node is changing state'
+          errorMessage === 'Cannot call other APIs while node is changing state'
         ) {
           await new Promise((res) => setTimeout(res, pollingInterval))
           pollingInterval = Math.min(pollingInterval * 2, 15000)
           continue
         }
 
+        if (error?.status === 401 && errorMessage === 'Invalid password') {
+          setUnlockError('Invalid password')
+          toast.error('Invalid password', {
+            autoClose: 5000,
+            position: 'top-right',
+          })
+          shouldRetry = false
+          continue
+        }
+        // Handle initialization and already unlocked cases
         if (
           error.status === 403 &&
-          error.data?.error ===
-            'Wallet has not been initialized (hint: call init)'
+          errorMessage === 'Wallet has not been initialized (hint: call init)'
         ) {
           setShowInitModal(true)
           shouldRetry = false
-        } else if (error.data?.error === 'Node has already been unlocked') {
+        } else if (errorMessage === 'Node has already been unlocked') {
           toast.info('Node is already unlocked', {
             autoClose: 3000,
             position: 'bottom-right',
@@ -185,28 +190,10 @@ export const Component = () => {
           navigate(WALLET_DASHBOARD_PATH)
           shouldRetry = false
         } else {
-          // Provide better error messages for common scenarios
-          let errorMessage = error.data?.error || 'An error occurred'
-
-          if (
-            errorMessage.includes('Authentication required') ||
-            errorMessage.includes('redirecting to a login page')
-          ) {
-            errorMessage =
-              'Authentication Issue: The node requires authentication or has CORS configuration problems. Please check your node setup.'
-          } else if (
-            errorMessage.includes('The provided password is incorrect')
-          ) {
-            errorMessage =
-              'Incorrect password. Please check your wallet password and try again.'
-          } else if (errorMessage === 'An error occurred') {
-            errorMessage =
-              'Unknown Error: Unable to unlock the wallet. Please check your node connection and configuration.'
-          }
-
+          // Handle all other errors
           setUnlockError(errorMessage)
           toast.error(errorMessage, {
-            autoClose: 8000,
+            autoClose: 5000,
             position: 'top-right',
           })
           shouldRetry = false

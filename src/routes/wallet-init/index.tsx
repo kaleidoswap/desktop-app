@@ -66,6 +66,7 @@ interface NodeSetupFields {
   proxy_endpoint: string
   daemon_listening_port: string
   ldk_peer_listening_port: string
+  bearer_token: string
 }
 
 type SetupStep = 'setup' | 'password' | 'mnemonic' | 'verify' | 'unlock'
@@ -91,6 +92,7 @@ export const Component = () => {
   // Separate forms for each step
   const nodeSetupForm = useForm<NodeSetupFields>({
     defaultValues: {
+      bearer_token: '',
       name: 'Test Account',
       network: 'Regtest',
       ...NETWORK_DEFAULTS['Regtest'],
@@ -189,6 +191,7 @@ export const Component = () => {
         setSettingsAsync({
           daemon_listening_port: data.daemon_listening_port,
           datapath: datapath,
+          bearer_token: data.bearer_token,
           default_lsp_url: NETWORK_DEFAULTS[data.network].default_lsp_url,
           default_maker_url: defaultMakerUrl,
           indexer_url: data.indexer_url,
@@ -328,18 +331,35 @@ export const Component = () => {
     const initResult = await init({ password })
 
     if (!initResult.isSuccess) {
+      // Handle 403 status case
       if (
         initResult.error &&
+        typeof initResult.error === 'object' &&
         'status' in initResult.error &&
         initResult.error.status === 403
       ) {
         throw new Error('NODE_ALREADY_INITIALIZED')
       }
-      throw new Error(
-        initResult.error && 'data' in initResult.error
-          ? (initResult.error.data as { error: string }).error
-          : 'Node initialization failed'
-      )
+
+      // Handle error with data property
+      if (
+        initResult.error &&
+        typeof initResult.error === 'object' &&
+        'data' in initResult.error &&
+        initResult.error.data &&
+        typeof initResult.error.data === 'object' &&
+        'error' in initResult.error.data &&
+        typeof initResult.error.data.error === 'string'
+      ) {
+        throw new Error(initResult.error.data.error)
+      }
+
+      // Default error case
+      throw new Error('Node initialization failed')
+    }
+
+    if (!initResult.data || !initResult.data.mnemonic) {
+      throw new Error('Invalid response: missing mnemonic')
     }
 
     return initResult.data.mnemonic.split(' ')
@@ -802,6 +822,20 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
 
           <AdvancedSettings>
             <NetworkSettings form={form} />
+
+            <FormField
+              description="Optional authentication token for remote node access"
+              error={form.formState.errors.bearer_token?.message}
+              htmlFor="bearer_token"
+              label="Bearer Token"
+            >
+              <Input
+                id="bearer_token"
+                placeholder="Enter your bearer token"
+                {...form.register('bearer_token')}
+                error={!!form.formState.errors.bearer_token}
+              />
+            </FormField>
           </AdvancedSettings>
 
           <div className="pt-3">

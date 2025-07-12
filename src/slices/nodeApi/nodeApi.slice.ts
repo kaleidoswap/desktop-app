@@ -35,6 +35,7 @@ interface OpenChannelRequest {
   fee_rate_msat?: number
   fee_proportional_millionths?: number
   temporary_channel_id?: string
+  public?: boolean
 }
 
 interface OpenChannelResponse {
@@ -229,6 +230,7 @@ interface SendAssetRequest {
   recipient_id: string
   fee_rate: number
   transport_endpoints: string[]
+  donation?: boolean
 }
 
 interface SendAssetResponse {
@@ -434,6 +436,7 @@ export interface UnlockRequest {
   bitcoind_rpc_port: number
   indexer_url: string
   proxy_endpoint: string
+  bearer_token?: string
 }
 
 interface InvoiceStatusRequest {
@@ -466,6 +469,7 @@ const dynamicBaseQuery: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   const state = api.getState() as RootState
   const node_url = state.nodeSettings.data.node_url
+  const bearer_token = state.nodeSettings.data?.bearer_token
 
   if (!node_url) {
     return {
@@ -480,8 +484,26 @@ const dynamicBaseQuery: BaseQueryFn<
 
   const urlEnd = typeof args === 'string' ? args : args.url
   const adjustedUrl = `${node_url}${urlEnd}`
+
+  // Handle headers including authentication
+  let headers: Record<string, string> = {}
+  if (bearer_token) {
+    headers['Authorization'] = `Bearer ${bearer_token}`
+  }
+
+  // If args is an object and has headers, merge them with our headers
+  if (typeof args !== 'string' && args.headers) {
+    headers = { ...headers, ...(args.headers as Record<string, string>) }
+  }
+
   const adjustedArgs =
-    typeof args === 'string' ? adjustedUrl : { ...args, url: adjustedUrl }
+    typeof args === 'string'
+      ? adjustedUrl
+      : {
+          ...args,
+          headers,
+          url: adjustedUrl,
+        }
 
   const baseQuery = fetchBaseQuery({
     baseUrl: '',
@@ -831,7 +853,7 @@ export const nodeApi = createApi({
           capacity_sat: body.capacity_sat,
           fee_rate_msat: body.fee_rate_msat,
           peer_pubkey_and_opt_addr: body.peer_pubkey_and_opt_addr,
-          public: true,
+          public: body.public !== undefined ? body.public : true,
           push_msat: 3100000,
           with_anchors: true,
         }

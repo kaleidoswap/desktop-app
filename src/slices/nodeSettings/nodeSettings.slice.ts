@@ -15,6 +15,7 @@ export interface Account {
   rpc_connection_url: string
   daemon_listening_port: string
   ldk_peer_listening_port: string
+  bearer_token?: string
 }
 
 export interface NodeSettingsState {
@@ -27,6 +28,7 @@ const initialState: NodeSettingsState = {
   data: {
     daemon_listening_port: '',
     datapath: '',
+    bearer_token: '',
     default_lsp_url: '',
     default_maker_url: '',
     indexer_url: '',

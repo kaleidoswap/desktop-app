@@ -16,6 +16,7 @@ export const NewChannelFormSchema = z.object({
     const isFullFormat = /^([0-9a-fA-F]{66})@([^\s]+):(\d+)$/.test(value)
     return isPubkeyOnly || isFullFormat
   }, 'Invalid format. Expected: 66-char hex pubkey OR pubkey@host:port'),
+  public: z.boolean().default(true),
 })
 
 export type TNewChannelForm = z.infer<typeof NewChannelFormSchema>

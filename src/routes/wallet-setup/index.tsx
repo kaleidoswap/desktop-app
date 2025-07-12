@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import {
   Wallet,
   ArrowLeftRight,
@@ -8,7 +9,7 @@ import {
   ArrowLeft,
   HelpCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -33,6 +34,23 @@ export const Component = () => {
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const [isLocalNodeSupported, setIsLocalNodeSupported] = useState(true)
+
+  // Check if local node is supported on this platform
+  useEffect(() => {
+    const checkLocalNodeSupport = async () => {
+      try {
+        const supported = await invoke<boolean>('is_local_node_supported')
+        setIsLocalNodeSupported(supported)
+      } catch (error) {
+        console.error('Failed to check local node support:', error)
+        // If we can't check, assume it's not supported to be safe
+        setIsLocalNodeSupported(false)
+      }
+    }
+
+    checkLocalNodeSupport()
+  }, [])
 
   // Handle transitions
   const handleNodeTypeChange = (type: 'local' | 'remote' | null) => {
@@ -116,7 +134,9 @@ export const Component = () => {
                         Choose your preferred way to connect to the network
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                      className={`grid gap-6 ${isLocalNodeSupported ? 'grid-cols-1 md:grid-cols-2' : 'max-w-md mx-auto'}`}
+                    >
                       <NodeOption
                         description="Connect to a hosted node or self-hosted instance. Recommended for most users and advanced setups."
                         icon={<Cloud className="w-6 h-6" />}
@@ -124,13 +144,23 @@ export const Component = () => {
                         recommended={true}
                         title="Remote Node"
                       />
-                      <NodeOption
-                        description="Run a node on your local machine. Ideal for developers and testing environments."
-                        icon={<Server className="w-6 h-6" />}
-                        onClick={() => handleNodeTypeChange('local')}
-                        title="Local Node"
-                      />
+                      {isLocalNodeSupported && (
+                        <NodeOption
+                          description="Run a node on your local machine. Ideal for developers and testing environments."
+                          icon={<Server className="w-6 h-6" />}
+                          onClick={() => handleNodeTypeChange('local')}
+                          title="Local Node"
+                        />
+                      )}
                     </div>
+                    {!isLocalNodeSupported && (
+                      <div className="mt-6 text-center">
+                        <p className="text-gray-400 text-sm">
+                          Local node is not supported on Windows. Use a remote
+                          node connection instead.
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : nodeType === 'local' ? (
                   <>
