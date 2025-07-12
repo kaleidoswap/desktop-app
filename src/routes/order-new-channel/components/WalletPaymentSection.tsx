@@ -51,6 +51,14 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
     )
   }
 
+  // Hide the entire "Pay with Wallet" section if using lightning and no outbound liquidity
+  const hasNoLightningLiquidity =
+    paymentMethod === 'lightning' && outboundLiquidity <= 0
+
+  if (hasNoLightningLiquidity) {
+    return null
+  }
+
   const insufficientBalance =
     paymentMethod === 'lightning'
       ? outboundLiquidity < (currentPayment?.order_total_sat || 0)

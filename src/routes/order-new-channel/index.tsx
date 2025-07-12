@@ -80,6 +80,10 @@ export const Component = () => {
     'success' | 'error' | 'expired' | null
   >(null)
   const [paymentReceived, setPaymentReceived] = useState(false)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<
+    'lightning' | 'onchain' | null
+  >(null)
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -100,18 +104,42 @@ export const Component = () => {
         const orderData = orderResponse.data
 
         // Check if payment has been received (either in HOLD or PAID state)
-        const paymentState =
-          orderData?.payment?.bolt11?.state ||
-          orderData?.payment?.onchain?.state
+        // Properly detect which payment method was used
+        const bolt11State = orderData?.payment?.bolt11?.state
+        const onchainState = orderData?.payment?.onchain?.state
+
+        let actualPaymentState = null
+        let detectedPaymentMethod = null
+
+        // Check if bolt11 payment was made
+        if (bolt11State && ['HOLD', 'PAID'].includes(bolt11State)) {
+          actualPaymentState = bolt11State
+          detectedPaymentMethod = 'lightning'
+        }
+        // Check if onchain payment was made (only if bolt11 wasn't paid)
+        else if (onchainState && ['HOLD', 'PAID'].includes(onchainState)) {
+          actualPaymentState = onchainState
+          detectedPaymentMethod = 'onchain'
+        }
+        // Fall back to any payment state if neither is in HOLD/PAID
+        else {
+          actualPaymentState = bolt11State || onchainState
+        }
+
         const paymentJustReceived =
-          (paymentState === 'HOLD' || paymentState === 'PAID') &&
+          actualPaymentState &&
+          ['HOLD', 'PAID'].includes(actualPaymentState) &&
           !paymentReceived
 
         if (paymentJustReceived) {
           setPaymentReceived(true)
+          setIsProcessingPayment(true)
+          setPaymentMethod(detectedPaymentMethod as 'lightning' | 'onchain')
 
           console.log('Payment just received! Saving order to database...')
           console.log('Order ID:', orderId)
+          console.log('Payment method:', detectedPaymentMethod)
+          console.log('Payment state:', actualPaymentState)
           console.log('Order payload:', orderPayload)
           console.log('Order data:', orderData)
 
@@ -147,6 +175,7 @@ export const Component = () => {
         if (orderData?.order_state === 'COMPLETED') {
           clearInterval(intervalId)
           if (timeoutId) clearTimeout(timeoutId)
+          setIsProcessingPayment(false)
           setPaymentStatus('success')
           setStep(4)
         } else if (orderData?.order_state === 'FAILED') {
@@ -187,6 +216,7 @@ export const Component = () => {
 
           clearInterval(intervalId)
           if (timeoutId) clearTimeout(timeoutId)
+          setIsProcessingPayment(false)
 
           // Show 'expired' if no payment was made or if past expiry time
           // Show 'error' only if payment was made but still failed (requires refund)
@@ -579,6 +609,8 @@ export const Component = () => {
 
       <div className={step !== 3 ? 'hidden' : ''}>
         <Step3
+          detectedPaymentMethod={paymentMethod}
+          isProcessingPayment={isProcessingPayment}
           loading={getOrderResponse.isLoading}
           onBack={onStepBack}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
