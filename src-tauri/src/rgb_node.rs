@@ -11,6 +11,21 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Emitter, WebviewWindow};
+use crate::log_cache;
+use std::collections::VecDeque;
+use once_cell::sync::Lazy;
+
+// Cache for storing the most recent logs
+static LOG_CACHE: Lazy<Mutex<VecDeque<String>>> = Lazy::new(|| Mutex::new(VecDeque::with_capacity(5000)));
+
+// Function to add log to cache
+pub fn add_to_log_cache(message: String) {
+    let mut cache = LOG_CACHE.lock().unwrap();
+    if cache.len() >= 5000 {
+        cache.pop_front();
+    }
+    cache.push_back(message);
+}
 
 const SHUTDOWN_TIMEOUT_SECS: u64 = 5;
 
@@ -47,6 +62,11 @@ impl NodeProcess {
         }
     }
 
+    /// Check if local RGB Lightning Node is supported on this platform
+    pub fn is_local_node_supported() -> bool {
+        !cfg!(target_os = "windows")
+    }
+
     pub fn set_window(&self, window: WebviewWindow) {
         *self.window.lock().unwrap() = Some(window.clone());
         *self.app_handle.lock().unwrap() = Some(window.app_handle().clone());
@@ -60,6 +80,7 @@ impl NodeProcess {
     /// Starts a new RGB Lightning Node process (if none is running).
     /// If one is running, it is shut down first, then a new one is started.
     /// Returns an error if the node binary cannot be started.
+    /// On Windows, this will always return an error since rgb-lightning-node is not supported.
     pub fn start(
         &self,
         network: String,
@@ -68,6 +89,16 @@ impl NodeProcess {
         ldk_peer_listening_port: String,
         account_name: String,
     ) -> Result<(), String> {
+        // RGB Lightning Node is not supported on Windows
+        if cfg!(target_os = "windows") {
+            let err = "RGB Lightning Node is not supported on Windows. Please use a remote node connection instead.".to_string();
+            println!("{}", err);
+            if let Some(window) = &*self.window.lock().unwrap() {
+                let _ = window.emit("node-error", err.clone());
+            }
+            return Err(err);
+        }
+
         println!("Starting node for account: {}", account_name);
 
         // Check if ports are available before proceeding
@@ -476,6 +507,18 @@ impl NodeProcess {
         // Add additional delay to ensure ports are released
         println!("Waiting for ports to be released after force kill...");
         thread::sleep(Duration::from_secs(1));
+    }
+
+    pub fn log(&mut self, message: String) {
+        let mut logs = self.logs.lock().unwrap();
+        logs.push(message.clone());
+        // Add to the global cache
+        log_cache::add_to_cache(message);
+        
+        // Keep only last 1000 logs in memory for this instance
+        if logs.len() > 1000 {
+            logs.remove(0);
+        }
     }
 
     /// Spawns the rgb-lightning-node process.

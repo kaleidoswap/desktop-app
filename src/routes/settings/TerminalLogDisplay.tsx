@@ -116,7 +116,7 @@ interface TerminalLogDisplayProps {
 }
 
 const TerminalLogDisplay = memo(
-  ({ logs, maxEntries, className = '' }: TerminalLogDisplayProps) => {
+  ({ logs, className = '' }: TerminalLogDisplayProps) => {
     const logsContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {

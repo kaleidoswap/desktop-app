@@ -1,20 +1,27 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use db::{Account, ChannelOrder};
-use dotenv::dotenv;
-use rgb_node::NodeProcess;
-use std::env;
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, Window};
+use once_cell::sync::Lazy;
 
 mod db;
 mod rgb_node;
+mod log_cache;
+
+use rgb_node::NodeProcess;
 
 #[derive(Default)]
-struct CurrentAccount(RwLock<Option<Account>>);
+struct CurrentAccount(RwLock<Option<db::Account>>);
+
+#[derive(serde::Serialize)]
+pub struct NodeLogsResponse {
+    logs: Vec<String>,
+    total: u32,
+}
 
 fn main() {
-    dotenv().ok();
+    dotenv::dotenv().ok();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
 
@@ -155,6 +162,8 @@ fn main() {
             insert_channel_order,
             get_channel_orders,
             delete_channel_order,
+            // New command
+            is_local_node_supported,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -229,7 +238,7 @@ fn stop_node(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Result<
 }
 
 #[tauri::command]
-fn get_accounts() -> Result<Vec<Account>, String> {
+fn get_accounts() -> Result<Vec<db::Account>, String> {
     match db::get_accounts() {
         Ok(configs) => Ok(configs),
         Err(e) => Err(e.to_string()),
@@ -250,6 +259,7 @@ fn insert_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, String> {
     match db::insert_account(
         name,
@@ -264,6 +274,7 @@ fn insert_account(
         default_maker_url,
         daemon_listening_port,
         ldk_peer_listening_port,
+        bearer_token,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),
@@ -284,6 +295,7 @@ fn update_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, String> {
     match db::update_account(
         name,
@@ -298,6 +310,7 @@ fn update_account(
         default_maker_url,
         daemon_listening_port,
         ldk_peer_listening_port,
+        bearer_token,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),
@@ -342,7 +355,7 @@ fn check_account_exists(name: String) -> Result<bool, String> {
 fn set_current_account(
     state: tauri::State<CurrentAccount>,
     account_name: String,
-) -> Result<Account, String> {
+) -> Result<db::Account, String> {
     let accounts = db::get_accounts().map_err(|e| e.to_string())?;
     let account = accounts
         .into_iter()
@@ -354,12 +367,12 @@ fn set_current_account(
 }
 
 #[tauri::command]
-fn get_current_account(state: tauri::State<CurrentAccount>) -> Option<Account> {
+fn get_current_account(state: tauri::State<CurrentAccount>) -> Option<db::Account> {
     state.0.read().unwrap().clone()
 }
 
 #[tauri::command]
-fn get_account_by_name(name: String) -> Result<Option<Account>, String> {
+fn get_account_by_name(name: String) -> Result<Option<db::Account>, String> {
     match db::get_account_by_name(&name) {
         Ok(account) => Ok(account),
         Err(e) => Err(e.to_string()),
@@ -367,8 +380,13 @@ fn get_account_by_name(name: String) -> Result<Option<Account>, String> {
 }
 
 #[tauri::command]
-fn get_node_logs(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Vec<String> {
-    node_process.lock().unwrap().get_logs()
+fn get_node_logs(
+    _node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
+    page: u32,
+    page_size: u32
+) -> Result<NodeLogsResponse, String> {
+    let (logs, total) = log_cache::get_logs(page, page_size);
+    Ok(NodeLogsResponse { logs, total })
 }
 
 #[tauri::command]
@@ -400,16 +418,45 @@ fn get_running_node_account(
 }
 
 #[tauri::command]
-fn insert_channel_order(order_id: String, status: String, payload: String, created_at: String) -> Result<usize, String> {
-    db::insert_channel_order(order_id, status, payload, created_at).map_err(|e| e.to_string())
+fn insert_channel_order(
+    state: tauri::State<CurrentAccount>,
+    #[allow(non_snake_case)] orderId: String, 
+    status: String, 
+    payload: String, 
+    #[allow(non_snake_case)] createdAt: String
+) -> Result<usize, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account = current_account.as_ref()
+        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
+    
+    db::insert_channel_order(account.id, orderId, status, payload, createdAt)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_channel_orders() -> Result<Vec<ChannelOrder>, String> {
-    db::get_channel_orders().map_err(|e| e.to_string())
+fn get_channel_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<db::ChannelOrder>, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account_id = current_account.as_ref().map(|account| account.id);
+    
+    db::get_channel_orders(account_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn delete_channel_order(order_id: String) -> Result<usize, String> {
-    db::delete_channel_order(order_id).map_err(|e| e.to_string())
+fn delete_channel_order(
+    state: tauri::State<CurrentAccount>,
+    #[allow(non_snake_case)] orderId: String
+) -> Result<usize, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account = current_account.as_ref()
+        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
+    
+    db::delete_channel_order(account.id, orderId).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn is_local_node_supported() -> bool {
+    rgb_node::NodeProcess::is_local_node_supported()
 }

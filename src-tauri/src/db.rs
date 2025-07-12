@@ -18,11 +18,13 @@ pub struct Account {
     pub default_maker_url: String,
     pub daemon_listening_port: String,
     pub ldk_peer_listening_port: String,
+    pub bearer_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ChannelOrder {
     pub id: i32,
+    pub account_id: i32,
     pub order_id: String,
     pub created_at: String,
     pub status: String,
@@ -39,37 +41,49 @@ pub fn init() {
     // Create/verify tables regardless of whether the file existed
     let path = get_db_path();
     let conn = Connection::open(path).unwrap();
+    
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS 'Accounts' (
-            'id'	INTEGER NOT NULL UNIQUE,
-            'name'	TEXT NOT NULL,
-            'network'	TEXT NOT NULL,
-            'datapath'	TEXT NOT NULL,
-            'rpc_connection_url'	TEXT NOT NULL,
-            'node_url'  TEXT NOT NULL,
-            'indexer_url'  TEXT NOT NULL,
-            'proxy_endpoint'  TEXT NOT NULL,
-            'default_lsp_url'  TEXT NOT NULL,
-            'maker_urls'  TEXT NOT NULL DEFAULT '',
-            'default_maker_url'  TEXT NOT NULL DEFAULT '',
-            'daemon_listening_port'  TEXT NOT NULL DEFAULT '3001',
-            'ldk_peer_listening_port'  TEXT NOT NULL DEFAULT '9735',
-            PRIMARY KEY('id' AUTOINCREMENT)
-        );",
-        (),
-    )
-    .unwrap();
+        "CREATE TABLE IF NOT EXISTS accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            network TEXT NOT NULL,
+            datapath TEXT,
+            rpc_connection_url TEXT NOT NULL,
+            node_url TEXT NOT NULL,
+            indexer_url TEXT NOT NULL,
+            proxy_endpoint TEXT NOT NULL,
+            default_lsp_url TEXT NOT NULL,
+            maker_urls TEXT NOT NULL,
+            default_maker_url TEXT NOT NULL,
+            daemon_listening_port TEXT NOT NULL,
+            ldk_peer_listening_port TEXT NOT NULL,
+            bearer_token TEXT
+        )",
+        [],
+    ).unwrap();
     // Add ChannelOrders table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
             'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+            'account_id' INTEGER NOT NULL,
             'order_id' TEXT NOT NULL,
             'created_at' TEXT NOT NULL,
             'status' TEXT NOT NULL,
-            'payload' TEXT NOT NULL
+            'payload' TEXT NOT NULL,
+            FOREIGN KEY(account_id) REFERENCES Accounts(id) ON DELETE CASCADE
         );",
         (),
     ).unwrap();
+
+    // Add account_id column to existing ChannelOrders table if it doesn't exist
+    let _ = conn.execute(
+        "ALTER TABLE ChannelOrders ADD COLUMN account_id INTEGER",
+        (),
+    );
+    // Note: We ignore the error if the column already exists
+    
+    // Migrate existing orders without account_id to the first available account
+    migrate_existing_orders(&conn);
 }
 
 // Create the database file.
@@ -127,6 +141,35 @@ pub fn get_db_path() -> String {
     db_path.to_str().unwrap().to_string()
 }
 
+fn migrate_existing_orders(conn: &Connection) {
+    // Check if there are any orders without account_id
+    let count_result: Result<i64, _> = conn.query_row(
+        "SELECT COUNT(*) FROM ChannelOrders WHERE account_id IS NULL",
+        [],
+        |row| row.get(0)
+    );
+    
+    if let Ok(count) = count_result {
+        if count > 0 {
+            // Get the first account id
+            let first_account_result: Result<i32, _> = conn.query_row(
+                "SELECT id FROM Accounts ORDER BY id LIMIT 1",
+                [],
+                |row| row.get(0)
+            );
+            
+            if let Ok(first_account_id) = first_account_result {
+                // Update all orders without account_id to use the first account
+                let _ = conn.execute(
+                    "UPDATE ChannelOrders SET account_id = ?1 WHERE account_id IS NULL",
+                    [first_account_id],
+                );
+                println!("Migrated {} existing channel orders to account {}", count, first_account_id);
+            }
+        }
+    }
+}
+
 pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     let mut stmt = conn.prepare("SELECT * FROM Accounts")?;
@@ -146,6 +189,7 @@ pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
                 default_maker_url: row.get(10)?,
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
+                bearer_token: row.get(13)?,
             })
         })?
         .map(|res| res.unwrap())
@@ -167,6 +211,7 @@ pub fn insert_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
 
@@ -182,9 +227,9 @@ pub fn insert_account(
     }
 
     conn.execute(
-        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-        rusqlite::params![name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port],
+        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        rusqlite::params![name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token],
     )
 }
 
@@ -201,6 +246,7 @@ pub fn update_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(
@@ -215,8 +261,9 @@ pub fn update_account(
             maker_urls = ?8,
             default_maker_url = ?9,
             daemon_listening_port = ?10,
-            ldk_peer_listening_port = ?11
-         WHERE name = ?12",
+            ldk_peer_listening_port = ?11,
+            bearer_token = ?12
+         WHERE name = ?13",
         rusqlite::params![
             network,
             datapath,
@@ -229,6 +276,7 @@ pub fn update_account(
             default_maker_url,
             daemon_listening_port,
             ldk_peer_listening_port,
+            bearer_token,
             name
         ],
     )
@@ -253,6 +301,7 @@ pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Erro
                 default_maker_url: row.get(10)?,
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
+                bearer_token: row.get(13)?,
             })
         })
         .optional()?;
@@ -296,36 +345,59 @@ pub fn check_account_exists(name: &str) -> Result<bool, rusqlite::Error> {
     Ok(count > 0)
 }
 
-pub fn insert_channel_order(order_id: String, status: String, payload: String, created_at: String) -> Result<usize, rusqlite::Error> {
+pub fn insert_channel_order(account_id: i32, order_id: String, status: String, payload: String, created_at: String) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(
-        "INSERT INTO ChannelOrders (order_id, created_at, status, payload) VALUES (?1, ?2, ?3, ?4)",
-        rusqlite::params![order_id, created_at, status, payload],
+        "INSERT INTO ChannelOrders (account_id, order_id, created_at, status, payload) VALUES (?1, ?2, ?3, ?4, ?5)",
+        rusqlite::params![account_id, order_id, created_at, status, payload],
     )
 }
 
-pub fn get_channel_orders() -> Result<Vec<ChannelOrder>, rusqlite::Error> {
+pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    let mut stmt = conn.prepare("SELECT id, order_id, created_at, status, payload FROM ChannelOrders ORDER BY created_at DESC")?;
-    let orders = stmt
-        .query_map([], |row| {
-            Ok(ChannelOrder {
-                id: row.get(0)?,
-                order_id: row.get(1)?,
-                created_at: row.get(2)?,
-                status: row.get(3)?,
-                payload: row.get(4)?,
-            })
-        })?
-        .map(|res| res.unwrap())
-        .collect();
-    Ok(orders)
+    
+    match account_id {
+        Some(id) => {
+            let mut stmt = conn.prepare("SELECT id, account_id, order_id, created_at, status, payload FROM ChannelOrders WHERE account_id = ?1 ORDER BY created_at DESC")?;
+            let orders = stmt
+                .query_map([id], |row| {
+                    Ok(ChannelOrder {
+                        id: row.get(0)?,
+                        account_id: row.get(1)?,
+                        order_id: row.get(2)?,
+                        created_at: row.get(3)?,
+                        status: row.get(4)?,
+                        payload: row.get(5)?,
+                    })
+                })?
+                .map(|res| res.unwrap())
+                .collect();
+            Ok(orders)
+        },
+        None => {
+            let mut stmt = conn.prepare("SELECT id, account_id, order_id, created_at, status, payload FROM ChannelOrders ORDER BY created_at DESC")?;
+            let orders = stmt
+                .query_map([], |row| {
+                    Ok(ChannelOrder {
+                        id: row.get(0)?,
+                        account_id: row.get(1)?,
+                        order_id: row.get(2)?,
+                        created_at: row.get(3)?,
+                        status: row.get(4)?,
+                        payload: row.get(5)?,
+                    })
+                })?
+                .map(|res| res.unwrap())
+                .collect();
+            Ok(orders)
+        }
+    }
 }
 
-pub fn delete_channel_order(order_id: String) -> Result<usize, rusqlite::Error> {
+pub fn delete_channel_order(account_id: i32, order_id: String) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(
-        "DELETE FROM ChannelOrders WHERE order_id = ?1",
-        rusqlite::params![order_id],
+        "DELETE FROM ChannelOrders WHERE order_id = ?1 AND account_id = ?2",
+        rusqlite::params![order_id, account_id],
     )
 }
