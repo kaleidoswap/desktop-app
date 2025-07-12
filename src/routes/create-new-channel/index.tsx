@@ -31,6 +31,7 @@ const initialFormState: TNewChannelForm = {
   capacitySat: MIN_CHANNEL_CAPACITY,
   fee: 'medium',
   pubKeyAndAddress: '',
+  public: true,
 }
 
 export const Component = () => {
@@ -145,6 +146,7 @@ export const Component = () => {
       capacity_sat: formData.capacitySat,
       fee_rate_msat: feeRates[formData.fee],
       peer_pubkey_and_opt_addr: formData.pubKeyAndAddress,
+      public: formData.public,
     }).unwrap()
   }
 

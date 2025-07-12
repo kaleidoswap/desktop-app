@@ -7,6 +7,8 @@ import {
   Activity,
   TagIcon,
   Users,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 
@@ -252,6 +254,31 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 <span className="text-white capitalize">{formData.fee}</span>
                 <span className="text-slate-400 text-sm ml-2">
                   {feeRates[formData.fee]} sat/vB
+                </span>
+              </div>
+            }
+          />
+        </InfoCardGrid>
+
+        <InfoCardGrid columns={1}>
+          <InfoCard
+            icon={
+              formData.public ? (
+                <Eye className="w-4 h-4 text-blue-500" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-blue-500" />
+              )
+            }
+            label="Channel Privacy"
+            value={
+              <div className="flex items-center justify-between">
+                <span className="text-white capitalize">
+                  {formData.public ? 'Public' : 'Private'}
+                </span>
+                <span className="text-slate-400 text-sm ml-2">
+                  {formData.public
+                    ? 'Visible on Lightning Network'
+                    : 'Only known to parties'}
                 </span>
               </div>
             }

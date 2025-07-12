@@ -40,6 +40,7 @@ interface FormFields {
   assetId: string
   assetTicker: string
   fee: 'slow' | 'medium' | 'fast'
+  public: boolean
 }
 
 const Step2Schema = NewChannelFormSchema.omit({
@@ -51,6 +52,7 @@ const Step2Schema = NewChannelFormSchema.omit({
   assetTicker: z.string().optional(), // Display amount with proper precision
   capacitySat: z.string(),
   pubKeyAndAddress: z.string(),
+  public: z.boolean(),
 })
 
 export const Step2 = ({
@@ -108,6 +110,7 @@ export const Step2 = ({
         capacitySat: formData.capacitySat.toString(),
         fee: formData.fee || 'medium',
         pubKeyAndAddress: formData.pubKeyAndAddress,
+        public: formData.public !== undefined ? formData.public : true,
       },
       mode: 'onChange',
       resolver: zodResolver(Step2Schema),
@@ -117,6 +120,7 @@ export const Step2 = ({
   const selectedFee = watch('fee')
   const currentAssetAmount = watch('assetAmount')
   const currentAssetId = watch('assetId')
+  const isPublic = watch('public')
 
   useEffect(() => {
     takerAssets()
@@ -921,6 +925,75 @@ export const Step2 = ({
                 </div>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Channel Privacy section */}
+        <div className="border-t border-gray-700/50 my-8"></div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-4">
+            Channel Privacy
+          </label>
+          <div className="bg-gray-900/50 p-6 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="text-white font-medium mb-1">
+                  {isPublic ? 'Public Channel' : 'Private Channel'}
+                </h5>
+                <p className="text-sm text-gray-400">
+                  {isPublic
+                    ? 'Visible on the Lightning Network and can be used for routing payments'
+                    : 'Only known to the two parties and cannot be used for routing'}
+                </p>
+              </div>
+
+              {/* Toggle Switch */}
+              <button
+                aria-checked={isPublic}
+                aria-label="Toggle channel privacy"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                  isPublic ? 'bg-purple-600' : 'bg-gray-600'
+                }`}
+                onClick={() => {
+                  const newValue = !isPublic
+                  setValue('public', newValue)
+                  onFormUpdate({ public: newValue })
+                }}
+                role="switch"
+                type="button"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isPublic ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                  />
+                </svg>
+                <div className="text-sm text-blue-300">
+                  <strong>Public channels</strong> are discoverable and can
+                  route payments for the network.
+                  <strong>Private channels</strong> provide direct connectivity
+                  without network visibility.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
