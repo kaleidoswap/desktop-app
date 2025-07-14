@@ -396,8 +396,9 @@ pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, 
 
 pub fn delete_channel_order(account_id: i32, order_id: String) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    conn.execute(
-        "DELETE FROM ChannelOrders WHERE order_id = ?1 AND account_id = ?2",
-        rusqlite::params![order_id, account_id],
-    )
+    let rows_affected = conn.execute(
+        "DELETE FROM ChannelOrders WHERE account_id = ?1 AND order_id = ?2",
+        rusqlite::params![account_id, order_id],
+    )?;
+    Ok(rows_affected)
 }

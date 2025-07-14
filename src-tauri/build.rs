@@ -14,9 +14,14 @@ fn main() {
     dotenv().ok();
 
     // Read the ENV that decides whether to build/run rgb-lightning-node
-    let build_rgb_lightning_node = env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE")
-        .unwrap_or_else(|_| "true".to_string())
-        == "true";
+    // On Windows, rgb-lightning-node is not supported, so skip building it
+    let build_rgb_lightning_node = if cfg!(target_os = "windows") {
+        false
+    } else {
+        env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE")
+            .unwrap_or_else(|_| "true".to_string())
+            == "true"
+    };
 
     // Path to the current Cargo.toml directory
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
@@ -66,6 +71,11 @@ fn main() {
             "../bin/rgb-lightning-node"
         };
         config.remove_resource(resource_name);
+        
+        // On Windows, also remove the Unix version to be safe
+        if cfg!(target_os = "windows") {
+            config.remove_resource("../bin/rgb-lightning-node");
+        }
     }
 
     // Use the TAURI_CONFIG environment variable

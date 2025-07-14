@@ -1033,9 +1033,7 @@ export const Component = () => {
         setTradingPairs,
         setTradablePairs,
         setSelectedPair,
-        setIsPairsLoading,
-        // Only show user error if all required data is loaded
-        isInitialDataLoaded && isAssetsLoaded && isChannelsLoaded
+        setIsPairsLoading
       ),
     [
       getPairs,
@@ -1311,6 +1309,7 @@ export const Component = () => {
       isChannelsLoaded &&
       pubKey &&
       makerConnectionUrl &&
+      tradablePairs.length > 0 && // Only initialize if we have tradable pairs
       !isWebSocketInitialized &&
       !webSocketService.isConnected() &&
       !isInitializingRef.current
@@ -1410,6 +1409,7 @@ export const Component = () => {
     isWebSocketInitialized,
     startConnectionTimeout,
     clearConnectionTimeout,
+    tradablePairs.length,
   ])
 
   // Separate effect to handle channels and assets changes without reinitializing WebSocket
@@ -1846,7 +1846,16 @@ export const Component = () => {
         await new Promise((resolve) => setTimeout(resolve, 200))
 
         // Fetch trading pairs after all basic data is loaded and settled
-        await fetchAndSetPairs()
+        const pairsFound = await fetchAndSetPairs()
+
+        // If no tradable pairs were found, don't proceed with WebSocket connection
+        if (!pairsFound) {
+          logger.warn(
+            'No tradable pairs found during setup - WebSocket connection will be skipped'
+          )
+          setIsInitialDataLoaded(true)
+          return
+        }
 
         logger.info('Initial data fetched successfully')
         setIsInitialDataLoaded(true)
@@ -2756,6 +2765,7 @@ export const Component = () => {
       isPairsLoading || // True until fetchAndSetPairs completes
       (!!makerConnectionUrl &&
         hasTradableChannels(channels) &&
+        tradablePairs.length > 0 && // Only wait for WebSocket if we have tradable pairs
         !isWebSocketInitialized) ||
       channels.length === 0 ||
       (tradablePairs.length === 0 && isPairsLoading))
@@ -2824,9 +2834,7 @@ export const Component = () => {
     !isStillLoading &&
     (!makerConnectionUrl || // Case 1: No maker URL configured
       !hasValidChannelsForTrading || // Case 2: Initial setup deemed no valid channels
-      (tradablePairs.length === 0 &&
-        !isPairsLoading &&
-        isWebSocketInitialized) || // Case 3: No pairs and not loading and WS init done
+      (tradablePairs.length === 0 && !isPairsLoading && isInitialDataLoaded) || // Case 3: No pairs and not loading and initial data loaded
       // Case 4: Maker URL exists, WS init done, not connected, AND no physical tradable channels
       (!!makerConnectionUrl &&
         isWebSocketInitialized &&
@@ -2843,7 +2851,7 @@ export const Component = () => {
     hasValidChannelsForTrading // Trading was deemed possible based on initial channel/pair checks
 
   return (
-    <div className="w-full min-h-screen overflow-y-auto relative">
+    <div className="w-full min-h-full overflow-y-auto relative">
       {shouldShowNoChannelsMessage ? (
         <NoTradingChannelsMessage
           {...createTradingChannelsMessageProps(
@@ -2855,11 +2863,7 @@ export const Component = () => {
           )}
         />
       ) : (
-        <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative flex items-center justify-center">
-          {/* Ultra Modern Background Enhancement */}
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/20 via-transparent to-purple-950/20 pointer-events-none"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none"></div>
-
+        <div className="w-full min-h-full relative flex items-center justify-center">
           <div className="w-full max-w-screen-xl mx-auto px-4 py-6">
             {isStillLoading ? (
               <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
@@ -3012,3 +3016,6 @@ export const Component = () => {
     </div>
   )
 }
+
+// Export with a named export for the trade hub
+export const MarketMakerComponent = Component

@@ -509,19 +509,18 @@ export const createFetchAndSetPairsHandler = (
   setTradingPairs: (pairs: TradingPair[]) => void,
   setTradablePairs: (pairs: TradingPair[]) => void,
   setSelectedPair: (pair: TradingPair | null) => void,
-  setIsPairsLoading?: (loading: boolean) => void,
-  showUserError: boolean = true
+  setIsPairsLoading?: (loading: boolean) => void
 ) => {
   // Add a static flag to prevent multiple simultaneous calls
   let isCurrentlyFetching = false
 
-  return async () => {
+  return async (): Promise<boolean> => {
     // Prevent multiple simultaneous calls
     if (isCurrentlyFetching) {
       logger.debug(
         'fetchAndSetPairs already in progress, skipping duplicate call'
       )
-      return
+      return false
     }
 
     isCurrentlyFetching = true
@@ -645,14 +644,9 @@ export const createFetchAndSetPairsHandler = (
               .map((p) => `${p.base_asset_id}/${p.quote_asset_id}`)
               .join(', ')
           )
-          // Show a clear toast error to the user ONLY if showUserError is true
-          if (showUserError) {
-            toast.error(
-              "No tradable pairs found. Your available assets do not match the market maker's supported pairs."
-            )
-          }
+          // Don't show toast error - let the component handle this case
         }
-        return
+        return false // Return false to indicate no tradable pairs found
       }
 
       // Try to find a pair with BTC first
@@ -683,9 +677,12 @@ export const createFetchAndSetPairsHandler = (
       logger.info(
         `Pairs fetched successfully. Selected pair: ${fromAsset}/${toAsset}`
       )
+
+      return true // Return true to indicate tradable pairs were found
     } catch (error) {
       logger.error('Error fetching pairs:', error)
       toast.error('Failed to fetch trading pairs')
+      return false
     } finally {
       isCurrentlyFetching = false
       if (setIsPairsLoading) {
@@ -820,11 +817,11 @@ export const checkMakerHealth = async (
       // Try to fetch a basic endpoint first (health check or pairs)
       const response = await fetch(`${makerUrl}/api/v1/market/pairs`, {
         // Use GET instead of HEAD as many APIs don't support HEAD
-headers: {
+        headers: {
           Accept: 'application/json',
         },
-        
-method: 'GET', 
+
+        method: 'GET',
         signal: controller.signal,
       })
 
