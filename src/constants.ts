@@ -7,6 +7,8 @@ export const COIN_ICON_URL =
   'https://raw.githubusercontent.com/kaleidoswap/coinmarketcap-icons-cryptos/refs/heads/main/icons/'
 
 export type BitcoinNetwork = 'Regtest' | 'Testnet' | 'Mainnet' | 'Signet'
+export type RegtestConnectionType = 'local' | 'bitfinex'
+
 // Error constants
 export const ERROR_NOT_ENOUGH_UNCOLORED =
   'No uncolored UTXOs are available (hint: call createutxos)'

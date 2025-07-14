@@ -10,7 +10,6 @@ import {
   Bell,
   HelpCircle,
   User,
-  RefreshCw,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
@@ -28,7 +27,6 @@ import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
 import { SupportModal } from '../SupportModal'
-import { useUpdate } from '../UpdateChecker'
 
 import 'react-toastify/dist/ReactToastify.min.css'
 import {
@@ -385,10 +383,6 @@ export const Layout = (props: Props) => {
 
   const { toggleNotificationPanel, notifications, addNotification } =
     useNotification()
-  const { checkForUpdates } = useUpdate()
-
-  // Check if there are any update notifications
-  const hasUpdateNotification = notifications.some((n) => n.data?.update)
 
   useOnClickOutside(channelMenuRef, () => setIsChannelMenuOpen(false))
   useOnClickOutside(transactionMenuRef, () => setIsTransactionMenuOpen(false))
