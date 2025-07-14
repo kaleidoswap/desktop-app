@@ -281,7 +281,8 @@ export const Component = () => {
     }
   }
 
-  const onSubmit: SubmitHandler<Fields> = async (data) => {
+  const onSubmit: SubmitHandler<Fields> = async () => {
+    // Show terms modal first
     setShowTermsModal(true)
   }
 
