@@ -76,3 +76,48 @@ export const useAssetIcon = (ticker: string, defaultIcon = defaultRgbIcon) => {
 
   return [imgSrc, setImgSrc] as const
 }
+
+// Generate random wallet names
+const adjectives = [
+  'swift',
+  'bright',
+  'cosmic',
+  'digital',
+  'electric',
+  'quantum',
+  'stellar',
+  'crypto',
+  'lunar',
+  'solar',
+  'atomic',
+  'dynamic',
+  'plasma',
+  'cyber',
+  'neural',
+  'quantum',
+]
+
+const nouns = [
+  'wallet',
+  'vault',
+  'node',
+  'beacon',
+  'portal',
+  'nexus',
+  'circuit',
+  'matrix',
+  'pulse',
+  'core',
+  'sphere',
+  'prism',
+  'vector',
+  'cipher',
+  'token',
+  'chain',
+]
+
+export const generateWalletName = (): string => {
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)]
+  const noun = nouns[Math.floor(Math.random() * nouns.length)]
+  return `${adjective}-${noun}-${Math.floor(Math.random() * 1000)}`
+}

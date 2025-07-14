@@ -164,6 +164,7 @@ fn main() {
             delete_channel_order,
             // New command
             is_local_node_supported,
+            get_markdown_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -459,4 +460,12 @@ fn delete_channel_order(
 #[tauri::command]
 fn is_local_node_supported() -> bool {
     rgb_node::NodeProcess::is_local_node_supported()
+}
+
+#[tauri::command]
+async fn get_markdown_content(file_path: String) -> Result<String, String> {
+    let content = tokio::fs::read_to_string(file_path)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(content)
 }

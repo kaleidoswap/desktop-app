@@ -59,3 +59,7 @@ export const CREATE_NEW_CHANNEL_PATH = makePath(['create-new-channel'])
 export const ORDER_CHANNEL_PATH = makePath(['order-new-channel'])
 
 export const CREATEUTXOS_PATH = makePath(['createutxos'])
+
+// Legal
+export const TERMS_PATH = '/terms'
+export const PRIVACY_PATH = '/privacy'

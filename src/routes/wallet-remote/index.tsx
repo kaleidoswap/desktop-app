@@ -13,6 +13,7 @@ import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { NetworkSelector } from '../../components/NetworkSelector'
 import { RegtestConnectionSelector } from '../../components/RegtestConnectionSelector'
+import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
   Button,
   Card,
@@ -72,9 +73,9 @@ export const Component = () => {
   } | null>(null)
   const [connectionSuccess, setConnectionSuccess] = useState(false)
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   const dispatch = useAppDispatch()
-
   const navigate = useNavigate()
 
   const form = useForm<Fields>({
@@ -281,9 +282,15 @@ export const Component = () => {
   }
 
   const onSubmit: SubmitHandler<Fields> = async (data) => {
+    setShowTermsModal(true)
+  }
+
+  const handleTermsAccept = async () => {
+    setShowTermsModal(false)
+    const data = form.getValues()
     setIsConnecting(true)
-    setConnectionError(null)
     setConnectionStep('testing')
+    setConnectionError(null)
 
     // Check if account with the same name already exists
     try {
@@ -477,9 +484,9 @@ export const Component = () => {
       // Save node settings with bearer token if auth is enabled
       await dispatch(
         setSettingsAsync({
+          bearer_token: data.authToken,
           daemon_listening_port: data.daemon_listening_port,
           datapath: '',
-          bearer_token: data.authToken,
           default_lsp_url: networkDefaults.default_lsp_url,
           default_maker_url: defaultMakerUrl,
           indexer_url: data.indexer_url,
@@ -500,15 +507,15 @@ export const Component = () => {
 
       // Insert account
       await invoke('insert_account', {
+        bearerToken: data.useAuth ? data.authToken : '',
         daemonListeningPort: '',
         datapath: '',
-        bearerToken: data.useAuth ? data.authToken : '',
         defaultLspUrl: networkDefaults.default_lsp_url,
         defaultMakerUrl,
-        
+
         indexerUrl: data.indexer_url,
         // Empty for remote nodes
-ldkPeerListeningPort: '',
+        ldkPeerListeningPort: '',
         makerUrls: defaultMakerUrl,
         name: data.name,
         network: data.network,
@@ -537,342 +544,355 @@ ldkPeerListeningPort: '',
   }
 
   return (
-    <Layout>
-      <SetupLayout
-        centered
-        fullHeight
-        icon={<Cloud />}
-        maxWidth="3xl"
-        onBack={() => navigate(WALLET_SETUP_PATH)}
-        subtitle="Enter the details of your remote RGB Lightning node"
-        title="Connect to Remote Node"
-      >
-        {connectionError && (
-          <Alert
-            className="mb-6"
-            icon={<AlertTriangle className="w-4 h-4" />}
-            title={connectionError.message}
-            variant="error"
-          >
-            <div className="space-y-2">
-              <p className="text-sm text-red-200">{connectionError.details}</p>
-              {connectionError.type === 'connection' && (
-                <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
-                  <p className="font-medium mb-1">💡 Troubleshooting tips:</p>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Verify the node URL is correct and accessible</li>
-                    <li>Check if the node is running and responding</li>
-                    <li>Ensure the port number is correct</li>
-                    <li>
-                      Try switching between local and remote regtest if using
-                      regtest
-                    </li>
-                  </ul>
-                </div>
-              )}
-              {connectionError.type === 'auth' && (
-                <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
-                  <p className="font-medium mb-1">🔑 Authentication help:</p>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Double-check your password</li>
-                    <li>Verify the authentication token if using one</li>
-                    <li>Ensure the node accepts your credentials</li>
-                  </ul>
-                </div>
-              )}
-              {connectionError.type === 'network' && (
-                <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
-                  <p className="font-medium mb-1">
-                    🌐 Network troubleshooting:
-                  </p>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Check your internet connection</li>
-                    <li>Verify the node is online and accessible</li>
-                    <li>
-                      Try switching regtest connection type if using regtest
-                    </li>
-                  </ul>
-                </div>
-              )}
-              <button
-                className="mt-3 text-xs text-red-300 hover:text-red-200 underline transition-colors"
-                onClick={() => setConnectionError(null)}
-                type="button"
-              >
-                Dismiss and try again
-              </button>
-            </div>
-          </Alert>
-        )}
-
-        {connectionSuccess && (
-          <Alert
-            className="mb-6"
-            icon={<Check className="w-4 h-4" />}
-            title="Connection test successful"
-            variant="success"
-          >
-            <div className="space-y-2">
-              <p className="text-sm text-green-200">
-                Successfully connected to the remote node! The node is
-                responding correctly.
-              </p>
-              <div className="text-xs text-green-300 bg-green-500/10 p-2 rounded border border-green-500/20">
-                <p className="font-medium mb-1">✅ Connection verified:</p>
-                <ul className="space-y-1 list-disc list-inside">
-                  <li>Node is online and accessible</li>
-                  <li>Authentication is working correctly</li>
-                  <li>Node is responding with valid data</li>
-                </ul>
-              </div>
-              <button
-                className="mt-3 text-xs text-green-300 hover:text-green-200 underline transition-colors"
-                onClick={() => setConnectionSuccess(false)}
-                type="button"
-              >
-                Dismiss
-              </button>
-            </div>
-          </Alert>
-        )}
-
-        <div className="w-full">
-          <p className="text-slate-400 mb-6 leading-relaxed">
-            Configure your remote node connection settings. Enter the details of
-            your existing RGB Lightning node.
-          </p>
-
-          <Card className="p-6 bg-blue-dark/40 border border-white/5">
-            <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-              <SetupSection>
-                <FormField
-                  description="This name will be used to identify your remote node connection"
-                  error={form.formState.errors.name?.message}
-                  htmlFor="name"
-                  label="Account Name"
-                >
-                  <Input
-                    id="name"
-                    placeholder="My Remote Node"
-                    {...form.register('name', {
-                      required: 'Account name is required',
-                    })}
-                    error={!!form.formState.errors.name}
-                  />
-                </FormField>
-                <FormField
-                  description={
-                    form.watch('network') === 'Regtest'
-                      ? `Node URL for ${form.watch('regtestConnectionType') === 'local' ? 'local' : 'Bitfinex'} regtest connection`
-                      : 'The URL of your remote RGB Lightning node'
-                  }
-                  error={form.formState.errors.node_url?.message}
-                  htmlFor="node_url"
-                  label="Node URL"
-                >
-                  <Input
-                    id="node_url"
-                    placeholder={
-                      form.watch('network') === 'Regtest'
-                        ? form.watch('regtestConnectionType') === 'local'
-                          ? 'http://localhost:3001'
-                          : 'http://localhost:3001 (Bitfinex regtest)'
-                        : 'http://your-node-url:3000'
-                    }
-                    {...form.register('node_url', {
-                      required: 'Node URL is required',
-                      validate: (value) => {
-                        // Check for common URL formatting issues
-                        if (value.includes('//nodeinfo')) {
-                          return 'Remove "/nodeinfo" from the URL - it will be added automatically'
-                        }
-                        if (value.match(/\/\/+$/)) {
-                          return 'Remove extra trailing slashes from the URL'
-                        }
-                        if (!value.match(/^https?:\/\//)) {
-                          return 'URL must start with http:// or https://'
-                        }
-                        return true
-                      },
-                    })}
-                    error={!!form.formState.errors.node_url}
-                  />
-                  {form.watch('node_url') &&
-                    form.watch('node_url').endsWith('/')}
-                </FormField>
-
-                <NetworkSelector
-                  className="mb-4"
-                  onChange={(network) => form.setValue('network', network)}
-                  selectedNetwork={form.watch('network')}
-                />
-
-                {form.watch('network') === 'Regtest' && (
-                  <div className="mb-6 p-4 bg-blue-dark/20 border border-blue-500/20 rounded-xl">
-                    <RegtestConnectionSelector
-                      onChange={(type) =>
-                        form.setValue('regtestConnectionType', type)
-                      }
-                      selectedType={form.watch('regtestConnectionType')}
-                    />
+    <>
+      <Layout>
+        <SetupLayout
+          centered
+          fullHeight
+          icon={<Cloud />}
+          maxWidth="3xl"
+          onBack={() => navigate(WALLET_SETUP_PATH)}
+          subtitle="Enter the details of your remote RGB Lightning node"
+          title="Connect to Remote Node"
+        >
+          {connectionError && (
+            <Alert
+              className="mb-6"
+              icon={<AlertTriangle className="w-4 h-4" />}
+              title={connectionError.message}
+              variant="error"
+            >
+              <div className="space-y-2">
+                <p className="text-sm text-red-200">
+                  {connectionError.details}
+                </p>
+                {connectionError.type === 'connection' && (
+                  <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
+                    <p className="font-medium mb-1">💡 Troubleshooting tips:</p>
+                    <ul className="space-y-1 list-disc list-inside">
+                      <li>Verify the node URL is correct and accessible</li>
+                      <li>Check if the node is running and responding</li>
+                      <li>Ensure the port number is correct</li>
+                      <li>
+                        Try switching between local and remote regtest if using
+                        regtest
+                      </li>
+                    </ul>
                   </div>
                 )}
-                <FormField
-                  error={form.formState.errors.password?.message}
-                  htmlFor="password"
-                  label="Node Password"
-                >
-                  <PasswordInput
-                    id="password"
-                    isVisible={isPasswordVisible}
-                    onToggleVisibility={() =>
-                      setIsPasswordVisible(!isPasswordVisible)
-                    }
-                    placeholder="Password"
-                    {...form.register('password', {
-                      required: 'Password is required',
-                    })}
-                    error={!!form.formState.errors.password}
-                  />
-                </FormField>
-              </SetupSection>
-
-              <AdvancedSettings>
-                <NetworkSettings form={form} />
-
-                <div className="p-2.5 bg-blue-dark/40 rounded-lg border border-slate-700/30 mt-4">
-                  <div className="flex items-center mb-2.5">
-                    <input
-                      className="w-3.5 h-3.5 text-cyan bg-blue-dark border-gray-600 rounded focus:ring-cyan"
-                      id="useAuth"
-                      type="checkbox"
-                      {...form.register('useAuth')}
-                    />
-                    <label
-                      className="ml-2 text-xs font-medium text-gray-300"
-                      htmlFor="useAuth"
-                    >
-                      Use Authentication Token
-                    </label>
+                {connectionError.type === 'auth' && (
+                  <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
+                    <p className="font-medium mb-1">🔑 Authentication help:</p>
+                    <ul className="space-y-1 list-disc list-inside">
+                      <li>Double-check your password</li>
+                      <li>Verify the authentication token if using one</li>
+                      <li>Ensure the node accepts your credentials</li>
+                    </ul>
                   </div>
+                )}
+                {connectionError.type === 'network' && (
+                  <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
+                    <p className="font-medium mb-1">
+                      🌐 Network troubleshooting:
+                    </p>
+                    <ul className="space-y-1 list-disc list-inside">
+                      <li>Check your internet connection</li>
+                      <li>Verify the node is online and accessible</li>
+                      <li>
+                        Try switching regtest connection type if using regtest
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                <button
+                  className="mt-3 text-xs text-red-300 hover:text-red-200 underline transition-colors"
+                  onClick={() => setConnectionError(null)}
+                  type="button"
+                >
+                  Dismiss and try again
+                </button>
+              </div>
+            </Alert>
+          )}
 
-                  {form.watch('useAuth') && (
-                    <FormField
-                      error={form.formState.errors.authToken?.message}
-                      htmlFor="authToken"
-                      label="Authentication Token"
-                    >
-                      <Input
-                        id="authToken"
-                        {...form.register('authToken', {
-                          required: form.watch('useAuth')
-                            ? 'Authentication token is required'
-                            : false,
-                        })}
-                        error={!!form.formState.errors.authToken}
-                      />
-                    </FormField>
-                  )}
+          {connectionSuccess && (
+            <Alert
+              className="mb-6"
+              icon={<Check className="w-4 h-4" />}
+              title="Connection test successful"
+              variant="success"
+            >
+              <div className="space-y-2">
+                <p className="text-sm text-green-200">
+                  Successfully connected to the remote node! The node is
+                  responding correctly.
+                </p>
+                <div className="text-xs text-green-300 bg-green-500/10 p-2 rounded border border-green-500/20">
+                  <p className="font-medium mb-1">✅ Connection verified:</p>
+                  <ul className="space-y-1 list-disc list-inside">
+                    <li>Node is online and accessible</li>
+                    <li>Authentication is working correctly</li>
+                    <li>Node is responding with valid data</li>
+                  </ul>
                 </div>
-              </AdvancedSettings>
+                <button
+                  className="mt-3 text-xs text-green-300 hover:text-green-200 underline transition-colors"
+                  onClick={() => setConnectionSuccess(false)}
+                  type="button"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </Alert>
+          )}
 
-              {/* Progress Indicator */}
-              {isConnecting && (
-                <div className="pt-3 pb-2">
-                  <div className="flex items-center gap-3 p-3 bg-blue-dark/30 border border-blue-500/20 rounded-lg">
-                    <Spinner size="sm" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white">
-                        {connectionStep === 'testing' &&
-                          'Step 1: Testing connection to remote node...'}
-                        {connectionStep === 'creating' &&
-                          'Step 2: Creating account and saving settings...'}
-                        {connectionStep === 'finalizing' &&
-                          'Step 3: Finalizing account setup...'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex gap-1">
-                          <div
-                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-cyan' : 'bg-slate-600'}`}
-                          />
-                          <div
-                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-cyan' : connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
-                          />
-                          <div
-                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
-                          />
+          <div className="w-full">
+            <p className="text-slate-400 mb-6 leading-relaxed">
+              Configure your remote node connection settings. Enter the details
+              of your existing RGB Lightning node.
+            </p>
+
+            <Card className="p-6 bg-blue-dark/40 border border-white/5">
+              <form
+                className="space-y-4"
+                onSubmit={form.handleSubmit(onSubmit)}
+              >
+                <SetupSection>
+                  <FormField
+                    description="This name will be used to identify your remote node connection"
+                    error={form.formState.errors.name?.message}
+                    htmlFor="name"
+                    label="Account Name"
+                  >
+                    <Input
+                      id="name"
+                      placeholder="My Remote Node"
+                      {...form.register('name', {
+                        required: 'Account name is required',
+                      })}
+                      error={!!form.formState.errors.name}
+                    />
+                  </FormField>
+                  <FormField
+                    description={
+                      form.watch('network') === 'Regtest'
+                        ? `Node URL for ${form.watch('regtestConnectionType') === 'local' ? 'local' : 'Bitfinex'} regtest connection`
+                        : 'The URL of your remote RGB Lightning node'
+                    }
+                    error={form.formState.errors.node_url?.message}
+                    htmlFor="node_url"
+                    label="Node URL"
+                  >
+                    <Input
+                      id="node_url"
+                      placeholder={
+                        form.watch('network') === 'Regtest'
+                          ? form.watch('regtestConnectionType') === 'local'
+                            ? 'http://localhost:3001'
+                            : 'http://localhost:3001 (Bitfinex regtest)'
+                          : 'http://your-node-url:3000'
+                      }
+                      {...form.register('node_url', {
+                        required: 'Node URL is required',
+                        validate: (value) => {
+                          // Check for common URL formatting issues
+                          if (value.includes('//nodeinfo')) {
+                            return 'Remove "/nodeinfo" from the URL - it will be added automatically'
+                          }
+                          if (value.match(/\/\/+$/)) {
+                            return 'Remove extra trailing slashes from the URL'
+                          }
+                          if (!value.match(/^https?:\/\//)) {
+                            return 'URL must start with http:// or https://'
+                          }
+                          return true
+                        },
+                      })}
+                      error={!!form.formState.errors.node_url}
+                    />
+                    {form.watch('node_url') &&
+                      form.watch('node_url').endsWith('/')}
+                  </FormField>
+
+                  <NetworkSelector
+                    className="mb-4"
+                    onChange={(network) => form.setValue('network', network)}
+                    selectedNetwork={form.watch('network')}
+                  />
+
+                  {form.watch('network') === 'Regtest' && (
+                    <div className="mb-6 p-4 bg-blue-dark/20 border border-blue-500/20 rounded-xl">
+                      <RegtestConnectionSelector
+                        onChange={(type) =>
+                          form.setValue('regtestConnectionType', type)
+                        }
+                        selectedType={form.watch('regtestConnectionType')}
+                      />
+                    </div>
+                  )}
+                  <FormField
+                    error={form.formState.errors.password?.message}
+                    htmlFor="password"
+                    label="Node Password"
+                  >
+                    <PasswordInput
+                      id="password"
+                      isVisible={isPasswordVisible}
+                      onToggleVisibility={() =>
+                        setIsPasswordVisible(!isPasswordVisible)
+                      }
+                      placeholder="Password"
+                      {...form.register('password', {
+                        required: 'Password is required',
+                      })}
+                      error={!!form.formState.errors.password}
+                    />
+                  </FormField>
+                </SetupSection>
+
+                <AdvancedSettings>
+                  <NetworkSettings form={form} />
+
+                  <div className="p-2.5 bg-blue-dark/40 rounded-lg border border-slate-700/30 mt-4">
+                    <div className="flex items-center mb-2.5">
+                      <input
+                        className="w-3.5 h-3.5 text-cyan bg-blue-dark border-gray-600 rounded focus:ring-cyan"
+                        id="useAuth"
+                        type="checkbox"
+                        {...form.register('useAuth')}
+                      />
+                      <label
+                        className="ml-2 text-xs font-medium text-gray-300"
+                        htmlFor="useAuth"
+                      >
+                        Use Authentication Token
+                      </label>
+                    </div>
+
+                    {form.watch('useAuth') && (
+                      <FormField
+                        error={form.formState.errors.authToken?.message}
+                        htmlFor="authToken"
+                        label="Authentication Token"
+                      >
+                        <Input
+                          id="authToken"
+                          {...form.register('authToken', {
+                            required: form.watch('useAuth')
+                              ? 'Authentication token is required'
+                              : false,
+                          })}
+                          error={!!form.formState.errors.authToken}
+                        />
+                      </FormField>
+                    )}
+                  </div>
+                </AdvancedSettings>
+
+                {/* Progress Indicator */}
+                {isConnecting && (
+                  <div className="pt-3 pb-2">
+                    <div className="flex items-center gap-3 p-3 bg-blue-dark/30 border border-blue-500/20 rounded-lg">
+                      <Spinner size="sm" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">
+                          {connectionStep === 'testing' &&
+                            'Step 1: Testing connection to remote node...'}
+                          {connectionStep === 'creating' &&
+                            'Step 2: Creating account and saving settings...'}
+                          {connectionStep === 'finalizing' &&
+                            'Step 3: Finalizing account setup...'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex gap-1">
+                            <div
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                            />
+                            <div
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-cyan' : connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                            />
+                            <div
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-400">
+                            {connectionStep === 'testing' && '1/3'}
+                            {connectionStep === 'creating' && '2/3'}
+                            {connectionStep === 'finalizing' && '3/3'}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-400">
-                          {connectionStep === 'testing' && '1/3'}
-                          {connectionStep === 'creating' && '2/3'}
-                          {connectionStep === 'finalizing' && '3/3'}
-                        </span>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              <div className="pt-3 space-y-3">
-                {/* Test Connection Button */}
-                <Button
-                  className="w-full"
-                  disabled={isTestingConnection || isConnecting}
-                  icon={
-                    isTestingConnection ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4" />
-                    )
-                  }
-                  iconPosition="left"
-                  onClick={testConnection}
-                  size="lg"
-                  type="button"
-                  variant="secondary"
-                >
-                  {isTestingConnection
-                    ? 'Testing Connection...'
-                    : 'Test Connection'}
-                </Button>
-
-                {/* Main Submit Button */}
-                <Button
-                  className="w-full"
-                  disabled={isConnecting || isTestingConnection}
-                  icon={
-                    isConnecting ? (
-                      <Spinner size="sm" />
-                    ) : (
-                      <ArrowRight className="w-4 h-4" />
-                    )
-                  }
-                  iconPosition="right"
-                  size="lg"
-                  type="submit"
-                  variant="primary"
-                >
-                  {isConnecting
-                    ? connectionStep === 'testing'
-                      ? 'Testing Connection...'
-                      : connectionStep === 'creating'
-                        ? 'Creating Account...'
-                        : connectionStep === 'finalizing'
-                          ? 'Finalizing Setup...'
-                          : 'Processing...'
-                    : 'Test Connection & Create Account'}
-                </Button>
-
-                {connectionSuccess && (
-                  <p className="text-xs text-center text-green-400">
-                    Connection verified! You can now safely connect to the node.
-                  </p>
                 )}
-              </div>
-            </form>
-          </Card>
-        </div>
-      </SetupLayout>
-    </Layout>
+
+                <div className="pt-3 space-y-3">
+                  {/* Test Connection Button */}
+                  <Button
+                    className="w-full"
+                    disabled={isTestingConnection || isConnecting}
+                    icon={
+                      isTestingConnection ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4" />
+                      )
+                    }
+                    iconPosition="left"
+                    onClick={testConnection}
+                    size="lg"
+                    type="button"
+                    variant="secondary"
+                  >
+                    {isTestingConnection
+                      ? 'Testing Connection...'
+                      : 'Test Connection'}
+                  </Button>
+
+                  {/* Main Submit Button */}
+                  <Button
+                    className="w-full"
+                    disabled={isConnecting || isTestingConnection}
+                    icon={
+                      isConnecting ? (
+                        <Spinner size="sm" />
+                      ) : (
+                        <ArrowRight className="w-4 h-4" />
+                      )
+                    }
+                    iconPosition="right"
+                    size="lg"
+                    type="submit"
+                    variant="primary"
+                  >
+                    {isConnecting
+                      ? connectionStep === 'testing'
+                        ? 'Testing Connection...'
+                        : connectionStep === 'creating'
+                          ? 'Creating Account...'
+                          : connectionStep === 'finalizing'
+                            ? 'Finalizing Setup...'
+                            : 'Processing...'
+                      : 'Test Connection & Create Account'}
+                  </Button>
+
+                  {connectionSuccess && (
+                    <p className="text-xs text-center text-green-400">
+                      Connection verified! You can now safely connect to the
+                      node.
+                    </p>
+                  )}
+                </div>
+              </form>
+            </Card>
+          </div>
+        </SetupLayout>
+      </Layout>
+      <TermsWarningModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccept}
+        onClose={() => setShowTermsModal(false)}
+      />
+    </>
   )
 }

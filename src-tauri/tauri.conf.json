@@ -16,7 +16,8 @@
     ],
     "targets": "all",
     "resources": [
-      "../bin/rgb-lightning-node"
+      "../bin/rgb-lightning-node",
+      "../docs"
     ],
     "linux": {
       "appimage": {

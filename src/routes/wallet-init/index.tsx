@@ -32,6 +32,7 @@ import {
   PasswordFields,
 } from '../../components/PasswordSetupForm'
 import { StepIndicator } from '../../components/StepIndicator'
+import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
   Button,
   Card,
@@ -51,6 +52,7 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 
 const WALLET_INIT_STEPS = [
+  { id: 'terms', label: 'Terms' },
   { id: 'setup', label: 'Node Setup' },
   { id: 'password', label: 'Password' },
   { id: 'mnemonic', label: 'Recovery Phrase' },
@@ -69,10 +71,16 @@ interface NodeSetupFields {
   bearer_token: string
 }
 
-type SetupStep = 'setup' | 'password' | 'mnemonic' | 'verify' | 'unlock'
+type SetupStep =
+  | 'terms'
+  | 'setup'
+  | 'password'
+  | 'mnemonic'
+  | 'verify'
+  | 'unlock'
 
 export const Component = () => {
-  const [currentStep, setCurrentStep] = useState<SetupStep>('setup')
+  const [currentStep, setCurrentStep] = useState<SetupStep>('terms')
   const [mnemonic, setMnemonic] = useState<string[]>([])
   const [isNodeError, setIsNodeError] = useState(false)
   const [nodeErrorMessage, setNodeErrorMessage] = useState('')
@@ -81,6 +89,7 @@ export const Component = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [nodePassword, setNodePassword] = useState('')
   const [isCancellingUnlock, setIsCancellingUnlock] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(true)
 
   const [init] = nodeApi.endpoints.init.useLazyQuery()
   const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
@@ -125,8 +134,11 @@ export const Component = () => {
   // Handle back navigation based on current step
   const handleBackNavigation = () => {
     switch (currentStep) {
-      case 'setup':
+      case 'terms':
         navigate(WALLET_SETUP_PATH)
+        break
+      case 'setup':
+        handleStepChange('terms')
         break
       case 'password':
         handleStepChange('setup')
@@ -189,9 +201,9 @@ export const Component = () => {
       const defaultMakerUrl = NETWORK_DEFAULTS[data.network].default_maker_url
       await dispatch(
         setSettingsAsync({
+          bearer_token: data.bearer_token,
           daemon_listening_port: data.daemon_listening_port,
           datapath: datapath,
-          bearer_token: data.bearer_token,
           default_lsp_url: NETWORK_DEFAULTS[data.network].default_lsp_url,
           default_maker_url: defaultMakerUrl,
           indexer_url: data.indexer_url,
@@ -602,6 +614,11 @@ export const Component = () => {
     }
   }
 
+  const handleTermsAccept = () => {
+    setShowTermsModal(false)
+    handleStepChange('setup')
+  }
+
   const renderCurrentStep = () => {
     const renderStepLayout = (
       title: string,
@@ -623,22 +640,39 @@ export const Component = () => {
     ) => (
       <SetupLayout
         centered={centered}
-        fullHeight
         icon={icon}
         maxWidth={maxWidth}
         onBack={onBack}
         subtitle={subtitle}
         title={title}
       >
-        <div className="mb-5">
-          <StepIndicator currentStep={currentStep} steps={WALLET_INIT_STEPS} />
-        </div>
-
-        <div className="flex-1">{content}</div>
+        {content}
       </SetupLayout>
     )
 
     switch (currentStep) {
+      case 'terms':
+        return renderStepLayout(
+          'Welcome to KaleidoSwap',
+          'Please read and accept our terms and privacy policy to continue',
+          <FileText className="w-8 h-8 text-blue-400" />,
+          <div className="flex flex-col items-center justify-center space-y-6 p-8">
+            <p className="text-gray-300 text-center max-w-lg">
+              Before you begin using KaleidoSwap, please review and accept our
+              Terms of Service and Privacy Policy.
+            </p>
+            <Button
+              className="w-full max-w-sm"
+              onClick={() => setShowTermsModal(true)}
+            >
+              Review Terms & Privacy Policy
+            </Button>
+          </div>,
+          () => navigate(WALLET_SETUP_PATH),
+          'xl',
+          true
+        )
+
       case 'setup':
         return renderStepLayout(
           'Create New Wallet',
@@ -749,7 +783,26 @@ export const Component = () => {
     }
   }
 
-  return <Layout>{renderCurrentStep()}</Layout>
+  return (
+    <>
+      <Layout>
+        <div className="flex-1 flex flex-col">
+          <div className="container mx-auto px-4 py-8">
+            <StepIndicator
+              currentStep={currentStep}
+              steps={WALLET_INIT_STEPS}
+            />
+            {renderCurrentStep()}
+          </div>
+        </div>
+      </Layout>
+      <TermsWarningModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccept}
+        onClose={() => navigate(WALLET_SETUP_PATH)}
+      />
+    </>
+  )
 }
 
 interface NodeSetupFormProps {

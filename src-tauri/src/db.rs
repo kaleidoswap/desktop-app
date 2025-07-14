@@ -57,7 +57,8 @@ pub fn init() {
             default_maker_url TEXT NOT NULL,
             daemon_listening_port TEXT NOT NULL,
             ldk_peer_listening_port TEXT NOT NULL,
-            bearer_token TEXT
+            bearer_token TEXT,
+            terms_accepted INTEGER DEFAULT 0
         )",
         [],
     ).unwrap();
@@ -227,8 +228,8 @@ pub fn insert_account(
     }
 
     conn.execute(
-        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, terms_accepted) 
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 1)",
         rusqlite::params![name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token],
     )
 }
