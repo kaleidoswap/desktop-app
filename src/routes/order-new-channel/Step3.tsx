@@ -134,7 +134,9 @@ export const Step3: React.FC<StepProps> = ({
   }, [order?.asset_id, getAssetInfo])
 
   // Calculate available liquidity
-  const channels = listChannelsResponse?.data?.channels || []
+  const channels =
+    listChannelsResponse?.data?.channels.filter((channel) => channel.ready) ||
+    []
   const outboundLiquidity = Math.max(
     ...(channels.map(
       (channel) => channel.next_outbound_htlc_limit_msat / 1000

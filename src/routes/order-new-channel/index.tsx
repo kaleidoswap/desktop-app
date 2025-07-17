@@ -159,17 +159,6 @@ export const Component = () => {
           } else {
             console.log('No order payload available to save')
           }
-
-          // Start the 3-minute timeout only after payment is received
-          timeoutId = setTimeout(
-            () => {
-              // When timeout occurs after payment is received, we treat it as an expired order
-              setPaymentStatus('expired')
-              toast.error(`Order confirmation timed out. Order ID: ${orderId}`)
-              setStep(4)
-            },
-            3 * 60 * 1000
-          ) // 3 minutes
         }
 
         if (orderData?.order_state === 'COMPLETED') {

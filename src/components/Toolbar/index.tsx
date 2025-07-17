@@ -945,6 +945,23 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
+                    Bitcoind RPC URL
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      onChange={(e) =>
+                        handleInputChange('rpc_connection_url', e.target.value)
+                      }
+                      placeholder="user:password@localhost:18443"
+                      type="text"
+                      value={formData.rpc_connection_url}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
                     Indexer URL
                   </label>
                   <div className="flex items-center">
