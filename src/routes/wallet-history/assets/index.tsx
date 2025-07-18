@@ -1,17 +1,15 @@
-import {
-  Coins,
-  Search,
-  RefreshCw,
-  ArrowLeft,
-  Copy,
-  ExternalLink,
-  ArrowDownRight,
-} from 'lucide-react'
+import { Coins, Search, RefreshCw, Copy, ArrowDownRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { Button, Card, LoadingPlaceholder, Badge } from '../../../components/ui'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+} from '../../../components/ui/Table'
 import { formatDate } from '../../../helpers/date'
 import { nodeApi, Transfer } from '../../../slices/nodeApi/nodeApi.slice'
 
@@ -389,201 +387,95 @@ export const Component = () => {
               <LoadingPlaceholder />
             </div>
           ) : filteredTransfers.length > 0 ? (
-            <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
-                    <th className="py-3 px-4 w-20">Type</th>
-                    <th className="py-3 px-4 w-32">Amount</th>
-                    <th className="py-3 px-4 w-24">Status</th>
-                    <th className="py-3 px-4 w-32">Date</th>
-                    <th className="py-3 px-4 min-w-0">Transaction ID</th>
-                    <th className="py-3 px-4 w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTransfers.map((transfer) => (
-                    <>
-                      <tr
-                        className={`border-b border-gray-700/50 hover:bg-gray-700/20 cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-gray-700/30' : ''}`}
-                        key={`${transfer.txid}-${transfer.idx}`}
-                        onClick={() =>
-                          setShowTxDetails(
-                            showTxDetails === `${transfer.txid}-${transfer.idx}`
-                              ? null
-                              : `${transfer.txid}-${transfer.idx}`
-                          )
-                        }
-                      >
-                        <td className="py-3 px-4 w-20">
-                          <Badge
-                            size="sm"
-                            variant={getKindBadgeVariant(transfer.kind)}
-                          >
-                            {getKindLabel(transfer.kind)}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 w-32">
-                          <span
-                            className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
-                          >
-                            {transfer.kind === 'Send' ? '-' : '+'}
-                            {formatAmount(transfer.amount)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 w-24">
-                          <Badge
-                            size="sm"
-                            variant={getStatusBadgeVariant(transfer.status)}
-                          >
-                            {transfer.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4 w-32 text-sm text-slate-300">
-                          {formatDate(transfer.created_at * 1000)}
-                        </td>
-                        <td className="py-3 px-4 min-w-0">
-                          <div className="flex items-center min-w-0">
-                            <span className="text-xs text-gray-400 truncate font-mono mr-2">
-                              {transfer.txid}
-                            </span>
-                            <button
-                              className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                copyToClipboard(
-                                  transfer.txid,
-                                  'Transaction ID copied to clipboard'
-                                )
-                              }}
-                              title="Copy transaction ID"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 w-12 text-right">
-                          <button className="text-gray-400 hover:text-gray-200">
-                            {showTxDetails ===
-                            `${transfer.txid}-${transfer.idx}` ? (
-                              <ArrowLeft className="h-4 w-4" />
-                            ) : (
-                              <ExternalLink className="h-4 w-4" />
-                            )}
-                          </button>
-                        </td>
-                      </tr>
-                      {showTxDetails === `${transfer.txid}-${transfer.idx}` && (
-                        <tr className="bg-gray-800/50">
-                          <td className="p-4" colSpan={6}>
-                            <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-300 mb-1">
-                                  Transaction Details
-                                </h4>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-gray-400">
-                                    Transaction ID:
-                                  </span>
-                                  <div className="flex items-center">
-                                    <span className="text-xs text-gray-300">
-                                      {transfer.txid}
-                                    </span>
-                                    <button
-                                      className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        copyToClipboard(
-                                          transfer.txid,
-                                          'Transaction ID copied to clipboard'
-                                        )
-                                      }}
-                                    >
-                                      <Copy className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  Amount:
-                                </span>
-                                <span
-                                  className={`text-xs ${getKindColor(transfer.kind)}`}
-                                >
-                                  {transfer.kind === 'Send' ? '-' : '+'}
-                                  {formatAmount(transfer.amount)}{' '}
-                                  {getSelectedAsset()?.ticker}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  Type:
-                                </span>
-                                <Badge
-                                  variant={getKindBadgeVariant(transfer.kind)}
-                                >
-                                  {getKindLabel(transfer.kind)}
-                                </Badge>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  Status:
-                                </span>
-                                <Badge
-                                  variant={getStatusBadgeVariant(
-                                    transfer.status
-                                  )}
-                                >
-                                  {transfer.status}
-                                </Badge>
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-gray-400">
-                                  Date:
-                                </span>
-                                <span className="text-xs text-gray-300">
-                                  {formatDate(transfer.created_at * 1000)}
-                                </span>
-                              </div>
-
-                              {transfer.recipient_id && (
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-gray-400">
-                                    Recipient ID:
-                                  </span>
-                                  <div className="flex items-center">
-                                    <span className="text-xs text-gray-300 truncate max-w-[200px]">
-                                      {transfer.recipient_id}
-                                    </span>
-                                    <button
-                                      className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        copyToClipboard(
-                                          transfer.recipient_id || '',
-                                          'Recipient ID copied to clipboard'
-                                        )
-                                      }}
-                                    >
-                                      <Copy className="h-3.5 w-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={[
+                {
+                  accessor: (transfer: Transfer) => (
+                    <Badge
+                      size="sm"
+                      variant={getKindBadgeVariant(transfer.kind)}
+                    >
+                      {getKindLabel(transfer.kind)}
+                    </Badge>
+                  ),
+                  className: 'col-span-1',
+                  header: 'Type',
+                },
+                {
+                  accessor: (transfer: Transfer) => (
+                    <span
+                      className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
+                    >
+                      {transfer.kind === 'Send' ? '-' : '+'}
+                      {formatAmount(transfer.amount)}
+                    </span>
+                  ),
+                  className: 'col-span-1',
+                  header: 'Amount',
+                },
+                {
+                  accessor: (transfer: Transfer) =>
+                    renderDateField(transfer.created_at * 1000),
+                  className: 'col-span-1',
+                  header: 'Date',
+                },
+                {
+                  accessor: (transfer: Transfer) =>
+                    renderCopyableField(
+                      transfer.txid,
+                      true,
+                      4,
+                      'Transaction ID'
+                    ),
+                  className: 'col-span-1',
+                  header: 'Transaction ID',
+                },
+                {
+                  accessor: (transfer: Transfer) =>
+                    renderStatusBadge(
+                      transfer.status,
+                      getStatusBadgeVariant(transfer.status)
+                    ),
+                  className: 'col-span-1',
+                  header: 'Status',
+                },
+              ]}
+              data={filteredTransfers}
+              emptyState={
+                <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+                  {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+                    ? 'No transfers found matching your search criteria'
+                    : 'No transfers found for this asset'}
+                  {(searchTerm ||
+                    statusFilter !== 'all' ||
+                    typeFilter !== 'all') && (
+                    <Button
+                      className="mt-4"
+                      onClick={() => {
+                        setSearchTerm('')
+                        setStatusFilter('all')
+                        setTypeFilter('all')
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              }
+              gridClassName="grid-cols-5"
+              onRowClick={(transfer: Transfer) =>
+                setShowTxDetails(
+                  showTxDetails === `${transfer.txid}-${transfer.idx}`
+                    ? null
+                    : `${transfer.txid}-${transfer.idx}`
+                )
+              }
+              rowClassName={(transfer: Transfer) =>
+                `cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-gray-700/30' : ''}`
+              }
+            />
           ) : (
             <div className="py-12 text-center">
               <p className="text-gray-400">
@@ -608,6 +500,104 @@ export const Component = () => {
                 </Button>
               )}
             </div>
+          )}
+
+          {/* Expanded transaction details */}
+          {filteredTransfers.map(
+            (transfer) =>
+              showTxDetails === `${transfer.txid}-${transfer.idx}` && (
+                <div
+                  className="mt-4 bg-gray-800/50 rounded-lg p-4"
+                  key={`${transfer.txid}-${transfer.idx}`}
+                >
+                  <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-300 mb-1">
+                        Transaction Details
+                      </h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          Transaction ID:
+                        </span>
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-300">
+                            {transfer.txid}
+                          </span>
+                          <button
+                            className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copyToClipboard(
+                                transfer.txid,
+                                'Transaction ID copied to clipboard'
+                              )
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Amount:</span>
+                      <span
+                        className={`text-xs ${getKindColor(transfer.kind)}`}
+                      >
+                        {transfer.kind === 'Send' ? '-' : '+'}
+                        {formatAmount(transfer.amount)}{' '}
+                        {getSelectedAsset()?.ticker}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Type:</span>
+                      <Badge variant={getKindBadgeVariant(transfer.kind)}>
+                        {getKindLabel(transfer.kind)}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Status:</span>
+                      <Badge variant={getStatusBadgeVariant(transfer.status)}>
+                        {transfer.status}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Date:</span>
+                      <span className="text-xs text-gray-300">
+                        {formatDate(transfer.created_at * 1000)}
+                      </span>
+                    </div>
+
+                    {transfer.recipient_id && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          Recipient ID:
+                        </span>
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-300 truncate max-w-[200px]">
+                            {transfer.recipient_id}
+                          </span>
+                          <button
+                            className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              copyToClipboard(
+                                transfer.recipient_id || '',
+                                'Recipient ID copied to clipboard'
+                              )
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
           )}
         </Card>
       )}

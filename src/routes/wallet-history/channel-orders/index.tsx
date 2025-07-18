@@ -1,20 +1,25 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
   RefreshCw,
-  Copy,
   Search,
   Loader as LoaderIcon,
-  Zap,
   Settings,
   Trash2,
   AlertTriangle,
   X,
+  Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
-import { Badge, IconButton, Card } from '../../../components/ui'
-import { formatDate } from '../../../helpers/date'
+import { IconButton, Card } from '../../../components/ui'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+  renderEmptyField,
+} from '../../../components/ui/Table'
 import {
   makerApi,
   Lsps1CreateOrderResponse,
@@ -68,159 +73,6 @@ const DEFAULT_COLUMNS = [
   'status',
   'actions',
 ]
-
-const ChannelOrderRow: React.FC<{
-  order: ChannelOrder
-  orderStatus: string
-  orderData?: Lsps1CreateOrderResponse
-  selectedColumns: string[]
-  onDelete: (orderId: string) => Promise<void>
-}> = ({ order, orderStatus, orderData, selectedColumns, onDelete }) => {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        toast.success('Order ID copied to clipboard')
-      })
-      .catch((err) => {
-        console.error('Failed to copy:', err)
-      })
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return (
-          <Badge size="sm" variant="success">
-            Completed
-          </Badge>
-        )
-      case 'FAILED':
-        return (
-          <Badge size="sm" variant="danger">
-            Failed
-          </Badge>
-        )
-      case 'CREATED':
-        return (
-          <Badge size="sm" variant="warning">
-            Created
-          </Badge>
-        )
-      default:
-        return (
-          <Badge size="sm" variant="default">
-            Unknown
-          </Badge>
-        )
-    }
-  }
-
-  const getAmountPaid = () => {
-    if (!orderData?.payment) return 'N/A'
-
-    const bolt11Amount = orderData.payment.bolt11?.order_total_sat
-    const onchainAmount = orderData.payment.onchain?.order_total_sat
-
-    const amount = bolt11Amount || onchainAmount
-    return amount ? `${amount.toLocaleString()} sats` : 'N/A'
-  }
-
-  const getFeesPaid = () => {
-    if (!orderData?.payment) return 'N/A'
-
-    const bolt11Fee = orderData.payment.bolt11?.fee_total_sat
-    const onchainFee = orderData.payment.onchain?.fee_total_sat
-
-    const fee = bolt11Fee || onchainFee
-    return fee ? `${fee.toLocaleString()} sats` : 'N/A'
-  }
-
-  const getCreatedAt = () => {
-    if (orderData?.created_at) {
-      return formatDate(new Date(orderData.created_at).getTime())
-    }
-    return 'N/A'
-  }
-
-  const getPayloadFieldValue = (fieldKey: string) => {
-    try {
-      const payload = JSON.parse(order.payload)
-      const value = payload[fieldKey]
-
-      if (value === undefined || value === null) return 'N/A'
-      if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-      if (typeof value === 'number') return value.toLocaleString()
-      if (typeof value === 'string' && value.length > 30) {
-        return `${value.substring(0, 30)}...`
-      }
-      return String(value)
-    } catch {
-      return 'N/A'
-    }
-  }
-
-  const getCellValue = (columnKey: string) => {
-    switch (columnKey) {
-      case 'order_id':
-        return (
-          <div className="flex items-center min-w-0">
-            <span className="text-xs text-gray-400 truncate font-mono mr-2">
-              {order.order_id}
-            </span>
-            <button
-              className="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors"
-              onClick={() => copyToClipboard(order.order_id)}
-              title="Copy order ID"
-            >
-              <Copy className="w-3 h-3" />
-            </button>
-          </div>
-        )
-      case 'amount_paid':
-        return (
-          <span className="font-semibold text-white">{getAmountPaid()}</span>
-        )
-      case 'fees_paid':
-        return <span className="text-slate-300">{getFeesPaid()}</span>
-      case 'created_at':
-        return <span className="text-slate-300">{getCreatedAt()}</span>
-      case 'status':
-        return getStatusBadge(orderStatus)
-      case 'actions':
-        return (
-          <div className="flex items-center justify-end gap-2">
-            <button
-              className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-              onClick={() => onDelete(order.order_id)}
-              title="Delete order"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        )
-      default:
-        return (
-          <span className="text-slate-300">
-            {getPayloadFieldValue(columnKey)}
-          </span>
-        )
-    }
-  }
-
-  return (
-    <tr className="border-b border-gray-700/50 hover:bg-gray-700/20 text-sm">
-      {selectedColumns.map((columnKey) => (
-        <td
-          className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' || columnKey === 'actions' ? 'text-right' : ''}`}
-          key={columnKey}
-        >
-          {getCellValue(columnKey)}
-        </td>
-      ))}
-    </tr>
-  )
-}
 
 // Confirmation Modal Component
 const DeleteConfirmationModal: React.FC<{
@@ -524,39 +376,134 @@ export const Component = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <table className="w-full min-w-[800px]">
-            <thead>
-              <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
-                {selectedColumns.map((columnKey) => {
-                  const column = AVAILABLE_COLUMNS.find(
-                    (col) => col.key === columnKey
-                  )
-                  return (
-                    <th
-                      className={`py-3 px-4 ${columnKey === 'order_id' ? 'min-w-0' : ''} ${columnKey === 'status' || columnKey === 'actions' ? 'text-right' : ''}`}
-                      key={columnKey}
-                    >
-                      {column?.label || columnKey}
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => (
-                <ChannelOrderRow
-                  key={order.id}
-                  onDelete={handleDelete}
-                  order={order}
-                  orderData={orderData[order.order_id]}
-                  orderStatus={orderStatuses[order.order_id] || 'Unknown'}
-                  selectedColumns={selectedColumns}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={selectedColumns.map((columnKey) => {
+            const column = AVAILABLE_COLUMNS.find(
+              (col) => col.key === columnKey
+            )
+            return {
+              accessor: (order: ChannelOrder) => {
+                const currentOrderData = orderData[order.order_id]
+                const orderStatus = orderStatuses[order.order_id] || 'Unknown'
+
+                const getStatusBadge = (status: string) => {
+                  switch (status) {
+                    case 'COMPLETED':
+                      return renderStatusBadge('Completed', 'success')
+                    case 'FAILED':
+                      return renderStatusBadge('Failed', 'danger')
+                    case 'CREATED':
+                      return renderStatusBadge('Created', 'warning')
+                    default:
+                      return renderStatusBadge('Unknown', 'default')
+                  }
+                }
+
+                switch (columnKey) {
+                  case 'order_id':
+                    return renderCopyableField(
+                      order.order_id,
+                      true,
+                      4,
+                      'Order ID'
+                    )
+                  case 'amount_paid': {
+                    if (!currentOrderData?.payment) return renderEmptyField()
+                    const bolt11Amount = (currentOrderData.payment as any)
+                      ?.bolt11?.order_total_sat
+                    const onchainAmount = (currentOrderData.payment as any)
+                      ?.onchain?.order_total_sat
+                    const amount = bolt11Amount || onchainAmount
+                    return (
+                      <span className="font-semibold text-white">
+                        {amount
+                          ? `${amount.toLocaleString()} sats`
+                          : renderEmptyField()}
+                      </span>
+                    )
+                  }
+                  case 'fees_paid': {
+                    if (!currentOrderData?.payment) return renderEmptyField()
+                    const bolt11Fee = (currentOrderData.payment as any)?.bolt11
+                      ?.fee_total_sat
+                    const onchainFee = (currentOrderData.payment as any)
+                      ?.onchain?.fee_total_sat
+                    const fee = bolt11Fee || onchainFee
+                    return (
+                      <span className="text-slate-300">
+                        {fee
+                          ? `${fee.toLocaleString()} sats`
+                          : renderEmptyField()}
+                      </span>
+                    )
+                  }
+                  case 'created_at':
+                    return renderDateField(
+                      currentOrderData?.created_at
+                        ? new Date(currentOrderData.created_at).getTime()
+                        : null
+                    )
+                  case 'status':
+                    return getStatusBadge(orderStatus)
+                  case 'actions': {
+                    return (
+                      <div className="flex items-center justify-center">
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(order.order_id)
+                          }}
+                          title="Delete order"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )
+                  }
+                  default: {
+                    try {
+                      const payload = JSON.parse(order.payload)
+                      const value = payload[columnKey]
+                      if (value === undefined || value === null)
+                        return renderEmptyField()
+                      if (typeof value === 'boolean')
+                        return value ? 'Yes' : 'No'
+                      if (typeof value === 'number')
+                        return value.toLocaleString()
+                      if (typeof value === 'string' && value.length > 30) {
+                        return `${value.substring(0, 30)}...`
+                      }
+                      return String(value)
+                    } catch {
+                      return renderEmptyField()
+                    }
+                  }
+                }
+              },
+              className:
+                columnKey === 'actions'
+                  ? 'col-span-1 text-center'
+                  : 'col-span-1',
+              header:
+                columnKey === 'actions'
+                  ? 'Actions'
+                  : column?.label || columnKey,
+              headerClassName: columnKey === 'actions' ? 'text-center' : '',
+            }
+          })}
+          data={filteredOrders}
+          emptyState={
+            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+              {orders.length === 0 ? (
+                <p>No channel orders found.</p>
+              ) : (
+                <p>No orders found matching your search.</p>
+              )}
+            </div>
+          }
+          gridClassName={`grid-cols-${selectedColumns.length}`}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

@@ -14,6 +14,12 @@ import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, IconButton, Badge, Card, Alert } from '../../../components/ui'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+} from '../../../components/ui/Table'
 import { formatDate } from '../../../helpers/date'
 import {
   nodeApi,
@@ -92,7 +98,7 @@ const getStatusBadgeVariant = (status: SwapStatus) => {
   }
 }
 
-const SwapRow: React.FC<{
+const _SwapRow: React.FC<{
   swap: SwapDetails
   assetInfo: Record<string, AssetInfo>
   bitcoinUnit: string
@@ -605,39 +611,138 @@ export const Component: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <table className="w-full min-w-[800px]">
-            <thead>
-              <tr className="text-left text-sm text-gray-400 border-b border-gray-700">
-                <th className={twJoin(COL_CLASS_NAME, 'w-20')}>Type</th>
-                <th className={twJoin(COL_CLASS_NAME, 'w-48')}>Swap</th>
-                <th className={twJoin(COL_CLASS_NAME, 'w-24')}>Status</th>
-                <th className={twJoin(COL_CLASS_NAME, 'w-32')}>Date</th>
-                <th className={twJoin(COL_CLASS_NAME, 'min-w-0')}>
-                  Payment Hash
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSwaps.map((swap) => (
-                <SwapRow
-                  assetInfo={assetInfo}
-                  bitcoinUnit={bitcoinUnit}
-                  isExpanded={expandedSwap === swap.payment_hash}
-                  key={swap.payment_hash}
-                  onClick={() =>
-                    setExpandedSwap(
-                      expandedSwap === swap.payment_hash
-                        ? null
-                        : swap.payment_hash
-                    )
-                  }
-                  swap={swap}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table
+          columns={[
+            {
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) => (
+                <Badge
+                  size="sm"
+                  variant={swap.type === 'maker' ? 'info' : 'primary'}
+                >
+                  {swap.type === 'maker' ? 'Maker' : 'Taker'}
+                </Badge>
+              ),
+              className: 'col-span-1',
+              header: 'Type',
+            },
+            {
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) => {
+                const fromAssetIsBtc = !swap.from_asset
+                const toAssetIsBtc = !swap.to_asset
+
+                const fromAssetTicker = fromAssetIsBtc
+                  ? bitcoinUnit
+                  : assetInfo[swap.from_asset || '']?.ticker || 'Unknown'
+
+                const toAssetTicker = toAssetIsBtc
+                  ? bitcoinUnit
+                  : assetInfo[swap.to_asset || '']?.ticker || 'Unknown'
+
+                const fromPrecision = fromAssetIsBtc
+                  ? 8
+                  : assetInfo[swap.from_asset || '']?.precision || 8
+
+                const toPrecision = toAssetIsBtc
+                  ? 8
+                  : assetInfo[swap.to_asset || '']?.precision || 8
+
+                const fromAmount = formatAmount(
+                  swap.qty_from,
+                  fromPrecision,
+                  fromAssetIsBtc,
+                  bitcoinUnit
+                )
+
+                const toAmount = formatAmount(
+                  swap.qty_to,
+                  toPrecision,
+                  toAssetIsBtc,
+                  bitcoinUnit
+                )
+
+                return (
+                  <div className="flex items-center flex-wrap gap-1">
+                    <span className="text-red-500 font-semibold text-sm">
+                      {fromAmount}
+                    </span>
+                    <span className="text-gray-400 text-xs">
+                      {fromAssetTicker}
+                    </span>
+                    <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                    <span className="text-green-500 font-semibold text-sm">
+                      {toAmount}
+                    </span>
+                    <span className="text-gray-400 text-xs">
+                      {toAssetTicker}
+                    </span>
+                  </div>
+                )
+              },
+              className: 'col-span-1',
+              header: 'Swap',
+            },
+            {
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
+                renderDateField(
+                  swap.completed_at || swap.initiated_at || swap.requested_at
+                ),
+              className: 'col-span-1',
+              header: 'Date',
+            },
+            {
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
+                renderCopyableField(swap.payment_hash, true, 4, 'Payment hash'),
+              className: 'col-span-1',
+              header: 'Payment Hash',
+            },
+            {
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
+                renderStatusBadge(
+                  swap.status,
+                  getStatusBadgeVariant(swap.status)
+                ),
+              className: 'col-span-1',
+              header: 'Status',
+            },
+          ]}
+          data={filteredSwaps}
+          emptyState={
+            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+              {searchTerm ||
+              statusFilter !== 'all' ||
+              typeFilter !== 'all' ||
+              assetFilter !== 'all' ? (
+                <>
+                  <p>No swaps found matching your filters.</p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setStatusFilter('all')
+                      setTypeFilter('all')
+                      setAssetFilter('all')
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <p>No swaps found.</p>
+              )}
+            </div>
+          }
+          gridClassName="grid-cols-5"
+          onRowClick={(swap: SwapDetails & { type: 'maker' | 'taker' }) =>
+            setExpandedSwap(
+              expandedSwap === swap.payment_hash ? null : swap.payment_hash
+            )
+          }
+          rowClassName={(swap: SwapDetails & { type: 'maker' | 'taker' }) =>
+            `cursor-pointer ${expandedSwap === swap.payment_hash ? 'bg-gray-700/30' : ''}`
+          }
+        />
       )}
     </Card>
   )
