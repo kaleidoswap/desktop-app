@@ -106,7 +106,7 @@ export const Component = () => {
           return (
             <Link
               className={twJoin(
-                'flex items-center gap-2 px-6 py-3 font-medium relative',
+                'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center',
                 isActive ? 'text-white' : 'text-slate-400 hover:text-white'
               )}
               key={tab.path}

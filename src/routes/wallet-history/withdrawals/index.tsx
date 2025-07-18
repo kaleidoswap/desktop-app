@@ -14,6 +14,12 @@ import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, Badge, IconButton, Card, Alert } from '../../../components/ui'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+} from '../../../components/ui/Table'
 import { formatDate } from '../../../helpers/date'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
@@ -74,7 +80,7 @@ const formatAssetAmount = (
     })
 }
 
-const Withdrawal: React.FC<WithdrawalProps> = ({
+const _Withdrawal: React.FC<WithdrawalProps> = ({
   type,
   asset,
   amount,
@@ -441,35 +447,99 @@ export const Component: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <div className="min-w-[800px]">
-            <div className="grid grid-cols-12 font-medium text-slate-400 border-b border-slate-700 py-2 text-sm">
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>Type</div>
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>Asset</div>
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>Amount</div>
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>Date</div>
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-5')}>
-                Transaction ID
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'col-span-1 text-right')}>
-                Status
-              </div>
+        <Table
+          columns={[
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                withdrawal.type === 'on-chain' ? (
+                  <Badge
+                    icon={<Chain className="w-3 h-3" />}
+                    size="sm"
+                    variant="primary"
+                  >
+                    On-chain
+                  </Badge>
+                ) : (
+                  <Badge
+                    icon={<Zap className="w-3 h-3" />}
+                    size="sm"
+                    variant="info"
+                  >
+                    Off-chain
+                  </Badge>
+                ),
+              className: 'col-span-1',
+              header: 'Type',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) => (
+                <span className="font-medium">
+                  {withdrawal.asset === 'BTC' ? bitcoinUnit : withdrawal.asset}
+                </span>
+              ),
+              className: 'col-span-1',
+              header: 'Asset',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) => (
+                <span className="font-semibold text-white">
+                  {formatAssetAmount(
+                    withdrawal.amount,
+                    withdrawal.asset,
+                    bitcoinUnit,
+                    listAssetsData?.nia
+                  )}
+                </span>
+              ),
+              className: 'col-span-1',
+              header: 'Amount',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                renderDateField(
+                  withdrawal.timestamp ? withdrawal.timestamp * 1000 : null
+                ),
+              className: 'col-span-1',
+              header: 'Date',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                renderCopyableField(withdrawal.txId, true, 4, 'Transaction ID'),
+              className: 'col-span-1',
+              header: 'Transaction ID',
+            },
+            {
+              accessor: () => renderStatusBadge('Sent', 'danger'),
+              className: 'col-span-1',
+              header: 'Status',
+            },
+          ]}
+          data={filteredWithdrawals}
+          emptyState={
+            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+              {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
+                <>
+                  <p>No withdrawals found matching your filters.</p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setTypeFilter('all')
+                      setAssetFilter('all')
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <p>No withdrawals found.</p>
+              )}
             </div>
-
-            {filteredWithdrawals.map((withdrawal, index) => (
-              <Withdrawal
-                amount={withdrawal.amount}
-                asset={withdrawal.asset}
-                assetsList={listAssetsData?.nia}
-                bitcoinUnit={bitcoinUnit}
-                key={`${withdrawal.txId}-${index}`}
-                timestamp={(withdrawal as Withdrawal).timestamp}
-                txId={withdrawal.txId}
-                type={withdrawal.type}
-              />
-            ))}
-          </div>
-        </div>
+          }
+          gridClassName="grid-cols-6"
+        />
       )}
     </Card>
   )
