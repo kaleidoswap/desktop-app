@@ -1,9 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, Window};
-use once_cell::sync::Lazy;
+use std::collections::HashMap;
 
 mod db;
 mod rgb_node;
@@ -158,6 +157,11 @@ fn main() {
             save_logs_to_file,
             is_node_running,
             get_running_node_account,
+            // Port management commands
+            check_ports_available,
+            get_running_node_ports,
+            find_available_ports,
+            stop_node_by_account,
             // ChannelOrders commands
             insert_channel_order,
             get_channel_orders,
@@ -416,6 +420,52 @@ fn get_running_node_account(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
 ) -> Option<String> {
     node_process.lock().unwrap().get_current_account()
+}
+
+#[tauri::command]
+fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, String> {
+    let mut result = HashMap::new();
+    for port in ports {
+        match port.parse::<u16>() {
+            Ok(port_num) => {
+                result.insert(port.clone(), rgb_node::NodeProcess::is_port_available(port_num));
+            }
+            Err(e) => {
+                return Err(format!("Invalid port number {}: {}", port, e));
+            }
+        }
+    }
+    Ok(result)
+}
+
+#[tauri::command]
+fn get_running_node_ports(node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>) -> HashMap<String, String> {
+    node_process.lock().unwrap().get_running_node_ports()
+}
+
+#[tauri::command]
+fn find_available_ports(
+    base_daemon_port: Option<u16>,
+    base_ldk_port: Option<u16>,
+) -> Result<HashMap<String, u16>, String> {
+    let (daemon_port, ldk_port) = rgb_node::NodeProcess::find_available_ports(
+        base_daemon_port.unwrap_or(3001),
+        base_ldk_port.unwrap_or(9735),
+    );
+    
+    let mut result = HashMap::new();
+    result.insert("daemon".to_string(), daemon_port);
+    result.insert("ldk".to_string(), ldk_port);
+    Ok(result)
+}
+
+#[tauri::command]
+fn stop_node_by_account(
+    node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>,
+    account_name: String,
+) -> Result<(), String> {
+    let node_process = node_process.lock().unwrap();
+    node_process.stop_by_account(&account_name)
 }
 
 #[tauri::command]

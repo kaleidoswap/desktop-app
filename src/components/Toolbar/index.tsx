@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH } from '../../app/router/paths'
+import { ROOT_PATH , WALLET_UNLOCK_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
@@ -353,14 +353,40 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   }, [accounts, isEditing])
 
   useEffect(() => {
-    const unlisten = listen('node-started', () => {
-      toast.success('Local node started successfully', {
+    let isToastActive = false
+    let timeoutId: number
+
+    const handleNodeStarted = (event: { payload: string }) => {
+      // If a toast is already active or there's a pending timeout, don't show another one
+      if (isToastActive) return
+
+      // Set the flag to prevent multiple toasts
+      isToastActive = true
+
+      // Clear any existing timeout
+      if (timeoutId) window.clearTimeout(timeoutId)
+
+      // Show the toast
+      toast.success(`Local node "${event.payload}" started successfully`, {
         autoClose: 3000,
+        onClose: () => {
+          // Reset the flag when the toast closes
+          isToastActive = false
+        },
         position: 'bottom-right',
+        toastId: 'node-started',
       })
-    })
+
+      // Set a timeout to reset the flag (in case onClose doesn't fire)
+      timeoutId = window.setTimeout(() => {
+        isToastActive = false
+      }, 3000)
+    }
+
+    const unlisten = listen('node-started', handleNodeStarted)
 
     return () => {
+      if (timeoutId) window.clearTimeout(timeoutId)
       unlisten.then((fn) => fn())
     }
   }, [])
@@ -405,8 +431,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         // Wait for the Redux store to be updated
         await dispatch(setSettingsAsync(formattedNode))
 
-        console.log('Node already running, navigating to dashboard')
-        navigate(ROOT_PATH)
+        // Check if node is locked before navigating
+        try {
+          await invoke('node_info')
+          console.log('Node unlocked, navigating to dashboard')
+          navigate(ROOT_PATH)
+        } catch (error) {
+          console.log('Node locked, navigating to unlock page')
+          navigate(WALLET_UNLOCK_PATH)
+        }
         return
       }
 
@@ -445,6 +478,103 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         })
 
         try {
+          // Check port availability before starting the node
+          const ports = [
+            node.daemon_listening_port,
+            node.ldk_peer_listening_port,
+          ]
+          const portCheck = await invoke<{ [port: string]: boolean }>(
+            'check_ports_available',
+            { ports }
+          )
+          const unavailablePorts = Object.entries(portCheck)
+            .filter(([_, isAvailable]) => !isAvailable)
+            .map(([port]) => port)
+
+          if (unavailablePorts.length > 0) {
+            // Get running node ports to check if they're our own nodes
+            const runningNodePorts = await invoke<{ [port: string]: string }>(
+              'get_running_node_ports'
+            )
+            const ourConflictingPorts = unavailablePorts.filter(
+              (port) => port in runningNodePorts
+            )
+
+            if (ourConflictingPorts.length > 0) {
+              // If ports are used by our nodes, try to stop them
+              toast.info('Stopping existing nodes on conflicting ports...', {
+                autoClose: false,
+                toastId: 'stopping-nodes',
+              })
+
+              for (const port of ourConflictingPorts) {
+                const nodeAccount = runningNodePorts[port]
+                try {
+                  await invoke('stop_node_by_account', {
+                    accountName: nodeAccount,
+                  })
+                  await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait for cleanup
+                } catch (error) {
+                  console.error(`Failed to stop node on port ${port}:`, error)
+                  throw new Error(
+                    `Failed to stop existing node on port ${port}`
+                  )
+                }
+              }
+
+              toast.update('stopping-nodes', {
+                autoClose: 2000,
+                render: 'Existing nodes stopped successfully',
+                type: 'success',
+              })
+
+              // Recheck port availability after stopping our nodes
+              const recheckPorts = await invoke<{ [port: string]: boolean }>(
+                'check_ports_available',
+                { ports }
+              )
+              const stillUnavailablePorts = Object.entries(recheckPorts)
+                .filter(([_, isAvailable]) => !isAvailable)
+                .map(([port]) => port)
+
+              if (stillUnavailablePorts.length > 0) {
+                // Try to find alternative ports
+                const suggestedPorts = await invoke<{
+                  daemon: number
+                  ldk: number
+                }>('find_available_ports', {
+                  base_daemon_port: parseInt(node.daemon_listening_port),
+                  base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                })
+
+                throw new Error(
+                  `Ports ${stillUnavailablePorts.join(', ')} are still in use by other processes. ` +
+                    'Suggested alternative ports:\n' +
+                    `- Daemon port: ${suggestedPorts.daemon}\n` +
+                    `- LDK peer port: ${suggestedPorts.ldk}`
+                )
+              }
+            } else {
+              // Ports are in use by external processes
+              // Try to find alternative ports
+              const suggestedPorts = await invoke<{
+                daemon: number
+                ldk: number
+              }>('find_available_ports', {
+                base_daemon_port: parseInt(node.daemon_listening_port),
+                base_ldk_port: parseInt(node.ldk_peer_listening_port),
+              })
+
+              throw new Error(
+                `Ports ${unavailablePorts.join(', ')} are in use by other applications. ` +
+                  'Suggested alternative ports:\n' +
+                  `- Daemon port: ${suggestedPorts.daemon}\n` +
+                  `- LDK peer port: ${suggestedPorts.ldk}`
+              )
+            }
+          }
+
+          // Start the node with the checked ports
           await invoke('start_node', {
             accountName: node.name,
             daemonListeningPort: node.daemon_listening_port,
@@ -460,7 +590,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      navigate(ROOT_PATH)
+
+      // Check if node is locked before navigating
+      try {
+        await invoke('node_info')
+        console.log('Node unlocked, navigating to dashboard')
+        navigate(ROOT_PATH)
+      } catch (error) {
+        console.log('Node locked, navigating to unlock page')
+        navigate(WALLET_UNLOCK_PATH)
+      }
     } catch (error) {
       dispatch(nodeSettingsActions.resetNodeSettings())
       toast.error(
@@ -615,6 +754,50 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const [error, setError] = useState<string | null>(null)
+  const [suggestedPorts, setSuggestedPorts] = useState<{
+    daemon: string
+    ldk: string
+  } | null>(null)
+
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(account)
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+        // Check if error message contains suggested ports
+        const match = error.message.match(
+          /Daemon port: (\d+).*LDK peer port: (\d+)/s
+        )
+        if (match) {
+          const [, daemonPort, ldkPort] = match
+          setSuggestedPorts({
+            daemon: daemonPort,
+            ldk: ldkPort,
+          })
+        }
+      } else {
+        setError('An unknown error occurred')
+      }
+    }
+  }
+
+  const handleUseSuggestedPorts = () => {
+    if (!suggestedPorts) return
+
+    const updatedAccount = {
+      ...account,
+      daemon_listening_port: suggestedPorts.daemon,
+      ldk_peer_listening_port: suggestedPorts.ldk,
+      node_url: `http://localhost:${suggestedPorts.daemon}`,
+    }
+
+    onConfirm(updatedAccount)
+    setError(null)
+    setSuggestedPorts(null)
+  }
+
   return (
     <>
       <div className="mb-6">
@@ -623,6 +806,30 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           Review the node details before switching
         </p>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-red-500 font-medium">Error starting node</p>
+              <p className="text-sm text-red-400/80 mt-1 whitespace-pre-line">
+                {error}
+              </p>
+              {suggestedPorts && (
+                <div className="mt-3">
+                  <button
+                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
+                    onClick={handleUseSuggestedPorts}
+                  >
+                    Use suggested ports
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-gray-700/50 p-6 rounded-xl mb-8 text-left space-y-4 border border-gray-600">
         <div className="flex items-center gap-4 mb-6">
@@ -679,6 +886,24 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             <label className="text-gray-400 block mb-1">RGB Proxy</label>
             <div className="text-white break-all">{account.proxy_endpoint}</div>
           </div>
+          {account.datapath && (
+            <>
+              <div>
+                <label className="text-gray-400 block mb-1">Daemon Port</label>
+                <div className="text-white">
+                  {account.daemon_listening_port}
+                </div>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">
+                  LDK Peer Port
+                </label>
+                <div className="text-white">
+                  {account.ldk_peer_listening_port}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -694,7 +919,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         <button
           className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
           disabled={isLoading}
-          onClick={() => onConfirm(account)}
+          onClick={handleConfirm}
           type="button"
         >
           {isLoading ? <Spinner size={20} /> : 'Select Node'}
