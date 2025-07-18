@@ -59,7 +59,10 @@ import { hasTradableChannels, logChannelDiagnostics } from './channelUtils'
 
 // Import our utility modules
 import { getValidationError } from './errorMessages'
-import { createFromAmountChangeHandler } from './formUtils'
+import {
+  createFromAmountChangeHandler,
+  createToAmountChangeHandler,
+} from './formUtils'
 import {
   createQuoteRequestHandler,
   startQuoteRequestTimer,
@@ -2549,7 +2552,9 @@ export const Component = () => {
                         onAmountChange={(e) => {
                           const baseHandler = createFromAmountChangeHandler(
                             form,
-                            getAssetPrecisionWrapper
+                            getAssetPrecisionWrapper,
+                            setDebouncedFromAmount,
+                            maxFromAmount
                           )
                           const quoteHandler =
                             createAmountChangeQuoteHandler(requestQuote)
@@ -2616,6 +2621,17 @@ export const Component = () => {
                         isLoading={isToAmountLoading}
                         label="You Receive (Estimated)"
                         maxAmount={maxToAmount}
+                        onAmountChange={(e) => {
+                          const baseHandler = createToAmountChangeHandler(
+                            form,
+                            getAssetPrecisionWrapper,
+                            maxToAmount
+                          )
+                          const quoteHandler =
+                            createAmountChangeQuoteHandler(requestQuote)
+                          baseHandler(e)
+                          quoteHandler(e)
+                        }}
                         onAssetChange={(value) =>
                           handleAssetChange('toAsset', value)
                         }

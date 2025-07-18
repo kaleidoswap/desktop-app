@@ -1,6 +1,8 @@
 import { ChangeEvent } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 
+import { formatNumberInput } from '../../../helpers/number'
+
 import { Fields } from './types'
 
 /**
@@ -8,17 +10,20 @@ import { Fields } from './types'
  *
  * @param form Form instance from react-hook-form
  * @param getAssetPrecision Function to get asset precision
- * @param parseAssetAmount Optional function to parse asset amount
  * @param setDebouncedFromAmount Optional function to set debounced from amount
+ * @param maxAmount Optional maximum amount allowed (in base units)
+ * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
  */
 export const createFromAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  setDebouncedFromAmount?: (value: string) => void
+  setDebouncedFromAmount?: (value: string) => void,
+  maxAmount?: number
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const fromAsset = form.getValues().fromAsset
+    const precision = getAssetPrecision(fromAsset)
 
     // Get current cursor position before formatting
     const cursorPosition = e.target.selectionStart || 0
@@ -28,11 +33,42 @@ export const createFromAmountChangeHandler = (
       value.substring(0, cursorPosition).match(/,/g) || []
     ).length
 
-    // Format input to ensure correct number format
-    const formattedValue = formatNumericInput(
-      value,
-      getAssetPrecision(fromAsset)
-    )
+    // First, remove any non-numeric characters except decimal point
+    let cleanValue = value.replace(/[^\d.]/g, '')
+
+    // Ensure only one decimal point
+    const decimalPoints = cleanValue.match(/\./g)
+    if (decimalPoints && decimalPoints.length > 1) {
+      cleanValue = cleanValue.replace(/\./g, (match, index) =>
+        index === cleanValue.indexOf('.') ? match : ''
+      )
+    }
+
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    const integerPart = parts[0]
+    let decimalPart = parts[1] || ''
+
+    // Limit decimal places to asset precision
+    if (decimalPart.length > precision) {
+      decimalPart = decimalPart.slice(0, precision)
+    }
+
+    // Reconstruct the value
+    cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
+
+    // Convert to number for comparison
+    const numericValue = parseFloat(cleanValue) || 0
+    const maxDisplayValue = maxAmount
+      ? maxAmount / Math.pow(10, precision)
+      : Infinity
+
+    // Ensure value doesn't exceed max
+    let finalValue =
+      numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
+
+    // Format the value with proper number formatting
+    let formattedValue = formatNumberInput(finalValue, precision)
 
     // Set the formatted value in the form
     form.setValue('from', formattedValue, { shouldValidate: true })
@@ -69,76 +105,58 @@ export const createFromAmountChangeHandler = (
  *
  * @param form Form instance from react-hook-form
  * @param getAssetPrecision Function to get asset precision
- * @param setDebouncedToAmount Function to set debounced to amount
+ * @param maxAmount Optional maximum amount allowed (in base units)
+ * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
  */
 export const createToAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  setDebouncedToAmount: (value: string) => void
+  maxAmount?: number
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const toAsset = form.getValues().toAsset
+    const precision = getAssetPrecision(toAsset)
 
-    // Format input to ensure correct number format
-    const formattedValue = formatNumericInput(value, getAssetPrecision(toAsset))
-    form.setValue('to', formattedValue, { shouldValidate: true })
+    // First, remove any non-numeric characters except decimal point
+    let cleanValue = value.replace(/[^\d.]/g, '')
 
-    // Store the debounced value for later processing
-    setDebouncedToAmount(formattedValue)
-  }
-}
-
-/**
- * Format numeric input to ensure correct number format
- *
- * @param value Input value
- * @param precision Decimal precision
- */
-const formatNumericInput = (value: string, precision: number): string => {
-  // Remove any character that is not a digit, dot, or comma
-  let cleaned = value.replace(/[^\d.,]/g, '')
-
-  // Replace commas with empty string to handle values with thousand separators
-  cleaned = cleaned.replace(/,/g, '')
-
-  // Replace multiple dots with a single dot
-  const dotCount = (cleaned.match(/\./g) || []).length
-  if (dotCount > 1) {
-    const firstDotIndex = cleaned.indexOf('.')
-    cleaned =
-      cleaned.slice(0, firstDotIndex + 1) +
-      cleaned.slice(firstDotIndex + 1).replace(/\./g, '')
-  }
-
-  // Ensure the decimal part doesn't exceed the precision
-  if (cleaned.includes('.')) {
-    const [whole, decimal] = cleaned.split('.')
-    cleaned = `${whole}.${decimal.slice(0, precision)}`
-  }
-
-  // If value is not empty, try to format with comma thousand separators
-  if (cleaned && !cleaned.endsWith('.')) {
-    try {
-      // Parse the cleaned value to a number
-      const numValue = parseFloat(cleaned)
-      if (!isNaN(numValue)) {
-        // Format the whole part with commas
-        if (cleaned.includes('.')) {
-          const [whole, decimal] = cleaned.split('.')
-          const formattedWhole = parseInt(whole).toLocaleString('en-US')
-          return `${formattedWhole}.${decimal}`
-        } else {
-          return parseInt(cleaned).toLocaleString('en-US')
-        }
-      }
-    } catch (e) {
-      // Fall back to the cleaned value if formatting fails
-      return cleaned
+    // Ensure only one decimal point
+    const decimalPoints = cleanValue.match(/\./g)
+    if (decimalPoints && decimalPoints.length > 1) {
+      cleanValue = cleanValue.replace(/\./g, (match, index) =>
+        index === cleanValue.indexOf('.') ? match : ''
+      )
     }
-  }
 
-  return cleaned
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    const integerPart = parts[0]
+    let decimalPart = parts[1] || ''
+
+    // Limit decimal places to asset precision
+    if (decimalPart.length > precision) {
+      decimalPart = decimalPart.slice(0, precision)
+    }
+
+    // Reconstruct the value
+    cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
+
+    // Convert to number for comparison
+    const numericValue = parseFloat(cleanValue) || 0
+    const maxDisplayValue = maxAmount
+      ? maxAmount / Math.pow(10, precision)
+      : Infinity
+
+    // Ensure value doesn't exceed max
+    let finalValue =
+      numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
+
+    // Format the value with proper number formatting
+    let formattedValue = formatNumberInput(finalValue, precision)
+
+    form.setValue('to', formattedValue, { shouldValidate: true })
+  }
 }
 
 /**

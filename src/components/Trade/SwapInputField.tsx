@@ -44,6 +44,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   label,
   availableAmount,
   availableAmountLabel = 'Available:',
+  maxAmount,
   minAmount,
   maxHtlcAmount,
   isLoading,
@@ -81,6 +82,26 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       value: option.value,
     })
   )
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onAmountChange) return
+
+    const numericValue = e.target.value.replace(/[^\d.]/g, '')
+    const parsedValue = parseFloat(numericValue)
+
+    // If maxAmount is defined and the input value is greater than maxAmount,
+    // format maxAmount and use that instead
+    if (
+      maxAmount !== undefined &&
+      !isNaN(parsedValue) &&
+      parsedValue > maxAmount
+    ) {
+      const formattedMaxAmount = formatAmount(maxAmount, asset)
+      e.target.value = formattedMaxAmount
+    }
+
+    onAmountChange(e)
+  }
 
   return (
     <div className={`group ${containerAnimationClass}`}>
@@ -184,7 +205,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                     group-hover:bg-slate-900/60
                   `}
                   disabled={disabled}
-                  onChange={onAmountChange}
+                  onChange={handleAmountChange}
                   placeholder="0.00"
                   readOnly={readOnly}
                   type="text"
