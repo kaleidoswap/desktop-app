@@ -1,16 +1,7 @@
 import Decimal from 'decimal.js'
-import {
-  Link as Chain,
-  Zap,
-  RefreshCw,
-  Loader,
-  Search,
-  Copy,
-} from 'lucide-react'
+import { Link as Chain, Zap, RefreshCw, Loader, Search } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useSelector } from 'react-redux'
-import { toast } from 'react-toastify'
-import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, Badge, IconButton, Card, Alert } from '../../../components/ui'
@@ -20,10 +11,7 @@ import {
   renderDateField,
   renderStatusBadge,
 } from '../../../components/ui/Table'
-import { formatDate } from '../../../helpers/date'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-
-const COL_CLASS_NAME = 'py-3 px-4'
 
 const formatBitcoinAmount = (
   amount: string | number,
@@ -42,16 +30,6 @@ const formatBitcoinAmount = (
       useGrouping: true,
     })
   }
-}
-
-interface WithdrawalProps {
-  type: 'on-chain' | 'off-chain'
-  asset: string
-  amount: string | number
-  txId: string
-  bitcoinUnit: string
-  assetsList?: any[]
-  timestamp?: number
 }
 
 const formatAssetAmount = (
@@ -78,85 +56,6 @@ const formatAssetAmount = (
       minimumFractionDigits: 0,
       useGrouping: true,
     })
-}
-
-const _Withdrawal: React.FC<WithdrawalProps> = ({
-  type,
-  asset,
-  amount,
-  txId,
-  bitcoinUnit,
-  assetsList,
-  timestamp,
-}) => {
-  const formattedAmount = formatAssetAmount(
-    amount,
-    asset,
-    bitcoinUnit,
-    assetsList
-  )
-
-  const displayAsset = asset === 'BTC' ? bitcoinUnit : asset
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        toast.success('Transaction ID copied to clipboard')
-      })
-      .catch((err) => {
-        console.error('Failed to copy:', err)
-      })
-  }
-
-  return (
-    <div className="grid grid-cols-12 border-b border-slate-700 items-center text-sm font-medium hover:bg-slate-800/30 transition-colors">
-      <div className={twJoin(COL_CLASS_NAME, 'flex items-center col-span-1')}>
-        {type === 'on-chain' ? (
-          <Badge
-            icon={<Chain className="w-3 h-3" />}
-            size="sm"
-            variant="primary"
-          >
-            On-chain
-          </Badge>
-        ) : (
-          <Badge icon={<Zap className="w-3 h-3" />} size="sm" variant="info">
-            Off-chain
-          </Badge>
-        )}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'col-span-1')}>
-        <span className="font-medium">{displayAsset}</span>
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>
-        <span className="font-semibold text-white">{formattedAmount}</span>
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'col-span-2')}>
-        <span className="text-slate-300">
-          {timestamp ? formatDate(timestamp * 1000) : 'N/A'}
-        </span>
-      </div>
-      <div
-        className={twJoin(
-          COL_CLASS_NAME,
-          'col-span-5 text-slate-400 flex items-center min-w-0'
-        )}
-      >
-        <span className="truncate mr-2 font-mono text-xs">{txId}</span>
-        <button
-          className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
-          onClick={() => copyToClipboard(txId)}
-          title="Copy transaction ID"
-        >
-          <Copy className="w-3 h-3" />
-        </button>
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'col-span-1 text-right')}>
-        <Badge variant="danger">Sent</Badge>
-      </div>
-    </div>
-  )
 }
 
 export const Component: React.FC = () => {

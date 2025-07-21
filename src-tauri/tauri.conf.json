@@ -15,10 +15,7 @@
       "icons/512x512.png"
     ],
     "targets": "all",
-    "resources": [
-      "../bin/rgb-lightning-node",
-      "../docs"
-    ],
+    "resources": [],
     "linux": {
       "appimage": {
         "bundleMediaFramework": true
@@ -36,7 +33,7 @@
   },
   "productName": "KaleidoSwap",
   "mainBinaryName": "KaleidoSwap",
-  "version": "0.1.2-rc2",
+  "version": "0.1.2-2",
   "identifier": "com.kaleidoswap.dev",
   "plugins": {
     "updater": {
