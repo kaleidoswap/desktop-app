@@ -46,10 +46,6 @@ export const AppVersion: React.FC<AppVersionProps> = ({
         }
 
         const info: AppVersionInfo = {
-          buildDate:
-            (buildInfo as any)?.buildDate ||
-            __BUILD_DATE__ ||
-            new Date().toISOString(),
           commit: (buildInfo as any)?.commit || __GIT_COMMIT__ || 'unknown',
           environment:
             (buildInfo as any)?.environment || __NODE_ENV__ || 'development',
