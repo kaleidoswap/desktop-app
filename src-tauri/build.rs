@@ -62,7 +62,9 @@ fn main() {
         } else {
             "../bin/rgb-lightning-node"
         };
-        config.add_resource(resource_name);
+        if !cfg!(target_os = "windows") {
+            config.add_resource(resource_name);
+        }
     } else {
         //  In case we do NOT want to build/run the executable, we remove it from the config
         let resource_name = if cfg!(target_os = "windows") {
