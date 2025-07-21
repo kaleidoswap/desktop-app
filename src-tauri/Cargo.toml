@@ -1,6 +1,6 @@
 [package]
 name = "desktop-app"
-version = "0.1.2-rc3"
+version = "0.1.2-3"
 description = "Kaleidoswap App"
 authors = ["Kaleidoswap Team"]
 license = "MIT"
