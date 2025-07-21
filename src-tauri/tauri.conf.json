@@ -16,20 +16,13 @@
     ],
     "targets": "all",
     "resources": [
-      "../docs"
+      "../docs",
+      "../bin/rgb-lightning-node"
     ],
     "linux": {
       "appimage": {
         "bundleMediaFramework": true
-      },
-      "resources": [
-        "../bin/rgb-lightning-node"
-      ]
-    },
-    "macOS": {
-      "resources": [
-        "../bin/rgb-lightning-node"
-      ]
+      }
     },
     "windows": {
       "certificateThumbprint": null,
