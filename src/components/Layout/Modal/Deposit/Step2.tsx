@@ -58,6 +58,24 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [lnInvoice] = nodeApi.endpoints.lnInvoice.useLazyQuery()
   const [rgbInvoice] = nodeApi.endpoints.rgbInvoice.useLazyQuery()
 
+  // Auto-generate BTC address when component mounts
+  useEffect(() => {
+    const generateBtcAddress = async () => {
+      if (assetId === BTC_ASSET_ID && network === 'on-chain' && !address) {
+        setLoading(true)
+        try {
+          const res = await addressQuery()
+          setAddress(res.data?.address)
+        } catch (error) {
+          toast.error('Failed to generate address')
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+    generateBtcAddress()
+  }, [assetId, network, address, addressQuery])
+
   const { data: invoiceStatus } = nodeApi.useInvoiceStatusQuery(
     { invoice: address as string },
     {
@@ -703,13 +721,28 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 </span>
                 {address.length > 45 ? `${address.slice(0, 42)}...` : address}
               </div>
-              <button
-                className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                         text-slate-400 hover:text-blue-500"
-                onClick={handleCopy}
-              >
-                <Copy className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
+                           text-slate-400 hover:text-blue-500 disabled:opacity-50 
+                           disabled:cursor-not-allowed"
+                  disabled={loading}
+                  onClick={generateAddress}
+                  title="Generate new address"
+                >
+                  <Loader
+                    className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+                  />
+                </button>
+                <button
+                  className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
+                           text-slate-400 hover:text-blue-500"
+                  onClick={handleCopy}
+                  title="Copy to clipboard"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Recipient ID Display for Assets - More compact */}
