@@ -17,12 +17,6 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-# Validate version format (x.y.z or x.y.z-rcN)
-if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
-    echo "Error: Version must be in format x.y.z or x.y.z-rcN (e.g., 0.1.3 or 0.1.2-rc1)"
-    exit 1
-fi
-
 # Determine tag prefix
 if [ "$TEST_FLAG" = "--test" ]; then
     TAG_PREFIX="test-v"
