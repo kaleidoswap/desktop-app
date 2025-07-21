@@ -18,8 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
+          # Temporarily removed aarch64 build until Apple signing is set up
+          # - platform: 'macos-latest'
+          #   args: '--target aarch64-apple-darwin'
           - platform: 'macos-latest'
             args: '--target x86_64-apple-darwin'
           - platform: 'ubuntu-22.04'
@@ -55,7 +56,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin' || '' }}
 
       - name: Setup MSVC environment (Windows)
         if: matrix.platform == 'windows-latest'
@@ -106,10 +107,21 @@ jobs:
 
             Changes in this version:
             - Built from ${{ startsWith(github.ref, 'refs/tags/') && 'tag' || (github.ref == 'refs/heads/test-build' && 'test-build' || 'build') }} ${{ github.ref_name }}
-            - Includes macOS (Intel + Apple Silicon), Linux, and Windows builds
+            - Includes macOS (Intel only), Linux, and Windows builds
+            - Note: Apple Silicon (M1/M2) users should use the Intel build with Rosetta 2 for now
             - Signed and ready for auto-update
 
             SHA256 checksums will be provided separately.
+
+            Installation Notes:
+            - macOS Intel (x86_64): Install normally
+            - macOS Apple Silicon: Use Intel build with Rosetta 2
+            - Linux: Use .AppImage or .deb as preferred
+            - Windows: Use the provided installer
+
+            For Apple Silicon users experiencing "app is damaged" errors:
+            1. Right-click the .dmg → Open
+            2. Or run in Terminal: xattr -d com.apple.quarantine /path/to/KaleidoSwap.dmg
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
@@ -128,6 +140,8 @@ jobs:
           git push origin latest
 
       - name: Create manifest file
+        if: matrix.platform != 'windows-latest'  # Skip on Windows
+        shell: bash  # Explicitly use bash for this step
         run: |
           echo "Creating manifest.txt for signing..."
           echo "App version: ${{ env.VERSION }}" > manifest.txt
@@ -152,7 +166,6 @@ jobs:
           fi
 
           for file in $artifact_paths; do
-            # if [[ "$file" =~ \.(dmg|AppImage|deb|msi|exe)$ ]] && [ -f "$file" ]; then
             if [ -f "$file" ]; then
               CHECKSUM=$($CHECKSUM_CMD "$file" | awk '{print $1}')
               filename=$(basename "$file")
@@ -163,6 +176,7 @@ jobs:
           cat manifest.txt
 
       - name: Upload manifest.txt
+        if: matrix.platform != 'windows-latest'  # Skip on Windows
         uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}
