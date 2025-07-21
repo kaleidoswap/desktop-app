@@ -132,25 +132,29 @@ jobs:
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
 
-          $artifact_paths="${{ steps.tauri_build.outputs.artifactPaths }}"
-          $artifact_paths=$artifact_paths.Trim('[]').Replace('"', '').Split(',')
+          # Parse artifact paths safely
+          $paths = "${{ steps.tauri_build.outputs.artifactPaths }}"
+          $paths = $paths.TrimStart('[').TrimEnd(']')
+          $artifact_paths = $paths -split ',' | ForEach-Object { $_.Trim('"') }
 
+          # Set checksum command based on OS
           if ($env:RUNNER_OS -eq "Linux") {
-            $CHECKSUM_CMD="sha256sum"
+            $CHECKSUM_CMD = "sha256sum"
           } elseif ($env:RUNNER_OS -eq "macOS") {
-            $CHECKSUM_CMD="shasum -a 256"
+            $CHECKSUM_CMD = "shasum -a 256"
           } else {
-            $CHECKSUM_CMD="certutil -hashfile"
+            $CHECKSUM_CMD = "certutil -hashfile"
           }
 
+          # Process each artifact
           foreach ($file in $artifact_paths) {
             if (Test-Path $file) {
               if ($env:RUNNER_OS -eq "Windows") {
-                $CHECKSUM=(certutil -hashfile $file SHA256)[1].Replace(" ", "")
+                $CHECKSUM = (certutil -hashfile $file SHA256)[1].Replace(" ", "")
               } else {
-                $CHECKSUM=($CHECKSUM_CMD $file).Split()[0]
+                $CHECKSUM = (& $CHECKSUM_CMD $file).Split()[0]
               }
-              $filename=Split-Path $file -Leaf
+              $filename = Split-Path $file -Leaf
               echo "$filename: $CHECKSUM" >> manifest.txt
             }
           }
