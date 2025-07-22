@@ -109,19 +109,13 @@ export const createSwapExecutor = (
     let errorMessage: string | null = null
 
     const clearToastAndTimeout = () => {
-      try {
-        if (toastId !== null) {
-          toast.dismiss(toastId)
-        }
-      } catch (e) {
-        logger.error('Error dismissing toast:', e)
+      if (toastId !== null) {
+        toast.dismiss(toastId)
+        toastId = null
       }
-      try {
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId)
-        }
-      } catch (e) {
-        logger.error('Error clearing timeout:', e)
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+        timeoutId = null
       }
     }
 

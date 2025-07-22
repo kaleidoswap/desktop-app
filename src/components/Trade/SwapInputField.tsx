@@ -86,8 +86,16 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onAmountChange) return
 
+    // Remove any non-numeric characters except decimal point and prevent negative values
     const numericValue = e.target.value.replace(/[^\d.]/g, '')
     const parsedValue = parseFloat(numericValue)
+
+    // Prevent negative values explicitly
+    if (parsedValue < 0 || numericValue.startsWith('-')) {
+      e.target.value = ''
+      onAmountChange(e)
+      return
+    }
 
     // If maxAmount is defined and the input value is greater than maxAmount,
     // format maxAmount and use that instead

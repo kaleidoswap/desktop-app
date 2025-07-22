@@ -57,8 +57,14 @@ export const createFromAmountChangeHandler = (
     // Reconstruct the value
     cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
 
-    // Convert to number for comparison
+    // Convert to number for comparison and validation
     const numericValue = parseFloat(cleanValue) || 0
+
+    // Prevent negative values explicitly
+    if (numericValue < 0) {
+      cleanValue = '0'
+    }
+
     const maxDisplayValue = maxAmount
       ? maxAmount / Math.pow(10, precision)
       : Infinity
@@ -142,8 +148,14 @@ export const createToAmountChangeHandler = (
     // Reconstruct the value
     cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
 
-    // Convert to number for comparison
+    // Convert to number for comparison and validation
     const numericValue = parseFloat(cleanValue) || 0
+
+    // Prevent negative values explicitly
+    if (numericValue < 0) {
+      cleanValue = '0'
+    }
+
     const maxDisplayValue = maxAmount
       ? maxAmount / Math.pow(10, precision)
       : Infinity
