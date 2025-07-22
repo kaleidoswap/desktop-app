@@ -38,17 +38,9 @@ export const AppVersion: React.FC<AppVersionProps> = ({
         ])
 
         // Try to get additional build info if available
-        let buildInfo = {}
-        try {
-          buildInfo = await invoke('get_build_info')
-        } catch (error) {
-          console.log('Build info not available:', error)
-        }
-
         const info: AppVersionInfo = {
-          commit: (buildInfo as any)?.commit || __GIT_COMMIT__ || 'unknown',
-          environment:
-            (buildInfo as any)?.environment || __NODE_ENV__ || 'development',
+          commit: __GIT_COMMIT__ || 'unknown',
+          environment: __NODE_ENV__ || 'development',
           name: appName,
           version: appVersion,
         }
