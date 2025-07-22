@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 mod db;
 mod rgb_node;
-mod log_cache;
 
 use rgb_node::NodeProcess;
 
@@ -15,8 +14,8 @@ struct CurrentAccount(RwLock<Option<db::Account>>);
 
 #[derive(serde::Serialize)]
 pub struct NodeLogsResponse {
-    logs: Vec<String>,
-    total: u32,
+    pub logs: Vec<String>,
+    pub total: u32,
 }
 
 fn main() {
@@ -386,11 +385,25 @@ fn get_account_by_name(name: String) -> Result<Option<db::Account>, String> {
 
 #[tauri::command]
 fn get_node_logs(
-    _node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
+    node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
     page: u32,
-    page_size: u32
+    page_size: u32,
 ) -> Result<NodeLogsResponse, String> {
-    let (logs, total) = log_cache::get_logs(page, page_size);
+    let node_process = node_process.lock().unwrap();
+    let all_logs = node_process.get_logs();
+    let total = all_logs.len() as u32;
+
+    // Calculate start and end indices for pagination
+    let start = ((page - 1) * page_size) as usize;
+    let end = std::cmp::min(start + page_size as usize, all_logs.len());
+
+    // Get the paginated logs
+    let logs = if start < all_logs.len() {
+        all_logs[start..end].to_vec()
+    } else {
+        Vec::new()
+    };
+
     Ok(NodeLogsResponse { logs, total })
 }
 

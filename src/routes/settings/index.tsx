@@ -140,11 +140,9 @@ export const Component: React.FC = () => {
 
     try {
       setIsLoadingLogs(true)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Logs fetch timeout')), 8000)
-      )
+      console.log('Fetching logs with params:', { currentPage, maxLogEntries })
 
-      const logsPromise = invoke<{ logs: string[]; total: number }>(
+      const result = await invoke<{ logs: string[]; total: number }>(
         'get_node_logs',
         {
           page: currentPage,
@@ -152,22 +150,23 @@ export const Component: React.FC = () => {
         }
       )
 
-      // Race between the fetch and the timeout
-      const result = (await Promise.race([logsPromise, timeoutPromise])) as {
-        logs: string[]
-        total: number
-      }
+      console.log('Received logs:', result)
 
-      if (result && result.logs && Array.isArray(result.logs)) {
+      if (result && Array.isArray(result.logs)) {
         setNodeLogs(result.logs)
         setTotalLogs(result.total)
         // Reset retry count on success
         setLogsFetchRetries(0)
         setIsLogsFetchDisabled(false)
+      } else {
+        console.error('Invalid logs format received:', result)
+        toast.error('Invalid logs format received from server')
       }
     } catch (error) {
       console.error('Failed to fetch node logs:', error)
-      toast.error('Failed to load logs. Retrying...')
+      toast.error(
+        `Failed to load logs: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
 
       // Increment retry count and implement backoff
       const newRetryCount = logsFetchRetries + 1
@@ -195,6 +194,8 @@ export const Component: React.FC = () => {
     const loadInitialData = async () => {
       try {
         setIsLoading(true)
+        // Ensure we start from page 1
+        setCurrentPage(1)
         await fetchNodeLogs()
       } catch (error) {
         console.error('Error loading initial data:', error)
@@ -205,13 +206,20 @@ export const Component: React.FC = () => {
 
     loadInitialData()
 
-    // Set up polling with a cleanup function - reduced frequency to improve performance
-    const logsInterval = setInterval(fetchNodeLogs, 30000) // Poll logs every 30 seconds
+    // Set up polling with a cleanup function and longer interval
+    const logsInterval = setInterval(fetchNodeLogs, 10000) // Poll logs every 10 seconds instead of 5
 
     return () => {
       clearInterval(logsInterval)
     }
-  }, [])
+  }, []) // Empty dependency array to run only on mount
+
+  // Add effect to refetch when page or page size changes
+  useEffect(() => {
+    if (!isLoading) {
+      fetchNodeLogs()
+    }
+  }, [currentPage, maxLogEntries])
 
   useEffect(() => {
     reset({
@@ -294,9 +302,9 @@ export const Component: React.FC = () => {
         dispatch(setNodeConnectionString(data.nodeConnectionString))
 
         await invoke('update_account', {
+          bearerToken: data.bearerToken || null,
           daemonListeningPort: currentAccount.daemon_listening_port,
           datapath: currentAccount.datapath,
-          bearerToken: data.bearerToken || null,
           defaultLspUrl: data.lspUrl,
           defaultMakerUrl: data.defaultMakerUrl,
           indexerUrl: data.indexerUrl,

@@ -11,7 +11,6 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Emitter, WebviewWindow};
-use crate::log_cache;
 use std::collections::HashMap;
 
 const SHUTDOWN_TIMEOUT_SECS: u64 = 5;
@@ -547,14 +546,6 @@ impl NodeProcess {
         thread::sleep(Duration::from_secs(1));
     }
 
-    pub fn log(&mut self, message: String) {
-        println!("{}", message);
-        log_cache::add_to_cache(message.clone());
-        if let Some(window) = &*self.window.lock().unwrap() {
-            let _ = window.emit("node-log", message);
-        }
-    }
-
     /// Spawns the rgb-lightning-node process.
     /// Returns a `Child` on success or an error message otherwise.
     fn run_rgb_lightning_node(
@@ -703,51 +694,4 @@ impl NodeProcess {
             }
         }
     }
-}
-
-// Add Tauri commands for port management
-#[tauri::command]
-fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, String> {
-    let mut result = HashMap::new();
-    for port in ports {
-        match port.parse::<u16>() {
-            Ok(port_num) => {
-                result.insert(port.clone(), NodeProcess::is_port_available(port_num));
-            }
-            Err(e) => {
-                return Err(format!("Invalid port number {}: {}", port, e));
-            }
-        }
-    }
-    Ok(result)
-}
-
-#[tauri::command]
-fn get_running_node_ports(node_process: tauri::State<Arc<Mutex<NodeProcess>>>) -> HashMap<String, String> {
-    node_process.lock().unwrap().get_running_node_ports()
-}
-
-#[tauri::command]
-fn find_available_ports(
-    base_daemon_port: Option<u16>,
-    base_ldk_port: Option<u16>,
-) -> Result<HashMap<String, u16>, String> {
-    let (daemon_port, ldk_port) = NodeProcess::find_available_ports(
-        base_daemon_port.unwrap_or(3001),
-        base_ldk_port.unwrap_or(9735),
-    );
-    
-    let mut result = HashMap::new();
-    result.insert("daemon".to_string(), daemon_port);
-    result.insert("ldk".to_string(), ldk_port);
-    Ok(result)
-}
-
-#[tauri::command]
-fn stop_node_by_account(
-    node_process: tauri::State<Arc<Mutex<NodeProcess>>>,
-    account_name: String,
-) -> Result<(), String> {
-    let node_process = node_process.lock().unwrap();
-    node_process.stop_by_account(&account_name)
 }
