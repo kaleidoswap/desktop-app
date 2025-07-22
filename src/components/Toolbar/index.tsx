@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH , WALLET_UNLOCK_PATH } from '../../app/router/paths'
+import { ROOT_PATH, WALLET_UNLOCK_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
@@ -1030,9 +1030,62 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   const [formData, setFormData] = useState(account)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced'>('basic')
+  const [portErrors, setPortErrors] = useState<{
+    daemon?: string
+    ldk?: string
+  }>({})
+
+  const validatePorts = (daemonPort: string, ldkPort: string) => {
+    const errors: { daemon?: string; ldk?: string } = {}
+
+    const daemonPortNum = parseInt(daemonPort)
+    const ldkPortNum = parseInt(ldkPort)
+
+    // Validate daemon port
+    if (!daemonPort || isNaN(daemonPortNum)) {
+      errors.daemon = 'Daemon port is required'
+    } else if (daemonPortNum < 1024 || daemonPortNum > 65535) {
+      errors.daemon = 'Daemon port must be between 1024 and 65535'
+    }
+
+    // Validate LDK port
+    if (!ldkPort || isNaN(ldkPortNum)) {
+      errors.ldk = 'LDK peer port is required'
+    } else if (ldkPortNum < 1024 || ldkPortNum > 65535) {
+      errors.ldk = 'LDK peer port must be between 1024 and 65535'
+    }
+
+    // Check if ports are the same
+    if (daemonPort && ldkPort && daemonPort === ldkPort) {
+      errors.daemon = 'Daemon and LDK ports must be different'
+      errors.ldk = 'Daemon and LDK ports must be different'
+    }
+
+    setPortErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Validate ports on initial load
+  useEffect(() => {
+    validatePorts(
+      formData.daemon_listening_port,
+      formData.ldk_peer_listening_port
+    )
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate ports before submission
+    const isValidPorts = validatePorts(
+      formData.daemon_listening_port,
+      formData.ldk_peer_listening_port
+    )
+    if (!isValidPorts) {
+      toast.error('Please fix the port configuration errors')
+      return
+    }
+
     setIsLoading(true)
     try {
       await onSave(formData)
@@ -1046,7 +1099,22 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   }
 
   const handleInputChange = (field: keyof Account, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+
+    // Real-time validation for port fields
+    if (
+      field === 'daemon_listening_port' ||
+      field === 'ldk_peer_listening_port'
+    ) {
+      // Use a small timeout to avoid excessive validation calls while typing
+      setTimeout(() => {
+        validatePorts(
+          newFormData.daemon_listening_port,
+          newFormData.ldk_peer_listening_port
+        )
+      }, 500)
+    }
   }
 
   return (
@@ -1237,6 +1305,84 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-gray-300 mb-4">
+                Port Configuration
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
+                    Daemon Listening Port
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                        portErrors.daemon
+                          ? 'border-red-500 focus:border-red-400'
+                          : 'border-gray-600 focus:border-cyan/50'
+                      }`}
+                      max="65535"
+                      min="1024"
+                      onChange={(e) =>
+                        handleInputChange(
+                          'daemon_listening_port',
+                          e.target.value
+                        )
+                      }
+                      placeholder="3001"
+                      type="number"
+                      value={formData.daemon_listening_port}
+                    />
+                  </div>
+                  {portErrors.daemon ? (
+                    <p className="text-xs text-red-400 mt-1">
+                      {portErrors.daemon}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Port for the RGB Lightning Node daemon API (1024-65535)
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
+                    LDK Peer Listening Port
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                        portErrors.ldk
+                          ? 'border-red-500 focus:border-red-400'
+                          : 'border-gray-600 focus:border-cyan/50'
+                      }`}
+                      max="65535"
+                      min="1024"
+                      onChange={(e) =>
+                        handleInputChange(
+                          'ldk_peer_listening_port',
+                          e.target.value
+                        )
+                      }
+                      placeholder="9735"
+                      type="number"
+                      value={formData.ldk_peer_listening_port}
+                    />
+                  </div>
+                  {portErrors.ldk ? (
+                    <p className="text-xs text-red-400 mt-1">
+                      {portErrors.ldk}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Port for Lightning Network peer connections (1024-65535)
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
