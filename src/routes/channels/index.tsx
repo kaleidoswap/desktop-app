@@ -119,6 +119,16 @@ export const Component: React.FC = () => {
     refreshData()
   }, [refreshData])
 
+  // Auto-refresh every 3 seconds
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshData()
+    }, 3000)
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId)
+  }, [refreshData])
+
   useEffect(() => {
     if (listAssetsResponse.data) {
       const assetsMap = listAssetsResponse.data.nia.reduce(

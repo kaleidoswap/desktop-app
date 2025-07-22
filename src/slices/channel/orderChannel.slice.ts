@@ -32,7 +32,7 @@ export const initialState: SliceState = {
       assetAmount: 0,
       assetId: '',
       capacitySat: MIN_CHANNEL_CAPACITY,
-      channelExpireBlocks: 1008, // 1 week
+      channelExpireBlocks: 4320, // 1 month
       clientBalanceSat: 0,
     },
   },

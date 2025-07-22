@@ -233,7 +233,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         assetAmount: '',
         assetId: '',
         capacitySat: '',
-        channelExpireBlocks: 1008,
+        channelExpireBlocks: 4320,
         clientBalanceSat: '',
       },
       resolver: zodResolver(FormFieldsSchema),
@@ -546,11 +546,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
   const getChannelExpiryOptions = useCallback(() => {
     const options = [
-      { label: '1 week', value: (6 * 24 * 7).toString() },
-      { label: '1 month', value: (6 * 24 * 30).toString() },
+      { label: '1 month', value: '4320' },
+      { label: '3 months', value: '12960' },
     ]
 
-    const sixMonthsBlocks = 6 * 24 * 30 * 6
+    const sixMonthsBlocks = 25920 // 6 * 24 * 30 * 6
     if (
       !lspOptions ||
       sixMonthsBlocks <= lspOptions.max_channel_expiry_blocks
