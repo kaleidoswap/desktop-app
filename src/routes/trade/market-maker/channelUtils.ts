@@ -12,6 +12,7 @@ export const isTradableChannel = (channel: Channel): boolean => {
     channel.ready &&
     // Channel must have either outbound or inbound balance
     (channel.outbound_balance_msat > 0 || channel.inbound_balance_msat > 0) &&
+    channel.next_outbound_htlc_minimum_msat > 0 &&
     // Channel must have a valid asset_id
     channel.asset_id !== null &&
     channel.asset_id !== undefined

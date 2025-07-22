@@ -419,6 +419,85 @@ export const createTradingChannelsMessageProps = (
   }
 }
 
+// New component for channels that exist but are not ready yet
+interface ChannelsNotReadyMessageProps {
+  onRefresh: () => Promise<void>
+}
+
+export const ChannelsNotReadyMessage: React.FC<
+  ChannelsNotReadyMessageProps
+> = ({ onRefresh }) => {
+  return (
+    <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center">
+          <Clock className="w-8 h-8 text-yellow-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">
+          Channels Not Ready Yet
+        </h2>
+        <p className="text-slate-400 text-center text-base max-w-md">
+          Your trading channels are being set up. This process usually takes a
+          few minutes. Please wait while we prepare everything for you.
+        </p>
+
+        <div className="w-full max-w-md bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 mt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+              <span className="text-yellow-400 font-medium">
+                Channel Status
+              </span>
+            </div>
+            <span className="text-slate-400 text-sm">Initializing...</span>
+          </div>
+          <div className="mt-3 w-full bg-slate-700/30 rounded-full h-2 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 w-3/4 animate-pulse rounded-full"></div>
+          </div>
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button
+            className="px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl 
+                     font-medium transition-colors flex items-center gap-2 text-base
+                     shadow-lg hover:shadow-yellow-500/25"
+            onClick={onRefresh}
+          >
+            <RefreshCcw className="w-5 h-5" />
+            Check Status
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg mt-4">
+          <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4">
+            <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center mb-3 border border-blue-500/20">
+              <Clock className="w-5 h-5 text-blue-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-blue-300 mb-1">
+              Setup Time
+            </h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Channel setup typically takes 3-5 minutes to complete
+            </p>
+          </div>
+
+          <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4">
+            <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mb-3 border border-green-500/20">
+              <RefreshCcw className="w-5 h-5 text-green-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-green-300 mb-1">
+              Auto-Refresh
+            </h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              We'll automatically check the status every 30 seconds
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // New component for when WebSocket is disconnected but channels are available
 interface WebSocketDisconnectedMessageProps {
   onMakerChange: () => Promise<void>

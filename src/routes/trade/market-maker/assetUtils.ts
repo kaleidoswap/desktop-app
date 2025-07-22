@@ -285,9 +285,14 @@ export const getAvailableAssets = (
   channels: Channel[],
   _assets: NiaAsset[] // Prefixed with underscore to indicate intentionally unused
 ): string[] => {
-  // Get unique asset IDs from channels that are ready and usable
+  if (!channels || channels.length === 0) {
+    logger.warn('getAvailableAssets called with no channels')
+    return ['BTC']
+  }
+  const validChannels = Array.isArray(channels) ? channels : []
+  // Get unique asset IDs from channels that have balance
   const channelAssetIds = new Set<string>(
-    channels
+    validChannels
       .filter(
         (c) =>
           c.ready && (c.outbound_balance_msat > 0 || c.inbound_balance_msat > 0)

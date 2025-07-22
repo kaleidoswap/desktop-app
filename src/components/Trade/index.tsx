@@ -112,6 +112,7 @@ export {
   SupportedAssetsDisplay,
 } from './TradablePairsDisplay'
 export {
+  ChannelsNotReadyMessage,
   ConnectionTimeoutMessage,
   NoChannelsMessage,
   NoTradingChannelsMessage,
