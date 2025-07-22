@@ -3,6 +3,7 @@ export const MIN_CHANNEL_CAPACITY = 50_000
 export const MAX_CHANNEL_CAPACITY = 16_777_215
 export const MSATS_PER_SAT = 1000
 export const RGB_HTLC_MIN_SAT = 3000
+export const DEFAULT_UTXO_SIZE = 3000
 export const KALEIDOSWAP_LSP_URL = 'http://localhost:8000'
 export const DEFAULT_RGB_ICON = 'rgb-symbol-color.svg'
 export const COIN_ICON_URL =
