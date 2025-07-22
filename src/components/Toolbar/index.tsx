@@ -759,11 +759,36 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     daemon: string
     ldk: string
   } | null>(null)
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [loadingState, setLoadingState] = useState<{
+    message: string
+    step: number
+  } | null>(null)
 
   const handleConfirm = async () => {
     try {
+      setLoadingState({ message: 'Checking node status...', step: 1 })
+      setError(null)
+
+      // Check if node is already running
+      const isNodeRunning = await invoke<boolean>('is_node_running', {
+        accountName: account.name,
+      })
+
+      if (isNodeRunning) {
+        setLoadingState({
+          message: 'Node is already running, switching context...',
+          step: 2,
+        })
+      } else if (account.datapath) {
+        setLoadingState({ message: 'Starting local node...', step: 2 })
+      } else {
+        setLoadingState({ message: 'Connecting to remote node...', step: 2 })
+      }
+
       await onConfirm(account)
     } catch (error) {
+      console.error('Node switch error:', error)
       if (error instanceof Error) {
         setError(error.message)
         // Check if error message contains suggested ports
@@ -778,8 +803,10 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           })
         }
       } else {
-        setError('An unknown error occurred')
+        setError('An unknown error occurred while switching nodes')
       }
+    } finally {
+      setLoadingState(null)
     }
   }
 
@@ -798,21 +825,62 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     setSuggestedPorts(null)
   }
 
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section)
+  }
+
+  const NodeIcon = account.datapath ? Server : Cloud
+  const nodeType = account.datapath ? 'Local Node' : 'Remote Node'
+  const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
+  const bgColor = account.datapath
+    ? 'from-green-500/5 to-transparent'
+    : 'from-cyan/5 to-transparent'
+
   return (
-    <>
-      <div className="mb-6">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <div className="sticky top-0 bg-gray-800 pb-4 z-10">
         <h2 className="text-2xl font-bold mb-2">Switch Node</h2>
-        <p className="text-gray-400">
+        <p className="text-gray-400 text-sm">
           Review the node details before switching
         </p>
       </div>
 
+      {/* Loading State */}
+      {loadingState && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Spinner size={24} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              </div>
+            </div>
+            <div>
+              <p className="text-blue-400 font-medium">
+                {loadingState.message}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 1 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-500 font-medium">Error starting node</p>
+              <p className="text-red-500 font-medium">Error switching node</p>
               <p className="text-sm text-red-400/80 mt-1 whitespace-pre-line">
                 {error}
               </p>
@@ -831,101 +899,211 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         </div>
       )}
 
-      <div className="bg-gray-700/50 p-6 rounded-xl mb-8 text-left space-y-4 border border-gray-600">
-        <div className="flex items-center gap-4 mb-6">
-          <MinidenticonImg
-            className="rounded-lg"
-            height="48"
-            saturation="90"
-            username={account.name}
-            width="48"
-          />
-          <div>
-            <h3 className="text-xl font-semibold">{account.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="bg-gray-600 px-3 py-1 rounded-full text-sm">
+      <div
+        className={`bg-gradient-to-b ${bgColor} rounded-xl p-4 mb-4 border border-gray-700`}
+      >
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <MinidenticonImg
+              className="rounded-lg"
+              height="56"
+              saturation="90"
+              username={account.name}
+              width="56"
+            />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-darkest flex items-center justify-center shadow-md">
+              <NodeIcon className={`w-3.5 h-3.5 ${nodeColor}`} />
+            </div>
+          </div>
+          <div className="flex-grow">
+            <h3 className="text-xl font-semibold text-white">{account.name}</h3>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="bg-blue-darkest px-3 py-1 rounded-full text-sm text-gray-300">
                 {account.network}
               </span>
-              {account.datapath ? (
-                <span className="flex items-center text-green-400 text-sm">
-                  <Server className="mr-1" size={14} />
-                  Local Node
-                </span>
-              ) : (
-                <span className="flex items-center text-blue-400 text-sm">
-                  <Cloud className="mr-1" size={14} />
-                  Remote Node
-                </span>
-              )}
+              <span
+                className={`flex items-center ${nodeColor} text-sm font-medium`}
+              >
+                <NodeIcon className="mr-1.5" size={14} />
+                {nodeType}
+              </span>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="space-y-3 text-sm">
-          {account.datapath && (
-            <div>
-              <label className="text-gray-400 block mb-1">Data Path</label>
-              <div className="text-white break-all">{account.datapath}</div>
+      <div className="space-y-2">
+        {/* Connection Details Section */}
+        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            onClick={() => toggleSection('connection')}
+          >
+            <span className="font-medium text-white">Connection Details</span>
+            <div
+              className={`transform transition-transform ${expandedSection === 'connection' ? 'rotate-180' : ''}`}
+            >
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
             </div>
-          )}
-          <div>
-            <label className="text-gray-400 block mb-1">Node URL</label>
-            <div className="text-white break-all">{account.node_url}</div>
-          </div>
-          <div>
-            <label className="text-gray-400 block mb-1">RPC Connection</label>
-            <div className="text-white break-all">
-              {account.rpc_connection_url}
-            </div>
-          </div>
-          <div>
-            <label className="text-gray-400 block mb-1">Indexer URL</label>
-            <div className="text-white break-all">{account.indexer_url}</div>
-          </div>
-          <div>
-            <label className="text-gray-400 block mb-1">RGB Proxy</label>
-            <div className="text-white break-all">{account.proxy_endpoint}</div>
-          </div>
-          {account.datapath && (
-            <>
+          </button>
+          {expandedSection === 'connection' && (
+            <div className="px-4 pb-4 space-y-3">
               <div>
-                <label className="text-gray-400 block mb-1">Daemon Port</label>
-                <div className="text-white">
-                  {account.daemon_listening_port}
+                <label className="text-sm text-gray-400">Node URL</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.node_url}
                 </div>
               </div>
               <div>
-                <label className="text-gray-400 block mb-1">
-                  LDK Peer Port
-                </label>
-                <div className="text-white">
-                  {account.ldk_peer_listening_port}
+                <label className="text-sm text-gray-400">RPC Connection</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.rpc_connection_url}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
+
+        {/* Service Endpoints Section */}
+        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            onClick={() => toggleSection('services')}
+          >
+            <span className="font-medium text-white">Service Endpoints</span>
+            <div
+              className={`transform transition-transform ${expandedSection === 'services' ? 'rotate-180' : ''}`}
+            >
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </button>
+          {expandedSection === 'services' && (
+            <div className="px-4 pb-4 space-y-3">
+              <div>
+                <label className="text-sm text-gray-400">Indexer URL</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.indexer_url}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">RGB Proxy</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.proxy_endpoint}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Port Configuration Section - Only for Local Nodes */}
+        {account.datapath && (
+          <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+            <button
+              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+              onClick={() => toggleSection('ports')}
+            >
+              <span className="font-medium text-white">Port Configuration</span>
+              <div
+                className={`transform transition-transform ${expandedSection === 'ports' ? 'rotate-180' : ''}`}
+              >
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M19 9l-7 7-7-7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+            </button>
+            {expandedSection === 'ports' && (
+              <div className="px-4 pb-4 space-y-3">
+                <div>
+                  <label className="text-sm text-gray-400">Daemon Port</label>
+                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.daemon_listening_port}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">LDK Peer Port</label>
+                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.ldk_peer_listening_port}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">Data Path</label>
+                  <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.datapath}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-        <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
-          disabled={isLoading}
-          onClick={onCancel}
-          type="button"
-        >
-          Cancel
-        </button>
-        <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
-          disabled={isLoading}
-          onClick={handleConfirm}
-          type="button"
-        >
-          {isLoading ? <Spinner size={20} /> : 'Select Node'}
-        </button>
+      <div className="sticky bottom-0 bg-gray-800 pt-4 mt-6 border-t border-gray-700">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          <button
+            className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            disabled={isLoading || loadingState !== null}
+            onClick={onCancel}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors
+              ${
+                isLoading || loadingState !== null
+                  ? 'bg-blue/50 cursor-not-allowed'
+                  : 'bg-blue hover:bg-blue/80'
+              } text-white`}
+            disabled={isLoading || loadingState !== null}
+            onClick={handleConfirm}
+            type="button"
+          >
+            {isLoading || loadingState ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner size={20} />
+                <span>Switching...</span>
+              </div>
+            ) : (
+              'Switch to This Node'
+            )}
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -997,14 +1175,14 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
 
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded-lg shadow-md transition duration-200"
+          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
           onClick={onCancel}
           type="button"
         >
           Cancel
         </button>
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-white text-lg font-bold rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2"
+          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
           onClick={handleDelete}
           type="button"
         >
