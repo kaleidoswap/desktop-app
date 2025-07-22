@@ -219,7 +219,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   const dispatch = useAppDispatch()
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
-  const [addAsset, setAddAsset] = useState(false)
+  const [addAsset, setAddAsset] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [lspOptions, setLspOptions] = useState<LspOptions | null>(null)
   const [effectiveMinCapacity, setEffectiveMinCapacity] =
