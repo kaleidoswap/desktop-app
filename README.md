@@ -26,7 +26,7 @@
       - [Building and Running](#building-and-running)
   - [Usage 💡](#usage-)
     - [Connecting to an RGB Lightning Node](#connecting-to-an-rgb-lightning-node)
-    - [Trading and Swapping Assets](#trading-and-swapping-assets)
+    - [Getting Started with Trading](#getting-started-with-trading)
     - [Managing Channels](#managing-channels)
     - [Deposits and Withdrawals](#deposits-and-withdrawals)
     - [Backup](#backup)
@@ -67,12 +67,12 @@ You can install the app in two ways:
 ### 1. Download Binaries
 
 1. Download the appropriate binary for your operating system from the [Releases](https://github.com/kaleidoswap/desktop-app/releases) page.
-2. Download both the binary file and its corresponding `.sig` signature file.
+2. Download the manifest.txt file and its corresponding `.sig` signature file.
 3. Import our public GPG key:
    ```sh
-      curl https://keybase.io/bitwalt/pgp_keys.asc | gpg --import
+      curl https://github.com/bitwalt.gpg | gpg --import
    ```
-4. Verify the signature:
+4. Verify the manifest signature:
    ```sh
    # For Linux
    gpg --verify kaleido-swap_0.0.1_amd64.AppImage.sig kaleido-swap_0.0.1_amd64.AppImage
@@ -83,7 +83,7 @@ You can install the app in two ways:
    # For Windows
    gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
    ```
-5. Verify the SHA256 checksum of the binary.
+5. Verify the SHA256 checksum of your binary against the one listed in the manifest.txt file.
 6. Run the app by executing the binary.
 
 ### 2. Building Locally
@@ -116,6 +116,13 @@ You can install the app in two ways:
 3. **Tauri Prerequisites**  
    Confirm correct installation of Rust, Node.js, npm, and pnpm.
 
+#### Arch Linux (AUR)
+
+- Install via an AUR helper like `yay`:
+  ```sh
+  yay -S kaleidoswap
+  ```
+
 #### Building and Running
 
 1. **Install dependencies**:  
@@ -124,6 +131,7 @@ You can install the app in two ways:
    ```
 2. **Build the Tauri app**:  
    ```sh
+
    # For current platform
    pnpm run tauri:build
    
@@ -143,18 +151,29 @@ You can install the app in two ways:
 ### Connecting to an RGB Lightning Node
 
 1. **Launch** Kaleidoswap.
-2. **Configure the Node** in the **Settings** page:
-   - Connect to a local or remote instance of [rgb-lightning-node](https://github.com/RGB-Tools/rgb-lightning-node).
-   - Provide the correct host/port and any additional configuration details required.
+2. **Setup Your Node**:
+   - Create a new local node using the setup wizard, or
+   - Connect to a remote instance of [rgb-lightning-node](https://github.com/RGB-Tools/rgb-lightning-node) by providing the correct host/port and any additional configuration details required.
 
-### Trading and Swapping Assets
+### Getting Started with Trading
 
-1. **Select or Add a Market Maker** on the **Settings** page.
-   - KaleidoSwap currently provides two built-in makers: one for **regtest** and another for **signet** (mutinynet). Supported assets and pairs can be found at [KaleidoSwap RGB Registry](https://registry.kaleidoswap.com/).
-2. **Check Supported Pairs**: Ensure you have at least one Lightning channel funded with the RGB asset you want to trade.
-   - If you lack a channel, you can **buy one** from an LSP that supports your chosen RGB asset.
-3. **Initiate the Swap**:
-   - Go to the trading interface, pick your maker and select a supported trading pair.
+1. **Deposit Bitcoin**:
+   - Use one of the available faucets to deposit some Bitcoin to your wallet.
+   - Wait for the transaction to confirm.
+
+2. **Buy a Channel with RGB Assets**:
+   - Navigate to the **Buy New Channel** page.
+   - Request a channel from an LSP, specifying capacity and the RGB asset you want included.
+   - Wait for the channel to be opened and confirmed.
+
+3. **Select or Add a Market Maker**:
+   - KaleidoSwap currently provides two built-in makers: one for **regtest** and another for **signet** (mutinynet).
+   - Supported assets and pairs can be found at [KaleidoSwap RGB Registry](https://registry.kaleidoswap.com/).
+   - Go to the **Settings** page if you want to add a different market maker.
+
+4. **Initiate the Swap**:
+   - Go to the trading interface and select a supported trading pair.
+   - Ensure you have at least one Lightning channel funded with the RGB asset you want to trade.
    - Accept the RFQ price to execute the swap.
 
 > **Important**: Since Kaleidoswap is in alpha, swaps may fail or get stuck. Check the [docs](https://docs.kaleidoswap.com) for troubleshooting, and feel free to [open an issue](#support-) if you encounter problems.
