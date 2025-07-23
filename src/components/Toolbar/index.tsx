@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH } from '../../app/router/paths'
+import { ROOT_PATH, WALLET_UNLOCK_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
@@ -353,14 +353,40 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   }, [accounts, isEditing])
 
   useEffect(() => {
-    const unlisten = listen('node-started', () => {
-      toast.success('Local node started successfully', {
+    let isToastActive = false
+    let timeoutId: number
+
+    const handleNodeStarted = (event: { payload: string }) => {
+      // If a toast is already active or there's a pending timeout, don't show another one
+      if (isToastActive) return
+
+      // Set the flag to prevent multiple toasts
+      isToastActive = true
+
+      // Clear any existing timeout
+      if (timeoutId) window.clearTimeout(timeoutId)
+
+      // Show the toast
+      toast.success(`Local node "${event.payload}" started successfully`, {
         autoClose: 3000,
+        onClose: () => {
+          // Reset the flag when the toast closes
+          isToastActive = false
+        },
         position: 'bottom-right',
+        toastId: 'node-started',
       })
-    })
+
+      // Set a timeout to reset the flag (in case onClose doesn't fire)
+      timeoutId = window.setTimeout(() => {
+        isToastActive = false
+      }, 3000)
+    }
+
+    const unlisten = listen('node-started', handleNodeStarted)
 
     return () => {
+      if (timeoutId) window.clearTimeout(timeoutId)
       unlisten.then((fn) => fn())
     }
   }, [])
@@ -405,8 +431,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         // Wait for the Redux store to be updated
         await dispatch(setSettingsAsync(formattedNode))
 
-        console.log('Node already running, navigating to dashboard')
-        navigate(ROOT_PATH)
+        // Check if node is locked before navigating
+        try {
+          await invoke('node_info')
+          console.log('Node unlocked, navigating to dashboard')
+          navigate(ROOT_PATH)
+        } catch (error) {
+          console.log('Node locked, navigating to unlock page')
+          navigate(WALLET_UNLOCK_PATH)
+        }
         return
       }
 
@@ -445,6 +478,103 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         })
 
         try {
+          // Check port availability before starting the node
+          const ports = [
+            node.daemon_listening_port,
+            node.ldk_peer_listening_port,
+          ]
+          const portCheck = await invoke<{ [port: string]: boolean }>(
+            'check_ports_available',
+            { ports }
+          )
+          const unavailablePorts = Object.entries(portCheck)
+            .filter(([_, isAvailable]) => !isAvailable)
+            .map(([port]) => port)
+
+          if (unavailablePorts.length > 0) {
+            // Get running node ports to check if they're our own nodes
+            const runningNodePorts = await invoke<{ [port: string]: string }>(
+              'get_running_node_ports'
+            )
+            const ourConflictingPorts = unavailablePorts.filter(
+              (port) => port in runningNodePorts
+            )
+
+            if (ourConflictingPorts.length > 0) {
+              // If ports are used by our nodes, try to stop them
+              toast.info('Stopping existing nodes on conflicting ports...', {
+                autoClose: false,
+                toastId: 'stopping-nodes',
+              })
+
+              for (const port of ourConflictingPorts) {
+                const nodeAccount = runningNodePorts[port]
+                try {
+                  await invoke('stop_node_by_account', {
+                    accountName: nodeAccount,
+                  })
+                  await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait for cleanup
+                } catch (error) {
+                  console.error(`Failed to stop node on port ${port}:`, error)
+                  throw new Error(
+                    `Failed to stop existing node on port ${port}`
+                  )
+                }
+              }
+
+              toast.update('stopping-nodes', {
+                autoClose: 2000,
+                render: 'Existing nodes stopped successfully',
+                type: 'success',
+              })
+
+              // Recheck port availability after stopping our nodes
+              const recheckPorts = await invoke<{ [port: string]: boolean }>(
+                'check_ports_available',
+                { ports }
+              )
+              const stillUnavailablePorts = Object.entries(recheckPorts)
+                .filter(([_, isAvailable]) => !isAvailable)
+                .map(([port]) => port)
+
+              if (stillUnavailablePorts.length > 0) {
+                // Try to find alternative ports
+                const suggestedPorts = await invoke<{
+                  daemon: number
+                  ldk: number
+                }>('find_available_ports', {
+                  base_daemon_port: parseInt(node.daemon_listening_port),
+                  base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                })
+
+                throw new Error(
+                  `Ports ${stillUnavailablePorts.join(', ')} are still in use by other processes. ` +
+                    'Suggested alternative ports:\n' +
+                    `- Daemon port: ${suggestedPorts.daemon}\n` +
+                    `- LDK peer port: ${suggestedPorts.ldk}`
+                )
+              }
+            } else {
+              // Ports are in use by external processes
+              // Try to find alternative ports
+              const suggestedPorts = await invoke<{
+                daemon: number
+                ldk: number
+              }>('find_available_ports', {
+                base_daemon_port: parseInt(node.daemon_listening_port),
+                base_ldk_port: parseInt(node.ldk_peer_listening_port),
+              })
+
+              throw new Error(
+                `Ports ${unavailablePorts.join(', ')} are in use by other applications. ` +
+                  'Suggested alternative ports:\n' +
+                  `- Daemon port: ${suggestedPorts.daemon}\n` +
+                  `- LDK peer port: ${suggestedPorts.ldk}`
+              )
+            }
+          }
+
+          // Start the node with the checked ports
           await invoke('start_node', {
             accountName: node.name,
             daemonListeningPort: node.daemon_listening_port,
@@ -460,7 +590,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      navigate(ROOT_PATH)
+
+      // Check if node is locked before navigating
+      try {
+        await invoke('node_info')
+        console.log('Node unlocked, navigating to dashboard')
+        navigate(ROOT_PATH)
+      } catch (error) {
+        console.log('Node locked, navigating to unlock page')
+        navigate(WALLET_UNLOCK_PATH)
+      }
     } catch (error) {
       dispatch(nodeSettingsActions.resetNodeSettings())
       toast.error(
@@ -615,92 +754,356 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const [error, setError] = useState<string | null>(null)
+  const [suggestedPorts, setSuggestedPorts] = useState<{
+    daemon: string
+    ldk: string
+  } | null>(null)
+  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [loadingState, setLoadingState] = useState<{
+    message: string
+    step: number
+  } | null>(null)
+
+  const handleConfirm = async () => {
+    try {
+      setLoadingState({ message: 'Checking node status...', step: 1 })
+      setError(null)
+
+      // Check if node is already running
+      const isNodeRunning = await invoke<boolean>('is_node_running', {
+        accountName: account.name,
+      })
+
+      if (isNodeRunning) {
+        setLoadingState({
+          message: 'Node is already running, switching context...',
+          step: 2,
+        })
+      } else if (account.datapath) {
+        setLoadingState({ message: 'Starting local node...', step: 2 })
+      } else {
+        setLoadingState({ message: 'Connecting to remote node...', step: 2 })
+      }
+
+      await onConfirm(account)
+    } catch (error) {
+      console.error('Node switch error:', error)
+      if (error instanceof Error) {
+        setError(error.message)
+        // Check if error message contains suggested ports
+        const match = error.message.match(
+          /Daemon port: (\d+).*LDK peer port: (\d+)/s
+        )
+        if (match) {
+          const [, daemonPort, ldkPort] = match
+          setSuggestedPorts({
+            daemon: daemonPort,
+            ldk: ldkPort,
+          })
+        }
+      } else {
+        setError('An unknown error occurred while switching nodes')
+      }
+    } finally {
+      setLoadingState(null)
+    }
+  }
+
+  const handleUseSuggestedPorts = () => {
+    if (!suggestedPorts) return
+
+    const updatedAccount = {
+      ...account,
+      daemon_listening_port: suggestedPorts.daemon,
+      ldk_peer_listening_port: suggestedPorts.ldk,
+      node_url: `http://localhost:${suggestedPorts.daemon}`,
+    }
+
+    onConfirm(updatedAccount)
+    setError(null)
+    setSuggestedPorts(null)
+  }
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section)
+  }
+
+  const NodeIcon = account.datapath ? Server : Cloud
+  const nodeType = account.datapath ? 'Local Node' : 'Remote Node'
+  const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
+  const bgColor = account.datapath
+    ? 'from-green-500/5 to-transparent'
+    : 'from-cyan/5 to-transparent'
+
   return (
-    <>
-      <div className="mb-6">
+    <div className="max-h-[80vh] overflow-y-auto">
+      <div className="sticky top-0 bg-gray-800 pb-4 z-10">
         <h2 className="text-2xl font-bold mb-2">Switch Node</h2>
-        <p className="text-gray-400">
+        <p className="text-gray-400 text-sm">
           Review the node details before switching
         </p>
       </div>
 
-      <div className="bg-gray-700/50 p-6 rounded-xl mb-8 text-left space-y-4 border border-gray-600">
-        <div className="flex items-center gap-4 mb-6">
-          <MinidenticonImg
-            className="rounded-lg"
-            height="48"
-            saturation="90"
-            username={account.name}
-            width="48"
-          />
-          <div>
-            <h3 className="text-xl font-semibold">{account.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="bg-gray-600 px-3 py-1 rounded-full text-sm">
-                {account.network}
-              </span>
-              {account.datapath ? (
-                <span className="flex items-center text-green-400 text-sm">
-                  <Server className="mr-1" size={14} />
-                  Local Node
-                </span>
-              ) : (
-                <span className="flex items-center text-blue-400 text-sm">
-                  <Cloud className="mr-1" size={14} />
-                  Remote Node
-                </span>
+      {/* Loading State */}
+      {loadingState && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Spinner size={24} />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              </div>
+            </div>
+            <div>
+              <p className="text-blue-400 font-medium">
+                {loadingState.message}
+              </p>
+              <div className="mt-2 flex gap-2">
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 1 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+                <div
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-red-500 font-medium">Error switching node</p>
+              <p className="text-sm text-red-400/80 mt-1 whitespace-pre-line">
+                {error}
+              </p>
+              {suggestedPorts && (
+                <div className="mt-3">
+                  <button
+                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
+                    onClick={handleUseSuggestedPorts}
+                  >
+                    Use suggested ports
+                  </button>
+                </div>
               )}
             </div>
           </div>
         </div>
+      )}
 
-        <div className="space-y-3 text-sm">
-          {account.datapath && (
-            <div>
-              <label className="text-gray-400 block mb-1">Data Path</label>
-              <div className="text-white break-all">{account.datapath}</div>
+      <div
+        className={`bg-gradient-to-b ${bgColor} rounded-xl p-4 mb-4 border border-gray-700`}
+      >
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <MinidenticonImg
+              className="rounded-lg"
+              height="56"
+              saturation="90"
+              username={account.name}
+              width="56"
+            />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-darkest flex items-center justify-center shadow-md">
+              <NodeIcon className={`w-3.5 h-3.5 ${nodeColor}`} />
             </div>
-          )}
-          <div>
-            <label className="text-gray-400 block mb-1">Node URL</label>
-            <div className="text-white break-all">{account.node_url}</div>
           </div>
-          <div>
-            <label className="text-gray-400 block mb-1">RPC Connection</label>
-            <div className="text-white break-all">
-              {account.rpc_connection_url}
+          <div className="flex-grow">
+            <h3 className="text-xl font-semibold text-white">{account.name}</h3>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="bg-blue-darkest px-3 py-1 rounded-full text-sm text-gray-300">
+                {account.network}
+              </span>
+              <span
+                className={`flex items-center ${nodeColor} text-sm font-medium`}
+              >
+                <NodeIcon className="mr-1.5" size={14} />
+                {nodeType}
+              </span>
             </div>
-          </div>
-          <div>
-            <label className="text-gray-400 block mb-1">Indexer URL</label>
-            <div className="text-white break-all">{account.indexer_url}</div>
-          </div>
-          <div>
-            <label className="text-gray-400 block mb-1">RGB Proxy</label>
-            <div className="text-white break-all">{account.proxy_endpoint}</div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-        <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
-          disabled={isLoading}
-          onClick={onCancel}
-          type="button"
-        >
-          Cancel
-        </button>
-        <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
-          disabled={isLoading}
-          onClick={() => onConfirm(account)}
-          type="button"
-        >
-          {isLoading ? <Spinner size={20} /> : 'Select Node'}
-        </button>
+      <div className="space-y-2">
+        {/* Connection Details Section */}
+        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            onClick={() => toggleSection('connection')}
+          >
+            <span className="font-medium text-white">Connection Details</span>
+            <div
+              className={`transform transition-transform ${expandedSection === 'connection' ? 'rotate-180' : ''}`}
+            >
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </button>
+          {expandedSection === 'connection' && (
+            <div className="px-4 pb-4 space-y-3">
+              <div>
+                <label className="text-sm text-gray-400">Node URL</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.node_url}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">RPC Connection</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.rpc_connection_url}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Service Endpoints Section */}
+        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            onClick={() => toggleSection('services')}
+          >
+            <span className="font-medium text-white">Service Endpoints</span>
+            <div
+              className={`transform transition-transform ${expandedSection === 'services' ? 'rotate-180' : ''}`}
+            >
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </button>
+          {expandedSection === 'services' && (
+            <div className="px-4 pb-4 space-y-3">
+              <div>
+                <label className="text-sm text-gray-400">Indexer URL</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.indexer_url}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">RGB Proxy</label>
+                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  {account.proxy_endpoint}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Port Configuration Section - Only for Local Nodes */}
+        {account.datapath && (
+          <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+            <button
+              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+              onClick={() => toggleSection('ports')}
+            >
+              <span className="font-medium text-white">Port Configuration</span>
+              <div
+                className={`transform transition-transform ${expandedSection === 'ports' ? 'rotate-180' : ''}`}
+              >
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M19 9l-7 7-7-7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+            </button>
+            {expandedSection === 'ports' && (
+              <div className="px-4 pb-4 space-y-3">
+                <div>
+                  <label className="text-sm text-gray-400">Daemon Port</label>
+                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.daemon_listening_port}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">LDK Peer Port</label>
+                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.ldk_peer_listening_port}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400">Data Path</label>
+                  <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                    {account.datapath}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </>
+
+      <div className="sticky bottom-0 bg-gray-800 pt-4 mt-6 border-t border-gray-700">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          <button
+            className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            disabled={isLoading || loadingState !== null}
+            onClick={onCancel}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors
+              ${
+                isLoading || loadingState !== null
+                  ? 'bg-blue/50 cursor-not-allowed'
+                  : 'bg-blue hover:bg-blue/80'
+              } text-white`}
+            disabled={isLoading || loadingState !== null}
+            onClick={handleConfirm}
+            type="button"
+          >
+            {isLoading || loadingState ? (
+              <div className="flex items-center justify-center gap-2">
+                <Spinner size={20} />
+                <span>Switching...</span>
+              </div>
+            ) : (
+              'Switch to This Node'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -772,14 +1175,14 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
 
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded-lg shadow-md transition duration-200"
+          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
           onClick={onCancel}
           type="button"
         >
           Cancel
         </button>
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500/10 hover:bg-blue-500/20 text-white text-lg font-bold rounded-lg shadow-md transition duration-200 flex items-center justify-center gap-2"
+          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
           onClick={handleDelete}
           type="button"
         >
@@ -805,9 +1208,62 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   const [formData, setFormData] = useState(account)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced'>('basic')
+  const [portErrors, setPortErrors] = useState<{
+    daemon?: string
+    ldk?: string
+  }>({})
+
+  const validatePorts = (daemonPort: string, ldkPort: string) => {
+    const errors: { daemon?: string; ldk?: string } = {}
+
+    const daemonPortNum = parseInt(daemonPort)
+    const ldkPortNum = parseInt(ldkPort)
+
+    // Validate daemon port
+    if (!daemonPort || isNaN(daemonPortNum)) {
+      errors.daemon = 'Daemon port is required'
+    } else if (daemonPortNum < 1024 || daemonPortNum > 65535) {
+      errors.daemon = 'Daemon port must be between 1024 and 65535'
+    }
+
+    // Validate LDK port
+    if (!ldkPort || isNaN(ldkPortNum)) {
+      errors.ldk = 'LDK peer port is required'
+    } else if (ldkPortNum < 1024 || ldkPortNum > 65535) {
+      errors.ldk = 'LDK peer port must be between 1024 and 65535'
+    }
+
+    // Check if ports are the same
+    if (daemonPort && ldkPort && daemonPort === ldkPort) {
+      errors.daemon = 'Daemon and LDK ports must be different'
+      errors.ldk = 'Daemon and LDK ports must be different'
+    }
+
+    setPortErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  // Validate ports on initial load
+  useEffect(() => {
+    validatePorts(
+      formData.daemon_listening_port,
+      formData.ldk_peer_listening_port
+    )
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate ports before submission
+    const isValidPorts = validatePorts(
+      formData.daemon_listening_port,
+      formData.ldk_peer_listening_port
+    )
+    if (!isValidPorts) {
+      toast.error('Please fix the port configuration errors')
+      return
+    }
+
     setIsLoading(true)
     try {
       await onSave(formData)
@@ -821,7 +1277,22 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   }
 
   const handleInputChange = (field: keyof Account, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+
+    // Real-time validation for port fields
+    if (
+      field === 'daemon_listening_port' ||
+      field === 'ldk_peer_listening_port'
+    ) {
+      // Use a small timeout to avoid excessive validation calls while typing
+      setTimeout(() => {
+        validatePorts(
+          newFormData.daemon_listening_port,
+          newFormData.ldk_peer_listening_port
+        )
+      }, 500)
+    }
   }
 
   return (
@@ -945,6 +1416,23 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
+                    Bitcoind RPC URL
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      onChange={(e) =>
+                        handleInputChange('rpc_connection_url', e.target.value)
+                      }
+                      placeholder="user:password@localhost:18443"
+                      type="text"
+                      value={formData.rpc_connection_url}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
                     Indexer URL
                   </label>
                   <div className="flex items-center">
@@ -995,6 +1483,84 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-gray-300 mb-4">
+                Port Configuration
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
+                    Daemon Listening Port
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                        portErrors.daemon
+                          ? 'border-red-500 focus:border-red-400'
+                          : 'border-gray-600 focus:border-cyan/50'
+                      }`}
+                      max="65535"
+                      min="1024"
+                      onChange={(e) =>
+                        handleInputChange(
+                          'daemon_listening_port',
+                          e.target.value
+                        )
+                      }
+                      placeholder="3001"
+                      type="number"
+                      value={formData.daemon_listening_port}
+                    />
+                  </div>
+                  {portErrors.daemon ? (
+                    <p className="text-xs text-red-400 mt-1">
+                      {portErrors.daemon}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Port for the RGB Lightning Node daemon API (1024-65535)
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1.5">
+                    LDK Peer Listening Port
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                        portErrors.ldk
+                          ? 'border-red-500 focus:border-red-400'
+                          : 'border-gray-600 focus:border-cyan/50'
+                      }`}
+                      max="65535"
+                      min="1024"
+                      onChange={(e) =>
+                        handleInputChange(
+                          'ldk_peer_listening_port',
+                          e.target.value
+                        )
+                      }
+                      placeholder="9735"
+                      type="number"
+                      value={formData.ldk_peer_listening_port}
+                    />
+                  </div>
+                  {portErrors.ldk ? (
+                    <p className="text-xs text-red-400 mt-1">
+                      {portErrors.ldk}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Port for Lightning Network peer connections (1024-65535)
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

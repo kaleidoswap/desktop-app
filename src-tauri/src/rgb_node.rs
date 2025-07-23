@@ -11,6 +11,7 @@ use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Emitter, WebviewWindow};
+use std::collections::HashMap;
 
 const SHUTDOWN_TIMEOUT_SECS: u64 = 5;
 
@@ -47,19 +48,76 @@ impl NodeProcess {
         }
     }
 
+    /// Check if local RGB Lightning Node is supported on this platform
+    pub fn is_local_node_supported() -> bool {
+        !cfg!(target_os = "windows")
+    }
+
     pub fn set_window(&self, window: WebviewWindow) {
         *self.window.lock().unwrap() = Some(window.clone());
         *self.app_handle.lock().unwrap() = Some(window.app_handle().clone());
     }
 
     /// Check if a port is available
-    fn is_port_available(port: u16) -> bool {
+    pub fn is_port_available(port: u16) -> bool {
         TcpListener::bind(("127.0.0.1", port)).is_ok()
+    }
+
+    /// Get a list of available ports starting from a base port
+    pub fn find_available_ports(base_daemon_port: u16, base_ldk_port: u16) -> (u16, u16) {
+        let mut daemon_port = base_daemon_port;
+        let mut ldk_port = base_ldk_port;
+
+        // Try up to 10 port numbers after the base ports
+        for i in 0..10 {
+            if Self::is_port_available(daemon_port + i) {
+                daemon_port = daemon_port + i;
+                break;
+            }
+        }
+
+        for i in 0..10 {
+            if Self::is_port_available(ldk_port + i) {
+                ldk_port = ldk_port + i;
+                break;
+            }
+        }
+
+        (daemon_port, ldk_port)
+    }
+
+    /// Get the current running node's ports
+    pub fn get_running_node_ports(&self) -> HashMap<String, String> {
+        let mut ports = HashMap::new();
+        if let Some(_) = self.child_process.lock().unwrap().as_ref() {
+            if let Some(account) = self.current_account.lock().unwrap().as_ref() {
+                if let Ok(Some(account_info)) = crate::db::get_account_by_name(account) {
+                    ports.insert(account_info.daemon_listening_port, account.clone());
+                    ports.insert(account_info.ldk_peer_listening_port, account.clone());
+                }
+            }
+        }
+        ports
+    }
+
+    /// Stop a specific node by account name
+    pub fn stop_by_account(&self, account_name: &str) -> Result<(), String> {
+        if let Some(current_account) = self.get_current_account() {
+            if current_account == account_name {
+                self.stop();
+                Ok(())
+            } else {
+                Err(format!("Node for account {} is not running", account_name))
+            }
+        } else {
+            Err("No node is currently running".to_string())
+        }
     }
 
     /// Starts a new RGB Lightning Node process (if none is running).
     /// If one is running, it is shut down first, then a new one is started.
     /// Returns an error if the node binary cannot be started.
+    /// On Windows, this will always return an error since rgb-lightning-node is not supported.
     pub fn start(
         &self,
         network: String,
@@ -68,6 +126,16 @@ impl NodeProcess {
         ldk_peer_listening_port: String,
         account_name: String,
     ) -> Result<(), String> {
+        // RGB Lightning Node is not supported on Windows
+        if cfg!(target_os = "windows") {
+            let err = "RGB Lightning Node is not supported on Windows. Please use a remote node connection instead.".to_string();
+            println!("{}", err);
+            if let Some(window) = &*self.window.lock().unwrap() {
+                let _ = window.emit("node-error", err.clone());
+            }
+            return Err(err);
+        }
+
         println!("Starting node for account: {}", account_name);
 
         // Check if ports are available before proceeding
@@ -212,7 +280,7 @@ impl NodeProcess {
 
         // Emit an event so your UI knows a node started
         if let Some(window) = &*self.window.lock().unwrap() {
-            let _ = window.emit("node-started", ());
+            let _ = window.emit("node-started", account_name.clone());
         }
 
         // 5) Spawn a thread to watch the child process output and handle shutdown

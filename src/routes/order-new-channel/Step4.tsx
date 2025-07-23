@@ -6,6 +6,7 @@ import {
   Home,
   AlertCircle,
   Copy,
+  Clock,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -16,7 +17,7 @@ export const Step4 = ({
   paymentStatus,
   orderId,
 }: {
-  paymentStatus: string
+  paymentStatus: 'success' | 'error' | 'expired' | null | string
   orderId?: string
 }) => {
   const navigate = useNavigate()
@@ -31,7 +32,7 @@ export const Step4 = ({
   }
 
   const statusConfig = {
-    failed: {
+    error: {
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/30',
       buttonAction: () => navigate(CHANNELS_PATH),
@@ -39,6 +40,15 @@ export const Step4 = ({
       icon: <XCircle className="text-red-500 mb-6" size={80} />,
       message: 'There was an issue with your payment. Please try again.',
       title: 'Payment Failed',
+    },
+    expired: {
+      bgColor: 'bg-yellow-500/10',
+      borderColor: 'border-yellow-500/30',
+      buttonAction: () => navigate(CHANNELS_PATH),
+      buttonText: 'Create New Order',
+      icon: <Clock className="text-yellow-500 mb-6" size={80} />,
+      message: 'The order has expired. Please create a new order to continue.',
+      title: 'Order Expired',
     },
     pending: {
       bgColor: 'bg-blue-500/10',
@@ -57,16 +67,14 @@ export const Step4 = ({
       icon: <CheckCircle className="text-green-500 mb-6" size={80} />,
       message:
         'Your payment has been received and the channel is being opened.',
-      title: 'Payment Completed!',
+      title: 'Order Completed!',
     },
   }
 
-  const config =
-    statusConfig[paymentStatus as keyof typeof statusConfig] ||
-    statusConfig.failed
+  const config = statusConfig[paymentStatus as keyof typeof statusConfig]
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-4">
+    <div className="flex flex-col items-center justify-center w-full text-white p-4">
       <div
         className={`${config.bgColor} border ${config.borderColor} rounded-xl shadow-2xl p-10 max-w-md w-full text-center`}
       >
@@ -83,7 +91,7 @@ export const Step4 = ({
           </div>
         )}
 
-        {paymentStatus === 'failed' && (
+        {paymentStatus === 'error' && (
           <>
             <div className="mb-6 p-4 bg-amber-500/20 border border-amber-500/30 rounded-lg text-left">
               <div className="flex items-start">
@@ -142,21 +150,40 @@ export const Step4 = ({
           </>
         )}
 
+        {paymentStatus === 'expired' && (
+          <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-left">
+            <div className="flex items-start">
+              <AlertCircle
+                className="text-yellow-500 mr-3 mt-1 flex-shrink-0"
+                size={20}
+              />
+              <div>
+                <p className="text-yellow-200 font-medium mb-2">
+                  Order Expired:
+                </p>
+                <p className="text-gray-300 text-sm">
+                  The order has expired. Please create a new order to continue.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <button
           className={`px-6 py-4 rounded-lg text-lg font-bold ${
             paymentStatus === 'success'
-              ? 'bg-green-600 hover:bg-green-700'
-              : paymentStatus === 'failed'
+              ? 'bg-green-700 hover:bg-green-800'
+              : paymentStatus === 'error'
                 ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-blue-600 hover:bg-blue-700'
+                : paymentStatus === 'expired'
+                  ? 'bg-yellow-600 hover:bg-yellow-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
           } transition-colors w-full flex items-center justify-center shadow-lg`}
           onClick={config.buttonAction}
         >
           {config.buttonText}
           {paymentStatus === 'success' ? (
             <ArrowRight className="ml-2" size={20} />
-          ) : paymentStatus === 'failed' ? (
-            <RefreshCcw className="ml-2" size={20} />
           ) : (
             <RefreshCcw className="ml-2" size={20} />
           )}

@@ -6,7 +6,7 @@ import { useAssetIcon } from '../../helpers/utils'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { ArrowDownIcon } from '../../icons/ArrowDown'
 
-interface AssetOptionProps {
+export interface AssetOptionProps {
   ticker?: string
 }
 
@@ -39,45 +39,51 @@ interface SelectProps {
   active?: string
   options: Array<{ value: string; label: string; ticker?: string }>
   onSelect: (value: string) => void
-  theme: 'light' | 'dark'
+  theme?: 'light' | 'dark'
   disabled?: boolean
 }
 
-const Select: React.FC<SelectProps> = (props) => {
+const Select: React.FC<SelectProps> = ({
+  active,
+  options,
+  onSelect,
+  theme = 'dark',
+  disabled = false,
+}) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
 
   useOnClickOutside(menuRef, () => setIsOpen(false))
 
-  const active = props.options.find((option) => option.value === props.active)
+  const activeOption = options.find((option) => option.value === active)
 
   return (
     <div className="relative" ref={menuRef}>
       <div
         className={twJoin(
           'flex items-center justify-between px-4 py-3 rounded cursor-pointer w-full',
-          props.theme === 'dark' ? 'bg-blue-dark' : 'bg-section-lighter',
-          props.disabled ? 'opacity-50 cursor-not-allowed' : ''
+          theme === 'dark' ? 'bg-blue-dark' : 'bg-section-lighter',
+          disabled ? 'opacity-50 cursor-not-allowed' : ''
         )}
-        onClick={() => !props.disabled && setIsOpen((state) => !state)}
+        onClick={() => !disabled && setIsOpen((state) => !state)}
       >
-        <AssetOption ticker={active?.ticker} />
+        <AssetOption ticker={activeOption?.ticker} />
         <ArrowDownIcon />
       </div>
 
-      {!props.disabled && (
+      {!disabled && (
         <ul
           className={twJoin(
             'absolute top-full left-0 right-0 bg-section-lighter divide-y divide-divider rounded z-50 mt-1 shadow-lg max-h-60 overflow-y-auto',
             !isOpen ? 'hidden' : 'block'
           )}
         >
-          {props.options.map((option) => (
+          {options.map((option) => (
             <li
               className="px-4 py-3 cursor-pointer hover:bg-divider first:rounded-t last:rounded-b whitespace-nowrap"
               key={option.value}
               onClick={() => {
-                props.onSelect(option.value)
+                onSelect(option.value)
                 setIsOpen(false)
               }}
               title={option.ticker || option.value}
@@ -91,11 +97,7 @@ const Select: React.FC<SelectProps> = (props) => {
   )
 }
 
-Select.defaultProps = {
-  theme: 'dark',
-}
-
-interface AssetSelectProps {
+export interface AssetSelectProps {
   options: Array<{ value: string; label: string; ticker?: string }>
   value: string
   onChange: (value: string) => void
@@ -116,3 +118,14 @@ export const AssetSelect: React.FC<AssetSelectProps> = ({
     theme="dark"
   />
 )
+
+export interface AssetComponentsProps {
+  // Define any props needed for the component
+  children?: React.ReactNode
+}
+
+export const AssetComponents: React.FC<AssetComponentsProps> = ({
+  children,
+}) => {
+  return <>{children}</>
+}

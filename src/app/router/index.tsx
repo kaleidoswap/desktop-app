@@ -23,6 +23,7 @@ import {
   WALLET_HISTORY_TRADES_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
   WALLET_HISTORY_ASSETS_PATH,
+  WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   CREATEUTXOS_PATH,
 } from './paths'
 
@@ -94,6 +95,10 @@ export const router = createBrowserRouter([
           {
             lazy: () => import('../../routes/wallet-history/assets'),
             path: WALLET_HISTORY_ASSETS_PATH,
+          },
+          {
+            lazy: () => import('../../routes/wallet-history/channel-orders'),
+            path: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
           },
         ],
         lazy: () => import('../../routes/wallet-history'),

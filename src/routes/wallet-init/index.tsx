@@ -32,6 +32,7 @@ import {
   PasswordFields,
 } from '../../components/PasswordSetupForm'
 import { StepIndicator } from '../../components/StepIndicator'
+import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
   Button,
   Card,
@@ -50,7 +51,46 @@ import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 
+const checkPortAvailability = async (
+  ports: string[]
+): Promise<{ available: boolean; conflictingPorts: string[] }> => {
+  try {
+    // First check if any ports are in use by our own nodes
+    const runningNodePorts = await invoke<{ [port: string]: string }>(
+      'get_running_node_ports'
+    )
+    const conflictingNodePorts = ports.filter(
+      (port) => port in runningNodePorts
+    )
+
+    if (conflictingNodePorts.length > 0) {
+      return {
+        available: false,
+        conflictingPorts: conflictingNodePorts,
+      }
+    }
+
+    // Then check if ports are in use by other processes
+    const portStatus = await invoke<{ [port: string]: boolean }>(
+      'check_ports_available',
+      { ports }
+    )
+    const unavailablePorts = Object.entries(portStatus)
+      .filter(([_, isAvailable]) => !isAvailable)
+      .map(([port]) => port)
+
+    return {
+      available: unavailablePorts.length === 0,
+      conflictingPorts: unavailablePorts,
+    }
+  } catch (error) {
+    console.error('Error checking port availability:', error)
+    throw new Error('Failed to check port availability')
+  }
+}
+
 const WALLET_INIT_STEPS = [
+  { id: 'terms', label: 'Terms' },
   { id: 'setup', label: 'Node Setup' },
   { id: 'password', label: 'Password' },
   { id: 'mnemonic', label: 'Recovery Phrase' },
@@ -66,12 +106,19 @@ interface NodeSetupFields {
   proxy_endpoint: string
   daemon_listening_port: string
   ldk_peer_listening_port: string
+  bearer_token: string
 }
 
-type SetupStep = 'setup' | 'password' | 'mnemonic' | 'verify' | 'unlock'
+type SetupStep =
+  | 'terms'
+  | 'setup'
+  | 'password'
+  | 'mnemonic'
+  | 'verify'
+  | 'unlock'
 
 export const Component = () => {
-  const [currentStep, setCurrentStep] = useState<SetupStep>('setup')
+  const [currentStep, setCurrentStep] = useState<SetupStep>('terms')
   const [mnemonic, setMnemonic] = useState<string[]>([])
   const [isNodeError, setIsNodeError] = useState(false)
   const [nodeErrorMessage, setNodeErrorMessage] = useState('')
@@ -80,6 +127,7 @@ export const Component = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [nodePassword, setNodePassword] = useState('')
   const [isCancellingUnlock, setIsCancellingUnlock] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(true)
 
   const [init] = nodeApi.endpoints.init.useLazyQuery()
   const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
@@ -91,6 +139,7 @@ export const Component = () => {
   // Separate forms for each step
   const nodeSetupForm = useForm<NodeSetupFields>({
     defaultValues: {
+      bearer_token: '',
       name: 'Test Account',
       network: 'Regtest',
       ...NETWORK_DEFAULTS['Regtest'],
@@ -123,8 +172,11 @@ export const Component = () => {
   // Handle back navigation based on current step
   const handleBackNavigation = () => {
     switch (currentStep) {
-      case 'setup':
+      case 'terms':
         navigate(WALLET_SETUP_PATH)
+        break
+      case 'setup':
+        handleStepChange('terms')
         break
       case 'password':
         handleStepChange('setup')
@@ -187,6 +239,7 @@ export const Component = () => {
       const defaultMakerUrl = NETWORK_DEFAULTS[data.network].default_maker_url
       await dispatch(
         setSettingsAsync({
+          bearer_token: data.bearer_token,
           daemon_listening_port: data.daemon_listening_port,
           datapath: datapath,
           default_lsp_url: NETWORK_DEFAULTS[data.network].default_lsp_url,
@@ -271,9 +324,67 @@ export const Component = () => {
     network: BitcoinNetwork,
     datapath: string
   ): Promise<void> => {
+    const daemonPort = nodeSetupForm.getValues('daemon_listening_port')
+    const ldkPort = nodeSetupForm.getValues('ldk_peer_listening_port')
+    const ports = [daemonPort, ldkPort]
+
     try {
+      // Check port availability
+      const portCheck = await checkPortAvailability(ports)
+
+      if (!portCheck.available) {
+        // If ports are in use by our own nodes, try to stop them gracefully
+        const runningNodePorts = await invoke<{ [port: string]: string }>(
+          'get_running_node_ports'
+        )
+        const ourConflictingPorts = portCheck.conflictingPorts.filter(
+          (port) => port in runningNodePorts
+        )
+
+        if (ourConflictingPorts.length > 0) {
+          toast.info('Stopping existing nodes on conflicting ports...', {
+            autoClose: false,
+            toastId: 'stopping-nodes',
+          })
+
+          for (const port of ourConflictingPorts) {
+            const nodeAccount = runningNodePorts[port]
+            try {
+              await invoke('stop_node_by_account', { accountName: nodeAccount })
+              await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait for cleanup
+            } catch (error) {
+              console.error(`Failed to stop node on port ${port}:`, error)
+              throw new Error(`Failed to stop existing node on port ${port}`)
+            }
+          }
+
+          toast.update('stopping-nodes', {
+            autoClose: 2000,
+            render: 'Existing nodes stopped successfully',
+            type: 'success',
+          })
+
+          // Recheck port availability after stopping our nodes
+          const recheckPorts = await checkPortAvailability(ports)
+          if (!recheckPorts.available) {
+            throw new Error(
+              `Ports ${recheckPorts.conflictingPorts.join(', ')} are still in use by other processes. ` +
+                'Please choose different ports or stop the conflicting processes.'
+            )
+          }
+        } else {
+          // Ports are in use by external processes
+          throw new Error(
+            `Ports ${portCheck.conflictingPorts.join(', ')} are in use by other applications. ` +
+              'Please choose different ports or stop the conflicting applications.'
+          )
+        }
+      }
+
+      // Now proceed with starting the node
       const nodeStartedPromise = new Promise<void>((resolve, reject) => {
         let unlistenFn: (() => void) | null = null
+        let startTimeout = 30000 // 30 seconds timeout
 
         const timeoutId = setTimeout(async () => {
           if (unlistenFn) unlistenFn()
@@ -289,7 +400,7 @@ export const Component = () => {
           }
 
           reject(new Error('Timeout waiting for node to start'))
-        }, 15000)
+        }, startTimeout)
 
         listen('node-log', (event: { payload: string }) => {
           if (event.payload.includes('Listening on')) {
@@ -310,17 +421,25 @@ export const Component = () => {
       // Start the node
       await invoke('start_node', {
         accountName,
-        daemonListeningPort: nodeSetupForm.getValues('daemon_listening_port'),
+        daemonListeningPort: daemonPort,
         datapath,
-        ldkPeerListeningPort: nodeSetupForm.getValues(
-          'ldk_peer_listening_port'
-        ),
+        ldkPeerListeningPort: ldkPort,
         network,
       })
 
       await nodeStartedPromise
     } catch (error) {
-      throw new Error(`Failed to start node: ${error}`)
+      // If we fail to start, try to find alternative ports
+      const suggestedPorts = await invoke<{ daemon: string; ldk: string }>(
+        'find_available_ports'
+      )
+
+      throw new Error(
+        `Failed to start node: ${error}\n` +
+          `Suggested alternative ports:\n` +
+          `- Daemon port: ${suggestedPorts.daemon}\n` +
+          `- LDK peer port: ${suggestedPorts.ldk}`
+      )
     }
   }
 
@@ -328,18 +447,35 @@ export const Component = () => {
     const initResult = await init({ password })
 
     if (!initResult.isSuccess) {
+      // Handle 403 status case
       if (
         initResult.error &&
+        typeof initResult.error === 'object' &&
         'status' in initResult.error &&
         initResult.error.status === 403
       ) {
         throw new Error('NODE_ALREADY_INITIALIZED')
       }
-      throw new Error(
-        initResult.error && 'data' in initResult.error
-          ? (initResult.error.data as { error: string }).error
-          : 'Node initialization failed'
-      )
+
+      // Handle error with data property
+      if (
+        initResult.error &&
+        typeof initResult.error === 'object' &&
+        'data' in initResult.error &&
+        initResult.error.data &&
+        typeof initResult.error.data === 'object' &&
+        'error' in initResult.error.data &&
+        typeof initResult.error.data.error === 'string'
+      ) {
+        throw new Error(initResult.error.data.error)
+      }
+
+      // Default error case
+      throw new Error('Node initialization failed')
+    }
+
+    if (!initResult.data || !initResult.data.mnemonic) {
+      throw new Error('Invalid response: missing mnemonic')
     }
 
     return initResult.data.mnemonic.split(' ')
@@ -374,20 +510,29 @@ export const Component = () => {
     const datapath = getDatapath(accountName)
 
     try {
-      // Step 1: Check and stop any existing node
+      // Check and stop any existing node
       await checkAndStopExistingNode()
 
-      // Step 2: Start the local node
-      toast.info(
-        `Starting RLN node on port ${nodeSetupForm.getValues('daemon_listening_port')}...`,
-        {
+      try {
+        toast.info(`Starting RLN node...`, {
           autoClose: 2000,
           position: 'bottom-right',
-        }
-      )
-      await startLocalNode(accountName, network, datapath)
+        })
 
-      // Step 3: Initialize or unlock the node
+        await startLocalNode(accountName, network, datapath)
+      } catch (error) {
+        // Show a warning toast when ports are in use
+        toast.warning(
+          'Cannot start node: Some ports are already in use by other processes. Please stop any running nodes or choose different ports.',
+          {
+            autoClose: false,
+            closeOnClick: true,
+          }
+        )
+        return
+      }
+
+      // Rest of the initialization process
       try {
         const mnemonic = await initializeNode(data.password)
         setNodePassword(data.password)
@@ -410,9 +555,18 @@ export const Component = () => {
         }
       }
     } catch (error) {
-      toast.error(
+      const errorMessage =
         error instanceof Error ? error.message : 'Failed to initialize node'
-      )
+      toast.error(errorMessage, {
+        autoClose: false,
+      })
+
+      // Try to clean up
+      try {
+        await invoke('stop_node')
+      } catch (cleanupError) {
+        console.error('Failed to clean up after error:', cleanupError)
+      }
     }
   }
 
@@ -582,6 +736,11 @@ export const Component = () => {
     }
   }
 
+  const handleTermsAccept = () => {
+    setShowTermsModal(false)
+    handleStepChange('setup')
+  }
+
   const renderCurrentStep = () => {
     const renderStepLayout = (
       title: string,
@@ -603,22 +762,39 @@ export const Component = () => {
     ) => (
       <SetupLayout
         centered={centered}
-        fullHeight
         icon={icon}
         maxWidth={maxWidth}
         onBack={onBack}
         subtitle={subtitle}
         title={title}
       >
-        <div className="mb-5">
-          <StepIndicator currentStep={currentStep} steps={WALLET_INIT_STEPS} />
-        </div>
-
-        <div className="flex-1">{content}</div>
+        {content}
       </SetupLayout>
     )
 
     switch (currentStep) {
+      case 'terms':
+        return renderStepLayout(
+          'Welcome to KaleidoSwap',
+          'Please read and accept our terms and privacy policy to continue',
+          <FileText className="w-8 h-8 text-blue-400" />,
+          <div className="flex flex-col items-center justify-center space-y-6 p-8">
+            <p className="text-gray-300 text-center max-w-lg">
+              Before you begin using KaleidoSwap, please review and accept our
+              Terms of Service and Privacy Policy.
+            </p>
+            <Button
+              className="w-full max-w-sm"
+              onClick={() => setShowTermsModal(true)}
+            >
+              Review Terms & Privacy Policy
+            </Button>
+          </div>,
+          () => navigate(WALLET_SETUP_PATH),
+          'xl',
+          true
+        )
+
       case 'setup':
         return renderStepLayout(
           'Create New Wallet',
@@ -729,7 +905,26 @@ export const Component = () => {
     }
   }
 
-  return <Layout>{renderCurrentStep()}</Layout>
+  return (
+    <>
+      <Layout>
+        <div className="flex-1 flex flex-col">
+          <div className="container mx-auto px-4 py-8">
+            <StepIndicator
+              currentStep={currentStep}
+              steps={WALLET_INIT_STEPS}
+            />
+            {renderCurrentStep()}
+          </div>
+        </div>
+      </Layout>
+      <TermsWarningModal
+        isOpen={showTermsModal}
+        onAccept={handleTermsAccept}
+        onClose={() => navigate(WALLET_SETUP_PATH)}
+      />
+    </>
+  )
 }
 
 interface NodeSetupFormProps {
@@ -802,6 +997,20 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
 
           <AdvancedSettings>
             <NetworkSettings form={form} />
+
+            <FormField
+              description="Optional authentication token for remote node access"
+              error={form.formState.errors.bearer_token?.message}
+              htmlFor="bearer_token"
+              label="Bearer Token"
+            >
+              <Input
+                id="bearer_token"
+                placeholder="Enter your bearer token"
+                {...form.register('bearer_token')}
+                error={!!form.formState.errors.bearer_token}
+              />
+            </FormField>
           </AdvancedSettings>
 
           <div className="pt-3">

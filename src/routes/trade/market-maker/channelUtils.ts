@@ -12,6 +12,7 @@ export const isTradableChannel = (channel: Channel): boolean => {
     channel.ready &&
     // Channel must have either outbound or inbound balance
     (channel.outbound_balance_msat > 0 || channel.inbound_balance_msat > 0) &&
+    channel.next_outbound_htlc_minimum_msat > 0 &&
     // Channel must have a valid asset_id
     channel.asset_id !== null &&
     channel.asset_id !== undefined
@@ -77,12 +78,35 @@ export const getTradableChannelDiagnostics = (
   }
 }
 
+// Cache for last logged diagnostics to prevent excessive logging
+let lastLoggedDiagnostics: string | null = null
+let lastLogTime = 0
+const LOG_THROTTLE_MS = 5000 // Only log every 5 seconds
+
 /**
  * Logs diagnostic information about the tradable channels
  * @param channels Array of channels to analyze and log
+ * @param force Force logging even if throttled
  */
-export const logChannelDiagnostics = (channels: Channel[]): void => {
+export const logChannelDiagnostics = (
+  channels: Channel[],
+  force = false
+): void => {
   const diagnostics = getTradableChannelDiagnostics(channels)
+  const diagnosticsString = JSON.stringify(diagnostics)
+  const now = Date.now()
+
+  // Skip logging if same diagnostics were logged recently (unless forced)
+  if (
+    !force &&
+    lastLoggedDiagnostics === diagnosticsString &&
+    now - lastLogTime < LOG_THROTTLE_MS
+  ) {
+    return
+  }
+
+  lastLoggedDiagnostics = diagnosticsString
+  lastLogTime = now
 
   logger.info(`Channel diagnostics:`)
   logger.info(`- Total channels: ${diagnostics.totalChannels}`)

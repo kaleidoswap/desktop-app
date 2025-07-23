@@ -1,5 +1,7 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { Info } from 'lucide-react'
+import { useCallback, useState, useEffect } from 'react'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
@@ -30,11 +32,58 @@ interface AssetInfo {
   max_channel_amount: number
 }
 
+// Helper function to extract meaningful error messages
+const extractErrorMessage = (error: any): string => {
+  // Handle string errors
+  if (typeof error === 'string') {
+    return error
+  }
+
+  // Handle object errors with nested structures
+  if (typeof error === 'object' && error !== null) {
+    // Common error message fields
+    const possibleFields = ['error', 'message', 'detail', 'description', 'msg']
+
+    for (const field of possibleFields) {
+      if (error[field] && typeof error[field] === 'string') {
+        return error[field]
+      }
+    }
+
+    // Check for nested error objects
+    if (error.error && typeof error.error === 'object') {
+      return extractErrorMessage(error.error)
+    }
+
+    // If it's an array, try to extract from the first element
+    if (Array.isArray(error) && error.length > 0) {
+      return extractErrorMessage(error[0])
+    }
+
+    // Last resort: stringify the object but limit length
+    const stringified = JSON.stringify(error)
+    return stringified.length > 200
+      ? stringified.substring(0, 200) + '...'
+      : stringified
+  }
+
+  return 'Unknown error format'
+}
+
 export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
+  const [orderPayload, setOrderPayload] = useState<any>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<
+    'success' | 'error' | 'expired' | null
+  >(null)
+  const [paymentReceived, setPaymentReceived] = useState(false)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<
+    'lightning' | 'onchain' | null
+  >(null)
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -43,76 +92,142 @@ export const Component = () => {
   const [getOrderRequest, getOrderResponse] =
     makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
-  const [paymentStatus, setPaymentStatus] = useState<
-    'success' | 'error' | null
-  >(null)
 
-  const toastIdRef = useRef<string | number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      toast.dismiss()
-    }
-  }, [])
+  let toastId: string | number | null = null
 
   useEffect(() => {
     if (orderId && step === 3) {
-      if (toastIdRef.current) {
-        toast.dismiss(toastIdRef.current)
-      }
-
-      toastIdRef.current = toast.loading('Waiting for payment...', {
-        position: 'bottom-right',
-      })
+      let timeoutId: ReturnType<typeof setTimeout> | null = null
 
       const intervalId = setInterval(async () => {
         const orderResponse = await getOrderRequest({ order_id: orderId })
+        const orderData = orderResponse.data
 
-        if (orderResponse.data?.order_state === 'COMPLETED') {
+        // Check if payment has been received (either in HOLD or PAID state)
+        // Properly detect which payment method was used
+        const bolt11State = orderData?.payment?.bolt11?.state
+        const onchainState = orderData?.payment?.onchain?.state
+
+        let actualPaymentState = null
+        let detectedPaymentMethod = null
+
+        // Check if bolt11 payment was made
+        if (bolt11State && ['HOLD', 'PAID'].includes(bolt11State)) {
+          actualPaymentState = bolt11State
+          detectedPaymentMethod = 'lightning'
+        }
+        // Check if onchain payment was made (only if bolt11 wasn't paid)
+        else if (onchainState && ['HOLD', 'PAID'].includes(onchainState)) {
+          actualPaymentState = onchainState
+          detectedPaymentMethod = 'onchain'
+        }
+        // Fall back to any payment state if neither is in HOLD/PAID
+        else {
+          actualPaymentState = bolt11State || onchainState
+        }
+
+        const paymentJustReceived =
+          actualPaymentState &&
+          ['HOLD', 'PAID'].includes(actualPaymentState) &&
+          !paymentReceived
+
+        if (paymentJustReceived) {
+          setPaymentReceived(true)
+          setIsProcessingPayment(true)
+          setPaymentMethod(detectedPaymentMethod as 'lightning' | 'onchain')
+
+          console.log('Payment just received! Saving order to database...')
+          console.log('Order ID:', orderId)
+          console.log('Payment method:', detectedPaymentMethod)
+          console.log('Payment state:', actualPaymentState)
+          console.log('Order payload:', orderPayload)
+          console.log('Order data:', orderData)
+
+          // Save the order to the database when payment is received
+          if (orderPayload) {
+            try {
+              await invoke('insert_channel_order', {
+                createdAt: orderData?.created_at || new Date().toISOString(),
+                orderId: orderId,
+                payload: JSON.stringify(orderPayload),
+                status: orderData?.order_state || 'paid',
+              })
+              console.log('Order saved to database successfully!')
+            } catch (error) {
+              console.error('Error saving order to database:', error)
+            }
+          } else {
+            console.log('No order payload available to save')
+          }
+        }
+
+        if (orderData?.order_state === 'COMPLETED') {
           clearInterval(intervalId)
+          if (timeoutId) clearTimeout(timeoutId)
+          setIsProcessingPayment(false)
           setPaymentStatus('success')
           setStep(4)
-          if (toastIdRef.current) {
-            toast.update(toastIdRef.current, {
-              autoClose: 5000,
-              isLoading: false,
-              render: 'Payment completed. Channel is being set up.',
-              type: 'success',
-            })
-          }
-        } else if (orderResponse.data?.order_state === 'FAILED') {
+        } else if (orderData?.order_state === 'FAILED') {
+          // Check if payment was actually made or not
+          const now = new Date().getTime()
+          const bolt11ExpiresAt = orderData?.payment?.bolt11?.expires_at
+            ? new Date(orderData.payment.bolt11.expires_at).getTime()
+            : 0
+          const onchainExpiresAt = orderData?.payment?.onchain?.expires_at
+            ? new Date(orderData.payment.onchain.expires_at).getTime()
+            : 0
+
+          // Get payment states
+          const bolt11State = orderData?.payment?.bolt11?.state
+          const onchainState = orderData?.payment?.onchain?.state
+
+          // Check if no payment was actually made
+          // Payment states that indicate no payment was made:
+          // - EXPECT_PAYMENT: waiting for payment
+          // - TIMEOUT: payment timed out before being made
+          // - EXPIRED: payment expired
+          const noPaymentMadeStates = ['EXPECT_PAYMENT', 'TIMEOUT', 'EXPIRED']
+          const bolt11NoPayment = bolt11State
+            ? noPaymentMadeStates.includes(bolt11State)
+            : true
+          const onchainNoPayment = onchainState
+            ? noPaymentMadeStates.includes(onchainState)
+            : true
+
+          // If no payment was made on either method, show expired instead of error
+          // This prevents showing refund messages when no payment was actually made
+          const noPaymentMade = bolt11NoPayment && onchainNoPayment
+
+          // Also check if we're past the expiry time as an additional indicator
+          const isPastExpiry =
+            (bolt11ExpiresAt > 0 && now > bolt11ExpiresAt) ||
+            (onchainExpiresAt > 0 && now > onchainExpiresAt)
+
           clearInterval(intervalId)
-          setPaymentStatus('error')
+          if (timeoutId) clearTimeout(timeoutId)
+          setIsProcessingPayment(false)
+
+          // Show 'expired' if no payment was made or if past expiry time
+          // Show 'error' only if payment was made but still failed (requires refund)
+          setPaymentStatus(noPaymentMade || isPastExpiry ? 'expired' : 'error')
           setStep(4)
-          if (toastIdRef.current) {
-            toast.update(toastIdRef.current, {
-              autoClose: 5000,
-              isLoading: false,
-              render: 'Payment failed. Please try again.',
-              type: 'error',
-            })
-          }
         }
       }, 5000)
 
       return () => {
         clearInterval(intervalId)
-        if (toastIdRef.current) {
-          toast.dismiss(toastIdRef.current)
-        }
+        if (timeoutId) clearTimeout(timeoutId)
       }
     }
-  }, [orderId, getOrderRequest, step])
+  }, [orderId, getOrderRequest, step, paymentReceived, orderPayload])
 
   const onSubmitStep1 = useCallback(
     async (data: { connectionUrl: string; success: boolean }) => {
       if (data.success) {
         setStep(2)
       } else {
-        toast.error('Failed to connect to LSP. Please try again.', {
-          autoClose: 5000,
-          position: 'bottom-right',
-        })
+        setPaymentStatus('error')
+        setStep(4)
       }
     },
     []
@@ -122,19 +237,35 @@ export const Component = () => {
     async (data: any) => {
       setLoading(true)
       try {
-        // Get node info and refund address
-        const clientPubKey = (await nodeInfoRequest()).data?.pubkey
-        const addressRefund = (await addressRequest()).data?.address
-
-        if (!clientPubKey) {
-          throw new Error('Could not get client pubkey')
-        }
-        if (!addressRefund) {
-          throw new Error('Could not get refund address')
-        }
+        // Validate that we have basic prerequisites
         if (!data) {
           throw new Error('Form data is incomplete or missing')
         }
+
+        console.log('Starting create order request with data:', data)
+
+        // Get node info and refund address
+        const nodeInfoResponse = await nodeInfoRequest()
+        const addressResponse = await addressRequest()
+
+        const clientPubKey = nodeInfoResponse.data?.pubkey
+        const addressRefund = addressResponse.data?.address
+
+        if (!clientPubKey) {
+          throw new Error(
+            'Could not get client pubkey from node. Please ensure your node is running and accessible.'
+          )
+        }
+        if (!addressRefund) {
+          throw new Error(
+            'Could not get refund address from node. Please ensure your node is running and accessible.'
+          )
+        }
+
+        console.log('Node info retrieved successfully:', {
+          addressRefund,
+          clientPubKey,
+        })
 
         const {
           capacitySat,
@@ -145,9 +276,20 @@ export const Component = () => {
         } = data
 
         // Get LSP info to validate against constraints
+        console.log('Fetching LSP info...')
         const infoResponse = await getInfoRequest()
+
+        if (infoResponse.error) {
+          console.error('Failed to get LSP info:', infoResponse.error)
+          throw new Error(
+            'Could not connect to LSP server. Please check the LSP server URL and ensure it is accessible.'
+          )
+        }
+
         const lspOptions = infoResponse.data?.options
         let assets: AssetInfo[] = []
+
+        console.log('LSP info retrieved successfully:', infoResponse.data)
 
         // Safely extract assets array
         if (
@@ -247,30 +389,120 @@ export const Component = () => {
           payload.client_asset_amount = 0
         }
 
-        // log the payload for the request
-        console.log(
-          `Payload for create order request: ${JSON.stringify(payload)}`
-        )
+        // Log the payload for the request
+        console.log('Payload for create order request:', payload)
 
+        console.log('Sending create order request to LSP...')
         const channelResponse = await createOrderRequest(payload)
+        console.log('Create order request completed, response received')
 
         if (channelResponse.error) {
-          let errorMessage = 'An error occurred'
+          let errorMessage =
+            'An error occurred while creating the channel order'
+
+          console.error('Create order error details:', {
+            error: channelResponse.error,
+            payload: payload,
+            timestamp: new Date().toISOString(),
+          })
+
+          // Handle different types of RTK Query errors
           if ('status' in channelResponse.error) {
             const fetchError = channelResponse.error as FetchBaseQueryError
-            errorMessage = `Error ${fetchError.status}: ${JSON.stringify(fetchError.data)}`
+
+            // Handle different status codes and error structures
+            if (fetchError.status === 'FETCH_ERROR') {
+              errorMessage =
+                'Network error: Unable to connect to the LSP server. Please check your internet connection and LSP server status.'
+            } else if (fetchError.status === 'TIMEOUT_ERROR') {
+              errorMessage =
+                'Request timeout: The LSP server took too long to respond. Please try again.'
+            } else if (fetchError.status === 'PARSING_ERROR') {
+              errorMessage =
+                'Response parsing error: Invalid data received from the LSP server.'
+            } else if (typeof fetchError.status === 'number') {
+              // HTTP status errors with improved error extraction
+              const extractedError = fetchError.data
+                ? extractErrorMessage(fetchError.data)
+                : null
+
+              if (fetchError.status >= 400 && fetchError.status < 500) {
+                // Client errors (4xx)
+                const baseMessage = `Request error (${fetchError.status})`
+                if (
+                  extractedError &&
+                  extractedError !== 'Unknown error format'
+                ) {
+                  errorMessage = `${baseMessage}: ${extractedError}`
+                } else {
+                  // Provide specific messages for common 4xx errors
+                  switch (fetchError.status) {
+                    case 400:
+                      errorMessage = `${baseMessage}: Invalid request parameters. Please check your input and try again.`
+                      break
+                    case 401:
+                      errorMessage = `${baseMessage}: Authentication required. Please check your LSP credentials.`
+                      break
+                    case 403:
+                      errorMessage = `${baseMessage}: Access forbidden. You may not have permission to create orders.`
+                      break
+                    case 404:
+                      errorMessage = `${baseMessage}: LSP endpoint not found. Please check the LSP server configuration.`
+                      break
+                    case 422:
+                      errorMessage = `${baseMessage}: Invalid order data. Please verify your channel parameters.`
+                      break
+                    case 429:
+                      errorMessage = `${baseMessage}: Too many requests. Please wait a moment and try again.`
+                      break
+                    default:
+                      errorMessage = `${baseMessage}: Client request error. Please check your input.`
+                  }
+                }
+              } else if (fetchError.status >= 500) {
+                // Server errors (5xx)
+                errorMessage = `Server error (${fetchError.status}): The LSP server is experiencing issues. Please try again later.`
+                if (
+                  extractedError &&
+                  extractedError !== 'Unknown error format'
+                ) {
+                  errorMessage += ` Details: ${extractedError}`
+                }
+              } else {
+                errorMessage = `HTTP error (${fetchError.status}): An unexpected error occurred`
+                if (
+                  extractedError &&
+                  extractedError !== 'Unknown error format'
+                ) {
+                  errorMessage += `: ${extractedError}`
+                }
+              }
+            } else {
+              // Non-numeric status (FETCH_ERROR, etc.)
+              errorMessage = `Network error: ${fetchError.status || 'Unknown network issue'}`
+            }
+          } else if ('message' in channelResponse.error) {
+            // SerializedError with message
+            const message = channelResponse.error.message
+            errorMessage = message ? `Request failed: ${message}` : errorMessage
           } else {
-            errorMessage = channelResponse.error.message || errorMessage
+            // Fallback for other error types
+            const extractedError = extractErrorMessage(channelResponse.error)
+            if (extractedError !== 'Unknown error format') {
+              errorMessage = `Request failed: ${extractedError}`
+            }
           }
+
           throw new Error(errorMessage)
         } else {
           console.log('Request of channel created successfully!')
           console.log('Response:', channelResponse.data)
           const orderId: string = channelResponse.data?.order_id || ''
           if (!orderId) {
-            throw new Error('Could not get order id')
+            throw new Error('Could not get order id from server response')
           }
           setOrderId(orderId)
+          setOrderPayload(payload)
           setStep(3)
         }
       } catch (error) {
@@ -288,7 +520,13 @@ export const Component = () => {
         setLoading(false)
       }
     },
-    [createOrderRequest, nodeInfoRequest, addressRequest, getInfoRequest]
+    [
+      createOrderRequest,
+      nodeInfoRequest,
+      addressRequest,
+      getInfoRequest,
+      extractErrorMessage,
+    ]
   )
 
   const onStepBack = useCallback(() => {
@@ -304,8 +542,8 @@ export const Component = () => {
   const handleConfirmBack = useCallback(() => {
     setShowBackConfirmation(false)
     setOrderId(null)
-    if (toastIdRef.current) {
-      toast.dismiss(toastIdRef.current)
+    if (toastId) {
+      toast.dismiss(toastId)
     }
     setStep(2)
   }, [])
@@ -343,7 +581,7 @@ export const Component = () => {
   )
 
   return (
-    <div className="max-w-screen-lg w-full bg-blue-dark py-8 rounded px-14 pt-20 pb-8 relative">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white relative min-h-fit">
       {loading && (
         <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader color={'#123abc'} loading={loading} size={50} />
@@ -360,17 +598,32 @@ export const Component = () => {
 
       <div className={step !== 3 ? 'hidden' : ''}>
         <Step3
+          detectedPaymentMethod={paymentMethod}
+          isProcessingPayment={isProcessingPayment}
           loading={getOrderResponse.isLoading}
           onBack={onStepBack}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
+          orderPayload={orderPayload}
+          paymentReceived={paymentReceived}
+          paymentStatus={paymentStatus}
         />
       </div>
 
       <div className={step !== 4 ? 'hidden' : ''}>
         <Step4
           orderId={orderId ?? undefined}
-          paymentStatus={paymentStatus ?? ''}
+          paymentStatus={paymentStatus || 'error'}
         />
+      </div>
+
+      {/* Info Section */}
+      <div className="flex items-center space-x-2 text-sm text-gray-400 mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+        <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
+        <p>
+          LSP channels provide instant liquidity without requiring you to manage
+          on-chain transactions. The LSP handles channel opening and provides
+          inbound liquidity for receiving payments.
+        </p>
       </div>
     </div>
   )

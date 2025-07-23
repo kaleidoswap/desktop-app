@@ -6,14 +6,14 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { twJoin } from 'tailwind-merge'
 
 import {
   WALLET_HISTORY_ASSETS_PATH,
+  WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
-  WALLET_HISTORY_PATH,
   WALLET_HISTORY_TRADES_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
 } from '../../app/router/paths'
@@ -28,7 +28,7 @@ const TABS = [
   {
     color: 'red',
     icon: <ArrowUp className="w-5 h-5" />,
-    label: 'Withdrawals',
+    label: 'Payments & Withdrawals',
     path: WALLET_HISTORY_WITHDRAWALS_PATH,
   },
   {
@@ -42,6 +42,12 @@ const TABS = [
     icon: <Coins className="w-5 h-5" />,
     label: 'Assets',
     path: WALLET_HISTORY_ASSETS_PATH,
+  },
+  {
+    color: 'orange',
+    icon: <ArrowDownUp className="w-5 h-5" />,
+    label: 'Channel Orders',
+    path: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   },
 ]
 
@@ -77,40 +83,30 @@ const getIconBgColor = (color: string) => {
 
 export const Component = () => {
   const location = useLocation()
-  const [activeTab, setActiveTab] = useState(TABS[0].path)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  useEffect(() => {
-    // Find the tab that matches the current path
-    const matchingTab = TABS.find((tab) => location.pathname === tab.path)
-    if (matchingTab) {
-      setActiveTab(matchingTab.path)
-    } else if (location.pathname === WALLET_HISTORY_PATH) {
-      // Default to deposits if we're at the base history path
-      setActiveTab(TABS[0].path)
-    }
-  }, [location.pathname])
-
-  const activeTabData = TABS.find((tab) => tab.path === activeTab)
+  const activeTabData = TABS.find((tab) =>
+    location.pathname.startsWith(tab.path)
+  )
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">Wallet History</h1>
         <p className="text-slate-400">
-          View your transaction history, including deposits, withdrawals, and
-          swaps.
+          View your transaction history, including deposits, payments,
+          withdrawals, and swaps.
         </p>
       </div>
 
       {/* Desktop Tabs */}
       <div className="hidden md:flex mb-6 border-b border-gray-700">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.path
+          const isActive = location.pathname.startsWith(tab.path)
           return (
             <Link
               className={twJoin(
-                'flex items-center gap-2 px-6 py-3 font-medium relative',
+                'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center',
                 isActive ? 'text-white' : 'text-slate-400 hover:text-white'
               )}
               key={tab.path}
@@ -165,7 +161,7 @@ export const Component = () => {
         {isMobileMenuOpen && (
           <div className="mt-2 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
             {TABS.map((tab) => {
-              const isActive = activeTab === tab.path
+              const isActive = location.pathname.startsWith(tab.path)
               return (
                 <Link
                   className={twJoin(
@@ -181,7 +177,7 @@ export const Component = () => {
                   <div
                     className={twJoin(
                       'p-1.5 rounded-md',
-                      getIconBgColor(tab.color)
+                      isActive ? getIconBgColor(tab.color) : 'bg-transparent'
                     )}
                   >
                     {tab.icon}

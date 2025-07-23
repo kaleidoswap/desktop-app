@@ -1,6 +1,15 @@
-import { CheckCircle, AlertCircle, Clock, X, Bell } from 'lucide-react'
+import {
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  X,
+  Bell,
+  Download,
+} from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+import { UpdateModal } from './UpdateModal'
 
 export type NotificationType =
   | 'success'
@@ -86,7 +95,8 @@ const NotificationItem: React.FC<{
   notification: Notification
   onClose: () => void
   inPanel?: boolean
-}> = ({ notification, onClose, inPanel = false }) => {
+  onNotificationClick?: (notification: Notification) => void
+}> = ({ notification, onClose, inPanel = false, onNotificationClick }) => {
   const {
     icon: Icon,
     containerClass,
@@ -95,6 +105,8 @@ const NotificationItem: React.FC<{
   } = getNotificationConfig(notification.type)
   const [progress, setProgress] = useState(100)
   const progressInterval = useRef<number>()
+
+  const isUpdateNotification = notification.data?.update
 
   useEffect(() => {
     if (notification.autoClose && notification.showProgress) {
@@ -124,29 +136,57 @@ const NotificationItem: React.FC<{
 
   return (
     <div
-      className={`${inPanel ? 'border-b border-divider/10' : 'rounded-xl shadow-lg'} ${containerClass} backdrop-blur-md`}
+      className={`${inPanel ? 'border-b border-divider/10' : 'rounded-xl shadow-lg'} ${
+        isUpdateNotification
+          ? 'bg-gradient-to-r from-amber-900/90 to-orange-900/90 border border-amber-500/30 cursor-pointer hover:from-amber-800/90 hover:to-orange-800/90 transform hover:scale-[1.02] transition-all duration-200'
+          : containerClass
+      } backdrop-blur-md`}
+      onClick={
+        isUpdateNotification && onNotificationClick
+          ? () => onNotificationClick(notification)
+          : undefined
+      }
       role="alert"
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Icon className={`${iconClass} w-5 h-5`} />
-            <span className="font-semibold text-gray-700 dark:text-gray-200">
+            {isUpdateNotification ? (
+              <Download className="text-amber-200 w-5 h-5" />
+            ) : (
+              <Icon className={`${iconClass} w-5 h-5`} />
+            )}
+            <span
+              className={`font-semibold ${isUpdateNotification ? 'text-amber-100' : 'text-gray-700 dark:text-gray-200'}`}
+            >
               {notification.title || 'Notification'}
             </span>
+            {isUpdateNotification && (
+              <span className="text-xs bg-amber-500/20 text-amber-200 px-2 py-1 rounded-full font-medium">
+                v{notification.data?.update?.version}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className={`px-2.5 py-1 rounded-full text-xs font-medium uppercase ${badgeClass}`}
-            >
-              {notification.type}
-            </span>
+            {!isUpdateNotification && (
+              <span
+                className={`px-2.5 py-1 rounded-full text-xs font-medium uppercase ${badgeClass}`}
+              >
+                {notification.type}
+              </span>
+            )}
             {!inPanel && (
               <button
                 className="p-1 hover:bg-gray-500/10 rounded-full transition-colors"
-                onClick={onClose}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onClose()
+                }}
               >
-                <X className="w-4 h-4 text-gray-400" />
+                <X
+                  className={`w-4 h-4 ${isUpdateNotification ? 'text-amber-300 hover:text-amber-200' : 'text-gray-400'}`}
+                />
               </button>
             )}
           </div>
@@ -161,8 +201,16 @@ const NotificationItem: React.FC<{
           </div>
         )}
 
-        <div className="text-sm text-gray-600 dark:text-gray-300">
+        <div
+          className={`text-sm ${isUpdateNotification ? 'text-amber-100/90' : 'text-gray-600 dark:text-gray-300'}`}
+        >
           {notification.message}
+          {isUpdateNotification && (
+            <div className="mt-2 text-xs text-amber-200/70 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+              Click to open update dialog
+            </div>
+          )}
         </div>
 
         {notification.timestamp && inPanel && (
@@ -180,7 +228,14 @@ const NotificationPanel: React.FC<{
   onClose: () => void
   onClearAll: () => void
   onRemoveNotification: (id: string) => void
-}> = ({ notifications, onClose, onClearAll, onRemoveNotification }) => {
+  onNotificationClick: (notification: Notification) => void
+}> = ({
+  notifications,
+  onClose,
+  onClearAll,
+  onRemoveNotification,
+  onNotificationClick,
+}) => {
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-blue-darkest border-l border-divider/10 shadow-xl z-50">
       <div className="flex flex-col h-full">
@@ -218,6 +273,7 @@ const NotificationPanel: React.FC<{
                   key={notification.id}
                   notification={notification}
                   onClose={() => onRemoveNotification(notification.id)}
+                  onNotificationClick={onNotificationClick}
                 />
               ))}
             </div>
@@ -233,6 +289,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const [selectedUpdateModal, setSelectedUpdateModal] = useState<any>(null)
   const notificationTimers = useRef<
     Record<string, ReturnType<typeof setTimeout>>
   >({})
@@ -243,6 +300,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       ...notification,
       id,
       timestamp: new Date(),
+    }
+
+    // If this is an update notification, remove any existing update notifications for the same version
+    if (notification.data?.update) {
+      setNotifications((prev) =>
+        prev.filter(
+          (n) =>
+            !n.data?.update ||
+            n.data.update.version !== notification.data.update.version
+        )
+      )
     }
 
     setNotifications((prev) => [...prev, newNotification])
@@ -283,6 +351,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsNotificationPanelOpen((prev) => !prev)
   }
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (notification.data?.update) {
+      setSelectedUpdateModal(notification.data.update)
+      setIsNotificationPanelOpen(false)
+    }
+  }
+
   useEffect(() => {
     return () => {
       Object.values(notificationTimers.current).forEach(clearTimeout)
@@ -315,6 +390,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                   <NotificationItem
                     notification={notification}
                     onClose={() => removeNotification(notification.id)}
+                    onNotificationClick={handleNotificationClick}
                   />
                 </div>
               ))}
@@ -329,9 +405,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                 notifications={notifications}
                 onClearAll={clearNotifications}
                 onClose={toggleNotificationPanel}
+                onNotificationClick={handleNotificationClick}
                 onRemoveNotification={removeNotification}
               />
             </>
+          )}
+          {/* Update Modal */}
+          {selectedUpdateModal && (
+            <UpdateModal
+              isOpen={true}
+              onClose={() => setSelectedUpdateModal(null)}
+              update={selectedUpdateModal}
+            />
           )}
         </>,
         document.body

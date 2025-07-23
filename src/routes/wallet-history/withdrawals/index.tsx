@@ -1,23 +1,17 @@
 import Decimal from 'decimal.js'
-import {
-  Link as Chain,
-  Zap,
-  RefreshCw,
-  Loader,
-  Search,
-  Copy,
-} from 'lucide-react'
+import { Link as Chain, Zap, RefreshCw, Loader, Search } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useSelector } from 'react-redux'
-import { toast } from 'react-toastify'
-import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, Badge, IconButton, Card, Alert } from '../../../components/ui'
-import { formatDate } from '../../../helpers/date'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+} from '../../../components/ui/Table'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-
-const COL_CLASS_NAME = 'py-3 px-4'
 
 const formatBitcoinAmount = (
   amount: string | number,
@@ -25,20 +19,17 @@ const formatBitcoinAmount = (
 ): string => {
   const amountDecimal = new Decimal(amount)
   if (bitcoinUnit === 'SAT') {
-    return amountDecimal.toFixed(0)
+    return amountDecimal.toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 0,
+      useGrouping: true,
+    })
   } else {
-    return amountDecimal.div(100000000).toFixed(8)
+    return amountDecimal.div(100000000).toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 8,
+      minimumFractionDigits: 8,
+      useGrouping: true,
+    })
   }
-}
-
-interface WithdrawalProps {
-  type: 'on-chain' | 'off-chain'
-  asset: string
-  amount: string | number
-  txId: string
-  bitcoinUnit: string
-  assetsList?: any[]
-  timestamp?: number
 }
 
 const formatAssetAmount = (
@@ -57,85 +48,14 @@ const formatAssetAmount = (
 
   // Convert to decimal and format with proper precision
   const amountDecimal = new Decimal(amount)
-  return amountDecimal.div(Math.pow(10, precision)).toFixed(precision)
-}
-
-const Withdrawal: React.FC<WithdrawalProps> = ({
-  type,
-  asset,
-  amount,
-  txId,
-  bitcoinUnit,
-  assetsList,
-  timestamp,
-}) => {
-  const formattedAmount = formatAssetAmount(
-    amount,
-    asset,
-    bitcoinUnit,
-    assetsList
-  )
-
-  const displayAsset = asset === 'BTC' ? bitcoinUnit : asset
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        toast.success('Transaction ID copied to clipboard')
-      })
-      .catch((err) => {
-        console.error('Failed to copy:', err)
-      })
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-12 border-b border-slate-700 items-center text-base font-medium p-4 sm:p-0 hover:bg-slate-800/30 transition-colors">
-      <div
-        className={twJoin(COL_CLASS_NAME, 'flex items-center sm:col-span-1')}
-      >
-        {type === 'on-chain' ? (
-          <Badge
-            icon={<Chain className="w-4 h-4" />}
-            size="sm"
-            variant="primary"
-          >
-            On-chain
-          </Badge>
-        ) : (
-          <Badge icon={<Zap className="w-4 h-4" />} size="sm" variant="info">
-            Off-chain
-          </Badge>
-        )}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-        {displayAsset}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {formattedAmount}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {timestamp ? formatDate(timestamp * 1000) : 'N/A'}
-      </div>
-      <div
-        className={twJoin(
-          COL_CLASS_NAME,
-          'col-span-1 sm:col-span-5 truncate text-slate-400 flex items-center'
-        )}
-      >
-        <span className="truncate">{txId}</span>
-        <button
-          className="ml-2 text-slate-500 hover:text-slate-300 transition-colors"
-          onClick={() => copyToClipboard(txId)}
-        >
-          <Copy className="w-4 h-4" />
-        </button>
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}>
-        <Badge variant="danger">Sent</Badge>
-      </div>
-    </div>
-  )
+  return amountDecimal
+    .div(Math.pow(10, precision))
+    .toNumber()
+    .toLocaleString('en-US', {
+      maximumFractionDigits: precision,
+      minimumFractionDigits: 0,
+      useGrouping: true,
+    })
 }
 
 export const Component: React.FC = () => {
@@ -426,45 +346,99 @@ export const Component: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <div className="min-w-max">
-            <div className="grid grid-cols-1 sm:grid-cols-12 font-medium text-slate-400 border-b border-slate-700 py-2">
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Type
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Asset
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Amount
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Date
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-5')}>
-                Transaction ID
-              </div>
-              <div
-                className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}
-              >
-                Status
-              </div>
+        <Table
+          columns={[
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                withdrawal.type === 'on-chain' ? (
+                  <Badge
+                    icon={<Chain className="w-3 h-3" />}
+                    size="sm"
+                    variant="primary"
+                  >
+                    On-chain
+                  </Badge>
+                ) : (
+                  <Badge
+                    icon={<Zap className="w-3 h-3" />}
+                    size="sm"
+                    variant="info"
+                  >
+                    Off-chain
+                  </Badge>
+                ),
+              className: 'col-span-1',
+              header: 'Type',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) => (
+                <span className="font-medium">
+                  {withdrawal.asset === 'BTC' ? bitcoinUnit : withdrawal.asset}
+                </span>
+              ),
+              className: 'col-span-1',
+              header: 'Asset',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) => (
+                <span className="font-semibold text-white">
+                  {formatAssetAmount(
+                    withdrawal.amount,
+                    withdrawal.asset,
+                    bitcoinUnit,
+                    listAssetsData?.nia
+                  )}
+                </span>
+              ),
+              className: 'col-span-1',
+              header: 'Amount',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                renderDateField(
+                  withdrawal.timestamp ? withdrawal.timestamp * 1000 : null
+                ),
+              className: 'col-span-1',
+              header: 'Date',
+            },
+            {
+              accessor: (withdrawal: Withdrawal) =>
+                renderCopyableField(withdrawal.txId, true, 4, 'Transaction ID'),
+              className: 'col-span-1',
+              header: 'Transaction ID',
+            },
+            {
+              accessor: () => renderStatusBadge('Sent', 'danger'),
+              className: 'col-span-1',
+              header: 'Status',
+            },
+          ]}
+          data={filteredWithdrawals}
+          emptyState={
+            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+              {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
+                <>
+                  <p>No withdrawals found matching your filters.</p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setTypeFilter('all')
+                      setAssetFilter('all')
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <p>No withdrawals found.</p>
+              )}
             </div>
-
-            {filteredWithdrawals.map((withdrawal, index) => (
-              <Withdrawal
-                amount={withdrawal.amount}
-                asset={withdrawal.asset}
-                assetsList={listAssetsData?.nia}
-                bitcoinUnit={bitcoinUnit}
-                key={`${withdrawal.txId}-${index}`}
-                timestamp={(withdrawal as Withdrawal).timestamp}
-                txId={withdrawal.txId}
-                type={withdrawal.type}
-              />
-            ))}
-          </div>
-        </div>
+          }
+          gridClassName="grid-cols-6"
+        />
       )}
     </Card>
   )

@@ -1,24 +1,31 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use db::Account;
-use dotenv::dotenv;
-use rgb_node::NodeProcess;
-use std::env;
 use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, Window};
+use std::collections::HashMap;
 
 mod db;
 mod rgb_node;
 
+use rgb_node::NodeProcess;
+
 #[derive(Default)]
-struct CurrentAccount(RwLock<Option<Account>>);
+struct CurrentAccount(RwLock<Option<db::Account>>);
+
+#[derive(serde::Serialize)]
+pub struct NodeLogsResponse {
+    pub logs: Vec<String>,
+    pub total: u32,
+}
 
 fn main() {
-    dotenv().ok();
+    dotenv::dotenv().ok();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
@@ -148,7 +155,19 @@ fn main() {
             get_node_logs,
             save_logs_to_file,
             is_node_running,
-            get_running_node_account
+            get_running_node_account,
+            // Port management commands
+            check_ports_available,
+            get_running_node_ports,
+            find_available_ports,
+            stop_node_by_account,
+            // ChannelOrders commands
+            insert_channel_order,
+            get_channel_orders,
+            delete_channel_order,
+            // New command
+            is_local_node_supported,
+            get_markdown_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -223,7 +242,7 @@ fn stop_node(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Result<
 }
 
 #[tauri::command]
-fn get_accounts() -> Result<Vec<Account>, String> {
+fn get_accounts() -> Result<Vec<db::Account>, String> {
     match db::get_accounts() {
         Ok(configs) => Ok(configs),
         Err(e) => Err(e.to_string()),
@@ -244,6 +263,7 @@ fn insert_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, String> {
     match db::insert_account(
         name,
@@ -258,6 +278,7 @@ fn insert_account(
         default_maker_url,
         daemon_listening_port,
         ldk_peer_listening_port,
+        bearer_token,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),
@@ -278,6 +299,7 @@ fn update_account(
     default_maker_url: String,
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
+    bearer_token: Option<String>,
 ) -> Result<usize, String> {
     match db::update_account(
         name,
@@ -292,6 +314,7 @@ fn update_account(
         default_maker_url,
         daemon_listening_port,
         ldk_peer_listening_port,
+        bearer_token,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),
@@ -336,7 +359,7 @@ fn check_account_exists(name: String) -> Result<bool, String> {
 fn set_current_account(
     state: tauri::State<CurrentAccount>,
     account_name: String,
-) -> Result<Account, String> {
+) -> Result<db::Account, String> {
     let accounts = db::get_accounts().map_err(|e| e.to_string())?;
     let account = accounts
         .into_iter()
@@ -348,12 +371,12 @@ fn set_current_account(
 }
 
 #[tauri::command]
-fn get_current_account(state: tauri::State<CurrentAccount>) -> Option<Account> {
+fn get_current_account(state: tauri::State<CurrentAccount>) -> Option<db::Account> {
     state.0.read().unwrap().clone()
 }
 
 #[tauri::command]
-fn get_account_by_name(name: String) -> Result<Option<Account>, String> {
+fn get_account_by_name(name: String) -> Result<Option<db::Account>, String> {
     match db::get_account_by_name(&name) {
         Ok(account) => Ok(account),
         Err(e) => Err(e.to_string()),
@@ -361,8 +384,27 @@ fn get_account_by_name(name: String) -> Result<Option<Account>, String> {
 }
 
 #[tauri::command]
-fn get_node_logs(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Vec<String> {
-    node_process.lock().unwrap().get_logs()
+fn get_node_logs(
+    node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
+    page: u32,
+    page_size: u32,
+) -> Result<NodeLogsResponse, String> {
+    let node_process = node_process.lock().unwrap();
+    let all_logs = node_process.get_logs();
+    let total = all_logs.len() as u32;
+
+    // Calculate start and end indices for pagination
+    let start = ((page - 1) * page_size) as usize;
+    let end = std::cmp::min(start + page_size as usize, all_logs.len());
+
+    // Get the paginated logs
+    let logs = if start < all_logs.len() {
+        all_logs[start..end].to_vec()
+    } else {
+        Vec::new()
+    };
+
+    Ok(NodeLogsResponse { logs, total })
 }
 
 #[tauri::command]
@@ -391,4 +433,102 @@ fn get_running_node_account(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
 ) -> Option<String> {
     node_process.lock().unwrap().get_current_account()
+}
+
+#[tauri::command]
+fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, String> {
+    let mut result = HashMap::new();
+    for port in ports {
+        match port.parse::<u16>() {
+            Ok(port_num) => {
+                result.insert(port.clone(), rgb_node::NodeProcess::is_port_available(port_num));
+            }
+            Err(e) => {
+                return Err(format!("Invalid port number {}: {}", port, e));
+            }
+        }
+    }
+    Ok(result)
+}
+
+#[tauri::command]
+fn get_running_node_ports(node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>) -> HashMap<String, String> {
+    node_process.lock().unwrap().get_running_node_ports()
+}
+
+#[tauri::command]
+fn find_available_ports(
+    base_daemon_port: Option<u16>,
+    base_ldk_port: Option<u16>,
+) -> Result<HashMap<String, u16>, String> {
+    let (daemon_port, ldk_port) = rgb_node::NodeProcess::find_available_ports(
+        base_daemon_port.unwrap_or(3001),
+        base_ldk_port.unwrap_or(9735),
+    );
+    
+    let mut result = HashMap::new();
+    result.insert("daemon".to_string(), daemon_port);
+    result.insert("ldk".to_string(), ldk_port);
+    Ok(result)
+}
+
+#[tauri::command]
+fn stop_node_by_account(
+    node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>,
+    account_name: String,
+) -> Result<(), String> {
+    let node_process = node_process.lock().unwrap();
+    node_process.stop_by_account(&account_name)
+}
+
+#[tauri::command]
+fn insert_channel_order(
+    state: tauri::State<CurrentAccount>,
+    #[allow(non_snake_case)] orderId: String, 
+    status: String, 
+    payload: String, 
+    #[allow(non_snake_case)] createdAt: String
+) -> Result<usize, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account = current_account.as_ref()
+        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
+    
+    db::insert_channel_order(account.id, orderId, status, payload, createdAt)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn get_channel_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<db::ChannelOrder>, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account_id = current_account.as_ref().map(|account| account.id);
+    
+    db::get_channel_orders(account_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_channel_order(
+    state: tauri::State<CurrentAccount>,
+    #[allow(non_snake_case)] orderId: String
+) -> Result<usize, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account = current_account.as_ref()
+        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
+    
+    db::delete_channel_order(account.id, orderId).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn is_local_node_supported() -> bool {
+    rgb_node::NodeProcess::is_local_node_supported()
+}
+
+#[tauri::command]
+async fn get_markdown_content(file_path: String) -> Result<String, String> {
+    let content = tokio::fs::read_to_string(file_path)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(content)
 }

@@ -1,38 +1,41 @@
-import {
-  ArrowRight,
-  Wallet,
-  Zap,
-  Link as ChainIcon,
-  ChevronDown,
-  Clock,
-  Rocket,
-  Settings,
-  Copy,
-  AlertTriangle,
-} from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { ArrowLeft, Clock, Rocket, Settings, Zap } from 'lucide-react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
 import { BTC_ASSET_ID } from '../../../../constants'
 import {
+  parseAssetAmountWithPrecision,
+  getAssetPrecision,
+  msatToSat,
+  BTCtoSatoshi,
+} from '../../../../helpers/number'
+import {
   nodeApi,
   ApiError,
   DecodeInvoiceResponse,
   DecodeRgbInvoiceResponse,
+  NiaAsset,
 } from '../../../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
-interface Fields {
-  address: string
-  amount: number
-  fee_rate: string
-  asset_id: string
-  network: 'on-chain' | 'lightning'
+import { WithdrawForm, ConfirmationModal } from './components'
+import {
+  AddressType,
+  FeeEstimations,
+  FeeRateOption,
+  Fields,
+  PaymentStatus,
+  HTLCStatus,
+} from './types'
+
+const isLightningAddress = (input: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  return emailRegex.test(input)
 }
 
-export const WithdrawModalContent = () => {
+export const WithdrawModalContent: React.FC = () => {
   const dispatch = useAppDispatch()
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
   const transportEndpoint = useAppSelector(
@@ -41,7 +44,7 @@ export const WithdrawModalContent = () => {
   const [assetBalance, setAssetBalance] = useState(0)
   const [showAssetDropdown, setShowAssetDropdown] = useState(false)
   const [customFee, setCustomFee] = useState(1.0)
-  const [feeEstimations, setFeeEstimations] = useState({
+  const [feeEstimations, setFeeEstimations] = useState<FeeEstimations>({
     fast: 3,
     normal: 2,
     slow: 1,
@@ -54,112 +57,468 @@ export const WithdrawModalContent = () => {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingData, setPendingData] = useState<Fields | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [addressType, setAddressType] = useState<AddressType>('unknown')
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [maxLightningCapacity, setMaxLightningCapacity] = useState(0)
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null)
+  const [paymentHash, setPaymentHash] = useState<string | null>(null)
+  const [isPollingStatus, setIsPollingStatus] = useState(false)
 
   const [sendBtc] = nodeApi.useLazySendBtcQuery()
   const [sendAsset] = nodeApi.useLazySendAssetQuery()
   const [sendPayment] = nodeApi.useLazySendPaymentQuery()
+  const [listPayments] = nodeApi.useLazyListPaymentsQuery()
   const [estimateFee] = nodeApi.useLazyEstimateFeeQuery()
-  const assets = nodeApi.endpoints.listAssets.useQuery()
   const [decodeInvoice] = nodeApi.useLazyDecodeInvoiceQuery()
   const [decodeRgbInvoice] = nodeApi.useLazyDecodeRgbInvoiceQuery()
+
+  const assets = nodeApi.endpoints.listAssets.useQuery()
+  const channelsQuery = nodeApi.endpoints.listChannels.useQuery(undefined, {
+    pollingInterval: 3000,
+  })
 
   const form = useForm<Fields>({
     defaultValues: {
       address: '',
       amount: 0,
       asset_id: BTC_ASSET_ID,
+      donation: false,
       fee_rate: 'normal',
       network: 'on-chain',
     },
   })
 
-  const {
-    watch,
-    setValue,
-    control,
-    formState: { errors, isSubmitting },
-  } = form
+  const { watch, setValue } = form
   const network = watch('network')
   const assetId = watch('asset_id')
   const feeRate = watch('fee_rate')
 
-  const availableAssets = [
-    { label: bitcoinUnit, value: BTC_ASSET_ID },
-    ...(assets.data?.nia.map((asset) => ({
-      label: asset.ticker,
-      value: asset.asset_id,
-    })) ?? []),
-  ]
+  // Use useMemo to prevent recreating the array on every render
+  const availableAssets = useMemo(
+    () => [
+      { label: bitcoinUnit, value: BTC_ASSET_ID },
+      ...(assets.data?.nia.map((asset: NiaAsset) => ({
+        label: asset.ticker,
+        value: asset.asset_id,
+      })) ?? []),
+    ],
+    [bitcoinUnit, assets.data?.nia]
+  )
 
-  const feeRates = [
+  const feeRates: FeeRateOption[] = [
     { label: 'Slow', rate: feeEstimations.slow, value: 'slow' },
     { label: 'Normal', rate: feeEstimations.normal, value: 'normal' },
     { label: 'Fast', rate: feeEstimations.fast, value: 'fast' },
     { label: 'Custom', rate: customFee, value: 'custom' },
   ]
 
-  const handlePasteFromClipboard = async () => {
+  // Memoized balance fetching functions
+  const fetchBtcBalance = useCallback(async () => {
+    try {
+      const balance = await dispatch(
+        nodeApi.endpoints.btcBalance.initiate({ skip_sync: false })
+      ).unwrap()
+
+      if (bitcoinUnit === 'SAT') {
+        setAssetBalance(balance.vanilla.spendable)
+      } else {
+        setAssetBalance(balance.vanilla.spendable / 100000000)
+      }
+    } catch (error) {
+      console.error('Error fetching BTC balance:', error)
+      setAssetBalance(0)
+    }
+  }, [dispatch, bitcoinUnit])
+
+  const fetchAssetBalance = useCallback(
+    async (assetId: string) => {
+      if (assetId === BTC_ASSET_ID) {
+        return fetchBtcBalance()
+      }
+
+      try {
+        const balance = await dispatch(
+          nodeApi.endpoints.assetBalance.initiate({ asset_id: assetId })
+        ).unwrap()
+        setAssetBalance(balance.spendable)
+      } catch (error) {
+        console.error(`Error fetching asset balance for ${assetId}:`, error)
+        setAssetBalance(0)
+      }
+    },
+    [dispatch, fetchBtcBalance]
+  )
+
+  // Calculate max lightning outbound capacity
+  useEffect(() => {
+    if (channelsQuery.data?.channels) {
+      const activeChannels = channelsQuery.data.channels.filter(
+        (channel) => channel.is_usable
+      )
+
+      if (activeChannels.length > 0) {
+        const maxOutboundCapacity = Math.max(
+          ...activeChannels.map(
+            (channel) => channel.next_outbound_htlc_limit_msat
+          )
+        )
+        setMaxLightningCapacity(maxOutboundCapacity)
+      } else {
+        setMaxLightningCapacity(0)
+      }
+    }
+  }, [channelsQuery.data])
+
+  // Create a separate, more targeted effect just for polling
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const POLLING_INTERVAL_MS = 3000 // Poll every 3 seconds
+    const POLLING_TIMEOUT_MS = 60000 // 60 seconds timeout
+
+    const stopPolling = () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      intervalId = null
+      timeoutId = null
+    }
+
+    const pollPaymentStatus = async () => {
+      // Skip polling if payment hash is missing
+      if (!paymentHash) {
+        stopPolling()
+        return
+      }
+
+      try {
+        // Use listPayments to check payment status
+        const paymentsResponse = await listPayments().unwrap()
+
+        // Find the payment with the matching hash from the decoded invoice
+        const payment = paymentsResponse.payments.find(
+          (p) => p.payment_hash === paymentHash
+        )
+
+        if (payment) {
+          // Use the status directly from the payment response
+          const currentStatus = payment.status as HTLCStatus
+          setPaymentStatus(currentStatus)
+
+          if (currentStatus !== HTLCStatus.Pending) {
+            console.log(`Payment status changed to: ${currentStatus}`)
+            setIsPollingStatus(false) // This will clean up in the next render
+            setIsConfirming(false)
+
+            if (currentStatus === HTLCStatus.Succeeded) {
+              console.log(`Payment status changed to: ${currentStatus}`)
+
+              // Show success toast and close modal immediately
+              toast.success('Lightning payment successful!', {
+                autoClose: 5000,
+                progressStyle: { background: '#3B82F6' },
+              })
+
+              // Close the modal immediately
+              setIsPollingStatus(false)
+              setIsConfirming(false)
+              setShowConfirmation(false)
+              setPendingData(null)
+              dispatch(uiSliceActions.setModal({ type: 'none' }))
+
+              return // Exit early to prevent further status changes
+            } else {
+              // Failed
+              setValidationError(
+                'Payment failed. Please check the details or try again.'
+              )
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error)
+      }
+    }
+
+    // Only start polling if we have the necessary conditions
+    if (isPollingStatus && paymentHash) {
+      // Initial check immediately
+      pollPaymentStatus()
+
+      // Set up polling interval
+      intervalId = setInterval(pollPaymentStatus, POLLING_INTERVAL_MS)
+
+      // Set up timeout
+      timeoutId = setTimeout(() => {
+        console.log('Payment polling timed out after 60 seconds')
+        setIsPollingStatus(false) // This will clean up in the next render
+        setIsConfirming(false)
+        setPaymentStatus(HTLCStatus.Failed)
+        setValidationError(
+          'Payment is still pending after 60 seconds. Please check the status manually or try again.'
+        )
+        // Go back to the form instead of closing the modal
+        setShowConfirmation(false)
+      }, POLLING_TIMEOUT_MS)
+
+      // Cleanup function when effect is cleaned up
+      return () => {
+        stopPolling()
+      }
+    }
+
+    // No need for cleanup if we didn't start polling
+    return undefined
+  }, [paymentHash, isPollingStatus, dispatch, listPayments])
+
+  // Reset and clean up polling state on unmount
+  useEffect(() => {
+    return () => {
+      // Reset all payment statuses and polling state on unmount
+      setPaymentHash(null)
+      setIsPollingStatus(false)
+      setPaymentStatus(null)
+      setValidationError(null)
+    }
+  }, [])
+
+  // Function to detect address type and update form accordingly
+  const detectAddressType = useCallback(
+    async (input: string) => {
+      if (!input) {
+        setAddressType('unknown')
+        setDecodedInvoice(null)
+        setDecodedRgbInvoice(null)
+        setValidationError(null)
+        setPaymentHash(null) // Clear payment hash when input is cleared
+        return
+      }
+
+      setIsDecodingInvoice(true)
+      setAddressType('unknown')
+      setDecodedInvoice(null)
+      setDecodedRgbInvoice(null)
+      setValidationError(null)
+      setPaymentHash(null) // Clear payment hash before decoding
+
+      try {
+        if (input.startsWith('ln')) {
+          // Lightning invoice
+          console.log('Decoding Lightning invoice:', input)
+          const decoded = await decodeInvoice({ invoice: input }).unwrap()
+          console.log('Decoded Lightning invoice:', decoded)
+
+          setDecodedInvoice(decoded)
+          setPaymentHash(decoded.payment_hash) // Store payment hash
+          setAddressType('lightning')
+          setValue('network', 'lightning')
+
+          // Validate invoice amount against balance and capacity
+          if (decoded.asset_id && decoded.asset_amount) {
+            // Invoice specifies an RGB asset
+            setValue('asset_id', decoded.asset_id) // Set asset_id for potential display/validation
+            await fetchAssetBalance(decoded.asset_id) // Fetch balance for the specific asset
+
+            if (decoded.asset_amount > assetBalance) {
+              setValidationError(
+                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your balance is only ${assetBalance}. Cannot proceed with payment.`
+              )
+            }
+          }
+          // If this is a regular BTC invoice with an amount
+          else if (decoded.amt_msat > 0) {
+            // Get the amount in satoshis for display and validation
+            const invoiceAmountSats = decoded.amt_msat / 1000
+            const maxCapacitySats = maxLightningCapacity / 1000
+
+            // Check if we have enough balance for this payment (assuming BTC)
+            await fetchBtcBalance()
+            const amountInUnit =
+              bitcoinUnit === 'SAT'
+                ? invoiceAmountSats
+                : invoiceAmountSats / 100000000
+
+            if (amountInUnit > assetBalance) {
+              setValidationError(
+                `Error: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your available balance of ${assetBalance.toLocaleString()} ${bitcoinUnit}. Cannot proceed with payment.`
+              )
+            }
+            // Check channel capacity after balance check - upgraded to Error from Warning
+            else if (decoded.amt_msat > maxLightningCapacity) {
+              setValidationError(
+                `Error: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your outbound channel capacity (${maxCapacitySats.toLocaleString()} sats). Cannot proceed with payment.`
+              )
+            }
+          }
+        } else if (input.startsWith('rgb')) {
+          // RGB invoice
+          console.log('Decoding RGB invoice:', input)
+          try {
+            const decodedRgb = await decodeRgbInvoice({
+              invoice: input,
+            }).unwrap()
+            console.log('Decoded RGB invoice:', decodedRgb)
+
+            setDecodedRgbInvoice(decodedRgb)
+            setAddressType('rgb')
+            setValue('network', 'on-chain')
+
+            if (decodedRgb.asset_id) {
+              setValue('asset_id', decodedRgb.asset_id)
+              const assetExists = assets.data?.nia.some(
+                (asset: NiaAsset) => asset.asset_id === decodedRgb.asset_id
+              )
+              if (!assetExists && decodedRgb.asset_id !== BTC_ASSET_ID) {
+                setValidationError(
+                  `Error: You don't have the requested asset: ${decodedRgb.asset_id.substring(0, 8)}... Cannot proceed with payment.`
+                )
+              } else {
+                // Fetch balance and then validate amount if present
+                await fetchAssetBalance(decodedRgb.asset_id)
+                if (decodedRgb.amount) {
+                  const assetInfo = assets.data?.nia.find(
+                    (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
+                  )
+                  const ticker = assetInfo?.ticker || 'Unknown'
+                  const precision = assetInfo?.precision || 8
+                  const formattedAmount =
+                    decodedRgb.amount / Math.pow(10, precision)
+
+                  // Get the actual RGB asset balance
+                  const rgbBalance = assetInfo?.balance.spendable || 0
+                  const formattedBalance = rgbBalance / Math.pow(10, precision)
+
+                  if (decodedRgb.amount > rgbBalance) {
+                    setValue('amount', formattedBalance)
+                    setValidationError(
+                      `Warning: The invoice requested ${formattedAmount} ${ticker} but your balance is only ${formattedBalance} ${ticker}. Adjusted to maximum sendable amount.`
+                    )
+                  } else {
+                    setValue('amount', formattedAmount)
+                  }
+                }
+              }
+            } else {
+              const firstRgbAsset = availableAssets.find(
+                (asset) => asset.value !== BTC_ASSET_ID
+              )
+              if (firstRgbAsset) {
+                setValue('asset_id', firstRgbAsset.value)
+                await fetchAssetBalance(firstRgbAsset.value)
+              } else {
+                setValidationError('Warning: No RGB assets available to send.')
+              }
+            }
+          } catch (error) {
+            console.error('Failed to decode RGB invoice:', error)
+            setValidationError(
+              'Failed to decode RGB invoice. Please check that the invoice is valid.'
+            )
+            setAddressType('invalid')
+          }
+        } else if (input.startsWith('bc') || input.startsWith('tb')) {
+          // Bitcoin address
+          setAddressType('bitcoin')
+          setValue('network', 'on-chain')
+          setValue('asset_id', BTC_ASSET_ID) // Force BTC asset for Bitcoin addresses
+
+          // Immediately fetch Bitcoin balance
+          await fetchBtcBalance()
+        } else if (isLightningAddress(input)) {
+          // Lightning address (email format)
+          setAddressType('lightning-address')
+          setValue('network', 'lightning')
+          setValue('asset_id', BTC_ASSET_ID) // Default to BTC for lightning address
+          // For Lightning addresses, we'll fetch BTC balance by default
+          await fetchBtcBalance()
+        } else if (input) {
+          // Invalid input
+          setAddressType('invalid')
+          setValidationError(
+            'Invalid address format. Please enter a valid Bitcoin address, Lightning invoice, Lightning address, or RGB invoice.'
+          )
+        }
+      } catch (error) {
+        console.error('Failed to decode input', error)
+        setAddressType('invalid')
+        setValidationError(
+          'Failed to decode input. Please check the address format.'
+        )
+      } finally {
+        setIsDecodingInvoice(false)
+      }
+    },
+    [
+      decodeInvoice,
+      decodeRgbInvoice,
+      setValue,
+      assets.data?.nia,
+      fetchAssetBalance,
+      fetchBtcBalance,
+      maxLightningCapacity,
+      availableAssets,
+      bitcoinUnit,
+      assetBalance,
+    ]
+  ) // Added bitcoinUnit and assetBalance dependencies
+
+  const handlePasteFromClipboard = useCallback(async () => {
     try {
       const text = await navigator.clipboard.readText()
-      if (text.startsWith('ln')) {
-        setValue('network', 'lightning')
-        setValue('address', text)
-        await handleInvoiceChange({ target: { value: text } } as any)
-      } else if (text.startsWith('rgb')) {
-        setValue('network', 'on-chain')
-        setValue('address', text)
-        await handleInvoiceChange({ target: { value: text } } as any)
-      } else {
-        setValue('address', text)
-      }
+      setValue('address', text)
+      await detectAddressType(text)
     } catch (error) {
       console.error('Failed to read clipboard', error)
     }
-  }
+  }, [setValue, detectAddressType])
 
-  const handleInvoiceChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const invoice = e.target.value
+  const handleInvoiceChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.target.value
+      detectAddressType(input)
+    },
+    [detectAddressType]
+  )
 
-    // Reset all decoded states
-    setDecodedInvoice(null)
-    setDecodedRgbInvoice(null)
-
-    if (invoice.startsWith('ln')) {
-      setIsDecodingInvoice(true)
-      try {
-        const decoded = await decodeInvoice({ invoice }).unwrap()
-        setDecodedInvoice(decoded)
-      } catch (error) {
-        console.error('Failed to decode Lightning invoice', error)
-      } finally {
-        setIsDecodingInvoice(false)
-      }
-    } else if (invoice.startsWith('rgb')) {
-      setIsDecodingInvoice(true)
-      try {
-        const decodedRgb = await decodeRgbInvoice({ invoice }).unwrap()
-        setDecodedRgbInvoice(decodedRgb)
-
-        // If the decoded RGB invoice has an asset_id, set it in the form
-        if (decodedRgb.asset_id) {
-          setValue('asset_id', decodedRgb.asset_id)
-        }
-
-        // If the decoded RGB invoice has an amount, set it in the form
-        if (decodedRgb.amount) {
-          setValue('amount', decodedRgb.amount)
-        }
-      } catch (error) {
-        console.error('Failed to decode RGB invoice', error)
-      } finally {
-        setIsDecodingInvoice(false)
-      }
+  // Function to get the minimum amount for a given address type
+  const getMinAmount = useCallback(() => {
+    // Always consider fee and dust limit for on-chain btc transactions
+    if (addressType === 'bitcoin' && assetId === BTC_ASSET_ID) {
+      return 546 // Dust limit in sats
     }
-  }
 
-  const getFeeIcon = (type: string) => {
+    // For lightning payments, need to use a limit based on invoice or capacity
+    if (addressType === 'lightning') {
+      if (decodedInvoice?.amt_msat) {
+        // If invoice has an amount, use that as the min
+        return msatToSat(decodedInvoice.amt_msat)
+      }
+      // Return a reasonable min for lightning (1 sat)
+      return 1
+    }
+
+    // For other assets or address types, use 1 as minimum
+    return 1
+  }, [addressType, assetId, decodedInvoice, maxLightningCapacity]) // Add missing dependency
+
+  const getMinAmountMessage = useCallback(() => {
+    if (assetId === BTC_ASSET_ID) {
+      return bitcoinUnit === 'SAT' ? '1 SAT' : '0.00000001 BTC'
+    }
+
+    const assetInfo = assets.data?.nia.find(
+      (a: NiaAsset) => a.asset_id === assetId
+    )
+    const ticker = assetInfo?.ticker || 'Unknown'
+    const precision = getAssetPrecision(ticker, bitcoinUnit, assets.data?.nia)
+    const minAmount = 1 / Math.pow(10, precision)
+    return `${minAmount} ${ticker}`
+  }, [assetId, bitcoinUnit, assets.data?.nia])
+
+  const getFeeIcon = useCallback((type: string) => {
     switch (type) {
       case 'slow':
         return <Clock className="w-4 h-4" />
@@ -170,66 +529,119 @@ export const WithdrawModalContent = () => {
       default:
         return <Zap className="w-4 h-4" />
     }
-  }
+  }, [])
 
-  const formatAmount = (amount: number, assetId: string) => {
-    if (!amount) return '0'
-
-    if (assetId === BTC_ASSET_ID) {
-      return bitcoinUnit === 'SAT'
-        ? Math.round(amount).toLocaleString()
-        : (amount / 100000000).toLocaleString(undefined, {
-            maximumFractionDigits: 8,
-            minimumFractionDigits: 0,
-          })
-    }
-
-    const assetInfo = assets.data?.nia.find((a) => a.asset_id === assetId)
-    const precision = assetInfo?.precision ?? 0
-    const formattedAmount = amount / Math.pow(10, precision)
-
-    return formattedAmount.toLocaleString(undefined, {
-      maximumFractionDigits: precision,
-    })
-  }
-
-  const getMinAmount = () => {
-    if (assetId === BTC_ASSET_ID) {
-      return bitcoinUnit === 'SAT' ? 1 : 0.00000001
-    }
-    return 1
-  }
-
-  const getMinAmountMessage = () => {
-    if (assetId === BTC_ASSET_ID) {
-      return bitcoinUnit === 'SAT' ? '1 SAT' : '0.00000001 BTC'
-    }
-    return '1'
-  }
-
-  const parseAssetAmount = useCallback(
-    (amount: number, assetId: string): number => {
-      if (assetId === BTC_ASSET_ID) {
-        return bitcoinUnit === 'SAT'
-          ? Math.round(amount)
-          : Math.round(amount * 100000000)
+  const onSubmit = useCallback(
+    async (data: Fields) => {
+      // Block submission if there's an error that starts with "Error:"
+      if (validationError && validationError.startsWith('Error:')) {
+        toast.error(validationError, {
+          autoClose: 5000,
+        })
+        return
       }
 
-      const assetInfo = assets.data?.nia.find((a) => a.asset_id === assetId)
-      const precision = assetInfo?.precision ?? 0
-      return Math.round(amount * Math.pow(10, precision))
+      if (data.network === 'on-chain' && data.asset_id !== BTC_ASSET_ID) {
+        const enteredAmount = Number(data.amount)
+        if (enteredAmount > assetBalance) {
+          toast.error(
+            `Withdrawal amount (${enteredAmount}) exceeds available balance (${assetBalance})`,
+            {
+              autoClose: 5000,
+            }
+          )
+          return
+        }
+      }
+
+      // For Lightning payments, verify capacity one more time before proceeding to confirmation
+      if (data.network === 'lightning' && decodedInvoice) {
+        // Only check capacity for BTC invoices with an amount
+        if (decodedInvoice.amt_msat > 0 && !decodedInvoice.asset_id) {
+          const invoiceAmountSats = decodedInvoice.amt_msat / 1000
+          const maxCapacitySats = maxLightningCapacity / 1000
+
+          // Final capacity check
+          if (decodedInvoice.amt_msat > maxLightningCapacity) {
+            toast.error(
+              `Cannot proceed: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your outbound capacity (${maxCapacitySats.toLocaleString()} sats)`,
+              {
+                autoClose: 5000,
+              }
+            )
+            return
+          }
+        }
+      }
+
+      const formattedData = { ...data }
+
+      if (formattedData.network === 'lightning' && decodedInvoice) {
+        // Set the decoded invoice in the formatted data
+        formattedData.decodedInvoice = decodedInvoice
+
+        if (decodedInvoice.asset_id && decodedInvoice.asset_amount) {
+          // RGB Lightning Invoice with asset
+          formattedData.asset_id = decodedInvoice.asset_id
+          formattedData.amount = decodedInvoice.asset_amount
+        } else if (decodedInvoice.amt_msat > 0) {
+          // Standard BTC Lightning invoice - convert using helpers
+          const amountSats = msatToSat(decodedInvoice.amt_msat)
+          formattedData.asset_id = BTC_ASSET_ID // Ensure asset_id is set to BTC
+
+          // Convert to the appropriate unit based on user's setting
+          if (bitcoinUnit === 'SAT') {
+            formattedData.amount = amountSats
+          } else {
+            // Convert satoshis to BTC
+            formattedData.amount = amountSats / 100000000
+          }
+        }
+      }
+
+      setPendingData({
+        ...formattedData,
+        decodedInvoice:
+          formattedData.network === 'lightning' ? decodedInvoice : null,
+      } as Fields)
+
+      setShowConfirmation(true)
     },
-    [assets.data?.nia, bitcoinUnit]
+    [
+      validationError,
+      assetBalance,
+      BTC_ASSET_ID,
+      decodedInvoice,
+      bitcoinUnit,
+      maxLightningCapacity,
+    ]
   )
 
-  const onSubmit = async (data: Fields) => {
-    setPendingData(data)
-    setShowConfirmation(true)
-  }
-
-  const handleConfirmedSubmit = async () => {
+  const handleConfirmedSubmit = useCallback(async () => {
     if (!pendingData) return
+
+    // Final check for Lightning payments before sending
+    if (pendingData.network === 'lightning' && pendingData.decodedInvoice) {
+      // Check channel capacity for BTC invoices
+      if (
+        pendingData.decodedInvoice.amt_msat > 0 &&
+        !pendingData.decodedInvoice.asset_id
+      ) {
+        const invoiceAmountSats = pendingData.decodedInvoice.amt_msat / 1000
+        const maxCapacitySats = maxLightningCapacity / 1000
+
+        if (pendingData.decodedInvoice.amt_msat > maxLightningCapacity) {
+          setValidationError(
+            `Error: Not enough outbound capacity. Need ${invoiceAmountSats.toLocaleString()} sats but only have ${maxCapacitySats.toLocaleString()} sats available.`
+          )
+          return
+        }
+      }
+    }
+
     setIsConfirming(true)
+    setValidationError(null)
+    setPaymentStatus(null)
 
     try {
       if (pendingData.network === 'lightning') {
@@ -237,25 +649,91 @@ export const WithdrawModalContent = () => {
           throw new Error('Invalid Lightning invoice')
         }
 
-        const res = await sendPayment({
-          invoice: pendingData.address,
-        }).unwrap()
+        console.log('Processing Lightning payment...')
 
-        if ('error' in res) {
-          throw new Error(
-            (res.error as ApiError)?.data?.error || 'Payment failed'
-          )
-        }
+        try {
+          const res = await sendPayment({
+            invoice: pendingData.address,
+          }).unwrap()
 
-        if (res.status !== 'Pending') {
-          throw new Error(`Payment ${res.status.toLowerCase()}`)
+          // Ensure payment hash is set for tracking
+          if (
+            pendingData.decodedInvoice &&
+            pendingData.decodedInvoice.payment_hash
+          ) {
+            setPaymentHash(pendingData.decodedInvoice.payment_hash)
+          }
+
+          // Use the status directly from the response
+          setPaymentStatus(res.status)
+
+          if (res.status === HTLCStatus.Pending) {
+            console.log('Payment initiated - polling for status updates')
+            // Important: Set isPollingStatus in a separate statement to ensure React batches state updates correctly
+            setIsPollingStatus(true)
+          } else if (res.status === HTLCStatus.Succeeded) {
+            console.log('Payment succeeded immediately')
+
+            // Show success toast and close modal immediately
+            toast.success('Lightning payment successful!', {
+              autoClose: 5000,
+              progressStyle: { background: '#3B82F6' },
+            })
+
+            // Close the modal immediately
+            setIsPollingStatus(false)
+            setIsConfirming(false)
+            setShowConfirmation(false)
+            setPendingData(null)
+            dispatch(uiSliceActions.setModal({ type: 'none' }))
+          } else {
+            console.log('Payment failed immediately:', res.status)
+            const failureMsg = `Payment failed immediately with status: ${res.status}`
+
+            // Reset all states and go back to form to allow editing
+            setIsPollingStatus(false)
+            setIsConfirming(false)
+            setPaymentStatus(null)
+            setShowConfirmation(false) // Go back to form
+            setValidationError(failureMsg) // Show error in form
+          }
+        } catch (error: any) {
+          console.error('Lightning payment error:', error)
+
+          // Extract detailed error information for Lightning payments
+          let errorMessage = 'Unknown payment error'
+
+          if (error?.data?.error) {
+            errorMessage = error.data.error
+          } else if (error?.data?.message) {
+            errorMessage = error.data.message
+          } else if (error?.message) {
+            errorMessage = error.message
+          } else if (typeof error === 'string') {
+            errorMessage = error
+          }
+
+          const fullErrorMessage = `Lightning payment failed: ${errorMessage}`
+
+          // Also show in toast for immediate visibility
+          toast.error(fullErrorMessage, {
+            autoClose: 8000,
+          })
+
+          // Reset all states and go back to form to allow editing
+          setIsConfirming(false)
+          setIsPollingStatus(false)
+          setPaymentStatus(null) // Clear payment status to prevent overlay
+          setShowConfirmation(false) // Go back to form
+          setValidationError(fullErrorMessage) // Show error in form
         }
       } else if (pendingData.network === 'on-chain') {
         if (pendingData.asset_id === BTC_ASSET_ID) {
+          // Use conversion helpers for BTC amount
           const amountInSats =
             bitcoinUnit === 'SAT'
               ? Math.round(Number(pendingData.amount))
-              : Math.round(Number(pendingData.amount) * 100000000)
+              : BTCtoSatoshi(Number(pendingData.amount))
 
           const res = await sendBtc({
             address: pendingData.address,
@@ -273,21 +751,48 @@ export const WithdrawModalContent = () => {
               (res.error as ApiError)?.data?.error || 'Payment failed'
             )
           }
+          toast.success('BTC Withdrawal successful', {
+            progressStyle: { background: '#3B82F6' },
+          })
         } else {
-          const rawAmount = parseAssetAmount(
-            Number(pendingData.amount),
-            pendingData.asset_id
+          const assetInfo = assets.data?.nia.find(
+            (a: NiaAsset) => a.asset_id === pendingData.asset_id
+          )
+          const ticker = assetInfo?.ticker || 'Unknown'
+          const rawAmount = parseAssetAmountWithPrecision(
+            pendingData.amount.toString(),
+            ticker,
+            bitcoinUnit,
+            assets.data?.nia
           )
 
-          // Check if we're using an RGB invoice
+          console.log(
+            `Sending RGB asset ${ticker} with amount ${pendingData.amount} (raw: ${rawAmount})`
+          )
+
+          let res: any
+
           if (pendingData.address.startsWith('rgb') && decodedRgbInvoice) {
-            // Use the information from the decoded RGB invoice
-            const res = await sendAsset({
+            if (!decodedRgbInvoice.recipient_id) {
+              throw new Error('Decoded RGB invoice is missing a recipient ID.')
+            }
+            if (
+              !decodedRgbInvoice.transport_endpoints ||
+              decodedRgbInvoice.transport_endpoints.length === 0
+            ) {
+              throw new Error(
+                'Decoded RGB invoice is missing transport endpoints.'
+              )
+            }
+
+            res = await sendAsset({
               amount:
-                decodedRgbInvoice.amount !== null
+                decodedRgbInvoice.amount !== null &&
+                decodedRgbInvoice.amount !== undefined
                   ? decodedRgbInvoice.amount
                   : rawAmount,
               asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
+              donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
@@ -297,17 +802,14 @@ export const WithdrawModalContent = () => {
               recipient_id: decodedRgbInvoice.recipient_id,
               transport_endpoints: decodedRgbInvoice.transport_endpoints,
             }).unwrap()
-
-            if ('error' in res) {
-              throw new Error(
-                (res.error as ApiError)?.data?.error || 'Payment failed'
-              )
-            }
           } else {
-            // Use the manually entered recipient ID
-            const res = await sendAsset({
+            if (!transportEndpoint) {
+              throw new Error('Proxy transport endpoint is not configured.')
+            }
+            res = await sendAsset({
               amount: rawAmount,
               asset_id: pendingData.asset_id,
+              donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
@@ -317,62 +819,78 @@ export const WithdrawModalContent = () => {
               recipient_id: pendingData.address,
               transport_endpoints: [transportEndpoint],
             }).unwrap()
-
-            if ('error' in res) {
-              throw new Error(
-                (res.error as ApiError)?.data?.error || 'Payment failed'
-              )
-            }
           }
+
+          if ('error' in res) {
+            throw new Error(
+              (res.error as ApiError)?.data?.error || 'RGB Asset payment failed'
+            )
+          }
+          toast.success('RGB Asset Withdrawal successful', {
+            progressStyle: { background: '#3B82F6' },
+          })
         }
+
+        // Only close modal on successful withdrawal
+        setShowConfirmation(false)
+        setPendingData(null)
+        setIsConfirming(false)
+
+        setTimeout(() => {
+          dispatch(uiSliceActions.setModal({ type: 'none' }))
+        }, 1500)
       }
-
-      setShowConfirmation(false)
-      setPendingData(null)
-      setIsConfirming(false)
-
-      toast.success('Withdrawal successful', {
-        progressStyle: { background: '#3B82F6' },
-      })
-
-      setTimeout(() => {
-        dispatch(uiSliceActions.setModal({ type: 'none' }))
-      }, 1500)
     } catch (error: any) {
-      const errorMessage = error?.message || 'Withdrawal failed'
-      toast.error(errorMessage, {
-        autoClose: 5000,
-      })
-      setIsConfirming(false)
-    }
-  }
+      console.error('Withdrawal error:', error)
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        if (assetId === BTC_ASSET_ID) {
-          const balance = await dispatch(
-            nodeApi.endpoints.btcBalance.initiate({ skip_sync: false })
-          ).unwrap()
-          if (bitcoinUnit === 'SAT') {
-            setAssetBalance(balance.vanilla.spendable)
-          } else {
-            setAssetBalance(balance.vanilla.spendable / 100000000)
-          }
-        } else {
-          const balance = await dispatch(
-            nodeApi.endpoints.assetBalance.initiate({ asset_id: assetId })
-          ).unwrap()
-          setAssetBalance(balance.spendable)
-        }
-      } catch (error) {
-        setAssetBalance(0)
+      // Extract more detailed error information
+      let errorMessage = 'Withdrawal failed'
+
+      if (error?.data?.error) {
+        // API error with detailed message
+        errorMessage = error.data.error
+      } else if (error?.data?.message) {
+        // Alternative API error format
+        errorMessage = error.data.message
+      } else if (error?.message) {
+        // Standard error message
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        // String error
+        errorMessage = error
       }
+
+      // Show detailed error in toast
+      toast.error(`Withdrawal failed: ${errorMessage}`, {
+        autoClose: 8000, // Longer time for reading detailed errors
+      })
+
+      // Reset all confirmation states to allow user to go back and edit
+      setIsConfirming(false)
+      setIsPollingStatus(false)
+      setPaymentStatus(null) // Clear payment status to prevent overlay from showing
+
+      // Go back to the form to allow user to edit the amount
+      setShowConfirmation(false)
+
+      // Always set validation error to show in the form
+      setValidationError(errorMessage)
     }
+  }, [
+    pendingData,
+    bitcoinUnit,
+    sendPayment,
+    sendBtc,
+    feeEstimations,
+    customFee,
+    assets.data?.nia,
+    decodedRgbInvoice,
+    sendAsset,
+    transportEndpoint,
+    dispatch,
+  ])
 
-    fetchBalance()
-  }, [assetId, dispatch, bitcoinUnit])
-
+  // Effect to fetch fee estimations when necessary
   useEffect(() => {
     const fetchFees = async () => {
       if (network !== 'on-chain' || assetId !== BTC_ASSET_ID) return
@@ -396,799 +914,124 @@ export const WithdrawModalContent = () => {
     fetchFees()
   }, [network, assetId, estimateFee])
 
-  const getAssetTicker = useCallback(
-    (assetId: string | null) => {
-      if (!assetId || !assets.data?.nia) return null
-      const asset = assets.data.nia.find((a) => a.asset_id === assetId)
-      return asset?.ticker || null
-    },
-    [assets.data?.nia]
-  )
+  // Effect to fetch initial balance for the selected asset
+  useEffect(() => {
+    fetchAssetBalance(assetId)
+  }, [assetId, fetchAssetBalance])
 
-  const renderPaymentHash = (hash: string) => (
-    <div className="group relative">
-      <div className="flex justify-between text-sm">
-        <span className="text-slate-400">Payment Hash:</span>
-        <button
-          className="text-white font-mono hover:text-blue-400 transition-colors"
-          onClick={() => navigator.clipboard.writeText(hash)}
-          title="Click to copy"
-        >
-          {`${hash.slice(0, 8)}...${hash.slice(-8)}`}
-        </button>
-      </div>
+  // Define a wrapper function for setValue to fix type mismatch issue
+  const setValueWrapper = (name: string, value: any) => {
+    // We know that name is a valid key of Fields
+    setValue(name as keyof Fields, value)
+  }
 
-      {/* Full hash tooltip */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 
-                    opacity-0 group-hover:opacity-100 transition-opacity
-                    pointer-events-none"
-      >
-        <div
-          className="bg-slate-800 text-white text-xs rounded-lg px-3 py-2
-                      border border-slate-700 shadow-lg whitespace-nowrap"
-        >
-          <div className="font-mono">{hash}</div>
-          <div
-            className="absolute left-1/2 -bottom-1 w-2 h-2 bg-slate-800 
-                        -translate-x-1/2 rotate-45 border-r border-b border-slate-700"
-          ></div>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderOnChainContent = () => (
-    <div className="space-y-6">
-      <div>
-        <label className="text-sm font-medium text-slate-400 mb-2 block">
-          Select Asset & Amount
-        </label>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <Controller
-              control={control}
-              name="amount"
-              render={({ field }) => (
-                <div className="relative">
-                  <input
-                    className={`w-full px-4 py-3 bg-slate-800/50 rounded-xl border
-                    ${errors.amount ? 'border-red-500' : 'border-slate-700'}
-                    focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                    placeholder:text-slate-600 pr-20`}
-                    min="0"
-                    placeholder="0.00"
-                    step="any"
-                    type="number"
-                    {...field}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value)
-                      if (!isNaN(value) && value >= 0) {
-                        field.onChange(value)
-                      }
-                    }}
-                    style={{
-                      MozAppearance: 'textfield',
-                      WebkitAppearance: 'none',
-                    }}
-                  />
-                  <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs 
-                             text-blue-500 hover:text-blue-400 transition-colors
-                             bg-slate-800/50 rounded-md"
-                    onClick={() => field.onChange(assetBalance)}
-                    type="button"
-                  >
-                    MAX
-                  </button>
-                </div>
-              )}
-              rules={{
-                max: {
-                  message: 'Amount exceeds balance',
-                  value: assetBalance,
-                },
-                min: {
-                  message: `Minimum amount is ${getMinAmountMessage()}`,
-                  value: getMinAmount(),
-                },
-                required: 'Amount is required',
-                validate: {
-                  positive: (value) =>
-                    value > 0 || 'Amount must be greater than 0',
-                },
-              }}
-            />
-          </div>
-
-          <Controller
-            control={control}
-            name="asset_id"
-            render={({ field }) => (
-              <div className="relative">
-                <button
-                  className="h-full px-4 py-3 bg-slate-800/50 rounded-xl border border-slate-700 
-                           hover:border-blue-500/50 transition-all duration-200
-                           flex items-center gap-2 min-w-[120px]"
-                  onClick={() => setShowAssetDropdown(!showAssetDropdown)}
-                  type="button"
-                >
-                  <span className="text-white">
-                    {
-                      availableAssets.find((a) => a.value === field.value)
-                        ?.label
-                    }
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
-                </button>
-
-                {showAssetDropdown && (
-                  <div
-                    className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-xl border 
-                                border-slate-700 shadow-xl z-50"
-                  >
-                    {availableAssets.map((asset) => (
-                      <button
-                        className="w-full px-4 py-3 text-left hover:bg-blue-500/10 
-                                 transition-colors first:rounded-t-xl last:rounded-b-xl
-                                 text-white"
-                        key={asset.value}
-                        onClick={() => {
-                          field.onChange(asset.value)
-                          setShowAssetDropdown(false)
-                        }}
-                        type="button"
-                      >
-                        {asset.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          />
-        </div>
-        <div className="flex justify-between mt-2 text-sm">
-          <span className="text-slate-400">Available:</span>
-          <span className="text-slate-300">
-            {formatAmount(assetBalance, assetId)}{' '}
-            {assetId === BTC_ASSET_ID
-              ? bitcoinUnit
-              : availableAssets.find((a) => a.value === assetId)?.label}
-          </span>
-        </div>
-        {errors.amount && (
-          <div className="text-red-500 text-sm mt-1">
-            {errors.amount.message}
-          </div>
-        )}
-      </div>
-
-      {network === 'on-chain' && (
-        <div>
-          <label className="text-sm font-medium text-slate-400 mb-2 block">
-            Transaction Fee
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            {feeRates.map((rate) => (
-              <Controller
-                control={control}
-                key={rate.value}
-                name="fee_rate"
-                render={({ field }) => (
-                  <button
-                    className={`
-                      p-4 rounded-xl border-2 transition-all duration-200
-                      flex items-center justify-between
-                      ${
-                        field.value === rate.value
-                          ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                          : 'border-slate-700 text-slate-400 hover:border-blue-500/50'
-                      }
-                    `}
-                    onClick={() => field.onChange(rate.value)}
-                    type="button"
-                  >
-                    <div className="flex items-center gap-2">
-                      {getFeeIcon(rate.value)}
-                      <span>{rate.label}</span>
-                    </div>
-                    <span className="text-sm">
-                      {rate.value !== 'custom' ? `${rate.rate} sat/vB` : ''}
-                    </span>
-                  </button>
-                )}
-              />
-            ))}
-          </div>
-
-          {feeRate === 'custom' && (
-            <input
-              className="mt-4 w-full px-4 py-3 bg-slate-800/50 rounded-xl border border-slate-700 
-                       focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white"
-              onChange={(e) => setCustomFee(parseFloat(e.target.value))}
-              placeholder="Enter custom fee rate (sat/vB)"
-              step="0.1"
-              type="number"
-              value={customFee}
-            />
-          )}
-        </div>
-      )}
-
-      <div>
-        <label className="text-sm font-medium text-slate-400 mb-2 block">
-          {assetId === BTC_ASSET_ID ? 'Withdrawal Address' : 'Blinded UTXO'}
-        </label>
-        <Controller
-          control={control}
-          name="address"
-          render={({ field }) => (
-            <div>
-              <input
-                className={`w-full px-4 py-3 bg-slate-800/50 rounded-xl border
-                ${errors.address ? 'border-red-500' : 'border-slate-700'}
-                focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                placeholder:text-slate-600`}
-                placeholder={
-                  assetId === BTC_ASSET_ID
-                    ? 'Paste BTC address here'
-                    : 'Paste blinded UTXO or RGB invoice here'
-                }
-                type="text"
-                {...field}
-                onChange={(e) => {
-                  field.onChange(e)
-                  handleInvoiceChange(e)
-                }}
-              />
-              {assetId !== BTC_ASSET_ID && !decodedRgbInvoice && (
-                <p className="text-sm text-slate-400 mt-2">
-                  For asset transfers, please provide a blinded UTXO as the
-                  recipient identifier or paste an RGB invoice
-                </p>
-              )}
-              {isDecodingInvoice && (
-                <p className="text-sm text-blue-400 mt-2">
-                  Decoding invoice...
-                </p>
-              )}
-              {decodedRgbInvoice && (
-                <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <div className="text-blue-400 font-medium mb-1">
-                    RGB Invoice Detected
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {decodedRgbInvoice.asset_id && (
-                      <>
-                        <div className="text-slate-400">Asset ID:</div>
-                        <div className="text-white font-mono truncate">
-                          {`${decodedRgbInvoice.asset_id.slice(0, 8)}...${decodedRgbInvoice.asset_id.slice(-8)}`}
-                        </div>
-                      </>
-                    )}
-                    <div className="text-slate-400">Recipient ID:</div>
-                    <div className="text-white font-mono truncate">
-                      {`${decodedRgbInvoice.recipient_id.slice(0, 8)}...${decodedRgbInvoice.recipient_id.slice(-8)}`}
-                    </div>
-                    {decodedRgbInvoice.amount && (
-                      <>
-                        <div className="text-slate-400">Amount:</div>
-                        <div className="text-white">
-                          {decodedRgbInvoice.amount}
-                        </div>
-                      </>
-                    )}
-                    <div className="text-slate-400">Network:</div>
-                    <div className="text-white">
-                      {decodedRgbInvoice.network}
-                    </div>
-                  </div>
-
-                  {decodedRgbInvoice.asset_id &&
-                    decodedRgbInvoice.asset_id !== assetId && (
-                      <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-start gap-2">
-                        <AlertTriangle
-                          className="text-yellow-500 flex-shrink-0"
-                          size={18}
-                        />
-                        <p className="text-sm text-yellow-500">
-                          This invoice is for a different asset than what you
-                          have selected. The asset from the invoice will be used
-                          when submitting.
-                        </p>
-                      </div>
-                    )}
-                </div>
-              )}
-            </div>
-          )}
-          rules={{ required: 'Address is required' }}
-        />
-        {errors.address && (
-          <div className="text-red-500 text-sm mt-1">
-            {errors.address.message}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
-  const renderLightningContent = () => (
-    <div className="space-y-6">
-      <div>
-        <label className="text-sm font-medium text-slate-400 mb-2 block">
-          Lightning Invoice
-        </label>
-        <Controller
-          control={control}
-          name="address"
-          render={({ field }) => (
-            <div className="space-y-4">
-              <div className="relative">
-                <input
-                  className={`w-full px-4 py-3 bg-slate-800/50 rounded-xl border
-                    ${errors.address ? 'border-red-500' : 'border-slate-700'}
-                    focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                    placeholder:text-slate-600 pr-12`}
-                  placeholder="Paste invoice here"
-                  type="text"
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e)
-                    handleInvoiceChange(e)
-                  }}
-                />
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 
-                           hover:bg-blue-500/10 rounded-lg transition-colors 
-                           text-slate-400 hover:text-blue-500"
-                  onClick={handlePasteFromClipboard}
-                  title="Paste from Clipboard"
-                  type="button"
-                >
-                  <Copy className="w-5 h-5" />
-                </button>
-              </div>
-
-              {isDecodingInvoice && (
-                <div className="flex items-center gap-2 text-slate-400">
-                  <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
-                  Decoding invoice...
-                </div>
-              )}
-
-              {decodedInvoice && (
-                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                  <h4 className="text-white font-medium mb-3">
-                    Payment Details
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Amount:</span>
-                      <span className="text-white">
-                        {formatAmount(
-                          decodedInvoice.amt_msat / 1000,
-                          BTC_ASSET_ID
-                        )}{' '}
-                        {bitcoinUnit}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Network:</span>
-                      <span className="text-white">
-                        {decodedInvoice.network}
-                      </span>
-                    </div>
-
-                    {decodedInvoice.asset_id !== null && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Asset:</span>
-                        <span className="text-white">
-                          {getAssetTicker(decodedInvoice.asset_id) ||
-                            decodedInvoice.asset_id}
-                          <span className="text-slate-400 text-xs ml-2">
-                            ({decodedInvoice.asset_id.slice(0, 8)}...)
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {decodedInvoice.asset_amount !== null &&
-                      decodedInvoice.asset_id !== null && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Asset Amount:</span>
-                          <span className="text-white">
-                            {formatAmount(
-                              decodedInvoice.asset_amount,
-                              decodedInvoice.asset_id
-                            )}{' '}
-                            {getAssetTicker(decodedInvoice.asset_id)}
-                          </span>
-                        </div>
-                      )}
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Expires in:</span>
-                      <span className="text-white">
-                        {Math.max(
-                          0,
-                          Math.floor(
-                            (decodedInvoice.timestamp +
-                              decodedInvoice.expiry_sec -
-                              Date.now() / 1000) /
-                              60
-                          )
-                        )}{' '}
-                        minutes
-                      </span>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="border-t border-slate-700 my-2"></div>
-
-                    {/* Technical Details */}
-                    <div className="space-y-2">
-                      {renderPaymentHash(decodedInvoice.payment_hash)}
-
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Payee:</span>
-                        <span className="text-white font-mono text-xs">
-                          {`${decodedInvoice.payee_pubkey.slice(0, 8)}...${decodedInvoice.payee_pubkey.slice(-8)}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {errors.address && (
-                <div className="text-red-500 text-sm flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  {errors.address.message}
-                </div>
-              )}
-            </div>
-          )}
-          rules={{
-            required: 'Invoice is required',
-            validate: {
-              isLightning: (v) =>
-                v.startsWith('ln') || 'Invalid Lightning invoice',
-            },
-          }}
-        />
-      </div>
-    </div>
-  )
-
-  const renderConfirmationModal = () => (
-    <div className="fixed inset-0 z-50">
-      <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={() => {
-          if (!isConfirming) {
-            setShowConfirmation(false)
-            setPendingData(null)
-          }
-        }}
-      />
-
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 max-w-md w-full">
-          {isConfirming ? (
-            <div className="flex flex-col items-center py-6">
-              <div className="w-16 h-16 mb-4">
-                <div
-                  className="w-full h-full border-4 border-blue-500/30 border-t-blue-500 
-                              rounded-full animate-spin"
-                />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Processing{' '}
-                {pendingData?.network === 'lightning'
-                  ? 'Payment'
-                  : 'Withdrawal'}
-              </h3>
-              <p className="text-slate-400 text-center">
-                Please wait while we process your transaction...
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-6 h-6 text-yellow-500" />
-                <h3 className="text-xl font-bold text-white">
-                  Confirm Withdrawal
-                </h3>
-              </div>
-
-              {pendingData && (
-                <div className="space-y-4">
-                  {pendingData.network === 'lightning' ? (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Payment Type:</span>
-                        <span className="text-white">Lightning Invoice</span>
-                      </div>
-                      {decodedInvoice && (
-                        <>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-400">Amount:</span>
-                            <span className="text-white">
-                              {formatAmount(
-                                decodedInvoice.amt_msat / 1000,
-                                BTC_ASSET_ID
-                              )}{' '}
-                              {bitcoinUnit}
-                            </span>
-                          </div>
-                          {decodedInvoice.asset_id !== null && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-slate-400">Asset:</span>
-                              <span className="text-white">
-                                {getAssetTicker(decodedInvoice.asset_id) ||
-                                  decodedInvoice.asset_id}
-                              </span>
-                            </div>
-                          )}
-                          {decodedInvoice.asset_amount !== null &&
-                            decodedInvoice.asset_id !== null && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-slate-400">
-                                  Asset Amount:
-                                </span>
-                                <span className="text-white">
-                                  {formatAmount(
-                                    decodedInvoice.asset_amount,
-                                    decodedInvoice.asset_id
-                                  )}{' '}
-                                  {getAssetTicker(decodedInvoice.asset_id)}
-                                </span>
-                              </div>
-                            )}
-                          {renderPaymentHash(decodedInvoice.payment_hash)}
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Payment Type:</span>
-                        <span className="text-white">On-chain Transfer</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">Amount:</span>
-                        <span className="text-white">
-                          {formatAmount(
-                            pendingData.amount,
-                            pendingData.asset_id
-                          )}{' '}
-                          {pendingData.asset_id === BTC_ASSET_ID
-                            ? bitcoinUnit
-                            : availableAssets.find(
-                                (a) => a.value === pendingData.asset_id
-                              )?.label}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-400">To:</span>
-                        <span className="text-white font-mono text-sm">
-                          {`${pendingData.address.slice(0, 12)}...${pendingData.address.slice(-12)}`}
-                        </span>
-                      </div>
-                      {pendingData.fee_rate && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-400">Fee Rate:</span>
-                          <span className="text-white">
-                            {pendingData.fee_rate === 'custom'
-                              ? `${customFee} sat/vB`
-                              : `${feeEstimations[pendingData.fee_rate as keyof typeof feeEstimations]} sat/vB`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="border-t border-slate-800 my-4" />
-
-                  <p className="text-yellow-500/80 text-sm">
-                    Please verify all details before confirming. This action
-                    cannot be undone.
-                  </p>
-
-                  <div className="flex gap-3 mt-6">
-                    <button
-                      className="flex-1 py-3 px-4 rounded-xl border border-slate-700
-                               text-slate-300 hover:bg-slate-800 transition-colors
-                               disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={isConfirming}
-                      onClick={() => {
-                        setShowConfirmation(false)
-                        setPendingData(null)
-                      }}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700
-                               text-white rounded-xl font-medium transition-colors
-                               disabled:opacity-50 disabled:cursor-not-allowed
-                               flex items-center justify-center gap-2"
-                      disabled={isConfirming}
-                      onClick={handleConfirmedSubmit}
-                      type="button"
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  // Function to clear validation errors - helps users fix errors more easily
+  const clearValidationError = useCallback(() => {
+    setValidationError(null)
+  }, [])
 
   return (
     <>
-      <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-        {/* Header */}
-        <div className="flex flex-col items-center mb-8">
-          <Wallet className="w-12 h-12 text-blue-500 mb-4" />
-          <h3 className="text-3xl font-bold text-white mb-2">
-            Withdraw Assets
+      <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
+        <div className="mb-4">
+          <h3 className="text-2xl font-bold text-white text-center mb-2">
+            {showConfirmation ? 'Confirm Withdrawal' : 'Withdraw Funds'}
           </h3>
-          <p className="text-slate-400 text-center max-w-md">
-            {network === 'lightning'
-              ? 'Paste a Lightning invoice to make a payment'
-              : 'Choose your asset and enter the withdrawal details'}
+          <p className="text-slate-400 text-center text-sm mb-4">
+            {showConfirmation
+              ? 'Please review your withdrawal details before confirming'
+              : 'Send your funds to a Bitcoin address, Lightning invoice, Lightning address, or RGB invoice'}
           </p>
         </div>
 
-        <form
-          className="space-y-6 max-w-xl mx-auto"
-          onSubmit={form.handleSubmit(onSubmit)}
-        >
-          {/* Network Selection */}
-          <div className="flex gap-4">
-            <Controller
-              control={control}
-              name="network"
-              render={({ field }) => (
-                <>
-                  <button
-                    className={`
-                      flex-1 py-4 px-6 flex flex-col items-center justify-center gap-2
-                      rounded-xl transition-all duration-200 border-2
-                      ${
-                        field.value === 'on-chain'
-                          ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                          : 'border-slate-700 hover:border-blue-500/50 text-slate-400 hover:text-blue-500/80'
-                      }
-                    `}
-                    onClick={() => {
-                      field.onChange('on-chain')
-                      setValue('asset_id', BTC_ASSET_ID)
-                      setValue('address', '')
-                    }}
-                    type="button"
-                  >
-                    <ChainIcon className="w-6 h-6" />
-                    <span>On-chain</span>
-                  </button>
-                  <button
-                    className={`
-                      flex-1 py-4 px-6 flex flex-col items-center justify-center gap-2
-                      rounded-xl transition-all duration-200 border-2
-                      ${
-                        field.value === 'lightning'
-                          ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                          : 'border-slate-700 hover:border-blue-500/50 text-slate-400 hover:text-blue-500/80'
-                      }
-                    `}
-                    onClick={() => {
-                      field.onChange('lightning')
-                      setValue('address', '')
-                    }}
-                    type="button"
-                  >
-                    <Zap className="w-6 h-6" />
-                    <span>Lightning</span>
-                  </button>
-                </>
-              )}
-            />
-          </div>
-
-          {/* Content based on network type */}
-          {network === 'lightning'
-            ? renderLightningContent()
-            : renderOnChainContent()}
-
-          {/* Submit Button */}
-          <button
-            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
-                     disabled:cursor-not-allowed text-white rounded-xl font-medium 
-                     transition-colors flex items-center justify-center gap-2 mt-6"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            {isSubmitting ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
+          <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
+            {showConfirmation ? (
+              <ConfirmationModal
+                assets={assets}
+                availableAssets={availableAssets}
+                bitcoinUnit={bitcoinUnit}
+                customFee={customFee}
+                feeRates={feeRates}
+                isConfirming={isConfirming}
+                isPollingStatus={isPollingStatus}
+                onCancel={() => {
+                  setShowConfirmation(false)
+                  // If polling was active when cancelled from confirmation screen, stop it.
+                  if (isPollingStatus) {
+                    setIsPollingStatus(false)
+                    setPaymentStatus(null) // Reset status
+                    setValidationError(null) // Clear any polling error
+                    setIsConfirming(false) // Stop loading indicator
+                  }
+                }}
+                onConfirm={handleConfirmedSubmit}
+                paymentHash={paymentHash}
+                paymentStatus={paymentStatus}
+                pendingData={pendingData}
+                validationError={validationError}
+              />
             ) : (
-              <>
-                <span>
-                  {network === 'lightning' ? 'Pay Invoice' : 'Withdraw'}
-                </span>
-                <ArrowRight className="w-5 h-5" />
-              </>
+              <WithdrawForm
+                addressType={addressType}
+                assetBalance={assetBalance}
+                assetId={assetId}
+                assets={assets}
+                availableAssets={availableAssets}
+                bitcoinUnit={bitcoinUnit}
+                clearValidationError={clearValidationError}
+                customFee={customFee}
+                decodedInvoice={decodedInvoice}
+                decodedRgbInvoice={decodedRgbInvoice}
+                feeRate={feeRate}
+                feeRates={feeRates}
+                fetchAssetBalance={fetchAssetBalance}
+                fetchBtcBalance={fetchBtcBalance}
+                form={form}
+                getFeeIcon={getFeeIcon}
+                getMinAmount={getMinAmount}
+                getMinAmountMessage={getMinAmountMessage}
+                handleInvoiceChange={handleInvoiceChange}
+                handlePasteFromClipboard={handlePasteFromClipboard}
+                isDecodingInvoice={isDecodingInvoice}
+                isPollingStatus={isPollingStatus}
+                maxLightningCapacity={maxLightningCapacity}
+                onSubmit={onSubmit}
+                paymentStatus={paymentStatus}
+                setCustomFee={setCustomFee}
+                setShowAssetDropdown={setShowAssetDropdown}
+                setValue={setValueWrapper}
+                showAssetDropdown={showAssetDropdown}
+                validationError={validationError}
+              />
             )}
-          </button>
-        </form>
+          </div>
+        </div>
 
-        {/* Loading Overlay */}
-        {isSubmitting && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full mx-4">
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent 
-                              animate-spin mb-4"
-                />
-                <h4 className="text-xl font-semibold text-white mb-2">
-                  Processing{' '}
-                  {network === 'lightning' ? 'Payment' : 'Withdrawal'}
-                </h4>
-                <p className="text-slate-400 text-center">
-                  Please wait while we process your transaction. This may take a
-                  moment.
-                </p>
-              </div>
-            </div>
+        {!showConfirmation && (
+          <div className="flex justify-between pt-4">
+            <button
+              className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
+                       flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"
+              onClick={() => {
+                // Reset all states
+                setShowConfirmation(false)
+                setIsConfirming(false)
+                setIsPollingStatus(false)
+                setPaymentStatus(null)
+                setValidationError(null)
+
+                // Close the modal
+                dispatch(uiSliceActions.setModal({ type: 'none' }))
+              }}
+              type="button"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Cancel</span>
+            </button>
           </div>
         )}
-
-        {/* Toast Styles */}
-        <style>
-          {`
-            .Toastify__toast {
-              border-radius: 12px;
-              font-weight: 500;
-            }
-            
-            .Toastify__toast--success {
-              background: rgba(16, 185, 129, 0.1) !important;
-              backdrop-filter: blur(8px);
-              border: 1px solid rgba(16, 185, 129, 0.2);
-              color: #fff !important;
-            }
-            
-            .Toastify__toast--error {
-              background: rgba(239, 68, 68, 0.1) !important;
-              backdrop-filter: blur(8px);
-              border: 1px solid rgba(239, 68, 68, 0.2);
-              color: #fff !important;
-              font-weight: 500;
-            }
-
-            .Toastify__toast-body {
-              font-family: inherit;
-              padding: 8px;
-            }
-
-            .Toastify__progress-bar {
-              height: 3px;
-            }
-          `}
-        </style>
       </div>
-
-      {/* Confirmation Modal */}
-      {showConfirmation && renderConfirmationModal()}
     </>
   )
 }

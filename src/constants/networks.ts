@@ -9,6 +9,24 @@ export interface NetworkDefaults {
 }
 
 export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
+  BitfinexRegtest: {
+    daemon_listening_port: '3001',
+    default_lsp_url: 'https://api.regtest.kaleidoswap.com/',
+    default_maker_url: 'https://api.regtest.kaleidoswap.com/',
+    indexer_url: 'electrum.rgbtools.org:50041',
+    ldk_peer_listening_port: '9735',
+    proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',
+    rpc_connection_url: 'user:password@regtest-bitcoind.rgbtools.org:80',
+  },
+  LocalRegtest: {
+    daemon_listening_port: '3001',
+    default_lsp_url: 'http://localhost:8000/',
+    default_maker_url: 'http://localhost:8000/',
+    indexer_url: 'localhost:50001',
+    ldk_peer_listening_port: '9735',
+    proxy_endpoint: 'rpc://myproxy.local:3000/json-rpc',
+    rpc_connection_url: 'user:password@localhost:18443',
+  },
   Mainnet: {
     daemon_listening_port: '3001',
     default_lsp_url: 'https://api.kaleidoswap.com/',
@@ -18,15 +36,6 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
     proxy_endpoint: 'rpc://127.0.0.1:3000/json-rpc',
     rpc_connection_url: 'user:password@127.0.0.1:8332',
   },
-  // Regtest: {
-  //   daemon_listening_port: '3001',
-  //   default_lsp_url: 'http://localhost:8000/',
-  //   default_maker_url: 'http://localhost:8000/',
-  //   indexer_url: 'localhost:50001',
-  //   ldk_peer_listening_port: '9735',
-  //   proxy_endpoint: 'rpc://myproxy.local:3000/json-rpc',
-  //   rpc_connection_url: 'user:password@localhost:18443',
-  // },
   Regtest: {
     daemon_listening_port: '3001',
     default_lsp_url: 'https://api.regtest.kaleidoswap.com/',

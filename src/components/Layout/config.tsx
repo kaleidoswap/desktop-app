@@ -89,7 +89,7 @@ export const MAIN_NAV_ITEMS = [
     icon: <Clock className="w-5 h-5" />,
     label: 'History',
     matchPath: WALLET_HISTORY_PATH,
-    to: WALLET_HISTORY_DEPOSITS_PATH,
+    to: WALLET_HISTORY_PATH,
   },
   {
     icon: <Activity className="w-5 h-5" />,

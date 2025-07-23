@@ -4,8 +4,10 @@ on:
   push:
     branches:
       - build
+      - test-build
     tags:
-      - 'v*'  
+      - 'v*'
+      - 'test-v*'
   workflow_dispatch:
 
 jobs:
@@ -16,22 +18,29 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
+          # Temporarily removed aarch64 build until Apple signing is set up
+          # - platform: 'macos-latest'
+          #   args: '--target aarch64-apple-darwin'
           - platform: 'macos-latest'
             args: '--target x86_64-apple-darwin'
           - platform: 'ubuntu-22.04'
+            args: ''
+          - platform: 'windows-latest'
             args: ''
 
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev 
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-1 librsvg2-dev patchelf libglib2.0-dev libgtk-3-dev
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -47,7 +56,22 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin' || '' }}
+
+      - name: Setup MSVC environment (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Verify MSVC compiler (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          echo "Checking for cl.exe compiler..."
+          where cl.exe
+          cl.exe
+          echo "MSVC compiler found and working"
+        shell: cmd
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -57,49 +81,104 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Create placeholder rgb-lightning-node for Windows
+        if: matrix.platform == 'windows-latest'
+        run: |
+          mkdir -p bin
+          echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
+        shell: bash
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          # Skip rgb-lightning-node build on Windows since it's not supported
+          BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
         with:
-          tagName: app-v__VERSION__
-          releaseName: 'App v__VERSION__'
+          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
+            
             See the assets to download and install this version.
-            
+
             Changes in this version:
-            - Built from build branch
-            - Includes macOS (Intel + Apple Silicon) and Linux builds
-            
+            - Built from ${{ startsWith(github.ref, 'refs/tags/') && 'tag' || (github.ref == 'refs/heads/test-build' && 'test-build' || 'build') }} ${{ github.ref_name }}
+            - Includes macOS (Intel only), Linux, and Windows builds
+            - Note: Apple Silicon (M1/M2) users should use the Intel build with Rosetta 2 for now
+            - Signed and ready for auto-update
+
             SHA256 checksums will be provided separately.
-          releaseDraft: true
-          prerelease: false
+
+            Installation Notes:
+            - macOS Intel (x86_64): Install normally
+            - macOS Apple Silicon: Use Intel build with Rosetta 2
+            - Linux: Use .AppImage or .deb as preferred
+            - Windows: Use the provided installer
+
+            For Apple Silicon users experiencing "app is damaged" errors:
+            1. Right-click the .dmg → Open
+            2. Or run in Terminal: xattr -d com.apple.quarantine /path/to/KaleidoSwap.dmg
+          releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+          prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: false
           args: ${{ matrix.args }}
 
+      - name: Update latest release tag
+        if: startsWith(github.ref, 'refs/tags/v') && !startsWith(github.ref, 'refs/tags/test-v')
+        run: |
+          # Delete existing latest tag and recreate it pointing to current tag
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -d latest || true
+          git push origin :refs/tags/latest || true
+          git tag latest
+          git push origin latest
+
       - name: Create manifest file
+        if: matrix.platform != 'windows-latest'  # Skip on Windows
+        shell: bash  # Explicitly use bash for this step
         run: |
           echo "Creating manifest.txt for signing..."
-          echo "Build timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > manifest.txt
+          echo "App version: ${{ env.VERSION }}" > manifest.txt
+          echo "Build timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> manifest.txt
           echo "Git commit: ${{ github.sha }}" >> manifest.txt
+          echo "Git tag: ${{ github.ref_name }}" >> manifest.txt
           echo "Build platform: ${{ matrix.platform }}" >> manifest.txt
           echo "Architecture target: ${{ matrix.args }}" >> manifest.txt
           echo "" >> manifest.txt
           echo "File checksums (SHA256):" >> manifest.txt
-          
-          ARTIFACTS_DIR=${{ steps.tauri_build.outputs.artifactPath }}/../
-          for file in $ARTIFACTS_DIR*.{dmg,AppImage,deb,msi,exe}; do
+
+          artifact_paths="${{ steps.tauri_build.outputs.artifactPaths }}"
+          artifact_paths=$(echo "$artifact_paths" | tr -d '[]' | tr ',' ' ' | tr -d '"')
+
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            CHECKSUM_CMD="sha256sum"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            CHECKSUM_CMD="shasum -a 256"
+          else
+            echo "Unsupported OS: $RUNNER_OS"
+            exit 1
+          fi
+
+          for file in $artifact_paths; do
             if [ -f "$file" ]; then
-              CHECKSUM=$(sha256sum "$file" | awk '{print $1}')
-              echo "$(basename $file): $CHECKSUM" >> manifest.txt
+              CHECKSUM=$($CHECKSUM_CMD "$file" | awk '{print $1}')
+              filename=$(basename "$file")
+              echo "$filename: $CHECKSUM" >> manifest.txt
             fi
           done
-          
+
           cat manifest.txt
 
       - name: Upload manifest.txt
+        if: matrix.platform != 'windows-latest'  # Skip on Windows
         uses: actions/upload-artifact@v4
         with:
-          name: manifest-${{ matrix.platform }}-${{ matrix.args || 'default' }}
+          name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}
           path: manifest.txt
           if-no-files-found: error

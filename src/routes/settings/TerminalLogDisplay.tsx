@@ -1,5 +1,6 @@
-import { CSSProperties, useEffect, useRef } from 'react'
+import { CSSProperties, useEffect, useRef, memo, useMemo } from 'react'
 
+// Move parseAnsi outside component to avoid recreating on every render
 const parseAnsi = (log: string) => {
   const segments = []
   const ansiRegex = /\x1b\[([\d;]*?)m/g
@@ -78,59 +79,79 @@ const parseAnsi = (log: string) => {
   return segments
 }
 
+// Memoize individual log line to prevent unnecessary re-renders
+const LogLine = memo(
+  ({ log, style }: { log: string; style?: CSSProperties }) => {
+    const segments = useMemo(() => parseAnsi(log), [log])
+
+    return (
+      <div
+        className="font-mono text-sm leading-5 whitespace-pre-wrap py-1"
+        style={style}
+      >
+        {segments.map((segment, segIndex) => (
+          <span
+            key={segIndex}
+            style={{
+              color: segment.color || '#94A3B8',
+              fontStyle: segment.fontStyle || 'normal',
+              fontWeight: segment.fontWeight || 'normal',
+              textDecoration: segment.textDecoration || 'none',
+            }}
+          >
+            {segment.text}
+          </span>
+        ))}
+      </div>
+    )
+  }
+)
+
+LogLine.displayName = 'LogLine'
+
 interface TerminalLogDisplayProps {
   logs: string[]
   maxEntries: number
   className?: string
 }
 
-const TerminalLogDisplay = ({
-  logs,
-  maxEntries,
-  className = '',
-}: TerminalLogDisplayProps) => {
-  const logsContainerRef = useRef<HTMLDivElement>(null)
+const TerminalLogDisplay = memo(
+  ({ logs, className = '' }: TerminalLogDisplayProps) => {
+    const logsContainerRef = useRef<HTMLDivElement>(null)
 
-  // Get only the last N entries
-  const displayedLogs = logs.slice(-maxEntries)
+    useEffect(() => {
+      console.log('TerminalLogDisplay received logs:', logs)
+      if (logsContainerRef.current) {
+        logsContainerRef.current.scrollTop =
+          logsContainerRef.current.scrollHeight
+      }
+    }, [logs])
 
-  useEffect(() => {
-    if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight
-    }
-  }, [displayedLogs])
-
-  return (
-    <div
-      className={`h-full overflow-y-auto px-3 py-2 ${className}`}
-      ref={logsContainerRef}
-      style={{
-        scrollbarColor: '#4B5563 transparent',
-        scrollbarWidth: 'thin',
-      }}
-    >
-      {displayedLogs.map((log, index) => (
-        <div
-          className="font-mono text-sm leading-5 whitespace-pre-wrap py-1"
-          key={index}
-        >
-          {parseAnsi(log).map((segment, segIndex) => (
-            <span
-              key={segIndex}
-              style={{
-                color: segment.color || '#94A3B8',
-                fontStyle: segment.fontStyle || 'normal',
-                fontWeight: segment.fontWeight || 'normal',
-                textDecoration: segment.textDecoration || 'none',
-              }}
-            >
-              {segment.text}
-            </span>
-          ))}
+    if (!logs || logs.length === 0) {
+      return (
+        <div className={`h-full flex items-center justify-center ${className}`}>
+          <span className="text-gray-500">No logs available</span>
         </div>
-      ))}
-    </div>
-  )
-}
+      )
+    }
+
+    return (
+      <div
+        className={`h-full overflow-y-auto px-3 py-2 ${className}`}
+        ref={logsContainerRef}
+        style={{
+          scrollbarColor: '#4B5563 transparent',
+          scrollbarWidth: 'thin',
+        }}
+      >
+        {logs.map((log, index) => (
+          <LogLine key={`${index}-${log.slice(0, 20)}`} log={log} />
+        ))}
+      </div>
+    )
+  }
+)
+
+TerminalLogDisplay.displayName = 'TerminalLogDisplay'
 
 export { TerminalLogDisplay }

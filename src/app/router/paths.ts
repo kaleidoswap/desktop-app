@@ -48,9 +48,18 @@ export const WALLET_HISTORY_ASSETS_PATH = makePath([
   'assets',
 ])
 
+export const WALLET_HISTORY_CHANNEL_ORDERS_PATH = makePath([
+  WALLET_HISTORY_PATH,
+  'channel-orders',
+])
+
 export const CHANNELS_PATH = makePath(['channels'])
 
 export const CREATE_NEW_CHANNEL_PATH = makePath(['create-new-channel'])
 export const ORDER_CHANNEL_PATH = makePath(['order-new-channel'])
 
 export const CREATEUTXOS_PATH = makePath(['createutxos'])
+
+// Legal
+export const TERMS_PATH = '/terms'
+export const PRIVACY_PATH = '/privacy'

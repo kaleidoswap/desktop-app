@@ -2,28 +2,50 @@ import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import { TradingPair } from '../makerApi/makerApi.slice'
 
-export interface PairFeed {
+interface PriceData {
+  price: number
+  size: number
   rfq_id: string
+}
+
+export interface FeeDetails {
+  base_fee: number
+  variable_fee: number
+  fee_rate: number
+  fee_asset: string
+  final_fee: number
+  fee_asset_precision: number
+}
+
+interface QuoteResponse {
+  rfq_id: string
+  from_asset: string
+  from_amount: number
+  to_asset: string
+  to_amount: number
   price: number
   price_precision: number
-  pair: string
-  size: number
   timestamp: number
   expires_at: number
+  fee: FeeDetails
 }
 
 export interface PairsState {
   assets: string[]
-  feed: Record<string, PairFeed>
+  feed: { [key: string]: PriceData }
+  quotes: { [key: string]: QuoteResponse }
   values: TradingPair[]
   ticker: Record<string, number>
   subscribedPairs: string[]
   wsConnected: boolean
+  quoteError: string | null
 }
 
 const initialState: PairsState = {
   assets: [],
   feed: {},
+  quoteError: null,
+  quotes: {},
   subscribedPairs: [],
   ticker: {},
   values: [],
@@ -34,6 +56,24 @@ export const pairsSlice = createSlice({
   initialState,
   name: 'pairs',
   reducers: {
+    clearQuote: (
+      state,
+      action: PayloadAction<{
+        fromAsset: string
+        toAsset: string
+        fromAmount: number
+      }>
+    ) => {
+      const { fromAsset, toAsset, fromAmount } = action.payload
+      const key = `${fromAsset}/${toAsset}/${fromAmount}`
+      delete state.quotes[key]
+    },
+    clearQuoteError: (state) => {
+      state.quoteError = null
+    },
+    setQuoteError: (state, action: PayloadAction<string>) => {
+      state.quoteError = action.payload
+    },
     setTradingPairs: (state, action: PayloadAction<TradingPair[]>) => {
       state.values = action.payload
       state.assets = [
@@ -43,33 +83,28 @@ export const pairsSlice = createSlice({
     setWsConnected: (state, action: PayloadAction<boolean>) => {
       state.wsConnected = action.payload
     },
-    subscribeToPair: (state, action: PayloadAction<string>) => {
-      if (!state.subscribedPairs.includes(action.payload)) {
-        state.subscribedPairs.push(action.payload)
-      }
+    updatePrice: (state, action: PayloadAction<any>) => {
+      const { pair, price, size, rfq_id } = action.payload
+      state.feed[pair] = { price, rfq_id, size }
     },
-    unsubscribeFromPair: (state, action: PayloadAction<string>) => {
-      state.subscribedPairs = state.subscribedPairs.filter(
-        (pair) => pair !== action.payload
-      )
-    },
-    updatePrice: (state, action: PayloadAction<PairFeed>) => {
-      const { pair, ...values } = action.payload
-      state.feed[pair] = {
-        ...state.feed[pair],
-        ...values,
-      }
-      state.ticker[pair] = Date.now()
+    updateQuote: (state, action: PayloadAction<QuoteResponse>) => {
+      const quote = action.payload
+      const key = `${quote.from_asset}/${quote.to_asset}/${quote.from_amount}`
+      state.quotes[key] = quote
+      // Clear any previous quote error when we get a successful quote
+      state.quoteError = null
     },
   },
 })
 
 export const {
   setTradingPairs,
-  updatePrice,
-  subscribeToPair,
-  unsubscribeFromPair,
   setWsConnected,
+  updatePrice,
+  updateQuote,
+  clearQuote,
+  clearQuoteError,
+  setQuoteError,
 } = pairsSlice.actions
 
 export const pairsReducer = pairsSlice.reducer

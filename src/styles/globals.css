@@ -1,0 +1,298 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import our animations */
+@import './animations.css';
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* Global Styles */
+:root {
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 215 25% 27%;
+  --secondary-foreground: 210 40% 98%;
+
+  --accent: 217 91% 60%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 72% 29%;
+  --success-foreground: 210 40% 98%;
+
+  --warning: 45 93% 47%;
+  --warning-foreground: 224 71% 4%;
+
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 221 83% 53%;
+}
+
+/* Base Styles */
+body {
+  @apply bg-slate-950 text-slate-50 antialiased;
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
+}
+
+/* Modern Card Styles */
+.glass-card {
+  @apply relative overflow-hidden;
+  @apply bg-gradient-to-br from-slate-800/90 via-slate-900/85 to-slate-900/90;
+  @apply backdrop-blur-2xl;
+  @apply border border-slate-700/40;
+  @apply shadow-2xl shadow-slate-900/50;
+  @apply transition-all duration-500 ease-out;
+  @apply hover:shadow-slate-900/60 hover:border-slate-600/50;
+}
+
+.glass-card::before {
+  content: '';
+  @apply absolute inset-0;
+  @apply bg-gradient-to-br from-white/5 via-blue-400/5 to-transparent;
+  @apply opacity-0;
+  @apply transition-opacity duration-300;
+}
+
+.glass-card:hover::before {
+  @apply opacity-100;
+}
+
+/* Modern Input Styles */
+.modern-input {
+  @apply w-full px-4 py-3;
+  @apply bg-slate-900/50;
+  @apply rounded-xl;
+  @apply border border-slate-600/40;
+  @apply text-white text-lg font-semibold;
+  @apply focus:border-blue-500/60;
+  @apply focus:ring-2 focus:ring-blue-500/20;
+  @apply placeholder:text-slate-500;
+  @apply backdrop-blur-sm;
+  @apply transition-all duration-200;
+  @apply hover:border-slate-500/60;
+  @apply focus:outline-none;
+}
+
+/* Modern Button Styles */
+.modern-button {
+  @apply relative;
+  @apply flex items-center justify-center gap-2;
+  @apply px-4 py-2 rounded-xl;
+  @apply font-medium;
+  @apply transition-all duration-300 ease-out;
+  @apply transform hover:scale-[1.02] active:scale-[0.98];
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.modern-button--primary {
+  @apply bg-gradient-to-br from-blue-600/90 via-blue-600/80 to-purple-600/90;
+  @apply border border-blue-500/50;
+  @apply text-white;
+  @apply hover:from-blue-500/90 hover:via-blue-500/80 hover:to-purple-500/90;
+  @apply hover:border-blue-400/70;
+  @apply focus:ring-blue-500/40;
+}
+
+.modern-button--secondary {
+  @apply bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90;
+  @apply border border-slate-600/50;
+  @apply text-slate-200;
+  @apply hover:border-slate-500/70;
+  @apply focus:ring-slate-500/40;
+}
+
+.modern-button--destructive {
+  @apply bg-gradient-to-br from-red-600/90 via-red-600/80 to-red-700/90;
+  @apply border border-red-500/50;
+  @apply text-red-50;
+  @apply hover:from-red-500/90 hover:via-red-500/80 hover:to-red-600/90;
+  @apply hover:border-red-400/70;
+  @apply focus:ring-red-500/40;
+}
+
+/* Modern Select Styles */
+.modern-select {
+  @apply relative;
+  @apply flex items-center gap-2;
+  @apply px-4 py-3 rounded-xl;
+  @apply bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90;
+  @apply border border-slate-600/50;
+  @apply text-slate-200;
+  @apply transition-all duration-300 ease-out;
+  @apply hover:border-slate-500/70;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/40;
+}
+
+/* Modern Tooltip Styles */
+.modern-tooltip {
+  @apply absolute z-50;
+  @apply px-4 py-2.5;
+  @apply bg-slate-800/95;
+  @apply backdrop-blur-sm;
+  @apply text-xs text-slate-200;
+  @apply rounded-xl;
+  @apply shadow-2xl;
+  @apply border border-slate-600/50;
+}
+
+/* Modern Badge Styles */
+.modern-badge {
+  @apply inline-flex items-center;
+  @apply px-2.5 py-1 rounded-lg;
+  @apply text-xs font-medium;
+  @apply bg-gradient-to-br;
+  @apply border;
+  @apply transition-all duration-300;
+}
+
+.modern-badge--primary {
+  @apply from-blue-500/20 to-blue-600/20;
+  @apply border-blue-500/40;
+  @apply text-blue-200;
+}
+
+.modern-badge--success {
+  @apply from-emerald-500/20 to-emerald-600/20;
+  @apply border-emerald-500/40;
+  @apply text-emerald-200;
+}
+
+.modern-badge--warning {
+  @apply from-amber-500/20 to-orange-500/20;
+  @apply border-amber-500/40;
+  @apply text-amber-200;
+}
+
+.modern-badge--error {
+  @apply from-red-500/20 to-red-600/20;
+  @apply border-red-500/40;
+  @apply text-red-200;
+}
+
+/* Modern Loading Spinner */
+.loading-spinner {
+  @apply relative;
+  @apply w-5 h-5;
+  @apply border-2 border-current border-t-transparent;
+  @apply rounded-full;
+  @apply animate-spin;
+}
+
+.loading-spinner::after {
+  content: '';
+  @apply absolute inset-0;
+  @apply border-2 border-current/30;
+  @apply rounded-full;
+}
+
+/* Modern Checkbox Styles */
+.modern-checkbox {
+  @apply relative;
+  @apply w-5 h-5;
+  @apply rounded-lg;
+  @apply border-2 border-slate-600/50;
+  @apply bg-slate-900/50;
+  @apply transition-all duration-300;
+  @apply hover:border-blue-500/60;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/40;
+}
+
+.modern-checkbox:checked {
+  @apply bg-blue-500;
+  @apply border-blue-500;
+}
+
+/* Modern Radio Styles */
+.modern-radio {
+  @apply relative;
+  @apply w-5 h-5;
+  @apply rounded-full;
+  @apply border-2 border-slate-600/50;
+  @apply bg-slate-900/50;
+  @apply transition-all duration-300;
+  @apply hover:border-blue-500/60;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/40;
+}
+
+.modern-radio:checked {
+  @apply bg-blue-500;
+  @apply border-blue-500;
+}
+
+/* Modern Switch Styles */
+.modern-switch {
+  @apply relative;
+  @apply w-12 h-6;
+  @apply rounded-full;
+  @apply bg-slate-700/50;
+  @apply transition-all duration-300;
+  @apply cursor-pointer;
+}
+
+.modern-switch::after {
+  content: '';
+  @apply absolute top-1 left-1;
+  @apply w-4 h-4;
+  @apply rounded-full;
+  @apply bg-white;
+  @apply transition-all duration-300;
+}
+
+.modern-switch:checked {
+  @apply bg-blue-500;
+}
+
+.modern-switch:checked::after {
+  @apply translate-x-6;
+}
+
+/* Modern Table Styles */
+.modern-table {
+  @apply w-full;
+  @apply border-collapse;
+}
+
+.modern-table th {
+  @apply px-4 py-3;
+  @apply text-left;
+  @apply text-sm font-medium text-slate-400;
+  @apply border-b border-slate-700/50;
+}
+
+.modern-table td {
+  @apply px-4 py-3;
+  @apply text-sm text-slate-300;
+  @apply border-b border-slate-700/30;
+}
+
+.modern-table tr:hover td {
+  @apply bg-slate-800/30;
+}

@@ -1,33 +1,47 @@
-import { invoke } from '@tauri-apps/api/core'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
+import { webSocketService } from '../../app/hubs/websocketService'
 import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
   WALLET_UNLOCK_PATH,
+  TRADE_MARKET_MAKER_PATH,
 } from '../../app/router/paths'
 import { Layout } from '../../components/Layout'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 export const RootRoute = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   useEffect(() => {
-    const closeSplashscreen = async () => {
-      try {
-        // Wait for DOM to be fully ready
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        await invoke('close_splashscreen')
-      } catch (error) {
-        console.error('Failed to close splashscreen:', error)
+    const currentPath = location.pathname
+
+    if (
+      currentPath !== TRADE_MARKET_MAKER_PATH &&
+      webSocketService.isConnected()
+    ) {
+      logger.info(
+        `Route changed from market maker to ${currentPath}, cleaning up WebSocket connection`
+      )
+      webSocketService.close()
+    }
+  }, [location.pathname])
+
+  // Cleanup WebSocket on component unmount (app closing)
+  useEffect(() => {
+    return () => {
+      if (webSocketService.isConnected()) {
+        logger.info(
+          'Root component unmounting - cleaning up WebSocket connections'
+        )
+        webSocketService.close()
       }
     }
-
-    // Call it when component mounts
-    closeSplashscreen()
   }, [])
 
   useEffect(() => {

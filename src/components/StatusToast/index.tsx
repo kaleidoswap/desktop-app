@@ -231,7 +231,7 @@ export const StatusToast: React.FC<{
                 }
               },
               5000
-            )
+            ) as unknown as number
 
             if (swap.status === 'Succeeded') {
               toast.success('Swap succeeded')

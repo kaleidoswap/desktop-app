@@ -14,9 +14,14 @@ fn main() {
     dotenv().ok();
 
     // Read the ENV that decides whether to build/run rgb-lightning-node
-    let build_rgb_lightning_node = env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE")
-        .unwrap_or_else(|_| "true".to_string())
-        == "true";
+    // On Windows, rgb-lightning-node is not supported, so skip building it
+    let build_rgb_lightning_node = if cfg!(target_os = "windows") {
+        false
+    } else {
+        env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE")
+            .unwrap_or_else(|_| "true".to_string())
+            == "true"
+    };
 
     // Path to the current Cargo.toml directory
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
@@ -57,7 +62,9 @@ fn main() {
         } else {
             "../bin/rgb-lightning-node"
         };
-        config.add_resource(resource_name);
+        if !cfg!(target_os = "windows") {
+            config.add_resource(resource_name);
+        }
     } else {
         //  In case we do NOT want to build/run the executable, we remove it from the config
         let resource_name = if cfg!(target_os = "windows") {
@@ -66,6 +73,11 @@ fn main() {
             "../bin/rgb-lightning-node"
         };
         config.remove_resource(resource_name);
+        
+        // On Windows, also remove the Unix version to be safe
+        if cfg!(target_os = "windows") {
+            config.remove_resource("../bin/rgb-lightning-node");
+        }
     }
 
     // Use the TAURI_CONFIG environment variable
@@ -174,8 +186,9 @@ impl BuildManager {
         // Clone the rgb-lightning-node repo
         self.project_builder.clone_repo();
 
-        // Check whether it is "release" or "debug" build
-        let is_release = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()) == "release";
+        // Always build in release mode instead of checking the PROFILE env var
+        // let is_release = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()) == "release";
+        let is_release = true;  // Always build in release mode for better performance
 
         // Build the project
         self.project_builder.build(is_release);
@@ -286,10 +299,28 @@ impl DependencyChecker {
                 }
             }
         } else if cfg!(target_os = "windows") {
-            if !self.command_exists("cl") {
-                panic!(
-                    "MSVC compiler not found. Please install Visual Studio with C++ build tools."
-                );
+            // Try multiple compiler commands that might be available
+            let compilers = ["cl", "cl.exe"];
+            let mut compiler_found = false;
+            
+            for compiler in &compilers {
+                if self.command_exists(compiler) {
+                    compiler_found = true;
+                    break;
+                }
+            }
+            
+            // Also check if we're in a CI environment where the compiler might be available
+            // but not in the standard location
+            if !compiler_found {
+                // Check if we're in GitHub Actions or other CI environments
+                if std::env::var("GITHUB_ACTIONS").is_ok() || std::env::var("CI").is_ok() {
+                    println!("cargo:warning=MSVC compiler not found in PATH, but running in CI environment. Continuing build...");
+                } else {
+                    panic!(
+                        "MSVC compiler not found. Please install Visual Studio with C++ build tools."
+                    );
+                }
             }
         } else {
             panic!("Unsupported OS for compiler checks.");

@@ -23,7 +23,7 @@ const ConnectPopup: React.FC<{
   isAlreadyConnected: boolean
 }> = ({ onClose, onConfirm, connectionUrl, isAlreadyConnected }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-blue-dark p-8 rounded-lg max-w-md w-full">
+    <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 max-w-md w-full mx-4">
       <h3 className="text-2xl font-semibold mb-4">Connect to LSP</h3>
       {isAlreadyConnected ? (
         <>
@@ -137,7 +137,9 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
   const handleConnect = async () => {
     setShowConnectPopup(false)
     if (isAlreadyConnected) {
-      toast.success('Already connected to LSP')
+      toast.info('Already connected to LSP', {
+        autoClose: 2000,
+      })
       onNext({ connectionUrl, success: true })
       return
     }
@@ -256,10 +258,10 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-6">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+    <div className="w-full">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Buy a New Channel from LSP
           </h2>
           <p className="text-gray-400 mt-2">
@@ -267,49 +269,49 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           </p>
         </div>
 
-        <div className="flex justify-between mb-8">
+        <div className="flex justify-between mb-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
               1
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Connect LSP</p>
-              <p className="text-sm text-gray-400">Current step</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Connect LSP</p>
+              <p className="text-xs text-gray-400">Current step</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700">
               <div className="h-1 bg-blue-500 w-0"></div>
             </div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               2
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Configure</p>
-              <p className="text-sm text-gray-400">Set parameters</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Configure</p>
+              <p className="text-xs text-gray-400">Set parameters</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700"></div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               3
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Payment</p>
-              <p className="text-sm text-gray-400">Complete setup</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Payment</p>
+              <p className="text-xs text-gray-400">Complete setup</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-blue-900/50 border border-blue-700/50 p-6 rounded-xl mb-8">
-          <h3 className="text-xl font-semibold text-white mb-4">
+        <div className="bg-blue-900/50 border border-blue-700/50 p-4 rounded-xl mb-4">
+          <h3 className="text-lg font-semibold text-white mb-3">
             How Channel Opening Works
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-start">
               <div className="w-6 h-6 bg-blue-800 rounded-full flex items-center justify-center text-sm font-bold text-white mr-3 mt-1">
                 1
@@ -340,7 +342,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           </div>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-lg">
+        <div className="bg-gray-800 p-4 rounded-lg">
           <label className="block text-lg font-medium mb-2">
             Current LSP URL
           </label>
@@ -377,7 +379,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           </div>
         </div>
 
-        <div className="bg-gray-800 p-6 rounded-lg mt-6">
+        <div className="bg-gray-800 p-4 rounded-lg mt-4">
           <label className="block text-lg font-medium mb-2">
             LSP Connection String
           </label>
@@ -407,7 +409,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           </p>
         </div>
 
-        <div className="flex justify-center mt-8">
+        <div className="flex justify-center mt-4">
           <button
             className={`
               px-8 py-4 text-white rounded-lg

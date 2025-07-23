@@ -12,7 +12,13 @@ export const shortenAddress = (address: string) => {
 }
 
 export const isValidPubkeyAndAddress = (value: string): boolean => {
-  // Check basic format: pubkey@host:port
+  // Allow pubkey-only format (66 hex chars) for connected peers
+  const isPubkeyOnly = value.length === 66 && /^[0-9a-fA-F]{66}$/.test(value)
+  if (isPubkeyOnly) {
+    return true
+  }
+
+  // Check full format: pubkey@host:port
   const parts = value.split('@')
   if (parts.length !== 2) return false
 

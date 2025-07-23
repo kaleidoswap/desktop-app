@@ -15,18 +15,38 @@
       "icons/512x512.png"
     ],
     "targets": "all",
-    "resources": ["../bin/rgb-lightning-node"],
+    "resources": [
+      "../docs",
+      "../bin/rgb-lightning-node"
+    ],
     "linux": {
       "appimage": {
         "bundleMediaFramework": true
       }
-    }
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": {
+        "language": "en-US"
+      }
+    },
+    "createUpdaterArtifacts": true
   },
   "productName": "KaleidoSwap",
   "mainBinaryName": "KaleidoSwap",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.kaleidoswap.dev",
-  "plugins": {},
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxQUNEMjE0QjFENzRDOQpSV1RKZEIxTEljMGFCSE9FOFZ6dWtCSjg4d1dscWh4RzZjRG5CT1k2ZlBPcHZmMUFMem1jS3FMNAo=",
+      "endpoints": [
+        "https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json"
+      ],
+      "dangerousInsecureTransportProtocol": false
+    }
+  },
   "app": {
     "windows": [
       {
@@ -63,4 +83,3 @@
     }
   }
 }
-

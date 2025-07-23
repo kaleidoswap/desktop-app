@@ -74,7 +74,14 @@ You can install the app in two ways:
    ```
 4. Verify the manifest signature:
    ```sh
-   gpg --verify manifest.txt.sig manifest.txt
+   # For Linux
+   gpg --verify kaleido-swap_0.0.1_amd64.AppImage.sig kaleido-swap_0.0.1_amd64.AppImage
+
+   # For macOS
+   gpg --verify Kaleido-Swap_0.0.1_x64.dmg.sig Kaleido-Swap_0.0.1_x64.dmg
+
+   # For Windows
+   gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
    ```
 5. Verify the SHA256 checksum of your binary against the one listed in the manifest.txt file.
 6. Run the app by executing the binary.
@@ -84,7 +91,7 @@ You can install the app in two ways:
 #### Common Prerequisites
 
 - **Tauri 1.6.0**  
-  Make sure you have installed all the [official Tauri prerequisites](https://tauri.app/v1/guides/getting-started/prerequisites) (Rust, Node.js, npm, pnpm).
+  Make sure you have installed all the [official Tauri prerequisites](https://tauri.app/start/prerequisites/) (Rust, Node.js, npm, pnpm).
 - **Repository**  
   ```sh
   git clone https://github.com/kaleidoswap/desktop-app
@@ -124,11 +131,19 @@ You can install the app in two ways:
    ```
 2. **Build the Tauri app**:  
    ```sh
-   npm run tauri build
+
+   # For current platform
+   pnpm run tauri:build
+   
+   # For Windows specifically
+   pnpm run tauri:build:windows
+   
+   # Using Make
+   make build-app
    ```
 3. **Run Kaleidoswap in development mode**:  
    ```sh
-   npm run tauri dev
+   pnpm run tauri:dev
    ```
 
 ## Usage 💡

@@ -5,19 +5,19 @@ import {
   RefreshCw,
   Loader as LoaderIcon,
   Search,
-  Copy,
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useSelector } from 'react-redux'
-import { toast } from 'react-toastify'
-import { twJoin } from 'tailwind-merge'
 
 import { RootState } from '../../../app/store'
 import { Button, Badge, Alert, IconButton, Card } from '../../../components/ui'
-import { formatDate } from '../../../helpers/date'
+import {
+  Table,
+  renderCopyableField,
+  renderDateField,
+  renderStatusBadge,
+} from '../../../components/ui/Table'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-
-const COL_CLASS_NAME = 'py-3 px-4'
 
 const formatBitcoinAmount = (
   amount: string | number,
@@ -25,9 +25,16 @@ const formatBitcoinAmount = (
 ): string => {
   const amountDecimal = new Decimal(amount)
   if (bitcoinUnit === 'SAT') {
-    return amountDecimal.toFixed(0)
+    return amountDecimal.toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 0,
+      useGrouping: true,
+    })
   } else {
-    return amountDecimal.div(100000000).toFixed(8)
+    return amountDecimal.div(100000000).toNumber().toLocaleString('en-US', {
+      maximumFractionDigits: 8,
+      minimumFractionDigits: 8,
+      useGrouping: true,
+    })
   }
 }
 
@@ -47,95 +54,23 @@ const formatAssetAmount = (
 
   // Convert to decimal and format with proper precision
   const amountDecimal = new Decimal(amount)
-  return amountDecimal.div(Math.pow(10, precision)).toFixed(precision)
+  return amountDecimal
+    .div(Math.pow(10, precision))
+    .toNumber()
+    .toLocaleString('en-US', {
+      maximumFractionDigits: precision,
+      minimumFractionDigits: 0,
+      useGrouping: true,
+    })
 }
 
-interface DepositProps {
-  type: 'on-chain' | 'off-chain'
+// Update the Deposit type to be exported
+export type DepositType = {
+  amount: string
   asset: string
-  amount: string | number
   txId: string
-  bitcoinUnit: string
-  assetsList?: any[]
+  type: 'on-chain' | 'off-chain'
   timestamp?: number
-}
-
-const Deposit: React.FC<DepositProps> = ({
-  type,
-  asset,
-  amount,
-  txId,
-  bitcoinUnit,
-  assetsList,
-  timestamp,
-}) => {
-  const formattedAmount = formatAssetAmount(
-    amount,
-    asset,
-    bitcoinUnit,
-    assetsList
-  )
-
-  const displayAsset = asset === 'BTC' ? bitcoinUnit : asset
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        toast.success('Transaction ID copied to clipboard')
-      })
-      .catch((err) => {
-        console.error('Failed to copy:', err)
-      })
-  }
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-12 border-b border-slate-700 items-center text-base font-medium p-4 sm:p-0 hover:bg-slate-800/30 transition-colors">
-      <div
-        className={twJoin(COL_CLASS_NAME, 'flex items-center sm:col-span-1')}
-      >
-        {type === 'on-chain' ? (
-          <Badge
-            icon={<Chain className="w-4 h-4" />}
-            size="sm"
-            variant="primary"
-          >
-            On-chain
-          </Badge>
-        ) : (
-          <Badge icon={<Zap className="w-4 h-4" />} size="sm" variant="info">
-            Off-chain
-          </Badge>
-        )}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-        {displayAsset}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {formattedAmount}
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-        {timestamp ? formatDate(timestamp * 1000) : 'N/A'}
-      </div>
-      <div
-        className={twJoin(
-          COL_CLASS_NAME,
-          'col-span-1 sm:col-span-5 truncate text-slate-400 flex items-center'
-        )}
-      >
-        <span className="truncate">{txId}</span>
-        <button
-          className="ml-2 text-slate-500 hover:text-slate-300 transition-colors"
-          onClick={() => copyToClipboard(txId)}
-        >
-          <Copy className="w-4 h-4" />
-        </button>
-      </div>
-      <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}>
-        <Badge variant="success">Completed</Badge>
-      </div>
-    </div>
-  )
 }
 
 export const Component: React.FC = () => {
@@ -251,7 +186,7 @@ export const Component: React.FC = () => {
       })) || []
 
   // Define a type that includes the optional timestamp property
-  type Deposit = {
+  type DepositWithTimestamp = {
     amount: string
     asset: string
     txId: string
@@ -260,7 +195,7 @@ export const Component: React.FC = () => {
   }
 
   const allDeposits = [...onChainDeposits, ...offChainDeposits].sort(
-    (a: Deposit, b: Deposit) => {
+    (a: DepositWithTimestamp, b: DepositWithTimestamp) => {
       // Sort by timestamp if available, otherwise by amount
       if (a.timestamp && b.timestamp) {
         return b.timestamp - a.timestamp
@@ -274,29 +209,92 @@ export const Component: React.FC = () => {
   )
 
   // Apply filters
-  const filteredDeposits = allDeposits.filter((deposit: Deposit) => {
-    // Type filter
-    if (typeFilter !== 'all' && deposit.type !== typeFilter) {
-      return false
-    }
+  const filteredDeposits = allDeposits.filter(
+    (deposit: DepositWithTimestamp) => {
+      // Type filter
+      if (typeFilter !== 'all' && deposit.type !== typeFilter) {
+        return false
+      }
 
-    // Asset filter
-    if (assetFilter !== 'all' && deposit.asset !== assetFilter) {
-      return false
-    }
+      // Asset filter
+      if (assetFilter !== 'all' && deposit.asset !== assetFilter) {
+        return false
+      }
 
-    // Search term
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase()
-      return (
-        deposit.txId.toLowerCase().includes(searchLower) ||
-        deposit.asset.toLowerCase().includes(searchLower) ||
-        deposit.type.toLowerCase().includes(searchLower)
-      )
-    }
+      // Search term
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase()
+        return (
+          deposit.txId.toLowerCase().includes(searchLower) ||
+          deposit.asset.toLowerCase().includes(searchLower) ||
+          deposit.type.toLowerCase().includes(searchLower)
+        )
+      }
 
-    return true
-  })
+      return true
+    }
+  )
+
+  const tableColumns = [
+    {
+      accessor: (deposit: DepositWithTimestamp) =>
+        deposit.type === 'on-chain' ? (
+          <Badge
+            icon={<Chain className="w-3 h-3" />}
+            size="sm"
+            variant="primary"
+          >
+            On-chain
+          </Badge>
+        ) : (
+          <Badge icon={<Zap className="w-3 h-3" />} size="sm" variant="info">
+            Off-chain
+          </Badge>
+        ),
+      className: 'col-span-1',
+      header: 'Type',
+    },
+    {
+      accessor: (deposit: DepositWithTimestamp) => (
+        <span className="font-medium">
+          {deposit.asset === 'BTC' ? bitcoinUnit : deposit.asset}
+        </span>
+      ),
+      className: 'col-span-1',
+      header: 'Asset',
+    },
+    {
+      accessor: (deposit: DepositWithTimestamp) => (
+        <span className="font-semibold text-white">
+          {formatAssetAmount(
+            deposit.amount,
+            deposit.asset,
+            bitcoinUnit,
+            listAssetsData?.nia
+          )}
+        </span>
+      ),
+      className: 'col-span-1',
+      header: 'Amount',
+    },
+    {
+      accessor: (deposit: DepositWithTimestamp) =>
+        renderDateField(deposit.timestamp ? deposit.timestamp * 1000 : null),
+      className: 'col-span-1',
+      header: 'Date',
+    },
+    {
+      accessor: (deposit: DepositWithTimestamp) =>
+        renderCopyableField(deposit.txId, true, 4, 'Transaction ID'),
+      className: 'col-span-1',
+      header: 'Transaction ID',
+    },
+    {
+      accessor: () => renderStatusBadge('Completed', 'success'),
+      className: 'col-span-1',
+      header: 'Status',
+    },
+  ]
 
   return (
     <Card className="bg-gray-800/50 border border-gray-700/50">
@@ -426,45 +424,38 @@ export const Component: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700">
-          <div className="min-w-max">
-            <div className="grid grid-cols-1 sm:grid-cols-12 font-medium text-slate-400 border-b border-slate-700 py-2">
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Type
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-1')}>
-                Asset
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Amount
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-2')}>
-                Date
-              </div>
-              <div className={twJoin(COL_CLASS_NAME, 'sm:col-span-5')}>
-                Transaction ID
-              </div>
-              <div
-                className={twJoin(COL_CLASS_NAME, 'sm:col-span-1 text-right')}
-              >
-                Status
-              </div>
+        <Table
+          className=""
+          columns={tableColumns}
+          containerClassName=""
+          data={filteredDeposits}
+          emptyState={
+            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+              {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
+                <>
+                  <p>No deposits found matching your filters.</p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setTypeFilter('all')
+                      setAssetFilter('all')
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <p>No deposits found.</p>
+              )}
             </div>
-
-            {filteredDeposits.map((deposit, index) => (
-              <Deposit
-                amount={deposit.amount}
-                asset={deposit.asset}
-                assetsList={listAssetsData?.nia}
-                bitcoinUnit={bitcoinUnit}
-                key={`${deposit.txId}-${index}`}
-                timestamp={(deposit as Deposit).timestamp}
-                txId={deposit.txId}
-                type={deposit.type}
-              />
-            ))}
-          </div>
-        </div>
+          }
+          gridClassName="grid-cols-6"
+          minWidth=""
+          rowClassName={(_row, _i) => ''}
+        />
       )}
     </Card>
   )

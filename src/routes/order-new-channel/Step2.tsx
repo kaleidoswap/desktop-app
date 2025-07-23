@@ -2,16 +2,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'react-toastify'
+import { twJoin } from 'tailwind-merge'
 import * as z from 'zod'
 
 import { useAppDispatch } from '../../app/store/hooks'
-import { AssetSelector } from '../../components/AssetSelector'
+import defaultIcon from '../../assets/rgb-symbol-color.svg'
 import { Select } from '../../components/Select'
+import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   formatNumberWithCommas,
   parseNumberWithCommas,
 } from '../../helpers/number'
+import { useAssetIcon } from '../../helpers/utils'
 import {
   orderChannelSliceActions,
   OrderChannelFormSchema,
@@ -216,7 +219,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   const dispatch = useAppDispatch()
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
-  const [addAsset, setAddAsset] = useState(false)
+  const [addAsset, setAddAsset] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [lspOptions, setLspOptions] = useState<LspOptions | null>(null)
   const [effectiveMinCapacity, setEffectiveMinCapacity] =
@@ -230,7 +233,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         assetAmount: '',
         assetId: '',
         capacitySat: '',
-        channelExpireBlocks: 1008,
+        channelExpireBlocks: 4320,
         clientBalanceSat: '',
       },
       resolver: zodResolver(FormFieldsSchema),
@@ -239,6 +242,13 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
 
   const assetId = watch('assetId')
+
+  // Asset icon hook
+  const selectedAssetInfo = assetId ? assetMap[assetId] : null
+  const [assetIconSrc, setAssetIconSrc] = useAssetIcon(
+    selectedAssetInfo?.ticker || '',
+    defaultIcon
+  )
 
   useEffect(() => {
     const fetchData = async () => {
@@ -340,6 +350,18 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         return
       }
 
+      if (
+        addAsset &&
+        data.assetId &&
+        (data.assetAmount === '' || data.assetAmount === '0')
+      ) {
+        toast.error('Please enter an amount before proceeding.', {
+          autoClose: 5000,
+          position: 'bottom-right',
+        })
+        return
+      }
+
       // Apply min/max constraints before submission
       let capacitySat = data.capacitySat
       let clientBalanceSat = data.clientBalanceSat
@@ -389,8 +411,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         if (assetInfo) {
           const minAssetAmount =
             assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
+          const maxAssetAmount =
+            assetInfo.max_channel_amount / Math.pow(10, assetInfo.precision)
           const parsedAmount = parseFloat(assetAmount || '0')
 
+          // Validate minimum amount
           if (
             (parsedAmount !== 0 && isNaN(parsedAmount)) ||
             (parsedAmount > 0 && parsedAmount < minAssetAmount)
@@ -404,6 +429,18 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 position: 'bottom-right',
               }
             )
+          }
+
+          // Validate maximum amount and PREVENT submission if exceeded
+          if (parsedAmount > maxAssetAmount) {
+            toast.error(
+              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Please enter a valid amount before proceeding.`,
+              {
+                autoClose: 5000,
+                position: 'bottom-right',
+              }
+            )
+            return // PREVENT form submission
           }
         }
       }
@@ -507,25 +544,13 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     ]
   )
 
-  const getAssetMaxAmount = useCallback(() => {
-    if (!assetId || !assetMap[assetId]) return 0
-    const { max_channel_amount, precision } = assetMap[assetId]
-    return max_channel_amount / Math.pow(10, precision)
-  }, [assetId, assetMap])
-
-  const getAssetMinAmount = useCallback(() => {
-    if (!assetId || !assetMap[assetId]) return 0
-    const { min_channel_amount, precision } = assetMap[assetId]
-    return min_channel_amount / Math.pow(10, precision)
-  }, [assetId, assetMap])
-
   const getChannelExpiryOptions = useCallback(() => {
     const options = [
-      { label: '1 week', value: (6 * 24 * 7).toString() },
-      { label: '1 month', value: (6 * 24 * 30).toString() },
+      { label: '1 month', value: '4320' },
+      { label: '3 months', value: '12960' },
     ]
 
-    const sixMonthsBlocks = 6 * 24 * 30 * 6
+    const sixMonthsBlocks = 25920 // 6 * 24 * 30 * 6
     if (
       !lspOptions ||
       sixMonthsBlocks <= lspOptions.max_channel_expiry_blocks
@@ -537,10 +562,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   }, [lspOptions])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-6">
+    <div className="w-full">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Configure Your Channel
           </h2>
           <p className="text-gray-400 mt-2">Set up your channel parameters</p>
@@ -550,60 +575,60 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           </p>
         </div>
 
-        <div className="flex justify-between mb-8">
+        <div className="flex justify-between mb-4">
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               1
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Connect LSP</p>
-              <p className="text-sm text-gray-400">Completed</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Connect LSP</p>
+              <p className="text-xs text-gray-400">Completed</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700">
               <div className="h-1 bg-blue-500 w-1/2"></div>
             </div>
           </div>
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
               2
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Configure</p>
-              <p className="text-sm text-gray-400">Current step</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Configure</p>
+              <p className="text-xs text-gray-400">Current step</p>
             </div>
           </div>
-          <div className="flex-1 mx-4 mt-5">
+          <div className="flex-1 mx-2 mt-5">
             <div className="h-1 bg-gray-700"></div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
               3
             </div>
-            <div className="ml-3">
-              <p className="font-medium text-white">Payment</p>
-              <p className="text-sm text-gray-400">Next step</p>
+            <div className="ml-2">
+              <p className="font-medium text-white text-sm">Payment</p>
+              <p className="text-xs text-gray-400">Next step</p>
             </div>
           </div>
         </div>
 
         <form
-          className="bg-gray-900 text-white p-8 rounded-lg shadow-lg"
+          className="bg-gray-900 text-white p-4 rounded-lg shadow-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <h3 className="text-3xl font-bold mb-6 text-center">
+          <h3 className="text-2xl font-bold mb-4 text-center">
             Request an RGB Channel from LSP
           </h3>
-          <h4 className="text-xl font-semibold mb-8 text-center text-gray-300">
+          <h4 className="text-lg font-semibold mb-4 text-center text-gray-300">
             Select asset and amount for the requested channel
           </h4>
 
           {isLoading ? (
             <div className="text-center">Loading...</div>
           ) : (
-            <div className="space-y-8">
-              <div className="bg-gray-800 p-6 rounded-lg">
+            <div className="space-y-4">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Channel Capacity (sats)
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -647,7 +672,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Your Channel Liquidity (sats)
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -706,7 +731,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="block text-sm font-medium mb-2">
                   Channel Lock Duration
                   <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
@@ -740,7 +765,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 />
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-lg">
+              <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="flex items-center space-x-3 mb-4">
                   <input
                     checked={addAsset}
@@ -765,59 +790,386 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
                 {addAsset && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Select Asset
-                        <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                          ⓘ
-                          <span
-                            className="invisible group-hover:visible absolute left-0 
-                            bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                            shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            Choose an RGB asset to add to your channel. The
-                            selected amount will be on the LSP side, allowing
-                            you to receive the asset. Additional fees will apply
-                            based on the asset type and amount.
-                          </span>
-                        </span>
-                      </label>
-                      <AssetSelector
-                        assetMap={assetMap}
-                        control={control}
-                        name="assetId"
-                      />
-                    </div>
-
-                    {assetId && (
-                      <div>
-                        <NumberInput
-                          className="group transition-all duration-300 hover:translate-x-1"
-                          error={formState.errors.assetAmount?.message}
-                          label={`Asset Amount (${assetMap[assetId]?.ticker || ''})`}
-                          max={getAssetMaxAmount()}
-                          min={getAssetMinAmount()}
-                          onChange={(value) => setValue('assetAmount', value)}
-                          onSliderChange={(e) =>
-                            setValue('assetAmount', e.target.value)
-                          }
-                          placeholder="Enter amount"
-                          precision={getAssetPrecision(assetId)}
-                          showSlider
-                          sliderStep={
-                            1 / Math.pow(10, getAssetPrecision(assetId))
-                          }
-                          sliderValue={
-                            watch('assetAmount')
-                              ? parseFloat(
-                                  parseNumberWithCommas(watch('assetAmount')) ||
-                                    '0'
-                                )
-                              : getAssetMinAmount()
-                          }
-                          value={watch('assetAmount')}
-                        />
+                    {Object.keys(assetMap).length === 0 ? (
+                      <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <svg
+                              className="h-5 w-5 text-yellow-400"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                clipRule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                fillRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-200">
+                              No Assets Available
+                            </h3>
+                            <div className="mt-2 text-sm text-yellow-300">
+                              <p>
+                                There are currently no assets available to add
+                                to your channel. Please try again later or
+                                proceed without adding an asset.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Select Asset
+                            <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
+                              ⓘ
+                              <span
+                                className="invisible group-hover:visible absolute left-0 
+                                bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
+                                shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              >
+                                Choose an RGB asset to add to your channel. The
+                                selected amount will be on the LSP side,
+                                allowing you to receive the asset. Additional
+                                fees will apply based on the asset type and
+                                amount.
+                              </span>
+                            </span>
+                          </label>
+                          <Controller
+                            control={control}
+                            name="assetId"
+                            render={({ field }) => (
+                              <AssetSelectWithModal
+                                className="w-full"
+                                fieldLabel="Choose an RGB asset for your LSP channel"
+                                onChange={field.onChange}
+                                options={Object.entries(assetMap).map(
+                                  ([assetId, assetInfo]) => ({
+                                    assetId: assetId,
+                                    label: assetInfo.name,
+                                    name: assetInfo.name,
+                                    ticker: assetInfo.ticker,
+                                    value: assetId,
+                                  })
+                                )}
+                                placeholder="Select an RGB asset"
+                                searchPlaceholder="Search by name, ticker or asset ID..."
+                                title="Select RGB Asset"
+                                value={field.value}
+                              />
+                            )}
+                          />
+                        </div>
+
+                        {assetId && (
+                          <div className="space-y-4">
+                            {/* Enhanced Asset Amount Input */}
+                            <div className="space-y-3">
+                              <label className="text-sm font-medium text-slate-300">
+                                Asset Amount
+                              </label>
+
+                              {assetMap[assetId] && (
+                                <div className="space-y-4">
+                                  {/* Enhanced Asset Preview Card */}
+                                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                                    {/* Asset Header with Icon */}
+                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700/50">
+                                      <img
+                                        alt={assetMap[assetId].ticker}
+                                        className="w-10 h-10 rounded-full border-2 border-slate-600/50"
+                                        onError={() =>
+                                          setAssetIconSrc(defaultIcon)
+                                        }
+                                        src={assetIconSrc}
+                                      />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg font-semibold text-white">
+                                            {assetMap[assetId].ticker}
+                                          </span>
+                                          <span className="text-sm text-slate-400">
+                                            ({assetMap[assetId].name})
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-slate-500">
+                                          {assetMap[assetId].precision} decimal
+                                          places
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {/* Maximum Amount */}
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-slate-400">
+                                          Maximum Amount
+                                        </div>
+                                        <div className="text-sm font-medium text-green-400">
+                                          {(() => {
+                                            const maxAmount =
+                                              assetMap[assetId]
+                                                .max_channel_amount /
+                                              Math.pow(
+                                                10,
+                                                assetMap[assetId].precision
+                                              )
+                                            return formatNumberWithCommas(
+                                              maxAmount.toString()
+                                            )
+                                          })()}{' '}
+                                          {assetMap[assetId].ticker}
+                                        </div>
+                                      </div>
+
+                                      {/* Asset ID */}
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-slate-400">
+                                          Asset ID
+                                        </div>
+                                        <div
+                                          className="text-xs font-mono text-slate-300 break-all bg-slate-900/50 p-2 rounded border border-slate-700/30"
+                                          title={assetMap[assetId].asset_id}
+                                        >
+                                          {assetMap[assetId].asset_id}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Improved Amount Input */}
+                                  <div className="space-y-2">
+                                    <input
+                                      className={twJoin(
+                                        'w-full px-4 py-3 bg-slate-900/70 border rounded-xl',
+                                        'text-white text-lg font-medium placeholder:text-slate-500',
+                                        'border-slate-600/50 hover:border-slate-500/70',
+                                        'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
+                                        'transition-all duration-200'
+                                      )}
+                                      inputMode="decimal"
+                                      onBlur={(e) => {
+                                        // Validate max amount when user finishes typing
+                                        const value = e.target.value
+                                        if (value && assetMap[assetId]) {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const numValue = parseFloat(value)
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue > maxAssetAmount
+                                          ) {
+                                            setValue(
+                                              'assetAmount',
+                                              maxAssetAmount.toString()
+                                            )
+                                            toast.warn(
+                                              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Value has been adjusted.`,
+                                              {
+                                                autoClose: 4000,
+                                                position: 'bottom-right',
+                                              }
+                                            )
+                                          }
+                                        }
+                                      }}
+                                      onChange={(e) => {
+                                        const value = e.target.value
+                                        // Allow empty input
+                                        if (value === '') {
+                                          setValue('assetAmount', '')
+                                          return
+                                        }
+
+                                        // Prevent alpha characters - only allow numbers, decimal point
+                                        if (!/^[\d.]*$/.test(value)) {
+                                          return // Reject input with letters or special chars
+                                        }
+
+                                        // Basic decimal validation
+                                        const decimalRegex =
+                                          assetMap[assetId].precision > 0
+                                            ? new RegExp(
+                                                `^\\d*\\.?\\d{0,${assetMap[assetId].precision}}$`
+                                              )
+                                            : /^\d*$/
+
+                                        if (decimalRegex.test(value)) {
+                                          // Check against maximum amount before setting value
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const numValue = parseFloat(value)
+
+                                          // Prevent typing amounts that exceed maximum
+                                          if (
+                                            !isNaN(numValue) &&
+                                            numValue > maxAssetAmount
+                                          ) {
+                                            // Don't update the input if it would exceed max
+                                            toast.warn(
+                                              `Maximum amount is ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}`,
+                                              {
+                                                autoClose: 2000,
+                                                position: 'bottom-right',
+                                              }
+                                            )
+                                            return
+                                          }
+
+                                          setValue('assetAmount', value)
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        // Prevent entering non-numeric characters via keyboard
+                                        const allowedKeys = [
+                                          'Backspace',
+                                          'Delete',
+                                          'Tab',
+                                          'Escape',
+                                          'Enter',
+                                          'ArrowLeft',
+                                          'ArrowRight',
+                                          'ArrowUp',
+                                          'ArrowDown',
+                                          'Home',
+                                          'End',
+                                        ]
+
+                                        // Allow Ctrl/Cmd combinations
+                                        if (e.ctrlKey || e.metaKey) {
+                                          return
+                                        }
+
+                                        // Allow decimal point only if precision > 0 and not already present
+                                        if (
+                                          e.key === '.' &&
+                                          assetMap[assetId].precision > 0 &&
+                                          !watch('assetAmount').includes('.')
+                                        ) {
+                                          return
+                                        }
+
+                                        // Allow numbers
+                                        if (/^\d$/.test(e.key)) {
+                                          return
+                                        }
+
+                                        // Allow special keys
+                                        if (allowedKeys.includes(e.key)) {
+                                          return
+                                        }
+
+                                        // Prevent all other keys
+                                        e.preventDefault()
+                                      }}
+                                      placeholder={`0.${'0'.repeat(assetMap[assetId].precision)}`}
+                                      type="text"
+                                      value={watch('assetAmount')}
+                                    />
+
+                                    {/* Quick amount buttons */}
+                                    <div className="flex gap-2">
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white',
+                                          'border border-slate-600/30 hover:border-slate-500/50'
+                                        )}
+                                        onClick={() =>
+                                          setValue('assetAmount', '')
+                                        }
+                                        type="button"
+                                      >
+                                        Clear
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                          'border border-blue-500/30 hover:border-blue-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = (
+                                            maxAssetAmount * 0.25
+                                          ).toFixed(assetInfo.precision)
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        25%
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
+                                          'border border-blue-500/30 hover:border-blue-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = (
+                                            maxAssetAmount * 0.5
+                                          ).toFixed(assetInfo.precision)
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        50%
+                                      </button>
+                                      <button
+                                        className={twJoin(
+                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
+                                          'bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300',
+                                          'border border-green-500/30 hover:border-green-500/50'
+                                        )}
+                                        onClick={() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          const amount = maxAssetAmount.toFixed(
+                                            assetInfo.precision
+                                          )
+                                          setValue('assetAmount', amount)
+                                        }}
+                                        type="button"
+                                      >
+                                        Max (
+                                        {(() => {
+                                          const assetInfo = assetMap[assetId]
+                                          const maxAssetAmount =
+                                            assetInfo.max_channel_amount /
+                                            Math.pow(10, assetInfo.precision)
+                                          return formatNumberWithCommas(
+                                            maxAssetAmount.toString()
+                                          )
+                                        })()}
+                                        )
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -825,7 +1177,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             </div>
           )}
 
-          <div className="flex justify-between space-x-4 mt-10">
+          <div className="flex justify-between space-x-4 mt-6">
             <button
               className="px-6 py-3 rounded-lg text-lg font-bold bg-gray-600 hover:bg-gray-700 transition-colors"
               onClick={onBack}

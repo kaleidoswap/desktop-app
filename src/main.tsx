@@ -4,6 +4,7 @@ import WebFont from 'webfontloader'
 
 import { Router } from './app/router'
 import { store } from './app/store'
+import { UpdateProvider } from './components/UpdateChecker'
 
 import './styles.css'
 
@@ -15,6 +16,8 @@ WebFont.load({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <Provider store={store}>
-    <Router />
+    <UpdateProvider>
+      <Router />
+    </UpdateProvider>
   </Provider>
 )

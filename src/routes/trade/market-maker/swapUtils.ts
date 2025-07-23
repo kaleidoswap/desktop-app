@@ -20,7 +20,6 @@ export interface SwapDetails {
   timestamp: string
   payment_hash: string
   selectedPair: TradingPair | null
-  selectedPairFeed: any // Replace with proper type
 }
 
 /**
@@ -89,7 +88,7 @@ export const validateSwapString = (
 export const createSwapExecutor = (
   assets: NiaAsset[],
   pubKey: string,
-  selectedPairFeed: any,
+  price: number,
   selectedPair: TradingPair | null,
   parseAssetAmount: (
     amount: string | undefined | null,
@@ -102,8 +101,7 @@ export const createSwapExecutor = (
   execSwap: any,
   setSwapRecapDetails: (details: SwapDetails) => void,
   setShowRecap: (show: boolean) => void,
-  setErrorMessage: (message: string | null) => void,
-  setIsSwapInProgress: (inProgress: boolean) => void
+  setErrorMessage: (message: string | null) => void
 ) => {
   return async (data: Fields): Promise<void> => {
     let toastId: string | number | null = null
@@ -113,15 +111,15 @@ export const createSwapExecutor = (
     const clearToastAndTimeout = () => {
       if (toastId !== null) {
         toast.dismiss(toastId)
+        toastId = null
       }
       if (timeoutId !== null) {
         clearTimeout(timeoutId)
+        timeoutId = null
       }
-      setIsSwapInProgress(false)
     }
 
     try {
-      setIsSwapInProgress(true)
       toastId = toast.loading('(1/3) Initializing swap...', {
         autoClose: false,
       })
@@ -259,9 +257,8 @@ export const createSwapExecutor = (
         ),
         fromAsset: data.fromAsset,
         payment_hash: payment_hash,
-        price: selectedPairFeed.price / selectedPairFeed.size,
+        price: price || 0,
         selectedPair: selectedPair,
-        selectedPairFeed: selectedPairFeed,
         timestamp: new Date().toISOString(),
         toAmount: formatAmount(
           parseAssetAmount(data.to, data.toAsset),
@@ -293,7 +290,6 @@ export const createSwapExecutor = (
         pauseOnHover: true,
       })
 
-      setIsSwapInProgress(false)
       if (timeoutId !== null) {
         clearTimeout(timeoutId)
         timeoutId = null

@@ -9,6 +9,14 @@ REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
 BIN_DIR = $(ROOT_DIR)/bin
 
+# Windows-specific variables
+ifeq ($(OS),Windows_NT)
+    TARGET = $(PROJECT_NAME)/target/release/$(PROJECT_NAME).exe
+    BIN_TARGET = $(BIN_DIR)/$(PROJECT_NAME).exe
+else
+    BIN_TARGET = $(BIN_DIR)/$(PROJECT_NAME)
+endif
+
 all: check_dependencies check_cargo_env debug
 
 clone_repo:
@@ -26,25 +34,32 @@ update_repo:
 release: check_dependencies check_cargo_env update_repo
 	cd $(PROJECT_DIR) && $(CARGO) build --release --manifest-path $(PROJECT_DIR)/Cargo.toml
 	@mkdir -p $(BIN_DIR)
-	@cp $(TARGET) $(BIN_DIR)/
+	@cp $(TARGET) $(BIN_TARGET)
 
 debug: check_dependencies check_cargo_env update_repo
 	cd $(PROJECT_DIR) && $(CARGO) build --manifest-path $(PROJECT_DIR)/Cargo.toml
 	@mkdir -p $(BIN_DIR)
-	@cp $(BUILD_DIR)/debug/$(PROJECT_NAME) $(BIN_DIR)/
+ifeq ($(OS),Windows_NT)
+	@cp $(BUILD_DIR)/debug/$(PROJECT_NAME).exe $(BIN_TARGET)
+else
+	@cp $(BUILD_DIR)/debug/$(PROJECT_NAME) $(BIN_TARGET)
+endif
 
 build: debug
 
 build-app: 
 	npm run tauri build
 
+build-app-windows:
+	npm run tauri:build:windows
+
 
 
 run: release
-	$(BIN_DIR)/$(PROJECT_NAME)
+	$(BIN_TARGET)
 
 run-debug: debug
-	$(BIN_DIR)/$(PROJECT_NAME)
+	$(BIN_TARGET)
 
 clean:
 	@rm -rf $(BUILD_DIR)
@@ -101,6 +116,9 @@ check_dependencies: check_curl check_openssl
 			echo >&2 "Compiler 'cc' not found. Installing gcc..."; \
 			sudo apt-get update && sudo apt-get install -y build-essential; \
 		}; \
+	elif [ "$(OS)" = "Windows_NT" ]; then \
+		echo "Windows detected. Make sure you have Microsoft C++ Build Tools installed."; \
+		echo "Install from: https://visualstudio.microsoft.com/visual-cpp-build-tools/"; \
 	else \
 		echo >&2 "Unsupported OS. Please install gcc or clang manually."; \
 		exit 1; \
@@ -113,6 +131,8 @@ help:
 	@echo "  make release     - Update repo and compile the project in release mode"
 	@echo "  make debug       - Update repo and compile the project in debug mode"
 	@echo "  make build       - Alias for 'make debug'"
+	@echo "  make build-app   - Build the Tauri desktop app"
+	@echo "  make build-app-windows - Build the Tauri desktop app for Windows"
 	@echo "  make run         - Update repo, compile in release mode and run the program"
 	@echo "  make run-debug   - Update repo, compile in debug mode and run the program"
 	@echo "  make clean       - Clean the build files"

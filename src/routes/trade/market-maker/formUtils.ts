@@ -1,214 +1,198 @@
+import { ChangeEvent } from 'react'
+import { UseFormReturn } from 'react-hook-form'
+
 import { formatNumberInput } from '../../../helpers/number'
-import { logger } from '../../../utils/logger'
+
+import { Fields } from './types'
 
 /**
- * Creates a handler for the "from" amount input changes
+ * Creates a handler function for from amount changes
+ *
+ * @param form Form instance from react-hook-form
+ * @param getAssetPrecision Function to get asset precision
+ * @param setDebouncedFromAmount Optional function to set debounced from amount
+ * @param maxAmount Optional maximum amount allowed (in base units)
+ * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
  */
 export const createFromAmountChangeHandler = (
-  form: any,
+  form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  parseAssetAmount: (
-    amount: string | undefined | null,
-    asset: string
-  ) => number,
-  setDebouncedFromAmount: (amount: string) => void
+  setDebouncedFromAmount?: (value: string) => void,
+  maxAmount?: number
 ) => {
-  return (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  return (e: ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
     const fromAsset = form.getValues().fromAsset
     const precision = getAssetPrecision(fromAsset)
 
-    try {
-      const formattedValue = formatNumberInput(value, precision)
+    // Get current cursor position before formatting
+    const cursorPosition = e.target.selectionStart || 0
 
-      // Always update the form value with options to ensure validation is triggered
-      form.setValue('from', formattedValue, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
+    // Count commas before cursor position to adjust cursor later
+    const commasBeforeCursor = (
+      value.substring(0, cursorPosition).match(/,/g) || []
+    ).length
 
-      // Only update the other field if we have a complete number
-      if (!formattedValue.endsWith('.') && formattedValue !== '') {
-        const numValue = parseAssetAmount(formattedValue, fromAsset)
+    // First, remove any non-numeric characters except decimal point
+    let cleanValue = value.replace(/[^\d.]/g, '')
 
-        if (numValue === 0) {
-          form.setValue('to', '', {
-            shouldDirty: true,
-            shouldTouch: true,
-            shouldValidate: true,
-          })
-        } else {
-          // Don't cap the values - allow the user to input any amount
-          // Validation errors will show when values are out of range
-          setDebouncedFromAmount(formattedValue)
-        }
-      } else {
-        // Incomplete number (e.g., "5.")
-        setDebouncedFromAmount(formattedValue)
-      }
-
-      // Validate form immediately
-      form.trigger('from')
-    } catch (error) {
-      logger.error('Error handling amount change:', error)
-      form.setValue('from', '', {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
-      form.setValue('to', '', {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
+    // Ensure only one decimal point
+    const decimalPoints = cleanValue.match(/\./g)
+    if (decimalPoints && decimalPoints.length > 1) {
+      cleanValue = cleanValue.replace(/\./g, (match, index) =>
+        index === cleanValue.indexOf('.') ? match : ''
+      )
     }
+
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    const integerPart = parts[0]
+    let decimalPart = parts[1] || ''
+
+    // Limit decimal places to asset precision
+    if (decimalPart.length > precision) {
+      decimalPart = decimalPart.slice(0, precision)
+    }
+
+    // Reconstruct the value
+    cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
+
+    // Convert to number for comparison and validation
+    const numericValue = parseFloat(cleanValue) || 0
+
+    // Prevent negative values explicitly
+    if (numericValue < 0) {
+      cleanValue = '0'
+    }
+
+    const maxDisplayValue = maxAmount
+      ? maxAmount / Math.pow(10, precision)
+      : Infinity
+
+    // Ensure value doesn't exceed max
+    let finalValue =
+      numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
+
+    // Format the value with proper number formatting
+    let formattedValue = formatNumberInput(finalValue, precision)
+
+    // Set the formatted value in the form
+    form.setValue('from', formattedValue, { shouldValidate: true })
+
+    // Store the debounced value for later processing if provided
+    if (setDebouncedFromAmount) {
+      setDebouncedFromAmount(formattedValue)
+    }
+
+    // Schedule cursor position adjustment for after React re-renders the input
+    setTimeout(() => {
+      const input = document.querySelector(
+        'input[value="' + formattedValue + '"]'
+      ) as HTMLInputElement
+      if (input) {
+        // Count new commas before the original cursor position
+        const newCommasBeforeCursor = (
+          formattedValue.substring(0, cursorPosition).match(/,/g) || []
+        ).length
+
+        // Adjust cursor position based on difference in commas
+        const newPosition =
+          cursorPosition + (newCommasBeforeCursor - commasBeforeCursor)
+
+        // Set cursor position
+        input.setSelectionRange(newPosition, newPosition)
+      }
+    }, 0)
   }
 }
 
 /**
- * Creates a handler for the "to" amount input changes
+ * Creates a handler function for to amount changes
+ *
+ * @param form Form instance from react-hook-form
+ * @param getAssetPrecision Function to get asset precision
+ * @param maxAmount Optional maximum amount allowed (in base units)
+ * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
  */
 export const createToAmountChangeHandler = (
-  form: any,
+  form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  parseAssetAmount: (
-    amount: string | undefined | null,
-    asset: string
-  ) => number,
-  setDebouncedToAmount: (amount: string) => void
+  maxAmount?: number
 ) => {
-  return (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+  return (e: ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
     const toAsset = form.getValues().toAsset
     const precision = getAssetPrecision(toAsset)
 
-    try {
-      const formattedValue = formatNumberInput(value, precision)
+    // First, remove any non-numeric characters except decimal point
+    let cleanValue = value.replace(/[^\d.]/g, '')
 
-      // Always update the form value with options to ensure validation is triggered
-      form.setValue('to', formattedValue, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
-
-      // Only update the other field if we have a complete number
-      if (!formattedValue.endsWith('.') && formattedValue !== '') {
-        const numValue = parseAssetAmount(formattedValue, toAsset)
-
-        if (numValue === 0) {
-          form.setValue('from', '', {
-            shouldDirty: true,
-            shouldTouch: true,
-            shouldValidate: true,
-          })
-        } else {
-          // Don't cap the values - allow the user to input any amount
-          // Validation errors will show when values are out of range
-          setDebouncedToAmount(formattedValue)
-        }
-      } else {
-        // Incomplete number (e.g., "5.")
-        setDebouncedToAmount(formattedValue)
-      }
-
-      // Validate form immediately
-      form.trigger('to')
-    } catch (error) {
-      logger.error('Error handling amount change:', error)
-      form.setValue('to', '', {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
-      form.setValue('from', '', {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      })
+    // Ensure only one decimal point
+    const decimalPoints = cleanValue.match(/\./g)
+    if (decimalPoints && decimalPoints.length > 1) {
+      cleanValue = cleanValue.replace(/\./g, (match, index) =>
+        index === cleanValue.indexOf('.') ? match : ''
+      )
     }
+
+    // Split into integer and decimal parts
+    const parts = cleanValue.split('.')
+    const integerPart = parts[0]
+    let decimalPart = parts[1] || ''
+
+    // Limit decimal places to asset precision
+    if (decimalPart.length > precision) {
+      decimalPart = decimalPart.slice(0, precision)
+    }
+
+    // Reconstruct the value
+    cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
+
+    // Convert to number for comparison and validation
+    const numericValue = parseFloat(cleanValue) || 0
+
+    // Prevent negative values explicitly
+    if (numericValue < 0) {
+      cleanValue = '0'
+    }
+
+    const maxDisplayValue = maxAmount
+      ? maxAmount / Math.pow(10, precision)
+      : Infinity
+
+    // Ensure value doesn't exceed max
+    let finalValue =
+      numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
+
+    // Format the value with proper number formatting
+    let formattedValue = formatNumberInput(finalValue, precision)
+
+    form.setValue('to', formattedValue, { shouldValidate: true })
   }
 }
 
 /**
- * Creates a debounced handler for updating the "to" amount based on "from" changes
+ * Format a number with commas for better display (like 1,000,000)
+ *
+ * @param value Number to format
  */
-export const createDebouncedFromEffectHandler = (
-  debouncedFromAmount: string,
-  updatePending: boolean,
-  updateToAmount: (amount: string) => void,
-  setIsToAmountLoading: (isLoading: boolean) => void,
-  setUpdatePending: (isPending: boolean) => void
-) => {
-  if (
-    !debouncedFromAmount ||
-    debouncedFromAmount.endsWith('.') ||
-    updatePending
-  ) {
-    return () => {}
-  }
+export const formatNumberWithCommas = (value: number | string): string => {
+  if (typeof value === 'string' && !value) return ''
 
-  setUpdatePending(true)
+  // Parse to ensure we're working with a number
+  const numValue = typeof value === 'string' ? parseFloat(value) : value
+  if (isNaN(numValue)) return ''
 
-  return () => {
-    const timer = setTimeout(() => {
-      // Always update when size buttons are clicked, even if the formatted amount is the same
-      // as before (which can happen with certain percentage values)
-      setIsToAmountLoading(true)
-      updateToAmount(debouncedFromAmount)
-      setIsToAmountLoading(false)
-      setUpdatePending(false)
-    }, 300)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }
+  // Format with comma separators
+  return numValue.toLocaleString('en-US')
 }
 
 /**
- * Creates a debounced handler for updating the "from" amount based on "to" changes
+ * Parse a display value with commas back to a numeric string format
+ *
+ * @param value Display value with commas
  */
-export const createDebouncedToEffectHandler = (
-  debouncedToAmount: string,
-  previousToAmount: string | undefined,
-  updatePending: boolean,
-  calculateRate: () => number,
-  form: any,
-  parseAssetAmount: (
-    amount: string | undefined | null,
-    asset: string
-  ) => number,
-  formatAmount: (amount: number, asset: string) => string,
-  setUpdatePending: (isPending: boolean) => void
-) => {
-  if (!debouncedToAmount || debouncedToAmount.endsWith('.') || updatePending) {
-    return () => {}
-  }
-
-  setUpdatePending(true)
-
-  return () => {
-    const timer = setTimeout(() => {
-      if (debouncedToAmount !== previousToAmount) {
-        try {
-          const rate = calculateRate()
-          const fromAmount =
-            parseAssetAmount(debouncedToAmount, form.getValues().toAsset) / rate
-          form.setValue(
-            'from',
-            formatAmount(fromAmount, form.getValues().fromAsset)
-          )
-        } catch (error) {
-          logger.error('Error calculating from amount:', error)
-        }
-      }
-      setUpdatePending(false)
-    }, 300)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }
+export const parseFormattedNumber = (value: string): string => {
+  // Remove all non-numeric characters except decimal point
+  return value.replace(/[^\d.]/g, '')
 }

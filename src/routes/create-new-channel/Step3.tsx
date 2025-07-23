@@ -1,6 +1,27 @@
-import { useMemo } from 'react'
+import {
+  Zap,
+  ChevronLeft,
+  ArrowRight,
+  ExternalLink,
+  Wallet,
+  Activity,
+  TagIcon,
+  Users,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
 
+import BitcoinLogo from '../../assets/bitcoin-logo.svg'
+import {
+  Button,
+  Card,
+  InfoCard,
+  InfoCardGrid,
+  Badge,
+} from '../../components/ui'
 import { TNewChannelForm } from '../../slices/channel/channel.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface Props {
   error?: string
@@ -21,6 +42,31 @@ const formatPubKey = (pubKey: string) => {
 }
 
 export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [assetPrecision, setAssetPrecision] = useState<number>(8) // Default to 8 decimals
+
+  const [takerAssets] = nodeApi.endpoints.listAssets.useLazyQuery()
+
+  // Fetch asset precision when we have an assetId
+  useEffect(() => {
+    if (formData.assetId) {
+      takerAssets()
+        .unwrap()
+        .then((response) => {
+          const asset = response.nia.find(
+            (a) => a.asset_id === formData.assetId
+          )
+          if (asset) {
+            setAssetPrecision(asset.precision)
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching asset information:', error)
+          // Keep default precision of 8 if fetch fails
+        })
+    }
+  }, [formData.assetId, takerAssets])
+
   // Parse the peer connection string using useMemo to persist the values
   const connectionDetails = useMemo(() => {
     const [pubKey = '', hostAddress = ''] = formData.pubKeyAndAddress?.split(
@@ -33,162 +79,254 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
   // Validate if we have the required data
   const hasValidNodeInfo = useMemo(() => {
-    const isValid = !!(
+    // Check if we have a valid pubkey-only format (66 hex chars) or full address format
+    const isPubkeyOnly =
+      formData.pubKeyAndAddress?.length === 66 &&
+      /^[0-9a-f]+$/i.test(formData.pubKeyAndAddress)
+    const isFullAddress = !!(
       connectionDetails.pubKey &&
       connectionDetails.host &&
       connectionDetails.port &&
       formData.pubKeyAndAddress
     )
 
-    return isValid
+    return isPubkeyOnly || isFullAddress
   }, [connectionDetails, formData.pubKeyAndAddress])
+
+  // Determine if this is an asset channel
+  const isAssetChannel = useMemo(() => {
+    return !!(
+      formData.assetId &&
+      formData.assetAmount > 0 &&
+      formData.assetTicker
+    )
+  }, [formData.assetId, formData.assetAmount, formData.assetTicker])
+
+  // Format asset amount with proper precision
+  const formatAssetAmount = useMemo(() => {
+    if (!isAssetChannel) return '0'
+
+    // For precision 0, the amount is already in base units, no division needed
+    if (assetPrecision === 0) {
+      return formData.assetAmount.toLocaleString('en-US')
+    }
+
+    const divisor = Math.pow(10, assetPrecision)
+    const displayAmount = formData.assetAmount / divisor
+
+    // Use the asset's precision for formatting, but don't show unnecessary trailing zeros
+    return displayAmount.toFixed(assetPrecision).replace(/\.?0+$/, '')
+  }, [formData.assetAmount, assetPrecision, isAssetChannel])
+
+  const handleOpenChannel = () => {
+    setIsSubmitting(true)
+    // Add a small delay to show the animation
+    setTimeout(() => {
+      onNext()
+      setIsSubmitting(false)
+    }, 800)
+  }
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mb-10">
-        <h3 className="text-3xl font-bold text-white mb-4">
-          Open a Channel - Step 3
+      <div className="text-center mb-6">
+        <h3 className="text-3xl font-bold text-white mb-2">
+          Open a Channel - Review
         </h3>
-        <p className="text-gray-400">Review and confirm your channel details</p>
+        <p className="text-gray-400">
+          Confirm your channel details before proceeding
+        </p>
       </div>
 
       {error && (
-        <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-center">
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-center">
           {error}
         </div>
       )}
 
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8 space-y-8">
-        {/* Channel Capacity Section */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-400 mb-3">
-            Channel Capacity
-          </h4>
-          <div className="bg-gray-900/50 p-6 rounded-lg text-center">
-            <div className="text-3xl font-bold text-blue-400">
-              {formatNumber(formData.capacitySat)} SAT
-            </div>
-            {formData.assetAmount > 0 && (
-              <div className="mt-2 text-lg text-gray-400">
-                {formData.assetAmount} {formData.assetTicker}
-              </div>
-            )}
+      <Card className="mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-500/10 rounded-lg">
+            <Zap className="w-5 h-5 text-blue-500" />
           </div>
+          <h3 className="text-xl font-bold text-white">Channel Details</h3>
+          <Badge
+            className="ml-auto"
+            icon={
+              isAssetChannel ? (
+                <TagIcon className="w-3 h-3" />
+              ) : (
+                <img alt="Bitcoin" className="w-3.5 h-3.5" src={BitcoinLogo} />
+              )
+            }
+            variant={isAssetChannel ? 'info' : 'primary'}
+          >
+            {isAssetChannel ? 'RGB Asset' : 'Bitcoin'}
+          </Badge>
         </div>
 
-        {/* Node Connection Details */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-400 mb-3">
-            Connected Node
-          </h4>
-          <div className="bg-gray-900/50 p-6 rounded-lg space-y-4">
-            {hasValidNodeInfo ? (
-              <>
-                <div>
-                  <span className="text-gray-400 text-sm">Node ID:</span>
-                  <div className="font-mono text-sm break-all mt-1">
-                    <span className="text-white">
-                      {connectionDetails.pubKey}
+        <InfoCardGrid className="mb-6" columns={1}>
+          <InfoCard
+            icon={<Wallet className="w-4 h-4 text-blue-500" />}
+            label="Channel Capacity"
+            value={
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
+                  <span className="text-blue-400 font-bold">
+                    {formatNumber(formData.capacitySat)} SAT
+                  </span>
+                </div>
+                {isAssetChannel && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-cyan text-sm font-medium">
+                      {formatAssetAmount} {formData.assetTicker}
+                    </span>
+                  </div>
+                )}
+              </div>
+            }
+          />
+        </InfoCardGrid>
+
+        <InfoCardGrid className="mb-6" columns={1}>
+          <InfoCard
+            icon={<Users className="w-4 h-4 text-blue-500" />}
+            label="Connected Node"
+            value={
+              hasValidNodeInfo ? (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center">
+                    <span className="text-xs text-slate-400 mr-2">
+                      Node ID:
+                    </span>
+                    <span className="text-sm text-white font-mono truncate">
+                      {formatPubKey(
+                        connectionDetails.pubKey || formData.pubKeyAndAddress
+                      )}
                     </span>
                     <button
-                      className="ml-2 text-blue-400 hover:text-blue-300 text-xs"
+                      className="ml-2 text-blue-400 hover:text-blue-300 p-1 hover:bg-slate-700/50 rounded transition-colors"
                       onClick={() =>
-                        navigator.clipboard.writeText(connectionDetails.pubKey)
+                        navigator.clipboard.writeText(
+                          connectionDetails.pubKey || formData.pubKeyAndAddress
+                        )
                       }
                       title="Copy full pubkey"
                       type="button"
                     >
-                      {formatPubKey(connectionDetails.pubKey)} (click to copy)
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                  {connectionDetails.host && connectionDetails.port ? (
+                    <div className="flex items-center">
+                      <span className="text-xs text-slate-400 mr-2">Host:</span>
+                      <span className="text-sm text-white font-mono">
+                        {connectionDetails.host}:{connectionDetails.port}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <span className="text-xs text-slate-400 mr-2">
+                        Status:
+                      </span>
+                      <span className="text-sm text-green-400">
+                        Already Connected
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <span className="text-gray-400 text-sm">Host:</span>
-                  <div className="font-mono text-sm break-all mt-1">
-                    <span className="text-white">{connectionDetails.host}</span>
-                    <span className="text-white">
-                      :{connectionDetails.port}
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-red-500">
-                Please go back and enter valid node connection information
-              </div>
-            )}
-          </div>
-        </div>
+              ) : (
+                <span className="text-red-500 text-sm">
+                  Please go back and enter valid node information
+                </span>
+              )
+            }
+          />
+        </InfoCardGrid>
 
-        {/* Fee Rate Section */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-400 mb-3">
-            Transaction Fee Rate
-          </h4>
-          <div className="bg-gray-900/50 p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-white capitalize">{formData.fee}</span>
-              <span className="text-gray-400">
-                {feeRates[formData.fee] / 1000} sat/vB
-              </span>
+        <InfoCardGrid columns={1}>
+          <InfoCard
+            icon={<Activity className="w-4 h-4 text-blue-500" />}
+            label="Transaction Fee Rate"
+            value={
+              <div className="flex items-center justify-between">
+                <span className="text-white capitalize">{formData.fee}</span>
+                <span className="text-slate-400 text-sm ml-2">
+                  {feeRates[formData.fee]} sat/vB
+                </span>
+              </div>
+            }
+          />
+        </InfoCardGrid>
+
+        <InfoCardGrid columns={1}>
+          <InfoCard
+            icon={
+              formData.public ? (
+                <Eye className="w-4 h-4 text-blue-500" />
+              ) : (
+                <EyeOff className="w-4 h-4 text-blue-500" />
+              )
+            }
+            label="Channel Privacy"
+            value={
+              <div className="flex items-center justify-between">
+                <span className="text-white capitalize">
+                  {formData.public ? 'Public' : 'Private'}
+                </span>
+                <span className="text-slate-400 text-sm ml-2">
+                  {formData.public
+                    ? 'Visible on Lightning Network'
+                    : 'Only known to parties'}
+                </span>
+              </div>
+            }
+          />
+        </InfoCardGrid>
+      </Card>
+
+      {isAssetChannel && (
+        <Card className="mb-6">
+          <div className="flex items-start gap-2">
+            <div className="p-2 bg-cyan/10 rounded-lg shrink-0">
+              <TagIcon className="w-4 h-4 text-cyan" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-white mb-1">
+                RGB Asset Channel
+              </h4>
+              <p className="text-xs text-slate-400">
+                This channel will include both Bitcoin liquidity and RGB asset
+                allocation. The RGB asset ({formData.assetTicker}) will be
+                allocated with {formatAssetAmount} units.
+              </p>
             </div>
           </div>
-        </div>
-      </div>
+        </Card>
+      )}
 
       <div className="flex justify-between mt-8">
-        <button
-          className="px-8 py-3 rounded-lg text-lg font-bold
-            bg-gray-700 hover:bg-gray-600 text-gray-300
-            transform transition-all duration-200
-            focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50
-            shadow-md hover:shadow-lg
-            flex items-center"
+        <Button
+          icon={<ChevronLeft className="w-5 h-5" />}
           onClick={onBack}
-          type="button"
+          size="lg"
+          variant="secondary"
         >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M15 19l-7-7 7-7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
           Back
-        </button>
+        </Button>
 
-        <button
-          className="px-8 py-3 rounded-lg text-lg font-bold text-white
-            bg-blue-600 hover:bg-blue-700
-            transform transition-all duration-200
-            focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
-            shadow-lg hover:shadow-xl
-            flex items-center"
-          disabled={!hasValidNodeInfo}
-          onClick={onNext}
-          type="button"
+        <Button
+          disabled={!hasValidNodeInfo || isSubmitting}
+          icon={<ArrowRight className="w-5 h-5" />}
+          iconPosition="right"
+          isLoading={isSubmitting}
+          onClick={handleOpenChannel}
+          size="lg"
+          variant="primary"
         >
-          Open Channel
-          <svg
-            className="w-5 h-5 ml-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 5l7 7-7 7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-            />
-          </svg>
-        </button>
+          {isSubmitting ? 'Opening...' : 'Open Channel'}
+        </Button>
       </div>
     </div>
   )

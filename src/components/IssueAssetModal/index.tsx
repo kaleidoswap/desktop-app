@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { toast } from 'react-toastify'
 
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
@@ -18,7 +18,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   const [ticker, setTicker] = useState('')
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
-  const [precision, setPrecision] = useState('8')
+  const [precision, setPrecision] = useState('0')
   const [isLoading, setIsLoading] = useState(false)
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
@@ -26,9 +26,40 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
   const [issueAsset] = nodeApi.endpoints.issueNiaAsset.useLazyQuery()
 
+  // Calculate the actual amount that will be issued with decimal places
+  const actualAmount = useMemo(() => {
+    if (
+      !amount ||
+      isNaN(Number(amount)) ||
+      !precision ||
+      isNaN(Number(precision))
+    ) {
+      return '0'
+    }
+
+    // Convert to base units (add zeros based on precision)
+    const baseAmount = Number(amount) * Math.pow(10, Number(precision))
+    return baseAmount.toString()
+  }, [amount, precision])
+
+  // Format preview amount with decimal places
+  const previewAmount = useMemo(() => {
+    if (!amount || isNaN(Number(amount))) {
+      return '0'
+    }
+
+    // Clamp precision between 0 and 10
+    let safePrecision = Number(precision)
+    if (isNaN(safePrecision) || safePrecision < 0) safePrecision = 0
+    if (safePrecision > 10) safePrecision = 10
+
+    // Display with appropriate decimal places
+    return Number(amount).toFixed(safePrecision)
+  }, [amount, precision])
+
   const issueAssetOperation = async () => {
     return await issueAsset({
-      amounts: [Number(amount)],
+      amounts: [Number(actualAmount)],
       name,
       precision: Number(precision),
       ticker: ticker.toUpperCase(),
@@ -140,14 +171,32 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
                 max="18"
                 min="0"
-                onChange={(e) => setPrecision(e.target.value)}
+                onChange={(e) => {
+                  // removing fraction inputs
+                  let val = e.target.value
+                  const floored = Math.floor(Number(val))
+                  setPrecision(String(floored))
+                }}
                 placeholder="8"
                 required
+                step="1"
                 type="number"
                 value={precision}
               />
+              {(Number(precision) > 10 || Number(precision) < 0) &&
+                precision !== '' && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Precision value must be between 0 and 10.
+                  </p>
+                )}
             </div>
 
+            {amount && (
+              <p className="mt-2 text-sm text-slate-400">
+                You will issue:{' '}
+                <span className="text-white font-medium">{previewAmount}</span>
+              </p>
+            )}
             <button
               className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 
                        text-white rounded-xl font-medium transition-colors
