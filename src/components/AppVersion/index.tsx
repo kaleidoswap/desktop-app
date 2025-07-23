@@ -1,5 +1,4 @@
 import { getName, getVersion } from '@tauri-apps/api/app'
-import { invoke } from '@tauri-apps/api/core'
 import { GitCommit, Calendar, Package } from 'lucide-react'
 import { useState, useEffect } from 'react'
 

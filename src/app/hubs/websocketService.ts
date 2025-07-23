@@ -56,14 +56,14 @@ class WebSocketService {
   private clientId: string = ''
   private dispatch: Dispatch | null = null
   private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 5 // Increased from 3 to 5 for better reliability
-  private reconnectInterval: number = 8000 // Increased from 5000ms to 8000ms to reduce connection frequency
+  private maxReconnectAttempts: number = 5 // Keep at 5 for reliability
+  private reconnectInterval: number = 2000 // Reduced from 8000ms to 2000ms for faster reconnection
   private subscribedPairs: Set<string> = new Set()
   private isReconnecting: boolean = false
   private heartbeatInterval: number | null = null
   private lastHeartbeatResponse: number = 0
-  private heartbeatTimeout: number = 15000 // Increased from 10000ms to 15000ms for more stable connections
-  private heartbeatIntervalMs: number = 8000 // Increased from 5000ms to 8000ms for less frequent heartbeats
+  private heartbeatTimeout: number = 12000 // Reduced from 15000ms to 12000ms for quicker timeout detection
+  private heartbeatIntervalMs: number = 6000 // Reduced from 8000ms to 6000ms for more responsive heartbeats
   private networkOnlineHandler: (() => void) | null = null
   private networkOfflineHandler: (() => void) | null = null
 
@@ -71,7 +71,7 @@ class WebSocketService {
   private messageQueue: QueuedMessage[] = []
   private processingQueue: boolean = false
   private maxQueueSize: number = 200
-  private messageProcessInterval: number = 300 // Increased from 200ms to 300ms to reduce processing frequency
+  private messageProcessInterval: number = 200 // Reduced back to 200ms for more responsive message processing
   private messageProcessTimer: number | null = null
   private lastMessageSent: number = 0
 
@@ -92,15 +92,15 @@ class WebSocketService {
     stabilityScore: 100,
   }
 
-  // Circuit breaker settings
-  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5 // Increased from 3 to 5 for more tolerance
-  private readonly CIRCUIT_BREAKER_TIMEOUT = 30000 // Increased from 15000ms to 30000ms for better recovery
+  // Circuit breaker settings - optimized for development and rapid reconnections
+  private readonly CIRCUIT_BREAKER_FAILURE_THRESHOLD = 8 // Increased from 5 to 8 for more tolerance
+  private readonly CIRCUIT_BREAKER_TIMEOUT = 15000 // Reduced from 30000ms to 15000ms for faster recovery
 
   // Connection health monitoring
   private connectionHealthCheckInterval: number | null = null
-  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 15000 // Increased from 8000ms to 15000ms for less frequent health checks
+  private readonly CONNECTION_HEALTH_CHECK_INTERVAL = 10000 // Reduced from 15000ms to 10000ms for better responsiveness
   private missedHeartbeats: number = 0
-  private readonly MAX_MISSED_HEARTBEATS = 3 // Increased from 2 to 3 for more tolerance
+  private readonly MAX_MISSED_HEARTBEATS = 4 // Increased from 3 to 4 for more tolerance
 
   // Track last quote request for error handling
   private lastQuoteRequest: {
@@ -112,11 +112,11 @@ class WebSocketService {
   // Add connection readiness tracking
   private isConnectionReady: boolean = false
   private connectionReadyResolvers: Array<(value: boolean) => void> = []
-  private readonly CONNECTION_READY_TIMEOUT = 10000 // 10 second timeout for connection readiness
+  private readonly CONNECTION_READY_TIMEOUT = 8000 // Reduced from 10000ms to 8000ms
 
   // Connection cooldown to prevent rapid reconnections
   private lastCloseTime: number = 0
-  private readonly CONNECTION_COOLDOWN = 5000 // 5 second cooldown between connections to prevent rapid reconnections
+  private readonly CONNECTION_COOLDOWN = 1000 // Reduced from 5000ms to 1000ms for better UX
 
   private constructor() {
     logger.info('WebSocketService instance created')
@@ -538,28 +538,45 @@ class WebSocketService {
       return false
     }
 
-    // Check connection cooldown to prevent rapid reconnections
+    // Clean and normalize URL
+    const cleanUrl = url.replace(/\/+$/, '')
+
+    // Skip if already connected to the same URL with a ready connection
+    if (
+      this.connectionInitialized &&
+      this.url === cleanUrl &&
+      this.isConnected() &&
+      this.isConnectionReady
+    ) {
+      logger.info(
+        'WebSocketService: Already connected and ready to the same URL, skipping initialization'
+      )
+      return true
+    }
+
+    // Check connection cooldown only for different URLs or failed connections
     const now = Date.now()
-    if (now - this.lastCloseTime < this.CONNECTION_COOLDOWN) {
-      const remainingCooldown =
-        this.CONNECTION_COOLDOWN - (now - this.lastCloseTime)
+    const timeSinceClose = now - this.lastCloseTime
+
+    if (timeSinceClose < this.CONNECTION_COOLDOWN && this.url !== cleanUrl) {
+      const remainingCooldown = this.CONNECTION_COOLDOWN - timeSinceClose
       logger.debug(
-        `WebSocketService: Connection cooldown active, waiting ${remainingCooldown}ms`
+        `WebSocketService: Connection cooldown active for URL change, waiting ${remainingCooldown}ms`
       )
       return false
     }
 
-    // Skip if already connected to the same URL
-    const cleanUrl = url.replace(/\/+$/, '')
-    if (
-      this.connectionInitialized &&
-      this.url === cleanUrl &&
-      this.isConnected()
-    ) {
-      logger.info(
-        'WebSocketService: Already connected to the same URL, skipping initialization'
+    // For same URL reconnections within cooldown period, allow if connection is unhealthy
+    if (timeSinceClose < this.CONNECTION_COOLDOWN && this.url === cleanUrl) {
+      if (this.isConnected() && this.isConnectionReady) {
+        logger.debug(
+          'WebSocketService: Same URL connection already healthy, skipping'
+        )
+        return true
+      }
+      logger.debug(
+        'WebSocketService: Same URL reconnection allowed due to unhealthy connection'
       )
-      return true
     }
 
     // Skip if we're currently connecting to the same URL to prevent multiple connection attempts
@@ -1397,12 +1414,12 @@ class WebSocketService {
       return
     }
 
-    // Improved exponential backoff with jitter
+    // Improved exponential backoff with jitter - more aggressive for rapid recovery
     const baseDelay = Math.min(
-      this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts),
-      30000
+      this.reconnectInterval * Math.pow(1.3, this.reconnectAttempts), // Reduced exponent from 1.5 to 1.3
+      15000 // Reduced max delay from 30000ms to 15000ms
     )
-    const jitter = Math.random() * 1000 // Add up to 1 second of random jitter
+    const jitter = Math.random() * 500 // Reduced jitter from 1000ms to 500ms
     const delay = baseDelay + jitter
 
     logger.info(
@@ -1462,17 +1479,54 @@ class WebSocketService {
     // Reset circuit breaker
     this.resetCircuitBreaker()
 
-    // Reset reconnection attempts
+    // Reset reconnection attempts and state
     this.reconnectAttempts = 0
     this.isReconnecting = false
 
+    // Reset connection readiness
+    this.isConnectionReady = false
+
+    // Reject any pending connection ready promises
+    this.connectionReadyResolvers.forEach((resolve) => resolve(false))
+    this.connectionReadyResolvers = []
+
     // Reset connection state
     this.connectionInitialized = false
+
+    // Reset stability metrics
+    this.stability = {
+      circuitBreakerOpenTime: 0,
+      circuitBreakerState: CircuitBreakerState.CLOSED,
+      consecutiveFailures: 0,
+      lastFailureTime: 0,
+      lastSuccessfulConnection: 0,
+      reconnectAttempts: 0,
+      stabilityScore: 100,
+    }
+
+    // Reset heartbeat state
+    this.missedHeartbeats = 0
+    this.lastHeartbeatResponse = 0
+
+    // Reset message processing state
+    this.messageProcessInterval = 200 // Reset to default
+    this.messageQueue = []
+    this.processingQueue = false
+
+    // Clear subscribed pairs
+    this.subscribedPairs.clear()
 
     // Clear any existing connection
     if (this.socket) {
       this.close()
     }
+
+    // Reset connection health
+    resetConnectionHealth()
+
+    logger.info(
+      'WebSocketService: Complete state reset for new maker completed'
+    )
   }
 }
 

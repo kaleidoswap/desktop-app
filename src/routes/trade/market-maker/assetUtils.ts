@@ -267,8 +267,25 @@ export const createSwapAssetsHandler = (
         previousToAmount !== '' &&
         previousToAmount !== '0'
       ) {
-        // Set the new from amount (which was previously the to amount)
-        form.setValue('from', previousToAmount)
+        // Parse the previous toAmount and compare with new max amount
+        const parsedToAmount = parseFloat(previousToAmount.replace(/,/g, ''))
+
+        if (parsedToAmount > newMaxAmount) {
+          // If the amount exceeds the new max, set it to the max amount
+          logger.info(
+            `Previous amount ${parsedToAmount} exceeds new max ${newMaxAmount}, setting to max`
+          )
+          // Format the max amount with commas for thousands
+          const formattedMaxAmount = newMaxAmount.toLocaleString('en-US', {
+            maximumFractionDigits: 8,
+            minimumFractionDigits: 0,
+            useGrouping: true,
+          })
+          form.setValue('from', formattedMaxAmount)
+        } else {
+          // Otherwise use the previous toAmount as is
+          form.setValue('from', previousToAmount)
+        }
       } else {
         // If we didn't have a valid toAmount, clear the fromAmount
         form.setValue('from', '')

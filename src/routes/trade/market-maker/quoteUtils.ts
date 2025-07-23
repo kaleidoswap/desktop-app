@@ -60,6 +60,8 @@ export const clearDebouncedQuoteRequest = () => {
  * @param setIsQuoteLoading Function to set quote loading state
  * @param setIsToAmountLoading Function to set to amount loading state
  * @param hasValidQuote Optional function to check if there's already a valid quote
+ * @param maxFromAmount Maximum amount that can be sent
+ * @param minFromAmount Minimum amount that can be sent
  * @returns A function that can be called to request a quote
  */
 export const createQuoteRequestHandler = (
@@ -71,7 +73,9 @@ export const createQuoteRequestHandler = (
   assets: NiaAsset[],
   setIsQuoteLoading?: (loading: boolean) => void,
   setIsToAmountLoading?: (loading: boolean) => void,
-  hasValidQuote?: () => boolean
+  hasValidQuote?: () => boolean,
+  maxFromAmount?: number,
+  minFromAmount?: number
 ) => {
   return async () => {
     const fromAssetTicker = form.getValues().fromAsset
@@ -98,6 +102,24 @@ export const createQuoteRequestHandler = (
     const fromAmount = parseAssetAmount(fromAmountStr, fromAssetTicker)
     if (fromAmount <= 0) {
       return
+    }
+
+    // Check if the user's balance is below the minimum required amount
+    if (maxFromAmount !== undefined && minFromAmount !== undefined) {
+      if (maxFromAmount < minFromAmount) {
+        // User's balance is below minimum - don't request quote
+        logger.debug(
+          `Available balance (${maxFromAmount}) is below minimum required (${minFromAmount}), skipping quote request`
+        )
+        if (setIsQuoteLoading) {
+          setIsQuoteLoading(false)
+        }
+        if (setIsToAmountLoading) {
+          setIsToAmountLoading(false)
+        }
+        form.setValue('to', '') // Clear 'to' field since we can't trade
+        return
+      }
     }
 
     // Only set loading states if we don't already have a valid quote

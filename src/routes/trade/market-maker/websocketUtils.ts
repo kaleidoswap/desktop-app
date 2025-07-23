@@ -39,14 +39,26 @@ export const initializeWebSocket = (
         `Initializing WebSocket connection to ${makerUrl} with client ID ${clientId}`
       )
 
+      // Check if already connected to same URL
+      if (
+        webSocketService.isConnected() &&
+        webSocketService.getCurrentUrl() === makerUrl
+      ) {
+        logger.info('WebSocket already connected to the same URL')
+        resolve(true)
+        return
+      }
+
       // Use the WebSocketService to initialize the connection
       const success = webSocketService.init(makerUrl, clientId, dispatch)
 
       if (success) {
-        logger.info('WebSocket initialization successful')
+        logger.info('WebSocket initialization request successful')
         resolve(true)
       } else {
-        logger.error('WebSocket initialization failed')
+        logger.debug(
+          'WebSocket initialization request failed - service returned false'
+        )
         resolve(false)
       }
     } catch (error) {
@@ -54,6 +66,140 @@ export const initializeWebSocket = (
       resolve(false)
     }
   })
+}
+
+/**
+ * Initialize WebSocket connection and wait for it to be ready for communication
+ * @param makerUrl The URL of the market maker
+ * @param clientId Client ID, usually the node pubkey
+ * @param dispatch Redux dispatch function
+ * @param timeout Maximum time to wait for connection in milliseconds
+ * @returns Promise that resolves to a boolean indicating success
+ */
+export const initializeWebSocketWithWait = async (
+  makerUrl: string,
+  clientId: string,
+  dispatch: Dispatch,
+  timeout: number = 8000 // Reduced from 10000ms to 8000ms
+): Promise<boolean> => {
+  try {
+    logger.info(
+      `Initializing WebSocket connection to ${makerUrl} with client ID ${clientId} (with connection wait)`
+    )
+
+    // Check if already connected and ready to same URL
+    if (
+      webSocketService.isConnected() &&
+      webSocketService.getCurrentUrl() === makerUrl &&
+      webSocketService.isConnectionReadyForCommunication()
+    ) {
+      logger.info('WebSocket already connected and ready to the same URL')
+      return true
+    }
+
+    // First, initialize the WebSocket connection
+    const initSuccess = webSocketService.init(makerUrl, clientId, dispatch)
+
+    if (!initSuccess) {
+      // Get diagnostics to understand why init failed
+      const diagnostics = webSocketService.getDiagnostics()
+      logger.debug('WebSocket initialization failed - diagnostics:', {
+        circuitBreakerState: diagnostics.stability?.circuitBreakerState,
+        connectionInitialized: diagnostics.connectionInitialized,
+        currentUrl: diagnostics.url,
+        isConnected: diagnostics.isConnected,
+        targetUrl: makerUrl,
+      })
+      return false
+    }
+
+    // Wait for the connection to be fully established and ready
+    logger.info('Waiting for WebSocket connection to be ready...')
+    const connectionReady = await webSocketService.waitForConnection(timeout)
+
+    if (connectionReady) {
+      logger.info(
+        'WebSocket connection established and ready for communication'
+      )
+      return true
+    } else {
+      logger.warn(`WebSocket connection failed to be ready within ${timeout}ms`)
+      return false
+    }
+  } catch (error) {
+    logger.error('Error initializing WebSocket with wait:', error)
+    return false
+  }
+}
+
+/**
+ * Initialize WebSocket connection with automatic retry logic
+ * @param makerUrl The URL of the market maker
+ * @param clientId Client ID, usually the node pubkey
+ * @param dispatch Redux dispatch function
+ * @param maxRetries Maximum number of retry attempts
+ * @param timeout Maximum time to wait for each connection attempt in milliseconds
+ * @returns Promise that resolves to a boolean indicating success
+ */
+export const initializeWebSocketWithRetry = async (
+  makerUrl: string,
+  clientId: string,
+  dispatch: Dispatch,
+  maxRetries: number = 3,
+  timeout: number = 8000 // Reduced from 10000ms to 8000ms
+): Promise<boolean> => {
+  // First check if already connected and ready
+  if (
+    webSocketService.isConnected() &&
+    webSocketService.getCurrentUrl() === makerUrl &&
+    webSocketService.isConnectionReadyForCommunication()
+  ) {
+    logger.info('WebSocket already connected and ready, skipping retry logic')
+    return true
+  }
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      logger.info(
+        `WebSocket connection attempt ${attempt}/${maxRetries} to ${makerUrl}`
+      )
+
+      const success = await initializeWebSocketWithWait(
+        makerUrl,
+        clientId,
+        dispatch,
+        timeout
+      )
+
+      if (success) {
+        logger.info(`WebSocket connection successful on attempt ${attempt}`)
+        return true
+      }
+
+      // If this wasn't the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        // Reduced initial delay and max delay for faster recovery
+        const delay = Math.min(500 * Math.pow(1.5, attempt - 1), 2000) // Start at 500ms, max 2 seconds
+        logger.info(`WebSocket connection failed, retrying in ${delay}ms...`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      } else {
+        logger.error(`WebSocket connection failed after ${maxRetries} attempts`)
+      }
+    } catch (error) {
+      logger.error(`WebSocket connection attempt ${attempt} failed:`, error)
+
+      if (attempt === maxRetries) {
+        return false
+      }
+
+      // Reduced retry delay for faster recovery
+      const delay = Math.min(500 * Math.pow(1.5, attempt - 1), 2000)
+      logger.info(`Waiting ${delay}ms before retry due to error...`)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+
+  return false
 }
 
 /**

@@ -1,12 +1,15 @@
-import { Copy } from 'lucide-react'
+import { Copy, Wallet, Link, Plus, ShoppingCart } from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { webSocketService } from '../../../app/hubs/websocketService'
+import {
+  CREATE_NEW_CHANNEL_PATH,
+  ORDER_CHANNEL_PATH,
+} from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
-// import { StatusToast } from '../../../components/StatusToast'
 import { SwapConfirmation } from '../../../components/SwapConfirmation'
 import { SwapRecap } from '../../../components/SwapRecap'
 import {
@@ -18,8 +21,9 @@ import {
   NoTradingChannelsMessage,
   createTradingChannelsMessageProps,
   WebSocketDisconnectedMessage,
+  ChannelsNotReadyMessage,
 } from '../../../components/Trade'
-import { MIN_CHANNEL_CAPACITY } from '../../../constants'
+import { MIN_CHANNEL_CAPACITY , MSATS_PER_SAT, RGB_HTLC_MIN_SAT } from '../../../constants'
 import {
   getAssetPrecision,
   formatAssetAmountWithPrecision,
@@ -39,6 +43,7 @@ import {
   NiaAsset,
   SwapStatus,
 } from '../../../slices/nodeApi/nodeApi.slice'
+import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { logger } from '../../../utils/logger'
 
 // Import channel utilities
@@ -77,9 +82,7 @@ import {
   SwapDetails as SwapDetailsType,
 } from './swapUtils'
 import { Fields } from './types'
-
-const MSATS_PER_SAT = 1000
-const RGB_HTLC_MIN_SAT = 3000
+import { initializeWebSocketWithRetry } from './websocketUtils'
 
 export const Component = () => {
   // Declare makerConnectionUrl at the very top
@@ -87,13 +90,37 @@ export const Component = () => {
     (state) => state.nodeSettings.data.default_maker_url
   )
 
-  // Declare minLoadingDone state and effect after makerConnectionUrl
-  const [minLoadingDone, setMinLoadingDone] = useState(false)
+  // Loading states optimization - replace multiple loading states with simplified approach
+  const [loadingPhase, setLoadingPhase] = useState<
+    | 'initializing'
+    | 'validating-balance'
+    | 'validating-channels'
+    | 'connecting-maker'
+    | 'ready'
+    | 'error'
+  >('initializing')
+  const [validationError, setValidationError] = useState<string | null>(null)
+
+  // Component initialization logging
   useEffect(() => {
-    setMinLoadingDone(false)
-    const timer = setTimeout(() => setMinLoadingDone(true), 600) // 600ms minimum spinner
-    return () => clearTimeout(timer)
-  }, [makerConnectionUrl])
+    logger.info('🏁 Market Maker component mounted', {
+      makerUrl: makerConnectionUrl || 'Not configured',
+      timestamp: new Date().toISOString(),
+    })
+
+    return () => {
+      logger.info('🔚 Market Maker component unmounting')
+    }
+  }, [])
+
+  // Track loading phase changes
+  useEffect(() => {
+    logger.info(`🔄 Loading phase changed: ${loadingPhase}`, {
+      previousPhase: 'transition',
+      timestamp: new Date().toISOString(),
+      validationError: validationError,
+    })
+  }, [loadingPhase, validationError])
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -139,8 +166,7 @@ export const Component = () => {
   const [isPairsLoading, setIsPairsLoading] = useState(true)
   const [isChannelsLoaded, setIsChannelsLoaded] = useState(false)
   const [isAssetsLoaded, setIsAssetsLoaded] = useState(false)
-  const [hasValidChannelsForTrading, setHasValidChannelsForTrading] =
-    useState(false)
+  const [hasValidChannelsForTrading] = useState(false)
   const [isWebSocketInitialized, setIsWebSocketInitialized] = useState(false)
   const [debouncedFromAmount, setDebouncedFromAmount] = useState('')
 
@@ -162,17 +188,17 @@ export const Component = () => {
     useState<SwapDetailsType | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
+  // Add state for quote validity tracking
+  const [hasValidQuote, setHasValidQuote] = useState(false)
+  const [quoteExpiresAt, setQuoteExpiresAt] = useState<number | null>(null)
+
   // Component mount state management
   const isMountedRef = useRef(false)
   const initializationRef = useRef(false)
   const lastSuccessfulConnectionRef = useRef(0)
 
-  // Add a ref to track when we're in the middle of initialization to prevent conflicts
-  // This helps solve the race condition issues when navigating between pages
   const isInitializingRef = useRef(false)
-
-  // Add setup tracking to prevent multiple simultaneous setup calls
-  const isSetupRunningRef = useRef(false)
+  const setupRunningRef = useRef(false)
 
   // Fetch list of swaps and poll for updates
   const { data: swapsData } = nodeApi.useListSwapsQuery(undefined, {
@@ -201,25 +227,7 @@ export const Component = () => {
   // Track last reconnection attempt to prevent rapid reconnections
   const lastReconnectAttemptRef = useRef(0)
 
-  // Start connection timeout when WebSocket initialization begins
-  const startConnectionTimeout = useCallback(() => {
-    // Clear any existing timeout first
-    if (connectionTimeoutTimer) {
-      clearTimeout(connectionTimeoutTimer)
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      logger.warn('WebSocket connection timeout after 30 seconds')
-      setConnectionTimeout(true)
-      setConnectionTimeoutTimer(null)
-    }, 30000) // 30 second timeout
-
-    setConnectionTimeoutTimer(timeoutId)
-    setConnectionStartTime(Date.now())
-    setConnectionTimeout(false)
-    logger.debug('Started 30-second connection timeout')
-  }, [connectionTimeoutTimer])
-
+  // Connection timeout utilities (simplified for new approach)
   const clearConnectionTimeout = useCallback(() => {
     if (connectionTimeoutTimer) {
       clearTimeout(connectionTimeoutTimer)
@@ -354,7 +362,30 @@ export const Component = () => {
   const lastQuoteResponseRef = useRef<any>(null)
   const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
 
-  // Optimize the quote response selector to prevent unnecessary updates
+  // Update quote request handler with loading state setters
+  const requestQuote = useMemo(
+    () =>
+      createQuoteRequestHandler(
+        form,
+        parseAssetAmount,
+        assets,
+        setIsQuoteLoading,
+        setIsToAmountLoading,
+        () => hasValidQuote,
+        maxFromAmount,
+        minFromAmount
+      ),
+    [
+      form,
+      parseAssetAmount,
+      assets,
+      hasValidQuote,
+      maxFromAmount,
+      minFromAmount,
+    ]
+  )
+
+  // Replace the quoteResponse selector with a simpler version that only uses the latest quote
   const quoteResponse = useAppSelector((state) => {
     const fromAsset = form.getValues().fromAsset
     const toAsset = form.getValues().toAsset
@@ -374,45 +405,15 @@ export const Component = () => {
     const fromAssetId = mapTickerToAssetId(fromAsset, assets)
     const toAssetId = mapTickerToAssetId(toAsset, assets)
 
-    // First try direct lookup with current assets
-    let key = `${fromAssetId}/${toAssetId}/${fromAmount}`
-    let quote = state.pairs.quotes[key]
-
-    if (!quote) {
-      // If not found, look for any quotes with matching fromAsset and amount
-      const matchingQuoteKey = Object.keys(state.pairs.quotes).find(
-        (k) => k.startsWith(`${fromAssetId}/`) && k.endsWith(`/${fromAmount}`)
-      )
-
-      if (matchingQuoteKey) {
-        quote = state.pairs.quotes[matchingQuoteKey]
-        // Log that we found a quote with a different asset
-        logger.info(
-          `Found quote with key ${matchingQuoteKey} instead of ${key}`
-        )
-
-        // Don't automatically change the user's selected toAsset anymore
-        // This was causing the issue where user selections were being overridden
-        // The fallback quote won't be used if it doesn't match the user's selection
-        const quoteToAssetId = quote?.to_asset
-        if (quoteToAssetId && quoteToAssetId !== toAssetId) {
-          // The quote is for a different asset than what the user selected
-          // Don't use this quote and don't override the user's choice
-          logger.debug(
-            `Quote asset ${quoteToAssetId} doesn't match selected asset ${toAssetId}, ignoring fallback quote`
-          )
-          return null
-        }
-      }
-    }
-
-    return quote
+    // Only look for exact match - no fallback to other quotes
+    const key = `${fromAssetId}/${toAssetId}/${fromAmount}`
+    return state.pairs.quotes[key] || null
   })
 
-  // Process quote response updates in a separate effect to batch state updates
+  // Update the quote response effect to handle connection errors
   useEffect(() => {
     if (!quoteResponse) {
-      // Quote was cleared (likely due to an error), clear the UI state
+      // Quote was cleared or not found
       try {
         window.requestAnimationFrame(() => {
           form.setValue('to', '')
@@ -422,6 +423,13 @@ export const Component = () => {
           setIsToAmountLoading(false)
           setIsPriceLoading(false)
           setIsQuoteLoading(false)
+
+          // Only show connection error if we're connected but can't get a quote
+          if (wsConnected && form.getValues().from && !isQuoteLoading) {
+            setErrorMessage(
+              'Unable to get quote from market maker. Please try again.'
+            )
+          }
         })
       } catch (error) {
         logger.error('Error clearing quote response UI state:', error)
@@ -440,10 +448,26 @@ export const Component = () => {
 
       // Use requestAnimationFrame to batch updates and prevent render loops
       window.requestAnimationFrame(() => {
-        setQuoteResponseTimestamp(Date.now())
+        const now = Date.now()
+        const quoteTimestamp = quoteResponse.timestamp * 1000 // Convert to ms
+        const quoteAge = now - quoteTimestamp
+
+        // Only use quotes that are less than 30 seconds old
+        if (quoteAge > 30000) {
+          logger.warn('Received stale quote, requesting fresh quote')
+          setHasValidQuote(false)
+          setQuoteExpiresAt(null)
+          form.setValue('to', '')
+          form.setValue('rfq_id', '')
+          // Request a fresh quote
+          debouncedQuoteRequest(requestQuote)
+          return
+        }
+
+        setQuoteResponseTimestamp(now)
         setIsToAmountLoading(false)
         setIsPriceLoading(false)
-        setIsQuoteLoading(false) // Clear quote loading when we receive a response
+        setIsQuoteLoading(false)
 
         // Update the price from the quote
         if (quoteResponse.price) {
@@ -486,11 +510,7 @@ export const Component = () => {
         setErrorMessage(null)
       })
     }
-  }, [quoteResponse, form, assets])
-
-  // Add state for quote validity tracking
-  const [hasValidQuote, setHasValidQuote] = useState(false)
-  const [quoteExpiresAt, setQuoteExpiresAt] = useState<number | null>(null)
+  }, [quoteResponse, form, assets, requestQuote])
 
   // Update quote validity every second with extended grace period
   useEffect(() => {
@@ -532,22 +552,14 @@ export const Component = () => {
     }
   )
 
-  // Track when assets data is loaded from the query - ensure proper synchronization
   useEffect(() => {
     if (assetsData && assetsData.nia) {
       // Set assets immediately and mark as loaded
       setAssets(assetsData.nia)
       setIsAssetsLoaded(true)
-
-      // Log for debugging
-      logger.debug('Assets loaded and synchronized:', {
-        assetCount: assetsData.nia.length,
-        assetIds: assetsData.nia.map((a) => a.asset_id),
-      })
     } else if (assetsData === undefined) {
       // Reset loading state if assets data becomes unavailable
       setIsAssetsLoaded(false)
-      logger.debug('Assets data unavailable, resetting loading state')
     }
   }, [assetsData])
 
@@ -586,8 +598,6 @@ export const Component = () => {
   // Update formatAmount callback to ensure comma thousand separators
   const formatAmount = useCallback(
     (amount: number, asset: string) => {
-      // Use formatAssetAmountWithPrecision which already includes grouping (thousand separators)
-      // and ensure comma separators are applied
       return formatAssetAmountWithPrecision(amount, asset, bitcoinUnit, assets)
     },
     [assets, bitcoinUnit]
@@ -596,8 +606,6 @@ export const Component = () => {
   // Handle quote errors immediately to reset loading states
   useEffect(() => {
     if (quoteError) {
-      logger.warn('Quote error received, resetting loading states:', quoteError)
-
       // Immediately reset loading states when a quote error occurs
       setIsToAmountLoading(false)
       setIsPriceLoading(false)
@@ -654,20 +662,6 @@ export const Component = () => {
     }
   }, [quoteError, form, dispatch, formatAmount, displayAsset])
 
-  // Update quote request handler with loading state setters
-  const requestQuote = useMemo(
-    () =>
-      createQuoteRequestHandler(
-        form,
-        parseAssetAmount,
-        assets,
-        setIsQuoteLoading,
-        setIsToAmountLoading,
-        () => hasValidQuote
-      ),
-    [form, parseAssetAmount, assets, hasValidQuote]
-  )
-
   // Replace the original setFromAmount function with the enhanced one
   const setFromAmount = useCallback(
     (amount: number, fromAsset: string, percentageOfMax?: number) => {
@@ -690,9 +684,7 @@ export const Component = () => {
   const onSizeClick = useMemo(() => {
     const handler = createSizeClickHandler(form, maxFromAmount, setFromAmount)
     return (size: number) => {
-      setSelectedSize(size) // Use setSelectedSize when size is clicked
-      // When a size button is clicked, we explicitly pass the size percentage
-      // to setFromAmount so it can also update the selectedSize state.
+      setSelectedSize(size)
       return handler(size, size)
     }
   }, [form, maxFromAmount, setFromAmount])
@@ -807,26 +799,27 @@ export const Component = () => {
         setErrorMessage(errorMsg)
       }
 
-      // If there's no fromAmount set, initialize it with a reasonable default value
+      // Enhanced logic to always ensure minimum amount is set when needed
       const currentFromAmount = form.getValues().from
+      const currentFromAmountParsed = parseFloat(
+        currentFromAmount?.replace(/,/g, '') || '0'
+      )
+
       if (
         !currentFromAmount ||
-        parseFloat(currentFromAmount.replace(/,/g, '')) === 0
+        currentFromAmountParsed <= 0 ||
+        isNaN(currentFromAmountParsed)
       ) {
-        // Use 25% of max as a reasonable starting amount
-        const maxFromAmount = newMaxFromAmount / 1000
-        const initialAmount = Math.min(
-          maxFromAmount * 0.25,
-          Math.max(minOrderSize * 2, maxFromAmount * 0.1)
-        )
+        // Always set to minimum amount if the user has sufficient balance
+        const initialAmount = Math.max(minOrderSize, minOrderSize * 1.1) // Slightly above minimum for better UX
+
         logger.debug(
-          `Initializing from amount to ${initialAmount} ${fromAsset}`
+          `Setting from amount to minimum: ${initialAmount} ${fromAsset} (was: ${currentFromAmount})`
         )
 
         // Format and set the initial amount
         const formattedAmount = formatAmount(initialAmount, fromAsset)
         form.setValue('from', formattedAmount, { shouldValidate: true })
-        // setSelectedSize(25) // Set to 25% by default // REMOVE THIS LINE
 
         // Request a quote with this initial amount - debounced for 0.5 sec
         debouncedQuoteRequest(requestQuote)
@@ -843,14 +836,28 @@ export const Component = () => {
     displayAsset,
   ])
 
-  // Add a new effect to initialize the UI with a default "to" amount when pair is selected
+  // Enhanced effect to initialize the UI with minimum amounts when pair is selected
   useEffect(() => {
-    if (selectedPair && minFromAmount > 0 && !form.getValues().to) {
-      // If there's no "from" amount yet, set a default
-      if (!form.getValues().from) {
+    if (selectedPair && minFromAmount > 0) {
+      const currentFromAmount = form.getValues().from
+      const currentFromAmountParsed = parseFloat(
+        currentFromAmount?.replace(/,/g, '') || '0'
+      )
+
+      // Always ensure we have a minimum amount set
+      if (
+        !currentFromAmount ||
+        currentFromAmountParsed <= 0 ||
+        isNaN(currentFromAmountParsed)
+      ) {
         const fromAsset = form.getValues().fromAsset
-        const initialAmount = Math.max(minFromAmount * 2, maxFromAmount * 0.25)
+        // Use minimum order size, ensuring it's valid
+        const initialAmount = Math.max(minFromAmount, minFromAmount * 1.1)
         const formattedAmount = formatAmount(initialAmount, fromAsset)
+
+        logger.debug(
+          `Initializing UI with minimum amount: ${initialAmount} ${fromAsset}`
+        )
 
         form.setValue('from', formattedAmount, { shouldValidate: true })
 
@@ -1051,369 +1058,32 @@ export const Component = () => {
     ]
   )
 
-  // Add at the top, after other useState declarations
-  const [initStableTimer, setInitStableTimer] = useState<number | null>(null)
-
-  // Replace the main WebSocket initialization effect
-  useEffect(() => {
-    isMountedRef.current = true
-    let initTimeoutId: number | null = null
-
-    // Function to initialize WebSocket with debouncing
-    const initWebSocket = async () => {
-      // Prevent multiple initializations using refs for stability
-      if (
-        initializationRef.current ||
-        !isMountedRef.current ||
-        isInitializingRef.current
-      ) {
-        logger.debug(
-          'WebSocket initialization skipped: already initializing or component unmounted'
-        )
-        return
-      }
-
-      // Check if circuit breaker is active - don't try to connect if it is
-      const diagnostics = webSocketService.getDiagnostics()
-      if (diagnostics.circuitBreakerOpen) {
-        logger.warn(
-          'WebSocket initialization skipped: circuit breaker is active. Wait for it to reset or switch makers.'
-        )
-        if (isMountedRef.current) {
-          setIsWebSocketInitialized(true) // Mark as "initialized" to prevent retry loop
-        }
-        return
-      }
-
-      // Only proceed if we have pubKey (required for consistent client ID)
-      if (!pubKey) {
-        logger.warn('WebSocket initialization requires pubKey as client ID')
-        return
-      }
-
-      // Enhanced requirement checking - ensure channels, assets, AND RTK Query data are fully loaded
-      const hasBasicRequirements =
-        channels.length > 0 &&
-        assets.length > 0 &&
-        isAssetsLoaded &&
-        isChannelsLoaded &&
-        assetsData?.nia &&
-        assetsData.nia.length > 0
-
-      if (!hasBasicRequirements) {
-        logger.warn('Basic requirements not met for WebSocket initialization', {
-          assets: assets.length,
-          channels: channels.length,
-          hasRTKAssets: !!assetsData?.nia,
-          isAssetsLoaded,
-          isChannelsLoaded,
-          rtkAssetCount: assetsData?.nia?.length || 0,
-        })
-        return
-      }
-
-      // Enhanced channel completeness check - verify RGB channels are loaded if expected
-      const expectedRgbAssets = assetsData.nia.filter(
-        (asset) => asset.asset_id !== 'BTC'
-      )
-      const rgbChannels = channels.filter(
-        (c) => c.asset_id && c.asset_id !== 'BTC'
-      )
-
-      // If we have RGB assets but no RGB channels, channels might still be loading
-      if (expectedRgbAssets.length > 0 && rgbChannels.length === 0) {
-        logger.debug(
-          'RGB assets expected but no RGB channels found yet - delaying WebSocket initialization',
-          {
-            expectedRgbAssets: expectedRgbAssets.length,
-            foundRgbChannels: rgbChannels.length,
-            totalChannels: channels.length,
-          }
-        )
-        return
-      }
-
-      // Check for any tradable channels (don't require specific assets)
-      const hasAnyTradableChannels = channels.some(
-        (channel) =>
-          channel.ready &&
-          (channel.outbound_balance_msat > 0 ||
-            channel.inbound_balance_msat > 0) &&
-          channel.asset_id
-      )
-
-      if (!hasAnyTradableChannels) {
-        logger.warn(
-          'No tradable channels found. WebSocket initialization skipped.'
-        )
-        if (isMountedRef.current) {
-          setIsWebSocketInitialized(true)
-        }
-        return
-      }
-
-      // Check if we're already connected with the same client ID to prevent duplicate connections
-      if (webSocketService.isConnected()) {
-        logger.info('WebSocket already connected, skipping initialization')
-        if (isMountedRef.current) {
-          setIsWebSocketInitialized(true)
-          setIsLoading(false)
-
-          // Ensure we have pairs if connected but no pairs loaded
-          if (tradablePairs.length === 0) {
-            setTimeout(async () => {
-              try {
-                await fetchAndSetPairs()
-              } catch (error) {
-                logger.error(
-                  'Error fetching pairs on existing connection:',
-                  error
-                )
-              }
-            }, 500)
-          }
-        }
-        return
-      }
-
-      // Mark as initializing to prevent conflicts
-      isInitializingRef.current = true
-      initializationRef.current = true
-      logger.debug('Starting WebSocket initialization process')
-
-      // Set loading state immediately
-      if (isMountedRef.current) {
-        setIsLoading(true)
-      }
-
-      // Start the 30-second connection timeout
-      startConnectionTimeout()
-
-      try {
-        // Use pubkey[:16]-uuid format for client ID
-        const pubKeyPrefix = pubKey.slice(0, 16)
-        const uuid = crypto.randomUUID()
-        const clientId = `${pubKeyPrefix}-${uuid}`
-
-        logger.info(
-          `Initializing WebSocket connection to ${makerConnectionUrl} with pubKey as client ID: ${clientId.slice(0, 16)}...`
-        )
-
-        // Validate the makerConnectionUrl before attempting connection
-        try {
-          new URL(makerConnectionUrl)
-        } catch (urlError) {
-          throw new Error(`Invalid maker URL: ${makerConnectionUrl}`)
-        }
-
-        // Initialize the connection through the service
-        const success = webSocketService.init(
-          makerConnectionUrl,
-          clientId,
-          dispatch
-        )
-
-        if (success) {
-          logger.info('WebSocket initialization successful')
-          lastSuccessfulConnectionRef.current = Date.now()
-
-          // Fetch trading pairs after connection is established
-          // Use a timeout to wait for connection to be fully ready before fetching pairs
-          setTimeout(async () => {
-            if (tradablePairs.length === 0 && isMountedRef.current) {
-              try {
-                await fetchAndSetPairs()
-              } catch (pairsError) {
-                logger.error(
-                  'Error fetching pairs after WebSocket connection:',
-                  pairsError
-                )
-                // Don't fail the whole initialization if pairs fetch fails
-                if (isMountedRef.current) {
-                  toast.warning(
-                    'Connected to maker but failed to load trading pairs. Try refreshing.'
-                  )
-                }
-              }
-            }
-          }, 1000) // 1 second delay to ensure connection stability
-
-          // Log WebSocket diagnostics
-          const diagnostics = webSocketService.getDiagnostics()
-          logger.info('WebSocket connection diagnostics:', diagnostics)
-        } else {
-          logger.error('WebSocket initialization failed', {
-            hasAssets: !!assetsData?.nia?.length,
-            hasChannels: channels.length > 0,
-            makerConnectionUrl,
-            pubKeyAvailable: !!pubKey,
-          })
-          if (isMountedRef.current) {
-            // Only show error toast if this is a real failure, not just normal loading
-            if (assetsData?.nia?.length && channels.length > 0) {
-              toast.error(
-                'Could not connect to market maker. Check the maker URL and try again.',
-                {
-                  autoClose: 5000,
-                  toastId: 'websocket-connection-failed',
-                }
-              )
-            } else {
-              // Don't show error during normal loading - data is still being fetched
-              logger.info(
-                'WebSocket initialization skipped during data loading phase'
-              )
-            }
-          }
-        }
-      } catch (error) {
-        // Clear connection timeout on error
-        clearConnectionTimeout()
-
-        logger.error('Error during WebSocket initialization:', error)
-        if (isMountedRef.current) {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error'
-          toast.error(
-            `Connection error: ${errorMessage}. Please check settings and try again.`,
-            {
-              autoClose: 5000,
-              toastId: 'websocket-initialization-error',
-            }
-          )
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setIsLoading(false)
-          setIsWebSocketInitialized(true)
-        }
-        // Always reset the initializing flag
-        isInitializingRef.current = false
-      }
-    }
-
-    // Debounced initialization to prevent rapid reconnections
-    const debouncedInit = () => {
-      if (initTimeoutId) {
-        clearTimeout(initTimeoutId)
-      }
-      initTimeoutId = window.setTimeout(() => {
-        initWebSocket()
-        initTimeoutId = null
-      }, 2000) // Increased debounce time to 2 seconds to allow assets to fully load and prevent rapid reconnections
-    }
-
-    // --- STABILIZATION TIMER LOGIC ---
-    // Only initialize if all required data is present and stable for 1s
-    if (
-      channels.length > 0 &&
-      assets.length > 0 &&
-      isAssetsLoaded &&
-      isChannelsLoaded &&
-      pubKey &&
-      makerConnectionUrl &&
-      tradablePairs.length > 0 && // Only initialize if we have tradable pairs
-      !isWebSocketInitialized &&
-      !webSocketService.isConnected() &&
-      !isInitializingRef.current
-    ) {
-      // Additional validation before initialization
-      try {
-        new URL(makerConnectionUrl)
-        logger.info(
-          'Scheduling WebSocket initialization with stabilization timer'
-        )
-        if (initStableTimer) {
-          clearTimeout(initStableTimer)
-        }
-        const timer = window.setTimeout(() => {
-          debouncedInit()
-          setInitStableTimer(null)
-        }, 3000) // 3s stabilization to prevent frequent reconnections
-        setInitStableTimer(timer)
-      } catch (urlError) {
-        logger.error(
-          `Invalid maker URL detected: ${makerConnectionUrl}`,
-          urlError
-        )
-        if (isMountedRef.current) {
-          setErrorMessage(
-            `Invalid maker URL: ${makerConnectionUrl}. Please check your settings.`
-          )
-          setIsWebSocketInitialized(true) // Prevent retry loop
-        }
-      }
-    } else if (
-      channels.length === 0 ||
-      assets.length === 0 ||
-      !isAssetsLoaded ||
-      !isChannelsLoaded ||
-      !assetsData?.nia
-    ) {
-      // Don't reset initialization flag if basic data is not available
-      logger.debug(
-        'Basic data not available, skipping WebSocket initialization',
-        {
-          assets: assets.length,
-          channels: channels.length,
-          hasRTKAssets: !!assetsData?.nia,
-          isAssetsLoaded,
-          isChannelsLoaded,
-          rtkAssetCount: assetsData?.nia?.length || 0,
-        }
-      )
-    } else if (!pubKey) {
-      logger.warn('WebSocket initialization skipped: pubKey not available')
-    } else if (!makerConnectionUrl) {
-      logger.warn('WebSocket initialization skipped: maker URL not configured')
-    } else if (webSocketService.isConnected()) {
-      logger.debug(
-        'WebSocket already connected, ensuring initialization state is set'
-      )
-      if (isMountedRef.current && !isWebSocketInitialized) {
-        setIsWebSocketInitialized(true)
-      }
-    } else if (isWebSocketInitialized) {
-      logger.debug(
-        'WebSocket initialization already completed, but not connected - potential connection issue'
-      )
-    }
-
-    // Clean up function - disconnect WebSocket when leaving market maker page
-    return () => {
-      isMountedRef.current = false
-      // Clear any pending initialization
-      if (initTimeoutId) {
-        clearTimeout(initTimeoutId)
-        initTimeoutId = null
-      }
-      if (initStableTimer) {
-        clearTimeout(initStableTimer)
-        setInitStableTimer(null)
-      }
-      clearConnectionTimeout()
-      isInitializingRef.current = false
-      // Only disconnect if actually leaving the market maker route
-      if (window.location.pathname !== '/market-maker') {
-        logger.info('Leaving /market-maker route, disconnecting WebSocket')
-        webSocketService.close()
-        setIsWebSocketInitialized(false)
-        initializationRef.current = false
-      }
-    }
-  }, [
-    makerConnectionUrl,
-    pubKey,
-    channels.length,
-    assets.length,
-    isAssetsLoaded,
-    isChannelsLoaded,
-    assetsData?.nia?.length,
-    isWebSocketInitialized,
-    startConnectionTimeout,
-    clearConnectionTimeout,
-    tradablePairs.length,
-  ])
+  // Create a version that accepts fresh data as parameters
+  const fetchAndSetPairsWithData = useCallback(
+    (freshChannels: Channel[], freshAssets: NiaAsset[]) =>
+      createFetchAndSetPairsHandler(
+        getPairs,
+        dispatch,
+        freshChannels,
+        freshAssets,
+        form,
+        formatAmount,
+        setTradingPairs,
+        setTradablePairs,
+        setSelectedPair,
+        setIsPairsLoading
+      )(),
+    [
+      getPairs,
+      dispatch,
+      form,
+      formatAmount,
+      setTradingPairs,
+      setTradablePairs,
+      setSelectedPair,
+      setIsPairsLoading,
+    ]
+  )
 
   // Separate effect to handle channels and assets changes without reinitializing WebSocket
   useEffect(() => {
@@ -1671,239 +1341,265 @@ export const Component = () => {
     form,
   ])
 
-  // Fetch initial data
+  // Optimized initialization with step-by-step validation
   useEffect(() => {
-    const setup = async () => {
-      // Prevent multiple simultaneous setup calls
-      if (isSetupRunningRef.current) {
-        logger.debug('Setup already running, skipping duplicate call')
+    if (loadingPhase !== 'initializing') {
+      logger.debug(`Skipping setup - current phase: ${loadingPhase}`)
+      return
+    }
+
+    if (setupRunningRef.current) {
+      logger.debug('Setup already running, skipping duplicate execution')
+      return
+    }
+
+    logger.info('🚀 Starting optimized market maker initialization')
+
+    const optimizedSetup = async () => {
+      if (setupRunningRef.current) {
+        logger.debug('Setup already running, aborting duplicate execution')
         return
       }
 
-      isSetupRunningRef.current = true
-      setIsLoading(true)
+      setupRunningRef.current = true
 
       try {
-        // First, ensure we have assets data from RTK Query before proceeding
-        if (!assetsData?.nia || assetsData.nia.length === 0) {
+        // Phase 1: Get node info and channels first
+        logger.info('🔗 Phase 1: Checking channels and node info')
+        setLoadingPhase('validating-channels')
+
+        // Get node info and channels in parallel
+        const [nodeInfoResponse, channelsResponse] = await Promise.all([
+          nodeInfo(),
+          listChannels(),
+        ])
+
+        // Validate node info
+        if (!('data' in nodeInfoResponse) || !nodeInfoResponse.data) {
+          logger.error('❌ Failed to get node info')
+          throw new Error('Failed to get node information')
+        }
+        setPubKey(nodeInfoResponse.data.pubkey)
+        logger.debug('✅ Node info retrieved, pubkey set')
+
+        // Validate channels response
+        if (!('data' in channelsResponse) || !channelsResponse.data) {
+          logger.error('❌ Failed to get channels data')
+          throw new Error('Failed to get channels information')
+        }
+
+        const channelsList = channelsResponse.data.channels
+
+        if (channelsList.length === 0) {
+          logger.warn('❌ No channels found - lets check the balance')
+          setLoadingPhase('validating-balance')
+
+          // Get balance info
+          const balanceResponse = await btcBalance({ skip_sync: false })
+          if (!('data' in balanceResponse) || !balanceResponse.data) {
+            logger.error('❌ Failed to get balance data')
+            throw new Error('Failed to get balance information')
+          }
+
+          const { vanilla } = balanceResponse.data
+          const hasEnough = vanilla.spendable >= MIN_CHANNEL_CAPACITY
+          setHasEnoughBalance(hasEnough)
+
           logger.info(
-            'Waiting for assets data to be available from RTK Query...',
-            {
-              assetCount: assetsData?.nia?.length || 0,
-              hasAssetsData: !!assetsData,
-            }
+            `💰 Balance check: ${vanilla.spendable} sats (min required: ${MIN_CHANNEL_CAPACITY})`
           )
+          if (!hasEnough) {
+            logger.warn(
+              '❌ No channels and insufficient balance - redirecting to deposit'
+            )
+            setLoadingPhase('error')
+            setValidationError('insufficient-balance')
+            return
+          } else {
+            // No channels but sufficient balance - show no channels message
+            logger.warn(
+              '❌ No channels found but sufficient balance - redirecting to channel creation'
+            )
+            setLoadingPhase('error')
+            setValidationError('no-channels')
+            return
+          }
+        }
+
+        // Step 3: Set assets from RTK Query data
+        logger.info('🎨 Phase 3: Setting up assets')
+        if (!assetsData?.nia) {
+          logger.error('❌ No assets data available from RTK Query')
+          setLoadingPhase('error')
+          setValidationError('no-assets')
           return
         }
 
-        // Set assets first to ensure they're available for all subsequent operations
+        // Step 4: Update state and process fresh data
+        logger.info('🔄 Updating channels and assets state...')
+
+        // Update state with fresh data
+        setChannels(channelsList)
+        setIsChannelsLoaded(true)
         setAssets(assetsData.nia)
         setIsAssetsLoaded(true)
 
-        logger.info('Assets synchronized for initial data fetching:', {
-          assetCount: assetsData.nia.length,
-          firstFewAssetIds: assetsData.nia.slice(0, 3).map((a) => a.asset_id),
-        })
-
-        const [nodeInfoResponse, balanceResponse, getPairsResponse] =
-          await Promise.all([
-            nodeInfo(),
-            btcBalance({ skip_sync: false }),
-            getPairs(),
-          ])
-
-        if ('data' in nodeInfoResponse && nodeInfoResponse.data) {
-          setPubKey(nodeInfoResponse.data.pubkey)
-        }
-
-        let supportedAssets: string[] = []
-        if ('data' in getPairsResponse && getPairsResponse.data) {
-          const pairs = getPairsResponse.data.pairs
-          supportedAssets = Array.from(
-            new Set(
-              pairs.flatMap((pair) => [pair.base_asset_id, pair.quote_asset_id])
-            )
-          )
-        }
-
-        // Enhanced channel loading with retry logic for incomplete data
-        const loadChannelsWithRetry = async (
-          maxRetries = 3,
-          retryDelay = 1000
-        ): Promise<Channel[]> => {
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-              const listChannelsResponse = await listChannels()
-
-              if ('data' in listChannelsResponse && listChannelsResponse.data) {
-                const channelsList = listChannelsResponse.data.channels
-
-                // Count channels with different asset types
-                const btcChannels = channelsList.filter(
-                  (c) => c.asset_id === 'BTC' || !c.asset_id
-                )
-                const rgbChannels = channelsList.filter(
-                  (c) => c.asset_id && c.asset_id !== 'BTC'
-                )
-
-                logger.debug(`Channel loading attempt ${attempt}:`, {
-                  btcChannels: btcChannels.length,
-                  rgbChannels: rgbChannels.length,
-                  totalChannels: channelsList.length,
-                  uniqueAssetIds: [
-                    ...new Set(
-                      channelsList.map((c) => c.asset_id).filter(Boolean)
-                    ),
-                  ],
-                })
-
-                // If we have assets in RTK query, we should expect to have channels for them too
-                // Check if we have channels for at least some of the assets we know about
-                const expectedRgbAssetCount = assetsData.nia.filter(
-                  (asset) => asset.asset_id !== 'BTC'
-                ).length
-
-                // Accept the channels if:
-                // 1. We have at least one channel, AND
-                // 2. Either we have RGB channels OR we're on the last retry
-                const hasMinimumChannels = channelsList.length > 0
-                const hasExpectedRgbChannels =
-                  rgbChannels.length > 0 || expectedRgbAssetCount === 0
-                const isLastAttempt = attempt === maxRetries
-
-                if (
-                  hasMinimumChannels &&
-                  (hasExpectedRgbChannels || isLastAttempt)
-                ) {
-                  if (
-                    isLastAttempt &&
-                    rgbChannels.length === 0 &&
-                    expectedRgbAssetCount > 0
-                  ) {
-                    logger.warn(
-                      'Final channel loading attempt: missing expected RGB channels',
-                      {
-                        expectedRgbAssets: expectedRgbAssetCount,
-                        foundRgbChannels: rgbChannels.length,
-                      }
-                    )
-                  }
-                  return channelsList
-                }
-
-                // If not sufficient, retry unless it's the last attempt
-                if (attempt < maxRetries) {
-                  logger.info(
-                    `Channel data appears incomplete (attempt ${attempt}/${maxRetries}), retrying...`,
-                    {
-                      expected: `>= ${expectedRgbAssetCount} RGB channels`,
-                      found: `${rgbChannels.length} RGB channels`,
-                    }
-                  )
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, retryDelay)
-                  )
-                  continue
-                }
-
-                // Last attempt - return what we have
-                return channelsList
-              }
-
-              throw new Error('No channel data received')
-            } catch (error) {
-              logger.error(`Channel loading attempt ${attempt} failed:`, error)
-              if (attempt === maxRetries) {
-                throw error
-              }
-              await new Promise((resolve) => setTimeout(resolve, retryDelay))
-            }
-          }
-
-          throw new Error('Failed to load channels after all retries')
-        }
-
-        // Load channels with retry logic
-        const channelsList = await loadChannelsWithRetry()
-        setChannels(channelsList)
-        setIsChannelsLoaded(true)
-
-        // Check if there's at least one channel with a market maker supported asset
-        const hasValidChannels = channelsList.some(
-          (channel: Channel) =>
-            channel.asset_id !== null &&
-            channel.ready &&
-            (channel.outbound_balance_msat > 0 ||
-              channel.inbound_balance_msat > 0) &&
-            supportedAssets.includes(channel.asset_id)
-        )
-        setHasValidChannelsForTrading(hasValidChannels)
-
-        // Check if there's enough balance to open a channel
-        if ('data' in balanceResponse && balanceResponse.data) {
-          const { vanilla } = balanceResponse.data
-          setHasEnoughBalance(vanilla.spendable >= MIN_CHANNEL_CAPACITY)
-        }
-
-        // Add a small delay before fetching pairs to ensure channel state is fully settled
-        await new Promise((resolve) => setTimeout(resolve, 200))
-
-        // Fetch trading pairs after all basic data is loaded and settled
-        const pairsFound = await fetchAndSetPairs()
-
-        // If no tradable pairs were found, don't proceed with WebSocket connection
-        if (!pairsFound) {
+        // Check if we have channels but none are ready - if so, set ready phase to show channels not ready message
+        const readyChannels = channelsList.filter((c) => c.ready)
+        if (readyChannels.length === 0) {
           logger.warn(
-            'No tradable pairs found during setup - WebSocket connection will be skipped'
+            '❌ Channels exist but none are ready - setting ready phase to show channels not ready message'
           )
+          setLoadingPhase('ready')
           setIsInitialDataLoaded(true)
           return
         }
 
-        logger.info('Initial data fetched successfully')
+        // Step 5: Quick maker compatibility check using fresh data
+        logger.info(
+          '🤝 Phase 5: Connecting to maker and fetching trading pairs'
+        )
+        setLoadingPhase('connecting-maker')
+
+        logger.debug('Fetching trading pairs from maker with fresh data...')
+
+        // Fetch pairs using fresh data instead of waiting for state to update
+        const pairsFound = await fetchAndSetPairsWithData(
+          channelsList,
+          assetsData.nia
+        )
+
+        logger.info(
+          `📈 Trading pairs result: found=${pairsFound}, count=${tradablePairs.length}`,
+          {
+            assetsAvailable: assetsData.nia.length,
+            channelsAvailable: channelsList.length,
+            channelsReady: channelsList.filter((c) => c.ready).length,
+          }
+        )
+
+        if (!pairsFound) {
+          logger.warn('❌ No tradable pairs found from maker')
+          setLoadingPhase('error')
+          setValidationError('no-trading-pairs')
+          return
+        }
+
+        // Step 5: Mark as ready for WebSocket connection
+        logger.info('🎉 All validations passed! Ready for trading')
+        setLoadingPhase('ready')
         setIsInitialDataLoaded(true)
       } catch (error) {
-        logger.error('Error during setup:', error)
+        logger.error('💥 Error during optimized setup:', error)
+        setLoadingPhase('error')
+        setValidationError('setup-error')
         toast.error(
-          'Failed to initialize the swap component. Please try again.'
+          'Failed to initialize the trading interface. Please try again.'
         )
       } finally {
-        setIsLoading(false)
-        isSetupRunningRef.current = false
+        setupRunningRef.current = false
       }
     }
 
-    // Only run setup if we haven't loaded initial data yet
-    if (!isInitialDataLoaded && !isSetupRunningRef.current) {
-      // If assets aren't ready yet, retry in a moment
-      if (!assetsData?.nia?.length) {
-        const retryTimeout = setTimeout(() => {
-          if (
-            !isInitialDataLoaded &&
-            assetsData?.nia?.length &&
-            isMountedRef.current &&
-            !isSetupRunningRef.current
-          ) {
-            setup()
-          }
-        }, 1000) // Retry after 1 second
-
-        return () => clearTimeout(retryTimeout)
-      } else {
-        setup()
-      }
+    // Check assets data availability
+    if (!assetsData) {
+      logger.debug('⏳ Waiting for RTK Query assets data - no data yet')
+      return
     }
+
+    if (!assetsData.nia) {
+      logger.error('❌ RTK Query returned data but no nia array')
+      setLoadingPhase('error')
+      setValidationError('setup-error')
+      return
+    }
+
+    optimizedSetup()
   }, [
+    loadingPhase,
+    assetsData?.nia?.length,
     nodeInfo,
-    listChannels,
     btcBalance,
-    getPairs,
-    assetsData,
-    dispatch,
-    form,
-    formatAmount,
+    listChannels,
     fetchAndSetPairs,
-    isInitialDataLoaded,
+    makerConnectionUrl,
+  ])
+
+  // WebSocket initialization - only runs when we reach 'ready' phase
+  useEffect(() => {
+    if (
+      loadingPhase !== 'ready' ||
+      isWebSocketInitialized ||
+      !makerConnectionUrl ||
+      !pubKey
+    ) {
+      return
+    }
+
+    const initializeWebSocket = async () => {
+      try {
+        logger.info('Initializing WebSocket connection for trading interface')
+
+        // Use pubkey[:16]-uuid format for client ID
+        const pubKeyPrefix = pubKey.slice(0, 16)
+        const uuid = crypto.randomUUID()
+        const clientId = `${pubKeyPrefix}-${uuid}`
+
+        // Check if already connected to prevent unnecessary initialization
+        if (
+          webSocketService.isConnected() &&
+          webSocketService.getCurrentUrl() === makerConnectionUrl &&
+          webSocketService.isConnectionReadyForCommunication()
+        ) {
+          logger.info(
+            'WebSocket already connected and ready, skipping initialization'
+          )
+          setIsWebSocketInitialized(true)
+          lastSuccessfulConnectionRef.current = Date.now()
+          return
+        }
+
+        // Use the retry method for better reliability on initial connection
+        const success = await initializeWebSocketWithRetry(
+          makerConnectionUrl,
+          clientId,
+          dispatch,
+          5, // 5 retry attempts
+          8000 // Reduced timeout to 8 seconds per attempt
+        )
+
+        if (success) {
+          logger.info('WebSocket initialized and connected successfully')
+          setIsWebSocketInitialized(true)
+          lastSuccessfulConnectionRef.current = Date.now()
+        } else {
+          logger.error(
+            'WebSocket initialization failed after all retry attempts'
+          )
+
+          // Get diagnostics for troubleshooting
+          const diagnostics = webSocketService.getDiagnostics()
+          logger.debug('WebSocket failure diagnostics:', diagnostics)
+
+          toast.error(
+            'Failed to establish live connection to market maker. Please check the maker URL and try again.'
+          )
+        }
+      } catch (error) {
+        logger.error('Error initializing WebSocket:', error)
+        toast.error('Connection error occurred. Trading may be limited.')
+      }
+    }
+
+    // Reduced delay for faster initialization
+    const timer = setTimeout(initializeWebSocket, 200)
+    return () => clearTimeout(timer)
+  }, [
+    loadingPhase,
+    isWebSocketInitialized,
+    makerConnectionUrl,
+    pubKey,
+    dispatch,
   ])
 
   // Update amounts when selectedPair feed changes - don't try to use selectedPairFeed directly
@@ -2043,19 +1739,19 @@ export const Component = () => {
   const executeSwap = useMemo(
     () =>
       createSwapExecutor(
-        assets, // 1
-        pubKey, // 2
-        currentPrice || 0, // 3
-        selectedPair, // 4
-        parseAssetAmount, // 5
-        formatAmount, // 6
-        tradablePairs, // 7
-        initSwap, // 8
-        taker, // 9
-        execSwap, // 10
-        setSwapRecapDetails, // 11
-        setShowRecap, // 12
-        setErrorMessage // 13
+        assets,
+        pubKey,
+        currentPrice || 0,
+        selectedPair,
+        parseAssetAmount,
+        formatAmount,
+        tradablePairs,
+        initSwap,
+        taker,
+        execSwap,
+        setSwapRecapDetails,
+        setShowRecap,
+        setErrorMessage
       ),
     [
       assets,
@@ -2320,7 +2016,9 @@ export const Component = () => {
         return
       }
 
-      // Reset the circuit breaker and WebSocket state
+      logger.info('Manual reconnection requested - resetting WebSocket state')
+
+      // Reset the circuit breaker and WebSocket state completely
       webSocketService.resetForNewMaker()
       setIsWebSocketInitialized(false)
       initializationRef.current = false
@@ -2329,15 +2027,17 @@ export const Component = () => {
       // Clear any existing error messages
       setErrorMessage(null)
 
-      // Reinitialize the WebSocket connection
+      // Use the optimized retry method for reconnection
       const pubKeyPrefix = pubKey.slice(0, 16)
       const uuid = crypto.randomUUID()
       const clientId = `${pubKeyPrefix}-${uuid}`
 
-      const reconnected = webSocketService.init(
+      const reconnected = await initializeWebSocketWithRetry(
         makerConnectionUrl,
         clientId,
-        dispatch
+        dispatch,
+        3, // 3 retry attempts for manual reconnection
+        6000 // 6 second timeout per attempt
       )
 
       if (reconnected) {
@@ -2345,16 +2045,24 @@ export const Component = () => {
         lastSuccessfulConnectionRef.current = Date.now()
         setIsWebSocketInitialized(true)
 
-        // Wait a moment for connection to stabilize, then request a quote
+        // Request a quote now that connection is established and ready
         setTimeout(() => {
-          if (webSocketService.isConnected()) {
-            debouncedQuoteRequest(requestQuote)
-          }
-        }, 1000)
+          debouncedQuoteRequest(requestQuote)
+        }, 500) // Small delay to ensure connection is fully stable
+
+        toast.success('Reconnected to market maker successfully!', {
+          autoClose: 3000,
+          toastId: 'market-maker-reconnection-success',
+        })
       } else {
-        logger.error('Failed to reconnect to market maker')
+        logger.error('Failed to reconnect to market maker after retry attempts')
+
+        // Get diagnostics for troubleshooting
+        const diagnostics = webSocketService.getDiagnostics()
+        logger.debug('Reconnection failure diagnostics:', diagnostics)
+
         toast.error(
-          'Failed to reconnect to market maker. Please check your connection.',
+          'Failed to reconnect to market maker. Please check the maker URL and your network connection.',
           {
             autoClose: 5000,
             toastId: 'market-maker-reconnection-failed',
@@ -2770,21 +2478,12 @@ export const Component = () => {
     </div>
   )
 
-  // Determine if we're still in a loading state - be more comprehensive
+  // Simplified loading state based on validation phase
   const isStillLoading =
-    !connectionTimeout && // Don't show loading if connection has timed out
-    (!minLoadingDone ||
-      isLoading || // True during the main setup fetchData
-      !isInitialDataLoaded ||
-      !isChannelsLoaded ||
-      !isAssetsLoaded ||
-      isPairsLoading || // True until fetchAndSetPairs completes
-      (!!makerConnectionUrl &&
-        hasTradableChannels(channels) &&
-        tradablePairs.length > 0 && // Only wait for WebSocket if we have tradable pairs
-        !isWebSocketInitialized) ||
-      channels.length === 0 ||
-      (tradablePairs.length === 0 && isPairsLoading))
+    loadingPhase === 'initializing' ||
+    loadingPhase === 'validating-balance' ||
+    loadingPhase === 'validating-channels' ||
+    loadingPhase === 'connecting-maker'
 
   // Debug logging for loading states
   useEffect(() => {
@@ -2845,30 +2544,130 @@ export const Component = () => {
     pubKey,
   ])
 
-  // Determine if we should show the "no trading channels" message
-  const shouldShowNoChannelsMessage =
-    !isStillLoading &&
-    (!makerConnectionUrl || // Case 1: No maker URL configured
-      !hasValidChannelsForTrading || // Case 2: Initial setup deemed no valid channels
-      (tradablePairs.length === 0 && !isPairsLoading && isInitialDataLoaded) || // Case 3: No pairs and not loading and initial data loaded
-      // Case 4: Maker URL exists, WS init done, not connected, AND no physical tradable channels
-      (!!makerConnectionUrl &&
-        isWebSocketInitialized &&
-        !wsConnected &&
-        !hasTradableChannels(channels)))
+  // Handle validation actions when user clicks buttons
+  const handleDepositAction = useCallback(() => {
+    dispatch(uiSliceActions.setModal({ assetId: undefined, type: 'deposit' }))
+  }, [dispatch])
 
-  // Determine if we should show the WebSocket disconnected message
+  const handleCreateChannelAction = useCallback(() => {
+    navigate(CREATE_NEW_CHANNEL_PATH)
+  }, [navigate])
+
+  const handleBuyChannelAction = useCallback(() => {
+    navigate(ORDER_CHANNEL_PATH)
+  }, [navigate])
+
+  // Determine what to show based on loading phase and validation state
+  const shouldShowNoChannelsMessage =
+    loadingPhase === 'error' && validationError === 'no-trading-pairs'
+
+  const shouldShowInsufficientBalance =
+    loadingPhase === 'error' && validationError === 'insufficient-balance'
+
+  const shouldShowNoChannels =
+    loadingPhase === 'error' && validationError === 'no-channels'
+
   const shouldShowWSDisconnectedMessage =
-    !isStillLoading &&
-    !!makerConnectionUrl && // Maker URL must exist
-    (isWebSocketInitialized || connectionTimeout) && // WebSocket initialization must have been attempted OR timed out
-    !wsConnected && // WebSocket is currently not connected
-    hasTradableChannels(channels) && // Physical tradable channels exist
-    hasValidChannelsForTrading // Trading was deemed possible based on initial channel/pair checks
+    loadingPhase === 'ready' && !wsConnected && isWebSocketInitialized
+
+  // Check if we have channels but they're not ready yet
+  const hasUnreadyChannels =
+    channels.length > 0 && !channels.some((channel) => channel.ready)
+  const shouldShowChannelsNotReady =
+    loadingPhase === 'ready' && hasUnreadyChannels
+
+  // Dynamic loading message based on phase
+  const getLoadingMessage = () => {
+    switch (loadingPhase) {
+      case 'validating-balance':
+        return 'Checking wallet balance and requirements...'
+      case 'validating-channels':
+        return 'Verifying channel availability and liquidity...'
+      case 'connecting-maker':
+        return 'Connecting to market maker and fetching trading pairs...'
+      default:
+        return 'Initializing trading infrastructure...'
+    }
+  }
 
   return (
     <div className="w-full min-h-full overflow-y-auto relative">
-      {shouldShowNoChannelsMessage ? (
+      {/* Handle insufficient balance with action buttons */}
+      {shouldShowInsufficientBalance ? (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+            <div className="flex flex-col items-center space-y-6">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
+                <Wallet className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                Insufficient Bitcoin Balance
+              </h2>
+              <p className="text-slate-400 text-center text-base max-w-md">
+                You need bitcoin to open a trading channel. Please deposit some
+                BTC to get started with trading.
+              </p>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl 
+                           font-medium transition-colors flex items-center gap-2 text-base
+                           shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+                  onClick={handleDepositAction}
+                >
+                  <Wallet className="w-5 h-5" />
+                  Deposit Bitcoin
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : /* Handle no channels with action buttons */
+      shouldShowNoChannels ? (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+            <div className="flex flex-col items-center space-y-6">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                <Link className="w-8 h-8 text-blue-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                No Channels Available
+              </h2>
+              <p className="text-slate-400 text-center text-base max-w-md">
+                To start trading, you need to create a channel with some assets
+                or buy one from a Lightning Service Provider.
+              </p>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl 
+                           font-medium transition-colors flex items-center gap-2 text-base
+                           shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+                  onClick={handleCreateChannelAction}
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Channel
+                </button>
+                <button
+                  className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl 
+                           hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-base
+                           shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+                  onClick={handleBuyChannelAction}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Buy from LSP
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : /* Show channels not ready message */
+      shouldShowChannelsNotReady ? (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <ChannelsNotReadyMessage onRefresh={refreshChannelsAndAmounts} />
+        </div>
+      ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
+      shouldShowNoChannelsMessage ? (
         <NoTradingChannelsMessage
           {...createTradingChannelsMessageProps(
             assets,
@@ -2892,20 +2691,12 @@ export const Component = () => {
                 </div>
                 <div className="text-center space-y-4 max-w-lg">
                   <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
-                    Connecting to Market Maker
+                    {loadingPhase === 'connecting-maker'
+                      ? 'Connecting to Market Maker'
+                      : 'Initializing Trading Interface'}
                   </p>
                   <p className="text-slate-300 text-base leading-relaxed">
-                    {isLoading
-                      ? 'Initializing trading infrastructure and establishing secure connection...'
-                      : !isChannelsLoaded
-                        ? 'Loading channel information and verifying liquidity...'
-                        : !isAssetsLoaded
-                          ? 'Loading supported assets and trading pairs...'
-                          : isPairsLoading
-                            ? 'Fetching real-time trading pairs and market data...'
-                            : !!makerConnectionUrl && !isWebSocketInitialized
-                              ? 'Establishing WebSocket connection for live quotes...'
-                              : 'Finalizing setup and preparing trading interface...'}
+                    {getLoadingMessage()}
                   </p>
                   <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
                     <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
@@ -2914,84 +2705,11 @@ export const Component = () => {
               </div>
             ) : shouldShowWSDisconnectedMessage ? (
               <div className="flex justify-center items-center min-h-[60vh]">
-                <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-3xl border border-slate-600/50 shadow-2xl max-w-3xl w-full">
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-500/8 via-orange-500/6 to-red-500/8"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent"></div>
-                  <div className="relative p-8">
-                    {connectionTimeout ? (
-                      <div className="text-center space-y-6">
-                        <div className="flex justify-center mb-4">
-                          <div className="w-16 h-16 bg-gradient-to-br from-red-500/30 via-orange-500/25 to-red-500/30 rounded-full flex items-center justify-center border border-red-500/40 backdrop-blur-sm">
-                            <div className="w-8 h-8 text-red-400">⚠️</div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <h2 className="text-2xl font-bold text-white bg-gradient-to-r from-white via-red-100 to-orange-100 bg-clip-text text-transparent">
-                            Connection Timeout
-                          </h2>
-                          <p className="text-slate-300 text-lg leading-relaxed max-w-2xl mx-auto">
-                            Unable to connect to the market maker after 30
-                            seconds. This could be due to network issues, an
-                            incorrect maker URL, or the maker being temporarily
-                            unavailable.
-                          </p>
-                          <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-4 border border-slate-600/40 shadow-inner">
-                            <p className="text-slate-400 text-sm">
-                              <strong className="text-white">
-                                Current Maker:
-                              </strong>{' '}
-                              {makerConnectionUrl
-                                ? new URL(makerConnectionUrl).hostname
-                                : 'None'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                          <button
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600/30 via-blue-600/25 to-purple-600/30 text-white hover:from-cyan-600/40 hover:to-purple-600/40 transition-all border border-cyan-500/50 hover:border-purple-400/70 font-semibold shadow-lg backdrop-blur-sm"
-                            onClick={() => {
-                              // Reset timeout state and try to reconnect
-                              setConnectionTimeout(false)
-                              clearConnectionTimeout()
-                              setIsWebSocketInitialized(false)
-                              initializationRef.current = false
-                              isInitializingRef.current = false
-                            }}
-                            type="button"
-                          >
-                            Retry Connection
-                          </button>
-
-                          <button
-                            className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600/30 via-orange-600/25 to-amber-600/30 text-amber-300 hover:from-amber-600/40 hover:to-orange-600/40 transition-all border border-amber-500/50 hover:border-orange-400/70 font-semibold shadow-lg backdrop-blur-sm"
-                            onClick={refreshAmounts}
-                            type="button"
-                          >
-                            Change Market Maker
-                          </button>
-                        </div>
-
-                        <div className="text-xs text-slate-500 space-y-2">
-                          <p>Need help? Check that:</p>
-                          <ul className="list-disc list-inside space-y-1 text-left max-w-md mx-auto">
-                            <li>Your internet connection is stable</li>
-                            <li>The maker URL is correct and reachable</li>
-                            <li>The market maker service is running</li>
-                            <li>No firewall is blocking the connection</li>
-                          </ul>
-                        </div>
-                      </div>
-                    ) : (
-                      <WebSocketDisconnectedMessage
-                        makerUrl={makerConnectionUrl}
-                        onMakerChange={refreshAmounts}
-                        onRetryConnection={handleReconnectToMaker}
-                      />
-                    )}
-                  </div>
-                </div>
+                <WebSocketDisconnectedMessage
+                  makerUrl={makerConnectionUrl}
+                  onMakerChange={refreshAmounts}
+                  onRetryConnection={handleReconnectToMaker}
+                />
               </div>
             ) : (
               <div className="flex justify-center items-start min-h-[60vh]">
