@@ -78,7 +78,8 @@ export const Component = () => {
 
   const onSubmit: SubmitHandler<Fields> = async (data) => {
     let shouldRetry = true
-    let pollingInterval = 2000
+    let pollingInterval = 2000 // Start with 2 seconds
+    let maxPollingInterval = 15000 // Max 15 seconds
     let doubleFetchErrorFlag = false
 
     setIsUnlocking(true)
@@ -112,18 +113,20 @@ export const Component = () => {
 
         shouldRetry = false
       } catch (e: any) {
-        // Handle Tauri timeout error (60 seconds)
+        // Handle any kind of timeout or resource loading error
         if (
           e?.message?.includes('timeout') ||
-          e?.message?.includes('Timeout')
+          e?.message?.includes('timed out') ||
+          e?.message?.includes('The request timed out')
         ) {
-          // If we get a timeout error, continue retrying
-          await new Promise((res) => setTimeout(res, 2000)) // Wait 2 seconds before retrying
+          // For timeouts, silently retry with backoff
+          await new Promise((res) => setTimeout(res, pollingInterval))
+          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
           continue
         }
 
-        let errorMessage: string
         const error = e as NodeApiError
+        let errorMessage: string
 
         if (error?.data?.error) {
           errorMessage = error.data.error
@@ -133,36 +136,27 @@ export const Component = () => {
           errorMessage = 'An unknown error occurred'
         }
 
-        // Handle network/connection errors
+        // Handle network/connection errors - silently retry like timeouts
         if (
           typeof error.status === 'string' &&
-          error?.status === 'FETCH_ERROR'
+          (error?.status === 'FETCH_ERROR' || error?.status === 'TIMEOUT_ERROR')
         ) {
-          errorMessage =
-            'Connection failed: Unable to connect to the node. Please check if the node is running and accessible.'
-          if (doubleFetchErrorFlag) {
-            setUnlockError(errorMessage)
-            toast.error(errorMessage, {
-              autoClose: 5000,
-              position: 'top-right',
-            })
-            shouldRetry = false
-            continue
-          } else {
-            // First fetch error, wait and retry
-            await new Promise((res) => setTimeout(res, 2000))
+          // Don't show any error, just retry
+          await new Promise((res) => setTimeout(res, pollingInterval))
+          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
+          if (!doubleFetchErrorFlag) {
             doubleFetchErrorFlag = true
-            continue
           }
+          continue
         }
 
-        // Handle node state change
+        // Handle node state change - silently retry with backoff
         if (
           error?.status === 403 &&
           errorMessage === 'Cannot call other APIs while node is changing state'
         ) {
           await new Promise((res) => setTimeout(res, pollingInterval))
-          pollingInterval = Math.min(pollingInterval * 2, 15000)
+          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
           continue
         }
 
@@ -175,6 +169,7 @@ export const Component = () => {
           shouldRetry = false
           continue
         }
+
         // Handle initialization and already unlocked cases
         if (
           error.status === 403 &&
@@ -190,13 +185,10 @@ export const Component = () => {
           navigate(WALLET_DASHBOARD_PATH)
           shouldRetry = false
         } else {
-          // Handle all other errors
-          setUnlockError(errorMessage)
-          toast.error(errorMessage, {
-            autoClose: 5000,
-            position: 'top-right',
-          })
-          shouldRetry = false
+          // For any other error that we haven't explicitly handled, retry silently
+          await new Promise((res) => setTimeout(res, pollingInterval))
+          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
+          continue
         }
       }
     }
