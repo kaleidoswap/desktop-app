@@ -113,11 +113,6 @@ export const getValidationError = (
     return 'Please enter an amount to send.'
   }
 
-  // Only validate toAmount if we're not loading
-  if (!isToAmountLoading && toAmount === 0) {
-    return 'The received amount cannot be zero. Try a different amount.'
-  }
-
   // Minimum amount check
   if (fromAmount < minFromAmount) {
     return `The minimum order size is ${formatAmount(
@@ -134,8 +129,13 @@ export const getValidationError = (
     )} ${displayAsset(fromDisplayAsset)}.`
   }
 
-  // Only check maxToAmount if we're not loading
-  if (!isToAmountLoading && toAmount > maxToAmount) {
+  // Only check maxToAmount if we're not loading any quote-related data
+  if (
+    !isToAmountLoading &&
+    !isQuoteLoading &&
+    !isPriceLoading &&
+    toAmount > maxToAmount
+  ) {
     return `You can only receive up to ${formatAmount(
       maxToAmount,
       toDisplayAsset

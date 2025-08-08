@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 const iconBaseUrl =
-  'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/color/'
+  'https://raw.githubusercontent.com/kaleidoswap/cryptocurrency-icons/master/32/color/'
 const defaultIcon = `${iconBaseUrl}generic.png`
 
 export function useAssetIcon(ticker: string): string {

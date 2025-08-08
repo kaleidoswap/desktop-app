@@ -1,4 +1,4 @@
-## [Version 0.1.2] - 2025-07-23
+## [Version 0.2.0] - 2025-07-23
 
 ### 🚀 Features
 - Enhance `IssueAssetModal` with amount calculation and preview using `useMemo` hooks for better user feedback (70f3cee0)

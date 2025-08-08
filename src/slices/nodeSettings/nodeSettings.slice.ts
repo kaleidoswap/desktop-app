@@ -26,9 +26,9 @@ export type NodeSettings = Account
 
 const initialState: NodeSettingsState = {
   data: {
+    bearer_token: '',
     daemon_listening_port: '',
     datapath: '',
-    bearer_token: '',
     default_lsp_url: '',
     default_maker_url: '',
     indexer_url: '',

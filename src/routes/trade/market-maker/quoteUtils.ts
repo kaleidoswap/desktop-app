@@ -104,6 +104,24 @@ export const createQuoteRequestHandler = (
       return
     }
 
+    // Check if amount is below minimum or if balance is insufficient
+    if (minFromAmount !== undefined) {
+      if (fromAmount < minFromAmount) {
+        // Amount is below minimum - don't request quote
+        logger.debug(
+          `Amount (${fromAmount}) is below minimum required (${minFromAmount}), skipping quote request`
+        )
+        if (setIsQuoteLoading) {
+          setIsQuoteLoading(false)
+        }
+        if (setIsToAmountLoading) {
+          setIsToAmountLoading(false)
+        }
+        form.setValue('to', '') // Clear 'to' field since we can't trade
+        return
+      }
+    }
+
     // Check if the user's balance is below the minimum required amount
     if (maxFromAmount !== undefined && minFromAmount !== undefined) {
       if (maxFromAmount < minFromAmount) {
