@@ -67,7 +67,7 @@
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "vite": "^5.1.4"
+    "vite": "^7.1.5"
   },
   "lint-staged": {
     "src/**/*": "prettier --write --ignore-unknown",
