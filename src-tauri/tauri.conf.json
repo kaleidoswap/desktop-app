@@ -8,11 +8,11 @@
   "bundle": {
     "active": true,
     "icon": [
-      "icons/logo.icns",
-      "icons/logo.ico",
       "icons/128x128.png",
       "icons/256x256.png",
-      "icons/512x512.png"
+      "icons/512x512.png",
+      "icons/icon.icns",
+      "icons/logo.ico"
     ],
     "targets": "all",
     "resources": [
