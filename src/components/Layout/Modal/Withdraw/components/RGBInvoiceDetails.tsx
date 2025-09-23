@@ -27,10 +27,15 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
       )
     : '0'
 
-  // Format amount for display using utility function
-  const formattedAmount = decodedRgbInvoice.amount
+  // Get amount from assignment and format for display
+  const assignmentAmount =
+    decodedRgbInvoice.assignment?.type === 'Fungible'
+      ? decodedRgbInvoice.assignment.value
+      : null
+
+  const formattedAmount = assignmentAmount
     ? formatAssetAmountWithPrecision(
-        decodedRgbInvoice.amount,
+        assignmentAmount,
         ticker,
         bitcoinUnit,
         assets.data?.nia
@@ -56,7 +61,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
           </div>
         )}
 
-        {decodedRgbInvoice.amount && (
+        {assignmentAmount && (
           <div className="flex justify-between">
             <span className="text-slate-400">Amount:</span>
             <span className="text-white font-bold">

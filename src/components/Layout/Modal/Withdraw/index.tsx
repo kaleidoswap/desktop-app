@@ -17,6 +17,8 @@ import {
   DecodeInvoiceResponse,
   DecodeRgbInvoiceResponse,
   NiaAsset,
+  Assignment,
+  AssignmentFungible,
 } from '../../../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
@@ -33,6 +35,31 @@ import {
 const isLightningAddress = (input: string): boolean => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(input)
+}
+
+// Helper function to extract amount from assignment
+const getAssignmentAmount = (assignment: Assignment | null): number | null => {
+  if (!assignment) return null
+
+  switch (assignment.type) {
+    case 'Fungible':
+      return assignment.value
+    case 'InflationRight':
+      return assignment.value
+    case 'Any':
+    case 'NonFungible':
+    case 'ReplaceRight':
+    default:
+      return null
+  }
+}
+
+// Helper function to create fungible assignment from amount
+const createFungibleAssignment = (amount: number): AssignmentFungible => {
+  return {
+    type: 'Fungible',
+    value: amount,
+  }
 }
 
 export const WithdrawModalContent: React.FC = () => {
@@ -378,20 +405,23 @@ export const WithdrawModalContent: React.FC = () => {
               } else {
                 // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
-                if (decodedRgb.amount) {
+                const assignmentAmount = getAssignmentAmount(
+                  decodedRgb.assignment
+                )
+                if (assignmentAmount) {
                   const assetInfo = assets.data?.nia.find(
                     (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
                   )
                   const ticker = assetInfo?.ticker || 'Unknown'
                   const precision = assetInfo?.precision || 8
                   const formattedAmount =
-                    decodedRgb.amount / Math.pow(10, precision)
+                    assignmentAmount / Math.pow(10, precision)
 
                   // Get the actual RGB asset balance
                   const rgbBalance = assetInfo?.balance.spendable || 0
                   const formattedBalance = rgbBalance / Math.pow(10, precision)
 
-                  if (decodedRgb.amount > rgbBalance) {
+                  if (assignmentAmount > rgbBalance) {
                     setValue('amount', formattedBalance)
                     setValidationError(
                       `Warning: The invoice requested ${formattedAmount} ${ticker} but your balance is only ${formattedBalance} ${ticker}. Adjusted to maximum sendable amount.`
@@ -785,13 +815,21 @@ export const WithdrawModalContent: React.FC = () => {
               )
             }
 
+            // For RGB asset transfers, always use a Fungible assignment
+            // If the invoice has a specific amount in its assignment, use that, otherwise use the raw amount
+            let assignmentAmount = rawAmount
+            if (
+              decodedRgbInvoice.assignment?.type === 'Fungible' &&
+              decodedRgbInvoice.assignment.value
+            ) {
+              assignmentAmount = decodedRgbInvoice.assignment.value
+            }
+
+            const assignment = createFungibleAssignment(assignmentAmount)
+
             res = await sendAsset({
-              amount:
-                decodedRgbInvoice.amount !== null &&
-                decodedRgbInvoice.amount !== undefined
-                  ? decodedRgbInvoice.amount
-                  : rawAmount,
               asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
+              assignment,
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
@@ -807,8 +845,8 @@ export const WithdrawModalContent: React.FC = () => {
               throw new Error('Proxy transport endpoint is not configured.')
             }
             res = await sendAsset({
-              amount: rawAmount,
               asset_id: pendingData.asset_id,
+              assignment: createFungibleAssignment(rawAmount),
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'

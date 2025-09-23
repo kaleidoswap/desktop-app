@@ -224,13 +224,42 @@ interface SendBTCResponse {
   txid: string
 }
 
+export interface AssignmentFungible {
+  type: 'Fungible'
+  value: number
+}
+
+export interface AssignmentNonFungible {
+  type: 'NonFungible'
+}
+
+export interface AssignmentInflationRight {
+  type: 'InflationRight'
+  value: number
+}
+
+export interface AssignmentReplaceRight {
+  type: 'ReplaceRight'
+}
+
+export interface AssignmentAny {
+  type: 'Any'
+}
+
+export type Assignment =
+  | AssignmentFungible
+  | AssignmentNonFungible
+  | AssignmentInflationRight
+  | AssignmentReplaceRight
+  | AssignmentAny
+
 interface SendAssetRequest {
   asset_id: string
-  amount: number
+  assignment: Assignment
+  donation?: boolean
   recipient_id: string
   fee_rate: number
   transport_endpoints: string[]
-  donation?: boolean
 }
 
 interface SendAssetResponse {
@@ -294,10 +323,14 @@ export interface Transfer {
   created_at: number
   updated_at: number
   status: 'WaitingCounterparty' | 'WaitingConfirmations' | 'Settled' | 'Failed'
-  amount: number
+  requested_assignment: AssignmentFungible
+  assignments: AssignmentFungible[]
   kind: 'Issuance' | 'ReceiveBlind' | 'ReceiveWitness' | 'Send'
   txid: string
   recipient_id?: string
+  receive_utxo?: string
+  change_utxo?: string
+  expiration?: number
   transport_endpoints?: Array<{
     endpoint: string
     transport_type: string
@@ -333,23 +366,23 @@ interface MakerExecuteRequest {
   taker_pubkey: string
 }
 
+export interface RgbAllocation {
+  asset_id: string
+  assignment: AssignmentFungible
+  settled: boolean
+}
+
+export interface Unspent {
+  utxo: {
+    outpoint: string
+    btc_amount: number
+    colorable: boolean
+  }
+  rgb_allocations: RgbAllocation[]
+}
+
 interface ListUnspentsResponse {
-  unspents: [
-    {
-      utxo: {
-        outpoint: string
-        btc_amount: string
-        colorable: boolean
-      }
-      rgb_allocations: [
-        {
-          asset_id: string
-          amount: number
-          settled: boolean
-        },
-      ]
-    },
-  ]
+  unspents: Unspent[]
 }
 
 interface ListUnspentsRequest {
@@ -416,9 +449,9 @@ export interface DecodeInvoiceResponse {
 
 export interface DecodeRgbInvoiceResponse {
   recipient_id: string
-  asset_iface: string | null
+  asset_schema: string | null
   asset_id: string | null
-  amount: number | null
+  assignment: Assignment | null
   network: string
   expiration_timestamp: number
   transport_endpoints: string[]
@@ -895,9 +928,9 @@ export const nodeApi = createApi({
     sendAsset: builder.query<SendAssetResponse, SendAssetRequest>({
       query: (body) => ({
         body: {
-          amount: body.amount,
           asset_id: body.asset_id,
-          donation: false,
+          assignment: body.assignment,
+          donation: body.donation || false,
           fee_rate: body.fee_rate,
           min_confirmations: 1,
           recipient_id: body.recipient_id,
