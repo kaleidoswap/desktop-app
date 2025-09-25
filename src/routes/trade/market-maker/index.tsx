@@ -23,7 +23,11 @@ import {
   WebSocketDisconnectedMessage,
   ChannelsNotReadyMessage,
 } from '../../../components/Trade'
-import { MIN_CHANNEL_CAPACITY , MSATS_PER_SAT, RGB_HTLC_MIN_SAT } from '../../../constants'
+import {
+  MIN_CHANNEL_CAPACITY,
+  MSATS_PER_SAT,
+  RGB_HTLC_MIN_SAT,
+} from '../../../constants'
 import {
   getAssetPrecision,
   formatAssetAmountWithPrecision,
@@ -196,6 +200,7 @@ export const Component = () => {
   const isMountedRef = useRef(false)
   const initializationRef = useRef(false)
   const lastSuccessfulConnectionRef = useRef(0)
+  const errorMessageTimeoutRef = useRef<number | null>(null)
 
   const isInitializingRef = useRef(false)
   const setupRunningRef = useRef(false)
@@ -424,11 +429,42 @@ export const Component = () => {
           setIsPriceLoading(false)
           setIsQuoteLoading(false)
 
-          // Only show connection error if we're connected but can't get a quote
-          if (wsConnected && form.getValues().from && !isQuoteLoading) {
-            setErrorMessage(
-              'Unable to get quote from market maker. Please try again.'
-            )
+          // Only show connection error if:
+          // 1. We're connected to WebSocket
+          // 2. There's a 'from' amount entered
+          // 3. We're not currently in any loading state
+          // 4. There's no existing error message (to avoid overwriting validation errors)
+          const fromAmount = form.getValues().from
+          const hasFromAmount = fromAmount && fromAmount !== '0'
+
+          if (
+            wsConnected &&
+            hasFromAmount &&
+            !isToAmountLoading &&
+            !isPriceLoading &&
+            !errorMessage
+          ) {
+            // Clear any existing error timeout
+            if (errorMessageTimeoutRef.current) {
+              clearTimeout(errorMessageTimeoutRef.current)
+              errorMessageTimeoutRef.current = null
+            }
+
+            // Add a small delay to avoid showing error during rapid quote requests
+            errorMessageTimeoutRef.current = window.setTimeout(() => {
+              // Double-check conditions haven't changed during the timeout
+              if (
+                wsConnected &&
+                !isToAmountLoading &&
+                !isPriceLoading &&
+                !hasValidQuote
+              ) {
+                setErrorMessage(
+                  'Unable to get quote from market maker. Please try again.'
+                )
+              }
+              errorMessageTimeoutRef.current = null
+            }, 1000) // 1 second delay to allow for quote processing
           }
         })
       } catch (error) {
@@ -445,6 +481,12 @@ export const Component = () => {
 
     if (isNewQuote) {
       lastQuoteResponseRef.current = quoteResponse
+
+      // Clear any pending error message timeout since we got a quote
+      if (errorMessageTimeoutRef.current) {
+        clearTimeout(errorMessageTimeoutRef.current)
+        errorMessageTimeoutRef.current = null
+      }
 
       // Use requestAnimationFrame to batch updates and prevent render loops
       window.requestAnimationFrame(() => {
@@ -1146,6 +1188,12 @@ export const Component = () => {
       if (connectionTimeoutTimer) {
         clearTimeout(connectionTimeoutTimer)
         setConnectionTimeoutTimer(null)
+      }
+
+      // Clear any pending error message timeout
+      if (errorMessageTimeoutRef.current) {
+        clearTimeout(errorMessageTimeoutRef.current)
+        errorMessageTimeoutRef.current = null
       }
 
       // Reset all refs
