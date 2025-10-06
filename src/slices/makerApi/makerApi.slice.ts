@@ -173,6 +173,15 @@ interface StatusResponse {
   swap: Swap
 }
 
+export interface ChannelFees {
+  setup_fee: number
+  capacity_fee: number
+  duration_fee: number
+  total_fee: number
+  applied_discount?: number
+  discount_code?: string
+}
+
 const dynamicBaseQuery = async (args: any, api: any, extraOptions: any) => {
   const state = api.getState()
   const baseUrl =
@@ -194,6 +203,13 @@ export const makerApi = createApi({
         url: '/api/v1/lsps1/create_order',
       }),
     }),
+    estimate_fees: builder.query<ChannelFees, Lsps1CreateOrderRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/lsps1/estimate_fees',
+      }),
+    }),
     execSwap: builder.query<void, ExecSwapRequest>({
       query: (body) => ({
         body,
@@ -202,10 +218,10 @@ export const makerApi = createApi({
         url: '/api/v1/swaps/execute',
       }),
     }),
+
     getPairs: builder.query<GetPairsResponse, void>({
       query: () => '/api/v1/market/pairs',
     }),
-
     get_info: builder.query<Lsps1GetInfoResponse, void>({
       query: () => '/api/v1/lsps1/get_info',
     }),

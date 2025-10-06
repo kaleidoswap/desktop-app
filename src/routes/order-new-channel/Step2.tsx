@@ -20,7 +20,8 @@ import {
   OrderChannelFormSchema,
   TChannelRequestForm,
 } from '../../slices/channel/orderChannel.slice'
-import { makerApi } from '../../slices/makerApi/makerApi.slice'
+import { makerApi, ChannelFees } from '../../slices/makerApi/makerApi.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 import { FormError } from './FormError'
 import 'react-toastify/dist/ReactToastify.css'
@@ -226,20 +227,24 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     useState<number>(MIN_CHANNEL_CAPACITY)
   const [effectiveMaxCapacity, setEffectiveMaxCapacity] =
     useState<number>(MAX_CHANNEL_CAPACITY)
+  const [fees, setFees] = useState<ChannelFees | null>(null)
+  const [isLoadingFees, setIsLoadingFees] = useState(false)
 
   const { handleSubmit, setValue, control, watch, formState } =
     useForm<FormFields>({
       defaultValues: {
         assetAmount: '',
         assetId: '',
-        capacitySat: '',
-        channelExpireBlocks: 4320,
-        clientBalanceSat: '',
+        capacitySat: '100000', // Default to 100,000 sats
+        channelExpireBlocks: 12960, // Default to 3 months (12960 blocks)
+        clientBalanceSat: '20000', // Default to 20,000 sats inbound liquidity
       },
       resolver: zodResolver(FormFieldsSchema),
     })
 
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
+  const [estimateFeesRequest] = makerApi.endpoints.estimate_fees.useLazyQuery()
+  const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const assetId = watch('assetId')
 
@@ -561,6 +566,95 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     return options
   }, [lspOptions])
 
+  // Fetch fee estimates when channel parameters change
+  useEffect(() => {
+    const fetchFees = async () => {
+      const capacitySat = watch('capacitySat')
+      const clientBalanceSat = watch('clientBalanceSat')
+      const channelExpireBlocks = watch('channelExpireBlocks')
+      const assetId = watch('assetId')
+      const assetAmount = watch('assetAmount')
+
+      // Only fetch if we have valid basic parameters
+      if (!capacitySat || !clientBalanceSat || isLoading) {
+        return
+      }
+
+      const parsedCapacity = parseInt(capacitySat.replace(/[^0-9]/g, ''), 10)
+      const parsedClientBalance = parseInt(
+        clientBalanceSat.replace(/[^0-9]/g, ''),
+        10
+      )
+
+      if (isNaN(parsedCapacity) || isNaN(parsedClientBalance)) {
+        return
+      }
+
+      const lspBalance = parsedCapacity - parsedClientBalance
+
+      try {
+        setIsLoadingFees(true)
+
+        // Get node info to get pubkey
+        const nodeInfoResponse = await nodeInfoRequest()
+        const clientPubKey = nodeInfoResponse.data?.pubkey
+
+        if (!clientPubKey) {
+          // Node not ready yet, skip fee estimation
+          setIsLoadingFees(false)
+          return
+        }
+
+        const request: any = {
+          announce_channel: false,
+          channel_expiry_blocks: channelExpireBlocks,
+          client_balance_sat: parsedClientBalance,
+          client_pubkey: clientPubKey,
+          funding_confirms_within_blocks: 6,
+          lsp_balance_sat: lspBalance,
+          refund_onchain_address: '',
+          required_channel_confirmations: 1,
+        }
+
+        // Add asset parameters if an asset is selected
+        if (addAsset && assetId && assetAmount && assetMap[assetId]) {
+          const parsedAssetAmount = parseAssetAmount(assetAmount, assetId)
+          request.asset_id = assetId
+          request.lsp_asset_amount = parsedAssetAmount
+          request.client_asset_amount = 0
+        }
+
+        const response = await estimateFeesRequest(request)
+
+        if (response.data) {
+          setFees(response.data)
+        }
+      } catch (error) {
+        console.error('Error fetching fees:', error)
+        // Don't show error toast - fees are just estimates
+      } finally {
+        setIsLoadingFees(false)
+      }
+    }
+
+    // Debounce the fee fetching to avoid too many requests
+    const timeoutId = setTimeout(fetchFees, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [
+    watch('capacitySat'),
+    watch('clientBalanceSat'),
+    watch('channelExpireBlocks'),
+    watch('assetId'),
+    watch('assetAmount'),
+    addAsset,
+    isLoading,
+    estimateFeesRequest,
+    nodeInfoRequest,
+    parseAssetAmount,
+    assetMap,
+  ])
+
   return (
     <div className="w-full">
       <div className="max-w-3xl mx-auto">
@@ -743,8 +837,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                     >
                       The minimum time the LSP guarantees to keep your channel
                       open. Longer durations provide more stability but may
-                      affect fees. 1 week = 1,008 blocks 1 month = 4,320 blocks
-                      6 months = 25,920 blocks. Max:{' '}
+                      affect fees. 1 month = 4,320 blocks, 3 months = 12,960
+                      blocks, 6 months = 25,920 blocks. Default: 3 months. Max:{' '}
                       {lspOptions?.max_channel_expiry_blocks.toLocaleString() ||
                         0}{' '}
                       blocks.
@@ -1173,6 +1267,88 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Fee Estimate Section */}
+          {fees && (
+            <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg p-6 mt-6">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-6 w-6 text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-lg font-semibold text-blue-200 mb-4">
+                    Estimated Fees
+                    {isLoadingFees && (
+                      <span className="ml-2 text-sm text-gray-400">
+                        (calculating...)
+                      </span>
+                    )}
+                  </h3>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-blue-700/30">
+                      <span className="text-gray-300">Setup Fee</span>
+                      <span className="font-medium text-white">
+                        {formatNumberWithCommas(fees.setup_fee.toString())} sats
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-blue-700/30">
+                      <span className="text-gray-300">Capacity Fee</span>
+                      <span className="font-medium text-white">
+                        {formatNumberWithCommas(fees.capacity_fee.toString())}{' '}
+                        sats
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-blue-700/30">
+                      <span className="text-gray-300">Duration Fee</span>
+                      <span className="font-medium text-white">
+                        {formatNumberWithCommas(fees.duration_fee.toString())}{' '}
+                        sats
+                      </span>
+                    </div>
+                    {fees.applied_discount && fees.discount_code && (
+                      <div className="flex justify-between items-center py-2 border-b border-green-700/30 bg-green-900/20 -mx-3 px-3">
+                        <span className="text-green-300 font-medium">
+                          Discount ({fees.discount_code})
+                        </span>
+                        <span className="font-medium text-green-400">
+                          -{Math.round(fees.applied_discount * 100)}%
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center py-3 bg-blue-800/30 -mx-3 px-3 rounded-lg mt-3">
+                      <span className="text-blue-100 font-semibold text-lg">
+                        Total Fee
+                      </span>
+                      <span className="font-bold text-blue-200 text-lg">
+                        {formatNumberWithCommas(fees.total_fee.toString())} sats
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 text-xs text-gray-400">
+                    <p>
+                      This fee covers the cost of setting up and maintaining
+                      your channel. The total amount you'll need to pay includes
+                      this fee plus your desired channel liquidity.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
