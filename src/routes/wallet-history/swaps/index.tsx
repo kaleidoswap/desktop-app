@@ -468,10 +468,12 @@ export const Component: React.FC = () => {
               header: 'Swap',
             },
             {
-              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
-                renderDateField(
+              accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) => {
+                // Convert Unix timestamp from seconds to milliseconds
+                const timestamp =
                   swap.completed_at || swap.initiated_at || swap.requested_at
-                ),
+                return renderDateField(timestamp ? timestamp * 1000 : null)
+              },
               className: 'col-span-1',
               header: 'Date',
             },
