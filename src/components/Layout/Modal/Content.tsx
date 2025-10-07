@@ -1,4 +1,9 @@
 import { uiSliceSeletors } from '../../../slices/ui/ui.slice'
+import {
+  SparkDepositModal,
+  SparkWithdrawModal,
+  SparkL1WithdrawModal,
+} from '../../SparkWallet'
 
 import { DepositModalContent } from './Deposit'
 import { WithdrawModalContent } from './Withdraw'
@@ -12,5 +17,11 @@ export const Content = (props: Props) => {
       return <DepositModalContent />
     case 'withdraw':
       return <WithdrawModalContent />
+    case 'spark-deposit':
+      return <SparkDepositModal onClose={() => {}} />
+    case 'spark-withdraw':
+      return <SparkWithdrawModal onClose={() => {}} />
+    case 'spark-l1-withdraw':
+      return <SparkL1WithdrawModal onClose={() => {}} />
   }
 }

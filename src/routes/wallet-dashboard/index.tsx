@@ -26,6 +26,10 @@ import { LiquidityCard } from '../../components/LiquidityCard'
 import { OnChainDetailsOverlay } from '../../components/OnChainDetailsOverlay'
 import { PeerManagementModal } from '../../components/PeerManagementModal'
 import {
+  SparkWalletSection,
+  SparkBalanceSection,
+} from '../../components/SparkWallet'
+import {
   Button,
   Card,
   LoadingPlaceholder,
@@ -184,6 +188,18 @@ export const Component = () => {
         </div>
       )}
 
+      {/* Spark Wallet Section */}
+      <SparkWalletSection />
+      <SparkBalanceSection />
+
+      {/* RLN Wallet Section */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Wallet className="w-8 h-8 text-blue-500" />
+          <h3 className="text-xl font-bold text-white">RGB Lightning Wallet</h3>
+        </div>
+      </div>
+
       {onChainBalance === 0 && offChainBalance === 0 && !isLoading && (
         <div className="mb-6">
           <Alert
@@ -223,93 +239,86 @@ export const Component = () => {
         />
       )}
 
-      <div className="flex flex-col items-center mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Wallet className="w-8 h-8 text-blue-500" />
-          <h3 className="text-xl font-bold text-white">Wallet Dashboard</h3>
-        </div>
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+        <Button
+          icon={<Zap className="w-4 h-4" />}
+          onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
+          size="md"
+        >
+          Open Channel
+        </Button>
 
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-          <Button
-            icon={<Zap className="w-4 h-4" />}
-            onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
-            size="md"
-          >
-            Open Channel
-          </Button>
+        <Button
+          icon={<Database className="w-4 h-4" />}
+          onClick={() => setShowUTXOModal(true)}
+          size="md"
+        >
+          Manage UTXOs
+        </Button>
 
-          <Button
-            icon={<Database className="w-4 h-4" />}
-            onClick={() => setShowUTXOModal(true)}
-            size="md"
-          >
-            Manage UTXOs
-          </Button>
+        <Button
+          icon={<Users className="w-4 h-4" />}
+          onClick={() => setShowPeerModal(true)}
+          size="md"
+        >
+          Peers
+        </Button>
 
-          <Button
-            icon={<Users className="w-4 h-4" />}
-            onClick={() => setShowPeerModal(true)}
-            size="md"
-          >
-            Peers
-          </Button>
-
-          <Button
-            disabled={isRefreshing}
-            icon={
-              isRefreshing ? (
-                <LoaderIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )
-            }
-            onClick={refreshData}
-            size="sm"
-            variant="outline"
-          >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
-
-        <InfoCardGrid className="grid-cols-3 gap-3">
-          <InfoCard
-            copySuccessMessage="Node public key copied to clipboard"
-            copyText={nodeInfoResponse.data?.pubkey}
-            copyable
-            icon={<ChainIcon className="w-4 h-4 text-blue-500" />}
-            label="Node Public Key"
-            value={nodeInfoResponse.data?.pubkey || '...'}
-          />
-
-          <InfoCard
-            icon={<Network className="w-4 h-4 text-blue-500" />}
-            label="Network"
-            value={
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span>{networkInfoResponse.data?.network || 'Unknown'}</span>
-              </div>
-            }
-          />
-
-          <InfoCard
-            icon={<Blocks className="w-4 h-4 text-blue-500" />}
-            label="Block Height"
-            value={`#${networkInfoResponse.data?.height || '...'}`}
-          />
-        </InfoCardGrid>
-
-        {showUTXOModal && (
-          <UTXOManagementModal
-            bitcoinUnit={bitcoinUnit}
-            onClose={() => setShowUTXOModal(false)}
-          />
-        )}
-
-        {showPeerModal && (
-          <PeerManagementModal onClose={() => setShowPeerModal(false)} />
-        )}
+        <Button
+          disabled={isRefreshing}
+          icon={
+            isRefreshing ? (
+              <LoaderIcon className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )
+          }
+          onClick={refreshData}
+          size="sm"
+          variant="outline"
+        >
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
+
+      <InfoCardGrid className="grid-cols-3 gap-3">
+        <InfoCard
+          copySuccessMessage="Node public key copied to clipboard"
+          copyText={nodeInfoResponse.data?.pubkey}
+          copyable
+          icon={<ChainIcon className="w-4 h-4 text-blue-500" />}
+          label="Node Public Key"
+          value={nodeInfoResponse.data?.pubkey || '...'}
+        />
+
+        <InfoCard
+          icon={<Network className="w-4 h-4 text-blue-500" />}
+          label="Network"
+          value={
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span>{networkInfoResponse.data?.network || 'Unknown'}</span>
+            </div>
+          }
+        />
+
+        <InfoCard
+          icon={<Blocks className="w-4 h-4 text-blue-500" />}
+          label="Block Height"
+          value={`#${networkInfoResponse.data?.height || '...'}`}
+        />
+      </InfoCardGrid>
+
+      {showUTXOModal && (
+        <UTXOManagementModal
+          bitcoinUnit={bitcoinUnit}
+          onClose={() => setShowUTXOModal(false)}
+        />
+      )}
+
+      {showPeerModal && (
+        <PeerManagementModal onClose={() => setShowPeerModal(false)} />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="md:col-span-2">

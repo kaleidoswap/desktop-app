@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
+import wasm from 'vite-plugin-wasm'
+import topLevelAwait from 'vite-plugin-top-level-await'
 
 // Get git information at build time
 const getGitInfo = () => {
@@ -20,7 +22,11 @@ export default defineConfig(async () => {
   const buildDate = new Date().toISOString()
 
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      wasm(),
+      topLevelAwait(),
+    ],
 
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
     //
@@ -30,17 +36,33 @@ export default defineConfig(async () => {
     server: {
       port: 1420,
       strictPort: true,
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
     },
     // 3. to make use of `TAURI_DEBUG` and other env variables
     // https://tauri.studio/v1/api/config#buildconfig.beforedevcommand
     envPrefix: ['VITE_', 'TAURI_'],
-    
+
     // 4. Define build-time constants
     define: {
       __GIT_COMMIT__: JSON.stringify(gitCommit),
       __GIT_BRANCH__: JSON.stringify(gitBranch),
       __BUILD_DATE__: JSON.stringify(buildDate),
       __NODE_ENV__: JSON.stringify(process.env.NODE_ENV || 'development'),
+    },
+
+    // 5. Optimize dependencies and handle WASM
+    optimizeDeps: {
+      exclude: ['@breeztech/breez-sdk-spark'],
+      esbuildOptions: {
+        target: 'esnext',
+      },
+    },
+
+    build: {
+      target: 'esnext',
     },
   }
 })

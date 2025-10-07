@@ -13,9 +13,25 @@ export type WithdrawModal = {
   assetId: string | undefined
   type: 'withdraw'
 }
+
+export type SparkDepositModal = {
+  type: 'spark-deposit'
+}
+
+export type SparkWithdrawModal = {
+  type: 'spark-withdraw'
+}
+
+export type SparkL1WithdrawModal = {
+  type: 'spark-l1-withdraw'
+}
+
 type Modal =
   | DepositModal
   | WithdrawModal
+  | SparkDepositModal
+  | SparkWithdrawModal
+  | SparkL1WithdrawModal
   | {
       type: 'none'
     }
