@@ -18,6 +18,7 @@ import {
   WALLET_RESTORE_PATH,
 } from '../../app/router/paths'
 import logo from '../../assets/logo.svg'
+import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
@@ -96,43 +97,68 @@ export const Component = () => {
             <Toolbar />
           </div>
 
-          {/* Support button at bottom of sidebar */}
-          <div className="p-4 border-t border-divider/10">
+          {/* Support button and version at bottom of sidebar */}
+          <div className="p-4 border-t border-divider/10 space-y-3">
             <button
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 
-                bg-blue-dark/50 hover:bg-blue-dark text-cyan rounded-lg 
-                transition-colors duration-200"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-3 
+                bg-gradient-to-r from-cyan/10 to-blue-500/10 hover:from-cyan/20 hover:to-blue-500/20 
+                text-cyan rounded-xl border border-cyan/20 hover:border-cyan/30
+                transition-all duration-300 shadow-lg shadow-cyan/5 hover:shadow-cyan/10
+                group relative overflow-hidden"
               onClick={() => setShowSupportModal(true)}
             >
-              <HelpCircle className="w-4 h-4" />
-              <span>Get Help & Support</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-cyan/5 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              <HelpCircle className="w-4 h-4 relative z-10" />
+              <span className="relative z-10 font-medium">
+                Get Help & Support
+              </span>
             </button>
+            <AppVersion className="relative" />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="min-h-screen py-6 md:py-12 flex items-center justify-center p-3">
-            <Card className="p-5 md:p-8 w-full max-w-4xl backdrop-blur-md bg-blue-dark/30 border-divider/30 shadow-xl shadow-blue-darkest/30">
+        <div className="flex-1 overflow-auto relative">
+          {/* Animated background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan/5 via-transparent to-blue-500/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none" />
+
+          <div className="min-h-screen py-8 md:py-16 flex items-center justify-center p-4 relative z-10">
+            <Card
+              className="p-6 md:p-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-blue-dark/40 via-blue-dark/30 to-blue-dark/40 
+              border-2 border-cyan/20 shadow-2xl shadow-cyan/10 
+              hover:shadow-cyan/20 transition-all duration-500 
+              ring-1 ring-cyan/10 hover:ring-cyan/20"
+            >
               <div
                 className="fade-in content-container"
                 id="wallet-setup-content"
               >
                 {!nodeType ? (
                   <>
-                    <div className="text-center mb-10 slide-in">
-                      <div
-                        className={`${IconWrapper} bg-gradient-to-br from-cyan/30 to-cyan/5 border border-cyan/30 
-                        inline-flex rounded-2xl mb-5 shadow-lg shadow-cyan/5`}
-                      >
-                        <Zap className="w-8 h-8 text-cyan" />
+                    <div className="text-center mb-12 slide-in">
+                      <div className="relative inline-flex mb-6 group">
+                        <div
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/30 via-cyan/20 to-blue-500/20 border-2 border-cyan/40 
+                          rounded-2xl shadow-2xl shadow-cyan/20 
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/30`}
+                        >
+                          <Zap className="w-8 h-8 text-cyan drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                        </div>
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-cyan/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
-                      <h1 className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan to-blue-400 bg-clip-text text-transparent">
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         Connect to RGB Lightning Network
                       </h1>
-                      <p className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
+                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         Choose your preferred way to connect to the network
                       </p>
+                      <div className="mt-4 flex items-center justify-center space-x-2">
+                        <div className="h-1 w-1 rounded-full bg-cyan/60 animate-pulse" />
+                        <div className="h-1 w-8 rounded-full bg-gradient-to-r from-cyan/60 to-transparent" />
+                        <div className="h-1 w-1 rounded-full bg-cyan/60 animate-pulse delay-75" />
+                      </div>
                     </div>
                     <div
                       className={`grid gap-6 ${isLocalNodeSupported ? 'grid-cols-1 md:grid-cols-2' : 'max-w-md mx-auto'}`}
@@ -154,19 +180,22 @@ export const Component = () => {
                       )}
                     </div>
                     {!isLocalNodeSupported && (
-                      <div className="mt-6 text-center">
-                        <p className="text-gray-400 text-sm">
-                          Local node is not supported on Windows. Use a remote
-                          node connection instead.
-                        </p>
+                      <div className="mt-8 text-center fade-in">
+                        <div className="inline-flex items-center space-x-2 px-4 py-3 bg-blue-dark/40 border border-cyan/20 rounded-xl">
+                          <div className="w-2 h-2 rounded-full bg-cyan/60 animate-pulse" />
+                          <p className="text-gray-400 text-sm">
+                            Local node is not supported on Windows. Use a remote
+                            node connection instead.
+                          </p>
+                        </div>
                       </div>
                     )}
                   </>
                 ) : nodeType === 'local' ? (
                   <>
-                    <div className="mb-6 slide-in">
+                    <div className="mb-8 slide-in">
                       <Button
-                        className="hover:bg-blue-dark/60"
+                        className="hover:bg-blue-dark/60 hover:border-cyan/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
                         onClick={() => handleNodeTypeChange(null)}
                         size="sm"
@@ -176,17 +205,21 @@ export const Component = () => {
                       </Button>
                     </div>
 
-                    <div className="text-center mb-8 slide-in">
-                      <div
-                        className={`${IconWrapper} bg-gradient-to-br from-cyan/20 to-cyan/5 border border-cyan/20 
-                        inline-flex rounded-2xl mb-4 shadow-lg shadow-cyan/5`}
-                      >
-                        <Server className="w-7 h-7 text-cyan" />
+                    <div className="text-center mb-10 slide-in">
+                      <div className="relative inline-flex mb-6 group">
+                        <div
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30 
+                          rounded-2xl shadow-2xl shadow-cyan/15 
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
+                        >
+                          <Server className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                        </div>
+                        <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
-                      <h1 className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan to-blue-400 bg-clip-text text-transparent">
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         Set Up Local Node
                       </h1>
-                      <p className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
+                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         Choose an option to get started with your local RGB
                         Lightning node
                       </p>
@@ -212,9 +245,9 @@ export const Component = () => {
                   </>
                 ) : (
                   <>
-                    <div className="mb-6 slide-in">
+                    <div className="mb-8 slide-in">
                       <Button
-                        className="hover:bg-blue-dark/60"
+                        className="hover:bg-blue-dark/60 hover:border-cyan/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
                         onClick={() => handleNodeTypeChange(null)}
                         size="sm"
@@ -224,17 +257,21 @@ export const Component = () => {
                       </Button>
                     </div>
 
-                    <div className="text-center mb-8 slide-in">
-                      <div
-                        className={`${IconWrapper} bg-gradient-to-br from-cyan/20 to-cyan/5 border border-cyan/20 
-                        inline-flex rounded-2xl mb-4 shadow-lg shadow-cyan/5`}
-                      >
-                        <Cloud className="w-7 h-7 text-cyan" />
+                    <div className="text-center mb-10 slide-in">
+                      <div className="relative inline-flex mb-6 group">
+                        <div
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30 
+                          rounded-2xl shadow-2xl shadow-cyan/15 
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
+                        >
+                          <Cloud className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                        </div>
+                        <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
-                      <h1 className="text-2xl md:text-3xl font-bold mb-3 bg-gradient-to-r from-cyan to-blue-400 bg-clip-text text-transparent">
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         Connect to Remote Node
                       </h1>
-                      <p className="text-gray-400 text-sm md:text-base max-w-xl mx-auto">
+                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         Connect to an existing RGB Lightning node hosted by you
                         or a provider
                       </p>
@@ -242,15 +279,21 @@ export const Component = () => {
 
                     <RemoteNodeInfo />
 
-                    <div className="flex justify-center mt-6 fade-in">
+                    <div className="flex justify-center mt-8 fade-in">
                       <Button
-                        icon={<ArrowRight className="w-5 h-5 ml-1" />}
+                        className="group relative overflow-hidden shadow-xl shadow-cyan/20 hover:shadow-cyan/30 transition-all duration-300"
+                        icon={
+                          <ArrowRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
+                        }
                         iconPosition="right"
                         onClick={() => navigate(WALLET_REMOTE_PATH)}
                         size="lg"
                         variant="primary"
                       >
-                        Continue to Connection Setup
+                        <span className="relative z-10">
+                          Continue to Connection Setup
+                        </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-white/10 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                       </Button>
                     </div>
                   </>
