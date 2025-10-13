@@ -297,6 +297,7 @@ export const createSwapAssetsHandler = (
 /**
  * Gets available asset IDs from channels that can be used for trading
  * Returns asset IDs for proper filtering against trading pairs
+ * Only includes assets that have at least one READY channel
  */
 export const getAvailableAssets = (
   channels: Channel[],
@@ -307,7 +308,7 @@ export const getAvailableAssets = (
     return ['BTC']
   }
   const validChannels = Array.isArray(channels) ? channels : []
-  // Get unique asset IDs from channels that have balance
+  // Get unique asset IDs from channels that are READY and have balance
   const channelAssetIds = new Set<string>(
     validChannels
       .filter(
@@ -322,6 +323,31 @@ export const getAvailableAssets = (
   channelAssetIds.add('BTC')
 
   return Array.from(channelAssetIds)
+}
+
+/**
+ * Gets asset IDs that have channels but are not ready yet
+ * Returns asset IDs for channels that exist but are waiting for confirmation
+ */
+export const getUnconfirmedAssets = (
+  channels: Channel[],
+  _assets: NiaAsset[] // Prefixed with underscore to indicate intentionally unused
+): string[] => {
+  if (!channels || channels.length === 0) {
+    return []
+  }
+  const validChannels = Array.isArray(channels) ? channels : []
+  // Get unique asset IDs from channels that are NOT ready but have an asset_id
+  const unconfirmedAssetIds = new Set<string>(
+    validChannels
+      .filter(
+        (c) => !c.ready && c.asset_id !== null && c.asset_id !== undefined
+      )
+      .map((c) => c.asset_id)
+      .filter((assetId): assetId is string => assetId !== null)
+  )
+
+  return Array.from(unconfirmedAssetIds)
 }
 
 /**
@@ -614,70 +640,26 @@ export const createFetchAndSetPairsHandler = (
         }))
       )
 
-      // Enhanced filtering: Check both exact asset ID matches and ticker-based matching
-      const filteredPairs = validatedPairs.filter((pair: TradingPair) => {
-        // Direct asset ID matching (primary method)
-        const baseIdMatch = availableAssetIds.includes(pair.base_asset_id)
-        const quoteIdMatch = availableAssetIds.includes(pair.quote_asset_id)
-
-        if (baseIdMatch && quoteIdMatch) {
-          return true
-        }
-
-        // Secondary matching: If direct ID match fails, try ticker-based matching for BTC
-        // This handles cases where channels have 'BTC' as asset_id but pairs might have different base_asset_id
-        const hasBaseBTC =
-          pair.base_asset === 'BTC' && availableAssetIds.includes('BTC')
-        const hasQuoteBTC =
-          pair.quote_asset === 'BTC' && availableAssetIds.includes('BTC')
-
-        // For BTC pairs, allow if one asset is BTC and we have BTC in channels
-        if (
-          (hasBaseBTC && quoteIdMatch) ||
-          (baseIdMatch && hasQuoteBTC) ||
-          (hasBaseBTC && hasQuoteBTC)
-        ) {
-          return true
-        }
-
-        return false
-      })
-
+      // Show ALL pairs from the maker - don't filter based on channels
+      // Users can see all available pairs and will be prompted to buy a channel if needed
       logger.debug(
-        `Filtered ${validatedPairs.length} pairs down to ${filteredPairs.length} tradable pairs`
+        `Showing all ${validatedPairs.length} pairs from maker (no channel filtering)`
       )
 
-      setTradablePairs(filteredPairs)
+      setTradablePairs(validatedPairs)
 
-      if (filteredPairs.length === 0) {
-        if (validatedPairs.length === 0) {
-          logger.warn(
-            'No valid trading pairs available after filtering asset conflicts'
-          )
-          // toast.error(ASSET_CONFLICT_MESSAGES.NO_VALID_PAIRS)
-        } else {
-          logger.warn(
-            'No tradable pairs found for available assets - asset IDs do not match between channels and maker pairs'
-          )
-          logger.info('Available asset IDs:', availableAssetIds.join(', '))
-          logger.info(
-            'Pair asset IDs needed:',
-            validatedPairs
-              .map((p) => `${p.base_asset_id}/${p.quote_asset_id}`)
-              .join(', ')
-          )
-          // Don't show toast error - let the component handle this case
-        }
+      if (validatedPairs.length === 0) {
+        logger.warn('No valid trading pairs available from maker')
         return false // Return false to indicate no tradable pairs found
       }
 
       // Try to find a pair with BTC first
-      const btcPair = filteredPairs.find(
+      const btcPair = validatedPairs.find(
         (pair: TradingPair) =>
           pair.base_asset === 'BTC' || pair.quote_asset === 'BTC'
       )
 
-      const selectedPair = btcPair || filteredPairs[0]
+      const selectedPair = btcPair || validatedPairs[0]
       setSelectedPair(selectedPair)
 
       // Set initial assets based on the selected pair

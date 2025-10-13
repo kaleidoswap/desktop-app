@@ -146,3 +146,116 @@ export const getChannelDiagnosticsMessage = (channels: Channel[]): string => {
 
   return `${diagnostics.tradableChannels} tradable channels available.`
 }
+
+/**
+ * Checks if a specific asset has at least one ready channel
+ * @param channels Array of channels to check
+ * @param assetId The asset ID to check for
+ * @returns boolean indicating if there's at least one ready channel for the asset
+ */
+export const hasReadyChannelForAsset = (
+  channels: Channel[],
+  assetId: string | null
+): boolean => {
+  if (!assetId) return false
+
+  const assetChannels = channels.filter((c) => c.asset_id === assetId)
+  return assetChannels.some((c) => c.ready)
+}
+
+/**
+ * Checks if a specific asset has channels but all are unconfirmed (not ready)
+ * @param channels Array of channels to check
+ * @param assetId The asset ID to check for
+ * @returns boolean indicating if there are channels but none are ready
+ */
+export const hasOnlyUnconfirmedChannelsForAsset = (
+  channels: Channel[],
+  assetId: string | null
+): boolean => {
+  if (!assetId) return false
+
+  const assetChannels = channels.filter((c) => c.asset_id === assetId)
+
+  // If no channels exist for this asset, return false
+  if (assetChannels.length === 0) return false
+
+  // Return true if all channels are unconfirmed (not ready)
+  return assetChannels.every((c) => !c.ready)
+}
+
+/**
+ * Gets the count of ready channels for a specific asset
+ * @param channels Array of channels to check
+ * @param assetId The asset ID to check for
+ * @returns Number of ready channels for the asset
+ */
+export const getReadyChannelCountForAsset = (
+  channels: Channel[],
+  assetId: string | null
+): number => {
+  if (!assetId) return 0
+
+  const assetChannels = channels.filter((c) => c.asset_id === assetId)
+  return assetChannels.filter((c) => c.ready).length
+}
+
+/**
+ * Gets all channels for a specific asset
+ * @param channels Array of channels to filter
+ * @param assetId The asset ID to filter by
+ * @returns Array of channels for the specific asset
+ */
+export const getChannelsForAsset = (
+  channels: Channel[],
+  assetId: string | null
+): Channel[] => {
+  if (!assetId) return []
+  return channels.filter((c) => c.asset_id === assetId)
+}
+
+/**
+ * Interface for asset channel status
+ */
+export interface AssetChannelStatus {
+  assetId: string
+  hasChannels: boolean
+  hasReadyChannels: boolean
+  readyChannelCount: number
+  totalChannelCount: number
+  allUnconfirmed: boolean
+}
+
+/**
+ * Gets detailed channel status for a specific asset
+ * @param channels Array of channels to analyze
+ * @param assetId The asset ID to check
+ * @returns Detailed status object for the asset's channels
+ */
+export const getAssetChannelStatus = (
+  channels: Channel[],
+  assetId: string | null
+): AssetChannelStatus => {
+  if (!assetId) {
+    return {
+      allUnconfirmed: false,
+      assetId: assetId || '',
+      hasChannels: false,
+      hasReadyChannels: false,
+      readyChannelCount: 0,
+      totalChannelCount: 0,
+    }
+  }
+
+  const assetChannels = getChannelsForAsset(channels, assetId)
+  const readyChannels = assetChannels.filter((c) => c.ready)
+
+  return {
+    allUnconfirmed: assetChannels.length > 0 && readyChannels.length === 0,
+    assetId,
+    hasChannels: assetChannels.length > 0,
+    hasReadyChannels: readyChannels.length > 0,
+    readyChannelCount: readyChannels.length,
+    totalChannelCount: assetChannels.length,
+  }
+}
