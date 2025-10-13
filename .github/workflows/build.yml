@@ -18,9 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Temporarily removed aarch64 build until Apple signing is set up
-          # - platform: 'macos-latest'
-          #   args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
           - platform: 'macos-latest'
             args: '--target x86_64-apple-darwin'
           - platform: 'ubuntu-22.04'
@@ -85,7 +84,8 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'x86_64-apple-darwin' || '' }}
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Setup MSVC environment (Windows)
         if: matrix.platform == 'windows-latest'
@@ -128,6 +128,9 @@ jobs:
           APPLE_CERTIFICATE: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE || '' }}
           APPLE_CERTIFICATE_PASSWORD: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
           APPLE_SIGNING_IDENTITY: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ matrix.platform == 'macos-latest' && secrets.APPLE_TEAM_ID || '' }}
           # Skip rgb-lightning-node build on Windows since it's not supported
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
@@ -141,22 +144,20 @@ jobs:
 
             Changes in this version:
             - Built from ${{ startsWith(github.ref, 'refs/tags/') && 'tag' || (github.ref == 'refs/heads/test-build' && 'test-build' || 'build') }} ${{ github.ref_name }}
-            - Includes macOS (Intel, code signed), Linux, and Windows builds
-            - macOS build is signed with Apple Developer ID Certificate
-            - Note: Apple Silicon (M1/M2) users should use the Intel build with Rosetta 2 for now
+            - Includes macOS (Intel + Apple Silicon), Linux, and Windows builds
+            - All macOS builds are signed with Apple Developer ID Certificate and notarized by Apple
+            - Native support for Apple Silicon (M1/M2/M3) - no Rosetta required!
             - Signed and ready for auto-update
 
             SHA256 checksums will be provided separately.
 
             Installation Notes:
-            - macOS Intel (x86_64): Code signed, install normally
-            - macOS Apple Silicon: Use Intel build with Rosetta 2
+            - macOS Apple Silicon (aarch64): Native ARM64 build, code signed and notarized
+            - macOS Intel (x86_64): Native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
-
-            For Apple Silicon users experiencing "app is damaged" errors:
-            1. Right-click the .dmg → Open
-            2. Or run in Terminal: xattr -d com.apple.quarantine /path/to/KaleidoSwap.dmg
+            
+            All macOS builds install without security warnings!
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
