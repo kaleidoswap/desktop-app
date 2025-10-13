@@ -7,7 +7,7 @@ ARCH = $(shell uname -m)
 OS = $(shell uname -s)
 REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
-BIN_DIR = $(ROOT_DIR)/bin
+BIN_DIR = $(ROOT_DIR)/src-tauri/bin
 
 # Windows-specific variables
 ifeq ($(OS),Windows_NT)
@@ -35,6 +35,7 @@ release: check_dependencies check_cargo_env update_repo
 	cd $(PROJECT_DIR) && $(CARGO) build --release --manifest-path $(PROJECT_DIR)/Cargo.toml
 	@mkdir -p $(BIN_DIR)
 	@cp $(TARGET) $(BIN_TARGET)
+	@$(MAKE) sign-binary
 
 debug: check_dependencies check_cargo_env update_repo
 	cd $(PROJECT_DIR) && $(CARGO) build --manifest-path $(PROJECT_DIR)/Cargo.toml
@@ -124,6 +125,18 @@ check_dependencies: check_curl check_openssl
 		exit 1; \
 	fi
 
+sign-binary:
+	@if [ "$(OS)" = "Darwin" ] && [ -n "$$APPLE_SIGNING_IDENTITY" ]; then \
+		echo "Signing binary for macOS..."; \
+		codesign --force --options runtime --timestamp \
+			--sign "$$APPLE_SIGNING_IDENTITY" \
+			$(BIN_TARGET); \
+		codesign -vvv --deep --strict $(BIN_TARGET); \
+		echo "✓ Binary signed successfully"; \
+	else \
+		echo "Skipping binary signing (not on macOS or APPLE_SIGNING_IDENTITY not set)"; \
+	fi
+
 help:
 	@echo "Makefile for the Rust project"
 	@echo "Available commands:"
@@ -139,4 +152,4 @@ help:
 	@echo "  make test        - Update repo and run the tests"
 	@echo "  make help        - Show this help message"
 
-.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build
+.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build sign-binary
