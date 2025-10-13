@@ -678,6 +678,7 @@ impl NodeProcess {
             .args(&["--daemon-listening-port", daemon_listening_port])
             .args(&["--ldk-peer-listening-port", ldk_peer_listening_port])
             .args(&["--network", network])
+            .args(&["--disable-authentication"])
             .stdout(Stdio::from(stdout_log))
             .stderr(Stdio::from(stderr_log))
             .spawn();
