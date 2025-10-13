@@ -111,21 +111,41 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Verify rgb-lightning-node binary exists (Unix)
+        if: matrix.platform != 'windows-latest'
+        run: |
+          echo "Checking for rgb-lightning-node binary..."
+          if [ ! -f "src-tauri/bin/rgb-lightning-node" ]; then
+            echo "ERROR: src-tauri/bin/rgb-lightning-node not found!"
+            echo "Please ensure the binary is committed to the repository."
+            exit 1
+          fi
+          echo "✓ rgb-lightning-node binary found"
+          file src-tauri/bin/rgb-lightning-node
+          ls -lh src-tauri/bin/rgb-lightning-node
+
+      - name: Create placeholder rgb-lightning-node for Windows
+        if: matrix.platform == 'windows-latest'
+        run: |
+          mkdir -p bin
+          echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
+        shell: bash
+
       - name: Sign rgb-lightning-node binary (macOS)
         if: matrix.platform == 'macos-latest'
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           echo "Signing rgb-lightning-node binary..."
-          
+
           # Sign the binary with hardened runtime and timestamp
           codesign --force --options runtime --timestamp \
             --sign "$APPLE_SIGNING_IDENTITY" \
-            bin/rgb-lightning-node
-          
+            src-tauri/bin/rgb-lightning-node
+
           # Verify the signature
-          codesign -vvv --deep --strict bin/rgb-lightning-node
-          
+          codesign -vvv --deep --strict src-tauri/bin/rgb-lightning-node
+
           echo "✓ rgb-lightning-node binary signed successfully"
 
       - name: Build Tauri app
