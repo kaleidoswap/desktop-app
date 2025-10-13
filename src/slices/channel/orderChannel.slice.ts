@@ -9,13 +9,19 @@ import { RootState } from '../../app/store'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 
 export const OrderChannelFormSchema = z.object({
-  assetAmount: z.number().gte(0),
-  assetId: z.string(),
-  capacitySat: z
+  assetAmount: z.number().gte(0).optional(), 
+  // LSP-side capacity for receiving
+assetId: z.string(), 
+  
+capacitySat: z
     .number()
     .max(MAX_CHANNEL_CAPACITY, 'Maximum amount is 100000000 satoshis'),
-  channelExpireBlocks: z.number().gte(0),
-  clientBalanceSat: z.number().gte(0),
+  
+channelExpireBlocks: z.number().gte(0),
+  
+clientBalanceSat: z.number().gte(0),
+  // Legacy field
+totalAssetAmount: z.number().gte(0).optional(),
 })
 
 export type TChannelRequestForm = z.infer<typeof OrderChannelFormSchema>
@@ -32,8 +38,10 @@ export const initialState: SliceState = {
       assetAmount: 0,
       assetId: '',
       capacitySat: MIN_CHANNEL_CAPACITY,
-      channelExpireBlocks: 4320, // 1 month
-      clientBalanceSat: 0,
+      channelExpireBlocks: 4320,
+      // 1 month
+clientBalanceSat: 0, 
+      totalAssetAmount: 0,
     },
   },
 }

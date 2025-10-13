@@ -70,6 +70,35 @@ interface Lsps1CreateOrderRequest {
   asset_id?: string
   lsp_asset_amount?: LSPS0Sat
   client_asset_amount?: LSPS0Sat
+  rfq_id?: string
+}
+
+interface QuoteRequest {
+  from_asset: string
+  from_amount?: number
+  to_asset: string
+  to_amount?: number
+}
+
+interface QuoteFee {
+  base_fee: number
+  variable_fee: number
+  fee_rate: number
+  final_fee: number
+  fee_asset: string
+  fee_asset_precision: number
+}
+
+export interface QuoteResponse {
+  rfq_id: string
+  from_asset: string
+  from_amount: number
+  to_asset: string
+  to_amount: number
+  price: number
+  fee: QuoteFee
+  timestamp: number
+  expires_at: number
 }
 
 export interface Lsps1CreateOrderResponse {
@@ -221,6 +250,13 @@ export const makerApi = createApi({
 
     getPairs: builder.query<GetPairsResponse, void>({
       query: () => '/api/v1/market/pairs',
+    }),
+    getQuote: builder.query<QuoteResponse, QuoteRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/market/quote',
+      }),
     }),
     get_info: builder.query<Lsps1GetInfoResponse, void>({
       query: () => '/api/v1/lsps1/get_info',

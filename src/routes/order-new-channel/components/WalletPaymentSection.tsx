@@ -71,11 +71,16 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
         <label className="flex items-center space-x-3">
           <input
             checked={useWalletFunds}
-            className="form-checkbox h-5 w-5 text-blue-500 rounded border-gray-600 bg-gray-700"
+            className="form-checkbox h-5 w-5 text-blue-500 rounded border-gray-600 bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={insufficientBalance}
             onChange={(e) => onUseWalletFundsChange(e.target.checked)}
             type="checkbox"
           />
-          <span className="text-white font-medium">Pay with Wallet</span>
+          <span
+            className={`font-medium ${insufficientBalance ? 'text-gray-500' : 'text-white'}`}
+          >
+            Pay with Wallet
+          </span>
         </label>
         <div className="text-right">
           <div className="text-sm text-gray-400">

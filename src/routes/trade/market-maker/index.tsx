@@ -1,15 +1,13 @@
-import { Copy, Wallet, Link, Plus, ShoppingCart } from 'lucide-react'
+import { Copy, Wallet, Link, Plus, ShoppingCart, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { webSocketService } from '../../../app/hubs/websocketService'
-import {
-  CREATE_NEW_CHANNEL_PATH,
-  ORDER_CHANNEL_PATH,
-} from '../../../app/router/paths'
+import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
+import { BuyChannelModal } from '../../../components/BuyChannelModal'
 import { SwapConfirmation } from '../../../components/SwapConfirmation'
 import { SwapRecap } from '../../../components/SwapRecap'
 import {
@@ -58,13 +56,17 @@ import {
 import {
   createAssetChangeHandler,
   createSwapAssetsHandler,
-  getAvailableAssets as getAvailableAssetsUtil,
+  getUnconfirmedAssets,
   createFetchAndSetPairsHandler,
   mapAssetIdToTicker,
   mapTickerToAssetId,
   isAssetId,
 } from './assetUtils'
-import { hasTradableChannels, logChannelDiagnostics } from './channelUtils'
+import {
+  hasTradableChannels,
+  hasOnlyUnconfirmedChannelsForAsset,
+  getAssetChannelStatus,
+} from './channelUtils'
 
 // Import our utility modules
 import { getValidationError } from './errorMessages'
@@ -191,10 +193,32 @@ export const Component = () => {
   const [swapRecapDetails, setSwapRecapDetails] =
     useState<SwapDetailsType | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [showBuyChannelModal, setShowBuyChannelModal] = useState(false)
 
   // Add state for quote validity tracking
   const [hasValidQuote, setHasValidQuote] = useState(false)
   const [quoteExpiresAt, setQuoteExpiresAt] = useState<number | null>(null)
+
+  // Track which asset needs a channel
+  const [missingChannelAsset, setMissingChannelAsset] = useState<{
+    asset: string
+    assetId: string
+    isFromAsset: boolean
+  } | null>(null)
+
+  // Store BTC balance for use when no channels exist
+  const [onchainBtcBalance, setOnchainBtcBalance] = useState(0)
+
+  // Store LSP channel order limits
+  const [lspChannelLimits, setLspChannelLimits] = useState<{
+    min_initial_client_balance_sat: number
+    max_initial_client_balance_sat: number
+    min_channel_balance_sat: number
+    max_channel_balance_sat: number
+  } | null>(null)
+
+  // Track if user is trading without channels (using onchain balance)
+  const [isUsingOnchainBalance, setIsUsingOnchainBalance] = useState(false)
 
   // Component mount state management
   const isMountedRef = useRef(false)
@@ -459,9 +483,13 @@ export const Component = () => {
                 !isPriceLoading &&
                 !hasValidQuote
               ) {
-                setErrorMessage(
-                  'Unable to get quote from market maker. Please try again.'
-                )
+                // Preserve unconfirmed channel errors - they take priority
+                setErrorMessage((prev) => {
+                  if (prev && prev.includes('awaiting confirmation')) {
+                    return prev
+                  }
+                  return 'Unable to get quote from market maker. Please try again.'
+                })
               }
               errorMessageTimeoutRef.current = null
             }, 1000) // 1 second delay to allow for quote processing
@@ -548,8 +576,13 @@ export const Component = () => {
           form.setValue('rfq_id', quoteResponse.rfq_id)
         }
 
-        // Clear any validation errors if we got a valid quote
-        setErrorMessage(null)
+        // Clear any validation errors if we got a valid quote, but not unconfirmed channel errors
+        setErrorMessage((prev) => {
+          if (prev && prev.includes('awaiting confirmation')) {
+            return prev // Keep the unconfirmed channel error
+          }
+          return null // Clear other errors
+        })
       })
     }
   }, [quoteResponse, form, assets, requestQuote])
@@ -583,6 +616,7 @@ export const Component = () => {
   const [execSwap] = makerApi.endpoints.execSwap.useLazyQuery()
   const [getPairs] = makerApi.endpoints.getPairs.useLazyQuery()
   const [btcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
+  const [getInfo] = makerApi.endpoints.get_info.useLazyQuery()
 
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
@@ -696,8 +730,13 @@ export const Component = () => {
           'Unable to calculate quote. Please try a different amount.'
       }
 
-      // Show the user-friendly error message
-      setErrorMessage(userFriendlyError)
+      // Show the user-friendly error message, but preserve unconfirmed channel errors
+      setErrorMessage((prev) => {
+        if (prev && prev.includes('awaiting confirmation')) {
+          return prev
+        }
+        return userFriendlyError
+      })
 
       // Clear the error from the store after handling it
       dispatch(clearQuoteError())
@@ -741,12 +780,64 @@ export const Component = () => {
       const assetsList = assetsData.nia
 
       if (asset === 'BTC') {
-        if (channels.length === 0) {
-          logger.warn('No channels available for BTC')
+        const tradableChannels = channels.filter(
+          (c) => c.ready && c.next_outbound_htlc_minimum_msat > 0
+        )
+
+        if (tradableChannels.length === 0) {
+          // If no tradable channels exist, check if we can use onchain balance
+          // Only allow using onchain balance when buying assets (isFrom = true for BTC)
+          if (isFrom && onchainBtcBalance > 0) {
+            logger.info(
+              `No channels available, using onchain BTC balance: ${onchainBtcBalance} sats`
+            )
+            setIsUsingOnchainBalance(true)
+
+            let maxAllowed = onchainBtcBalance
+
+            // Respect LSP channel order limits
+            if (lspChannelLimits) {
+              maxAllowed = Math.min(
+                maxAllowed,
+                lspChannelLimits.max_initial_client_balance_sat
+              )
+              logger.debug(`Applied LSP channel limit: ${maxAllowed} sats`)
+            }
+
+            // Respect max order size from trading pair
+            if (selectedPair) {
+              const fromAsset = form.getValues().fromAsset
+              const toAsset = form.getValues().toAsset
+
+              let maxOrderSize: number
+              if (!isPairInverted(fromAsset, toAsset)) {
+                maxOrderSize = selectedPair.max_base_order_size
+              } else {
+                maxOrderSize = selectedPair.max_quote_order_size
+              }
+
+              // Convert from millisats to sats for BTC
+              if (fromAsset === 'BTC') {
+                maxOrderSize = maxOrderSize / MSATS_PER_SAT
+              }
+
+              maxAllowed = Math.min(maxAllowed, maxOrderSize)
+              logger.debug(`Applied max order size limit: ${maxAllowed} sats`)
+            }
+
+            return maxAllowed
+          }
+
+          logger.warn(
+            'No channels available for BTC and no onchain balance fallback'
+          )
+          setIsUsingOnchainBalance(false)
           return 0
         }
 
-        const channelHtlcLimits = channels.map(
+        // We have tradable channels, use normal flow
+        setIsUsingOnchainBalance(false)
+        const channelHtlcLimits = tradableChannels.map(
           (c) => c.next_outbound_htlc_limit_msat / MSATS_PER_SAT
         )
 
@@ -797,7 +888,15 @@ export const Component = () => {
         return maxAssetAmount
       }
     },
-    [channels, assetsData]
+    [
+      channels,
+      assetsData,
+      onchainBtcBalance,
+      lspChannelLimits,
+      selectedPair,
+      form,
+      isPairInverted,
+    ]
   )
 
   // Enhanced updateMinMaxAmounts to ensure consistent validation
@@ -829,16 +928,83 @@ export const Component = () => {
       setMaxFromAmount(newMaxFromAmount)
       setMaxToAmount(newMaxToAmount)
 
+      // Check if user is missing a channel for any of the assets
+      // Only suggest buying a channel if NO ready channels exist for that asset
+      // If channels exist but have 0 balance, validation error will handle it
+      let missingChannel: {
+        asset: string
+        assetId: string
+        isFromAsset: boolean
+      } | null = null
+
+      if (fromAsset !== 'BTC' && newMaxFromAmount === 0) {
+        const fromAssetInfo = assetsData?.nia.find(
+          (a) => a.ticker === fromAsset
+        )
+        if (fromAssetInfo) {
+          const channelStatus = getAssetChannelStatus(
+            channels,
+            fromAssetInfo.asset_id
+          )
+          // Only set missingChannel if no ready channels exist at all
+          if (!channelStatus.hasReadyChannels) {
+            missingChannel = {
+              asset: fromAsset,
+              assetId: fromAssetInfo.asset_id,
+              isFromAsset: true,
+            }
+          }
+        }
+      } else if (toAsset !== 'BTC' && newMaxToAmount === 0) {
+        const toAssetInfo = assetsData?.nia.find((a) => a.ticker === toAsset)
+        if (toAssetInfo) {
+          const channelStatus = getAssetChannelStatus(
+            channels,
+            toAssetInfo.asset_id
+          )
+          // Only set missingChannel if no ready channels exist at all
+          if (!channelStatus.hasReadyChannels) {
+            missingChannel = {
+              asset: toAsset,
+              assetId: toAssetInfo.asset_id,
+              isFromAsset: false,
+            }
+          }
+        }
+      }
+
+      setMissingChannelAsset(missingChannel)
+
       // Check if current "to" amount exceeds the new max
+      // Don't show the confusing "0.000000" error if user is missing a channel
       const currentToAmount = parseAssetAmount(form.getValues().to, toAsset)
-      if (currentToAmount > newMaxToAmount) {
+      if (currentToAmount > newMaxToAmount && newMaxToAmount > 0) {
         const formattedMaxToAmount = formatAmount(newMaxToAmount, toAsset)
         const displayedAsset = displayAsset(toAsset)
         const errorMsg = `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
         logger.warn(
           `Current to amount (${currentToAmount}) exceeds maximum receivable amount (${newMaxToAmount})`
         )
-        setErrorMessage(errorMsg)
+        // Preserve unconfirmed channel errors - they take priority
+        setErrorMessage((prev) => {
+          if (prev && prev.includes('awaiting confirmation')) {
+            return prev
+          }
+          return errorMsg
+        })
+      } else if (
+        newMaxToAmount === 0 &&
+        missingChannel &&
+        !missingChannel.isFromAsset
+      ) {
+        // Clear error if it's just a missing channel issue - we'll show a different warning
+        // But preserve unconfirmed channel errors
+        setErrorMessage((prev) => {
+          if (prev && prev.includes('awaiting confirmation')) {
+            return prev
+          }
+          return ''
+        })
       }
 
       // Enhanced logic to always ensure minimum amount is set when needed
@@ -917,23 +1083,33 @@ export const Component = () => {
   ])
 
   // Create onSwapAssets handler from our utility
-  const onSwapAssets = useMemo(
-    () =>
-      createSwapAssetsHandler(
-        selectedPair,
-        form,
-        calculateMaxTradableAmount,
-        updateMinMaxAmounts,
-        setMaxFromAmount
-      ),
-    [
+  const onSwapAssets = useMemo(() => {
+    // Disable swapping when using onchain balance (must be BTC → Asset only)
+    if (isUsingOnchainBalance && !hasTradableChannels(channels)) {
+      return async () => {
+        toast.warning(
+          'Asset swapping is not available when trading with onchain balance. You can only buy assets with BTC.'
+        )
+        logger.info('Swap disabled: using onchain balance')
+      }
+    }
+
+    return createSwapAssetsHandler(
       selectedPair,
       form,
       calculateMaxTradableAmount,
       updateMinMaxAmounts,
-      setMaxFromAmount,
-    ]
-  )
+      setMaxFromAmount
+    )
+  }, [
+    selectedPair,
+    form,
+    calculateMaxTradableAmount,
+    updateMinMaxAmounts,
+    setMaxFromAmount,
+    isUsingOnchainBalance,
+    channels,
+  ])
 
   // Update handleAssetChange to save preferences
   const handleAssetChange = useMemo(() => {
@@ -1045,7 +1221,13 @@ export const Component = () => {
         isPriceLoading
       )
 
-      setErrorMessage(errorMsg)
+      // Preserve unconfirmed channel errors - they take priority over amount validation errors
+      setErrorMessage((prev) => {
+        if (prev && prev.includes('awaiting confirmation')) {
+          return prev // Keep the unconfirmed channel error
+        }
+        return errorMsg
+      })
     })
 
     return () => subscription.unsubscribe()
@@ -1063,13 +1245,6 @@ export const Component = () => {
     isQuoteLoading,
     isPriceLoading,
   ])
-
-  // Create handler for asset changes
-  const getAvailableAssets = useCallback((): string[] => {
-    // Use our utility function but pass in the channels and assets
-    logChannelDiagnostics(channels)
-    return getAvailableAssetsUtil(channels, assets)
-  }, [channels, assets])
 
   // Use our utility function to create the fetch and set pairs handler
   const fetchAndSetPairs = useMemo(
@@ -1350,7 +1525,10 @@ export const Component = () => {
           totalFee: 0,
           variableFee: 0,
         })
-        setErrorMessage(null)
+        // Don't clear unconfirmed channel errors when resetting state
+        setErrorMessage((prev) =>
+          prev?.includes('awaiting confirmation') ? prev : null
+        )
         setIsToAmountLoading(true)
         setIsPriceLoading(true)
         setIsQuoteLoading(false)
@@ -1438,23 +1616,50 @@ export const Component = () => {
 
         const channelsList = channelsResponse.data.channels
 
+        // Always fetch BTC balance and LSP info for potential onchain trading
+        logger.info('💰 Fetching BTC balance and LSP info...')
+        setLoadingPhase('validating-balance')
+
+        const [balanceResponse, lspInfoResponse] = await Promise.all([
+          btcBalance({ skip_sync: false }),
+          getInfo(),
+        ])
+
+        if (!('data' in balanceResponse) || !balanceResponse.data) {
+          logger.error('❌ Failed to get balance data')
+          throw new Error('Failed to get balance information')
+        }
+
+        const { vanilla, colored } = balanceResponse.data
+        const totalOnchainBalance = vanilla.spendable + colored.spendable
+        setOnchainBtcBalance(totalOnchainBalance)
+        logger.info(`💰 Onchain BTC balance: ${totalOnchainBalance} sats`)
+
+        // Store LSP channel limits if available
+        if (lspInfoResponse.data?.options) {
+          setLspChannelLimits({
+            max_channel_balance_sat:
+              lspInfoResponse.data.options.max_channel_balance_sat,
+            max_initial_client_balance_sat:
+              lspInfoResponse.data.options.max_initial_client_balance_sat,
+            min_channel_balance_sat:
+              lspInfoResponse.data.options.min_channel_balance_sat,
+            min_initial_client_balance_sat:
+              lspInfoResponse.data.options.min_initial_client_balance_sat,
+          })
+          logger.info('✅ LSP channel limits loaded')
+        }
+
         if (channelsList.length === 0) {
-          logger.warn('❌ No channels found - lets check the balance')
-          setLoadingPhase('validating-balance')
+          logger.warn(
+            '⚠️ No channels found - checking if we can trade with onchain balance'
+          )
 
-          // Get balance info
-          const balanceResponse = await btcBalance({ skip_sync: false })
-          if (!('data' in balanceResponse) || !balanceResponse.data) {
-            logger.error('❌ Failed to get balance data')
-            throw new Error('Failed to get balance information')
-          }
-
-          const { vanilla } = balanceResponse.data
-          const hasEnough = vanilla.spendable >= MIN_CHANNEL_CAPACITY
+          const hasEnough = totalOnchainBalance >= MIN_CHANNEL_CAPACITY
           setHasEnoughBalance(hasEnough)
 
           logger.info(
-            `💰 Balance check: ${vanilla.spendable} sats (min required: ${MIN_CHANNEL_CAPACITY})`
+            `💰 Balance check: ${totalOnchainBalance} sats (min required: ${MIN_CHANNEL_CAPACITY})`
           )
           if (!hasEnough) {
             logger.warn(
@@ -1464,13 +1669,11 @@ export const Component = () => {
             setValidationError('insufficient-balance')
             return
           } else {
-            // No channels but sufficient balance - show no channels message
-            logger.warn(
-              '❌ No channels found but sufficient balance - redirecting to channel creation'
+            // No channels but sufficient balance - allow trading with onchain balance
+            logger.info(
+              '✅ No channels found but sufficient balance - allowing onchain trading'
             )
-            setLoadingPhase('error')
-            setValidationError('no-channels')
-            return
+            // Continue with initialization to allow asset viewing and buying
           }
         }
 
@@ -1568,10 +1771,64 @@ export const Component = () => {
     assetsData?.nia?.length,
     nodeInfo,
     btcBalance,
+    getInfo,
     listChannels,
     fetchAndSetPairs,
     makerConnectionUrl,
   ])
+
+  // Ensure BTC is the fromAsset when using onchain balance (no channels)
+  useEffect(() => {
+    if (
+      isUsingOnchainBalance &&
+      !hasTradableChannels(channels) &&
+      form &&
+      tradablePairs.length > 0
+    ) {
+      const currentFromAsset = form.getValues().fromAsset
+      const currentToAsset = form.getValues().toAsset
+
+      // If fromAsset is not BTC, force it to be BTC
+      if (currentFromAsset !== 'BTC') {
+        logger.info('Forcing fromAsset to BTC when using onchain balance')
+        form.setValue('fromAsset', 'BTC')
+
+        // If toAsset was BTC or empty, select the first available asset
+        if (!currentToAsset || currentToAsset === 'BTC') {
+          const availableAssets = tradablePairs
+            .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+            .filter(
+              (asset, index, self) =>
+                asset !== 'BTC' && self.indexOf(asset) === index
+            )
+
+          if (availableAssets.length > 0) {
+            form.setValue('toAsset', availableAssets[0])
+            logger.info(
+              `Set toAsset to ${availableAssets[0]} when using onchain balance`
+            )
+          }
+        }
+      }
+
+      // If toAsset is BTC, change it to another asset
+      if (currentToAsset === 'BTC') {
+        const availableAssets = tradablePairs
+          .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+          .filter(
+            (asset, index, self) =>
+              asset !== 'BTC' && self.indexOf(asset) === index
+          )
+
+        if (availableAssets.length > 0) {
+          form.setValue('toAsset', availableAssets[0])
+          logger.info(
+            `Changed toAsset from BTC to ${availableAssets[0]} when using onchain balance`
+          )
+        }
+      }
+    }
+  }, [isUsingOnchainBalance, channels, form, tradablePairs])
 
   // WebSocket initialization - only runs when we reach 'ready' phase
   useEffect(() => {
@@ -1818,8 +2075,11 @@ export const Component = () => {
     ]
   )
 
-  // Check for available channels
-  const hasChannels = useMemo(() => channels.length > 0, [channels])
+  // Check for available channels or onchain balance
+  const hasChannels = useMemo(
+    () => channels.length > 0 || isUsingOnchainBalance,
+    [channels, isUsingOnchainBalance]
+  )
 
   // Check for tradable pairs
   const hasTradablePairs = useMemo(
@@ -1829,12 +2089,23 @@ export const Component = () => {
 
   // Update the getAssetOptions function to map asset IDs to tickers for UI display
   const getAssetOptions = useCallback(
-    (excludeAsset: string = '') => {
+    (excludeAsset: string = '', isFromField: boolean = false) => {
       const safeAssets = assets || []
       // Get all unique assets from tradable pairs
-      const allPairAssets = tradablePairs
+      let allPairAssets = tradablePairs
         .flatMap((pair) => [pair.base_asset, pair.quote_asset])
         .filter((asset, index, self) => self.indexOf(asset) === index)
+
+      // When using onchain balance (no channels), restrict asset selection
+      if (isUsingOnchainBalance && !hasTradableChannels(channels)) {
+        if (isFromField) {
+          // For "from" field, only allow BTC
+          allPairAssets = allPairAssets.filter((asset) => asset === 'BTC')
+        } else {
+          // For "to" field, exclude BTC (only allow buying assets)
+          allPairAssets = allPairAssets.filter((asset) => asset !== 'BTC')
+        }
+      }
 
       // Ensure we're comparing by ticker if excludeAsset is a ticker
       const excludeAssetId = mapTickerToAssetId(excludeAsset, safeAssets)
@@ -1868,18 +2139,29 @@ export const Component = () => {
 
       return tradableAssets
     },
-    [tradablePairs, getAvailableAssets, assets]
+    [tradablePairs, assets, isUsingOnchainBalance, channels]
   )
 
   // Memoized asset options for both fields to prevent recomputation on every render
   const fromAssetOptions = useMemo(
-    () => (form ? getAssetOptions(form.getValues()?.toAsset ?? '') : []),
-    [getAssetOptions, form?.getValues()?.toAsset, tradablePairs]
+    () => (form ? getAssetOptions(form.getValues()?.toAsset ?? '', true) : []),
+    [
+      getAssetOptions,
+      form?.getValues()?.toAsset,
+      tradablePairs,
+      isUsingOnchainBalance,
+    ]
   )
 
   const toAssetOptions = useMemo(
-    () => (form ? getAssetOptions(form.getValues()?.fromAsset ?? '') : []),
-    [getAssetOptions, form?.getValues()?.fromAsset, tradablePairs]
+    () =>
+      form ? getAssetOptions(form.getValues()?.fromAsset ?? '', false) : [],
+    [
+      getAssetOptions,
+      form?.getValues()?.fromAsset,
+      tradablePairs,
+      isUsingOnchainBalance,
+    ]
   )
 
   // Improved window focus event listener with better logic
@@ -2072,8 +2354,10 @@ export const Component = () => {
       initializationRef.current = false
       isInitializingRef.current = false
 
-      // Clear any existing error messages
-      setErrorMessage(null)
+      // Clear any existing error messages except unconfirmed channel errors
+      setErrorMessage((prev) =>
+        prev?.includes('awaiting confirmation') ? prev : null
+      )
 
       // Use the optimized retry method for reconnection
       const pubKeyPrefix = pubKey.slice(0, 16)
@@ -2132,14 +2416,10 @@ export const Component = () => {
 
   // Submit handler - make sure we check for a valid quote with RFQ ID
   const onSubmit: SubmitHandler<Fields> = async () => {
-    const fromAmount = parseAssetAmount(
-      form.getValues().from,
-      form.getValues().fromAsset
-    )
-    const toAmount = parseAssetAmount(
-      form.getValues().to,
-      form.getValues().toAsset
-    )
+    const fromAsset = form.getValues().fromAsset
+    const toAsset = form.getValues().toAsset
+    const fromAmount = parseAssetAmount(form.getValues().from, fromAsset)
+    const toAmount = parseAssetAmount(form.getValues().to, toAsset)
     const rfqId = form.getValues().rfq_id
 
     // Check for zero amounts
@@ -2148,7 +2428,7 @@ export const Component = () => {
       return
     }
 
-    // Verify we have a valid RFQ ID for executing the swap
+    // Verify we have a valid RFQ ID first
     if (!rfqId) {
       setErrorMessage(
         'No valid quote available. Please try refreshing the quote.'
@@ -2156,13 +2436,82 @@ export const Component = () => {
       return
     }
 
+    // If using onchain balance (no channels), create a channel order instead of a regular swap
+    if (isUsingOnchainBalance && !hasTradableChannels(channels)) {
+      logger.info(
+        'User is buying asset with onchain balance - opening channel order modal'
+      )
+      setShowBuyChannelModal(true)
+      toast.info(
+        'Creating a channel order to buy your asset with onchain balance!'
+      )
+      return
+    }
+
+    // If user is missing a channel for a specific asset
+    if (missingChannelAsset) {
+      setShowBuyChannelModal(true)
+      toast.info(`Let's create a ${missingChannelAsset.asset} channel for you!`)
+      return
+    }
+
+    // If user has no channels at all (shouldn't reach here due to earlier checks)
+    if (!hasTradableChannels(channels)) {
+      setShowBuyChannelModal(true)
+      toast.info(
+        "You need a channel to trade. Let's create one with your desired asset."
+      )
+      return
+    }
+
+    // Check if the fromAsset has ready channels (for non-BTC assets)
+    if (fromAsset !== 'BTC') {
+      const fromAssetId = mapTickerToAssetId(fromAsset, assets)
+      const fromAssetStatus = getAssetChannelStatus(channels, fromAssetId)
+
+      if (!fromAssetStatus.hasReadyChannels) {
+        if (fromAssetStatus.allUnconfirmed) {
+          setErrorMessage(
+            `Your ${fromAsset} channel is awaiting confirmation. Please wait for it to be ready before swapping.`
+          )
+          logger.warn(`Cannot swap: ${fromAsset} channel not ready`)
+          return
+        } else if (!fromAssetStatus.hasChannels) {
+          setErrorMessage(
+            `You don't have a ${fromAsset} channel. Please open a channel with ${fromAsset} to swap.`
+          )
+          logger.warn(`Cannot swap: No ${fromAsset} channel found`)
+          return
+        }
+      }
+    }
+
+    // Check if the toAsset has ready channels (for non-BTC assets)
+    if (toAsset !== 'BTC') {
+      const toAssetId = mapTickerToAssetId(toAsset, assets)
+      const toAssetStatus = getAssetChannelStatus(channels, toAssetId)
+
+      if (!toAssetStatus.hasReadyChannels) {
+        if (toAssetStatus.allUnconfirmed) {
+          setErrorMessage(
+            `Your ${toAsset} channel is awaiting confirmation. Please wait for it to be ready before swapping.`
+          )
+          logger.warn(`Cannot swap: ${toAsset} channel not ready`)
+          return
+        } else if (!toAssetStatus.hasChannels) {
+          setErrorMessage(
+            `You don't have a ${toAsset} channel. Please open a channel with ${toAsset} to receive.`
+          )
+          logger.warn(`Cannot swap: No ${toAsset} channel found`)
+          return
+        }
+      }
+    }
+
     // Check maximum receivable amount (add explicit check here to prevent bypassing validation)
     if (toAmount > maxToAmount) {
-      const formattedMaxToAmount = formatAmount(
-        maxToAmount,
-        form.getValues().toAsset
-      )
-      const displayedAsset = displayAsset(form.getValues().toAsset)
+      const formattedMaxToAmount = formatAmount(maxToAmount, toAsset)
+      const displayedAsset = displayAsset(toAsset)
       setErrorMessage(
         `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
       )
@@ -2280,6 +2629,124 @@ export const Component = () => {
                 className="flex-1 flex flex-col justify-between"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
+                {/* Show info banner when using onchain balance */}
+                {isUsingOnchainBalance && !hasTradableChannels(channels) && (
+                  <div className="mb-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                          <span className="text-blue-400 text-xs">ℹ️</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-blue-300 text-sm font-medium">
+                          Trading with onchain balance
+                        </p>
+                        <p className="text-blue-200/80 text-xs mt-1">
+                          You don't have any trading channels yet. When you buy
+                          an asset, a new channel will be created automatically
+                          using your onchain BTC balance.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show warning banner when selected asset has only unconfirmed channels */}
+                {(() => {
+                  const currentFromAsset = form?.getValues().fromAsset
+                  const currentToAsset = form?.getValues().toAsset
+
+                  // Check if either selected asset has only unconfirmed channels
+                  if (fromAssetUnconfirmed || toAssetUnconfirmed) {
+                    const unconfirmedAssets = []
+                    if (fromAssetUnconfirmed)
+                      unconfirmedAssets.push(currentFromAsset)
+                    if (toAssetUnconfirmed)
+                      unconfirmedAssets.push(currentToAsset)
+
+                    const assetText = unconfirmedAssets.join(' and ')
+                    const channelText =
+                      unconfirmedAssets.length > 1
+                        ? 'channels are'
+                        : 'channel is'
+
+                    return (
+                      <div className="mb-3 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm">
+                        <div className="flex items-start gap-2">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                              <Clock className="w-3 h-3 text-yellow-400" />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-yellow-300 text-sm font-medium">
+                              {unconfirmedAssets.length > 1
+                                ? 'Channels'
+                                : 'Channel'}{' '}
+                              Not Ready: {assetText}
+                            </p>
+                            <p className="text-yellow-200/80 text-xs mt-1">
+                              Your {assetText} {channelText} awaiting blockchain
+                              confirmation. You can view the trading pair, but
+                              swapping will be disabled until{' '}
+                              {unconfirmedAssets.length > 1
+                                ? 'both channels are'
+                                : 'the channel is'}{' '}
+                              confirmed. This usually takes a few minutes.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  // Show general info banner when there are other unconfirmed channels
+                  const unconfirmedAssetIds = getUnconfirmedAssets(
+                    channels,
+                    assets
+                  )
+                  if (
+                    unconfirmedAssetIds.length > 0 &&
+                    hasTradableChannels(channels)
+                  ) {
+                    const unconfirmedTickers = unconfirmedAssetIds
+                      .map((assetId) => mapAssetIdToTicker(assetId, assets))
+                      .filter(
+                        (ticker) =>
+                          ticker !== 'BTC' &&
+                          ticker !== currentFromAsset &&
+                          ticker !== currentToAsset
+                      )
+
+                    if (unconfirmedTickers.length > 0) {
+                      return (
+                        <div className="mb-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                          <div className="flex items-start gap-2">
+                            <div className="flex-shrink-0 mt-0.5">
+                              <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                <Clock className="w-3 h-3 text-blue-400" />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-blue-300 text-sm font-medium">
+                                Additional Channels Pending
+                              </p>
+                              <p className="text-blue-200/80 text-xs mt-1">
+                                {unconfirmedTickers.length === 1
+                                  ? `${unconfirmedTickers[0]} channel`
+                                  : `${unconfirmedTickers.length} channels (${unconfirmedTickers.slice(0, 3).join(', ')}${unconfirmedTickers.length > 3 ? ', ...' : ''})`}{' '}
+                                pending confirmation.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                  }
+                  return null
+                })()}
+
                 {/* Trading Inputs with Compact Premium Styling */}
                 <div className="space-y-3">
                   {/* From Asset Section - Compact Premium Card */}
@@ -2292,7 +2759,11 @@ export const Component = () => {
                         asset={form.getValues().fromAsset}
                         assetOptions={fromAssetOptions}
                         availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
-                        availableAmountLabel="Available:"
+                        availableAmountLabel={
+                          isUsingOnchainBalance
+                            ? 'Onchain Available:'
+                            : 'Available:'
+                        }
                         disabled={
                           !hasChannels ||
                           !hasTradablePairs ||
@@ -2399,6 +2870,36 @@ export const Component = () => {
                     </div>
                   </div>
 
+                  {/* Channel Needed Warning */}
+                  {missingChannelAsset && (
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 border border-blue-500/40 backdrop-blur-xl shadow-xl">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/8 to-blue-500/10"></div>
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                      <div className="relative p-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-blue-500/50 flex items-center justify-center mt-0.5">
+                            <Wallet className="w-3.5 h-3.5 text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-blue-300 font-semibold text-sm mb-1">
+                              {missingChannelAsset.asset} Channel Required
+                            </h4>
+                            <p className="text-blue-200/90 text-sm leading-relaxed">
+                              To{' '}
+                              {missingChannelAsset.isFromAsset
+                                ? 'send'
+                                : 'receive'}{' '}
+                              {missingChannelAsset.asset}, you need to create a
+                              Lightning channel for this asset.
+                              {!missingChannelAsset.isFromAsset &&
+                                ' The asset will be purchased at the current rate and deposited into your new channel.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Compact Ultra Modern Error Message */}
                   {errorMessage && (
                     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
@@ -2447,6 +2948,7 @@ export const Component = () => {
                       isQuoteLoading={isQuoteLoading}
                       isSwapInProgress={isSwapInProgress}
                       isToAmountLoading={isToAmountLoading}
+                      missingChannelAsset={missingChannelAsset}
                       wsConnected={wsConnected}
                     />
                   </div>
@@ -2602,8 +3104,8 @@ export const Component = () => {
   }, [navigate])
 
   const handleBuyChannelAction = useCallback(() => {
-    navigate(ORDER_CHANNEL_PATH)
-  }, [navigate])
+    setShowBuyChannelModal(true)
+  }, [])
 
   // Determine what to show based on loading phase and validation state
   const shouldShowNoChannelsMessage =
@@ -2623,6 +3125,67 @@ export const Component = () => {
     channels.length > 0 && !channels.some((channel) => channel.ready)
   const shouldShowChannelsNotReady =
     loadingPhase === 'ready' && hasUnreadyChannels
+
+  // Helper function to check if a specific asset has only unconfirmed channels
+  const hasOnlyUnconfirmedChannels = useCallback(
+    (asset: string): boolean => {
+      if (!asset || asset === 'BTC') return false
+
+      const assetId = mapTickerToAssetId(asset, assets)
+
+      logger.debug(`[Channel Check] Asset: ${asset}, AssetId: ${assetId}`)
+
+      // Use the utility function from channelUtils
+      const result = hasOnlyUnconfirmedChannelsForAsset(channels, assetId)
+
+      logger.debug(
+        `[Channel Check] ${asset} - Has only unconfirmed channels: ${result}`
+      )
+
+      return result
+    },
+    [channels, assets]
+  )
+
+  // Watch for asset changes to trigger re-validation
+  const watchedFromAsset = form?.watch('fromAsset')
+  const watchedToAsset = form?.watch('toAsset')
+
+  // Check if currently selected assets have only unconfirmed channels
+  const fromAssetUnconfirmed = useMemo(() => {
+    if (!form || !watchedFromAsset) return false
+    return hasOnlyUnconfirmedChannels(watchedFromAsset)
+  }, [watchedFromAsset, hasOnlyUnconfirmedChannels])
+
+  const toAssetUnconfirmed = useMemo(() => {
+    if (!form || !watchedToAsset) return false
+    return hasOnlyUnconfirmedChannels(watchedToAsset)
+  }, [watchedToAsset, hasOnlyUnconfirmedChannels])
+
+  // Set error message when asset has unconfirmed channels
+  useEffect(() => {
+    if (fromAssetUnconfirmed || toAssetUnconfirmed) {
+      const unconfirmedAsset = fromAssetUnconfirmed
+        ? watchedFromAsset
+        : watchedToAsset
+      setErrorMessage(
+        `Channel for ${unconfirmedAsset} is awaiting confirmation. Please wait for it to be ready.`
+      )
+    } else {
+      // Clear the error if it was about unconfirmed channels and now both are confirmed
+      setErrorMessage((prev) => {
+        if (prev && prev.includes('awaiting confirmation')) {
+          return null
+        }
+        return prev
+      })
+    }
+  }, [
+    fromAssetUnconfirmed,
+    toAssetUnconfirmed,
+    watchedFromAsset,
+    watchedToAsset,
+  ])
 
   // Dynamic loading message based on phase
   const getLoadingMessage = () => {
@@ -2795,6 +3358,77 @@ export const Component = () => {
           swapDetails={swapRecapDetails}
         />
       )}
+
+      <BuyChannelModal
+        isOpen={showBuyChannelModal}
+        onClose={() => setShowBuyChannelModal(false)}
+        onSuccess={() => {
+          setShowBuyChannelModal(false)
+          toast.success('Channel created successfully! Refreshing...')
+          setTimeout(() => {
+            refreshChannelsAndAmounts()
+          }, 1000)
+        }}
+        preselectedAsset={(() => {
+          // Use the missingChannelAsset state if available
+          if (missingChannelAsset) {
+            const amount = missingChannelAsset.isFromAsset
+              ? parseFloat(form.getValues().from || '0')
+              : parseFloat(form.getValues().to || '0')
+
+            return {
+              amount: amount,
+              assetId: missingChannelAsset.assetId,
+            }
+          }
+
+          const toAsset = form.getValues().toAsset
+          const fromAsset = form.getValues().fromAsset
+          const toAmount = parseFloat(form.getValues().to || '0')
+
+          // Check which asset is missing and preselect it
+          const channelAssetIds = new Set(
+            channels
+              .filter((c) => c.ready)
+              .map((c) => c.asset_id)
+              .filter((id): id is string => id !== null)
+          )
+          channelAssetIds.add('BTC')
+
+          // If receiving asset is missing, preselect it
+          if (
+            toAsset !== 'BTC' &&
+            !channelAssetIds.has(selectedPair?.quote_asset_id || '')
+          ) {
+            return {
+              amount: toAmount,
+              assetId: selectedPair?.quote_asset_id || toAsset,
+            }
+          }
+
+          // If sending asset is missing, preselect it
+          if (
+            fromAsset !== 'BTC' &&
+            !channelAssetIds.has(selectedPair?.base_asset_id || '')
+          ) {
+            const fromAmount = parseFloat(form.getValues().from || '0')
+            return {
+              amount: fromAmount,
+              assetId: selectedPair?.base_asset_id || fromAsset,
+            }
+          }
+
+          // Fallback to toAsset if it's not BTC
+          if (toAsset && toAsset !== 'BTC') {
+            return {
+              amount: toAmount,
+              assetId: selectedPair?.quote_asset_id || toAsset,
+            }
+          }
+
+          return undefined
+        })()}
+      />
     </div>
   )
 }

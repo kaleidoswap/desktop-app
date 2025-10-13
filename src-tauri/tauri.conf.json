@@ -48,7 +48,7 @@
   "identifier": "com.kaleidoswap.dev",
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxQUNEMjE0QjFENzRDOQpSV1RKZEIxTEljMGFCSE9FOFZ6dWtCSjg4d1dscWh4RzZjRG5CT1k2ZlBPcHZmMUFMem1jS3FMNAo=",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU0NUFFMkE5QzVERkVDQ0UKUldUTzdOL0ZxZUphVkoybHMxY3JjUVJhd2ZsM2drNGhEb0IrTDg1TVdyRGdaTkt2RG51Tk82UlkK",
       "endpoints": [
         "https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json"
       ],

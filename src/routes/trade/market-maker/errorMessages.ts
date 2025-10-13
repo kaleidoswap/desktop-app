@@ -123,6 +123,10 @@ export const getValidationError = (
 
   // Maximum amount check
   if (fromAmount > maxFromAmount) {
+    // Special case: if max is 0, show a clearer insufficient balance message
+    if (maxFromAmount === 0) {
+      return `Insufficient balance. You don't have any ${displayAsset(fromDisplayAsset)} available to send.`
+    }
     return `You can only send up to ${formatAmount(
       maxFromAmount,
       fromDisplayAsset
@@ -136,6 +140,10 @@ export const getValidationError = (
     !isPriceLoading &&
     toAmount > maxToAmount
   ) {
+    // Special case: if max is 0, show a clearer message
+    if (maxToAmount === 0) {
+      return `Unable to receive ${displayAsset(toDisplayAsset)}. No channel capacity available.`
+    }
     return `You can only receive up to ${formatAmount(
       maxToAmount,
       toDisplayAsset
