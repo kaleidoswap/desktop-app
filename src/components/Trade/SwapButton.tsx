@@ -7,6 +7,7 @@ import {
   RefreshCw,
   Plug,
   Clock,
+  ShoppingCart,
 } from 'lucide-react'
 import React from 'react'
 import { twJoin } from 'tailwind-merge'
@@ -22,6 +23,11 @@ interface SwapButtonProps {
   isSwapInProgress: boolean
   hasZeroAmount?: boolean
   hasValidQuote?: boolean
+  missingChannelAsset?: {
+    asset: string
+    assetId: string
+    isFromAsset: boolean
+  } | null
 }
 
 export const SwapButton: React.FC<SwapButtonProps> = ({
@@ -35,9 +41,13 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   isSwapInProgress,
   hasZeroAmount = false,
   hasValidQuote = false,
+  missingChannelAsset = null,
 }) => {
   const getButtonText = () => {
     if (!wsConnected) return 'Connecting...'
+    if (missingChannelAsset) {
+      return `Buy ${missingChannelAsset.asset} in Channel`
+    }
     if (isQuoteLoading && !hasValidQuote) return 'Getting Latest Quote...'
     if (!hasValidQuote && (isToAmountLoading || isPriceLoading))
       return 'Preparing Swap...'
@@ -46,6 +56,9 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     if (errorMessage) {
       if (errorMessage.includes('You can only receive up to')) {
         return 'Exceeds Max Receivable'
+      }
+      if (errorMessage.includes('awaiting confirmation')) {
+        return 'Channel Not Ready'
       }
       return 'Invalid Amount'
     }
@@ -57,6 +70,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
 
   const getButtonIcon = () => {
     if (!wsConnected) return <Plug className="w-5 h-5" />
+    if (missingChannelAsset) return <ShoppingCart className="w-5 h-5" />
     if (isLoading) return <Loader2 className="w-5 h-5 animate-spin" />
     if (!hasChannels) return <Ban className="w-5 h-5" />
     if (!hasTradablePairs) return <Ban className="w-5 h-5" />
@@ -70,15 +84,16 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   }
 
   const isDisabled =
-    !wsConnected ||
-    (isQuoteLoading && !hasValidQuote) ||
-    (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
-    !!errorMessage ||
-    !hasChannels ||
-    !hasTradablePairs ||
-    isSwapInProgress ||
-    hasZeroAmount ||
-    !hasValidQuote
+    (!wsConnected ||
+      (isQuoteLoading && !hasValidQuote) ||
+      (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
+      !!errorMessage ||
+      !hasChannels ||
+      !hasTradablePairs ||
+      isSwapInProgress ||
+      hasZeroAmount ||
+      !hasValidQuote) &&
+    !missingChannelAsset // Allow clicking when channel is missing
 
   const isLoading =
     (isQuoteLoading && !hasValidQuote) ||
@@ -86,6 +101,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     isSwapInProgress
 
   const getButtonVariant = () => {
+    if (missingChannelAsset) return 'success' // Show as actionable button
     if (isDisabled) {
       if (errorMessage) return 'error'
       if (!hasChannels || !hasTradablePairs) return 'warning'
