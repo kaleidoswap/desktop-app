@@ -19,7 +19,6 @@ import {
   NoTradingChannelsMessage,
   createTradingChannelsMessageProps,
   WebSocketDisconnectedMessage,
-  ChannelsNotReadyMessage,
 } from '../../../components/Trade'
 import {
   MIN_CHANNEL_CAPACITY,
@@ -3133,12 +3132,6 @@ export const Component = () => {
 
   const shouldShowWSDisconnectedMessage =
     loadingPhase === 'ready' && !wsConnected && isWebSocketInitialized
-
-  // Check if we have channels but they're not ready yet
-  const hasUnreadyChannels =
-    channels.length > 0 && !channels.some((channel) => channel.ready)
-  const shouldShowChannelsNotReady =
-    loadingPhase === 'ready' && hasUnreadyChannels
 
   // Helper function to check if a specific asset has only unconfirmed channels
   const hasOnlyUnconfirmedChannels = useCallback(
