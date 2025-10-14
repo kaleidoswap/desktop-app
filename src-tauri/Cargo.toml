@@ -1,5 +1,5 @@
 [package]
-name = "KaleidoSwap"
+name = "kaleidoswap"
 version = "0.3.0"
 description = "Kaleidoswap App"
 authors = ["Kaleidoswap Team"]

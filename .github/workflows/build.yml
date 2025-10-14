@@ -119,13 +119,13 @@ jobs:
           echo "Building rgb-lightning-node binary..."
           make release
           echo "✓ rgb-lightning-node binary built successfully"
-          file src-tauri/bin/rgb-lightning-node
-          ls -lh src-tauri/bin/rgb-lightning-node
+          file bin/rgb-lightning-node
+          ls -lh bin/rgb-lightning-node
 
       - name: Create placeholder rgb-lightning-node for Windows
         if: matrix.platform == 'windows-latest'
         run: |
-          mkdir -p src-tauri/bin
+          mkdir -p bin
           echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > src-tauri/bin/rgb-lightning-node
         shell: bash
 

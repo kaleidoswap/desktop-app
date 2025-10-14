@@ -36,7 +36,7 @@ fn main() {
 
         // Determine the project paths
         let project_root = build_manager.project_builder.find_project_root();
-        let bin_dir = project_root.join("src-tauri").join("bin");
+        let bin_dir = project_root.join("bin");
         let executable_path = if cfg!(target_os = "windows") {
             bin_dir.join("rgb-lightning-node.exe")
         } else {
@@ -58,9 +58,9 @@ fn main() {
 
         // Add the resource (executable) dynamically to the config
         let resource_name = if cfg!(target_os = "windows") {
-            "bin/rgb-lightning-node.exe"
+            "../bin/rgb-lightning-node.exe"
         } else {
-            "bin/rgb-lightning-node"
+            "../bin/rgb-lightning-node"
         };
         if !cfg!(target_os = "windows") {
             config.add_resource(resource_name);
@@ -68,15 +68,15 @@ fn main() {
     } else {
         //  In case we do NOT want to build/run the executable, we remove it from the config
         let resource_name = if cfg!(target_os = "windows") {
-            "bin/rgb-lightning-node.exe"
+            "../bin/rgb-lightning-node.exe"
         } else {
-            "bin/rgb-lightning-node"
+            "../bin/rgb-lightning-node"
         };
         config.remove_resource(resource_name);
-
+        
         // On Windows, also remove the Unix version to be safe
         if cfg!(target_os = "windows") {
-            config.remove_resource("bin/rgb-lightning-node");
+            config.remove_resource("../bin/rgb-lightning-node");
         }
     }
 
@@ -164,7 +164,7 @@ impl BuildManager {
 
     fn build_rgb_lightning_node(&self) {
         let project_root = self.project_builder.find_project_root();
-        let bin_dir = project_root.join("src-tauri").join("bin");
+        let bin_dir = project_root.join("bin");
         let executable_path = if cfg!(target_os = "windows") {
             bin_dir.join("rgb-lightning-node.exe")
         } else {
@@ -396,7 +396,7 @@ impl ProjectBuilder {
     fn build(&self, release: bool) {
         let project_root = self.find_project_root();
         let project_dir = project_root.join("rgb-lightning-node");
-        let bin_dir = project_root.join("src-tauri").join("bin");
+        let bin_dir = project_root.join("bin");
         let target_dir = project_dir.join("target");
 
         // Cleaning target folder

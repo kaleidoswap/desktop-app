@@ -7,7 +7,7 @@ ARCH = $(shell uname -m)
 OS = $(shell uname -s)
 REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
-BIN_DIR = $(ROOT_DIR)/src-tauri/bin
+BIN_DIR = $(ROOT_DIR)/bin
 
 # Windows-specific variables
 ifeq ($(OS),Windows_NT)
@@ -53,8 +53,6 @@ build-app:
 
 build-app-windows:
 	npm run tauri:build:windows
-
-
 
 run: release
 	$(BIN_TARGET)

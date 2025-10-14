@@ -3,35 +3,6 @@
 version = 4
 
 [[package]]
-name = "KaleidoSwap"
-version = "0.3.0"
-dependencies = [
- "async-trait",
- "dotenv",
- "fs_extra",
- "futures",
- "futures-util",
- "log",
- "once_cell",
- "parking_lot",
- "rusqlite",
- "serde",
- "serde_json",
- "serde_yaml",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-shell",
- "tauri-plugin-updater",
- "tokio",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2271,6 +2242,35 @@ checksum = "5dea2b27dd239b2556ed7a25ba842fe47fd602e7fc7433c2a8d6106d4d9edd70"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "kaleidoswap"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "dotenv",
+ "fs_extra",
+ "futures",
+ "futures-util",
+ "log",
+ "once_cell",
+ "parking_lot",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-shell",
+ "tauri-plugin-updater",
+ "tokio",
 ]
 
 [[package]]

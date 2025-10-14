@@ -53,10 +53,8 @@ export interface CreateChannelOrderParams {
   clientBalanceSat: number
   channelExpireBlocks: number
   assetId?: string
-  assetAmount?: number // Deprecated: use totalAssetAmount instead
-  totalAssetAmount?: number // Total asset capacity in channel (LSP-side for receiving)
+  lspAssetAmount?: number // LSP's asset amount (inbound liquidity for receiving)
   clientAssetAmount?: number // Client's asset amount (for buying assets in market maker)
-  lspAssetAmount?: number // LSP's asset amount (alternative to totalAssetAmount)
   clientPubKey: string
   addressRefund: string
   lspOptions?: LspOptions
@@ -114,10 +112,8 @@ export const buildChannelOrderPayload = (
     clientBalanceSat,
     channelExpireBlocks,
     assetId,
-    assetAmount, // Deprecated
-    totalAssetAmount,
-    clientAssetAmount,
     lspAssetAmount,
+    clientAssetAmount,
     clientPubKey,
     addressRefund,
     lspOptions,
@@ -140,14 +136,9 @@ export const buildChannelOrderPayload = (
   if (assetId) {
     payload.asset_id = assetId
 
-    // Determine LSP asset amount
-    // Priority: lspAssetAmount > totalAssetAmount > assetAmount (deprecated)
-    const effectiveLspAssetAmount =
-      lspAssetAmount || totalAssetAmount || assetAmount || 0
-
     // LSP's portion (inbound liquidity for receiving/buying)
-    if (effectiveLspAssetAmount > 0) {
-      payload.lsp_asset_amount = effectiveLspAssetAmount
+    if (lspAssetAmount && lspAssetAmount > 0) {
+      payload.lsp_asset_amount = lspAssetAmount
     }
 
     // Client asset amount (for buying assets in market maker)
@@ -254,7 +245,7 @@ export const validateChannelParams = (
     clientBalanceSat,
     channelExpireBlocks,
     assetId,
-    assetAmount,
+    lspAssetAmount,
     lspOptions,
   } = params
 
@@ -309,17 +300,27 @@ export const validateChannelParams = (
     }
   }
 
-  // Validate asset amount if an asset is selected
-  if (assetId && assetAmount) {
+  // Validate asset if selected
+  if (assetId) {
     const selectedAsset = assets.find((asset) => asset.asset_id === assetId)
-    if (selectedAsset) {
-      if (assetAmount < selectedAsset.min_channel_amount) {
+
+    // Check if asset is supported by LSP
+    if (!selectedAsset) {
+      return {
+        error: `Asset ${assetId} is not supported by this LSP. Please select a different asset or check the LSP's supported assets list.`,
+        isValid: false,
+      }
+    }
+
+    // Validate LSP asset amount if provided
+    if (lspAssetAmount && lspAssetAmount > 0) {
+      if (lspAssetAmount < selectedAsset.min_channel_amount) {
         return {
           error: `Asset amount must be at least ${selectedAsset.min_channel_amount / Math.pow(10, selectedAsset.precision)} ${selectedAsset.ticker}`,
           isValid: false,
         }
       }
-      if (assetAmount > selectedAsset.max_channel_amount) {
+      if (lspAssetAmount > selectedAsset.max_channel_amount) {
         return {
           error: `Asset amount cannot exceed ${selectedAsset.max_channel_amount / Math.pow(10, selectedAsset.precision)} ${selectedAsset.ticker}`,
           isValid: false,

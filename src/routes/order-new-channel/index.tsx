@@ -224,8 +224,7 @@ export const Component = () => {
           capacitySat,
           clientBalanceSat,
           assetId,
-          assetAmount,
-          totalAssetAmount,
+          lspAssetAmount,
           channelExpireBlocks,
         } = data
 
@@ -265,12 +264,12 @@ export const Component = () => {
         const validation = validateChannelParams(
           {
             addressRefund,
-            assetAmount: assetAmount || undefined,
             assetId: assetId || undefined,
             capacitySat,
             channelExpireBlocks,
             clientBalanceSat,
             clientPubKey,
+            lspAssetAmount: lspAssetAmount || undefined,
             lspOptions,
           },
           assets,
@@ -285,20 +284,13 @@ export const Component = () => {
         // Build payload using shared utility
         const payload = buildChannelOrderPayload({
           addressRefund,
-          assetAmount: assetAmount || undefined, 
           assetId: assetId || undefined,
-          
-capacitySat,
-          
-channelExpireBlocks,
-          
-clientBalanceSat,
-          
-clientPubKey,
-          
-lspOptions,
-          // Legacy support
-totalAssetAmount: totalAssetAmount || undefined,
+          capacitySat,
+          channelExpireBlocks,
+          clientBalanceSat,
+          clientPubKey,
+          lspAssetAmount: lspAssetAmount || undefined,
+          lspOptions,
         })
 
         // Log the payload for the request

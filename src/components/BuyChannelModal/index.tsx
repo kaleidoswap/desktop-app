@@ -609,6 +609,13 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           10
         )
 
+        // Validate that selected asset is supported by LSP
+        if (data.assetId && !assetMap[data.assetId]) {
+          throw new Error(
+            'The selected asset is not supported by this LSP. Please refresh and select a supported asset.'
+          )
+        }
+
         let parsedClientAssetAmount = 0
         let parsedTotalAssetAmount = 0
         if (data.assetId && assetMap[data.assetId]) {
@@ -644,12 +651,12 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         const validation = validateChannelParams(
           {
             addressRefund,
-            assetAmount: parsedTotalAssetAmount, // Total capacity
             assetId: data.assetId,
             capacitySat: parsedCapacity,
             channelExpireBlocks: data.channelExpireBlocks,
             clientBalanceSat: parsedClientBalance,
             clientPubKey,
+            lspAssetAmount: parsedTotalAssetAmount,
             lspOptions,
           },
           Object.values(assetMap),

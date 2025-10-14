@@ -118,12 +118,13 @@ export const Step3: React.FC<StepProps> = ({
 
   useEffect(() => {
     const fetchAssetInfo = async () => {
-      if (order?.asset_id) {
+      // Check both order and orderPayload for asset_id
+      const assetId = order?.asset_id || orderPayload?.asset_id
+
+      if (assetId) {
         const result = await getAssetInfo()
         if (result.data) {
-          const asset = result.data.nia.find(
-            (a) => a.asset_id === order.asset_id
-          )
+          const asset = result.data.nia.find((a) => a.asset_id === assetId)
           if (asset) {
             setAssetInfo(asset)
           }
@@ -131,7 +132,7 @@ export const Step3: React.FC<StepProps> = ({
       }
     }
     fetchAssetInfo()
-  }, [order?.asset_id, getAssetInfo])
+  }, [order?.asset_id, orderPayload?.asset_id, getAssetInfo])
 
   // Calculate available liquidity
   const channels =
@@ -366,9 +367,11 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Processing State */}
         {(localPaymentState === 'processing' || isProcessingPayment) && (
           <OrderProcessingDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
             orderId={order?.order_id}
+            orderPayload={orderPayload}
             paymentMethod={detectedPaymentMethod || paymentMethod}
           />
         )}

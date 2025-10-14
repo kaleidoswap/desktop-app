@@ -2,12 +2,15 @@ import { Clock, CheckCircle, ArrowRight } from 'lucide-react'
 import React from 'react'
 
 import { formatBitcoinAmount } from '../../../helpers/number'
+import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 
 interface OrderProcessingDisplayProps {
   paymentMethod: 'lightning' | 'onchain'
   currentPayment: any
   bitcoinUnit: string
   orderId?: string
+  assetInfo?: NiaAsset | null
+  orderPayload?: any
 }
 
 export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
@@ -15,6 +18,8 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
   currentPayment,
   bitcoinUnit,
   orderId,
+  assetInfo,
+  orderPayload,
 }) => {
   return (
     <div className="max-w-2xl mx-auto">
@@ -64,6 +69,16 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
             </div>
           )}
         </div>
+
+        {/* Asset Badge */}
+        {orderPayload?.asset_id && assetInfo && (
+          <div className="flex items-center justify-center mb-6">
+            <span className="px-4 py-2 bg-purple-500/20 rounded-lg text-purple-300 text-sm font-medium flex items-center gap-2">
+              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+              RGB Asset: {assetInfo.ticker}
+            </span>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="mb-6">
