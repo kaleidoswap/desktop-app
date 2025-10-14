@@ -49,6 +49,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [amount, setAmount] = useState<string>('')
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
   const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
+  const [usePrivacy, setUsePrivacy] = useState<boolean>(false)
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
@@ -141,7 +142,15 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     setAddress(undefined)
     setAmount('')
     setNoColorableUtxos(false)
+    setUsePrivacy(false)
   }, [network])
+
+  // Reset address when switching privacy mode
+  useEffect(() => {
+    if (network === 'on-chain' && assetId !== BTC_ASSET_ID) {
+      setAddress(undefined)
+    }
+  }, [usePrivacy])
 
   const [assetTicker, setAssetTicker] = useState<string>('')
   const [assetName, setAssetName] = useState<string>('')
@@ -253,7 +262,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
   const generateRgbInvoice = async () => {
     try {
-      const res = await rgbInvoice(assetId ? { asset_id: assetId } : {})
+      const res = await rgbInvoice(
+        assetId
+          ? { asset_id: assetId, witness: !usePrivacy }
+          : { witness: !usePrivacy }
+      )
       setNoColorableUtxos(false)
       if ('error' in res && res.error) {
         const errorMessage =
@@ -456,6 +469,57 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <NetworkOption icon={ChainIcon} label="On-chain" type="on-chain" />
           <NetworkOption icon={Zap} label="Lightning" type="lightning" />
         </div>
+
+        {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
+        {network === 'on-chain' && assetId !== BTC_ASSET_ID && (
+          <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-white mb-1">
+                  Receive with Privacy
+                </h4>
+                <p className="text-xs text-slate-400">
+                  {usePrivacy
+                    ? 'Using blinded UTXO (enhanced privacy)'
+                    : 'Using onchain address (witness-based receive)'}
+                </p>
+              </div>
+              <button
+                className={`
+                  relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                  ${usePrivacy ? 'bg-blue-600' : 'bg-slate-600'}
+                `}
+                onClick={() => setUsePrivacy(!usePrivacy)}
+              >
+                <span
+                  className={`
+                    inline-block h-4 w-4 transform rounded-full transition-transform
+                    ${usePrivacy ? 'bg-blue-400 translate-x-6' : 'bg-slate-200 translate-x-1'}
+                  `}
+                />
+              </button>
+            </div>
+            <div className="text-xs text-slate-400 bg-slate-900/50 p-2 rounded-lg">
+              {usePrivacy ? (
+                <>
+                  <span className="font-medium text-slate-300">
+                    Privacy Mode:
+                  </span>{' '}
+                  Uses a colorable and blinded UTXO for enhanced privacy.
+                  Requires available colorable UTXOs.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-slate-300">
+                    Witness Mode:
+                  </span>{' '}
+                  Uses a standard Bitcoin onchain address. Simpler but less
+                  private.
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Show network info and faucet suggestion in a more compact format */}
         {networkInfo && (

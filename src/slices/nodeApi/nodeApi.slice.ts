@@ -196,6 +196,7 @@ enum ChannelStatus {
 
 interface RGBInvoiceRequest {
   asset_id?: string
+  witness?: boolean
 }
 
 interface RGBInvoiceResponse {
@@ -919,6 +920,7 @@ export const nodeApi = createApi({
       query: (body) => ({
         body: {
           ...(body.asset_id ? { asset_id: body.asset_id } : {}),
+          ...(body.witness !== undefined ? { witness: body.witness } : {}),
           min_confirmations: 1,
         },
         method: 'POST',
