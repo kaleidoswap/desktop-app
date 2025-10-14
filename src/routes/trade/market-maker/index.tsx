@@ -98,8 +98,8 @@ export const Component = () => {
 
   // Loading states optimization - replace multiple loading states with simplified approach
   const [loadingPhase, setLoadingPhase] = useState<
-    | 'initializing'
     | 'validating-balance'
+    | 'initializing'
     | 'validating-channels'
     | 'connecting-maker'
     | 'ready'
@@ -398,6 +398,7 @@ export const Component = () => {
         form,
         parseAssetAmount,
         assets,
+        tradablePairs,
         setIsQuoteLoading,
         setIsToAmountLoading,
         () => hasValidQuote,
@@ -408,6 +409,7 @@ export const Component = () => {
       form,
       parseAssetAmount,
       assets,
+      tradablePairs,
       hasValidQuote,
       maxFromAmount,
       minFromAmount,
@@ -431,8 +433,9 @@ export const Component = () => {
     }
 
     // Map the from/toAsset to asset IDs for lookup
-    const fromAssetId = mapTickerToAssetId(fromAsset, assets)
-    const toAssetId = mapTickerToAssetId(toAsset, assets)
+    // Pass tradablePairs to support assets the user doesn't own yet
+    const fromAssetId = mapTickerToAssetId(fromAsset, assets, tradablePairs)
+    const toAssetId = mapTickerToAssetId(toAsset, assets, tradablePairs)
 
     // Only look for exact match - no fallback to other quotes
     const key = `${fromAssetId}/${toAssetId}/${fromAmount}`
@@ -559,7 +562,11 @@ export const Component = () => {
         setQuoteExpiresAt(quoteResponse.expires_at || null)
 
         // Format and update the 'to' field with the received amount
-        const toTickerForUI = mapAssetIdToTicker(quoteResponse.to_asset, assets)
+        const toTickerForUI = mapAssetIdToTicker(
+          quoteResponse.to_asset,
+          assets,
+          tradablePairs
+        )
 
         // If to_asset is BTC, convert from millisats to sats
         let displayToAmount = quoteResponse.to_amount
@@ -651,13 +658,13 @@ export const Component = () => {
     (asset: string) => {
       // First map asset ID to ticker if needed
       const assetForDisplay = isAssetId(asset)
-        ? mapAssetIdToTicker(asset, assets)
+        ? mapAssetIdToTicker(asset, assets, tradablePairs)
         : asset
 
       // Then apply Bitcoin unit conversion if needed
       return getDisplayAsset(assetForDisplay, bitcoinUnit)
     },
-    [bitcoinUnit, assets]
+    [bitcoinUnit, assets, tradablePairs]
   )
 
   const isPairInverted = useCallback(
@@ -1591,6 +1598,21 @@ export const Component = () => {
 
       try {
         // Phase 1: Get node info and channels first
+
+        // Always fetch BTC balance and LSP info for potential onchain trading
+        logger.info('💰 Fetching BTC balance and LSP info...')
+        setLoadingPhase('validating-balance')
+
+        const [balanceResponse, lspInfoResponse] = await Promise.all([
+          btcBalance({ skip_sync: false }),
+          getInfo(),
+        ])
+
+        if (!('data' in balanceResponse) || !balanceResponse.data) {
+          logger.error('❌ Failed to get balance data')
+          throw new Error('Failed to get balance information')
+        }
+
         logger.info('🔗 Phase 1: Checking channels and node info')
         setLoadingPhase('validating-channels')
 
@@ -1615,20 +1637,6 @@ export const Component = () => {
         }
 
         const channelsList = channelsResponse.data.channels
-
-        // Always fetch BTC balance and LSP info for potential onchain trading
-        logger.info('💰 Fetching BTC balance and LSP info...')
-        setLoadingPhase('validating-balance')
-
-        const [balanceResponse, lspInfoResponse] = await Promise.all([
-          btcBalance({ skip_sync: false }),
-          getInfo(),
-        ])
-
-        if (!('data' in balanceResponse) || !balanceResponse.data) {
-          logger.error('❌ Failed to get balance data')
-          throw new Error('Failed to get balance information')
-        }
 
         const { vanilla, colored } = balanceResponse.data
         const totalOnchainBalance = vanilla.spendable + colored.spendable
@@ -2108,26 +2116,30 @@ export const Component = () => {
       }
 
       // Ensure we're comparing by ticker if excludeAsset is a ticker
-      const excludeAssetId = mapTickerToAssetId(excludeAsset, safeAssets)
+      const excludeAssetId = mapTickerToAssetId(
+        excludeAsset,
+        safeAssets,
+        tradablePairs
+      )
 
       // Include all assets that are part of a valid trading pair
       // This ensures all tradable assets appear in the dropdown
       const tradableAssets = allPairAssets
         // Remove the currently selected asset from options
         .filter((asset) => {
-          const assetId = mapTickerToAssetId(asset, safeAssets)
+          const assetId = mapTickerToAssetId(asset, safeAssets, tradablePairs)
           return assetId !== excludeAssetId
         })
         .map((asset) => {
           // Always display the ticker for the asset
           const displayTicker = isAssetId(asset)
-            ? mapAssetIdToTicker(asset, safeAssets)
+            ? mapAssetIdToTicker(asset, safeAssets, tradablePairs)
             : asset
 
           // Get the asset ID for this asset
           const assetId = isAssetId(asset)
             ? asset
-            : mapTickerToAssetId(asset, safeAssets)
+            : mapTickerToAssetId(asset, safeAssets, tradablePairs)
 
           return {
             assetId: assetId,
@@ -2466,7 +2478,7 @@ export const Component = () => {
 
     // Check if the fromAsset has ready channels (for non-BTC assets)
     if (fromAsset !== 'BTC') {
-      const fromAssetId = mapTickerToAssetId(fromAsset, assets)
+      const fromAssetId = mapTickerToAssetId(fromAsset, assets, tradablePairs)
       const fromAssetStatus = getAssetChannelStatus(channels, fromAssetId)
 
       if (!fromAssetStatus.hasReadyChannels) {
@@ -2488,7 +2500,7 @@ export const Component = () => {
 
     // Check if the toAsset has ready channels (for non-BTC assets)
     if (toAsset !== 'BTC') {
-      const toAssetId = mapTickerToAssetId(toAsset, assets)
+      const toAssetId = mapTickerToAssetId(toAsset, assets, tradablePairs)
       const toAssetStatus = getAssetChannelStatus(channels, toAssetId)
 
       if (!toAssetStatus.hasReadyChannels) {
@@ -2711,7 +2723,9 @@ export const Component = () => {
                     hasTradableChannels(channels)
                   ) {
                     const unconfirmedTickers = unconfirmedAssetIds
-                      .map((assetId) => mapAssetIdToTicker(assetId, assets))
+                      .map((assetId) =>
+                        mapAssetIdToTicker(assetId, assets, tradablePairs)
+                      )
                       .filter(
                         (ticker) =>
                           ticker !== 'BTC' &&
@@ -3131,7 +3145,7 @@ export const Component = () => {
     (asset: string): boolean => {
       if (!asset || asset === 'BTC') return false
 
-      const assetId = mapTickerToAssetId(asset, assets)
+      const assetId = mapTickerToAssetId(asset, assets, tradablePairs)
 
       logger.debug(`[Channel Check] Asset: ${asset}, AssetId: ${assetId}`)
 
@@ -3144,7 +3158,7 @@ export const Component = () => {
 
       return result
     },
-    [channels, assets]
+    [channels, assets, tradablePairs]
   )
 
   // Watch for asset changes to trigger re-validation
@@ -3271,11 +3285,6 @@ export const Component = () => {
               </div>
             </div>
           </div>
-        </div>
-      ) : /* Show channels not ready message */
-      shouldShowChannelsNotReady ? (
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <ChannelsNotReadyMessage onRefresh={refreshChannelsAndAmounts} />
         </div>
       ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
       shouldShowNoChannelsMessage ? (

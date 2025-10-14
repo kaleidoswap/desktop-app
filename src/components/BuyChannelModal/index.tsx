@@ -123,6 +123,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const [sendPayment] = nodeApi.endpoints.sendPayment.useLazyQuery()
   const [sendBtc] = nodeApi.endpoints.sendBtc.useLazyQuery()
   const [getQuote] = makerApi.endpoints.getQuote.useLazyQuery()
+  const [listPeers] = nodeApi.endpoints.listPeers.useLazyQuery()
+  const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
 
   const { handleSubmit, setValue, control, watch } = useForm<FormFields>({
     defaultValues: {
@@ -600,6 +602,39 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           throw new Error('LSP options not loaded')
         }
 
+        // Get LSP connection info and ensure we're connected to the LSP peer
+        const lspInfoResponse = await getInfoRequest()
+        const lspConnectionUrl = lspInfoResponse.data?.lsp_connection_url
+
+        if (lspConnectionUrl) {
+          try {
+            // Extract pubkey from connection URL (format: pubkey@host:port)
+            const lspPubkey = lspConnectionUrl.split('@')[0]
+
+            // Check if we're already connected to this peer
+            const peersResponse = await listPeers()
+            const isConnected = peersResponse.data?.peers?.some(
+              (peer) => peer.pubkey === lspPubkey
+            )
+
+            // Connect to LSP if not already connected
+            if (!isConnected) {
+              console.log('Connecting to LSP peer:', lspConnectionUrl)
+              await connectPeer({
+                peer_pubkey_and_addr: lspConnectionUrl,
+              }).unwrap()
+              console.log('Successfully connected to LSP peer')
+            } else {
+              console.log('Already connected to LSP peer')
+            }
+          } catch (peerError) {
+            console.error('Error connecting to LSP peer:', peerError)
+            throw new Error(
+              'Failed to connect to LSP. Please check your connection and try again.'
+            )
+          }
+        }
+
         const parsedCapacity = parseInt(
           data.capacitySat.replace(/[^0-9]/g, ''),
           10
@@ -717,6 +752,9 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       effectiveMinCapacity,
       effectiveMaxCapacity,
       quote,
+      getInfoRequest,
+      listPeers,
+      connectPeer,
     ]
   )
 

@@ -126,7 +126,7 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: |
           mkdir -p bin
-          echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > src-tauri/bin/rgb-lightning-node
+          echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
         shell: bash
 
       - name: Build Tauri app

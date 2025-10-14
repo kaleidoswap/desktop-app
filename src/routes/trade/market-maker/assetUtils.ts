@@ -699,24 +699,42 @@ export const createFetchAndSetPairsHandler = (
 /**
  * Maps an asset ID to its ticker symbol
  * This is crucial for UI display, as users should see tickers not asset IDs
+ * Now also checks trading pairs to support assets the user doesn't own yet
  *
  * @param assetId The full asset ID (e.g., "rgb:Dg!Mttpk-NSLmSJF-iDdTsdE-mnAg5$V-KqWib!Y-kkWETBE")
  * @param assets List of assets to map from
+ * @param tradingPairs Optional trading pairs to also check for asset mapping
  * @returns The ticker symbol (e.g., "USDT") or a shortened version of the asset ID if not found
  */
 export const mapAssetIdToTicker = (
   assetId: string,
-  assets: NiaAsset[]
+  assets: NiaAsset[],
+  tradingPairs?: TradingPair[]
 ): string => {
   // Return BTC as is
   if (assetId === 'BTC') {
     return assetId
   }
 
-  // Try to find the asset in the assets list
+  // Try to find the asset in the assets list first
   const asset = assets.find((a) => a.asset_id === assetId)
   if (asset && asset.ticker) {
     return asset.ticker
+  }
+
+  // If not found in user assets, check trading pairs
+  if (tradingPairs) {
+    const pairWithAsset = tradingPairs.find(
+      (p) => p.base_asset_id === assetId || p.quote_asset_id === assetId
+    )
+    if (pairWithAsset) {
+      if (pairWithAsset.base_asset_id === assetId) {
+        return pairWithAsset.base_asset
+      }
+      if (pairWithAsset.quote_asset_id === assetId) {
+        return pairWithAsset.quote_asset
+      }
+    }
   }
 
   // If we can't find a mapping, create a shortened display version
@@ -732,24 +750,42 @@ export const mapAssetIdToTicker = (
 /**
  * Maps a ticker symbol to its full asset ID
  * This is needed for WebSocket communication where we must use asset IDs
+ * Now also checks trading pairs to support assets the user doesn't own yet
  *
  * @param ticker The ticker symbol (e.g., "USDT")
  * @param assets List of assets to map from
+ * @param tradingPairs Optional trading pairs to also check for asset mapping
  * @returns The full asset ID or the original ticker if not found
  */
 export const mapTickerToAssetId = (
   ticker: string,
-  assets: NiaAsset[]
+  assets: NiaAsset[],
+  tradingPairs?: TradingPair[]
 ): string => {
   // Return BTC as is
   if (ticker === 'BTC' || ticker === 'SAT') {
     return 'BTC'
   }
 
-  // Try to find the asset in the assets list
+  // Try to find the asset in the assets list first
   const asset = assets.find((a) => a.ticker === ticker)
   if (asset && asset.asset_id) {
     return asset.asset_id
+  }
+
+  // If not found in user assets, check trading pairs
+  if (tradingPairs) {
+    const pairWithAsset = tradingPairs.find(
+      (p) => p.base_asset === ticker || p.quote_asset === ticker
+    )
+    if (pairWithAsset) {
+      if (pairWithAsset.base_asset === ticker) {
+        return pairWithAsset.base_asset_id
+      }
+      if (pairWithAsset.quote_asset === ticker) {
+        return pairWithAsset.quote_asset_id
+      }
+    }
   }
 
   // If we can't find a mapping, return the ticker (may be an asset ID already)

@@ -12,6 +12,20 @@
   animation: shimmer 2s infinite;
 }
 
+/* Shimmer Gradient Animation */
+@keyframes shimmerGradient {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer-gradient {
+  animation: shimmerGradient 2s infinite;
+}
+
 /* Sparkle Animation */
 @keyframes sparkle {
   0%,

@@ -3,6 +3,7 @@ import { UseFormReturn } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
 import { webSocketService } from '../../../app/hubs/websocketService'
+import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../utils/logger'
 
@@ -57,6 +58,7 @@ export const clearDebouncedQuoteRequest = () => {
  * @param form Form instance from react-hook-form
  * @param parseAssetAmount Function to parse asset amount
  * @param assets List of NiaAsset objects
+ * @param tradingPairs List of trading pairs from market maker (needed for asset mapping)
  * @param setIsQuoteLoading Function to set quote loading state
  * @param setIsToAmountLoading Function to set to amount loading state
  * @param hasValidQuote Optional function to check if there's already a valid quote
@@ -71,6 +73,7 @@ export const createQuoteRequestHandler = (
     asset: string
   ) => number,
   assets: NiaAsset[],
+  tradingPairs: TradingPair[],
   setIsQuoteLoading?: (loading: boolean) => void,
   setIsToAmountLoading?: (loading: boolean) => void,
   hasValidQuote?: () => boolean,
@@ -78,6 +81,13 @@ export const createQuoteRequestHandler = (
   minFromAmount?: number
 ) => {
   return async () => {
+    // Skip if trading pairs haven't been loaded yet - prevents race condition on initialization
+    // Trading pairs are needed for asset mapping, especially for assets the user doesn't own yet
+    if (!tradingPairs || tradingPairs.length === 0) {
+      logger.debug('Trading pairs not yet loaded, skipping quote request')
+      return
+    }
+
     const fromAssetTicker = form.getValues().fromAsset
     const toAssetTicker = form.getValues().toAsset
     const fromAmountStr = form.getValues().from
@@ -165,27 +175,17 @@ export const createQuoteRequestHandler = (
       }
     }
 
-    // Ensure assets are available before trying to send the request
-    if (!assets || assets.length === 0) {
-      logger.warn(
-        'Quote request skipped: assets list is not available or empty.'
-      )
-      if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
-        toast.warn('Asset data is not yet loaded. Cannot request quotes.', {
-          toastId: 'assets-not-loaded',
-        })
-        lastQuoteErrorToastTime = Date.now()
-      }
-      return
-    }
-
-    // Send the request immediately, passing tickers and the assets list
+    // Send the request immediately, passing tickers, assets, and trading pairs
     // Handle async request without blocking
-    sendQuoteRequest(fromAssetTicker, toAssetTicker, fromAmount, assets).catch(
-      (error) => {
-        logger.error('Error in async quote request:', error)
-      }
-    )
+    sendQuoteRequest(
+      fromAssetTicker,
+      toAssetTicker,
+      fromAmount,
+      assets,
+      tradingPairs
+    ).catch((error) => {
+      logger.error('Error in async quote request:', error)
+    })
   }
 }
 
@@ -196,16 +196,22 @@ const sendQuoteRequest = async (
   fromAssetTicker: string,
   toAssetTicker: string,
   fromAmount: number, // This fromAmount is in standard units (e.g., sats for BTC, base units for RGB)
-  assets: NiaAsset[]
+  assets: NiaAsset[],
+  tradingPairs: TradingPair[]
 ) => {
   // We use asset tickers in the UI, but need to send asset IDs to the websocket
   // Get the actual asset IDs to send in the request
-  const fromAssetId = mapTickerToAssetId(fromAssetTicker, assets)
-  const toAssetId = mapTickerToAssetId(toAssetTicker, assets)
+  // Now using trading pairs to support assets the user doesn't own yet
+  const fromAssetId = mapTickerToAssetId(fromAssetTicker, assets, tradingPairs)
+  const toAssetId = mapTickerToAssetId(toAssetTicker, assets, tradingPairs)
 
   // Get display tickers for logging/errors
-  const fromDisplayTicker = mapAssetIdToTicker(fromAssetId, assets)
-  const toDisplayTicker = mapAssetIdToTicker(toAssetId, assets)
+  const fromDisplayTicker = mapAssetIdToTicker(
+    fromAssetId,
+    assets,
+    tradingPairs
+  )
+  const toDisplayTicker = mapAssetIdToTicker(toAssetId, assets, tradingPairs)
 
   // Update tracking variables for request rate limiting
   const requestTime = Date.now() // Capture current time before updating lastQuoteRequestTime
