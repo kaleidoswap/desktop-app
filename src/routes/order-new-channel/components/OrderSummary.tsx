@@ -94,13 +94,59 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         </div>
 
-        {/* Asset Badge - Simple display */}
-        {orderPayload?.asset_id && assetInfo && (
-          <div className="flex items-center justify-center">
-            <span className="px-4 py-2 bg-purple-500/20 rounded-lg text-purple-300 text-sm font-medium flex items-center gap-2">
-              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              RGB Asset: {assetInfo.ticker}
-            </span>
+        {/* Asset Information */}
+        {(orderPayload?.asset_id || order.asset_id) && (
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-purple-300 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                RGB Asset Channel
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Asset ID:</span>
+                <span className="text-purple-300 font-mono text-xs">
+                  {assetInfo ? (
+                    <>
+                      {assetInfo.name} ({assetInfo.ticker})
+                    </>
+                  ) : (
+                    <>
+                      {(order.asset_id || orderPayload?.asset_id)
+                        ?.split('-')
+                        .slice(0, 2)
+                        .join('-')}
+                      ...
+                    </>
+                  )}
+                </span>
+              </div>
+              {(order.lsp_asset_amount || orderPayload?.lsp_asset_amount) && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">LSP Asset Amount:</span>
+                  <span className="text-purple-300 font-medium">
+                    {(
+                      order.lsp_asset_amount || orderPayload.lsp_asset_amount
+                    ).toLocaleString()}
+                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                  </span>
+                </div>
+              )}
+              {(order.client_asset_amount ||
+                orderPayload?.client_asset_amount) && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Your Asset Amount:</span>
+                  <span className="text-blue-300 font-medium">
+                    {(
+                      order.client_asset_amount ||
+                      orderPayload.client_asset_amount
+                    ).toLocaleString()}
+                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

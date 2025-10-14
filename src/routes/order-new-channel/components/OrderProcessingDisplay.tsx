@@ -2,6 +2,7 @@ import { Clock, CheckCircle, ArrowRight } from 'lucide-react'
 import React from 'react'
 
 import { formatBitcoinAmount } from '../../../helpers/number'
+import { Lsps1CreateOrderResponse } from '../../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 
 interface OrderProcessingDisplayProps {
@@ -11,6 +12,7 @@ interface OrderProcessingDisplayProps {
   orderId?: string
   assetInfo?: NiaAsset | null
   orderPayload?: any
+  order?: Lsps1CreateOrderResponse | null
 }
 
 export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
@@ -20,6 +22,7 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
   orderId,
   assetInfo,
   orderPayload,
+  order,
 }) => {
   return (
     <div className="max-w-2xl mx-auto">
@@ -70,13 +73,63 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
           )}
         </div>
 
-        {/* Asset Badge */}
-        {orderPayload?.asset_id && assetInfo && (
-          <div className="flex items-center justify-center mb-6">
-            <span className="px-4 py-2 bg-purple-500/20 rounded-lg text-purple-300 text-sm font-medium flex items-center gap-2">
+        {/* Asset Information */}
+        {(orderPayload?.asset_id || order?.asset_id) && (
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
               <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              RGB Asset: {assetInfo.ticker}
-            </span>
+              <span className="text-purple-300 text-sm font-medium">
+                RGB Asset Channel
+              </span>
+            </div>
+            <div className="text-center text-sm text-gray-400">
+              {assetInfo ? (
+                <>
+                  {assetInfo.name} ({assetInfo.ticker})
+                </>
+              ) : (
+                <span className="font-mono text-xs">
+                  {(order?.asset_id || orderPayload?.asset_id)
+                    ?.split('-')
+                    .slice(0, 2)
+                    .join('-')}
+                  ...
+                </span>
+              )}
+            </div>
+            {(order?.lsp_asset_amount ||
+              orderPayload?.lsp_asset_amount ||
+              order?.client_asset_amount ||
+              orderPayload?.client_asset_amount) && (
+              <div className="mt-3 pt-3 border-t border-purple-500/20 text-xs space-y-1">
+                {(order?.lsp_asset_amount ||
+                  orderPayload?.lsp_asset_amount) && (
+                  <div className="flex justify-center gap-2">
+                    <span className="text-gray-500">LSP Amount:</span>
+                    <span className="text-purple-300">
+                      {(
+                        order?.lsp_asset_amount ||
+                        orderPayload?.lsp_asset_amount
+                      )?.toLocaleString()}
+                      {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                    </span>
+                  </div>
+                )}
+                {(order?.client_asset_amount ||
+                  orderPayload?.client_asset_amount) && (
+                  <div className="flex justify-center gap-2">
+                    <span className="text-gray-500">Your Amount:</span>
+                    <span className="text-blue-300">
+                      {(
+                        order?.client_asset_amount ||
+                        orderPayload?.client_asset_amount
+                      )?.toLocaleString()}
+                      {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

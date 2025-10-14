@@ -348,6 +348,20 @@ export const Component = () => {
     }
   }, [step])
 
+  const handleRestartFlow = useCallback(() => {
+    // Reset all state
+    setStep(1)
+    setOrderId(null)
+    setOrderPayload(null)
+    setPaymentStatus(null)
+    setPaymentReceived(false)
+    setIsProcessingPayment(false)
+    setPaymentMethod(null)
+    if (toastId) {
+      toast.dismiss(toastId)
+    }
+  }, [])
+
   const handleConfirmBack = useCallback(() => {
     setShowBackConfirmation(false)
     setOrderId(null)
@@ -411,6 +425,7 @@ export const Component = () => {
           isProcessingPayment={isProcessingPayment}
           loading={getOrderResponse.isLoading}
           onBack={onStepBack}
+          onRestart={handleRestartFlow}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
           orderPayload={orderPayload}
           paymentReceived={paymentReceived}
@@ -420,6 +435,7 @@ export const Component = () => {
 
       <div className={step !== 4 ? 'hidden' : ''}>
         <Step4
+          onRestart={handleRestartFlow}
           orderId={orderId ?? undefined}
           paymentStatus={paymentStatus || 'error'}
         />

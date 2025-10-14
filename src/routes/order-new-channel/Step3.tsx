@@ -26,6 +26,7 @@ import {
 
 interface StepProps {
   onBack: () => void
+  onRestart?: () => void
   loading: boolean
   order: Lsps1CreateOrderResponse | null
   paymentStatus: 'success' | 'error' | 'expired' | null
@@ -44,6 +45,7 @@ const feeRates = [
 
 export const Step3: React.FC<StepProps> = ({
   onBack,
+  onRestart,
   loading,
   order,
   paymentStatus,
@@ -370,6 +372,7 @@ export const Step3: React.FC<StepProps> = ({
             assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            order={order}
             orderId={order?.order_id}
             orderPayload={orderPayload}
             paymentMethod={detectedPaymentMethod || paymentMethod}
@@ -379,8 +382,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Success State */}
         {(localPaymentState === 'success' || paymentStatus === 'success') && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="success"
           />
@@ -389,8 +397,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Error State */}
         {localPaymentState === 'error' && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="error"
           />
@@ -399,8 +412,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Expired State */}
         {localPaymentState === 'expired' && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="expired"
           />

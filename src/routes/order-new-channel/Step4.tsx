@@ -16,9 +16,11 @@ import { CHANNELS_PATH } from '../../app/router/paths'
 export const Step4 = ({
   paymentStatus,
   orderId,
+  onRestart,
 }: {
   paymentStatus: 'success' | 'error' | 'expired' | null | string
   orderId?: string
+  onRestart?: () => void
 }) => {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -35,7 +37,7 @@ export const Step4 = ({
     error: {
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/30',
-      buttonAction: () => navigate(CHANNELS_PATH),
+      buttonAction: () => (onRestart ? onRestart() : navigate(CHANNELS_PATH)),
       buttonText: 'Try Again',
       icon: <XCircle className="text-red-500 mb-6" size={80} />,
       message: 'There was an issue with your payment. Please try again.',
@@ -44,7 +46,7 @@ export const Step4 = ({
     expired: {
       bgColor: 'bg-yellow-500/10',
       borderColor: 'border-yellow-500/30',
-      buttonAction: () => navigate(CHANNELS_PATH),
+      buttonAction: () => (onRestart ? onRestart() : navigate(CHANNELS_PATH)),
       buttonText: 'Create New Order',
       icon: <Clock className="text-yellow-500 mb-6" size={80} />,
       message: 'The order has expired. Please create a new order to continue.',
