@@ -9,6 +9,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Zap,
+  Loader2,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
@@ -31,6 +32,7 @@ import {
   PasswordSetupForm,
   PasswordFields,
 } from '../../components/PasswordSetupForm'
+import { SkipMnemonicWarningModal } from '../../components/SkipMnemonicWarningModal'
 import { StepIndicator } from '../../components/StepIndicator'
 import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
@@ -128,6 +130,8 @@ export const Component = () => {
   const [nodePassword, setNodePassword] = useState('')
   const [isCancellingUnlock, setIsCancellingUnlock] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [showSkipMnemonicWarning, setShowSkipMnemonicWarning] = useState(false)
 
   const [init] = nodeApi.endpoints.init.useLazyQuery()
   const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
@@ -509,6 +513,8 @@ export const Component = () => {
     const network = nodeSetupForm.getValues('network')
     const datapath = getDatapath(accountName)
 
+    setIsInitializing(true)
+
     try {
       // Check and stop any existing node
       await checkAndStopExistingNode()
@@ -529,6 +535,7 @@ export const Component = () => {
             closeOnClick: true,
           }
         )
+        setIsInitializing(false)
         return
       }
 
@@ -567,6 +574,8 @@ export const Component = () => {
       } catch (cleanupError) {
         console.error('Failed to clean up after error:', cleanupError)
       }
+    } finally {
+      setIsInitializing(false)
     }
   }
 
@@ -741,6 +750,22 @@ export const Component = () => {
     handleStepChange('setup')
   }
 
+  const handleSkipMnemonicBackup = () => {
+    setShowSkipMnemonicWarning(true)
+  }
+
+  const handleConfirmSkipMnemonic = async () => {
+    setShowSkipMnemonicWarning(false)
+    // Skip directly to unlock step
+    handleStepChange('unlock')
+    setIsUnlocking(true)
+    try {
+      await handleUnlockComplete()
+    } catch (error) {
+      console.error('Unlock failed:', error)
+    }
+  }
+
   const renderCurrentStep = () => {
     const renderStepLayout = (
       title: string,
@@ -816,15 +841,53 @@ export const Component = () => {
           'Set a strong password to secure your node',
           <Lock />,
           <div className="w-full">
+            {isInitializing && (
+              <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <Alert
+                  className="border-cyan/20 bg-cyan/5 backdrop-blur-sm"
+                  icon={
+                    <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                  }
+                  title="Initializing Node"
+                  variant="info"
+                >
+                  <div className="space-y-2">
+                    <p className="text-sm text-slate-300">
+                      Please wait while we initialize your node. This may take a
+                      few moments...
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <div className="flex gap-1">
+                        <div
+                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
+                      </div>
+                      <span>Setting up your wallet...</span>
+                    </div>
+                  </div>
+                </Alert>
+              </div>
+            )}
             <PasswordSetupForm
+              disabled={isInitializing}
               errors={errors}
               form={passwordForm}
+              isLoading={isInitializing}
               isPasswordVisible={isPasswordVisible}
               onSubmit={handlePasswordSetup}
               setIsPasswordVisible={setIsPasswordVisible}
             />
           </div>,
-          () => handleBackNavigation()
+          isInitializing ? undefined : () => handleBackNavigation()
         )
 
       case 'mnemonic':
@@ -837,6 +900,7 @@ export const Component = () => {
               mnemonic={mnemonic}
               onCopy={copyMnemonicToClipboard}
               onNext={() => handleStepChange('verify')}
+              onSkip={handleSkipMnemonicBackup}
             />
           </div>,
           () => handleBackNavigation()
@@ -922,6 +986,11 @@ export const Component = () => {
         isOpen={showTermsModal}
         onAccept={handleTermsAccept}
         onClose={() => navigate(WALLET_SETUP_PATH)}
+      />
+      <SkipMnemonicWarningModal
+        isOpen={showSkipMnemonicWarning}
+        onCancel={() => setShowSkipMnemonicWarning(false)}
+        onConfirm={handleConfirmSkipMnemonic}
       />
     </>
   )
