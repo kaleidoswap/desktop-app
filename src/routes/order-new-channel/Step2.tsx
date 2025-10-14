@@ -34,12 +34,11 @@ interface Props {
 }
 
 const FormFieldsSchema = z.object({
-  assetAmount: z.string().optional().default(''),
   assetId: z.string().optional().default(''),
   capacitySat: z.string(),
   channelExpireBlocks: z.number(),
   clientBalanceSat: z.string(),
-  totalAssetAmount: z.string().optional().default(''),
+  lspAssetAmount: z.string().optional().default(''),
 })
 
 type FormFields = z.infer<typeof FormFieldsSchema>
@@ -60,12 +59,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   const { handleSubmit, setValue, control, watch, formState } =
     useForm<FormFields>({
       defaultValues: {
-        assetAmount: '',
         assetId: '',
         capacitySat: '100000', // Default to 100,000 sats
         channelExpireBlocks: 12960, // Default to 3 months (12960 blocks)
         clientBalanceSat: '20000', // Default to 20,000 sats inbound liquidity
-        totalAssetAmount: '',
+        lspAssetAmount: '',
       },
       resolver: zodResolver(FormFieldsSchema),
     })
@@ -176,10 +174,22 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         return
       }
 
+      // Validate that selected asset is supported by LSP
+      if (addAsset && data.assetId && !assetMap[data.assetId]) {
+        toast.error(
+          'The selected asset is not supported by this LSP. Please refresh and select a supported asset.',
+          {
+            autoClose: 5000,
+            position: 'bottom-right',
+          }
+        )
+        return
+      }
+
       if (
         addAsset &&
         data.assetId &&
-        (data.totalAssetAmount === '' || data.totalAssetAmount === '0')
+        (data.lspAssetAmount === '' || data.lspAssetAmount === '0')
       ) {
         toast.error('Please enter an asset amount before proceeding.', {
           autoClose: 5000,
@@ -231,7 +241,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         )
       }
 
-      let assetAmount = data.assetAmount || ''
+      // Validate and parse LSP asset amount
+      let parsedLspAssetAmount = 0
       if (addAsset && data.assetId) {
         const assetInfo = assetMap[data.assetId]
         if (assetInfo) {
@@ -239,17 +250,17 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
           const maxAssetAmount =
             assetInfo.max_channel_amount / Math.pow(10, assetInfo.precision)
-          const parsedAmount = parseFloat(assetAmount || '0')
+          const parsedAmount = parseFloat(data.lspAssetAmount || '0')
 
           // Validate minimum amount
           if (
             (parsedAmount !== 0 && isNaN(parsedAmount)) ||
             (parsedAmount > 0 && parsedAmount < minAssetAmount)
           ) {
-            assetAmount = minAssetAmount.toString()
-            setValue('assetAmount', assetAmount)
+            const adjustedAmount = minAssetAmount.toString()
+            setValue('lspAssetAmount', adjustedAmount)
             toast.info(
-              `Asset amount adjusted to minimum: ${formatNumberWithCommas(assetAmount)} ${assetInfo.ticker}`,
+              `Asset amount adjusted to minimum: ${formatNumberWithCommas(adjustedAmount)} ${assetInfo.ticker}`,
               {
                 autoClose: 3000,
                 position: 'bottom-right',
@@ -269,29 +280,20 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             return // PREVENT form submission
           }
         }
-      }
 
-      // Parse asset amount (all goes to LSP for receiving)
-      let parsedTotalAssetAmount = 0
-
-      if (addAsset && data.assetId) {
-        parsedTotalAssetAmount = parseAssetAmount(
-          data.totalAssetAmount || '0',
+        // Parse asset amount (all goes to LSP for receiving)
+        parsedLspAssetAmount = parseAssetAmount(
+          data.lspAssetAmount || '0',
           data.assetId
         )
       }
 
       const submissionData: TChannelRequestForm = {
-        assetAmount: 0, 
         assetId: data.assetId || '',
-        
-capacitySat: parsedCapacitySat,
-        
-channelExpireBlocks: data.channelExpireBlocks,
-        
-clientBalanceSat: parsedClientBalanceSat,
-        // Legacy field, not used anymore
-totalAssetAmount: parsedTotalAssetAmount,
+        capacitySat: parsedCapacitySat,
+        channelExpireBlocks: data.channelExpireBlocks,
+        clientBalanceSat: parsedClientBalanceSat,
+        lspAssetAmount: parsedLspAssetAmount,
       }
 
       try {
@@ -331,7 +333,7 @@ totalAssetAmount: parsedTotalAssetAmount,
               setValue('clientBalanceSat', minValue.toString())
               madeAdjustments = true
             } else if (
-              path === 'assetAmount' &&
+              path === 'lspAssetAmount' &&
               addAsset &&
               data.assetId &&
               assetMap[data.assetId]
@@ -339,9 +341,9 @@ totalAssetAmount: parsedTotalAssetAmount,
               const assetInfo = assetMap[data.assetId]
               const minAssetAmount =
                 assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
-              adjustedData.assetAmount =
+              adjustedData.lspAssetAmount =
                 minAssetAmount * Math.pow(10, assetInfo.precision)
-              setValue('assetAmount', minAssetAmount.toString())
+              setValue('lspAssetAmount', minAssetAmount.toString())
               madeAdjustments = true
             }
           })
@@ -387,7 +389,7 @@ totalAssetAmount: parsedTotalAssetAmount,
       const clientBalanceSat = watch('clientBalanceSat')
       const channelExpireBlocks = watch('channelExpireBlocks')
       const assetId = watch('assetId')
-      const assetAmount = watch('assetAmount')
+      const lspAssetAmount = watch('lspAssetAmount')
 
       // Only fetch if we have valid basic parameters
       if (!capacitySat || !clientBalanceSat || isLoading) {
@@ -431,8 +433,8 @@ totalAssetAmount: parsedTotalAssetAmount,
         }
 
         // Add asset parameters if an asset is selected
-        if (addAsset && assetId && assetAmount && assetMap[assetId]) {
-          const parsedAssetAmount = parseAssetAmount(assetAmount, assetId)
+        if (addAsset && assetId && lspAssetAmount && assetMap[assetId]) {
+          const parsedAssetAmount = parseAssetAmount(lspAssetAmount, assetId)
           request.asset_id = assetId
           request.lsp_asset_amount = parsedAssetAmount
           request.client_asset_amount = 0
@@ -460,7 +462,7 @@ totalAssetAmount: parsedTotalAssetAmount,
     watch('clientBalanceSat'),
     watch('channelExpireBlocks'),
     watch('assetId'),
-    watch('assetAmount'),
+    watch('lspAssetAmount'),
     addAsset,
     isLoading,
     estimateFeesRequest,
@@ -600,8 +602,7 @@ totalAssetAmount: parsedTotalAssetAmount,
                       // Clear asset values when unchecking
                       if (!checked) {
                         setValue('assetId', '')
-                        setValue('assetAmount', '')
-                        setValue('totalAssetAmount', '')
+                        setValue('lspAssetAmount', '')
                       }
                     }}
                     type="checkbox"
@@ -618,13 +619,13 @@ totalAssetAmount: parsedTotalAssetAmount,
                     control={control}
                     onAssetChange={(value) => setValue('assetId', value)}
                     onTotalAssetAmountChange={(value) =>
-                      setValue('totalAssetAmount', value.toString())
+                      setValue('lspAssetAmount', value.toString())
                     }
                     selectLabel="Select Asset"
                     selectedAssetId={assetId}
                     totalAssetAmount={
-                      watch('totalAssetAmount')
-                        ? parseFloat(watch('totalAssetAmount'))
+                      watch('lspAssetAmount')
+                        ? parseFloat(watch('lspAssetAmount'))
                         : 0
                     }
                   />
