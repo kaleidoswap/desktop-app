@@ -118,9 +118,22 @@ export interface Lsps1CreateOrderResponse {
   asset_id?: string
   lsp_asset_amount?: LSPS0Sat
   client_asset_amount?: LSPS0Sat
+  rfq_id?: string
+  asset_price_sat?: number
+  asset_delivery_status?: AssetDeliveryStatus
+  asset_delivery_payment_hash?: string
+  asset_delivery_completed_at?: string
+  asset_delivery_error?: string
 }
 
-type OrderState = 'CREATED' | 'COMPLETED' | 'FAILED'
+type OrderState = 'CREATED' | 'COMPLETED' | 'FAILED' | 'PENDING_RATE_DECISION'
+type AssetDeliveryStatus =
+  | 'NOT_REQUIRED'
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'RATE_CHANGED'
 
 interface ChannelDetails {
   funded_at?: string
@@ -159,6 +172,21 @@ interface Lsps1GetOrderRequest {
 }
 
 interface Lsps1GetOrderResponse extends Lsps1CreateOrderResponse {}
+
+type RetryDeliveryStatus =
+  | 'processing'
+  | 'not_found'
+  | 'no_pending_delivery'
+  | 'error'
+
+interface RetryDeliveryRequest {
+  order_id: string
+}
+
+interface RetryDeliveryResponse {
+  status: RetryDeliveryStatus
+  message: string
+}
 
 export interface TradingPair {
   id?: string
@@ -273,6 +301,13 @@ export const makerApi = createApi({
         body,
         method: 'POST',
         url: '/api/v1/swaps/init',
+      }),
+    }),
+    retry_delivery: builder.query<RetryDeliveryResponse, RetryDeliveryRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/lsps1/retry_delivery',
       }),
     }),
     status: builder.query<StatusResponse, StatusRequest>({

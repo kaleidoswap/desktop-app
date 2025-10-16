@@ -18,6 +18,7 @@ import {
   Coins,
   Activity,
   Info,
+  RotateCw,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -72,6 +73,11 @@ const AVAILABLE_COLUMNS = [
   { key: 'asset_id', label: 'Asset ID', type: 'payload' },
   { key: 'lsp_asset_amount', label: 'LSP Asset Amount', type: 'payload' },
   { key: 'client_asset_amount', label: 'Client Asset Amount', type: 'payload' },
+  {
+    key: 'asset_delivery_status',
+    label: 'Asset Delivery Status',
+    type: 'default',
+  },
   { key: 'actions', label: 'Actions', type: 'default' },
 ]
 
@@ -92,7 +98,18 @@ const OrderDetailCard: React.FC<{
   orderData: Lsps1CreateOrderResponse | undefined
   orderStatus: string
   onDelete: () => void
-}> = ({ isOpen, onClose, order, orderData, orderStatus, onDelete }) => {
+  onRetryDelivery?: () => void
+  isRetrying?: boolean
+}> = ({
+  isOpen,
+  onClose,
+  order,
+  orderData,
+  orderStatus,
+  onDelete,
+  onRetryDelivery,
+  isRetrying = false,
+}) => {
   if (!isOpen) return null
 
   const getStatusIcon = (status: string) => {
@@ -330,6 +347,48 @@ const OrderDetailCard: React.FC<{
                     </div>
                   )}
                 </div>
+
+                {/* Asset Delivery Status */}
+                {orderData?.asset_delivery_status &&
+                  orderData.asset_delivery_status !== 'NOT_REQUIRED' && (
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-slate-400 mb-1">
+                            Delivery Status
+                          </div>
+                          <div className="text-base font-semibold text-white">
+                            {orderData.asset_delivery_status}
+                          </div>
+                          {orderData.asset_delivery_error && (
+                            <div className="text-xs text-red-400 mt-1">
+                              Error: {orderData.asset_delivery_error}
+                            </div>
+                          )}
+                        </div>
+                        {orderData.asset_delivery_status === 'PENDING' &&
+                          onRetryDelivery && (
+                            <button
+                              className="flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              disabled={isRetrying}
+                              onClick={onRetryDelivery}
+                            >
+                              {isRetrying ? (
+                                <>
+                                  <LoaderIcon className="w-4 h-4 animate-spin" />
+                                  Retrying...
+                                </>
+                              ) : (
+                                <>
+                                  <RotateCw className="w-4 h-4" />
+                                  Retry Delivery
+                                </>
+                              )}
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           )}
@@ -463,8 +522,11 @@ export const Component = () => {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const [showDetailCard, setShowDetailCard] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<ChannelOrder | null>(null)
+  const [retryingOrders, setRetryingOrders] = useState<Set<string>>(new Set())
 
   const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
+  const [retryDeliveryRequest] =
+    makerApi.endpoints.retry_delivery.useLazyQuery()
 
   const fetchOrders = async () => {
     try {
@@ -558,6 +620,53 @@ export const Component = () => {
   const closeDetailCard = () => {
     setShowDetailCard(false)
     setSelectedOrder(null)
+  }
+
+  const handleRetryDelivery = async (orderId: string) => {
+    setRetryingOrders((prev) => new Set(prev).add(orderId))
+
+    try {
+      const response = await retryDeliveryRequest({ order_id: orderId })
+
+      if (response.data) {
+        const { status, message } = response.data
+
+        switch (status) {
+          case 'processing':
+            toast.success(message || 'Retry request queued successfully')
+            // Refresh order status after a short delay
+            setTimeout(async () => {
+              await fetchOrders()
+            }, 2000)
+            break
+          case 'not_found':
+            toast.error(message || 'Order not found')
+            break
+          case 'no_pending_delivery':
+            toast.info(message || 'No pending delivery to retry')
+            break
+          case 'error':
+            toast.error(message || 'Failed to retry delivery')
+            break
+          default:
+            toast.info(message || 'Unknown response')
+        }
+      } else if (response.error) {
+        console.error('Error retrying delivery:', response.error)
+        toast.error('Failed to retry delivery')
+      }
+    } catch (err) {
+      console.error('Error retrying delivery:', err)
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to retry delivery'
+      )
+    } finally {
+      setRetryingOrders((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(orderId)
+        return newSet
+      })
+    }
   }
 
   const handleColumnToggle = (columnKey: string) => {
@@ -761,9 +870,59 @@ export const Component = () => {
                     )
                   case 'status':
                     return getStatusBadge(orderStatus)
+                  case 'asset_delivery_status': {
+                    const deliveryStatus =
+                      currentOrderData?.asset_delivery_status
+                    if (!deliveryStatus || deliveryStatus === 'NOT_REQUIRED') {
+                      return renderEmptyField()
+                    }
+
+                    const getDeliveryStatusBadge = (status: string) => {
+                      switch (status) {
+                        case 'COMPLETED':
+                          return renderStatusBadge('Delivered', 'success')
+                        case 'PENDING':
+                          return renderStatusBadge('Pending', 'warning')
+                        case 'IN_PROGRESS':
+                          return renderStatusBadge('In Progress', 'info')
+                        case 'FAILED':
+                          return renderStatusBadge('Failed', 'danger')
+                        case 'RATE_CHANGED':
+                          return renderStatusBadge('Rate Changed', 'warning')
+                        default:
+                          return renderStatusBadge(status, 'default')
+                      }
+                    }
+
+                    return getDeliveryStatusBadge(deliveryStatus)
+                  }
                   case 'actions': {
+                    const hasPendingDelivery =
+                      currentOrderData?.client_asset_amount &&
+                      currentOrderData.client_asset_amount > 0 &&
+                      currentOrderData?.asset_delivery_status === 'PENDING'
+
+                    const isRetrying = retryingOrders.has(order.order_id)
+
                     return (
                       <div className="flex items-center justify-center gap-2">
+                        {hasPendingDelivery && (
+                          <button
+                            className="flex items-center justify-center w-8 h-8 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isRetrying}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRetryDelivery(order.order_id)
+                            }}
+                            title="Retry asset delivery"
+                          >
+                            {isRetrying ? (
+                              <LoaderIcon className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RotateCw className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
                         <button
                           className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
                           onClick={(e) => {
@@ -836,8 +995,10 @@ export const Component = () => {
       {selectedOrder && (
         <OrderDetailCard
           isOpen={showDetailCard}
+          isRetrying={retryingOrders.has(selectedOrder.order_id)}
           onClose={closeDetailCard}
           onDelete={() => handleDelete(selectedOrder.order_id)}
+          onRetryDelivery={() => handleRetryDelivery(selectedOrder.order_id)}
           order={selectedOrder}
           orderData={orderData[selectedOrder.order_id]}
           orderStatus={orderStatuses[selectedOrder.order_id] || 'Unknown'}
