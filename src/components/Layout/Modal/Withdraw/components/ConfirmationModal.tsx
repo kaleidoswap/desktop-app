@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react'
 
 import { BTC_ASSET_ID } from '../../../../../constants'
-import { formatBitcoinAmount, msatToSat } from '../../../../../helpers/number'
+import {
+  formatBitcoinAmount,
+  msatToSat,
+  formatAssetAmountWithPrecision,
+} from '../../../../../helpers/number'
 import { ConfirmationModalProps, HTLCStatus, AssetOption } from '../types'
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -10,6 +14,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   bitcoinUnit,
   feeRates,
   customFee,
+  assets,
   isConfirming,
   onCancel,
   onConfirm,
@@ -45,6 +50,28 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     const amountSats = msatToSat(decodedInvoice.amt_msat)
     return formatBitcoinAmount(amountSats, bitcoinUnit)
+  }
+
+  // Helper to format asset amounts with precision
+  const getAssetAmount = (amount: number, assetId: string) => {
+    if (assetId === BTC_ASSET_ID) {
+      // For BTC, amount is already in display units
+      return formatBitcoinAmount(
+        bitcoinUnit === 'SAT' ? amount : amount * 100000000,
+        bitcoinUnit
+      )
+    }
+
+    // For RGB assets, format with precision
+    const assetInfo = assets.data?.nia.find((a: any) => a.asset_id === assetId)
+    const ticker = assetInfo?.ticker || 'Unknown'
+
+    return formatAssetAmountWithPrecision(
+      amount,
+      ticker,
+      bitcoinUnit,
+      assets.data?.nia
+    )
   }
 
   const renderOverlay = () => {
@@ -185,7 +212,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <span className="text-white text-sm font-medium">
                   {hasRegularBtcAmount
                     ? getBtcAmount()
-                    : `${pendingData?.amount} ${availableAssets.find((a: AssetOption) => a.value === pendingData?.asset_id)?.label}`}
+                    : `${pendingData?.amount && pendingData?.asset_id ? getAssetAmount(Number(pendingData.amount), pendingData.asset_id) : pendingData?.amount} ${availableAssets.find((a: AssetOption) => a.value === pendingData?.asset_id)?.label}`}
                 </span>
               </div>
             )}
@@ -247,17 +274,22 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             )}
 
             {/* Asset Amount (if RGB Lightning) */}
-            {isLightningPayment && decodedInvoice?.asset_amount && (
-              <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">Asset Amount:</span>
-                <span className="text-white text-sm font-medium">
-                  {decodedInvoice.asset_amount}{' '}
-                  {availableAssets.find(
-                    (a: AssetOption) => a.value === decodedInvoice?.asset_id
-                  )?.label || 'Unknown'}
-                </span>
-              </div>
-            )}
+            {isLightningPayment &&
+              decodedInvoice?.asset_amount &&
+              decodedInvoice?.asset_id && (
+                <div className="flex justify-between py-2">
+                  <span className="text-slate-400 text-sm">Asset Amount:</span>
+                  <span className="text-white text-sm font-medium">
+                    {getAssetAmount(
+                      decodedInvoice.asset_amount,
+                      decodedInvoice.asset_id
+                    )}{' '}
+                    {availableAssets.find(
+                      (a: AssetOption) => a.value === decodedInvoice?.asset_id
+                    )?.label || 'Unknown'}
+                  </span>
+                </div>
+              )}
 
             {/* Fee (for BTC only) */}
             {pendingData?.asset_id === BTC_ASSET_ID &&

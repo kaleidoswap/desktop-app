@@ -87,6 +87,9 @@ export const WithdrawModalContent: React.FC = () => {
   const [addressType, setAddressType] = useState<AddressType>('unknown')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [maxLightningCapacity, setMaxLightningCapacity] = useState(0)
+  const [maxAssetCapacities, setMaxAssetCapacities] = useState<
+    Record<string, number>
+  >({})
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null)
   const [paymentHash, setPaymentHash] = useState<string | null>(null)
   const [isPollingStatus, setIsPollingStatus] = useState(false)
@@ -176,22 +179,38 @@ export const WithdrawModalContent: React.FC = () => {
     [dispatch, fetchBtcBalance]
   )
 
-  // Calculate max lightning outbound capacity
+  // Calculate max lightning outbound capacity for BTC and assets
   useEffect(() => {
     if (channelsQuery.data?.channels) {
-      const activeChannels = channelsQuery.data.channels.filter(
-        (channel) => channel.is_usable
+      const readyChannels = channelsQuery.data.channels.filter(
+        (channel) => channel.ready && channel.is_usable
       )
 
-      if (activeChannels.length > 0) {
+      if (readyChannels.length > 0) {
+        // Max BTC HTLC capacity across all ready channels
         const maxOutboundCapacity = Math.max(
-          ...activeChannels.map(
+          ...readyChannels.map(
             (channel) => channel.next_outbound_htlc_limit_msat
           )
         )
         setMaxLightningCapacity(maxOutboundCapacity)
+
+        // Max local_asset_amount per asset across all ready channels
+        const assetCapacities: Record<string, number> = {}
+        readyChannels.forEach((channel) => {
+          if (channel.asset_id && channel.asset_local_amount > 0) {
+            if (
+              !assetCapacities[channel.asset_id] ||
+              channel.asset_local_amount > assetCapacities[channel.asset_id]
+            ) {
+              assetCapacities[channel.asset_id] = channel.asset_local_amount
+            }
+          }
+        })
+        setMaxAssetCapacities(assetCapacities)
       } else {
         setMaxLightningCapacity(0)
+        setMaxAssetCapacities({})
       }
     }
   }, [channelsQuery.data])
@@ -347,12 +366,26 @@ export const WithdrawModalContent: React.FC = () => {
           if (decoded.asset_id && decoded.asset_amount) {
             // Invoice specifies an RGB asset
             setValue('asset_id', decoded.asset_id) // Set asset_id for potential display/validation
-            await fetchAssetBalance(decoded.asset_id) // Fetch balance for the specific asset
 
-            if (decoded.asset_amount > assetBalance) {
+            // Get max local asset amount for this asset from channels
+            const maxAssetAmount = maxAssetCapacities[decoded.asset_id] || 0
+
+            // Check asset amount against channel capacity
+            if (decoded.asset_amount > maxAssetAmount) {
               setValidationError(
-                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your balance is only ${assetBalance}. Cannot proceed with payment.`
+                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your max channel capacity is only ${maxAssetAmount}. Cannot proceed with payment.`
               )
+            }
+
+            // Also validate BTC amount if present (for the 3000 sat RGB fee)
+            if (decoded.amt_msat > 0) {
+              if (decoded.amt_msat > maxLightningCapacity) {
+                const invoiceAmountSats = decoded.amt_msat / 1000
+                const maxCapacitySats = maxLightningCapacity / 1000
+                setValidationError(
+                  `Error: Invoice requires ${invoiceAmountSats.toLocaleString()} sats but your max BTC channel capacity is ${maxCapacitySats.toLocaleString()} sats. Cannot proceed with payment.`
+                )
+              }
             }
           }
           // If this is a regular BTC invoice with an amount
@@ -489,11 +522,12 @@ export const WithdrawModalContent: React.FC = () => {
       fetchAssetBalance,
       fetchBtcBalance,
       maxLightningCapacity,
+      maxAssetCapacities,
       availableAssets,
       bitcoinUnit,
       assetBalance,
     ]
-  ) // Added bitcoinUnit and assetBalance dependencies
+  ) // Added bitcoinUnit, assetBalance, and maxAssetCapacities dependencies
 
   const handlePasteFromClipboard = useCallback(async () => {
     try {
@@ -1033,6 +1067,7 @@ export const WithdrawModalContent: React.FC = () => {
                 handlePasteFromClipboard={handlePasteFromClipboard}
                 isDecodingInvoice={isDecodingInvoice}
                 isPollingStatus={isPollingStatus}
+                maxAssetCapacities={maxAssetCapacities}
                 maxLightningCapacity={maxLightningCapacity}
                 onSubmit={onSubmit}
                 paymentStatus={paymentStatus}

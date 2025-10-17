@@ -94,7 +94,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
   const channels = useMemo(() => channelsData?.channels || [], [channelsData])
 
-  // Calculate max deposit amount based on HTLC limits (similar to market maker)
+  // Calculate max deposit amount based on HTLC limits for BTC or asset_remote_amount for RGB assets
   const calculateMaxDepositAmount = useCallback(
     (asset: string): number => {
       if (asset === 'BTC') {
@@ -117,9 +117,20 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         const maxDepositableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
         return Math.max(0, maxDepositableAmount)
       } else {
-        // For RGB assets, we still need to consider the BTC HTLC limits
-        // since RGB transfers require BTC for fees
-        return calculateMaxDepositAmount('BTC')
+        // For RGB assets, use the max asset_remote_amount across all channels for this asset
+        const assetChannels = channels.filter(
+          (c: Channel) => c.asset_id === asset && c.is_usable
+        )
+
+        if (assetChannels.length === 0) {
+          return 0
+        }
+
+        const assetRemoteAmounts = assetChannels.map(
+          (c: Channel) => c.asset_remote_amount
+        )
+
+        return Math.max(...assetRemoteAmounts)
       }
     },
     [channels]
@@ -234,21 +245,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       value = decimalParts[0] + '.' + decimalParts[1].substring(0, precision)
     }
 
-    // Format with comma separators but only for the integer part
-    const formattedValue =
-      value.split('.').length === 2
-        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
-          '.' +
-          value.split('.')[1]
-        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-
     // Validate against max deposit amount for lightning
     if (network === 'lightning' && maxDepositAmount > 0) {
       const numValue = parseFloat(value)
       if (!isNaN(numValue) && numValue > 0) {
         // Convert to base units and check against max
         const baseUnits = parseAmount(value, asset)
-        const maxBaseUnits = parseAmount(maxDepositAmount.toString(), asset)
+        const maxBaseUnits = maxDepositAmount
 
         if (baseUnits > maxBaseUnits) {
           // Don't update if it exceeds the limit
@@ -257,7 +260,24 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       }
     }
 
+    // Format with comma separators but only for the integer part
+    const formattedValue =
+      value.split('.').length === 2
+        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+          '.' +
+          value.split('.')[1]
+        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
     setAmount(formattedValue)
+  }
+
+  // Handle setting max amount
+  const handleSetMaxAmount = () => {
+    if (maxDepositAmount > 0) {
+      const asset = assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+      const formattedMax = formatAmount(maxDepositAmount, asset)
+      setAmount(formattedMax)
+    }
   }
 
   const generateRgbInvoice = async () => {
@@ -320,7 +340,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     : numericAmount * Math.pow(10, 8) * 1000,
               }
             : {
-                asset_amount: numericAmount,
+                asset_amount: parseAmount(cleanAmount, assetTicker),
                 asset_id: assetId,
               }
         )
@@ -614,17 +634,30 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                className="flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
-                         focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                         placeholder:text-slate-600 transition-all duration-200 text-sm"
-                inputMode="decimal"
-                onChange={handleAmountChange}
-                placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
-                type="text"
-                value={amount}
-              />
+              <div className="flex-1 relative">
+                <input
+                  autoFocus
+                  className="w-full px-3 py-2 pr-16 bg-slate-800/50 rounded-xl border border-slate-700 
+                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                           placeholder:text-slate-600 transition-all duration-200 text-sm"
+                  inputMode="decimal"
+                  onChange={handleAmountChange}
+                  placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
+                  type="text"
+                  value={amount}
+                />
+                {maxDepositAmount > 0 && (
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 
+                             bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 
+                             rounded-lg transition-colors text-xs font-medium"
+                    onClick={handleSetMaxAmount}
+                    type="button"
+                  >
+                    Max
+                  </button>
+                )}
+              </div>
               <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
                 {assetId === BTC_ASSET_ID
                   ? getDisplayAsset('BTC', bitcoinUnit)
@@ -640,11 +673,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   {parseAmount(
                     amount,
                     assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                  ) >
-                    parseAmount(
-                      maxDepositAmount.toString(),
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    ) && (
+                  ) > maxDepositAmount && (
                     <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
                       <p className="text-xs text-red-400">
                         <span className="font-medium">Error:</span> Amount
@@ -700,11 +729,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 parseAmount(
                   amount,
                   assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                ) >
-                  parseAmount(
-                    maxDepositAmount.toString(),
-                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                  )) ||
+                ) > maxDepositAmount) ||
               (network === 'lightning' && maxDepositAmount === 0)
             }
             onClick={generateAddress}

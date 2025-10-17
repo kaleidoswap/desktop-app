@@ -213,6 +213,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   addressType,
   validationError,
   clearValidationError,
+  maxAssetCapacities,
   isDecodingInvoice,
   showAssetDropdown,
   decodedInvoice,
@@ -259,16 +260,18 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   const calculateMaxWithdrawAmount = (assetId: string): number => {
     let maxRawAmount: number
 
-    if (
-      (addressType === 'lightning' || addressType === 'lightning-address') &&
-      assetId === BTC_ASSET_ID
-    ) {
-      // For Lightning BTC withdrawals, use the HTLC limit
-      const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
-      const maxWithdrawable = maxHtlcSat - RGB_HTLC_MIN_SAT
-      maxRawAmount = Math.max(0, Math.min(maxWithdrawable, assetBalance))
+    if (addressType === 'lightning' || addressType === 'lightning-address') {
+      if (assetId === BTC_ASSET_ID) {
+        // For Lightning BTC withdrawals, use the HTLC limit
+        const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
+        const maxWithdrawable = maxHtlcSat - RGB_HTLC_MIN_SAT
+        maxRawAmount = Math.max(0, maxWithdrawable)
+      } else {
+        // For Lightning RGB asset withdrawals, use the max local_asset_amount from channels
+        maxRawAmount = maxAssetCapacities[assetId] || 0
+      }
     } else {
-      // For on-chain or RGB withdrawals, use the full balance
+      // For on-chain withdrawals, use the full balance
       maxRawAmount = assetBalance
     }
 
@@ -288,6 +291,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       console.log('RGB Asset max calculation:', {
         assetId,
         displayAmount,
+        isLightning:
+          addressType === 'lightning' || addressType === 'lightning-address',
         maxRawAmount,
         precision,
         ticker: assetInfo?.ticker,
