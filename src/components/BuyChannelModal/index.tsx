@@ -1,8 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
-import { X, Info, CheckCircle, XCircle, Clock, Copy } from 'lucide-react'
-import QRCode from 'qrcode.react'
+import { X, Info, Clock, Zap, Rocket, Settings } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useForm } from 'react-hook-form'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
@@ -10,10 +8,7 @@ import { toast } from 'react-toastify'
 import { useAppSelector } from '../../app/store/hooks'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import { formatNumberWithCommas } from '../../helpers/number'
-import {
-  WalletPaymentSection,
-  WalletConfirmationModal,
-} from '../../routes/order-new-channel/components'
+import { WalletConfirmationModal } from '../../routes/order-new-channel/components'
 import {
   makerApi,
   ChannelFees,
@@ -38,6 +33,13 @@ import {
   FeeBreakdownDisplay,
   ChannelDurationSelector,
 } from '../ChannelConfiguration'
+
+import {
+  QuoteDisplay,
+  OrderSummary,
+  PaymentSection,
+  StatusScreen,
+} from './components'
 
 interface BuyChannelModalProps {
   isOpen: boolean
@@ -64,6 +66,19 @@ const feeRates = [
   { label: 'Fast', rate: 3, value: 'fast' },
   { label: 'Custom', rate: 0, value: 'custom' },
 ]
+
+const getFeeIcon = (type: string) => {
+  switch (type) {
+    case 'slow':
+      return <Clock className="w-4 h-4" />
+    case 'fast':
+      return <Rocket className="w-4 h-4" />
+    case 'custom':
+      return <Settings className="w-4 h-4" />
+    default:
+      return <Zap className="w-4 h-4" />
+  }
+}
 
 export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   isOpen,
@@ -156,11 +171,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const channels =
     listChannelsResponse?.data?.channels.filter((channel) => channel.ready) ||
     []
-  const outboundLiquidity = Math.max(
-    ...(channels.map(
-      (channel) => channel.next_outbound_htlc_limit_msat / 1000
-    ) || [0])
-  )
+  const outboundLiquidity =
+    channels.length > 0
+      ? Math.max(
+          ...channels.map(
+            (channel) => channel.next_outbound_htlc_limit_msat / 1000
+          )
+        )
+      : 0
   const vanillaChainBalance = btcBalanceResponse.data?.vanilla.spendable || 0
   const coloredChainBalance = btcBalanceResponse.data?.colored.spendable || 0
   const onChainBalance = vanillaChainBalance + coloredChainBalance
@@ -732,6 +750,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         setOrderId(orderId)
         setOrderPayload(payload)
         setOrder(channelResponse.data as Lsps1CreateOrderResponse)
+        setShowPreselectedConfirmation(false) // Hide confirmation to show payment step
         setStep(2)
       } catch (error) {
         toast.error(
@@ -781,6 +800,21 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         toast.success('Lightning payment initiated successfully!')
         setPaymentReceived(true)
         setIsProcessingPayment(true)
+
+        // Save order to database immediately after successful payment
+        if (orderId && orderPayload) {
+          try {
+            await invoke('insert_channel_order', {
+              createdAt: order.created_at || new Date().toISOString(),
+              orderId: orderId,
+              payload: JSON.stringify(orderPayload),
+              status: 'paid',
+            })
+          } catch (dbError) {
+            console.error('Error saving order to database:', dbError)
+            // Don't throw here - payment was successful, just log the error
+          }
+        }
       } else if (paymentMethodTab === 'onchain' && order?.payment?.onchain) {
         const feeRate =
           selectedFee === 'custom'
@@ -801,6 +835,21 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         toast.success('On-chain payment sent successfully!')
         setPaymentReceived(true)
         setIsProcessingPayment(true)
+
+        // Save order to database immediately after successful payment
+        if (orderId && orderPayload) {
+          try {
+            await invoke('insert_channel_order', {
+              createdAt: order.created_at || new Date().toISOString(),
+              orderId: orderId,
+              payload: JSON.stringify(orderPayload),
+              status: 'paid',
+            })
+          } catch (dbError) {
+            console.error('Error saving order to database:', dbError)
+            // Don't throw here - payment was successful, just log the error
+          }
+        }
       }
 
       setShowWalletConfirmation(false)
@@ -816,10 +865,10 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   }
 
   const handleClose = useCallback(() => {
-    if (step === 2 && !paymentStatus && paymentReceived) {
-      toast.warning('Payment is being processed, please wait')
-      return
-    }
+    // if (step === 2 && !paymentStatus && paymentReceived) {
+    //   toast.warning('Payment is being processed, please wait')
+    //   return
+    // }
     setStep(1)
     setOrderId(null)
     setPaymentStatus(null)
@@ -885,237 +934,407 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           {showPreselectedConfirmation &&
           preselectedAsset &&
           assetMap[preselectedAsset.assetId] ? (
-            <div className="space-y-6">
-              {/* Confirmation Header */}
-              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/40 rounded-xl p-5">
+            <div className="space-y-5">
+              {/* Quick Confirmation */}
+              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/40 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <Info className="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="text-xl font-semibold text-blue-200 mb-2">
-                      Confirm Asset Purchase
+                    <h3 className="text-lg font-semibold text-blue-200 mb-1">
+                      Confirm Purchase
                     </h3>
-                    <p className="text-blue-200/80 text-sm leading-relaxed">
-                      You're about to purchase an asset in a Lightning channel
-                      with predefined values. Review the details below and
-                      proceed or customize the parameters.
+                    <p className="text-blue-200/80 text-sm">
+                      You'll purchase{' '}
+                      <strong>
+                        {formatNumberWithCommas(
+                          preselectedAsset.amount.toString()
+                        )}{' '}
+                        {assetMap[preselectedAsset.assetId].ticker}
+                      </strong>{' '}
+                      in a Lightning channel. Review and proceed or customize.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Preselected Values Display */}
-              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-5 border border-gray-700/50">
-                <h4 className="text-lg font-semibold text-white mb-4">
-                  Selected Asset
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Asset</span>
-                    <span className="text-white font-semibold text-lg">
-                      {assetMap[preselectedAsset.assetId].ticker}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Amount to Purchase</span>
-                    <span className="text-emerald-300 font-semibold text-lg">
+              {/* Quote Display */}
+              <QuoteDisplay
+                assetInfo={assetMap[preselectedAsset.assetId]}
+                quote={quote}
+                quoteError={quoteError}
+                quoteLoading={quoteLoading}
+              />
+
+              {/* Quick Summary */}
+              {fees && quote && (
+                <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/30 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Asset Cost</span>
+                    <span className="text-emerald-300">
                       {formatNumberWithCommas(
-                        preselectedAsset.amount.toString()
+                        (quote.from_amount / 1000).toString()
                       )}{' '}
-                      {assetMap[preselectedAsset.assetId].ticker}
-                    </span>
-                  </div>
-                  <div className="pt-3 mt-3 border-t border-gray-700">
-                    <div className="bg-blue-950/30 rounded-lg p-3">
-                      <p className="text-xs text-blue-200/70 leading-relaxed">
-                        <strong>Note:</strong> A Lightning channel will be
-                        created to receive this asset. Default channel
-                        parameters will be used, which you can customize if
-                        needed.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quote Display on Confirmation */}
-              {quoteLoading && (
-                <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-4">
-                  <div className="flex items-center gap-3">
-                    <ClipLoader color="#10b981" size={20} />
-                    <span className="text-emerald-300 text-sm">
-                      Fetching price quote...
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {!quoteLoading && quote && assetMap[preselectedAsset.assetId] && (
-                <div className="bg-gradient-to-br from-emerald-900/30 to-green-900/30 border border-emerald-700/50 rounded-xl p-4">
-                  <h3 className="text-lg font-semibold text-emerald-200 mb-3 flex items-center gap-2">
-                    <Info className="w-5 h-5" />
-                    Current Price Quote
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Asset Amount</span>
-                      <span className="text-white font-medium">
-                        {formatNumberWithCommas(
-                          (
-                            quote.to_amount /
-                            Math.pow(
-                              10,
-                              assetMap[preselectedAsset.assetId].precision
-                            )
-                          ).toFixed(
-                            assetMap[preselectedAsset.assetId].precision
-                          )
-                        )}{' '}
-                        {assetMap[preselectedAsset.assetId].ticker}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Asset Price</span>
-                      <span className="text-white font-medium">
-                        {formatNumberWithCommas(
-                          (quote.from_amount / 1000).toString()
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
-                    {quote.expires_at && (
-                      <div className="flex justify-between text-xs pt-2 border-t border-emerald-700/30">
-                        <span className="text-emerald-200/70">
-                          Quote Expires
-                        </span>
-                        <span className="text-emerald-200/70">
-                          {new Date(
-                            quote.expires_at * 1000
-                          ).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {!quoteLoading && quoteError && (
-                <div className="bg-red-900/20 border border-red-700/40 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-red-300 mb-1">
-                        Quote Error
-                      </h4>
-                      <p className="text-xs text-red-200/80">{quoteError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Default Channel Parameters Info */}
-              <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/30">
-                <h4 className="text-sm font-semibold text-gray-300 mb-3">
-                  Default Channel Parameters
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Channel Capacity</span>
-                    <span className="text-gray-200">
-                      {formatNumberWithCommas(capacitySat)} sats
+                      sats
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">
-                      Your Outbound Liquidity
-                    </span>
+                    <span className="text-gray-400">Your Liquidity</span>
                     <span className="text-gray-200">
                       {formatNumberWithCommas(clientBalanceSat)} sats
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Channel Duration</span>
+                    <span className="text-gray-400">Fees</span>
                     <span className="text-gray-200">
-                      {channelExpireBlocks} blocks (~
-                      {Math.round(channelExpireBlocks / 144)} days)
+                      {formatNumberWithCommas(fees.total_fee)} sats
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Estimated Costs */}
-              {fees && quote && (
-                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-4 border border-gray-700/50">
-                  <h4 className="text-sm font-semibold text-gray-300 mb-3">
-                    Estimated Total Cost
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Asset Purchase</span>
-                      <span className="text-emerald-300 font-medium">
-                        {formatNumberWithCommas(
-                          (quote.from_amount / 1000).toString()
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Your Liquidity</span>
-                      <span className="text-gray-200">
-                        {formatNumberWithCommas(clientBalanceSat)} sats
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Channel Fees</span>
-                      <span className="text-gray-200">
-                        {formatNumberWithCommas(fees.total_fee)} sats
-                      </span>
-                    </div>
-                    <div className="flex justify-between pt-2 mt-2 border-t border-gray-700">
-                      <span className="text-white font-semibold">
-                        Total Payment
-                      </span>
-                      <span className="text-white font-semibold">
-                        {formatNumberWithCommas(
-                          quote.from_amount / 1000 +
-                            parseInt(
-                              clientBalanceSat.replace(/[^0-9]/g, ''),
-                              10
-                            ) +
-                            fees.total_fee
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
+                  <div className="flex justify-between pt-2 mt-2 border-t border-gray-700">
+                    <span className="text-white font-semibold">Total</span>
+                    <span className="text-white font-semibold">
+                      {formatNumberWithCommas(
+                        quote.from_amount / 1000 +
+                          parseInt(
+                            clientBalanceSat.replace(/[^0-9]/g, ''),
+                            10
+                          ) +
+                          fees.total_fee
+                      )}{' '}
+                      sats
+                    </span>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-4">
+              {/* Actions */}
+              <div className="flex gap-3">
                 <button
-                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+                  className="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                   onClick={handleClose}
                   type="button"
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors"
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                   onClick={() => setShowPreselectedConfirmation(false)}
                   type="button"
                 >
-                  Customize Parameters
+                  Customize
                 </button>
                 <button
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={quoteLoading || !!quoteError || !quote}
-                  onClick={handleSubmit(onSubmit)}
+                  className="flex-1 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+                  disabled={quoteLoading || !!quoteError || !quote || loading}
+                  onClick={() => handleSubmit(onSubmit)()}
                   type="button"
                 >
-                  {quoteLoading ? 'Loading Quote...' : 'Proceed to Payment'}
+                  {quoteLoading || loading
+                    ? 'Loading...'
+                    : 'Proceed to Payment'}
                 </button>
               </div>
             </div>
+          ) : step === 2 && order ? (
+            <div className="space-y-5">
+              {paymentReceived && isProcessingPayment ? (
+                <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-6 text-center">
+                  <div className="flex justify-center mb-4">
+                    <ClipLoader color="#3b82f6" size={40} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Processing Payment
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    Payment received and being processed...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Order Summary */}
+                  <OrderSummary
+                    assetMap={assetMap}
+                    fees={fees}
+                    orderPayload={orderPayload}
+                    quote={quote}
+                  />
+
+                  {/* Payment Method Selection */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-300 mb-3">
+                      Choose Payment Method
+                    </h3>
+                    <div className="flex gap-3">
+                      <button
+                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                          useWalletFunds
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                        }`}
+                        onClick={() => setUseWalletFunds(true)}
+                      >
+                        💰 Use Wallet Funds
+                      </button>
+                      <button
+                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                          !useWalletFunds
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                        }`}
+                        onClick={() => setUseWalletFunds(false)}
+                      >
+                        📱 External Wallet
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Payment Details */}
+                  {useWalletFunds ? (
+                    <div className="space-y-4">
+                      {/* Lightning/On-chain tabs */}
+                      <div className="flex gap-2">
+                        <button
+                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            paymentMethodTab === 'lightning'
+                              ? 'bg-blue-600/20 text-blue-300 border border-blue-600/50'
+                              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                          }`}
+                          onClick={() => setPaymentMethodTab('lightning')}
+                        >
+                          ⚡ Lightning
+                        </button>
+                        <button
+                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            paymentMethodTab === 'onchain'
+                              ? 'bg-blue-600/20 text-blue-300 border border-blue-600/50'
+                              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800'
+                          }`}
+                          onClick={() => setPaymentMethodTab('onchain')}
+                        >
+                          ⛓️ On-chain
+                        </button>
+                      </div>
+
+                      {/* Balance Display */}
+                      {isLoadingData ? (
+                        <div className="flex items-center justify-center gap-3 p-6">
+                          <ClipLoader color="#3B82F6" size={24} />
+                          <span className="text-gray-400">
+                            Loading balance...
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="bg-gray-900/50 rounded-xl p-4">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-gray-400 text-sm">
+                                {paymentMethodTab === 'lightning'
+                                  ? 'Max Sendable'
+                                  : 'Available Balance'}
+                              </span>
+                              <span className="text-white font-semibold">
+                                {formatNumberWithCommas(
+                                  paymentMethodTab === 'lightning'
+                                    ? outboundLiquidity
+                                    : onChainBalance
+                                )}{' '}
+                                sats
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400 text-sm">
+                                Amount to Pay
+                              </span>
+                              <span className="text-emerald-300 font-semibold">
+                                {formatNumberWithCommas(
+                                  paymentMethodTab === 'lightning'
+                                    ? order.payment?.bolt11?.order_total_sat ||
+                                        0
+                                    : order.payment?.onchain?.order_total_sat ||
+                                        0
+                                )}{' '}
+                                sats
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Insufficient Balance Warning */}
+                          {((paymentMethodTab === 'lightning' &&
+                            outboundLiquidity <
+                              (order.payment?.bolt11?.order_total_sat || 0)) ||
+                            (paymentMethodTab === 'onchain' &&
+                              onChainBalance <
+                                (order.payment?.onchain?.order_total_sat ||
+                                  0))) && (
+                            <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3">
+                              <div className="flex items-start gap-2">
+                                <Info className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-yellow-200/80 text-sm">
+                                  Insufficient balance. Please use external
+                                  wallet or add funds to your wallet.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Channel Fees Breakdown */}
+                          {fees && (
+                            <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700/30">
+                              <h4 className="text-sm font-semibold text-gray-300 mb-3">
+                                Channel Fees
+                              </h4>
+                              <div className="space-y-2 text-sm">
+                                {fees.setup_fee > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">
+                                      Setup Fee
+                                    </span>
+                                    <span className="text-gray-200">
+                                      {formatNumberWithCommas(fees.setup_fee)}{' '}
+                                      sats
+                                    </span>
+                                  </div>
+                                )}
+                                {fees.capacity_fee > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">
+                                      Capacity Fee
+                                    </span>
+                                    <span className="text-gray-200">
+                                      {formatNumberWithCommas(
+                                        fees.capacity_fee
+                                      )}{' '}
+                                      sats
+                                    </span>
+                                  </div>
+                                )}
+                                {fees.duration_fee > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400">
+                                      Duration Fee
+                                    </span>
+                                    <span className="text-gray-200">
+                                      {formatNumberWithCommas(
+                                        fees.duration_fee
+                                      )}{' '}
+                                      sats
+                                    </span>
+                                  </div>
+                                )}
+                                {fees.applied_discount &&
+                                  fees.applied_discount > 0 && (
+                                    <div className="flex justify-between text-green-400">
+                                      <span>Discount</span>
+                                      <span>
+                                        -
+                                        {formatNumberWithCommas(
+                                          fees.applied_discount
+                                        )}{' '}
+                                        sats
+                                      </span>
+                                    </div>
+                                  )}
+                                <div className="flex justify-between pt-2 mt-2 border-t border-gray-700/50">
+                                  <span className="text-gray-300 font-medium">
+                                    Total Channel Fees
+                                  </span>
+                                  <span className="text-blue-300 font-semibold">
+                                    {formatNumberWithCommas(fees.total_fee)}{' '}
+                                    sats
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Fee Selector for On-chain */}
+                          {paymentMethodTab === 'onchain' && (
+                            <div className="bg-gray-900/50 rounded-xl p-4">
+                              <h4 className="text-sm font-semibold text-gray-300 mb-3">
+                                Transaction Fee
+                              </h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                {feeRates.map((rate) => (
+                                  <button
+                                    className={`p-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between text-sm ${
+                                      selectedFee === rate.value
+                                        ? 'border-blue-500 bg-blue-500/10 text-blue-500'
+                                        : 'border-gray-700 text-gray-400 hover:border-blue-500/50'
+                                    }`}
+                                    key={rate.value}
+                                    onClick={() => setSelectedFee(rate.value)}
+                                    type="button"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {getFeeIcon(rate.value)}
+                                      <span>{rate.label}</span>
+                                    </div>
+                                    {rate.value !== 'custom' && (
+                                      <span>{rate.rate} sat/vB</span>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                              {selectedFee === 'custom' && (
+                                <input
+                                  className="mt-3 w-full px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white"
+                                  onChange={(e) =>
+                                    setCustomFee(parseFloat(e.target.value))
+                                  }
+                                  placeholder="Custom fee rate (sat/vB)"
+                                  step="0.1"
+                                  type="number"
+                                  value={customFee}
+                                />
+                              )}
+                            </div>
+                          )}
+
+                          {/* Pay Button */}
+                          <button
+                            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={
+                              (paymentMethodTab === 'lightning' &&
+                                outboundLiquidity <
+                                  (order.payment?.bolt11?.order_total_sat ||
+                                    0)) ||
+                              (paymentMethodTab === 'onchain' &&
+                                onChainBalance <
+                                  (order.payment?.onchain?.order_total_sat ||
+                                    0))
+                            }
+                            onClick={() => setShowWalletConfirmation(true)}
+                          >
+                            Pay with Wallet
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <PaymentSection
+                      onTabChange={setPaymentMethodTab}
+                      paymentData={order.payment}
+                      paymentMethod={paymentMethodTab}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          ) : step === 3 && paymentStatus ? (
+            <StatusScreen
+              onClose={handleClose}
+              onRetry={() => {
+                setStep(1)
+                setOrderId(null)
+                setPaymentStatus(null)
+                setPaymentReceived(false)
+                setIsProcessingPayment(false)
+                setQuote(null)
+                setQuoteError(null)
+                setQuoteLoading(false)
+              }}
+              orderId={orderId}
+              status={paymentStatus}
+            />
           ) : step === 1 ? (
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               {/* Info Banner */}
@@ -1217,87 +1436,16 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                 )}
               </div>
 
-              {/* Quote Loading */}
-              {quoteLoading &&
-                assetId &&
-                clientAssetAmount &&
-                parseFloat(clientAssetAmount) > 0 && (
-                  <div className="bg-emerald-900/20 border border-emerald-700/40 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <ClipLoader color="#10b981" size={20} />
-                      <span className="text-emerald-300 text-sm">
-                        Fetching quote...
-                      </span>
-                    </div>
-                  </div>
-                )}
-
               {/* Quote Display */}
-              {!quoteLoading &&
-                quote &&
-                assetId &&
-                assetMap[assetId] &&
+              {assetId &&
                 clientAssetAmount &&
                 parseFloat(clientAssetAmount) > 0 && (
-                  <div className="bg-gradient-to-br from-emerald-900/30 to-green-900/30 border border-emerald-700/50 rounded-xl p-4">
-                    <h3 className="text-lg font-semibold text-emerald-200 mb-3 flex items-center gap-2">
-                      <Info className="w-5 h-5" />
-                      Asset Price Quote
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-300">Asset Amount</span>
-                        <span className="text-white font-medium">
-                          {formatNumberWithCommas(
-                            (
-                              quote.to_amount /
-                              Math.pow(10, assetMap[assetId].precision)
-                            ).toFixed(assetMap[assetId].precision)
-                          )}{' '}
-                          {assetMap[assetId].ticker}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-300">Asset Price</span>
-                        <span className="text-white font-medium">
-                          {formatNumberWithCommas(
-                            (quote.from_amount / 1000).toString()
-                          )}{' '}
-                          sats
-                        </span>
-                      </div>
-                      {quote.expires_at && (
-                        <div className="flex justify-between text-xs pt-2 border-t border-emerald-700/30">
-                          <span className="text-emerald-200/70">
-                            Quote Expires
-                          </span>
-                          <span className="text-emerald-200/70">
-                            {new Date(
-                              quote.expires_at * 1000
-                            ).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              {!quoteLoading &&
-                quoteError &&
-                assetId &&
-                clientAssetAmount &&
-                parseFloat(clientAssetAmount) > 0 && (
-                  <div className="bg-red-900/20 border border-red-700/40 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-red-300 mb-1">
-                          Quote Error
-                        </h4>
-                        <p className="text-xs text-red-200/80">{quoteError}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <QuoteDisplay
+                    assetInfo={assetMap[assetId] || null}
+                    quote={quote}
+                    quoteError={quoteError}
+                    quoteLoading={quoteLoading}
+                  />
                 )}
 
               {/* Channel Duration - After Asset Configuration */}
@@ -1366,632 +1514,6 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               </div>
             </form>
           ) : null}
-
-          {step === 2 && order && (
-            <div className="space-y-6">
-              {/* Detailed Order Summary */}
-              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-5 border border-gray-700/50">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-blue-400" />
-                  Order Details
-                </h3>
-                <div className="space-y-3">
-                  {/* Channel Information */}
-                  <div className="bg-gray-900/50 rounded-lg p-3 space-y-2">
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                      Channel Configuration
-                    </h4>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Total Capacity</span>
-                      <span className="text-white font-medium">
-                        {formatNumberWithCommas(
-                          (orderPayload?.client_balance_sat || 0) +
-                            (orderPayload?.lsp_balance_sat || 0)
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">
-                        Your Inbound Liquidity
-                      </span>
-                      <span className="text-emerald-300 font-medium">
-                        {formatNumberWithCommas(
-                          orderPayload?.lsp_balance_sat || 0
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">
-                        Your Outbound Liquidity
-                      </span>
-                      <span className="text-blue-300 font-medium">
-                        {formatNumberWithCommas(
-                          orderPayload?.client_balance_sat || 0
-                        )}{' '}
-                        sats
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Asset Information - if buying assets */}
-                  {orderPayload?.asset_id &&
-                    orderPayload?.client_asset_amount &&
-                    assetMap[orderPayload.asset_id] && (
-                      <div className="bg-gradient-to-br from-emerald-900/30 to-green-900/30 rounded-lg p-3 border border-emerald-700/30 space-y-2">
-                        <h4 className="text-xs font-semibold text-emerald-300 uppercase tracking-wide mb-2">
-                          Asset Purchase
-                        </h4>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-emerald-200">Asset</span>
-                          <span className="text-white font-medium">
-                            {assetMap[orderPayload.asset_id].ticker}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-emerald-200">Amount</span>
-                          <span className="text-white font-semibold">
-                            {formatNumberWithCommas(
-                              (
-                                orderPayload.client_asset_amount /
-                                Math.pow(
-                                  10,
-                                  assetMap[orderPayload.asset_id].precision
-                                )
-                              ).toFixed(
-                                assetMap[orderPayload.asset_id].precision
-                              )
-                            )}{' '}
-                            {assetMap[orderPayload.asset_id].ticker}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Fee Breakdown */}
-                  {fees && (
-                    <div className="bg-gray-900/50 rounded-lg p-3 space-y-2">
-                      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                        Fees
-                      </h4>
-                      <div className="space-y-1.5 text-sm">
-                        {fees.setup_fee > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Channel Setup</span>
-                            <span className="text-gray-200">
-                              {formatNumberWithCommas(fees.setup_fee)} sats
-                            </span>
-                          </div>
-                        )}
-                        {fees.capacity_fee > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Capacity Fee</span>
-                            <span className="text-gray-200">
-                              {formatNumberWithCommas(fees.capacity_fee)} sats
-                            </span>
-                          </div>
-                        )}
-                        {fees.duration_fee > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-gray-300">Duration Fee</span>
-                            <span className="text-gray-200">
-                              {formatNumberWithCommas(fees.duration_fee)} sats
-                            </span>
-                          </div>
-                        )}
-                        {fees.applied_discount && fees.applied_discount > 0 && (
-                          <div className="flex justify-between text-green-400">
-                            <span>Discount Applied</span>
-                            <span>
-                              -{formatNumberWithCommas(fees.applied_discount)}{' '}
-                              sats
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between pt-2 mt-2 border-t border-gray-700">
-                          <span className="text-white font-semibold">
-                            Total Fees
-                          </span>
-                          <span className="text-white font-semibold">
-                            {formatNumberWithCommas(fees.total_fee)} sats
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {paymentReceived && isProcessingPayment ? (
-                <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <ClipLoader color="#3b82f6" size={40} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Processing Payment
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Your payment has been received and is being processed...
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Payment Amount Display */}
-                  <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/50 rounded-xl p-5">
-                    <div className="text-center">
-                      <p className="text-gray-300 text-sm mb-2">
-                        Total Payment Amount
-                      </p>
-                      <p className="text-3xl font-bold text-white mb-1">
-                        {formatNumberWithCommas(
-                          paymentMethodTab === 'lightning'
-                            ? order.payment?.bolt11?.order_total_sat || 0
-                            : order.payment?.onchain?.order_total_sat || 0
-                        )}{' '}
-                        <span className="text-xl text-gray-300">sats</span>
-                      </p>
-                      {paymentMethodTab === 'lightning' &&
-                        order.payment?.bolt11?.expires_at && (
-                          <div className="flex items-center justify-center gap-2 mt-3 text-yellow-300 text-sm">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                              Invoice expires:{' '}
-                              {new Date(
-                                order.payment.bolt11.expires_at
-                              ).toLocaleTimeString()}
-                            </span>
-                          </div>
-                        )}
-                      {paymentMethodTab === 'onchain' &&
-                        order.payment?.onchain?.expires_at && (
-                          <div className="flex items-center justify-center gap-2 mt-3 text-yellow-300 text-sm">
-                            <Clock className="w-4 h-4" />
-                            <span>
-                              Payment window expires:{' '}
-                              {new Date(
-                                order.payment.onchain.expires_at
-                              ).toLocaleTimeString()}
-                            </span>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-
-                  {/* Payment Method Tabs */}
-                  <div className="flex justify-center gap-4">
-                    <button
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                        paymentMethodTab === 'lightning'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                      onClick={() => setPaymentMethodTab('lightning')}
-                    >
-                      ⚡ Lightning
-                    </button>
-                    <button
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                        paymentMethodTab === 'onchain'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                      onClick={() => setPaymentMethodTab('onchain')}
-                    >
-                      ⛓️ On-chain
-                    </button>
-                  </div>
-
-                  {/* Payment Instructions */}
-                  <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 border border-gray-700/30 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-gray-300">
-                        {paymentMethodTab === 'lightning' ? (
-                          <p>
-                            Pay with your wallet's Lightning balance or scan the
-                            QR code with any Lightning wallet. Payment is
-                            instant and will be confirmed immediately.
-                          </p>
-                        ) : (
-                          <p>
-                            Send Bitcoin to the address below. Payment requires{' '}
-                            <strong>
-                              {order.payment?.onchain
-                                ?.min_onchain_payment_confirmations || 1}{' '}
-                              confirmation(s)
-                            </strong>
-                            . You can pay from your wallet or any external
-                            Bitcoin wallet.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Wallet Payment Section */}
-                  <WalletPaymentSection
-                    bitcoinUnit={bitcoinUnit}
-                    currentPayment={
-                      paymentMethodTab === 'lightning'
-                        ? order.payment?.bolt11
-                        : order.payment?.onchain
-                    }
-                    customFee={customFee}
-                    isLoadingData={isLoadingData}
-                    onChainBalance={onChainBalance}
-                    onCustomFeeChange={setCustomFee}
-                    onFeeChange={setSelectedFee}
-                    onPayClick={() => setShowWalletConfirmation(true)}
-                    onUseWalletFundsChange={setUseWalletFunds}
-                    outboundLiquidity={outboundLiquidity}
-                    paymentMethod={paymentMethodTab}
-                    selectedFee={selectedFee}
-                    useWalletFunds={useWalletFunds}
-                  />
-
-                  {/* External Wallet Payment - Always show for external wallet option */}
-                  <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-white">
-                        Pay with External Wallet
-                      </h3>
-                      <CopyToClipboard
-                        onCopy={() => toast.success('Copied to clipboard!')}
-                        text={
-                          paymentMethodTab === 'lightning'
-                            ? order.payment?.bolt11?.invoice || ''
-                            : order.payment?.onchain?.address || ''
-                        }
-                      >
-                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
-                          <Copy className="w-4 h-4" />
-                          Copy{' '}
-                          {paymentMethodTab === 'lightning'
-                            ? 'Invoice'
-                            : 'Address'}
-                        </button>
-                      </CopyToClipboard>
-                    </div>
-
-                    <div className="flex justify-center mb-4">
-                      <div className="bg-white p-4 rounded-lg">
-                        <QRCode
-                          size={220}
-                          value={
-                            paymentMethodTab === 'lightning'
-                              ? order.payment?.bolt11?.invoice || ''
-                              : order.payment?.onchain?.address || ''
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-900/50 rounded-lg p-3 break-all font-mono text-xs text-gray-300 mb-3">
-                      {paymentMethodTab === 'lightning'
-                        ? order.payment?.bolt11?.invoice || ''
-                        : order.payment?.onchain?.address || ''}
-                    </div>
-
-                    <div className="flex items-start gap-2 text-xs text-gray-400">
-                      <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <p>
-                        Scan this QR code with any{' '}
-                        {paymentMethodTab === 'lightning'
-                          ? 'Lightning'
-                          : 'Bitcoin'}{' '}
-                        wallet app, or copy and paste the{' '}
-                        {paymentMethodTab === 'lightning'
-                          ? 'invoice'
-                          : 'address'}{' '}
-                        to make the payment. The order will be processed
-                        automatically once payment is received.
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="flex flex-col items-center justify-center py-8 space-y-6">
-              {paymentStatus === 'success' ? (
-                <>
-                  <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center animate-pulse">
-                    <CheckCircle className="w-12 h-12 text-green-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Payment Successful!
-                  </h3>
-                  <div className="max-w-lg space-y-4">
-                    <p className="text-gray-300 text-center leading-relaxed">
-                      Your channel order has been created successfully and
-                      payment received.
-                    </p>
-
-                    {/* Channel Confirmation Info */}
-                    <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-5 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <Clock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                        <div className="space-y-2">
-                          <h4 className="text-blue-200 font-semibold">
-                            Channel Confirmation in Progress
-                          </h4>
-                          <p className="text-blue-200/80 text-sm leading-relaxed">
-                            Your channel is being created on the Bitcoin
-                            blockchain. This requires approximately
-                            <strong> 6 on-chain confirmations</strong>, which
-                            typically takes around <strong>1 hour</strong>.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* What Happens Next */}
-                    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-5 space-y-3">
-                      <h4 className="text-white font-semibold flex items-center gap-2">
-                        <Info className="w-5 h-5 text-gray-400" />
-                        What Happens Next
-                      </h4>
-                      <ul className="space-y-2 text-sm text-gray-300">
-                        <li className="flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">•</span>
-                          <span>
-                            Your channel will appear in the channels list once
-                            the first confirmation is received
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">•</span>
-                          <span>
-                            The asset you purchased will be locked at today's
-                            rate during confirmation
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">•</span>
-                          <span>
-                            Once fully confirmed (~1 hour), you'll be able to
-                            trade immediately
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">•</span>
-                          <span>
-                            You can close this window and check back later
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Order ID */}
-                    {orderId && (
-                      <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
-                        <p className="text-xs text-gray-400 text-center">
-                          Order ID:{' '}
-                          <span className="text-gray-300 font-mono">
-                            {orderId}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors shadow-lg"
-                    onClick={handleClose}
-                  >
-                    Got it, thanks!
-                  </button>
-                </>
-              ) : paymentStatus === 'expired' ? (
-                <>
-                  <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                    <Clock className="w-12 h-12 text-yellow-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Payment Expired
-                  </h3>
-
-                  <div className="max-w-lg space-y-4">
-                    <p className="text-gray-300 text-center leading-relaxed">
-                      The payment window for this order has expired.
-                    </p>
-
-                    {/* Expiration Information */}
-                    <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-5 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                        <div className="space-y-2">
-                          <h4 className="text-yellow-200 font-semibold">
-                            What Happened
-                          </h4>
-                          <p className="text-yellow-200/80 text-sm leading-relaxed">
-                            Channel orders have a limited time window for
-                            payment to ensure price stability. This order's
-                            payment period has expired without receiving
-                            payment.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Next Steps */}
-                    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-5 space-y-3">
-                      <h4 className="text-white font-semibold flex items-center gap-2">
-                        <Info className="w-5 h-5 text-gray-400" />
-                        What You Can Do
-                      </h4>
-                      <ul className="space-y-2 text-sm text-gray-300">
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            No funds were deducted - it's safe to try again
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            Create a new order with the same or different
-                            parameters
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            The new order will have fresh pricing and a new
-                            payment window
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Order ID if available */}
-                    {orderId && (
-                      <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
-                        <p className="text-xs text-gray-400 text-center">
-                          Expired Order ID:{' '}
-                          <span className="text-gray-300 font-mono">
-                            {orderId}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
-                      onClick={handleClose}
-                    >
-                      Close
-                    </button>
-                    <button
-                      className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
-                      onClick={() => {
-                        setStep(1)
-                        setOrderId(null)
-                        setPaymentStatus(null)
-                        setPaymentReceived(false)
-                        setIsProcessingPayment(false)
-                        setQuote(null)
-                        setQuoteError(null)
-                        setQuoteLoading(false)
-                      }}
-                    >
-                      Create New Order
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center">
-                    <XCircle className="w-12 h-12 text-red-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">
-                    Order Failed
-                  </h3>
-
-                  <div className="max-w-lg space-y-4">
-                    <p className="text-gray-300 text-center leading-relaxed">
-                      Unfortunately, there was an issue processing your channel
-                      order.
-                    </p>
-
-                    {/* Error Information */}
-                    <div className="bg-red-900/20 border border-red-700/40 rounded-xl p-5 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                        <div className="space-y-2">
-                          <h4 className="text-red-200 font-semibold">
-                            What This Means
-                          </h4>
-                          <p className="text-red-200/80 text-sm leading-relaxed">
-                            The channel order could not be completed. This might
-                            happen if there was an issue with the payment
-                            processing or channel creation on the LSP side.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Next Steps */}
-                    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-5 space-y-3">
-                      <h4 className="text-white font-semibold flex items-center gap-2">
-                        <Info className="w-5 h-5 text-gray-400" />
-                        What You Can Do
-                      </h4>
-                      <ul className="space-y-2 text-sm text-gray-300">
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            If payment was made, no funds were deducted from
-                            your wallet
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            You can try creating a new order with different
-                            parameters
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            Check your internet connection and wallet balance
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>
-                            If the problem persists, please contact support
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Order ID if available */}
-                    {orderId && (
-                      <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
-                        <p className="text-xs text-gray-400 text-center">
-                          Order ID:{' '}
-                          <span className="text-gray-300 font-mono">
-                            {orderId}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
-                      onClick={handleClose}
-                    >
-                      Close
-                    </button>
-                    <button
-                      className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
-                      onClick={() => {
-                        setStep(1)
-                        setOrderId(null)
-                        setPaymentStatus(null)
-                        setPaymentReceived(false)
-                        setIsProcessingPayment(false)
-                        setQuote(null)
-                        setQuoteError(null)
-                        setQuoteLoading(false)
-                      }}
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
