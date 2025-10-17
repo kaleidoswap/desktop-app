@@ -63,6 +63,7 @@ import {
 } from './assetUtils'
 import {
   hasTradableChannels,
+  getTradableChannels,
   hasOnlyUnconfirmedChannelsForAsset,
   getAssetChannelStatus,
 } from './channelUtils'
@@ -165,6 +166,11 @@ export const Component = () => {
     totalFee: 0,
     variableFee: 0,
   })
+
+  // Store precision from quote for assets not in our list
+  const [quoteAssetPrecision, setQuoteAssetPrecision] = useState<{
+    [assetId: string]: number
+  }>({})
 
   const [isLoading, setIsLoading] = useState(true)
   const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false)
@@ -546,7 +552,7 @@ export const Component = () => {
           setCurrentPrice(quoteResponse.price)
         }
 
-        // Update the fees
+        // Update the fees and store precision for the to_asset
         if (quoteResponse.fee) {
           setFees({
             baseFee: quoteResponse.fee.base_fee,
@@ -554,6 +560,21 @@ export const Component = () => {
             totalFee: quoteResponse.fee.final_fee,
             variableFee: quoteResponse.fee.variable_fee,
           })
+
+          // Store the precision for the to_asset if provided
+          // This is crucial for assets not in our listAssets
+          if (
+            quoteResponse.fee.fee_asset_precision !== undefined &&
+            quoteResponse.to_asset
+          ) {
+            setQuoteAssetPrecision((prev) => ({
+              ...prev,
+              [quoteResponse.to_asset]: quoteResponse.fee.fee_asset_precision,
+            }))
+            logger.debug(
+              `Stored precision ${quoteResponse.fee.fee_asset_precision} for asset ${quoteResponse.to_asset}`
+            )
+          }
         }
 
         // Update quote validity tracking
@@ -573,7 +594,30 @@ export const Component = () => {
           displayToAmount = Math.round(displayToAmount / MSATS_PER_SAT)
         }
 
-        const formattedToAmount = formatAmount(displayToAmount, toTickerForUI)
+        // Format the amount using precision from quote if available
+        // This is crucial for assets not in our listAssets
+        let formattedToAmount: string
+        if (
+          quoteResponse.fee?.fee_asset_precision !== undefined &&
+          quoteResponse.to_asset !== 'BTC' &&
+          toTickerForUI !== 'BTC'
+        ) {
+          // Use precision directly from quote for non-BTC assets
+          const precision = quoteResponse.fee.fee_asset_precision
+          const divisor = Math.pow(10, precision)
+          const formattedAmount = (displayToAmount / divisor).toFixed(precision)
+          formattedToAmount = new Intl.NumberFormat('en-US', {
+            maximumFractionDigits: precision,
+            minimumFractionDigits: precision,
+            useGrouping: true,
+          }).format(parseFloat(formattedAmount))
+          logger.debug(
+            `Formatted to_amount using quote precision ${precision}: ${displayToAmount} -> ${formattedToAmount}`
+          )
+        } else {
+          // Fall back to standard formatting for BTC or when precision not in quote
+          formattedToAmount = formatAmount(displayToAmount, toTickerForUI)
+        }
 
         form.setValue('to', formattedToAmount)
 
@@ -647,9 +691,16 @@ export const Component = () => {
 
   const getAssetPrecisionWrapper = useCallback(
     (asset: string): number => {
+      // First check if we have precision from a quote for this asset
+      // This handles assets not in our listAssets
+      const assetId = mapTickerToAssetId(asset, assets, tradablePairs)
+      if (assetId && quoteAssetPrecision[assetId] !== undefined) {
+        return quoteAssetPrecision[assetId]
+      }
+      // Fall back to the standard precision lookup
       return getAssetPrecision(asset, bitcoinUnit, assets)
     },
-    [assets, bitcoinUnit]
+    [assets, bitcoinUnit, quoteAssetPrecision, tradablePairs]
   )
 
   // Display asset handler that shows tickers instead of asset IDs
@@ -841,7 +892,65 @@ export const Component = () => {
           return 0
         }
 
-        // We have tradable channels, use normal flow
+        // We have tradable channels, but check if we need to buy a channel for the other asset
+        // If trading BTC -> Asset and we don't have a channel for that asset, use onchain balance
+        if (isFrom && selectedPair) {
+          const fromAsset = form.getValues().fromAsset
+          const toAsset = form.getValues().toAsset
+
+          // Only check if BTC is the fromAsset and we're trading for another asset
+          if (fromAsset === 'BTC' && toAsset !== 'BTC') {
+            const toAssetId = mapTickerToAssetId(
+              toAsset,
+              assetsList,
+              selectedPair ? [selectedPair] : []
+            )
+            const toAssetStatus = getAssetChannelStatus(channels, toAssetId)
+
+            // If the toAsset has no ready channels, we'll need to buy a channel
+            // In this case, use onchain balance instead of lightning balance
+            if (!toAssetStatus.hasReadyChannels && onchainBtcBalance > 0) {
+              logger.info(
+                `Trading for ${toAsset} which has no ready channels, using onchain BTC balance: ${onchainBtcBalance} sats`
+              )
+              setIsUsingOnchainBalance(true)
+
+              let maxAllowed = onchainBtcBalance
+
+              // Respect LSP channel order limits
+              if (lspChannelLimits) {
+                maxAllowed = Math.min(
+                  maxAllowed,
+                  lspChannelLimits.max_initial_client_balance_sat
+                )
+                logger.debug(`Applied LSP channel limit: ${maxAllowed} sats`)
+              }
+
+              // Respect max order size from trading pair
+              let maxOrderSize: number
+              if (!isPairInverted(fromAsset, toAsset)) {
+                maxOrderSize = selectedPair.max_base_order_size
+              } else {
+                maxOrderSize = selectedPair.max_quote_order_size
+              }
+
+              // Convert from millisats to sats for BTC
+              if (fromAsset === 'BTC') {
+                maxOrderSize = maxOrderSize / MSATS_PER_SAT
+              }
+
+              maxAllowed = Math.min(maxAllowed, maxOrderSize)
+              logger.debug(`Applied max order size limit: ${maxAllowed} sats`)
+
+              return maxAllowed
+            }
+          }
+        }
+
+        // We have tradable channels and either:
+        // - Not trading for an asset that needs a channel purchase, OR
+        // - No onchain balance available
+        // Use normal lightning flow
         setIsUsingOnchainBalance(false)
         const channelHtlcLimits = tradableChannels.map(
           (c) => c.next_outbound_htlc_limit_msat / MSATS_PER_SAT
@@ -868,11 +977,33 @@ export const Component = () => {
         }
 
         const assetChannels = channels.filter(
-          (c: Channel) => c.asset_id === assetInfo.asset_id
+          (c: Channel) => c.asset_id === assetInfo.asset_id && c.ready
         )
+
         if (assetChannels.length === 0) {
+          // If receiving an asset without a channel, allow trading up to pair limits
+          // The user will need to buy a channel, but we show them the quote
+          if (!isFrom && selectedPair) {
+            logger.info(
+              `No ready channels for ${asset}, allowing receive up to pair limits for channel purchase`
+            )
+            const fromAsset = form.getValues().fromAsset
+            const toAsset = form.getValues().toAsset
+
+            let maxOrderSize: number
+            if (!isPairInverted(fromAsset, toAsset)) {
+              maxOrderSize = selectedPair.max_quote_order_size
+            } else {
+              maxOrderSize = selectedPair.max_base_order_size
+            }
+
+            // For receiving assets, return the max order size from the pair
+            // This allows the user to see quotes even without a channel
+            return maxOrderSize
+          }
+
           logger.warn(
-            `No channels found for asset: ${asset} (asset_id: ${assetInfo.asset_id})`
+            `No ready channels found for sending asset: ${asset} (asset_id: ${assetInfo.asset_id})`
           )
           return 0
         }
@@ -936,81 +1067,175 @@ export const Component = () => {
 
       // Check if user is missing a channel for any of the assets
       // Only suggest buying a channel if NO ready channels exist for that asset
-      // If channels exist but have 0 balance, validation error will handle it
       let missingChannel: {
         asset: string
         assetId: string
         isFromAsset: boolean
       } | null = null
 
-      if (fromAsset !== 'BTC' && newMaxFromAmount === 0) {
-        const fromAssetInfo = assetsData?.nia.find(
-          (a) => a.ticker === fromAsset
+      // Check fromAsset for missing ready channel
+      if (fromAsset !== 'BTC') {
+        // Use mapTickerToAssetId to get the proper asset ID
+        const fromAssetId = mapTickerToAssetId(
+          fromAsset,
+          assetsData?.nia || [],
+          selectedPair ? [selectedPair] : []
         )
-        if (fromAssetInfo) {
-          const channelStatus = getAssetChannelStatus(
-            channels,
-            fromAssetInfo.asset_id
+        logger.debug(
+          `[Channel Check] Checking fromAsset: ${fromAsset}, mapped to ID: ${fromAssetId}`
+        )
+
+        if (fromAssetId && fromAssetId !== fromAsset) {
+          const channelStatus = getAssetChannelStatus(channels, fromAssetId)
+          logger.debug(
+            `[Channel Check] ${fromAsset} fromAsset status:`,
+            channelStatus
           )
-          // Only set missingChannel if no ready channels exist at all
-          if (!channelStatus.hasReadyChannels) {
+          // Only set missingChannel if NO channels exist at all (not just unconfirmed)
+          // If channels exist but are unconfirmed, the separate "awaiting confirmation" error will show
+          if (
+            !channelStatus.hasReadyChannels &&
+            !channelStatus.allUnconfirmed
+          ) {
             missingChannel = {
               asset: fromAsset,
-              assetId: fromAssetInfo.asset_id,
+              assetId: fromAssetId,
               isFromAsset: true,
             }
+            logger.info(
+              `[Channel Check] Missing channel detected for fromAsset ${fromAsset}`
+            )
           }
-        }
-      } else if (toAsset !== 'BTC' && newMaxToAmount === 0) {
-        const toAssetInfo = assetsData?.nia.find((a) => a.ticker === toAsset)
-        if (toAssetInfo) {
-          const channelStatus = getAssetChannelStatus(
-            channels,
-            toAssetInfo.asset_id
+        } else {
+          logger.warn(
+            `[Channel Check] Could not map fromAsset ticker ${fromAsset} to asset ID`
           )
-          // Only set missingChannel if no ready channels exist at all
-          if (!channelStatus.hasReadyChannels) {
+        }
+      }
+
+      // Check toAsset for missing ready channel (only if fromAsset has channels or is BTC)
+      if (!missingChannel && toAsset !== 'BTC') {
+        // Use mapTickerToAssetId to get the proper asset ID
+        const toAssetId = mapTickerToAssetId(
+          toAsset,
+          assetsData?.nia || [],
+          selectedPair ? [selectedPair] : []
+        )
+        logger.info(
+          `[Channel Check] Checking toAsset: ${toAsset}, mapped to ID: ${toAssetId}`
+        )
+
+        if (toAssetId && toAssetId !== toAsset) {
+          const channelStatus = getAssetChannelStatus(channels, toAssetId)
+
+          logger.info(`[Channel Check] ${toAsset} toAsset channel status:`, {
+            allUnconfirmed: channelStatus.allUnconfirmed,
+            assetId: toAssetId,
+            hasChannels: channelStatus.hasChannels,
+            hasReadyChannels: channelStatus.hasReadyChannels,
+            readyChannelCount: channelStatus.readyChannelCount,
+            totalChannelCount: channelStatus.totalChannelCount,
+          })
+
+          logger.info(
+            `[Channel Check] Condition check: !hasReadyChannels && !allUnconfirmed = ${!channelStatus.hasReadyChannels} && ${!channelStatus.allUnconfirmed} = ${!channelStatus.hasReadyChannels && !channelStatus.allUnconfirmed}`
+          )
+
+          // Only set missingChannel if NO channels exist at all (not just unconfirmed)
+          // If channels exist but are unconfirmed, the separate "awaiting confirmation" error will show
+          if (
+            !channelStatus.hasReadyChannels &&
+            !channelStatus.allUnconfirmed
+          ) {
             missingChannel = {
               asset: toAsset,
-              assetId: toAssetInfo.asset_id,
+              assetId: toAssetId,
               isFromAsset: false,
             }
+            logger.info(
+              `[Channel Check] ✓ Missing channel detected for toAsset ${toAsset}`
+            )
+          } else {
+            logger.info(
+              `[Channel Check] ✗ toAsset ${toAsset} has channels or all unconfirmed`
+            )
+          }
+        } else {
+          logger.warn(
+            `[Channel Check] Could not map toAsset ticker ${toAsset} to asset ID`
+          )
+        }
+      }
+
+      // Special case: If no tradable channels exist at all,
+      // and we're buying a non-BTC asset, set that asset as missing
+      // This handles the onchain balance scenario
+      if (!missingChannel && toAsset !== 'BTC') {
+        const tradableChannels = getTradableChannels(channels)
+        if (tradableChannels.length === 0 && fromAsset === 'BTC') {
+          const toAssetId = mapTickerToAssetId(
+            toAsset,
+            assetsData?.nia || [],
+            selectedPair ? [selectedPair] : []
+          )
+          logger.info(
+            `[Channel Check] Special case: No tradable channels, checking toAsset: ${toAsset}, mapped to ID: ${toAssetId}`
+          )
+
+          if (toAssetId && toAssetId !== toAsset) {
+            missingChannel = {
+              asset: toAsset,
+              assetId: toAssetId,
+              isFromAsset: false,
+            }
+            logger.info(
+              `[Channel Check] ✓ No channels available, missing ${toAsset} channel for receiving`
+            )
+          } else {
+            logger.warn(
+              `[Channel Check] Could not map toAsset ticker ${toAsset} to asset ID in special case`
+            )
           }
         }
       }
 
+      logger.info(`[Channel Check] === FINAL RESULT ===`)
+      logger.info(`[Channel Check] missingChannelAsset:`, missingChannel)
+      logger.info(`[Channel Check] Total channels in system:`, channels.length)
+      logger.info(
+        `[Channel Check] Channel asset IDs:`,
+        channels.map((c) => ({ assetId: c.asset_id, ready: c.ready }))
+      )
       setMissingChannelAsset(missingChannel)
 
-      // Check if current "to" amount exceeds the new max
-      // Don't show the confusing "0.000000" error if user is missing a channel
-      const currentToAmount = parseAssetAmount(form.getValues().to, toAsset)
-      if (currentToAmount > newMaxToAmount && newMaxToAmount > 0) {
-        const formattedMaxToAmount = formatAmount(newMaxToAmount, toAsset)
-        const displayedAsset = displayAsset(toAsset)
-        const errorMsg = `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
-        logger.warn(
-          `Current to amount (${currentToAmount}) exceeds maximum receivable amount (${newMaxToAmount})`
-        )
-        // Preserve unconfirmed channel errors - they take priority
+      // If a channel is missing, clear validation errors so the "Buy channel" button shows properly
+      // The UI will display a dedicated message about needing a channel
+      if (missingChannel) {
         setErrorMessage((prev) => {
+          // Preserve unconfirmed channel errors - they take priority
           if (prev && prev.includes('awaiting confirmation')) {
             return prev
           }
-          return errorMsg
+          return null
         })
-      } else if (
-        newMaxToAmount === 0 &&
-        missingChannel &&
-        !missingChannel.isFromAsset
-      ) {
-        // Clear error if it's just a missing channel issue - we'll show a different warning
-        // But preserve unconfirmed channel errors
-        setErrorMessage((prev) => {
-          if (prev && prev.includes('awaiting confirmation')) {
-            return prev
-          }
-          return ''
-        })
+      } else {
+        // Only check amount limits if no channel is missing
+        const currentToAmount = parseAssetAmount(form.getValues().to, toAsset)
+        if (currentToAmount > newMaxToAmount && newMaxToAmount > 0) {
+          const formattedMaxToAmount = formatAmount(newMaxToAmount, toAsset)
+          const displayedAsset = displayAsset(toAsset)
+          const errorMsg = `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
+          logger.warn(
+            `Current to amount (${currentToAmount}) exceeds maximum receivable amount (${newMaxToAmount})`
+          )
+          // Preserve unconfirmed channel errors - they take priority
+          setErrorMessage((prev) => {
+            if (prev && prev.includes('awaiting confirmation')) {
+              return prev
+            }
+            return errorMsg
+          })
+        }
       }
 
       // Enhanced logic to always ensure minimum amount is set when needed
@@ -1048,6 +1273,8 @@ export const Component = () => {
     requestQuote,
     parseAssetAmount,
     displayAsset,
+    assetsData,
+    channels,
   ])
 
   // Enhanced effect to initialize the UI with minimum amounts when pair is selected
@@ -1224,7 +1451,8 @@ export const Component = () => {
         assets,
         isToAmountLoading,
         isQuoteLoading,
-        isPriceLoading
+        isPriceLoading,
+        missingChannelAsset
       )
 
       // Preserve unconfirmed channel errors - they take priority over amount validation errors
@@ -1250,6 +1478,7 @@ export const Component = () => {
     isToAmountLoading,
     isQuoteLoading,
     isPriceLoading,
+    missingChannelAsset,
   ])
 
   // Use our utility function to create the fetch and set pairs handler
@@ -2460,7 +2689,15 @@ export const Component = () => {
     }
 
     // If user is missing a channel for a specific asset
+    // But don't open modal if there's an unconfirmed channel (it's pending)
     if (missingChannelAsset) {
+      // Check if the error is about an unconfirmed channel
+      if (errorMessage && errorMessage.includes('awaiting confirmation')) {
+        toast.warning(
+          'Please wait for your channel to be confirmed before trading.'
+        )
+        return
+      }
       setShowBuyChannelModal(true)
       toast.info(`Let's create a ${missingChannelAsset.asset} channel for you!`)
       return
@@ -2808,7 +3045,8 @@ export const Component = () => {
                         onRefresh={refreshAmounts}
                         onSizeClick={onSizeClick}
                         selectedSize={selectedSize}
-                        showMaxHtlc
+                        showMaxAmount={!!missingChannelAsset}
+                        showMaxHtlc={!missingChannelAsset}
                         showMinAmount
                         showSizeButtons
                         useEnhancedSelector={true}
@@ -2851,8 +3089,14 @@ export const Component = () => {
                       <SwapInputField
                         asset={form.getValues().toAsset}
                         assetOptions={toAssetOptions}
-                        availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
-                        availableAmountLabel="Can receive up to:"
+                        availableAmount={
+                          missingChannelAsset
+                            ? 'Channel needed'
+                            : `${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`
+                        }
+                        availableAmountLabel={
+                          missingChannelAsset ? 'Status:' : 'Can receive up to:'
+                        }
                         disabled={
                           !hasChannels || !hasTradablePairs || isSwapInProgress
                         }
@@ -3032,6 +3276,7 @@ export const Component = () => {
                   fees={fees}
                   quoteResponse={quoteResponse}
                   toAsset={form.getValues().toAsset}
+                  tradablePairs={tradablePairs}
                 />
               </div>
             </div>

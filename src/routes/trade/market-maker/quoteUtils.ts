@@ -114,6 +114,21 @@ export const createQuoteRequestHandler = (
       return
     }
 
+    // Check if available balance is zero - don't request quote
+    if (maxFromAmount !== undefined && maxFromAmount === 0) {
+      logger.debug(
+        `Available balance is zero for ${fromAssetTicker}, skipping quote request`
+      )
+      if (setIsQuoteLoading) {
+        setIsQuoteLoading(false)
+      }
+      if (setIsToAmountLoading) {
+        setIsToAmountLoading(false)
+      }
+      form.setValue('to', '') // Clear 'to' field since we can't trade
+      return
+    }
+
     // Check if amount is below minimum or if balance is insufficient
     if (minFromAmount !== undefined) {
       if (fromAmount < minFromAmount) {

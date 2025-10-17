@@ -90,10 +90,21 @@ export const getValidationError = (
   assets: NiaAsset[] = [],
   isToAmountLoading: boolean = false,
   isQuoteLoading: boolean = false,
-  isPriceLoading: boolean = false
+  isPriceLoading: boolean = false,
+  missingChannelAsset: {
+    asset: string
+    assetId: string
+    isFromAsset: boolean
+  } | null = null
 ): string | null => {
   // Don't show validation errors while any quote-related loading is happening
   if (isToAmountLoading || isQuoteLoading || isPriceLoading) {
+    return null
+  }
+
+  // If a channel is missing, don't show validation errors
+  // The UI will show a "Buy channel" button instead
+  if (missingChannelAsset) {
     return null
   }
 
@@ -107,6 +118,11 @@ export const getValidationError = (
     isAssetId(toAsset) && assets.length > 0
       ? mapAssetIdToTicker(toAsset, assets)
       : toAsset
+
+  // Check if available balance is zero - show error immediately
+  if (maxFromAmount === 0) {
+    return `Insufficient balance. You don't have any ${displayAsset(fromDisplayAsset)} available to send.`
+  }
 
   // Zero amounts - only check fromAmount during loading
   if (fromAmount === 0) {
