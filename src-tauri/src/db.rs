@@ -19,6 +19,7 @@ pub struct Account {
     pub daemon_listening_port: String,
     pub ldk_peer_listening_port: String,
     pub bearer_token: Option<String>,
+    pub terms_accepted: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -33,16 +34,28 @@ pub struct ChannelOrder {
 
 // Check if a database file exists, and create one if it does not.
 pub fn init() {
+    println!("Initializing database...");
+    
     // Create database file if it doesn't exist
     if !db_file_exists() {
+        println!("Database file not found, creating new database...");
         create_db_file();
+    } else {
+        println!("Database file exists, checking for schema updates...");
     }
 
     // Create/verify tables regardless of whether the file existed
     let path = get_db_path();
-    let conn = Connection::open(path).unwrap();
+    let conn = match Connection::open(&path) {
+        Ok(conn) => conn,
+        Err(e) => {
+            eprintln!("Failed to open database at {}: {}", path, e);
+            panic!("Critical error: Cannot open database");
+        }
+    };
     
-    conn.execute(
+    // Create Accounts table if it doesn't exist
+    match conn.execute(
         "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -61,9 +74,16 @@ pub fn init() {
             terms_accepted INTEGER DEFAULT 0
         )",
         [],
-    ).unwrap();
-    // Add ChannelOrders table
-    conn.execute(
+    ) {
+        Ok(_) => println!("Accounts table verified"),
+        Err(e) => eprintln!("Warning: Error creating Accounts table: {}", e),
+    }
+    
+    // Migrate existing Accounts table schema
+    migrate_accounts_table(&conn);
+    
+    // Create ChannelOrders table if it doesn't exist
+    match conn.execute(
         "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
             'id' INTEGER PRIMARY KEY AUTOINCREMENT,
             'account_id' INTEGER NOT NULL,
@@ -74,17 +94,18 @@ pub fn init() {
             FOREIGN KEY(account_id) REFERENCES Accounts(id) ON DELETE CASCADE
         );",
         (),
-    ).unwrap();
+    ) {
+        Ok(_) => println!("ChannelOrders table verified"),
+        Err(e) => eprintln!("Warning: Error creating ChannelOrders table: {}", e),
+    }
 
-    // Add account_id column to existing ChannelOrders table if it doesn't exist
-    let _ = conn.execute(
-        "ALTER TABLE ChannelOrders ADD COLUMN account_id INTEGER",
-        (),
-    );
-    // Note: We ignore the error if the column already exists
+    // Migrate existing ChannelOrders table schema
+    migrate_channel_orders_table(&conn);
     
     // Migrate existing orders without account_id to the first available account
     migrate_existing_orders(&conn);
+    
+    println!("Database initialization completed successfully");
 }
 
 // Create the database file.
@@ -142,6 +163,75 @@ pub fn get_db_path() -> String {
     db_path.to_str().unwrap().to_string()
 }
 
+// Helper function to check if a column exists in a table
+fn column_exists(conn: &Connection, table: &str, column: &str) -> bool {
+    let query = format!("PRAGMA table_info({})", table);
+    let mut stmt = match conn.prepare(&query) {
+        Ok(stmt) => stmt,
+        Err(_) => return false,
+    };
+    
+    let column_names: Result<Vec<String>, _> = stmt
+        .query_map([], |row| row.get::<_, String>(1))
+        .and_then(|mapped| mapped.collect());
+    
+    match column_names {
+        Ok(names) => names.iter().any(|name| name == column),
+        Err(_) => false,
+    }
+}
+
+// Migrate Accounts table to add any missing columns
+fn migrate_accounts_table(conn: &Connection) {
+    println!("Checking Accounts table for missing columns...");
+    
+    // List of all columns that should exist in the Accounts table
+    // Format: (column_name, column_type, default_value)
+    let required_columns = vec![
+        ("terms_accepted", "INTEGER", "0"),
+    ];
+    
+    for (column_name, column_type, default_value) in required_columns {
+        if !column_exists(conn, "accounts", column_name) {
+            println!("Adding missing column '{}' to Accounts table", column_name);
+            let alter_query = format!(
+                "ALTER TABLE accounts ADD COLUMN {} {} DEFAULT {}",
+                column_name, column_type, default_value
+            );
+            match conn.execute(&alter_query, []) {
+                Ok(_) => println!("Successfully added column '{}'", column_name),
+                Err(e) => {
+                    // If error is "duplicate column name", it's fine - column already exists
+                    if !e.to_string().contains("duplicate column name") {
+                        println!("Warning: Failed to add column '{}': {}", column_name, e);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Migrate ChannelOrders table to add any missing columns
+fn migrate_channel_orders_table(conn: &Connection) {
+    println!("Checking ChannelOrders table for missing columns...");
+    
+    // Check if account_id column exists
+    if !column_exists(conn, "ChannelOrders", "account_id") {
+        println!("Adding missing column 'account_id' to ChannelOrders table");
+        match conn.execute(
+            "ALTER TABLE ChannelOrders ADD COLUMN account_id INTEGER",
+            [],
+        ) {
+            Ok(_) => println!("Successfully added column 'account_id'"),
+            Err(e) => {
+                if !e.to_string().contains("duplicate column name") {
+                    println!("Warning: Failed to add column 'account_id': {}", e);
+                }
+            }
+        }
+    }
+}
+
 fn migrate_existing_orders(conn: &Connection) {
     // Check if there are any orders without account_id
     let count_result: Result<i64, _> = conn.query_row(
@@ -191,6 +281,7 @@ pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
                 bearer_token: row.get(13)?,
+                terms_accepted: row.get(14).ok(),
             })
         })?
         .map(|res| res.unwrap())
@@ -303,6 +394,7 @@ pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Erro
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
                 bearer_token: row.get(13)?,
+                terms_accepted: row.get(14).ok(),
             })
         })
         .optional()?;
