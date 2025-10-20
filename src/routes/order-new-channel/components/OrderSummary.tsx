@@ -14,14 +14,6 @@ interface OrderSummaryProps {
   orderPayload?: any
 }
 
-const formatAssetAmount = (
-  amount: number | undefined,
-  precision: number
-): string => {
-  if (amount === undefined) return '0'
-  return (amount / Math.pow(10, precision)).toFixed(precision)
-}
-
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   order,
   bitcoinUnit,
@@ -102,69 +94,61 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         </div>
 
-        {/* Asset Info from Original Request */}
-        {orderPayload?.asset_id && assetInfo && (
-          <div className="bg-gray-900/50 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Requested RGB Asset</span>
-              <span className="px-2 py-1 bg-blue-500/10 rounded text-blue-400 text-xs">
-                {assetInfo.ticker}
+        {/* Asset Information */}
+        {(orderPayload?.asset_id || order.asset_id) && (
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-purple-300 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                RGB Asset Channel
               </span>
             </div>
-            <div className="text-white font-medium text-sm mb-2">
-              {assetInfo.name}
-            </div>
-            <div className="text-xs text-gray-500 mb-2">
-              <span className="text-gray-400">Asset ID:</span>{' '}
-              {orderPayload.asset_id.slice(0, 16)}...
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>
-                Requested Amount:{' '}
-                {formatAssetAmount(
-                  orderPayload.lsp_asset_amount,
-                  assetInfo.precision
-                )}{' '}
-                {assetInfo.ticker}
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Asset ID:</span>
+                <span className="text-purple-300 font-mono text-xs">
+                  {assetInfo ? (
+                    <>
+                      {assetInfo.name} ({assetInfo.ticker})
+                    </>
+                  ) : (
+                    <>
+                      {(order.asset_id || orderPayload?.asset_id)
+                        ?.split('-')
+                        .slice(0, 2)
+                        .join('-')}
+                      ...
+                    </>
+                  )}
+                </span>
+              </div>
+              {(order.lsp_asset_amount || orderPayload?.lsp_asset_amount) && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">LSP Asset Amount:</span>
+                  <span className="text-purple-300 font-medium">
+                    {(
+                      order.lsp_asset_amount || orderPayload.lsp_asset_amount
+                    ).toLocaleString()}
+                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                  </span>
+                </div>
+              )}
+              {(order.client_asset_amount ||
+                orderPayload?.client_asset_amount) && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Your Asset Amount:</span>
+                  <span className="text-blue-300 font-medium">
+                    {(
+                      order.client_asset_amount ||
+                      orderPayload.client_asset_amount
+                    ).toLocaleString()}
+                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
-
-        {/* Asset Info (From Order Response) */}
-        {order?.asset_id &&
-          assetInfo &&
-          order.asset_id !== orderPayload?.asset_id && (
-            <div className="bg-gray-900/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-400">
-                  Confirmed RGB Asset
-                </span>
-                <span className="px-2 py-1 bg-green-500/10 rounded text-green-400 text-xs">
-                  {assetInfo.ticker}
-                </span>
-              </div>
-              <div className="text-white font-medium text-sm">
-                {assetInfo.name}
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>
-                  Your:{' '}
-                  {formatAssetAmount(
-                    order.client_asset_amount,
-                    assetInfo.precision
-                  )}
-                </span>
-                <span>
-                  LSP:{' '}
-                  {formatAssetAmount(
-                    order.lsp_asset_amount,
-                    assetInfo.precision
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
 
         {/* Cost Breakdown */}
         <div className="bg-gray-900/50 rounded-xl p-4">

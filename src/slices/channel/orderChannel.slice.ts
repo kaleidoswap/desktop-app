@@ -9,13 +9,13 @@ import { RootState } from '../../app/store'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 
 export const OrderChannelFormSchema = z.object({
-  assetAmount: z.number().gte(0),
   assetId: z.string(),
   capacitySat: z
     .number()
     .max(MAX_CHANNEL_CAPACITY, 'Maximum amount is 100000000 satoshis'),
   channelExpireBlocks: z.number().gte(0),
   clientBalanceSat: z.number().gte(0),
+  lspAssetAmount: z.number().gte(0).optional(), // LSP-side asset amount for receiving
 })
 
 export type TChannelRequestForm = z.infer<typeof OrderChannelFormSchema>
@@ -29,11 +29,11 @@ interface SliceState {
 export const initialState: SliceState = {
   forms: {
     request: {
-      assetAmount: 0,
       assetId: '',
       capacitySat: MIN_CHANNEL_CAPACITY,
       channelExpireBlocks: 4320, // 1 month
       clientBalanceSat: 0,
+      lspAssetAmount: 0,
     },
   },
 }

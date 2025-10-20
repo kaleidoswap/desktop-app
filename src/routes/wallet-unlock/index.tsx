@@ -43,10 +43,12 @@ export const Component = () => {
   const [errors, setErrors] = useState<string[]>([])
   const [unlockError, setUnlockError] = useState<string | null>(null)
   const [isConnectionDetailsOpen, setIsConnectionDetailsOpen] = useState(false)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true)
 
   // Check if the node is already unlocked when the component mounts
   useEffect(() => {
     const checkNodeStatus = async () => {
+      setIsCheckingStatus(true)
       try {
         const nodeInfoRes = await nodeInfo()
         if (nodeInfoRes.isSuccess) {
@@ -65,6 +67,8 @@ export const Component = () => {
             }
           )
         }
+      } finally {
+        setIsCheckingStatus(false)
       }
     }
     checkNodeStatus()
@@ -79,7 +83,7 @@ export const Component = () => {
   const onSubmit: SubmitHandler<Fields> = async (data) => {
     let shouldRetry = true
     let pollingInterval = 2000 // Start with 2 seconds
-    let maxPollingInterval = 15000 // Max 15 seconds
+    const maxPollingInterval = 15000 // Max 15 seconds
     let doubleFetchErrorFlag = false
 
     setIsUnlocking(true)
@@ -482,7 +486,31 @@ export const Component = () => {
 
   return (
     <Layout className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {isUnlocking ? (
+      {isCheckingStatus ? (
+        <div className="flex items-center justify-center min-h-screen px-4 py-12">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+          <div className="absolute inset-0">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+          </div>
+          <div className="relative z-10 w-full max-w-lg mx-auto">
+            <div className="text-center">
+              <div className="relative inline-block mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl">
+                  <Shield className="w-12 h-12 text-white animate-pulse" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-3">
+                Checking Wallet Status
+              </h2>
+              <p className="text-slate-400">
+                Please wait while we verify your wallet...
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : isUnlocking ? (
         <SetupLayout
           centered={true}
           className="flex items-center justify-center min-h-screen py-8"

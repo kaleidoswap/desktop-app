@@ -52,7 +52,7 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
     default_maker_url: 'https://api.signet.kaleidoswap.com/',
     indexer_url: 'electrum.signet.kaleidoswap.com:60601',
     ldk_peer_listening_port: '9735',
-    proxy_endpoint: 'rpcs://proxy.signet.kaleidoswap.com/json-rpc',
+    proxy_endpoint: 'rpcs://proxy.kaleidoswap.com/json-rpc',
     rpc_connection_url:
       'user:default_password@bitcoind.signet.kaleidoswap.com:38332',
   },

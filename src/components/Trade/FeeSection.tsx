@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 
 import { formatAssetAmountWithPrecision } from '../../helpers/number'
 import { mapAssetIdToTicker } from '../../routes/trade/market-maker/assetUtils'
+import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 interface FeeSectionProps {
@@ -17,6 +18,7 @@ interface FeeSectionProps {
   bitcoinUnit: string
   assets: NiaAsset[]
   displayAsset: (asset: string) => string
+  tradablePairs?: TradingPair[]
 }
 
 const MSATS_PER_SAT = 1000
@@ -28,6 +30,7 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
   bitcoinUnit,
   assets,
   displayAsset,
+  tradablePairs,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -44,10 +47,33 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
         assets
       )
     } else if (quoteResponse?.fee?.fee_asset) {
-      // Use fee asset for RGB assets
+      // Use precision directly from quote if available
+      // This handles assets not in our listAssets
+      if (quoteResponse.fee.fee_asset_precision !== undefined) {
+        const precision = quoteResponse.fee.fee_asset_precision
+        const divisor = Math.pow(10, precision)
+        const formattedAmount = amount / divisor
+
+        // For zero or very small amounts, show minimal decimals
+        if (formattedAmount === 0) {
+          return '0'
+        }
+
+        // Determine the number of significant decimals to show
+        const minDecimals =
+          formattedAmount < 0.01 ? precision : Math.min(precision, 6)
+
+        return new Intl.NumberFormat('en-US', {
+          maximumFractionDigits: precision,
+          minimumFractionDigits: minDecimals,
+          useGrouping: true,
+        }).format(formattedAmount)
+      }
+      // Fallback to asset-based formatting if precision not in quote
       const feeAssetTicker = mapAssetIdToTicker(
         quoteResponse.fee.fee_asset,
-        assets
+        assets,
+        tradablePairs
       )
       return formatAssetAmountWithPrecision(
         amount,
@@ -67,7 +93,8 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
     if (quoteResponse?.fee?.fee_asset) {
       const feeAssetTicker = mapAssetIdToTicker(
         quoteResponse.fee.fee_asset,
-        assets
+        assets,
+        tradablePairs
       )
       return displayAsset(feeAssetTicker)
     } else if (quoteResponse?.to_asset === 'BTC' || toAsset === 'BTC') {
@@ -82,7 +109,7 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
   const feeAssetDisplay = getFeeAssetDisplay()
 
   return (
-    <div className="group relative z-10">
+    <div className="group relative z-10 overflow-visible">
       <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-xl rounded-xl border border-slate-700/30 shadow-lg hover:shadow-xl transition-all duration-300 overflow-visible">
         {/* Compact Header */}
         <div className="px-3 py-2.5 border-b border-slate-700/20">
@@ -119,9 +146,9 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
 
         {/* Expandable Content */}
         <div
-          className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-0'}`}
+          className={`transition-all duration-300 ${isExpanded ? 'max-h-96 overflow-visible' : 'max-h-0 overflow-hidden'}`}
         >
-          <div className="p-3 space-y-3">
+          <div className="p-3 space-y-3 relative">
             {/* Fee Breakdown */}
             <div className="grid grid-cols-1 gap-2">
               <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-lg">
@@ -132,9 +159,12 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
                   </span>
                   <div className="group/tooltip relative">
                     <Info className="w-3.5 h-3.5 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-slate-900/95 backdrop-blur-sm text-xs text-slate-200 rounded-lg w-56 hidden group-hover/tooltip:block shadow-2xl border border-slate-600/50 z-[9999] pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-xs text-slate-100 rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-slate-600 z-[100] pointer-events-none whitespace-normal">
                       Fixed fee charged regardless of transaction amount
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900/95"></div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                        <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-600"></div>
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-slate-800 -mt-px"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -151,9 +181,12 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
                   </span>
                   <div className="group/tooltip relative">
                     <Info className="w-3.5 h-3.5 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-slate-900/95 backdrop-blur-sm text-xs text-slate-200 rounded-lg w-56 hidden group-hover/tooltip:block shadow-2xl border border-slate-600/50 z-[9999] pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-xs text-slate-100 rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-slate-600 z-[100] pointer-events-none whitespace-normal">
                       Percentage-based fee calculated on transaction amount
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900/95"></div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                        <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-600"></div>
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-slate-800 -mt-px"></div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -26,6 +26,7 @@ import {
 
 interface StepProps {
   onBack: () => void
+  onRestart?: () => void
   loading: boolean
   order: Lsps1CreateOrderResponse | null
   paymentStatus: 'success' | 'error' | 'expired' | null
@@ -44,6 +45,7 @@ const feeRates = [
 
 export const Step3: React.FC<StepProps> = ({
   onBack,
+  onRestart,
   loading,
   order,
   paymentStatus,
@@ -118,12 +120,13 @@ export const Step3: React.FC<StepProps> = ({
 
   useEffect(() => {
     const fetchAssetInfo = async () => {
-      if (order?.asset_id) {
+      // Check both order and orderPayload for asset_id
+      const assetId = order?.asset_id || orderPayload?.asset_id
+
+      if (assetId) {
         const result = await getAssetInfo()
         if (result.data) {
-          const asset = result.data.nia.find(
-            (a) => a.asset_id === order.asset_id
-          )
+          const asset = result.data.nia.find((a) => a.asset_id === assetId)
           if (asset) {
             setAssetInfo(asset)
           }
@@ -131,7 +134,7 @@ export const Step3: React.FC<StepProps> = ({
       }
     }
     fetchAssetInfo()
-  }, [order?.asset_id, getAssetInfo])
+  }, [order?.asset_id, orderPayload?.asset_id, getAssetInfo])
 
   // Calculate available liquidity
   const channels =
@@ -366,9 +369,12 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Processing State */}
         {(localPaymentState === 'processing' || isProcessingPayment) && (
           <OrderProcessingDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            order={order}
             orderId={order?.order_id}
+            orderPayload={orderPayload}
             paymentMethod={detectedPaymentMethod || paymentMethod}
           />
         )}
@@ -376,8 +382,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Success State */}
         {(localPaymentState === 'success' || paymentStatus === 'success') && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="success"
           />
@@ -386,8 +397,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Error State */}
         {localPaymentState === 'error' && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="error"
           />
@@ -396,8 +412,13 @@ export const Step3: React.FC<StepProps> = ({
         {/* Payment Expired State */}
         {localPaymentState === 'expired' && (
           <PaymentStatusDisplay
+            assetInfo={assetInfo}
             bitcoinUnit={bitcoinUnit}
             currentPayment={currentPayment}
+            onBack={onBack}
+            onRestart={onRestart}
+            order={order}
+            orderPayload={orderPayload}
             paymentMethod={paymentMethod}
             status="expired"
           />

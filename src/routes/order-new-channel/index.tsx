@@ -1,4 +1,3 @@
-import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { invoke } from '@tauri-apps/api/core'
 import { Info } from 'lucide-react'
 import { useCallback, useState, useEffect } from 'react'
@@ -11,64 +10,18 @@ import {
   Lsps1CreateOrderResponse,
 } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import {
+  AssetInfo,
+  buildChannelOrderPayload,
+  validateChannelParams,
+  formatRtkQueryError,
+} from '../../utils/channelOrderUtils'
 
 import { Step1 } from './Step1'
 import { Step2 } from './Step2'
 import { Step3 } from './Step3'
 import { Step4 } from './Step4'
 import 'react-toastify/dist/ReactToastify.css'
-
-// Define the asset interface
-interface AssetInfo {
-  name: string
-  ticker: string
-  asset_id: string
-  precision: number
-  min_initial_client_amount: number
-  max_initial_client_amount: number
-  min_initial_lsp_amount: number
-  max_initial_lsp_amount: number
-  min_channel_amount: number
-  max_channel_amount: number
-}
-
-// Helper function to extract meaningful error messages
-const extractErrorMessage = (error: any): string => {
-  // Handle string errors
-  if (typeof error === 'string') {
-    return error
-  }
-
-  // Handle object errors with nested structures
-  if (typeof error === 'object' && error !== null) {
-    // Common error message fields
-    const possibleFields = ['error', 'message', 'detail', 'description', 'msg']
-
-    for (const field of possibleFields) {
-      if (error[field] && typeof error[field] === 'string') {
-        return error[field]
-      }
-    }
-
-    // Check for nested error objects
-    if (error.error && typeof error.error === 'object') {
-      return extractErrorMessage(error.error)
-    }
-
-    // If it's an array, try to extract from the first element
-    if (Array.isArray(error) && error.length > 0) {
-      return extractErrorMessage(error[0])
-    }
-
-    // Last resort: stringify the object but limit length
-    const stringified = JSON.stringify(error)
-    return stringified.length > 200
-      ? stringified.substring(0, 200) + '...'
-      : stringified
-  }
-
-  return 'Unknown error format'
-}
 
 export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
@@ -93,11 +46,11 @@ export const Component = () => {
     makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
 
-  let toastId: string | number | null = null
+  const toastId: string | number | null = null
 
   useEffect(() => {
     if (orderId && step === 3) {
-      let timeoutId: ReturnType<typeof setTimeout> | null = null
+      const timeoutId: ReturnType<typeof setTimeout> | null = null
 
       const intervalId = setInterval(async () => {
         const orderResponse = await getOrderRequest({ order_id: orderId })
@@ -271,7 +224,7 @@ export const Component = () => {
           capacitySat,
           clientBalanceSat,
           assetId,
-          assetAmount,
+          lspAssetAmount,
           channelExpireBlocks,
         } = data
 
@@ -299,95 +252,46 @@ export const Component = () => {
           assets = infoResponse.data.assets as AssetInfo[]
         }
 
-        // Validate channel capacity
-        if (lspOptions) {
-          // Calculate effective min/max capacity
-          const effectiveMinCapacity = Math.max(
-            MIN_CHANNEL_CAPACITY,
-            lspOptions.min_channel_balance_sat
-          )
-          const effectiveMaxCapacity = Math.min(
-            MAX_CHANNEL_CAPACITY,
-            lspOptions.max_channel_balance_sat
-          )
+        // Calculate effective min/max capacity
+        const effectiveMinCapacity = lspOptions
+          ? Math.max(MIN_CHANNEL_CAPACITY, lspOptions.min_channel_balance_sat)
+          : MIN_CHANNEL_CAPACITY
+        const effectiveMaxCapacity = lspOptions
+          ? Math.min(MAX_CHANNEL_CAPACITY, lspOptions.max_channel_balance_sat)
+          : MAX_CHANNEL_CAPACITY
 
-          if (capacitySat < effectiveMinCapacity) {
-            throw new Error(
-              `Channel capacity must be at least ${effectiveMinCapacity.toLocaleString()} sats`
-            )
-          }
-          if (capacitySat > effectiveMaxCapacity) {
-            throw new Error(
-              `Channel capacity cannot exceed ${effectiveMaxCapacity.toLocaleString()} sats`
-            )
-          }
+        // Validate channel parameters using shared utility
+        const validation = validateChannelParams(
+          {
+            addressRefund,
+            assetId: assetId || undefined,
+            capacitySat,
+            channelExpireBlocks,
+            clientBalanceSat,
+            clientPubKey,
+            lspAssetAmount: lspAssetAmount || undefined,
+            lspOptions,
+          },
+          assets,
+          effectiveMinCapacity,
+          effectiveMaxCapacity
+        )
+
+        if (!validation.isValid) {
+          throw new Error(validation.error)
         }
 
-        // Validate client balance
-        if (lspOptions) {
-          if (clientBalanceSat < lspOptions.min_initial_client_balance_sat) {
-            throw new Error(
-              `Your channel liquidity must be at least ${lspOptions.min_initial_client_balance_sat} sats`
-            )
-          }
-          if (clientBalanceSat > lspOptions.max_initial_client_balance_sat) {
-            throw new Error(
-              `Your channel liquidity cannot exceed ${lspOptions.max_initial_client_balance_sat} sats`
-            )
-          }
-        }
-
-        if (clientBalanceSat > capacitySat) {
-          throw new Error('Client balance cannot be greater than capacity')
-        }
-
-        // Validate channel expiry
-        if (
-          lspOptions &&
-          channelExpireBlocks > lspOptions.max_channel_expiry_blocks
-        ) {
-          throw new Error(
-            `Channel expiry cannot exceed ${lspOptions.max_channel_expiry_blocks} blocks`
-          )
-        }
-
-        // Validate asset amount if an asset is selected
-        if (assetId && assetAmount) {
-          const selectedAsset = assets.find(
-            (asset: AssetInfo) => asset.asset_id === assetId
-          )
-          if (selectedAsset) {
-            if (assetAmount < selectedAsset.min_channel_amount) {
-              throw new Error(
-                `Asset amount must be at least ${selectedAsset.min_channel_amount / Math.pow(10, selectedAsset.precision)} ${selectedAsset.ticker}`
-              )
-            }
-            if (assetAmount > selectedAsset.max_channel_amount) {
-              throw new Error(
-                `Asset amount cannot exceed ${selectedAsset.max_channel_amount / Math.pow(10, selectedAsset.precision)} ${selectedAsset.ticker}`
-              )
-            }
-          }
-        }
-
-        const payload: any = {
-          announce_channel: true,
-          channel_expiry_blocks: channelExpireBlocks,
-          client_balance_sat: clientBalanceSat,
-          client_pubkey: clientPubKey,
-          funding_confirms_within_blocks:
-            lspOptions?.min_funding_confirms_within_blocks || 1,
-          lsp_balance_sat: capacitySat - clientBalanceSat,
-          refund_onchain_address: addressRefund,
-          required_channel_confirmations:
-            lspOptions?.min_required_channel_confirmations || 3,
-        }
-
-        if (assetId && assetAmount) {
-          payload.asset_id = assetId
-          payload.lsp_asset_amount = assetAmount
-          payload.client_asset_amount = 0
-        }
+        // Build payload using shared utility
+        const payload = buildChannelOrderPayload({
+          addressRefund,
+          assetId: assetId || undefined,
+          capacitySat,
+          channelExpireBlocks,
+          clientBalanceSat,
+          clientPubKey,
+          lspAssetAmount: lspAssetAmount || undefined,
+          lspOptions,
+        })
 
         // Log the payload for the request
         console.log('Payload for create order request:', payload)
@@ -397,102 +301,13 @@ export const Component = () => {
         console.log('Create order request completed, response received')
 
         if (channelResponse.error) {
-          let errorMessage =
-            'An error occurred while creating the channel order'
-
           console.error('Create order error details:', {
             error: channelResponse.error,
             payload: payload,
             timestamp: new Date().toISOString(),
           })
 
-          // Handle different types of RTK Query errors
-          if ('status' in channelResponse.error) {
-            const fetchError = channelResponse.error as FetchBaseQueryError
-
-            // Handle different status codes and error structures
-            if (fetchError.status === 'FETCH_ERROR') {
-              errorMessage =
-                'Network error: Unable to connect to the LSP server. Please check your internet connection and LSP server status.'
-            } else if (fetchError.status === 'TIMEOUT_ERROR') {
-              errorMessage =
-                'Request timeout: The LSP server took too long to respond. Please try again.'
-            } else if (fetchError.status === 'PARSING_ERROR') {
-              errorMessage =
-                'Response parsing error: Invalid data received from the LSP server.'
-            } else if (typeof fetchError.status === 'number') {
-              // HTTP status errors with improved error extraction
-              const extractedError = fetchError.data
-                ? extractErrorMessage(fetchError.data)
-                : null
-
-              if (fetchError.status >= 400 && fetchError.status < 500) {
-                // Client errors (4xx)
-                const baseMessage = `Request error (${fetchError.status})`
-                if (
-                  extractedError &&
-                  extractedError !== 'Unknown error format'
-                ) {
-                  errorMessage = `${baseMessage}: ${extractedError}`
-                } else {
-                  // Provide specific messages for common 4xx errors
-                  switch (fetchError.status) {
-                    case 400:
-                      errorMessage = `${baseMessage}: Invalid request parameters. Please check your input and try again.`
-                      break
-                    case 401:
-                      errorMessage = `${baseMessage}: Authentication required. Please check your LSP credentials.`
-                      break
-                    case 403:
-                      errorMessage = `${baseMessage}: Access forbidden. You may not have permission to create orders.`
-                      break
-                    case 404:
-                      errorMessage = `${baseMessage}: LSP endpoint not found. Please check the LSP server configuration.`
-                      break
-                    case 422:
-                      errorMessage = `${baseMessage}: Invalid order data. Please verify your channel parameters.`
-                      break
-                    case 429:
-                      errorMessage = `${baseMessage}: Too many requests. Please wait a moment and try again.`
-                      break
-                    default:
-                      errorMessage = `${baseMessage}: Client request error. Please check your input.`
-                  }
-                }
-              } else if (fetchError.status >= 500) {
-                // Server errors (5xx)
-                errorMessage = `Server error (${fetchError.status}): The LSP server is experiencing issues. Please try again later.`
-                if (
-                  extractedError &&
-                  extractedError !== 'Unknown error format'
-                ) {
-                  errorMessage += ` Details: ${extractedError}`
-                }
-              } else {
-                errorMessage = `HTTP error (${fetchError.status}): An unexpected error occurred`
-                if (
-                  extractedError &&
-                  extractedError !== 'Unknown error format'
-                ) {
-                  errorMessage += `: ${extractedError}`
-                }
-              }
-            } else {
-              // Non-numeric status (FETCH_ERROR, etc.)
-              errorMessage = `Network error: ${fetchError.status || 'Unknown network issue'}`
-            }
-          } else if ('message' in channelResponse.error) {
-            // SerializedError with message
-            const message = channelResponse.error.message
-            errorMessage = message ? `Request failed: ${message}` : errorMessage
-          } else {
-            // Fallback for other error types
-            const extractedError = extractErrorMessage(channelResponse.error)
-            if (extractedError !== 'Unknown error format') {
-              errorMessage = `Request failed: ${extractedError}`
-            }
-          }
-
+          const errorMessage = formatRtkQueryError(channelResponse.error as any)
           throw new Error(errorMessage)
         } else {
           console.log('Request of channel created successfully!')
@@ -538,6 +353,20 @@ export const Component = () => {
       )
     }
   }, [step])
+
+  const handleRestartFlow = useCallback(() => {
+    // Reset all state
+    setStep(1)
+    setOrderId(null)
+    setOrderPayload(null)
+    setPaymentStatus(null)
+    setPaymentReceived(false)
+    setIsProcessingPayment(false)
+    setPaymentMethod(null)
+    if (toastId) {
+      toast.dismiss(toastId)
+    }
+  }, [])
 
   const handleConfirmBack = useCallback(() => {
     setShowBackConfirmation(false)
@@ -602,6 +431,7 @@ export const Component = () => {
           isProcessingPayment={isProcessingPayment}
           loading={getOrderResponse.isLoading}
           onBack={onStepBack}
+          onRestart={handleRestartFlow}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
           orderPayload={orderPayload}
           paymentReceived={paymentReceived}
@@ -611,6 +441,7 @@ export const Component = () => {
 
       <div className={step !== 4 ? 'hidden' : ''}>
         <Step4
+          onRestart={handleRestartFlow}
           orderId={orderId ?? undefined}
           paymentStatus={paymentStatus || 'error'}
         />

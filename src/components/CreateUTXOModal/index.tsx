@@ -223,7 +223,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
               <div className="text-sm text-slate-200">
                 <p className="mb-2 font-medium">
                   {operationType === 'issuance'
-                    ? 'Issuing an RGB asset requires colorable UTXOs.'
+                    ? 'Issuing or receiving an RGB asset on-chain requires colorable UTXOs.'
                     : 'Opening a channel with RGB assets requires colorable UTXOs.'}
                 </p>
                 <p className="text-slate-300">

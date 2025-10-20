@@ -16,6 +16,8 @@ import {
   getDisplayAsset,
   formatNumberWithCommas,
   parseNumberWithCommas,
+  satoshiToBTC,
+  BTCtoSatoshi,
 } from '../../../../../helpers/number'
 import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
 import { WithdrawFormProps, AssetOption } from '../types'
@@ -44,6 +46,8 @@ interface NumberInputProps {
   sliderStep?: number
   sliderValue?: number
   displayUnit?: string
+  secondaryValue?: string
+  secondaryUnit?: string
 }
 
 const formatSliderValue = (value: number, precision: number = 0): string => {
@@ -70,6 +74,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
   sliderStep,
   sliderValue,
   displayUnit,
+  secondaryValue,
+  secondaryUnit,
 }) => {
   const [displayValue, setDisplayValue] = useState(
     value ? formatNumberWithCommas(value) : ''
@@ -170,6 +176,19 @@ const NumberInput: React.FC<NumberInputProps> = ({
           </div>
         )}
       </div>
+      {/* Secondary value display */}
+      {secondaryValue && secondaryUnit && (
+        <div className="mt-1 px-3 py-1.5 bg-slate-800/30 rounded-lg border border-slate-700/50">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-slate-400">
+              Equivalent in {secondaryUnit}:
+            </span>
+            <span className="text-xs text-blue-400 font-medium">
+              {secondaryValue} {secondaryUnit}
+            </span>
+          </div>
+        </div>
+      )}
       {showSlider && (
         <input
           className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer mt-4 accent-blue-500"
@@ -194,6 +213,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   addressType,
   validationError,
   clearValidationError,
+  maxAssetCapacities,
   isDecodingInvoice,
   showAssetDropdown,
   decodedInvoice,
@@ -240,16 +260,18 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   const calculateMaxWithdrawAmount = (assetId: string): number => {
     let maxRawAmount: number
 
-    if (
-      (addressType === 'lightning' || addressType === 'lightning-address') &&
-      assetId === BTC_ASSET_ID
-    ) {
-      // For Lightning BTC withdrawals, use the HTLC limit
-      const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
-      const maxWithdrawable = maxHtlcSat - RGB_HTLC_MIN_SAT
-      maxRawAmount = Math.max(0, Math.min(maxWithdrawable, assetBalance))
+    if (addressType === 'lightning' || addressType === 'lightning-address') {
+      if (assetId === BTC_ASSET_ID) {
+        // For Lightning BTC withdrawals, use the HTLC limit
+        const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
+        const maxWithdrawable = maxHtlcSat - RGB_HTLC_MIN_SAT
+        maxRawAmount = Math.max(0, maxWithdrawable)
+      } else {
+        // For Lightning RGB asset withdrawals, use the max local_asset_amount from channels
+        maxRawAmount = maxAssetCapacities[assetId] || 0
+      }
     } else {
-      // For on-chain or RGB withdrawals, use the full balance
+      // For on-chain withdrawals, use the full balance
       maxRawAmount = assetBalance
     }
 
@@ -269,6 +291,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       console.log('RGB Asset max calculation:', {
         assetId,
         displayAmount,
+        isLightning:
+          addressType === 'lightning' || addressType === 'lightning-address',
         maxRawAmount,
         precision,
         ticker: assetInfo?.ticker,
@@ -635,7 +659,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {/* Amount Input - Only needed when not specified in invoice */}
           {(addressType === 'bitcoin' ||
             addressType === 'lightning-address' ||
-            (addressType === 'rgb' && !decodedRgbInvoice?.amount)) && (
+            (addressType === 'rgb' && !decodedRgbInvoice?.assignment)) && (
             <div className="space-y-1">
               <Controller
                 control={control}
@@ -662,6 +686,46 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                     filteredAvailableAssets.find(
                       (a: AssetOption) => a.value === assetId
                     )?.label || 'SAT'
+
+                  // Calculate secondary value for BTC conversion
+                  const getSecondaryValue = () => {
+                    if (assetId !== BTC_ASSET_ID || !field.value) {
+                      return {
+                        secondaryUnit: undefined,
+                        secondaryValue: undefined,
+                      }
+                    }
+
+                    const cleanValue = parseNumberWithCommas(field.value)
+                    const numericValue = parseFloat(cleanValue || '0')
+
+                    if (isNaN(numericValue) || numericValue === 0) {
+                      return {
+                        secondaryUnit: undefined,
+                        secondaryValue: undefined,
+                      }
+                    }
+
+                    if (bitcoinUnit === 'SAT') {
+                      // User entered sats, show BTC equivalent
+                      const btcValue = satoshiToBTC(numericValue)
+                      return {
+                        secondaryUnit: 'BTC',
+                        secondaryValue: parseFloat(btcValue)
+                          .toFixed(8)
+                          .replace(/\.?0+$/, ''),
+                      }
+                    } else {
+                      // User entered BTC, show sats equivalent
+                      const satsValue = BTCtoSatoshi(numericValue)
+                      return {
+                        secondaryUnit: 'sats',
+                        secondaryValue: satsValue.toLocaleString(),
+                      }
+                    }
+                  }
+
+                  const { secondaryValue, secondaryUnit } = getSecondaryValue()
 
                   return (
                     <div className="relative">
@@ -692,6 +756,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         }}
                         placeholder={`Enter amount (max ${maxWithdrawable > 0 ? maxWithdrawable.toLocaleString() : 'N/A'})`}
                         precision={precision}
+                        secondaryUnit={secondaryUnit}
+                        secondaryValue={secondaryValue}
                         showSlider
                         sliderStep={
                           precision === 0 ? 1 : 1 / Math.pow(10, precision)

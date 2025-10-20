@@ -125,6 +125,7 @@ export interface WithdrawFormProps {
   decodedInvoice: DecodeInvoiceResponse | null
   decodedRgbInvoice: DecodeRgbInvoiceResponse | null
   maxLightningCapacity: number
+  maxAssetCapacities: Record<string, number>
   assetId: string
   assetBalance: number
   bitcoinUnit: string

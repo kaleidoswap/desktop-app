@@ -17,6 +17,8 @@ import {
   DecodeInvoiceResponse,
   DecodeRgbInvoiceResponse,
   NiaAsset,
+  Assignment,
+  AssignmentFungible,
 } from '../../../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
@@ -33,6 +35,31 @@ import {
 const isLightningAddress = (input: string): boolean => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(input)
+}
+
+// Helper function to extract amount from assignment
+const getAssignmentAmount = (assignment: Assignment | null): number | null => {
+  if (!assignment) return null
+
+  switch (assignment.type) {
+    case 'Fungible':
+      return assignment.value
+    case 'InflationRight':
+      return assignment.value
+    case 'Any':
+    case 'NonFungible':
+    case 'ReplaceRight':
+    default:
+      return null
+  }
+}
+
+// Helper function to create fungible assignment from amount
+const createFungibleAssignment = (amount: number): AssignmentFungible => {
+  return {
+    type: 'Fungible',
+    value: amount,
+  }
 }
 
 export const WithdrawModalContent: React.FC = () => {
@@ -60,6 +87,9 @@ export const WithdrawModalContent: React.FC = () => {
   const [addressType, setAddressType] = useState<AddressType>('unknown')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [maxLightningCapacity, setMaxLightningCapacity] = useState(0)
+  const [maxAssetCapacities, setMaxAssetCapacities] = useState<
+    Record<string, number>
+  >({})
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null)
   const [paymentHash, setPaymentHash] = useState<string | null>(null)
   const [isPollingStatus, setIsPollingStatus] = useState(false)
@@ -149,22 +179,38 @@ export const WithdrawModalContent: React.FC = () => {
     [dispatch, fetchBtcBalance]
   )
 
-  // Calculate max lightning outbound capacity
+  // Calculate max lightning outbound capacity for BTC and assets
   useEffect(() => {
     if (channelsQuery.data?.channels) {
-      const activeChannels = channelsQuery.data.channels.filter(
-        (channel) => channel.is_usable
+      const readyChannels = channelsQuery.data.channels.filter(
+        (channel) => channel.ready && channel.is_usable
       )
 
-      if (activeChannels.length > 0) {
+      if (readyChannels.length > 0) {
+        // Max BTC HTLC capacity across all ready channels
         const maxOutboundCapacity = Math.max(
-          ...activeChannels.map(
+          ...readyChannels.map(
             (channel) => channel.next_outbound_htlc_limit_msat
           )
         )
         setMaxLightningCapacity(maxOutboundCapacity)
+
+        // Max local_asset_amount per asset across all ready channels
+        const assetCapacities: Record<string, number> = {}
+        readyChannels.forEach((channel) => {
+          if (channel.asset_id && channel.asset_local_amount > 0) {
+            if (
+              !assetCapacities[channel.asset_id] ||
+              channel.asset_local_amount > assetCapacities[channel.asset_id]
+            ) {
+              assetCapacities[channel.asset_id] = channel.asset_local_amount
+            }
+          }
+        })
+        setMaxAssetCapacities(assetCapacities)
       } else {
         setMaxLightningCapacity(0)
+        setMaxAssetCapacities({})
       }
     }
   }, [channelsQuery.data])
@@ -320,12 +366,26 @@ export const WithdrawModalContent: React.FC = () => {
           if (decoded.asset_id && decoded.asset_amount) {
             // Invoice specifies an RGB asset
             setValue('asset_id', decoded.asset_id) // Set asset_id for potential display/validation
-            await fetchAssetBalance(decoded.asset_id) // Fetch balance for the specific asset
 
-            if (decoded.asset_amount > assetBalance) {
+            // Get max local asset amount for this asset from channels
+            const maxAssetAmount = maxAssetCapacities[decoded.asset_id] || 0
+
+            // Check asset amount against channel capacity
+            if (decoded.asset_amount > maxAssetAmount) {
               setValidationError(
-                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your balance is only ${assetBalance}. Cannot proceed with payment.`
+                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your max channel capacity is only ${maxAssetAmount}. Cannot proceed with payment.`
               )
+            }
+
+            // Also validate BTC amount if present (for the 3000 sat RGB fee)
+            if (decoded.amt_msat > 0) {
+              if (decoded.amt_msat > maxLightningCapacity) {
+                const invoiceAmountSats = decoded.amt_msat / 1000
+                const maxCapacitySats = maxLightningCapacity / 1000
+                setValidationError(
+                  `Error: Invoice requires ${invoiceAmountSats.toLocaleString()} sats but your max BTC channel capacity is ${maxCapacitySats.toLocaleString()} sats. Cannot proceed with payment.`
+                )
+              }
             }
           }
           // If this is a regular BTC invoice with an amount
@@ -378,20 +438,23 @@ export const WithdrawModalContent: React.FC = () => {
               } else {
                 // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
-                if (decodedRgb.amount) {
+                const assignmentAmount = getAssignmentAmount(
+                  decodedRgb.assignment
+                )
+                if (assignmentAmount) {
                   const assetInfo = assets.data?.nia.find(
                     (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
                   )
                   const ticker = assetInfo?.ticker || 'Unknown'
                   const precision = assetInfo?.precision || 8
                   const formattedAmount =
-                    decodedRgb.amount / Math.pow(10, precision)
+                    assignmentAmount / Math.pow(10, precision)
 
                   // Get the actual RGB asset balance
                   const rgbBalance = assetInfo?.balance.spendable || 0
                   const formattedBalance = rgbBalance / Math.pow(10, precision)
 
-                  if (decodedRgb.amount > rgbBalance) {
+                  if (assignmentAmount > rgbBalance) {
                     setValue('amount', formattedBalance)
                     setValidationError(
                       `Warning: The invoice requested ${formattedAmount} ${ticker} but your balance is only ${formattedBalance} ${ticker}. Adjusted to maximum sendable amount.`
@@ -459,11 +522,12 @@ export const WithdrawModalContent: React.FC = () => {
       fetchAssetBalance,
       fetchBtcBalance,
       maxLightningCapacity,
+      maxAssetCapacities,
       availableAssets,
       bitcoinUnit,
       assetBalance,
     ]
-  ) // Added bitcoinUnit and assetBalance dependencies
+  ) // Added bitcoinUnit, assetBalance, and maxAssetCapacities dependencies
 
   const handlePasteFromClipboard = useCallback(async () => {
     try {
@@ -785,13 +849,21 @@ export const WithdrawModalContent: React.FC = () => {
               )
             }
 
+            // For RGB asset transfers, always use a Fungible assignment
+            // If the invoice has a specific amount in its assignment, use that, otherwise use the raw amount
+            let assignmentAmount = rawAmount
+            if (
+              decodedRgbInvoice.assignment?.type === 'Fungible' &&
+              decodedRgbInvoice.assignment.value
+            ) {
+              assignmentAmount = decodedRgbInvoice.assignment.value
+            }
+
+            const assignment = createFungibleAssignment(assignmentAmount)
+
             res = await sendAsset({
-              amount:
-                decodedRgbInvoice.amount !== null &&
-                decodedRgbInvoice.amount !== undefined
-                  ? decodedRgbInvoice.amount
-                  : rawAmount,
               asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
+              assignment,
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
@@ -807,8 +879,8 @@ export const WithdrawModalContent: React.FC = () => {
               throw new Error('Proxy transport endpoint is not configured.')
             }
             res = await sendAsset({
-              amount: rawAmount,
               asset_id: pendingData.asset_id,
+              assignment: createFungibleAssignment(rawAmount),
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
@@ -995,6 +1067,7 @@ export const WithdrawModalContent: React.FC = () => {
                 handlePasteFromClipboard={handlePasteFromClipboard}
                 isDecodingInvoice={isDecodingInvoice}
                 isPollingStatus={isPollingStatus}
+                maxAssetCapacities={maxAssetCapacities}
                 maxLightningCapacity={maxLightningCapacity}
                 onSubmit={onSubmit}
                 paymentStatus={paymentStatus}

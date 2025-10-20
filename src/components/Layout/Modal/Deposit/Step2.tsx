@@ -49,6 +49,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [amount, setAmount] = useState<string>('')
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
   const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
+  const [usePrivacy, setUsePrivacy] = useState<boolean>(false)
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
@@ -93,7 +94,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
   const channels = useMemo(() => channelsData?.channels || [], [channelsData])
 
-  // Calculate max deposit amount based on HTLC limits (similar to market maker)
+  // Calculate max deposit amount based on HTLC limits for BTC or asset_remote_amount for RGB assets
   const calculateMaxDepositAmount = useCallback(
     (asset: string): number => {
       if (asset === 'BTC') {
@@ -116,9 +117,20 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         const maxDepositableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
         return Math.max(0, maxDepositableAmount)
       } else {
-        // For RGB assets, we still need to consider the BTC HTLC limits
-        // since RGB transfers require BTC for fees
-        return calculateMaxDepositAmount('BTC')
+        // For RGB assets, use the max asset_remote_amount across all channels for this asset
+        const assetChannels = channels.filter(
+          (c: Channel) => c.asset_id === asset && c.is_usable
+        )
+
+        if (assetChannels.length === 0) {
+          return 0
+        }
+
+        const assetRemoteAmounts = assetChannels.map(
+          (c: Channel) => c.asset_remote_amount
+        )
+
+        return Math.max(...assetRemoteAmounts)
       }
     },
     [channels]
@@ -141,7 +153,15 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     setAddress(undefined)
     setAmount('')
     setNoColorableUtxos(false)
+    setUsePrivacy(false)
   }, [network])
+
+  // Reset address when switching privacy mode
+  useEffect(() => {
+    if (network === 'on-chain' && assetId !== BTC_ASSET_ID) {
+      setAddress(undefined)
+    }
+  }, [usePrivacy])
 
   const [assetTicker, setAssetTicker] = useState<string>('')
   const [assetName, setAssetName] = useState<string>('')
@@ -225,21 +245,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       value = decimalParts[0] + '.' + decimalParts[1].substring(0, precision)
     }
 
-    // Format with comma separators but only for the integer part
-    const formattedValue =
-      value.split('.').length === 2
-        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
-          '.' +
-          value.split('.')[1]
-        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-
     // Validate against max deposit amount for lightning
     if (network === 'lightning' && maxDepositAmount > 0) {
       const numValue = parseFloat(value)
       if (!isNaN(numValue) && numValue > 0) {
         // Convert to base units and check against max
         const baseUnits = parseAmount(value, asset)
-        const maxBaseUnits = parseAmount(maxDepositAmount.toString(), asset)
+        const maxBaseUnits = maxDepositAmount
 
         if (baseUnits > maxBaseUnits) {
           // Don't update if it exceeds the limit
@@ -248,12 +260,33 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       }
     }
 
+    // Format with comma separators but only for the integer part
+    const formattedValue =
+      value.split('.').length === 2
+        ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+          '.' +
+          value.split('.')[1]
+        : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
     setAmount(formattedValue)
+  }
+
+  // Handle setting max amount
+  const handleSetMaxAmount = () => {
+    if (maxDepositAmount > 0) {
+      const asset = assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+      const formattedMax = formatAmount(maxDepositAmount, asset)
+      setAmount(formattedMax)
+    }
   }
 
   const generateRgbInvoice = async () => {
     try {
-      const res = await rgbInvoice(assetId ? { asset_id: assetId } : {})
+      const res = await rgbInvoice(
+        assetId
+          ? { asset_id: assetId, witness: !usePrivacy }
+          : { witness: !usePrivacy }
+      )
       setNoColorableUtxos(false)
       if ('error' in res && res.error) {
         const errorMessage =
@@ -307,7 +340,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     : numericAmount * Math.pow(10, 8) * 1000,
               }
             : {
-                asset_amount: numericAmount,
+                asset_amount: parseAmount(cleanAmount, assetTicker),
                 asset_id: assetId,
               }
         )
@@ -457,6 +490,57 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <NetworkOption icon={Zap} label="Lightning" type="lightning" />
         </div>
 
+        {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
+        {network === 'on-chain' && assetId !== BTC_ASSET_ID && (
+          <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-white mb-1">
+                  Receive with Privacy
+                </h4>
+                <p className="text-xs text-slate-400">
+                  {usePrivacy
+                    ? 'Using blinded UTXO (enhanced privacy)'
+                    : 'Using onchain address (witness-based receive)'}
+                </p>
+              </div>
+              <button
+                className={`
+                  relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                  ${usePrivacy ? 'bg-blue-600' : 'bg-slate-600'}
+                `}
+                onClick={() => setUsePrivacy(!usePrivacy)}
+              >
+                <span
+                  className={`
+                    inline-block h-4 w-4 transform rounded-full transition-transform
+                    ${usePrivacy ? 'bg-blue-400 translate-x-6' : 'bg-slate-200 translate-x-1'}
+                  `}
+                />
+              </button>
+            </div>
+            <div className="text-xs text-slate-400 bg-slate-900/50 p-2 rounded-lg">
+              {usePrivacy ? (
+                <>
+                  <span className="font-medium text-slate-300">
+                    Privacy Mode:
+                  </span>{' '}
+                  Uses a colorable and blinded UTXO for enhanced privacy.
+                  Requires available colorable UTXOs.
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-slate-300">
+                    Witness Mode:
+                  </span>{' '}
+                  Uses a standard Bitcoin onchain address. Simpler but less
+                  private.
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Show network info and faucet suggestion in a more compact format */}
         {networkInfo && (
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
@@ -550,17 +634,30 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <input
-                autoFocus
-                className="flex-1 px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
-                         focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                         placeholder:text-slate-600 transition-all duration-200 text-sm"
-                inputMode="decimal"
-                onChange={handleAmountChange}
-                placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
-                type="text"
-                value={amount}
-              />
+              <div className="flex-1 relative">
+                <input
+                  autoFocus
+                  className="w-full px-3 py-2 pr-16 bg-slate-800/50 rounded-xl border border-slate-700 
+                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                           placeholder:text-slate-600 transition-all duration-200 text-sm"
+                  inputMode="decimal"
+                  onChange={handleAmountChange}
+                  placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
+                  type="text"
+                  value={amount}
+                />
+                {maxDepositAmount > 0 && (
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 
+                             bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 
+                             rounded-lg transition-colors text-xs font-medium"
+                    onClick={handleSetMaxAmount}
+                    type="button"
+                  >
+                    Max
+                  </button>
+                )}
+              </div>
               <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
                 {assetId === BTC_ASSET_ID
                   ? getDisplayAsset('BTC', bitcoinUnit)
@@ -576,11 +673,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   {parseAmount(
                     amount,
                     assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                  ) >
-                    parseAmount(
-                      maxDepositAmount.toString(),
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    ) && (
+                  ) > maxDepositAmount && (
                     <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
                       <p className="text-xs text-red-400">
                         <span className="font-medium">Error:</span> Amount
@@ -636,11 +729,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 parseAmount(
                   amount,
                   assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                ) >
-                  parseAmount(
-                    maxDepositAmount.toString(),
-                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                  )) ||
+                ) > maxDepositAmount) ||
               (network === 'lightning' && maxDepositAmount === 0)
             }
             onClick={generateAddress}

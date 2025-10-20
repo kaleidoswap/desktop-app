@@ -8,6 +8,17 @@ import {
   AlertTriangle,
   X,
   Zap,
+  ExternalLink,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Calendar,
+  Hash,
+  Coins,
+  Activity,
+  Info,
+  RotateCw,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -62,6 +73,11 @@ const AVAILABLE_COLUMNS = [
   { key: 'asset_id', label: 'Asset ID', type: 'payload' },
   { key: 'lsp_asset_amount', label: 'LSP Asset Amount', type: 'payload' },
   { key: 'client_asset_amount', label: 'Client Asset Amount', type: 'payload' },
+  {
+    key: 'asset_delivery_status',
+    label: 'Asset Delivery Status',
+    type: 'default',
+  },
   { key: 'actions', label: 'Actions', type: 'default' },
 ]
 
@@ -73,6 +89,353 @@ const DEFAULT_COLUMNS = [
   'status',
   'actions',
 ]
+
+// Order Detail Card Modal Component
+const OrderDetailCard: React.FC<{
+  isOpen: boolean
+  onClose: () => void
+  order: ChannelOrder
+  orderData: Lsps1CreateOrderResponse | undefined
+  orderStatus: string
+  onDelete: () => void
+  onRetryDelivery?: () => void
+  isRetrying?: boolean
+}> = ({
+  isOpen,
+  onClose,
+  order,
+  orderData,
+  orderStatus,
+  onDelete,
+  onRetryDelivery,
+  isRetrying = false,
+}) => {
+  if (!isOpen) return null
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return <CheckCircle2 className="w-5 h-5 text-green-500" />
+      case 'FAILED':
+        return <XCircle className="w-5 h-5 text-red-500" />
+      case 'CREATED':
+        return <Clock className="w-5 h-5 text-yellow-500" />
+      default:
+        return <AlertCircle className="w-5 h-5 text-gray-500" />
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-green-500/10 border-green-500/30 text-green-400'
+      case 'FAILED':
+        return 'bg-red-500/10 border-red-500/30 text-red-400'
+      case 'CREATED':
+        return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+      default:
+        return 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+    }
+  }
+
+  const payload = (() => {
+    try {
+      return JSON.parse(order.payload)
+    } catch {
+      return {}
+    }
+  })()
+
+  const bolt11Amount = (orderData?.payment as any)?.bolt11?.order_total_sat
+  const onchainAmount = (orderData?.payment as any)?.onchain?.order_total_sat
+  const amountPaid = bolt11Amount || onchainAmount
+
+  const bolt11Fee = (orderData?.payment as any)?.bolt11?.fee_total_sat
+  const onchainFee = (orderData?.payment as any)?.onchain?.fee_total_sat
+  const feePaid = bolt11Fee || onchainFee
+
+  return (
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-slate-900 rounded-xl border border-slate-700/70 shadow-2xl max-w-3xl w-full my-8">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-700/70">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-blue-500/10">
+              <Info className="w-6 h-6 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">
+                Channel Order Details
+              </h3>
+              <p className="text-sm text-slate-400 mt-0.5">
+                Complete order information
+              </p>
+            </div>
+          </div>
+          <button
+            aria-label="Close modal"
+            className="p-2 rounded-full hover:bg-slate-800 text-gray-400 hover:text-white transition-colors"
+            onClick={onClose}
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+          {/* Status Section */}
+          <div
+            className={`rounded-lg border p-4 ${getStatusColor(orderStatus)}`}
+          >
+            <div className="flex items-center gap-3">
+              {getStatusIcon(orderStatus)}
+              <div>
+                <div className="text-sm font-medium uppercase tracking-wide">
+                  Order Status
+                </div>
+                <div className="text-lg font-bold mt-0.5">{orderStatus}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order ID Section */}
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-start gap-3">
+              <Hash className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-slate-400 mb-1">Order ID</div>
+                <div className="font-mono text-white text-sm break-all">
+                  {order.order_id}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Information */}
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Coins className="w-5 h-5 text-blue-400" />
+              <h4 className="text-lg font-semibold text-white">
+                Payment Information
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-slate-400 mb-1">Amount Paid</div>
+                <div className="text-xl font-bold text-white">
+                  {amountPaid ? `${amountPaid.toLocaleString()} sats` : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">Fees Paid</div>
+                <div className="text-xl font-bold text-slate-300">
+                  {feePaid ? `${feePaid.toLocaleString()} sats` : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Channel Configuration */}
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-5 h-5 text-purple-400" />
+              <h4 className="text-lg font-semibold text-white">
+                Channel Configuration
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-slate-400 mb-1">
+                  Client Balance
+                </div>
+                <div className="text-base font-semibold text-white">
+                  {payload.client_balance_sat
+                    ? `${payload.client_balance_sat.toLocaleString()} sats`
+                    : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">LSP Balance</div>
+                <div className="text-base font-semibold text-white">
+                  {payload.lsp_balance_sat
+                    ? `${payload.lsp_balance_sat.toLocaleString()} sats`
+                    : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">
+                  Channel Expiry
+                </div>
+                <div className="text-base font-semibold text-white">
+                  {payload.channel_expiry_blocks
+                    ? `${payload.channel_expiry_blocks} blocks`
+                    : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">
+                  Required Confirmations
+                </div>
+                <div className="text-base font-semibold text-white">
+                  {payload.required_channel_confirmations ?? 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">
+                  Funding Confirms Within
+                </div>
+                <div className="text-base font-semibold text-white">
+                  {payload.funding_confirms_within_blocks
+                    ? `${payload.funding_confirms_within_blocks} blocks`
+                    : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-400 mb-1">
+                  Announce Channel
+                </div>
+                <div className="text-base font-semibold text-white">
+                  {payload.announce_channel !== undefined
+                    ? payload.announce_channel
+                      ? 'Yes'
+                      : 'No'
+                    : 'N/A'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Asset Information (if available) */}
+          {(payload.asset_id ||
+            payload.lsp_asset_amount ||
+            payload.client_asset_amount) && (
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-5 h-5 text-orange-400" />
+                <h4 className="text-lg font-semibold text-white">
+                  Asset Information
+                </h4>
+              </div>
+              <div className="space-y-3">
+                {payload.asset_id && (
+                  <div>
+                    <div className="text-sm text-slate-400 mb-1">Asset ID</div>
+                    <div className="font-mono text-sm text-white break-all">
+                      {payload.asset_id}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {payload.client_asset_amount && (
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">
+                        Client Asset Amount
+                      </div>
+                      <div className="text-base font-semibold text-white">
+                        {payload.client_asset_amount.toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                  {payload.lsp_asset_amount && (
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">
+                        LSP Asset Amount
+                      </div>
+                      <div className="text-base font-semibold text-white">
+                        {payload.lsp_asset_amount.toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Asset Delivery Status */}
+                {orderData?.asset_delivery_status &&
+                  orderData.asset_delivery_status !== 'NOT_REQUIRED' && (
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm text-slate-400 mb-1">
+                            Delivery Status
+                          </div>
+                          <div className="text-base font-semibold text-white">
+                            {orderData.asset_delivery_status}
+                          </div>
+                          {orderData.asset_delivery_error && (
+                            <div className="text-xs text-red-400 mt-1">
+                              Error: {orderData.asset_delivery_error}
+                            </div>
+                          )}
+                        </div>
+                        {orderData.asset_delivery_status === 'PENDING' &&
+                          onRetryDelivery && (
+                            <button
+                              className="flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              disabled={isRetrying}
+                              onClick={onRetryDelivery}
+                            >
+                              {isRetrying ? (
+                                <>
+                                  <LoaderIcon className="w-4 h-4 animate-spin" />
+                                  Retrying...
+                                </>
+                              ) : (
+                                <>
+                                  <RotateCw className="w-4 h-4" />
+                                  Retry Delivery
+                                </>
+                              )}
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
+
+          {/* Timeline */}
+          {orderData?.created_at && (
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-5 h-5 text-green-400" />
+                <h4 className="text-lg font-semibold text-white">Timeline</h4>
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <div>
+                  <div className="text-sm text-slate-400">Created At</div>
+                  <div className="text-base font-medium text-white">
+                    {new Date(orderData.created_at).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700/70">
+          <button
+            className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            onClick={onClose}
+          >
+            Close
+          </button>
+          <button
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            onClick={() => {
+              onDelete()
+              onClose()
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Order
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // Confirmation Modal Component
 const DeleteConfirmationModal: React.FC<{
@@ -157,8 +520,13 @@ export const Component = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
+  const [showDetailCard, setShowDetailCard] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<ChannelOrder | null>(null)
+  const [retryingOrders, setRetryingOrders] = useState<Set<string>>(new Set())
 
   const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
+  const [retryDeliveryRequest] =
+    makerApi.endpoints.retry_delivery.useLazyQuery()
 
   const fetchOrders = async () => {
     try {
@@ -242,6 +610,63 @@ export const Component = () => {
   const cancelDelete = () => {
     setShowDeleteModal(false)
     setOrderToDelete(null)
+  }
+
+  const handleViewDetails = (order: ChannelOrder) => {
+    setSelectedOrder(order)
+    setShowDetailCard(true)
+  }
+
+  const closeDetailCard = () => {
+    setShowDetailCard(false)
+    setSelectedOrder(null)
+  }
+
+  const handleRetryDelivery = async (orderId: string) => {
+    setRetryingOrders((prev) => new Set(prev).add(orderId))
+
+    try {
+      const response = await retryDeliveryRequest({ order_id: orderId })
+
+      if (response.data) {
+        const { status, message } = response.data
+
+        switch (status) {
+          case 'processing':
+            toast.success(message || 'Retry request queued successfully')
+            // Refresh order status after a short delay
+            setTimeout(async () => {
+              await fetchOrders()
+            }, 2000)
+            break
+          case 'not_found':
+            toast.error(message || 'Order not found')
+            break
+          case 'no_pending_delivery':
+            toast.info(message || 'No pending delivery to retry')
+            break
+          case 'error':
+            toast.error(message || 'Failed to retry delivery')
+            break
+          default:
+            toast.info(message || 'Unknown response')
+        }
+      } else if (response.error) {
+        console.error('Error retrying delivery:', response.error)
+        toast.error('Failed to retry delivery')
+      }
+    } catch (err) {
+      console.error('Error retrying delivery:', err)
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to retry delivery'
+      )
+    } finally {
+      setRetryingOrders((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(orderId)
+        return newSet
+      })
+    }
   }
 
   const handleColumnToggle = (columnKey: string) => {
@@ -445,9 +870,69 @@ export const Component = () => {
                     )
                   case 'status':
                     return getStatusBadge(orderStatus)
+                  case 'asset_delivery_status': {
+                    const deliveryStatus =
+                      currentOrderData?.asset_delivery_status
+                    if (!deliveryStatus || deliveryStatus === 'NOT_REQUIRED') {
+                      return renderEmptyField()
+                    }
+
+                    const getDeliveryStatusBadge = (status: string) => {
+                      switch (status) {
+                        case 'COMPLETED':
+                          return renderStatusBadge('Delivered', 'success')
+                        case 'PENDING':
+                          return renderStatusBadge('Pending', 'warning')
+                        case 'IN_PROGRESS':
+                          return renderStatusBadge('In Progress', 'info')
+                        case 'FAILED':
+                          return renderStatusBadge('Failed', 'danger')
+                        case 'RATE_CHANGED':
+                          return renderStatusBadge('Rate Changed', 'warning')
+                        default:
+                          return renderStatusBadge(status, 'default')
+                      }
+                    }
+
+                    return getDeliveryStatusBadge(deliveryStatus)
+                  }
                   case 'actions': {
+                    const hasPendingDelivery =
+                      currentOrderData?.client_asset_amount &&
+                      currentOrderData.client_asset_amount > 0 &&
+                      currentOrderData?.asset_delivery_status === 'PENDING'
+
+                    const isRetrying = retryingOrders.has(order.order_id)
+
                     return (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {hasPendingDelivery && (
+                          <button
+                            className="flex items-center justify-center w-8 h-8 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isRetrying}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRetryDelivery(order.order_id)
+                            }}
+                            title="Retry asset delivery"
+                          >
+                            {isRetrying ? (
+                              <LoaderIcon className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RotateCw className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleViewDetails(order)
+                          }}
+                          title="View details"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
                         <button
                           className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                           onClick={(e) => {
@@ -503,6 +988,20 @@ export const Component = () => {
             </div>
           }
           gridClassName={`grid-cols-${selectedColumns.length}`}
+        />
+      )}
+
+      {/* Order Detail Card */}
+      {selectedOrder && (
+        <OrderDetailCard
+          isOpen={showDetailCard}
+          isRetrying={retryingOrders.has(selectedOrder.order_id)}
+          onClose={closeDetailCard}
+          onDelete={() => handleDelete(selectedOrder.order_id)}
+          onRetryDelivery={() => handleRetryDelivery(selectedOrder.order_id)}
+          order={selectedOrder}
+          orderData={orderData[selectedOrder.order_id]}
+          orderStatus={orderStatuses[selectedOrder.order_id] || 'Unknown'}
         />
       )}
 

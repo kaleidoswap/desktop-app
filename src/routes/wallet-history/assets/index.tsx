@@ -11,7 +11,26 @@ import {
   renderStatusBadge,
 } from '../../../components/ui/Table'
 import { formatDate } from '../../../helpers/date'
-import { nodeApi, Transfer } from '../../../slices/nodeApi/nodeApi.slice'
+import {
+  nodeApi,
+  Transfer,
+  Assignment,
+} from '../../../slices/nodeApi/nodeApi.slice'
+
+// Helper function to extract amount from assignment
+const getAssignmentAmount = (assignment: Assignment): number => {
+  switch (assignment.type) {
+    case 'Fungible':
+      return assignment.value
+    case 'InflationRight':
+      return assignment.value
+    case 'Any':
+    case 'NonFungible':
+    case 'ReplaceRight':
+    default:
+      return 0
+  }
+}
 
 export const Component = () => {
   const [searchParams] = useSearchParams()
@@ -407,7 +426,9 @@ export const Component = () => {
                       className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
                     >
                       {transfer.kind === 'Send' ? '-' : '+'}
-                      {formatAmount(transfer.amount)}
+                      {formatAmount(
+                        getAssignmentAmount(transfer.requested_assignment)
+                      )}
                     </span>
                   ),
                   className: 'col-span-1',
@@ -545,7 +566,9 @@ export const Component = () => {
                         className={`text-xs ${getKindColor(transfer.kind)}`}
                       >
                         {transfer.kind === 'Send' ? '-' : '+'}
-                        {formatAmount(transfer.amount)}{' '}
+                        {formatAmount(
+                          getAssignmentAmount(transfer.requested_assignment)
+                        )}{' '}
                         {getSelectedAsset()?.ticker}
                       </span>
                     </div>

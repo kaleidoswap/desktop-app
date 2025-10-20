@@ -1,6 +1,6 @@
 [package]
-name = "desktop-app"
-version = "0.2.0"
+name = "kaleidoswap"
+version = "0.3.0"
 description = "Kaleidoswap App"
 authors = ["Kaleidoswap Team"]
 license = "MIT"
@@ -19,7 +19,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 fs_extra = "1.2"
 dotenv = "0.15.0"
-rusqlite = { version = "0.32.1", features = ["bundled"] }
+rusqlite = { version = "0.37.0", features = ["bundled"] }
 
 futures = "0.3"
 futures-util = "0.3"

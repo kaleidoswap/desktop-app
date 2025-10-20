@@ -131,7 +131,6 @@ You can install the app in two ways:
    ```
 2. **Build the Tauri app**:  
    ```sh
-
    # For current platform
    pnpm run tauri:build
    

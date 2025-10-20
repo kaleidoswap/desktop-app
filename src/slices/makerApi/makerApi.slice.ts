@@ -70,6 +70,35 @@ interface Lsps1CreateOrderRequest {
   asset_id?: string
   lsp_asset_amount?: LSPS0Sat
   client_asset_amount?: LSPS0Sat
+  rfq_id?: string
+}
+
+interface QuoteRequest {
+  from_asset: string
+  from_amount?: number
+  to_asset: string
+  to_amount?: number
+}
+
+interface QuoteFee {
+  base_fee: number
+  variable_fee: number
+  fee_rate: number
+  final_fee: number
+  fee_asset: string
+  fee_asset_precision: number
+}
+
+export interface QuoteResponse {
+  rfq_id: string
+  from_asset: string
+  from_amount: number
+  to_asset: string
+  to_amount: number
+  price: number
+  fee: QuoteFee
+  timestamp: number
+  expires_at: number
 }
 
 export interface Lsps1CreateOrderResponse {
@@ -89,9 +118,22 @@ export interface Lsps1CreateOrderResponse {
   asset_id?: string
   lsp_asset_amount?: LSPS0Sat
   client_asset_amount?: LSPS0Sat
+  rfq_id?: string
+  asset_price_sat?: number
+  asset_delivery_status?: AssetDeliveryStatus
+  asset_delivery_payment_hash?: string
+  asset_delivery_completed_at?: string
+  asset_delivery_error?: string
 }
 
-type OrderState = 'CREATED' | 'COMPLETED' | 'FAILED'
+type OrderState = 'CREATED' | 'COMPLETED' | 'FAILED' | 'PENDING_RATE_DECISION'
+type AssetDeliveryStatus =
+  | 'NOT_REQUIRED'
+  | 'PENDING'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'RATE_CHANGED'
 
 interface ChannelDetails {
   funded_at?: string
@@ -130,6 +172,21 @@ interface Lsps1GetOrderRequest {
 }
 
 interface Lsps1GetOrderResponse extends Lsps1CreateOrderResponse {}
+
+type RetryDeliveryStatus =
+  | 'processing'
+  | 'not_found'
+  | 'no_pending_delivery'
+  | 'error'
+
+interface RetryDeliveryRequest {
+  order_id: string
+}
+
+interface RetryDeliveryResponse {
+  status: RetryDeliveryStatus
+  message: string
+}
 
 export interface TradingPair {
   id?: string
@@ -173,6 +230,15 @@ interface StatusResponse {
   swap: Swap
 }
 
+export interface ChannelFees {
+  setup_fee: number
+  capacity_fee: number
+  duration_fee: number
+  total_fee: number
+  applied_discount?: number
+  discount_code?: string
+}
+
 const dynamicBaseQuery = async (args: any, api: any, extraOptions: any) => {
   const state = api.getState()
   const baseUrl =
@@ -194,6 +260,13 @@ export const makerApi = createApi({
         url: '/api/v1/lsps1/create_order',
       }),
     }),
+    estimate_fees: builder.query<ChannelFees, Lsps1CreateOrderRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/lsps1/estimate_fees',
+      }),
+    }),
     execSwap: builder.query<void, ExecSwapRequest>({
       query: (body) => ({
         body,
@@ -202,10 +275,17 @@ export const makerApi = createApi({
         url: '/api/v1/swaps/execute',
       }),
     }),
+
     getPairs: builder.query<GetPairsResponse, void>({
       query: () => '/api/v1/market/pairs',
     }),
-
+    getQuote: builder.query<QuoteResponse, QuoteRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/market/quote',
+      }),
+    }),
     get_info: builder.query<Lsps1GetInfoResponse, void>({
       query: () => '/api/v1/lsps1/get_info',
     }),
@@ -221,6 +301,13 @@ export const makerApi = createApi({
         body,
         method: 'POST',
         url: '/api/v1/swaps/init',
+      }),
+    }),
+    retry_delivery: builder.query<RetryDeliveryResponse, RetryDeliveryRequest>({
+      query: (body) => ({
+        body,
+        method: 'POST',
+        url: '/api/v1/lsps1/retry_delivery',
       }),
     }),
     status: builder.query<StatusResponse, StatusRequest>({

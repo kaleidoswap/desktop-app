@@ -43,7 +43,6 @@ export const createRefreshDataHandler = (
   getPairs: any,
   dispatch: any,
   form: any,
-  channels: any[],
   assetsData: any,
   formatAmount: (amount: number, asset: string) => string,
   updateMinMaxAmounts: () => Promise<void>,
@@ -73,24 +72,18 @@ export const createRefreshDataHandler = (
 
       if ('data' in getPairsResponse && getPairsResponse.data) {
         dispatch(setTradingPairs(getPairsResponse.data.pairs))
-        const tradableAssets = new Set([
-          ...channels.map((c) => c.asset_id).filter((id) => id !== null),
-        ])
-        const filteredPairs = getPairsResponse.data.pairs.filter(
-          (pair: any) =>
-            tradableAssets.has(pair.base_asset_id) ||
-            tradableAssets.has(pair.quote_asset_id)
-        )
-        setTradablePairs(filteredPairs)
+        // Show all pairs from maker - don't filter based on channels
+        const allPairs = getPairsResponse.data.pairs
+        setTradablePairs(allPairs)
 
-        if (filteredPairs.length > 0) {
-          setSelectedPair(filteredPairs[0])
-          form.setValue('fromAsset', filteredPairs[0].base_asset)
-          form.setValue('toAsset', filteredPairs[0].quote_asset)
-          const defaultMinAmount = filteredPairs[0].min_order_size
+        if (allPairs.length > 0) {
+          setSelectedPair(allPairs[0])
+          form.setValue('fromAsset', allPairs[0].base_asset)
+          form.setValue('toAsset', allPairs[0].quote_asset)
+          const defaultMinAmount = allPairs[0].min_order_size
           form.setValue(
             'from',
-            formatAmount(defaultMinAmount, filteredPairs[0].base_asset)
+            formatAmount(defaultMinAmount, allPairs[0].base_asset)
           )
         }
       }

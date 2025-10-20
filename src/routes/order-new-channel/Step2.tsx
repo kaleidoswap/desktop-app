@@ -1,14 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 import { twJoin } from 'tailwind-merge'
 import * as z from 'zod'
 
 import { useAppDispatch } from '../../app/store/hooks'
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
-import { Select } from '../../components/Select'
-import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
+import {
+  BitcoinChannelSection,
+  AssetChannelSection,
+  FeeBreakdownDisplay,
+  ChannelDurationSelector,
+} from '../../components/ChannelConfiguration'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   formatNumberWithCommas,
@@ -20,7 +23,9 @@ import {
   OrderChannelFormSchema,
   TChannelRequestForm,
 } from '../../slices/channel/orderChannel.slice'
-import { makerApi } from '../../slices/makerApi/makerApi.slice'
+import { makerApi, ChannelFees } from '../../slices/makerApi/makerApi.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { AssetInfo, LspOptions } from '../../utils/channelOrderUtils'
 
 import { FormError } from './FormError'
 import 'react-toastify/dist/ReactToastify.css'
@@ -30,191 +35,15 @@ interface Props {
   onBack: () => void
 }
 
-interface AssetInfo {
-  name: string
-  ticker: string
-  asset_id: string
-  precision: number
-  min_initial_client_amount: number
-  max_initial_client_amount: number
-  min_initial_lsp_amount: number
-  max_initial_lsp_amount: number
-  min_channel_amount: number
-  max_channel_amount: number
-}
-
-interface LspOptions {
-  min_required_channel_confirmations: number
-  min_funding_confirms_within_blocks: number
-  min_onchain_payment_confirmations: number
-  supports_zero_channel_reserve: boolean
-  min_onchain_payment_size_sat: number
-  max_channel_expiry_blocks: number
-  min_initial_client_balance_sat: number
-  max_initial_client_balance_sat: number
-  min_initial_lsp_balance_sat: number
-  max_initial_lsp_balance_sat: number
-  min_channel_balance_sat: number
-  max_channel_balance_sat: number
-}
-
 const FormFieldsSchema = z.object({
-  assetAmount: z.string().optional().default(''),
   assetId: z.string().optional().default(''),
   capacitySat: z.string(),
   channelExpireBlocks: z.number(),
   clientBalanceSat: z.string(),
+  lspAssetAmount: z.string().optional().default(''),
 })
 
 type FormFields = z.infer<typeof FormFieldsSchema>
-
-interface NumberInputProps {
-  value: string
-  onChange: (value: string) => void
-  min?: number
-  max?: number
-  precision?: number
-  label: string
-  placeholder?: string
-  className?: string
-  error?: string
-  showSlider?: boolean
-  onSliderChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
-  sliderStep?: number
-  sliderValue?: number
-}
-
-const formatSliderValue = (value: number, precision: number = 0): string => {
-  if (isNaN(value) || value === 0) return ''
-  const formattedValue = new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: precision,
-    minimumFractionDigits: precision,
-  }).format(value)
-  return formattedValue
-}
-
-const NumberInput: React.FC<NumberInputProps> = ({
-  value,
-  onChange,
-  min = 0,
-  max,
-  precision = 0,
-  label,
-  placeholder,
-  className = '',
-  error,
-  showSlider = false,
-  onSliderChange,
-  sliderStep,
-  sliderValue,
-}) => {
-  const [displayValue, setDisplayValue] = useState(
-    value ? formatNumberWithCommas(value) : ''
-  )
-  const [isFocused, setIsFocused] = useState(false)
-
-  useEffect(() => {
-    if (!isFocused) {
-      setDisplayValue(value ? formatNumberWithCommas(value) : '')
-    }
-  }, [value, isFocused])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = parseNumberWithCommas(e.target.value)
-
-    if (rawValue === '' || rawValue === '.') {
-      setDisplayValue(rawValue)
-      onChange(rawValue)
-      return
-    }
-
-    const parsedValue = parseFloat(rawValue)
-    if (isNaN(parsedValue)) return
-
-    // Handle precision
-    const [whole, decimal] = rawValue.split('.')
-    let formattedValue = rawValue
-    if (decimal && decimal.length > precision) {
-      formattedValue = `${whole}.${decimal.slice(0, precision)}`
-    }
-
-    if (max !== undefined && parsedValue > max) {
-      formattedValue = max.toString()
-    }
-
-    setDisplayValue(formattedValue)
-    onChange(formattedValue)
-  }
-
-  // Add a new function to handle blur event
-  const handleBlur = () => {
-    setIsFocused(false)
-
-    if (!value) {
-      setDisplayValue('')
-      return
-    }
-
-    const parsedValue = parseFloat(value)
-    if (isNaN(parsedValue)) {
-      setDisplayValue(formatNumberWithCommas(value))
-      return
-    }
-
-    // Don't apply min constraints on blur - let the form submission handle it
-    // Only apply max constraints to prevent errors
-    let finalValue = value
-    if (max !== undefined && parsedValue > max) {
-      finalValue = max.toString()
-      onChange(finalValue)
-    }
-
-    setDisplayValue(formatNumberWithCommas(finalValue))
-  }
-
-  return (
-    <div className={className}>
-      <div className="flex justify-between items-center mb-2">
-        <label className="block text-sm font-medium text-gray-300">
-          {label}
-        </label>
-        <span className="text-sm text-gray-400">
-          {value ? formatSliderValue(parseFloat(value || '0'), precision) : ''}
-        </span>
-      </div>
-      <div className="relative">
-        <input
-          className={`w-full px-4 py-3 bg-gray-700/50 border ${
-            error ? 'border-red-500' : 'border-gray-600'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white`}
-          onBlur={handleBlur}
-          onChange={handleChange}
-          onFocus={() => {
-            setIsFocused(true)
-            setDisplayValue(parseNumberWithCommas(value))
-          }}
-          placeholder={placeholder}
-          type="text"
-          value={
-            isFocused ? displayValue : formatNumberWithCommas(displayValue)
-          }
-        />
-        {error && <p className="absolute text-sm text-red-500 mt-1">{error}</p>}
-      </div>
-      {showSlider && (
-        <input
-          className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer mt-4 accent-blue-500"
-          max={max}
-          min={min}
-          onChange={onSliderChange}
-          step={sliderStep}
-          type="range"
-          value={sliderValue}
-        />
-      )}
-    </div>
-  )
-}
 
 export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
   const dispatch = useAppDispatch()
@@ -226,20 +55,24 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     useState<number>(MIN_CHANNEL_CAPACITY)
   const [effectiveMaxCapacity, setEffectiveMaxCapacity] =
     useState<number>(MAX_CHANNEL_CAPACITY)
+  const [fees, setFees] = useState<ChannelFees | null>(null)
+  const [isLoadingFees, setIsLoadingFees] = useState(false)
 
   const { handleSubmit, setValue, control, watch, formState } =
     useForm<FormFields>({
       defaultValues: {
-        assetAmount: '',
         assetId: '',
-        capacitySat: '',
-        channelExpireBlocks: 4320,
-        clientBalanceSat: '',
+        capacitySat: '100000', // Default to 100,000 sats
+        channelExpireBlocks: 12960, // Default to 3 months (12960 blocks)
+        clientBalanceSat: '20000', // Default to 20,000 sats inbound liquidity
+        lspAssetAmount: '',
       },
       resolver: zodResolver(FormFieldsSchema),
     })
 
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
+  const [estimateFeesRequest] = makerApi.endpoints.estimate_fees.useLazyQuery()
+  const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const assetId = watch('assetId')
 
@@ -350,12 +183,24 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         return
       }
 
+      // Validate that selected asset is supported by LSP
+      if (addAsset && data.assetId && !assetMap[data.assetId]) {
+        toast.error(
+          'The selected asset is not supported by this LSP. Please refresh and select a supported asset.',
+          {
+            autoClose: 5000,
+            position: 'bottom-right',
+          }
+        )
+        return
+      }
+
       if (
         addAsset &&
         data.assetId &&
-        (data.assetAmount === '' || data.assetAmount === '0')
+        (data.lspAssetAmount === '' || data.lspAssetAmount === '0')
       ) {
-        toast.error('Please enter an amount before proceeding.', {
+        toast.error('Please enter an asset amount before proceeding.', {
           autoClose: 5000,
           position: 'bottom-right',
         })
@@ -405,7 +250,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         )
       }
 
-      let assetAmount = data.assetAmount || ''
+      // Validate and parse LSP asset amount
+      let parsedLspAssetAmount = 0
       if (addAsset && data.assetId) {
         const assetInfo = assetMap[data.assetId]
         if (assetInfo) {
@@ -413,17 +259,17 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
           const maxAssetAmount =
             assetInfo.max_channel_amount / Math.pow(10, assetInfo.precision)
-          const parsedAmount = parseFloat(assetAmount || '0')
+          const parsedAmount = parseFloat(data.lspAssetAmount || '0')
 
           // Validate minimum amount
           if (
             (parsedAmount !== 0 && isNaN(parsedAmount)) ||
             (parsedAmount > 0 && parsedAmount < minAssetAmount)
           ) {
-            assetAmount = minAssetAmount.toString()
-            setValue('assetAmount', assetAmount)
+            const adjustedAmount = minAssetAmount.toString()
+            setValue('lspAssetAmount', adjustedAmount)
             toast.info(
-              `Asset amount adjusted to minimum: ${formatNumberWithCommas(assetAmount)} ${assetInfo.ticker}`,
+              `Asset amount adjusted to minimum: ${formatNumberWithCommas(adjustedAmount)} ${assetInfo.ticker}`,
               {
                 autoClose: 3000,
                 position: 'bottom-right',
@@ -443,19 +289,20 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             return // PREVENT form submission
           }
         }
+
+        // Parse asset amount (all goes to LSP for receiving)
+        parsedLspAssetAmount = parseAssetAmount(
+          data.lspAssetAmount || '0',
+          data.assetId
+        )
       }
 
-      const parsedAssetAmount =
-        addAsset && data.assetId
-          ? parseAssetAmount(assetAmount, data.assetId)
-          : 0
-
       const submissionData: TChannelRequestForm = {
-        assetAmount: parsedAssetAmount,
         assetId: data.assetId || '',
         capacitySat: parsedCapacitySat,
         channelExpireBlocks: data.channelExpireBlocks,
         clientBalanceSat: parsedClientBalanceSat,
+        lspAssetAmount: parsedLspAssetAmount,
       }
 
       try {
@@ -495,7 +342,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               setValue('clientBalanceSat', minValue.toString())
               madeAdjustments = true
             } else if (
-              path === 'assetAmount' &&
+              path === 'lspAssetAmount' &&
               addAsset &&
               data.assetId &&
               assetMap[data.assetId]
@@ -503,9 +350,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               const assetInfo = assetMap[data.assetId]
               const minAssetAmount =
                 assetInfo.min_channel_amount / Math.pow(10, assetInfo.precision)
-              adjustedData.assetAmount =
+              adjustedData.lspAssetAmount =
                 minAssetAmount * Math.pow(10, assetInfo.precision)
-              setValue('assetAmount', minAssetAmount.toString())
+              setValue('lspAssetAmount', minAssetAmount.toString())
               madeAdjustments = true
             }
           })
@@ -544,22 +391,94 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     ]
   )
 
-  const getChannelExpiryOptions = useCallback(() => {
-    const options = [
-      { label: '1 month', value: '4320' },
-      { label: '3 months', value: '12960' },
-    ]
+  // Fetch fee estimates when channel parameters change
+  useEffect(() => {
+    const fetchFees = async () => {
+      const capacitySat = watch('capacitySat')
+      const clientBalanceSat = watch('clientBalanceSat')
+      const channelExpireBlocks = watch('channelExpireBlocks')
+      const assetId = watch('assetId')
+      const lspAssetAmount = watch('lspAssetAmount')
 
-    const sixMonthsBlocks = 25920 // 6 * 24 * 30 * 6
-    if (
-      !lspOptions ||
-      sixMonthsBlocks <= lspOptions.max_channel_expiry_blocks
-    ) {
-      options.push({ label: '6 months', value: sixMonthsBlocks.toString() })
+      // Only fetch if we have valid basic parameters
+      if (!capacitySat || !clientBalanceSat || isLoading) {
+        return
+      }
+
+      const parsedCapacity = parseInt(capacitySat.replace(/[^0-9]/g, ''), 10)
+      const parsedClientBalance = parseInt(
+        clientBalanceSat.replace(/[^0-9]/g, ''),
+        10
+      )
+
+      if (isNaN(parsedCapacity) || isNaN(parsedClientBalance)) {
+        return
+      }
+
+      const lspBalance = parsedCapacity - parsedClientBalance
+
+      try {
+        setIsLoadingFees(true)
+
+        // Get node info to get pubkey
+        const nodeInfoResponse = await nodeInfoRequest()
+        const clientPubKey = nodeInfoResponse.data?.pubkey
+
+        if (!clientPubKey) {
+          // Node not ready yet, skip fee estimation
+          setIsLoadingFees(false)
+          return
+        }
+
+        const request: any = {
+          announce_channel: false,
+          channel_expiry_blocks: channelExpireBlocks,
+          client_balance_sat: parsedClientBalance,
+          client_pubkey: clientPubKey,
+          funding_confirms_within_blocks: 6,
+          lsp_balance_sat: lspBalance,
+          refund_onchain_address: '',
+          required_channel_confirmations: 1,
+        }
+
+        // Add asset parameters if an asset is selected
+        if (addAsset && assetId && lspAssetAmount && assetMap[assetId]) {
+          const parsedAssetAmount = parseAssetAmount(lspAssetAmount, assetId)
+          request.asset_id = assetId
+          request.lsp_asset_amount = parsedAssetAmount
+          request.client_asset_amount = 0
+        }
+
+        const response = await estimateFeesRequest(request)
+
+        if (response.data) {
+          setFees(response.data)
+        }
+      } catch (error) {
+        console.error('Error fetching fees:', error)
+        // Don't show error toast - fees are just estimates
+      } finally {
+        setIsLoadingFees(false)
+      }
     }
 
-    return options
-  }, [lspOptions])
+    // Debounce the fee fetching to avoid too many requests
+    const timeoutId = setTimeout(fetchFees, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [
+    watch('capacitySat'),
+    watch('clientBalanceSat'),
+    watch('channelExpireBlocks'),
+    watch('assetId'),
+    watch('lspAssetAmount'),
+    addAsset,
+    isLoading,
+    estimateFeesRequest,
+    nodeInfoRequest,
+    parseAssetAmount,
+    assetMap,
+  ])
 
   return (
     <div className="w-full">
@@ -568,10 +487,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Configure Your Channel
           </h2>
-          <p className="text-gray-400 mt-2">Set up your channel parameters</p>
-          <p className="text-gray-400 mt-1">
-            Fees will be calculated in the next step based on all parameters
-            including channel capacity, duration, and assets
+          <p className="text-gray-400 mt-2">
+            Set up your channel parameters and capacity
           </p>
         </div>
 
@@ -617,564 +534,122 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           className="bg-gray-900 text-white p-4 rounded-lg shadow-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <h3 className="text-2xl font-bold mb-4 text-center">
-            Request an RGB Channel from LSP
-          </h3>
-          <h4 className="text-lg font-semibold mb-4 text-center text-gray-300">
-            Select asset and amount for the requested channel
-          </h4>
-
           {isLoading ? (
             <div className="text-center">Loading...</div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <label className="block text-sm font-medium mb-2">
-                  Channel Capacity (sats)
-                  <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                    ⓘ
-                    <span
-                      className="invisible group-hover:visible absolute left-0 
-                      bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                      shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      The total size of your Lightning channel in satoshis. Min:{' '}
-                      {effectiveMinCapacity.toLocaleString()} sats Max:{' '}
-                      {effectiveMaxCapacity.toLocaleString()} sats. This
-                      determines the maximum amount you can send or receive
-                      through this channel. You'll need to pay fees based on
-                      this capacity.
-                    </span>
-                  </span>
-                </label>
-                <NumberInput
-                  className="group transition-all duration-300 hover:translate-x-1"
-                  error={formState.errors.capacitySat?.message}
-                  label=""
-                  max={effectiveMaxCapacity}
-                  min={effectiveMinCapacity}
-                  onChange={(value) => setValue('capacitySat', value)}
-                  onSliderChange={(e) =>
-                    setValue('capacitySat', e.target.value)
+              {/* Bitcoin Channel Configuration */}
+              <BitcoinChannelSection
+                capacityPresets={[50000, 100000, 500000, 1000000]}
+                clientBalance={
+                  watch('clientBalanceSat')
+                    ? parseInt(
+                        parseNumberWithCommas(watch('clientBalanceSat')) || '0',
+                        10
+                      )
+                    : 0
+                }
+                containerClassName="bg-gray-800 p-4 rounded-lg"
+                maxCapacity={effectiveMaxCapacity}
+                maxClientBalance={Math.min(
+                  parseInt(
+                    parseNumberWithCommas(watch('capacitySat')) || '0',
+                    10
+                  ),
+                  lspOptions?.max_initial_client_balance_sat ||
+                    Number.MAX_SAFE_INTEGER
+                )}
+                minCapacity={effectiveMinCapacity}
+                minClientBalance={
+                  lspOptions?.min_initial_client_balance_sat || 0
+                }
+                onCapacityChange={(capacity) => {
+                  setValue('capacitySat', capacity.toString())
+                  // Adjust client balance if it exceeds new capacity
+                  const currentClientBalance = parseInt(
+                    parseNumberWithCommas(watch('clientBalanceSat')) || '0',
+                    10
+                  )
+                  if (currentClientBalance > capacity) {
+                    setValue(
+                      'clientBalanceSat',
+                      Math.floor(capacity / 2).toString()
+                    )
                   }
-                  placeholder="Enter amount"
-                  showSlider
-                  sliderStep={1000}
-                  sliderValue={
-                    watch('capacitySat')
-                      ? parseInt(
-                          parseNumberWithCommas(watch('capacitySat')) || '0',
-                          10
-                        )
-                      : effectiveMinCapacity
-                  }
-                  value={watch('capacitySat')}
-                />
-              </div>
+                }}
+                onClientBalanceChange={(value) =>
+                  setValue('clientBalanceSat', value.toString())
+                }
+                totalCapacity={
+                  watch('capacitySat')
+                    ? parseInt(
+                        parseNumberWithCommas(watch('capacitySat')) || '0',
+                        10
+                      )
+                    : 0
+                }
+              />
 
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <label className="block text-sm font-medium mb-2">
-                  Your Channel Liquidity (sats)
-                  <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                    ⓘ
-                    <span
-                      className="invisible group-hover:visible absolute left-0 
-                      bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                      shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      Also known as outbound liquidity - the amount of satoshis
-                      you'll have available to send. The remaining capacity will
-                      be on the LSP side for receiving payments. Min:{' '}
-                      {lspOptions?.min_initial_client_balance_sat.toLocaleString() ||
-                        0}{' '}
-                      sats, Max:{' '}
-                      {Math.min(
-                        lspOptions?.max_initial_client_balance_sat ||
-                          Number.MAX_SAFE_INTEGER,
-                        effectiveMaxCapacity
-                      ).toLocaleString()}{' '}
-                      sats (or your chosen channel capacity). You'll need to pay
-                      for this liquidity - fees will be shown in the next step.
-                    </span>
-                  </span>
-                </label>
-                <NumberInput
-                  className="group transition-all duration-300 hover:translate-x-1"
-                  error={formState.errors.clientBalanceSat?.message}
-                  label=""
-                  max={Math.min(
-                    parseInt(
-                      parseNumberWithCommas(watch('capacitySat')) || '0',
-                      10
-                    ),
-                    lspOptions?.max_initial_client_balance_sat ||
-                      Number.MAX_SAFE_INTEGER
-                  )}
-                  min={lspOptions?.min_initial_client_balance_sat || 0}
-                  onChange={(value) => setValue('clientBalanceSat', value)}
-                  onSliderChange={(e) =>
-                    setValue('clientBalanceSat', e.target.value)
-                  }
-                  placeholder="Enter amount"
-                  showSlider
-                  sliderStep={1000}
-                  sliderValue={
-                    watch('clientBalanceSat')
-                      ? parseInt(
-                          parseNumberWithCommas(watch('clientBalanceSat')) ||
-                            '0',
-                          10
-                        )
-                      : lspOptions?.min_initial_client_balance_sat || 0
-                  }
-                  value={watch('clientBalanceSat')}
-                />
-              </div>
+              <ChannelDurationSelector
+                containerClassName="bg-gray-800 p-4 rounded-lg"
+                control={control}
+                maxExpiryBlocks={lspOptions?.max_channel_expiry_blocks}
+                onChange={(value) => setValue('channelExpireBlocks', value)}
+                theme="dark"
+                value={watch('channelExpireBlocks')}
+              />
 
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <label className="block text-sm font-medium mb-2">
-                  Channel Lock Duration
-                  <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                    ⓘ
-                    <span
-                      className="invisible group-hover:visible absolute left-0 
-                      bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                      shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      The minimum time the LSP guarantees to keep your channel
-                      open. Longer durations provide more stability but may
-                      affect fees. 1 week = 1,008 blocks 1 month = 4,320 blocks
-                      6 months = 25,920 blocks. Max:{' '}
-                      {lspOptions?.max_channel_expiry_blocks.toLocaleString() ||
-                        0}{' '}
-                      blocks.
-                    </span>
-                  </span>
-                </label>
-                <Controller
-                  control={control}
-                  name="channelExpireBlocks"
-                  render={({ field }) => (
-                    <Select
-                      active={field.value.toString()}
-                      onSelect={(value) => field.onChange(parseInt(value))}
-                      options={getChannelExpiryOptions()}
-                      theme="dark"
-                    />
-                  )}
-                />
-              </div>
-
+              {/* Asset Configuration Section - Separate from Bitcoin */}
               <div className="bg-gray-800 p-4 rounded-lg">
                 <label className="flex items-center space-x-3 mb-4">
                   <input
                     checked={addAsset}
                     className="form-checkbox h-5 w-5 text-purple-500"
-                    onChange={(e) => setAddAsset(e.target.checked)}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setAddAsset(checked)
+                      // Clear asset values when unchecking
+                      if (!checked) {
+                        setValue('assetId', '')
+                        setValue('lspAssetAmount', '')
+                      }
+                    }}
                     type="checkbox"
                   />
-                  <span className="text-lg font-medium">Add Asset</span>
-                  <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                    ⓘ
-                    <span
-                      className="invisible group-hover:visible absolute left-0 
-                      bg-gray-900 text-white text-sm rounded py-1 px-2 w-96
-                      shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      Adding an RGB asset enables you to receive that asset
-                      through this channel. The amount you specify will be held
-                      by the LSP, determining how much you can receive.
-                    </span>
+                  <span className="text-lg font-medium">
+                    Add Asset to Channel
                   </span>
                 </label>
 
                 {addAsset && (
-                  <div className="space-y-4">
-                    {Object.keys(assetMap).length === 0 ? (
-                      <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-4">
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0">
-                            <svg
-                              className="h-5 w-5 text-yellow-400"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                clipRule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                fillRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <h3 className="text-sm font-medium text-yellow-200">
-                              No Assets Available
-                            </h3>
-                            <div className="mt-2 text-sm text-yellow-300">
-                              <p>
-                                There are currently no assets available to add
-                                to your channel. Please try again later or
-                                proceed without adding an asset.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Select Asset
-                            <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
-                              ⓘ
-                              <span
-                                className="invisible group-hover:visible absolute left-0 
-                                bg-gray-900 text-white text-sm rounded py-1 px-2 w-80
-                                shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                              >
-                                Choose an RGB asset to add to your channel. The
-                                selected amount will be on the LSP side,
-                                allowing you to receive the asset. Additional
-                                fees will apply based on the asset type and
-                                amount.
-                              </span>
-                            </span>
-                          </label>
-                          <Controller
-                            control={control}
-                            name="assetId"
-                            render={({ field }) => (
-                              <AssetSelectWithModal
-                                className="w-full"
-                                fieldLabel="Choose an RGB asset for your LSP channel"
-                                onChange={field.onChange}
-                                options={Object.entries(assetMap).map(
-                                  ([assetId, assetInfo]) => ({
-                                    assetId: assetId,
-                                    label: assetInfo.name,
-                                    name: assetInfo.name,
-                                    ticker: assetInfo.ticker,
-                                    value: assetId,
-                                  })
-                                )}
-                                placeholder="Select an RGB asset"
-                                searchPlaceholder="Search by name, ticker or asset ID..."
-                                title="Select RGB Asset"
-                                value={field.value}
-                              />
-                            )}
-                          />
-                        </div>
-
-                        {assetId && (
-                          <div className="space-y-4">
-                            {/* Enhanced Asset Amount Input */}
-                            <div className="space-y-3">
-                              <label className="text-sm font-medium text-slate-300">
-                                Asset Amount
-                              </label>
-
-                              {assetMap[assetId] && (
-                                <div className="space-y-4">
-                                  {/* Enhanced Asset Preview Card */}
-                                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                                    {/* Asset Header with Icon */}
-                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-700/50">
-                                      <img
-                                        alt={assetMap[assetId].ticker}
-                                        className="w-10 h-10 rounded-full border-2 border-slate-600/50"
-                                        onError={() =>
-                                          setAssetIconSrc(defaultIcon)
-                                        }
-                                        src={assetIconSrc}
-                                      />
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-lg font-semibold text-white">
-                                            {assetMap[assetId].ticker}
-                                          </span>
-                                          <span className="text-sm text-slate-400">
-                                            ({assetMap[assetId].name})
-                                          </span>
-                                        </div>
-                                        <div className="text-xs text-slate-500">
-                                          {assetMap[assetId].precision} decimal
-                                          places
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {/* Maximum Amount */}
-                                      <div className="space-y-1">
-                                        <div className="text-xs text-slate-400">
-                                          Maximum Amount
-                                        </div>
-                                        <div className="text-sm font-medium text-green-400">
-                                          {(() => {
-                                            const maxAmount =
-                                              assetMap[assetId]
-                                                .max_channel_amount /
-                                              Math.pow(
-                                                10,
-                                                assetMap[assetId].precision
-                                              )
-                                            return formatNumberWithCommas(
-                                              maxAmount.toString()
-                                            )
-                                          })()}{' '}
-                                          {assetMap[assetId].ticker}
-                                        </div>
-                                      </div>
-
-                                      {/* Asset ID */}
-                                      <div className="space-y-1">
-                                        <div className="text-xs text-slate-400">
-                                          Asset ID
-                                        </div>
-                                        <div
-                                          className="text-xs font-mono text-slate-300 break-all bg-slate-900/50 p-2 rounded border border-slate-700/30"
-                                          title={assetMap[assetId].asset_id}
-                                        >
-                                          {assetMap[assetId].asset_id}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Improved Amount Input */}
-                                  <div className="space-y-2">
-                                    <input
-                                      className={twJoin(
-                                        'w-full px-4 py-3 bg-slate-900/70 border rounded-xl',
-                                        'text-white text-lg font-medium placeholder:text-slate-500',
-                                        'border-slate-600/50 hover:border-slate-500/70',
-                                        'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
-                                        'transition-all duration-200'
-                                      )}
-                                      inputMode="decimal"
-                                      onBlur={(e) => {
-                                        // Validate max amount when user finishes typing
-                                        const value = e.target.value
-                                        if (value && assetMap[assetId]) {
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          const numValue = parseFloat(value)
-                                          if (
-                                            !isNaN(numValue) &&
-                                            numValue > maxAssetAmount
-                                          ) {
-                                            setValue(
-                                              'assetAmount',
-                                              maxAssetAmount.toString()
-                                            )
-                                            toast.warn(
-                                              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Value has been adjusted.`,
-                                              {
-                                                autoClose: 4000,
-                                                position: 'bottom-right',
-                                              }
-                                            )
-                                          }
-                                        }
-                                      }}
-                                      onChange={(e) => {
-                                        const value = e.target.value
-                                        // Allow empty input
-                                        if (value === '') {
-                                          setValue('assetAmount', '')
-                                          return
-                                        }
-
-                                        // Prevent alpha characters - only allow numbers, decimal point
-                                        if (!/^[\d.]*$/.test(value)) {
-                                          return // Reject input with letters or special chars
-                                        }
-
-                                        // Basic decimal validation
-                                        const decimalRegex =
-                                          assetMap[assetId].precision > 0
-                                            ? new RegExp(
-                                                `^\\d*\\.?\\d{0,${assetMap[assetId].precision}}$`
-                                              )
-                                            : /^\d*$/
-
-                                        if (decimalRegex.test(value)) {
-                                          // Check against maximum amount before setting value
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          const numValue = parseFloat(value)
-
-                                          // Prevent typing amounts that exceed maximum
-                                          if (
-                                            !isNaN(numValue) &&
-                                            numValue > maxAssetAmount
-                                          ) {
-                                            // Don't update the input if it would exceed max
-                                            toast.warn(
-                                              `Maximum amount is ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}`,
-                                              {
-                                                autoClose: 2000,
-                                                position: 'bottom-right',
-                                              }
-                                            )
-                                            return
-                                          }
-
-                                          setValue('assetAmount', value)
-                                        }
-                                      }}
-                                      onKeyDown={(e) => {
-                                        // Prevent entering non-numeric characters via keyboard
-                                        const allowedKeys = [
-                                          'Backspace',
-                                          'Delete',
-                                          'Tab',
-                                          'Escape',
-                                          'Enter',
-                                          'ArrowLeft',
-                                          'ArrowRight',
-                                          'ArrowUp',
-                                          'ArrowDown',
-                                          'Home',
-                                          'End',
-                                        ]
-
-                                        // Allow Ctrl/Cmd combinations
-                                        if (e.ctrlKey || e.metaKey) {
-                                          return
-                                        }
-
-                                        // Allow decimal point only if precision > 0 and not already present
-                                        if (
-                                          e.key === '.' &&
-                                          assetMap[assetId].precision > 0 &&
-                                          !watch('assetAmount').includes('.')
-                                        ) {
-                                          return
-                                        }
-
-                                        // Allow numbers
-                                        if (/^\d$/.test(e.key)) {
-                                          return
-                                        }
-
-                                        // Allow special keys
-                                        if (allowedKeys.includes(e.key)) {
-                                          return
-                                        }
-
-                                        // Prevent all other keys
-                                        e.preventDefault()
-                                      }}
-                                      placeholder={`0.${'0'.repeat(assetMap[assetId].precision)}`}
-                                      type="text"
-                                      value={watch('assetAmount')}
-                                    />
-
-                                    {/* Quick amount buttons */}
-                                    <div className="flex gap-2">
-                                      <button
-                                        className={twJoin(
-                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                          'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white',
-                                          'border border-slate-600/30 hover:border-slate-500/50'
-                                        )}
-                                        onClick={() =>
-                                          setValue('assetAmount', '')
-                                        }
-                                        type="button"
-                                      >
-                                        Clear
-                                      </button>
-                                      <button
-                                        className={twJoin(
-                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
-                                          'border border-blue-500/30 hover:border-blue-500/50'
-                                        )}
-                                        onClick={() => {
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          const amount = (
-                                            maxAssetAmount * 0.25
-                                          ).toFixed(assetInfo.precision)
-                                          setValue('assetAmount', amount)
-                                        }}
-                                        type="button"
-                                      >
-                                        25%
-                                      </button>
-                                      <button
-                                        className={twJoin(
-                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                          'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
-                                          'border border-blue-500/30 hover:border-blue-500/50'
-                                        )}
-                                        onClick={() => {
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          const amount = (
-                                            maxAssetAmount * 0.5
-                                          ).toFixed(assetInfo.precision)
-                                          setValue('assetAmount', amount)
-                                        }}
-                                        type="button"
-                                      >
-                                        50%
-                                      </button>
-                                      <button
-                                        className={twJoin(
-                                          'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                          'bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300',
-                                          'border border-green-500/30 hover:border-green-500/50'
-                                        )}
-                                        onClick={() => {
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          const amount = maxAssetAmount.toFixed(
-                                            assetInfo.precision
-                                          )
-                                          setValue('assetAmount', amount)
-                                        }}
-                                        type="button"
-                                      >
-                                        Max (
-                                        {(() => {
-                                          const assetInfo = assetMap[assetId]
-                                          const maxAssetAmount =
-                                            assetInfo.max_channel_amount /
-                                            Math.pow(10, assetInfo.precision)
-                                          return formatNumberWithCommas(
-                                            maxAssetAmount.toString()
-                                          )
-                                        })()}
-                                        )
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <AssetChannelSection
+                    assetMap={assetMap}
+                    containerClassName=""
+                    control={control}
+                    onAssetChange={(value) => setValue('assetId', value)}
+                    onTotalAssetAmountChange={(value) =>
+                      setValue('lspAssetAmount', value.toString())
+                    }
+                    selectLabel="Select Asset"
+                    selectedAssetId={assetId}
+                    totalAssetAmount={
+                      watch('lspAssetAmount')
+                        ? parseFloat(watch('lspAssetAmount'))
+                        : 0
+                    }
+                  />
                 )}
               </div>
             </div>
+          )}
+
+          {/* Fee Estimate Section */}
+          {fees && (
+            <FeeBreakdownDisplay
+              containerClassName="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg p-6 mt-6"
+              fees={fees}
+              isLoading={isLoadingFees}
+            />
           )}
 
           <div className="flex justify-between space-x-4 mt-6">

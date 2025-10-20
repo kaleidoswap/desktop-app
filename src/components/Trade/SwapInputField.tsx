@@ -32,6 +32,7 @@ interface SwapInputFieldProps {
   formatAmount: (amount: number, asset: string) => string
   getDisplayAsset: (asset: string) => string
   showMinAmount?: boolean
+  showMaxAmount?: boolean
   showMaxHtlc?: boolean
   showSizeButtons?: boolean
   selectedSize?: number | undefined
@@ -59,6 +60,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   formatAmount,
   getDisplayAsset,
   showMinAmount = false,
+  showMaxAmount = false,
   showMaxHtlc = false,
   showSizeButtons,
   selectedSize,
@@ -292,7 +294,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
         </div>
 
         {/* Enhanced Footer Section */}
-        {(showMinAmount || showMaxHtlc) && (
+        {(showMinAmount || showMaxAmount || showMaxHtlc) && (
           <div className="px-4 pb-4">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
               {showMinAmount && minAmount && (
@@ -300,6 +302,14 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                   <span className="text-slate-500">Min:</span>{' '}
                   <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
                     {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
+                  </span>
+                </div>
+              )}
+              {showMaxAmount && maxAmount && (
+                <div className={`text-slate-400 ${amountAnimationClass}`}>
+                  <span className="text-slate-500">Max:</span>{' '}
+                  <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
+                    {formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}
                   </span>
                 </div>
               )}

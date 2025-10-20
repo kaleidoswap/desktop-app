@@ -1,4 +1,4 @@
-import { Copy, AlertCircle, ArrowRight } from 'lucide-react'
+import { Copy, AlertCircle, ArrowRight, SkipForward } from 'lucide-react'
 
 import { Button, Card, Alert } from '../ui'
 
@@ -6,12 +6,14 @@ interface MnemonicDisplayProps {
   mnemonic: string[]
   onCopy: () => void
   onNext: () => void
+  onSkip?: () => void
 }
 
 export const MnemonicDisplay = ({
   mnemonic,
   onCopy,
   onNext,
+  onSkip,
 }: MnemonicDisplayProps) => {
   return (
     <div className="w-full">
@@ -48,29 +50,44 @@ export const MnemonicDisplay = ({
           ))}
         </div>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          {/* Copy Button */}
-          <Button
-            className="text-cyan border-cyan/20 hover:bg-cyan/10"
-            icon={<Copy className="w-4 h-4" />}
-            onClick={onCopy}
-            size="md"
-            variant="outline"
-          >
-            Copy Recovery Phrase
-          </Button>
+        <div className="mt-6 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Copy Button */}
+            <Button
+              className="text-cyan border-cyan/20 hover:bg-cyan/10"
+              icon={<Copy className="w-4 h-4" />}
+              onClick={onCopy}
+              size="md"
+              variant="outline"
+            >
+              Copy Recovery Phrase
+            </Button>
 
-          {/* Next Button */}
-          <Button
-            className="flex-1"
-            icon={<ArrowRight className="w-4 h-4" />}
-            iconPosition="right"
-            onClick={onNext}
-            size="md"
-            variant="primary"
-          >
-            I've Securely Saved My Recovery Phrase
-          </Button>
+            {/* Next Button */}
+            <Button
+              className="flex-1"
+              icon={<ArrowRight className="w-4 h-4" />}
+              iconPosition="right"
+              onClick={onNext}
+              size="md"
+              variant="primary"
+            >
+              I've Securely Saved My Recovery Phrase
+            </Button>
+          </div>
+
+          {/* Skip Button */}
+          {onSkip && (
+            <Button
+              className="w-full text-slate-400 border-slate-700/50 hover:bg-slate-800/50 hover:text-slate-300 hover:border-slate-600"
+              icon={<SkipForward className="w-4 h-4" />}
+              onClick={onSkip}
+              size="md"
+              variant="outline"
+            >
+              Skip Backup (Not Recommended)
+            </Button>
+          )}
         </div>
       </Card>
     </div>

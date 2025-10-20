@@ -7,6 +7,7 @@ import {
   RefreshCw,
   Plug,
   Clock,
+  ShoppingCart,
 } from 'lucide-react'
 import React from 'react'
 import { twJoin } from 'tailwind-merge'
@@ -22,6 +23,11 @@ interface SwapButtonProps {
   isSwapInProgress: boolean
   hasZeroAmount?: boolean
   hasValidQuote?: boolean
+  missingChannelAsset?: {
+    asset: string
+    assetId: string
+    isFromAsset: boolean
+  } | null
 }
 
 export const SwapButton: React.FC<SwapButtonProps> = ({
@@ -35,9 +41,17 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   isSwapInProgress,
   hasZeroAmount = false,
   hasValidQuote = false,
+  missingChannelAsset = null,
 }) => {
+  // Check if we have an unconfirmed channel (channel pending confirmation)
+  const hasUnconfirmedChannel = errorMessage?.includes('awaiting confirmation')
+
   const getButtonText = () => {
     if (!wsConnected) return 'Connecting...'
+    // Only show "Buy channel" if there's truly no channel (not just unconfirmed)
+    if (missingChannelAsset && !hasUnconfirmedChannel) {
+      return `Buy ${missingChannelAsset.asset} in Channel`
+    }
     if (isQuoteLoading && !hasValidQuote) return 'Getting Latest Quote...'
     if (!hasValidQuote && (isToAmountLoading || isPriceLoading))
       return 'Preparing Swap...'
@@ -46,6 +60,9 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     if (errorMessage) {
       if (errorMessage.includes('You can only receive up to')) {
         return 'Exceeds Max Receivable'
+      }
+      if (hasUnconfirmedChannel) {
+        return 'Channel Awaiting Confirmation'
       }
       return 'Invalid Amount'
     }
@@ -57,9 +74,13 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
 
   const getButtonIcon = () => {
     if (!wsConnected) return <Plug className="w-5 h-5" />
+    // Only show shopping cart if there's truly no channel (not just unconfirmed)
+    if (missingChannelAsset && !hasUnconfirmedChannel)
+      return <ShoppingCart className="w-5 h-5" />
     if (isLoading) return <Loader2 className="w-5 h-5 animate-spin" />
     if (!hasChannels) return <Ban className="w-5 h-5" />
     if (!hasTradablePairs) return <Ban className="w-5 h-5" />
+    if (hasUnconfirmedChannel) return <Clock className="w-5 h-5" />
     if (errorMessage) return <AlertCircle className="w-5 h-5" />
     if (hasZeroAmount) return <Wallet className="w-5 h-5" />
     if (isSwapInProgress) return <RefreshCw className="w-5 h-5 animate-spin" />
@@ -70,15 +91,17 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   }
 
   const isDisabled =
-    !wsConnected ||
-    (isQuoteLoading && !hasValidQuote) ||
-    (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
-    !!errorMessage ||
-    !hasChannels ||
-    !hasTradablePairs ||
-    isSwapInProgress ||
-    hasZeroAmount ||
-    !hasValidQuote
+    (!wsConnected ||
+      (isQuoteLoading && !hasValidQuote) ||
+      (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
+      !!errorMessage ||
+      !hasChannels ||
+      !hasTradablePairs ||
+      isSwapInProgress ||
+      hasZeroAmount ||
+      !hasValidQuote) &&
+    // Allow clicking when channel is missing BUT NOT when it's just unconfirmed
+    !(missingChannelAsset && !hasUnconfirmedChannel)
 
   const isLoading =
     (isQuoteLoading && !hasValidQuote) ||
@@ -86,7 +109,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     isSwapInProgress
 
   const getButtonVariant = () => {
+    // Only show as actionable (success) if there's truly no channel (not just unconfirmed)
+    if (missingChannelAsset && !hasUnconfirmedChannel) return 'success'
     if (isDisabled) {
+      if (hasUnconfirmedChannel) return 'warning' // Show warning for unconfirmed channels
       if (errorMessage) return 'error'
       if (!hasChannels || !hasTradablePairs) return 'warning'
       return 'disabled'

@@ -4,7 +4,22 @@ import { useNavigate } from 'react-router-dom'
 
 import { CREATEUTXOS_PATH } from '../../app/router/paths'
 import { formatBitcoinAmount } from '../../helpers/number'
-import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { nodeApi, Assignment } from '../../slices/nodeApi/nodeApi.slice'
+
+// Helper function to extract amount from assignment
+const getAssignmentAmount = (assignment: Assignment): number => {
+  switch (assignment.type) {
+    case 'Fungible':
+      return assignment.value
+    case 'InflationRight':
+      return assignment.value
+    case 'Any':
+    case 'NonFungible':
+    case 'ReplaceRight':
+    default:
+      return 0
+  }
+}
 
 interface UTXOManagementModalProps {
   onClose: () => void
@@ -76,18 +91,9 @@ export const UTXOManagementModal = ({
       colorableCount: colorable.length,
       coloredCount: colored.length,
       normalCount: normal.length,
-      totalColorable: colorable.reduce(
-        (sum, u) => sum + parseInt(u.utxo.btc_amount),
-        0
-      ),
-      totalColored: colored.reduce(
-        (sum, u) => sum + parseInt(u.utxo.btc_amount),
-        0
-      ),
-      totalNormal: normal.reduce(
-        (sum, u) => sum + parseInt(u.utxo.btc_amount),
-        0
-      ),
+      totalColorable: colorable.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
+      totalColored: colored.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
+      totalNormal: normal.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
     }
 
     return {
@@ -151,7 +157,7 @@ export const UTXOManagementModal = ({
               key={i}
             >
               <span className="truncate">{allocation.asset_id}</span>
-              <span>{allocation.amount}</span>
+              <span>{getAssignmentAmount(allocation.assignment)}</span>
             </div>
           ))}
         </div>
