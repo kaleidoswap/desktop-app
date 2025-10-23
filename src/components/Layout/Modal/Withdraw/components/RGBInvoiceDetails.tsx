@@ -31,7 +31,9 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
   const assignmentAmount =
     decodedRgbInvoice.assignment?.type === 'Fungible'
       ? decodedRgbInvoice.assignment.value
-      : null
+      : decodedRgbInvoice.assignment?.type === 'InflationRight'
+        ? decodedRgbInvoice.assignment.value
+        : null
 
   const formattedAmount = assignmentAmount
     ? formatAssetAmountWithPrecision(
@@ -61,14 +63,18 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
           </div>
         )}
 
-        {assignmentAmount && (
-          <div className="flex justify-between">
-            <span className="text-slate-400">Amount:</span>
+        <div className="flex justify-between">
+          <span className="text-slate-400">Amount:</span>
+          {assignmentAmount ? (
             <span className="text-white font-bold">
               {formattedAmount} {ticker}
             </span>
-          </div>
-        )}
+          ) : (
+            <span className="text-yellow-400 font-medium text-xs">
+              Not specified - enter below
+            </span>
+          )}
+        </div>
 
         <div className="flex justify-between">
           <span className="text-slate-400">Recipient ID:</span>

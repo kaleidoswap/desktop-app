@@ -19,7 +19,10 @@ import {
   satoshiToBTC,
   BTCtoSatoshi,
 } from '../../../../../helpers/number'
-import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
+import {
+  NiaAsset,
+  Assignment,
+} from '../../../../../slices/nodeApi/nodeApi.slice'
 import { WithdrawFormProps, AssetOption } from '../types'
 
 import { BalanceDisplay } from './BalanceDisplay'
@@ -29,6 +32,25 @@ import { RGBInvoiceDetails } from './RGBInvoiceDetails'
 
 const MSATS_PER_SAT = 1000
 const RGB_HTLC_MIN_SAT = 3000
+
+// Helper function to extract amount from assignment
+const getAssignmentAmount = (
+  assignment: Assignment | null | undefined
+): number | null => {
+  if (!assignment) return null
+
+  switch (assignment.type) {
+    case 'Fungible':
+      return assignment.value
+    case 'InflationRight':
+      return assignment.value
+    case 'Any':
+    case 'NonFungible':
+    case 'ReplaceRight':
+    default:
+      return null
+  }
+}
 
 // NumberInput component similar to the one used in Step2.tsx
 interface NumberInputProps {
@@ -659,7 +681,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {/* Amount Input - Only needed when not specified in invoice */}
           {(addressType === 'bitcoin' ||
             addressType === 'lightning-address' ||
-            (addressType === 'rgb' && !decodedRgbInvoice?.assignment)) && (
+            (addressType === 'rgb' &&
+              getAssignmentAmount(decodedRgbInvoice?.assignment) === null)) && (
             <div className="space-y-1">
               <Controller
                 control={control}
