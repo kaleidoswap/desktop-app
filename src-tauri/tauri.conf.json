@@ -36,6 +36,14 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
+      "nsis": {
+        "language": "English",
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/logo.ico",
+        "installMode": "perUser",
+        "allowDowngrades": true,
+        "deleteAppDataOnUninstall": false
+      },
       "wix": {
         "language": "en-US"
       }
