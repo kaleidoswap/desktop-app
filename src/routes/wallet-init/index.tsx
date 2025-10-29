@@ -388,7 +388,7 @@ export const Component = () => {
       // Now proceed with starting the node
       const nodeStartedPromise = new Promise<void>((resolve, reject) => {
         let unlistenFn: (() => void) | null = null
-        let startTimeout = 30000 // 30 seconds timeout
+        const startTimeout = 30000 // 30 seconds timeout
 
         const timeoutId = setTimeout(async () => {
           if (unlistenFn) unlistenFn()
@@ -636,6 +636,23 @@ export const Component = () => {
       setErrors([])
       setIsNodeError(false)
       setNodeErrorMessage('')
+
+      // Store encrypted mnemonic before proceeding
+      try {
+        const accountName = nodeSetupForm.getValues('name')
+        await invoke('store_encrypted_mnemonic', {
+          accountName,
+          mnemonic: mnemonic.join(' '),
+          password: nodePassword,
+        })
+        console.log('Mnemonic encrypted and stored successfully')
+      } catch (error) {
+        console.error('Failed to store encrypted mnemonic:', error)
+        toast.error(
+          'Failed to securely store recovery phrase. Please try again.'
+        )
+        return
+      }
 
       // Move to unlock step
       handleStepChange('unlock')

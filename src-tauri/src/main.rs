@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, Manager, Window};
 use std::collections::HashMap;
 
+mod crypto;
 mod db;
 mod rgb_node;
 
@@ -165,6 +166,9 @@ fn main() {
             insert_channel_order,
             get_channel_orders,
             delete_channel_order,
+            // Mnemonic encryption commands
+            store_encrypted_mnemonic,
+            get_decrypted_mnemonic,
             // New command
             is_local_node_supported,
             get_markdown_content,
@@ -531,4 +535,51 @@ async fn get_markdown_content(file_path: String) -> Result<String, String> {
         .await
         .map_err(|e| e.to_string())?;
     Ok(content)
+}
+
+/// Store encrypted mnemonic for an account
+/// 
+/// This command encrypts the mnemonic using the user's password and stores it securely
+/// in the database. The encryption uses AES-256-GCM with Argon2id key derivation.
+#[tauri::command]
+fn store_encrypted_mnemonic(
+    account_name: String,
+    mnemonic: String,
+    password: String,
+) -> Result<(), String> {
+    // Encrypt the mnemonic
+    let (encrypted, salt, nonce) = crypto::encrypt_mnemonic(&mnemonic, &password)
+        .map_err(|e| format!("Failed to encrypt mnemonic: {}", e))?;
+    
+    // Store in database
+    db::store_encrypted_mnemonic(&account_name, &encrypted, &salt, &nonce)
+        .map_err(|e| format!("Failed to store encrypted mnemonic: {}", e))?;
+    
+    Ok(())
+}
+
+/// Retrieve and decrypt mnemonic for an account
+/// 
+/// This command retrieves the encrypted mnemonic from the database and decrypts it
+/// using the provided password. Returns an error if the password is incorrect.
+#[tauri::command]
+fn get_decrypted_mnemonic(
+    state: tauri::State<CurrentAccount>,
+    password: String,
+) -> Result<String, String> {
+    // Get current account
+    let current_account = state.0.read().unwrap();
+    let account = current_account.as_ref()
+        .ok_or_else(|| "No account is currently selected.".to_string())?;
+    
+    // Retrieve encrypted mnemonic from database
+    let (encrypted, salt, nonce) = db::get_encrypted_mnemonic(&account.name)
+        .map_err(|e| format!("Failed to retrieve encrypted mnemonic: {}", e))?
+        .ok_or_else(|| "No mnemonic stored for this account.".to_string())?;
+    
+    // Decrypt the mnemonic
+    let mnemonic = crypto::decrypt_mnemonic(&encrypted, &password, &salt, &nonce)
+        .map_err(|e| format!("Failed to decrypt mnemonic: {}. This usually means the password is incorrect.", e))?;
+    
+    Ok(mnemonic)
 }

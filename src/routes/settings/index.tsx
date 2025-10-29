@@ -17,6 +17,8 @@ import {
   Trash2,
   Star,
   RefreshCw,
+  Lock,
+  ArrowRight,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
@@ -29,6 +31,7 @@ import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
 import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
+import { MnemonicViewerModal } from '../../components/MnemonicViewer'
 import {
   ModalType,
   ModalTypeValue,
@@ -80,6 +83,7 @@ export const Component: React.FC = () => {
   const [isShuttingDown, setIsShuttingDown] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
+  const [showMnemonicModal, setShowMnemonicModal] = useState(false)
   const maxLogsFetchRetries = 3
 
   // Replace showModal with unified modal state
@@ -862,6 +866,62 @@ export const Component: React.FC = () => {
 
           {/* Right Column - Node Status and Actions */}
           <div className="space-y-6">
+            {/* Security & Backup Card */}
+            <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <div className="flex items-center gap-2 mb-6">
+                <Shield className="w-5 h-5 text-blue-400" />
+                <h3 className="text-xl font-semibold text-white">
+                  Security & Backup
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                {/* View Recovery Phrase Button */}
+                <button
+                  className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl p-4 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  onClick={() => setShowMnemonicModal(true)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-semibold">
+                          View Recovery Phrase
+                        </div>
+                        <div className="text-sm text-white/70">
+                          Access your encrypted seed phrase
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+
+                {/* Backup Wallet Button */}
+                <button
+                  className="w-full group bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-white rounded-xl p-4 transition-all duration-200"
+                  onClick={() => setShowBackupModal(true)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-600/20 rounded-lg group-hover:bg-blue-600/30 transition-colors">
+                        <Download className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-semibold">Backup Wallet</div>
+                        <div className="text-sm text-gray-400">
+                          Export encrypted wallet backup
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Node Status Card */}
             <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
               <div className="flex items-center gap-2 mb-6">
@@ -915,16 +975,8 @@ export const Component: React.FC = () => {
               </div>
 
               {/* Node Actions */}
-              <div className="space-y-4 mt-6">
-                <button
-                  className="w-full flex items-center justify-center px-4 py-3 bg-[#4361EE] text-white rounded-xl hover:bg-[#3651DE] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-                  onClick={() => setShowBackupModal(true)}
-                >
-                  <Shield className="w-5 h-5 mr-2" />
-                  Backup Wallet
-                </button>
-
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 mt-6">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     className="flex items-center justify-center px-4 py-3 bg-[#2A2D3A] text-white rounded-xl hover:bg-[#363A4B] focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
                     onClick={handleLogout}
@@ -1085,6 +1137,11 @@ export const Component: React.FC = () => {
           </div>
         )}
       </div>
+
+      <MnemonicViewerModal
+        isOpen={showMnemonicModal}
+        onClose={() => setShowMnemonicModal(false)}
+      />
 
       <BackupModal
         backupPath={backupPath}
