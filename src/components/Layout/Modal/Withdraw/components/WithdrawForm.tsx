@@ -309,17 +309,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       const precision = assetInfo?.precision || 8
       const displayAmount = maxRawAmount / Math.pow(10, precision)
 
-      // Debug logging
-      console.log('RGB Asset max calculation:', {
-        assetId,
-        displayAmount,
-        isLightning:
-          addressType === 'lightning' || addressType === 'lightning-address',
-        maxRawAmount,
-        precision,
-        ticker: assetInfo?.ticker,
-      })
-
       return displayAmount
     }
   }
@@ -681,8 +670,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {/* Amount Input - Only needed when not specified in invoice */}
           {(addressType === 'bitcoin' ||
             addressType === 'lightning-address' ||
-            (addressType === 'rgb' &&
-              getAssignmentAmount(decodedRgbInvoice?.assignment) === null)) && (
+            addressType === 'rgb') && (
             <div className="space-y-1">
               <Controller
                 control={control}
