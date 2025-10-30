@@ -18,7 +18,11 @@ import {
 } from '../../../slices/nodeApi/nodeApi.slice'
 
 // Helper function to extract amount from assignment
-const getAssignmentAmount = (assignment: Assignment): number => {
+const getAssignmentAmount = (
+  assignment: Assignment | null | undefined
+): number => {
+  if (!assignment) return 0
+
   switch (assignment.type) {
     case 'Fungible':
       return assignment.value
