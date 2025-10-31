@@ -83,7 +83,7 @@ export const Component = () => {
   const onSubmit: SubmitHandler<Fields> = async (data) => {
     let shouldRetry = true
     let pollingInterval = 2000 // Start with 2 seconds
-    let maxPollingInterval = 15000 // Max 15 seconds
+    const maxPollingInterval = 15000 // Max 15 seconds
     let doubleFetchErrorFlag = false
 
     setIsUnlocking(true)
@@ -189,10 +189,14 @@ export const Component = () => {
           navigate(WALLET_DASHBOARD_PATH)
           shouldRetry = false
         } else {
-          // For any other error that we haven't explicitly handled, retry silently
-          await new Promise((res) => setTimeout(res, pollingInterval))
-          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
-          continue
+          // For any other error that we haven't explicitly handled, show it to the user
+          setUnlockError(errorMessage)
+          setErrors([errorMessage])
+          toast.error(errorMessage, {
+            autoClose: 5000,
+            position: 'top-right',
+          })
+          shouldRetry = false
         }
       }
     }
