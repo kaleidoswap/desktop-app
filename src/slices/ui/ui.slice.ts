@@ -26,12 +26,36 @@ export type SparkL1WithdrawModal = {
   type: 'spark-l1-withdraw'
 }
 
+export type WalletTypeSelectionModal = {
+  type: 'wallet-type-selection'
+  context?: 'setup' | 'dashboard'
+}
+
+export type AddWalletModal = {
+  type: 'add-wallet'
+  walletType?: 'spark' | 'arkade'
+}
+
+export type ManageWalletsModal = {
+  type: 'manage-wallets'
+}
+
+export type UnifiedWalletActionModal = {
+  type: 'unified-wallet-action'
+  action?: 'deposit' | 'withdraw'
+  assetId?: string
+}
+
 type Modal =
   | DepositModal
   | WithdrawModal
   | SparkDepositModal
   | SparkWithdrawModal
   | SparkL1WithdrawModal
+  | WalletTypeSelectionModal
+  | AddWalletModal
+  | ManageWalletsModal
+  | UnifiedWalletActionModal
   | {
       type: 'none'
     }

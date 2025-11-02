@@ -22,7 +22,12 @@ import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
   TRADE_NOSTR_P2P_PATH,
+  TRADE_AMM_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
+  WALLET_HISTORY_WITHDRAWALS_PATH,
+  WALLET_HISTORY_TRADES_PATH,
+  WALLET_HISTORY_ASSETS_PATH,
+  WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   WALLET_HISTORY_PATH,
   WALLET_SETUP_PATH,
   WALLET_RESTORE_PATH,
@@ -75,6 +80,11 @@ export const MAIN_NAV_ITEMS = [
         icon: <Zap className="w-4 h-4" />,
         label: 'Manual Swaps',
         to: TRADE_MANUAL_PATH,
+      },
+      {
+        icon: <Activity className="w-4 h-4" />,
+        label: 'AMM (Spark)',
+        to: TRADE_AMM_PATH,
       },
       {
         disabled: true,
@@ -204,6 +214,10 @@ export const PAGE_CONFIG = {
     icon: <Settings className="w-5 h-5" />,
     title: 'Settings',
   },
+  [TRADE_AMM_PATH]: {
+    icon: <Activity className="w-5 h-5" />,
+    title: 'AMM (Spark)',
+  },
   [TRADE_MANUAL_PATH]: {
     icon: <Zap className="w-5 h-5" />,
     title: 'Manual Swaps',
@@ -220,7 +234,27 @@ export const PAGE_CONFIG = {
     icon: <Home className="w-5 h-5" />,
     title: 'Dashboard',
   },
+  [WALLET_HISTORY_ASSETS_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: 'History',
+  },
+  [WALLET_HISTORY_CHANNEL_ORDERS_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: 'History',
+  },
   [WALLET_HISTORY_DEPOSITS_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: 'History',
+  },
+  [WALLET_HISTORY_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: 'History',
+  },
+  [WALLET_HISTORY_TRADES_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: 'History',
+  },
+  [WALLET_HISTORY_WITHDRAWALS_PATH]: {
     icon: <Clock className="w-5 h-5" />,
     title: 'History',
   },

@@ -113,6 +113,87 @@ export const sparkApi = createApi({
       },
     }),
 
+    // Token Balance & Transfer Endpoints
+    getTokenBalances: builder.query<
+      Map<string, { balance: bigint; bech32mTokenIdentifier: string }>,
+      void
+    >({
+      providesTags: ['SparkInfo'],
+      queryFn: async () => {
+        try {
+          if (!sdkInstance) {
+            throw new Error('SDK not connected')
+          }
+
+          // Get wallet balance which includes token balances
+          const info = await sdkInstance.getInfo({ ensureSynced: true })
+
+          // Convert tokenBalances from SDK format to our format
+          const tokenBalances = new Map<
+            string,
+            { balance: bigint; bech32mTokenIdentifier: string }
+          >()
+
+          // Note: SDK's getInfo should return tokenBalances
+          // If it doesn't exist yet, return empty map
+          if ('tokenBalances' in info && info.tokenBalances) {
+            for (const [key, value] of Object.entries(
+              info.tokenBalances as Record<string, any>
+            )) {
+              tokenBalances.set(key, value as any)
+            }
+          }
+
+          return { data: tokenBalances }
+        } catch (error) {
+          return {
+            error: {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to get token balances',
+              status: 'CUSTOM_ERROR',
+            },
+          }
+        }
+      },
+    }),
+
+    getTokenInfo: builder.query<
+      Array<{
+        tokenIdentifier: string
+        name?: string
+        ticker?: string
+        precision: number
+      }>,
+      void
+    >({
+      providesTags: ['SparkInfo'],
+      queryFn: async () => {
+        try {
+          if (!sdkInstance) {
+            throw new Error('SDK not connected')
+          }
+
+          // Note: This assumes the SDK has a getTokenInfo method
+          // If not available yet, this will need to be implemented when SDK is updated
+          const tokenInfo = await (sdkInstance as any).getTokenInfo()
+
+          return { data: tokenInfo || [] }
+        } catch (error) {
+          return {
+            error: {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to get token info',
+              status: 'CUSTOM_ERROR',
+            },
+          }
+        }
+      },
+    }),
+
     getWalletInfo: builder.query<SparkWalletInfo, { ensureSynced?: boolean }>({
       providesTags: ['SparkInfo'],
       queryFn: async ({ ensureSynced = false }) => {
@@ -346,6 +427,51 @@ export const sparkApi = createApi({
                 error instanceof Error
                   ? error.message
                   : 'Failed to send payment',
+              status: 'CUSTOM_ERROR',
+            },
+          }
+        }
+      },
+    }),
+
+    transferTokens: builder.mutation<
+      { transactionId: string },
+      {
+        tokenIdentifier: string
+        tokenAmount: bigint
+        receiverSparkAddress: string
+        selectedOutputs?: any[]
+      }
+    >({
+      invalidatesTags: ['SparkInfo', 'SparkPayments'],
+      queryFn: async ({
+        tokenIdentifier,
+        tokenAmount,
+        receiverSparkAddress,
+        selectedOutputs,
+      }) => {
+        try {
+          if (!sdkInstance) {
+            throw new Error('SDK not connected')
+          }
+
+          // Note: This assumes the SDK has a transferTokens method
+          // If not available yet, this will need to be implemented when SDK is updated
+          const result = await (sdkInstance as any).transferTokens({
+            receiverSparkAddress,
+            selectedOutputs,
+            tokenAmount,
+            tokenIdentifier,
+          })
+
+          return { data: { transactionId: result.transactionId } }
+        } catch (error) {
+          return {
+            error: {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to transfer tokens',
               status: 'CUSTOM_ERROR',
             },
           }

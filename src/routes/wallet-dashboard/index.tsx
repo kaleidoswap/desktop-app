@@ -21,6 +21,11 @@ import { CREATE_NEW_CHANNEL_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { AssetRow } from '../../components/AssetRow'
 import { ChannelCard } from '../../components/ChannelCard'
+import {
+  UnifiedBalanceHeader,
+  RGBAssetsCard,
+  SparkAssetsCard,
+} from '../../components/Dashboard'
 import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { LiquidityCard } from '../../components/LiquidityCard'
 import { OnChainDetailsOverlay } from '../../components/OnChainDetailsOverlay'
@@ -39,12 +44,25 @@ import {
   Alert,
 } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
+import { AddWalletButton } from '../../components/WalletManagement'
+import { WalletStatusIndicator } from '../../components/WalletStatus'
 import { BitcoinNetwork } from '../../constants'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
+// Import the new dashboard
+// import { DashboardV2 } from './DashboardV2'
+
 export const Component = () => {
+  // Check if user wants the new dashboard (can be toggled via settings)
+  // const useNewDashboard = true // TODO: Make this a user setting
+
+  // if (useNewDashboard) {
+  //   return <DashboardV2 />
+  // }
+
+  // Old dashboard below
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [assets, assetsResponse] = nodeApi.endpoints.listAssets.useLazyQuery()
@@ -171,6 +189,35 @@ export const Component = () => {
   const isLoading =
     btcBalanceResponse.isLoading || listChannelsResponse.isLoading
 
+  // Get Spark balance for unified header
+  const sparkInfo = useAppSelector((state) => state.spark.info)
+  const sparkBalance = sparkInfo?.balanceSats || 0
+  const showRgbAssets = useAppSelector((state) => state.settings.showRgbAssets)
+  const showSparkAssets = useAppSelector(
+    (state) => state.settings.showSparkAssets
+  )
+
+  // Prepare RGB assets for the card
+  const rgbAssets = (assetsResponse.data?.nia || []).map((asset) => ({
+    asset_id: asset.asset_id,
+    name: asset.name,
+    offChainBalance: assetBalances[asset.asset_id]?.offChain || 0,
+    onChainBalance: assetBalances[asset.asset_id]?.onChain || 0,
+    precision: asset.precision,
+    ticker: asset.ticker,
+  }))
+
+  // Prepare Spark assets (placeholder - will be populated when token balance API is integrated)
+  const sparkAssets = Array.from(sparkInfo?.tokenBalances?.entries() || []).map(
+    ([key, value]) => ({
+      balance: value.balance,
+      name: undefined,
+      ticker: undefined,
+      tokenIdentifier: value.tokenIdentifier || key,
+      tokenPublicKey: key,
+    })
+  )
+
   return (
     <div className="w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
       {(networkInfoResponse.data?.network as unknown as BitcoinNetwork) !==
@@ -188,9 +235,32 @@ export const Component = () => {
         </div>
       )}
 
-      {/* Spark Wallet Section */}
+      {/* Wallet Status and Management */}
+      <div className="flex items-center justify-between mb-6">
+        <WalletStatusIndicator />
+        <AddWalletButton />
+      </div>
+
+      {/* Unified Balance Header */}
+      <UnifiedBalanceHeader
+        bitcoinUnit={bitcoinUnit}
+        offChainLN={offChainBalance}
+        offChainSpark={sparkBalance}
+        totalOffChain={offChainBalance + sparkBalance}
+        totalOnChain={onChainBalance + onChainColoredBalance}
+      />
+
+      {/* Spark Wallet Section (Legacy - can be removed if using new cards) */}
       <SparkWalletSection />
       <SparkBalanceSection />
+
+      {/* Asset Cards - New Multi-Wallet Display */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {showRgbAssets && (
+          <RGBAssetsCard assets={rgbAssets} bitcoinUnit={bitcoinUnit} />
+        )}
+        {showSparkAssets && <SparkAssetsCard assets={sparkAssets} />}
+      </div>
 
       {/* RLN Wallet Section */}
       <div className="flex flex-col items-center mb-6">

@@ -4,13 +4,13 @@ import { useForm } from 'react-hook-form'
 import { useAppDispatch } from '../../app/store/hooks'
 import { sparkSliceActions } from '../../slices/spark/spark.slice'
 import { useConnectWalletMutation } from '../../slices/spark/sparkApi.slice'
-import type { SparkWalletConfig } from '../../types/spark'
+import type { SparkNetwork, SparkWalletConfig } from '../../types/spark'
 import { Button, Card } from '../ui'
 
 interface SparkWalletSetupForm {
   mnemonic: string
   passphrase?: string
-  network: 'mainnet' | 'testnet' | 'signet'
+  network: SparkNetwork
   apiKey: string
 }
 
@@ -32,7 +32,7 @@ export const SparkWalletSetupModal = ({
     defaultValues: {
       apiKey: import.meta.env.VITE_BREEZ_SDK_API_KEY || '',
       mnemonic: import.meta.env.VITE_MNEMONIC || '',
-      network: 'mainnet',
+      network: 'mainnet' as SparkNetwork,
     },
   })
 

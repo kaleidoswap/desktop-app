@@ -13,6 +13,7 @@ import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
   TRADE_NOSTR_P2P_PATH,
+  TRADE_AMM_PATH,
   WALLET_REMOTE_PATH,
   WALLET_SETUP_PATH,
   WALLET_RESTORE_PATH,
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
       {
         lazy: () => import('../../routes/trade/nostr-p2p'),
         path: TRADE_NOSTR_P2P_PATH,
+      },
+      {
+        lazy: () => import('../../routes/trade/amm'),
+        path: TRADE_AMM_PATH,
       },
       {
         lazy: () => import('../../routes/settings'),

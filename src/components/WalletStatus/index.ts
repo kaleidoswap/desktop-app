@@ -1,0 +1,1 @@
+export { WalletStatusIndicator } from './WalletStatusIndicator'
