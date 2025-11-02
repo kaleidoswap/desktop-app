@@ -658,8 +658,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {/* Amount Input - Only needed when not specified in invoice */}
           {(addressType === 'bitcoin' ||
             addressType === 'lightning-address' ||
-            (addressType === 'rgb' &&
-              getAssignmentAmount(decodedRgbInvoice?.assignment) === null)) && (
+            addressType === 'rgb') && (
             <div className="space-y-1">
               <Controller
                 control={control}

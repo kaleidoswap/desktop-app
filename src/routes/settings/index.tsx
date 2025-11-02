@@ -529,15 +529,9 @@ export const Component: React.FC = () => {
     <div className="flex flex-col min-h-screen py-8 px-4">
       {/* Page Header */}
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Settings className="w-10 h-10 text-blue-400" />
-          <div>
-            <h1 className="text-4xl font-bold text-white">Settings</h1>
-            <p className="text-gray-400">
-              Manage your node and application preferences
-            </p>
-          </div>
-        </div>
+        <p className="text-gray-400 text-sm">
+          Manage your node and application preferences
+        </p>
       </div>
 
       {/* Main Content Grid */}
@@ -876,28 +870,30 @@ export const Component: React.FC = () => {
               </div>
 
               <div className="space-y-4">
-                {/* View Recovery Phrase Button */}
-                <button
-                  className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl p-4 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  onClick={() => setShowMnemonicModal(true)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
-                        <Lock className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold">
-                          View Recovery Phrase
+                {/* View Recovery Phrase Button - Only for local nodes */}
+                {isLocalNode && (
+                  <button
+                    className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl p-4 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    onClick={() => setShowMnemonicModal(true)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+                          <Lock className="w-5 h-5" />
                         </div>
-                        <div className="text-sm text-white/70">
-                          Access your encrypted seed phrase
+                        <div className="text-left">
+                          <div className="font-semibold">
+                            View Recovery Phrase
+                          </div>
+                          <div className="text-sm text-white/70">
+                            Access your encrypted seed phrase
+                          </div>
                         </div>
                       </div>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </button>
+                  </button>
+                )}
 
                 {/* Backup Wallet Button */}
                 <button
