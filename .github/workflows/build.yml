@@ -196,7 +196,8 @@ jobs:
             
             All macOS builds install without security warnings!
             
-            SHA256 checksums are available in the manifest files attached to this release.
+            **Verification:**
+            - GPG signatures (`.asc` files) will be added shortly after release
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true

@@ -19,6 +19,7 @@
   - [Supported Networks](#supported-networks)
   - [Installation 🛠️](#installation-️)
     - [1. Download Binaries](#1-download-binaries)
+      - [Verifying Downloads with GPG](#verifying-downloads-with-gpg)
     - [2. Building Locally](#2-building-locally)
       - [Common Prerequisites](#common-prerequisites)
       - [Windows-Specific Instructions](#windows-specific-instructions)
@@ -66,25 +67,49 @@ You can install the app in two ways:
 
 ### 1. Download Binaries
 
-1. Download the appropriate binary for your operating system from the [Releases](https://github.com/kaleidoswap/desktop-app/releases) page.
-2. Download both the binary file and its corresponding `.sig` signature file.
-3. Import our public GPG key:
-   ```sh
-      curl https://keybase.io/bitwalt/pgp_keys.asc | gpg --import
-   ```
-4. Verify the signature:
-   ```sh
-   # For Linux
-   gpg --verify kaleido-swap_0.0.1_amd64.AppImage.sig kaleido-swap_0.0.1_amd64.AppImage
+1. **Download** the appropriate binary for your operating system from the [Releases](https://github.com/kaleidoswap/desktop-app/releases) page.
 
-   # For macOS
-   gpg --verify Kaleido-Swap_0.0.1_x64.dmg.sig Kaleido-Swap_0.0.1_x64.dmg
+2. **Verify** the download using GPG signatures (recommended for security).
 
-   # For Windows
-   gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
-   ```
-5. Verify the SHA256 checksum of the binary.
-6. Run the app by executing the binary.
+3. **Run** the app by executing the binary.
+
+#### Verifying Downloads with GPG
+
+Each release is signed with a hardware security key (Yubikey) to guarantee authenticity. Download both the binary and its `.asc` signature file, then verify:
+
+**Step 1: Import the public GPG key** (first time only)
+```sh
+curl https://keybase.io/bitwalt/pgp_keys.asc | gpg --import
+```
+
+**Step 2: Download binary and signature**
+```sh
+# Example for Linux (adjust filename for your platform)
+curl -LO https://github.com/kaleidoswap/desktop-app/releases/download/v0.3.1/KaleidoSwap_0.3.1_amd64_linux.AppImage
+curl -LO https://github.com/kaleidoswap/desktop-app/releases/download/v0.3.1/KaleidoSwap_0.3.1_amd64_linux.AppImage.asc
+```
+
+**Step 3: Verify the signature**
+```sh
+# Linux
+gpg --verify KaleidoSwap_0.3.1_amd64_linux.AppImage.asc KaleidoSwap_0.3.1_amd64_linux.AppImage
+
+# macOS (Apple Silicon)
+gpg --verify KaleidoSwap_aarch64.app.tar.gz.asc KaleidoSwap_aarch64.app.tar.gz
+
+# macOS (Intel)
+gpg --verify KaleidoSwap_x64.app.tar.gz.asc KaleidoSwap_x64.app.tar.gz
+
+# Windows
+gpg --verify KaleidoSwap_0.3.1_x64-setup_windows.exe.asc KaleidoSwap_0.3.1_x64-setup_windows.exe
+```
+
+**Expected output:**
+```
+gpg: Good signature from "Walter Maffione <your-email>"
+```
+
+> **Note:** The `.asc` files are GPG signatures created post-build with a hardware security key. The `.sig` files in releases are for the app's auto-updater functionality. macOS binaries are also code-signed and notarized by Apple.
 
 ### 2. Building Locally
 
