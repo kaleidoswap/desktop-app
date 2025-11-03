@@ -1,3 +1,17 @@
+## [Version 0.3.1] - 2025-11-03
+
+### 🚀 Features
+- **Mnemonic Viewer Modal**: Secure access to view your recovery phrase directly from the app with proper security warnings and confirmation
+- **Windows Installer Enhancement**: Improved Windows installation experience with NSIS configuration for better integration with Windows OS
+
+### 🐛 Bug Fixes
+- **RGB Asset On-chain Payments**: Fixed missing amount parameter when sending RGB assets on-chain, ensuring proper transaction amounts
+- **Withdrawal Form**: Fixed handling of null or undefined assignments in amount extraction, preventing crashes during withdrawals
+- **Invoice Details**: Improved clarity and user guidance in RGB invoice details and withdrawal forms
+
+### 🔧 Improvements
+- **Layout & Settings UI**: Enhanced user experience with improved layout and settings components
+- **Code Cleanup**: Removed unused assignment extraction logic for better code maintainability
 
 ## [Version 0.3.0] - 2025-10-20
 

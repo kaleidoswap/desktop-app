@@ -129,6 +129,31 @@ jobs:
           echo "# Placeholder file for Windows - RGB Lightning Node not supported on Windows" > bin/rgb-lightning-node
         shell: bash
 
+      - name: Extract changelog for release
+        id: changelog
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Extracting changelog for version $VERSION"
+          
+          # Extract the changelog section for this version
+          CHANGELOG=$(awk "/## \[Version $VERSION\]/,/## \[Version/" CHANGELOG.md | sed '/## \[Version [0-9]/d' | sed '/^$/d')
+          
+          # If changelog is empty, provide a default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="See the CHANGELOG.md for details about this release."
+          fi
+          
+          # Save to file for multiline content
+          echo "$CHANGELOG" > /tmp/changelog.txt
+          
+          # Set output using the recommended method for multiline strings
+          {
+            echo 'CHANGELOG<<EOF'
+            cat /tmp/changelog.txt
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
@@ -154,22 +179,24 @@ jobs:
             
             See the assets to download and install this version.
 
-            Changes in this version:
-            - Built from ${{ startsWith(github.ref, 'refs/tags/') && 'tag' || (github.ref == 'refs/heads/test-build' && 'test-build' || 'build') }} ${{ github.ref_name }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && steps.changelog.outputs.CHANGELOG || 'Changes in this version:
+            - Built from test-build or build branch
             - Includes macOS (Intel + Apple Silicon), Linux, and Windows builds
             - All macOS builds are signed with Apple Developer ID Certificate and notarized by Apple
             - Native support for Apple Silicon (M1/M2/M3) - no Rosetta required!
-            - Signed and ready for auto-update
+            - Signed and ready for auto-update' }}
 
-            SHA256 checksums will be provided separately.
+            ---
 
-            Installation Notes:
+            **Installation Notes:**
             - macOS Apple Silicon (aarch64): Native ARM64 build, code signed and notarized
             - macOS Intel (x86_64): Native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
             
             All macOS builds install without security warnings!
+            
+            SHA256 checksums are available in the manifest files attached to this release.
           releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
