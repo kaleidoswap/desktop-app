@@ -286,17 +286,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       const precision = assetInfo?.precision || 8
       const displayAmount = maxRawAmount / Math.pow(10, precision)
 
-      // Debug logging
-      console.log('RGB Asset max calculation:', {
-        assetId,
-        displayAmount,
-        isLightning:
-          addressType === 'lightning' || addressType === 'lightning-address',
-        maxRawAmount,
-        precision,
-        ticker: assetInfo?.ticker,
-      })
-
       return displayAmount
     }
   }

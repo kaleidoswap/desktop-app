@@ -64,17 +64,24 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         )}
 
         <div className="flex justify-between">
-          <span className="text-slate-400">Amount:</span>
+          <span className="text-slate-400">Requested Amount:</span>
           {assignmentAmount ? (
-            <span className="text-white font-bold">
+            <span className="text-white font-medium">
               {formattedAmount} {ticker}
             </span>
           ) : (
             <span className="text-yellow-400 font-medium text-xs">
-              Not specified - enter below
+              Not specified
             </span>
           )}
         </div>
+        {assignmentAmount && (
+          <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+            <p className="text-xs text-yellow-400">
+              💡 You can modify the amount below if needed
+            </p>
+          </div>
+        )}
 
         <div className="flex justify-between">
           <span className="text-slate-400">Recipient ID:</span>
