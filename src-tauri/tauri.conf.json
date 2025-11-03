@@ -36,6 +36,7 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
+      "nsis": null,
       "wix": {
         "language": "en-US"
       }
