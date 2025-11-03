@@ -36,3 +36,6 @@ bin
 rgb-lightning-node
 
 src-tauri/gen
+
+# Rust build artifacts
+target/
