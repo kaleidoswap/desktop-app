@@ -1831,14 +1831,32 @@ export const Component = () => {
         logger.info('💰 Fetching BTC balance and LSP info...')
         setLoadingPhase('validating-balance')
 
-        const [balanceResponse, lspInfoResponse] = await Promise.all([
-          btcBalance({ skip_sync: false }),
-          getInfo(),
-        ])
+        const balanceResponse = await btcBalance({ skip_sync: false })
 
         if (!('data' in balanceResponse) || !balanceResponse.data) {
           logger.error('❌ Failed to get balance data')
           throw new Error('Failed to get balance information')
+        }
+
+        let lspInfoResponse: any = null
+        try {
+          lspInfoResponse = await getInfo()
+          if (lspInfoResponse.error) {
+            logger.warn(
+              '⚠️ LSP info fetch failed, continuing without channel limits'
+            )
+          }
+        } catch (error: any) {
+          if (error?.status === 'TIMEOUT_ERROR') {
+            logger.warn(
+              '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
+            )
+          } else {
+            logger.warn(
+              '⚠️ Failed to fetch LSP info, continuing without channel limits:',
+              error
+            )
+          }
         }
 
         logger.info('🔗 Phase 1: Checking channels and node info')
@@ -1872,7 +1890,11 @@ export const Component = () => {
         logger.info(`💰 Onchain BTC balance: ${totalOnchainBalance} sats`)
 
         // Store LSP channel limits if available
-        if (lspInfoResponse.data?.options) {
+        if (
+          lspInfoResponse &&
+          'data' in lspInfoResponse &&
+          lspInfoResponse.data?.options
+        ) {
           setLspChannelLimits({
             max_channel_balance_sat:
               lspInfoResponse.data.options.max_channel_balance_sat,
@@ -1884,6 +1906,8 @@ export const Component = () => {
               lspInfoResponse.data.options.min_initial_client_balance_sat,
           })
           logger.info('✅ LSP channel limits loaded')
+        } else {
+          logger.info('ℹ️ No LSP channel limits available - will use defaults')
         }
 
         if (channelsList.length === 0) {
@@ -1976,13 +2000,25 @@ export const Component = () => {
         logger.info('🎉 All validations passed! Ready for trading')
         setLoadingPhase('ready')
         setIsInitialDataLoaded(true)
-      } catch (error) {
+      } catch (error: any) {
         logger.error('💥 Error during optimized setup:', error)
         setLoadingPhase('error')
         setValidationError('setup-error')
-        toast.error(
+
+        // Show specific error message for timeout
+        let errorMessage =
           'Failed to initialize the trading interface. Please try again.'
-        )
+        if (error?.status === 'TIMEOUT_ERROR') {
+          errorMessage =
+            'Request timed out while initializing. Please check your connection and try again.'
+        } else if (error?.status === 'FETCH_ERROR') {
+          errorMessage =
+            'Network error while initializing. Please check your connection.'
+        } else if (error?.message) {
+          errorMessage = error.message
+        }
+
+        toast.error(errorMessage)
       } finally {
         setupRunningRef.current = false
       }

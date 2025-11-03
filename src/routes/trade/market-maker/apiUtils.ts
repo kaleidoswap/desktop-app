@@ -10,6 +10,17 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
 
   if (typeof error === 'string') return error
 
+  // Check for timeout error
+  if (error.status === 'TIMEOUT_ERROR' || error.status === 'FETCH_ERROR') {
+    if (
+      error.status === 'TIMEOUT_ERROR' ||
+      (error.error && error.error.includes('timeout'))
+    ) {
+      return 'Request timed out. The maker server is taking too long to respond. Please check your connection and try again.'
+    }
+    return 'Network error. Please check your connection and try again.'
+  }
+
   const errorData = error.data
   if (!errorData) return 'No error details available'
 

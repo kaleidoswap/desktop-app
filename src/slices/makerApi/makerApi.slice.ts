@@ -171,7 +171,7 @@ interface Lsps1GetOrderRequest {
   order_id: string
 }
 
-interface Lsps1GetOrderResponse extends Lsps1CreateOrderResponse {}
+type Lsps1GetOrderResponse = Lsps1CreateOrderResponse
 
 type RetryDeliveryStatus =
   | 'processing'
@@ -243,7 +243,10 @@ const dynamicBaseQuery = async (args: any, api: any, extraOptions: any) => {
   const state = api.getState()
   const baseUrl =
     state.nodeSettings.data.default_maker_url || 'http://localhost:8000'
-  const rawBaseQuery = fetchBaseQuery({ baseUrl })
+  const rawBaseQuery = fetchBaseQuery({
+    baseUrl,
+    timeout: 15000,
+  })
   return rawBaseQuery(args, api, extraOptions)
 }
 

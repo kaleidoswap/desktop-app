@@ -140,6 +140,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         return false
       } catch (error) {
         toast.error('Failed to check peer connection status')
+        console.error('Failed to check peer connection status:', error)
         return false
       }
     },
@@ -179,9 +180,26 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
       } else {
         toast.error('Failed to get LSP connection URL')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching LSP info:', error)
-      toast.error('Failed to fetch LSP information')
+
+      // Check if it's a timeout error
+      let errorMessage = 'Failed to fetch LSP information'
+      if (
+        error?.status === 'TIMEOUT_ERROR' ||
+        (error?.error &&
+          typeof error.error === 'string' &&
+          error.error.includes('timeout'))
+      ) {
+        errorMessage =
+          'Request timed out. The LSP server is not responding. Please check the URL and try again.'
+      } else if (error?.status === 'FETCH_ERROR') {
+        errorMessage =
+          'Network error. Please check your connection and the LSP URL.'
+      }
+
+      toast.error(errorMessage)
+
       // Revert to previous LSP URL on error
       if (tempLspUrl !== lspUrl) {
         dispatch(
@@ -225,8 +243,9 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               setShowConnectPopup(true)
             }
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error during initialization:', error)
+          // Don't show a toast on initialization error - user can try again manually
         }
       }
 
@@ -332,8 +351,22 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
       } else {
         toast.error('Failed to get LSP connection URL')
       }
-    } catch (error) {
-      toast.error(`Failed to select Kaleidoswap LSP`)
+    } catch (error: any) {
+      // Check if it's a timeout error
+      let errorMessage = 'Failed to select Kaleidoswap LSP'
+      if (
+        error?.status === 'TIMEOUT_ERROR' ||
+        (error?.error &&
+          typeof error.error === 'string' &&
+          error.error.includes('timeout'))
+      ) {
+        errorMessage =
+          'Request timed out. The Kaleidoswap LSP server is not responding. Please try again later.'
+      } else if (error?.status === 'FETCH_ERROR') {
+        errorMessage = 'Network error. Please check your connection.'
+      }
+
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

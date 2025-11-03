@@ -683,9 +683,20 @@ export const createFetchAndSetPairsHandler = (
       )
 
       return true // Return true to indicate tradable pairs were found
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error fetching pairs:', error)
-      toast.error('Failed to fetch trading pairs')
+
+      // Show specific error message for timeout
+      let errorMessage = 'Failed to fetch trading pairs'
+      if (error?.status === 'TIMEOUT_ERROR') {
+        errorMessage =
+          'Request timed out while fetching trading pairs. The maker server is not responding.'
+      } else if (error?.status === 'FETCH_ERROR') {
+        errorMessage =
+          'Network error while fetching trading pairs. Please check your connection.'
+      }
+
+      toast.error(errorMessage)
       return false
     } finally {
       isCurrentlyFetching = false
