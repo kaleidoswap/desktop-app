@@ -1,6 +1,6 @@
 [package]
 name = "kaleidoswap"
-version = "0.3.0"
+version = "0.3.1"
 description = "Kaleidoswap App"
 authors = ["Kaleidoswap Team"]
 license = "MIT"
