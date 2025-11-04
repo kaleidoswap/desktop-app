@@ -761,16 +761,14 @@ export const mapAssetIdToTicker = (
 /**
  * Maps a ticker symbol to its full asset ID
  * This is needed for WebSocket communication where we must use asset IDs
- * Now also checks trading pairs to support assets the user doesn't own yet
+ * ONLY uses trading pairs from the maker - ensures we only trade maker's supported assets
  *
  * @param ticker The ticker symbol (e.g., "USDT")
- * @param assets List of assets to map from
- * @param tradingPairs Optional trading pairs to also check for asset mapping
+ * @param tradingPairs Trading pairs from the maker
  * @returns The full asset ID or the original ticker if not found
  */
 export const mapTickerToAssetId = (
   ticker: string,
-  assets: NiaAsset[],
   tradingPairs?: TradingPair[]
 ): string => {
   // Return BTC as is
@@ -778,13 +776,6 @@ export const mapTickerToAssetId = (
     return 'BTC'
   }
 
-  // Try to find the asset in the assets list first
-  const asset = assets.find((a) => a.ticker === ticker)
-  if (asset && asset.asset_id) {
-    return asset.asset_id
-  }
-
-  // If not found in user assets, check trading pairs
   if (tradingPairs) {
     const pairWithAsset = tradingPairs.find(
       (p) => p.base_asset === ticker || p.quote_asset === ticker
@@ -799,7 +790,8 @@ export const mapTickerToAssetId = (
     }
   }
 
-  // If we can't find a mapping, return the ticker (may be an asset ID already)
+  // If we can't find a mapping in trading pairs, return the ticker
+  // (may be an asset ID already)
   return ticker
 }
 

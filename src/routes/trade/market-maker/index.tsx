@@ -439,8 +439,8 @@ export const Component = () => {
 
     // Map the from/toAsset to asset IDs for lookup
     // Pass tradablePairs to support assets the user doesn't own yet
-    const fromAssetId = mapTickerToAssetId(fromAsset, assets, tradablePairs)
-    const toAssetId = mapTickerToAssetId(toAsset, assets, tradablePairs)
+    const fromAssetId = mapTickerToAssetId(fromAsset, tradablePairs)
+    const toAssetId = mapTickerToAssetId(toAsset, tradablePairs)
 
     // Only look for exact match - no fallback to other quotes
     const key = `${fromAssetId}/${toAssetId}/${fromAmount}`
@@ -693,7 +693,7 @@ export const Component = () => {
     (asset: string): number => {
       // First check if we have precision from a quote for this asset
       // This handles assets not in our listAssets
-      const assetId = mapTickerToAssetId(asset, assets, tradablePairs)
+      const assetId = mapTickerToAssetId(asset, tradablePairs)
       if (assetId && quoteAssetPrecision[assetId] !== undefined) {
         return quoteAssetPrecision[assetId]
       }
@@ -902,7 +902,6 @@ export const Component = () => {
           if (fromAsset === 'BTC' && toAsset !== 'BTC') {
             const toAssetId = mapTickerToAssetId(
               toAsset,
-              assetsList,
               selectedPair ? [selectedPair] : []
             )
             const toAssetStatus = getAssetChannelStatus(channels, toAssetId)
@@ -1078,7 +1077,6 @@ export const Component = () => {
         // Use mapTickerToAssetId to get the proper asset ID
         const fromAssetId = mapTickerToAssetId(
           fromAsset,
-          assetsData?.nia || [],
           selectedPair ? [selectedPair] : []
         )
         logger.debug(
@@ -1118,7 +1116,6 @@ export const Component = () => {
         // Use mapTickerToAssetId to get the proper asset ID
         const toAssetId = mapTickerToAssetId(
           toAsset,
-          assetsData?.nia || [],
           selectedPair ? [selectedPair] : []
         )
         logger.info(
@@ -1175,7 +1172,6 @@ export const Component = () => {
         if (tradableChannels.length === 0 && fromAsset === 'BTC') {
           const toAssetId = mapTickerToAssetId(
             toAsset,
-            assetsData?.nia || [],
             selectedPair ? [selectedPair] : []
           )
           logger.info(
@@ -2380,18 +2376,14 @@ export const Component = () => {
       }
 
       // Ensure we're comparing by ticker if excludeAsset is a ticker
-      const excludeAssetId = mapTickerToAssetId(
-        excludeAsset,
-        safeAssets,
-        tradablePairs
-      )
+      const excludeAssetId = mapTickerToAssetId(excludeAsset, tradablePairs)
 
       // Include all assets that are part of a valid trading pair
       // This ensures all tradable assets appear in the dropdown
       const tradableAssets = allPairAssets
         // Remove the currently selected asset from options
         .filter((asset) => {
-          const assetId = mapTickerToAssetId(asset, safeAssets, tradablePairs)
+          const assetId = mapTickerToAssetId(asset, tradablePairs)
           return assetId !== excludeAssetId
         })
         .map((asset) => {
@@ -2403,7 +2395,7 @@ export const Component = () => {
           // Get the asset ID for this asset
           const assetId = isAssetId(asset)
             ? asset
-            : mapTickerToAssetId(asset, safeAssets, tradablePairs)
+            : mapTickerToAssetId(asset, tradablePairs)
 
           return {
             assetId: assetId,
@@ -2750,7 +2742,7 @@ export const Component = () => {
 
     // Check if the fromAsset has ready channels (for non-BTC assets)
     if (fromAsset !== 'BTC') {
-      const fromAssetId = mapTickerToAssetId(fromAsset, assets, tradablePairs)
+      const fromAssetId = mapTickerToAssetId(fromAsset, tradablePairs)
       const fromAssetStatus = getAssetChannelStatus(channels, fromAssetId)
 
       if (!fromAssetStatus.hasReadyChannels) {
@@ -2772,7 +2764,7 @@ export const Component = () => {
 
     // Check if the toAsset has ready channels (for non-BTC assets)
     if (toAsset !== 'BTC') {
-      const toAssetId = mapTickerToAssetId(toAsset, assets, tradablePairs)
+      const toAssetId = mapTickerToAssetId(toAsset, tradablePairs)
       const toAssetStatus = getAssetChannelStatus(channels, toAssetId)
 
       if (!toAssetStatus.hasReadyChannels) {
@@ -3419,7 +3411,7 @@ export const Component = () => {
     (asset: string): boolean => {
       if (!asset || asset === 'BTC') return false
 
-      const assetId = mapTickerToAssetId(asset, assets, tradablePairs)
+      const assetId = mapTickerToAssetId(asset, tradablePairs)
 
       logger.debug(`[Channel Check] Asset: ${asset}, AssetId: ${assetId}`)
 

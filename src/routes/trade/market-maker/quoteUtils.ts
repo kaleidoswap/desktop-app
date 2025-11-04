@@ -217,8 +217,8 @@ const sendQuoteRequest = async (
   // We use asset tickers in the UI, but need to send asset IDs to the websocket
   // Get the actual asset IDs to send in the request
   // Now using trading pairs to support assets the user doesn't own yet
-  const fromAssetId = mapTickerToAssetId(fromAssetTicker, assets, tradingPairs)
-  const toAssetId = mapTickerToAssetId(toAssetTicker, assets, tradingPairs)
+  const fromAssetId = mapTickerToAssetId(fromAssetTicker, tradingPairs)
+  const toAssetId = mapTickerToAssetId(toAssetTicker, tradingPairs)
 
   // Get display tickers for logging/errors
   const fromDisplayTicker = mapAssetIdToTicker(
