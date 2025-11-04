@@ -77,8 +77,11 @@ You can install the app in two ways:
    # For Linux
    gpg --verify kaleido-swap_0.0.1_amd64.AppImage.sig kaleido-swap_0.0.1_amd64.AppImage
 
-   # For macOS
+   # For macOS (Intel)
    gpg --verify Kaleido-Swap_0.0.1_x64.dmg.sig Kaleido-Swap_0.0.1_x64.dmg
+    
+   # For macOS (Apple Silicon)
+   gpg --verify Kaleido-Swap_0.0.1_aarch64.dmg.asc Kaleido-Swap_0.0.1_aarch64.dmg
 
    # For Windows
    gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
