@@ -197,6 +197,7 @@ enum ChannelStatus {
 interface RGBInvoiceRequest {
   asset_id?: string
   witness?: boolean
+  assignment?: Assignment
 }
 
 interface RGBInvoiceResponse {
@@ -254,11 +255,17 @@ export type Assignment =
   | AssignmentReplaceRight
   | AssignmentAny
 
+interface WitnessData {
+  amount_sat: number
+  blinding?: number
+}
+
 interface SendAssetRequest {
   asset_id: string
   assignment: Assignment
   donation?: boolean
   recipient_id: string
+  witness_data?: WitnessData
   fee_rate: number
   transport_endpoints: string[]
 }
@@ -450,6 +457,7 @@ export interface DecodeInvoiceResponse {
 
 export interface DecodeRgbInvoiceResponse {
   recipient_id: string
+  recipient_type: 'Witness' | 'Blind'
   asset_schema: string | null
   asset_id: string | null
   assignment: Assignment | null
@@ -921,6 +929,7 @@ export const nodeApi = createApi({
         body: {
           ...(body.asset_id ? { asset_id: body.asset_id } : {}),
           ...(body.witness !== undefined ? { witness: body.witness } : {}),
+          ...(body.assignment ? { assignment: body.assignment } : {}),
           min_confirmations: 1,
         },
         method: 'POST',
@@ -936,6 +945,7 @@ export const nodeApi = createApi({
           fee_rate: body.fee_rate,
           min_confirmations: 1,
           recipient_id: body.recipient_id,
+          ...(body.witness_data ? { witness_data: body.witness_data } : {}),
           skip_sync: false,
           transport_endpoints: body.transport_endpoints,
         },

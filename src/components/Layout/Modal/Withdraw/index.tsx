@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
 import { BTC_ASSET_ID } from '../../../../constants'
 import {
   parseAssetAmountWithPrecision,
+  formatAssetAmountWithPrecision,
   getAssetPrecision,
   msatToSat,
   BTCtoSatoshi,
@@ -115,6 +116,7 @@ export const WithdrawModalContent: React.FC = () => {
       donation: false,
       fee_rate: 'normal',
       network: 'on-chain',
+      witness_amount_sat: 1200, // Default witness amount (min: 512)
     },
   })
 
@@ -149,14 +151,25 @@ export const WithdrawModalContent: React.FC = () => {
         nodeApi.endpoints.btcBalance.initiate({ skip_sync: false })
       ).unwrap()
 
+      const spendableBalance = balance.vanilla.spendable
       if (bitcoinUnit === 'SAT') {
-        setAssetBalance(balance.vanilla.spendable)
+        setAssetBalance(spendableBalance)
       } else {
-        setAssetBalance(balance.vanilla.spendable / 100000000)
+        setAssetBalance(spendableBalance / 100000000)
+      }
+
+      // Check if BTC balance is zero
+      if (spendableBalance === 0) {
+        setValidationError(
+          `Error: You have zero balance for BTC. Cannot proceed with withdrawal.`
+        )
       }
     } catch (error) {
       console.error('Error fetching BTC balance:', error)
       setAssetBalance(0)
+      setValidationError(
+        `Error: Failed to fetch BTC balance. Cannot proceed with withdrawal.`
+      )
     }
   }, [dispatch, bitcoinUnit])
 
@@ -171,12 +184,36 @@ export const WithdrawModalContent: React.FC = () => {
           nodeApi.endpoints.assetBalance.initiate({ asset_id: assetId })
         ).unwrap()
         setAssetBalance(balance.spendable)
+
+        // Check if balance is zero
+        if (balance.spendable === 0) {
+          const assetInfo = assets.data?.nia.find(
+            (a: NiaAsset) => a.asset_id === assetId
+          )
+          const ticker = assetInfo?.ticker || 'asset'
+          setValidationError(
+            `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`
+          )
+        }
       } catch (error) {
         console.error(`Error fetching asset balance for ${assetId}:`, error)
         setAssetBalance(0)
+        // Check if asset exists in the list
+        const assetExists = assets.data?.nia.some(
+          (asset: NiaAsset) => asset.asset_id === assetId
+        )
+        if (!assetExists) {
+          setValidationError(
+            `Error: You don't have this asset. Cannot proceed with withdrawal.`
+          )
+        } else {
+          setValidationError(
+            `Error: Failed to fetch balance for this asset. Cannot proceed with withdrawal.`
+          )
+        }
       }
     },
-    [dispatch, fetchBtcBalance]
+    [dispatch, fetchBtcBalance, assets.data?.nia]
   )
 
   // Calculate max lightning outbound capacity for BTC and assets
@@ -426,6 +463,14 @@ export const WithdrawModalContent: React.FC = () => {
             setAddressType('rgb')
             setValue('network', 'on-chain')
 
+            // If this is a witness recipient, set default witness_amount_sat if not already set
+            if (decodedRgb.recipient_type === 'Witness') {
+              const currentWitnessAmount = form.getValues('witness_amount_sat')
+              if (!currentWitnessAmount || currentWitnessAmount < 512) {
+                setValue('witness_amount_sat', 1200)
+              }
+            }
+
             if (decodedRgb.asset_id) {
               setValue('asset_id', decodedRgb.asset_id)
               const assetExists = assets.data?.nia.some(
@@ -438,29 +483,47 @@ export const WithdrawModalContent: React.FC = () => {
               } else {
                 // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
+                const assetInfo = assets.data?.nia.find(
+                  (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
+                )
+                const rgbBalance = assetInfo?.balance.spendable || 0
+
+                // Check if balance is zero
+                if (rgbBalance === 0) {
+                  const ticker = assetInfo?.ticker || 'asset'
+                  setValidationError(
+                    `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`
+                  )
+                  return
+                }
+
                 const assignmentAmount = getAssignmentAmount(
                   decodedRgb.assignment
                 )
                 if (assignmentAmount) {
-                  const assetInfo = assets.data?.nia.find(
-                    (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
-                  )
                   const ticker = assetInfo?.ticker || 'Unknown'
-                  const precision = assetInfo?.precision || 8
-                  const formattedAmount =
-                    assignmentAmount / Math.pow(10, precision)
 
-                  // Get the actual RGB asset balance
-                  const rgbBalance = assetInfo?.balance.spendable || 0
-                  const formattedBalance = rgbBalance / Math.pow(10, precision)
+                  // Format the amount as a string for the form field
+                  const formattedAmountStr = formatAssetAmountWithPrecision(
+                    assignmentAmount,
+                    ticker,
+                    bitcoinUnit,
+                    assets.data?.nia
+                  )
+                  const formattedBalanceStr = formatAssetAmountWithPrecision(
+                    rgbBalance,
+                    ticker,
+                    bitcoinUnit,
+                    assets.data?.nia
+                  )
 
                   if (assignmentAmount > rgbBalance) {
-                    setValue('amount', formattedBalance)
+                    setValue('amount', formattedBalanceStr)
                     setValidationError(
-                      `Warning: The invoice requested ${formattedAmount} ${ticker} but your balance is only ${formattedBalance} ${ticker}. Adjusted to maximum sendable amount.`
+                      `Warning: The invoice requested ${formattedAmountStr} ${ticker} but your balance is only ${formattedBalanceStr} ${ticker}. Adjusted to maximum sendable amount.`
                     )
                   } else {
-                    setValue('amount', formattedAmount)
+                    setValue('amount', formattedAmountStr)
                   }
                 }
               }
@@ -605,6 +668,42 @@ export const WithdrawModalContent: React.FC = () => {
         return
       }
 
+      // Check if user has the asset
+      if (data.asset_id !== BTC_ASSET_ID) {
+        const assetExists = assets.data?.nia.some(
+          (asset: NiaAsset) => asset.asset_id === data.asset_id
+        )
+        if (!assetExists) {
+          toast.error(
+            `Error: You don't have this asset. Cannot proceed with withdrawal.`,
+            {
+              autoClose: 5000,
+            }
+          )
+          return
+        }
+      }
+
+      // Check if balance is zero
+      if (assetBalance === 0) {
+        const assetInfo =
+          data.asset_id === BTC_ASSET_ID
+            ? null
+            : assets.data?.nia.find(
+                (a: NiaAsset) => a.asset_id === data.asset_id
+              )
+        const ticker =
+          assetInfo?.ticker ||
+          (data.asset_id === BTC_ASSET_ID ? 'BTC' : 'asset')
+        toast.error(
+          `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`,
+          {
+            autoClose: 5000,
+          }
+        )
+        return
+      }
+
       if (data.network === 'on-chain' && data.asset_id !== BTC_ASSET_ID) {
         const enteredAmount = Number(data.amount)
         if (enteredAmount > assetBalance) {
@@ -678,6 +777,7 @@ export const WithdrawModalContent: React.FC = () => {
       decodedInvoice,
       bitcoinUnit,
       maxLightningCapacity,
+      assets.data?.nia,
     ]
   )
 
@@ -861,6 +961,25 @@ export const WithdrawModalContent: React.FC = () => {
 
             const assignment = createFungibleAssignment(assignmentAmount)
 
+            // Check if recipient is witness type and provide witness_data
+            let witnessData:
+              | { amount_sat: number; blinding?: number }
+              | undefined = undefined
+            if (decodedRgbInvoice.recipient_type === 'Witness') {
+              // For witness recipients, we need to provide witness_data
+              // The amount_sat is the Bitcoin amount (in sats) to send to the recipient
+              // This amount will be used for the witness UTXO
+              const witnessAmountSat = pendingData.witness_amount_sat || 1200
+              if (!witnessAmountSat || witnessAmountSat < 512) {
+                throw new Error(
+                  'Witness amount (sats) must be at least 512 sats for witness recipients.'
+                )
+              }
+              witnessData = {
+                amount_sat: witnessAmountSat,
+              }
+            }
+
             res = await sendAsset({
               asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
               assignment,
@@ -873,6 +992,7 @@ export const WithdrawModalContent: React.FC = () => {
                   : customFee,
               recipient_id: decodedRgbInvoice.recipient_id,
               transport_endpoints: decodedRgbInvoice.transport_endpoints,
+              witness_data: witnessData,
             }).unwrap()
           } else {
             if (!transportEndpoint) {
