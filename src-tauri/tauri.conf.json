@@ -36,6 +36,9 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
       "nsis": null,
       "wix": {
         "language": "en-US"
