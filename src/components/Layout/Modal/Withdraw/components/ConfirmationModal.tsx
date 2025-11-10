@@ -5,6 +5,7 @@ import {
   formatBitcoinAmount,
   msatToSat,
   formatAssetAmountWithPrecision,
+  formatNumberWithCommas,
 } from '../../../../../helpers/number'
 import { ConfirmationModalProps, HTLCStatus, AssetOption } from '../types'
 
@@ -212,7 +213,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <span className="text-white text-sm font-medium">
                   {hasRegularBtcAmount
                     ? getBtcAmount()
-                    : `${pendingData?.amount && pendingData?.asset_id ? getAssetAmount(Number(pendingData.amount), pendingData.asset_id) : pendingData?.amount} ${availableAssets.find((a: AssetOption) => a.value === pendingData?.asset_id)?.label}`}
+                    : pendingData?.asset_id === BTC_ASSET_ID
+                      ? `${pendingData?.amount && pendingData?.asset_id ? getAssetAmount(Number(pendingData.amount), pendingData.asset_id) : pendingData?.amount} ${availableAssets.find((a: AssetOption) => a.value === pendingData?.asset_id)?.label}`
+                      : `${formatNumberWithCommas(String(pendingData?.amount || '0'))} ${availableAssets.find((a: AssetOption) => a.value === pendingData?.asset_id)?.label}`}
                 </span>
               </div>
             )}

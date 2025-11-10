@@ -637,6 +637,23 @@ export const Component = () => {
       setIsNodeError(false)
       setNodeErrorMessage('')
 
+      // Store encrypted mnemonic before proceeding
+      try {
+        const accountName = nodeSetupForm.getValues('name')
+        await invoke('store_encrypted_mnemonic', {
+          accountName,
+          mnemonic: mnemonic.join(' '),
+          password: nodePassword,
+        })
+        console.log('Mnemonic encrypted and stored successfully')
+      } catch (error) {
+        console.error('Failed to store encrypted mnemonic:', error)
+        toast.error(
+          'Failed to securely store recovery phrase. Please try again.'
+        )
+        return
+      }
+
       // Move to unlock step
       handleStepChange('unlock')
 

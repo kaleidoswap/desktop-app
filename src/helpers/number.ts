@@ -312,10 +312,15 @@ export const formatNumberWithCommas = (value: string | number): string => {
 
 /**
  * Parses a formatted number string to a plain number string
- * @param value The formatted number string
+ * @param value The formatted number string (can be undefined, null, or string)
  * @returns The plain number string
  *  */
-export const parseNumberWithCommas = (value: string): string => {
+export const parseNumberWithCommas = (
+  value: string | undefined | null
+): string => {
+  if (!value) {
+    return ''
+  }
   return value.replace(/[^\d.]/g, '')
 }
 
@@ -340,8 +345,8 @@ export const calculateAndFormatRate = (
   if (!price || !selectedPair) return 'Price not available'
 
   let rate = price
-  let displayFromAsset = fromAsset
-  let displayToAsset = toAsset
+  const displayFromAsset = fromAsset
+  const displayToAsset = toAsset
 
   const isInverted =
     fromAsset === selectedPair.quote_asset &&
@@ -351,8 +356,8 @@ export const calculateAndFormatRate = (
   const fromPrecision = getAssetPrecision(displayFromAsset)
   const toPrecision = getAssetPrecision(displayToAsset)
 
-  let fromUnit = displayFromAsset === 'BTC' ? bitcoinUnit : displayFromAsset
-  let toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
+  const fromUnit = displayFromAsset === 'BTC' ? bitcoinUnit : displayFromAsset
+  const toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
 
   // Calculate the rate considering asset precisions
   if (isInverted) {

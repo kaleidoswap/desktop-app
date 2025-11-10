@@ -30,7 +30,6 @@ import { RGBInvoiceDetails } from './RGBInvoiceDetails'
 const MSATS_PER_SAT = 1000
 const RGB_HTLC_MIN_SAT = 3000
 
-// NumberInput component similar to the one used in Step2.tsx
 interface NumberInputProps {
   value: string
   onChange: (value: string) => void
@@ -287,17 +286,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       const precision = assetInfo?.precision || 8
       const displayAmount = maxRawAmount / Math.pow(10, precision)
 
-      // Debug logging
-      console.log('RGB Asset max calculation:', {
-        assetId,
-        displayAmount,
-        isLightning:
-          addressType === 'lightning' || addressType === 'lightning-address',
-        maxRawAmount,
-        precision,
-        ticker: assetInfo?.ticker,
-      })
-
       return displayAmount
     }
   }
@@ -497,6 +485,62 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         />
       )}
 
+      {/* Witness Amount Input - Only for witness recipients */}
+      {decodedRgbInvoice?.recipient_type === 'Witness' &&
+        addressType === 'rgb' && (
+          <div className="space-y-1 animate-fadeIn">
+            <label className="text-xs font-medium text-slate-400">
+              Bitcoin Amount (sats) for Witness UTXO
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <Controller
+                  control={form.control}
+                  name="witness_amount_sat"
+                  render={({ field }) => (
+                    <input
+                      className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700
+                             focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                             placeholder:text-slate-600 transition-all duration-200 text-sm"
+                      inputMode="numeric"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d]/g, '')
+                        field.onChange(value ? parseInt(value, 10) : '')
+                      }}
+                      placeholder="Enter amount in sats (min: 512, e.g., 1200)"
+                      type="text"
+                      value={field.value || ''}
+                    />
+                  )}
+                  rules={{
+                    min: {
+                      message: 'Amount must be at least 512 sats',
+                      value: 512,
+                    },
+                    required: 'Witness amount is required',
+                  }}
+                />
+              </div>
+              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
+                sats
+              </div>
+            </div>
+            {form.formState.errors.witness_amount_sat && (
+              <p className="text-red-400 text-xs mt-1">
+                {form.formState.errors.witness_amount_sat.message}
+              </p>
+            )}
+            <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+              <p className="text-xs text-yellow-400">
+                <span className="font-medium">Note:</span> When sending an RGB
+                asset to a witness recipient, you need to add some Bitcoin
+                (sats) to create a new UTXO for the recipient where the RGB
+                assets will be allocated. Recommended: 1000-2000 sats.
+              </p>
+            </div>
+          </div>
+        )}
+
       {/* Balance Display */}
       <BalanceDisplay
         addressType={addressType}
@@ -659,7 +703,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {/* Amount Input - Only needed when not specified in invoice */}
           {(addressType === 'bitcoin' ||
             addressType === 'lightning-address' ||
-            (addressType === 'rgb' && !decodedRgbInvoice?.assignment)) && (
+            addressType === 'rgb') && (
             <div className="space-y-1">
               <Controller
                 control={control}

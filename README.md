@@ -23,6 +23,7 @@
       - [Common Prerequisites](#common-prerequisites)
       - [Windows-Specific Instructions](#windows-specific-instructions)
       - [Linux-Specific Instructions](#linux-specific-instructions)
+      - [Arch Linux (AUR)](#arch-linux-aur)
       - [Building and Running](#building-and-running)
   - [Usage 💡](#usage-)
     - [Connecting to an RGB Lightning Node](#connecting-to-an-rgb-lightning-node)
@@ -75,16 +76,16 @@ You can install the app in two ways:
 4. Verify the manifest signature:
    ```sh
    # For Linux
-   gpg --verify kaleido-swap_0.0.1_amd64.AppImage.sig kaleido-swap_0.0.1_amd64.AppImage
+   gpg --verify kaleido-swap_0.0.1_amd64.AppImage.asc kaleido-swap_0.0.1_amd64.AppImage
 
    # For macOS (Intel)
-   gpg --verify Kaleido-Swap_0.0.1_x64.dmg.sig Kaleido-Swap_0.0.1_x64.dmg
+   gpg --verify Kaleido-Swap_0.0.1_x64.dmg.asc Kaleido-Swap_0.0.1_x64.dmg
     
    # For macOS (Apple Silicon)
    gpg --verify Kaleido-Swap_0.0.1_aarch64.dmg.asc Kaleido-Swap_0.0.1_aarch64.dmg
 
    # For Windows
-   gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.sig KaleidoSwap_0.0.1_x64-setup.exe
+   gpg --verify KaleidoSwap_0.0.1_x64-setup.exe.asc KaleidoSwap_0.0.1_x64-setup.exe
    ```
 5. Verify the SHA256 checksum of your binary against the one listed in the manifest.txt file.
 6. Run the app by executing the binary.

@@ -122,8 +122,23 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             setAssetMap(tmpMap)
           }
         }
-      } catch (error) {
-        toast.error('Error fetching data. Please try again later.', {
+      } catch (error: any) {
+        // Check if it's a timeout error
+        let errorMessage = 'Error fetching data. Please try again later.'
+        if (
+          error?.status === 'TIMEOUT_ERROR' ||
+          (error?.error &&
+            typeof error.error === 'string' &&
+            error.error.includes('timeout'))
+        ) {
+          errorMessage =
+            'Request timed out. The LSP server is not responding. Please check your connection and try again.'
+        } else if (error?.status === 'FETCH_ERROR') {
+          errorMessage =
+            'Network error. Please check your connection to the LSP server.'
+        }
+
+        toast.error(errorMessage, {
           autoClose: 5000,
           position: 'bottom-right',
         })

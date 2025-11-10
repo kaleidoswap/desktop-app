@@ -19,6 +19,9 @@ pub struct Account {
     pub daemon_listening_port: String,
     pub ldk_peer_listening_port: String,
     pub bearer_token: Option<String>,
+    pub encrypted_mnemonic: Option<String>,
+    pub mnemonic_salt: Option<String>,
+    pub mnemonic_nonce: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -58,10 +61,18 @@ pub fn init() {
             daemon_listening_port TEXT NOT NULL,
             ldk_peer_listening_port TEXT NOT NULL,
             bearer_token TEXT,
-            terms_accepted INTEGER DEFAULT 0
+            terms_accepted INTEGER DEFAULT 0,
+            encrypted_mnemonic TEXT,
+            mnemonic_salt TEXT,
+            mnemonic_nonce TEXT
         )",
         [],
     ).unwrap();
+    
+    // Add mnemonic encryption columns if they don't exist (migration)
+    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN encrypted_mnemonic TEXT", ());
+    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_salt TEXT", ());
+    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_nonce TEXT", ());
     // Add ChannelOrders table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
@@ -173,7 +184,7 @@ fn migrate_existing_orders(conn: &Connection) {
 
 pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    let mut stmt = conn.prepare("SELECT * FROM Accounts")?;
+    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts")?;
     let accounts = stmt
         .query_map([], |row| {
             Ok(Account {
@@ -191,6 +202,9 @@ pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
                 bearer_token: row.get(13)?,
+                encrypted_mnemonic: row.get(14).ok(),
+                mnemonic_salt: row.get(15).ok(),
+                mnemonic_nonce: row.get(16).ok(),
             })
         })?
         .map(|res| res.unwrap())
@@ -285,7 +299,7 @@ pub fn update_account(
 
 pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    let mut stmt = conn.prepare("SELECT * FROM Accounts WHERE name = ?")?;
+    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts WHERE name = ?")?;
     let account = stmt
         .query_row([name], |row| {
             Ok(Account {
@@ -303,6 +317,9 @@ pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Erro
                 daemon_listening_port: row.get(11)?,
                 ldk_peer_listening_port: row.get(12)?,
                 bearer_token: row.get(13)?,
+                encrypted_mnemonic: row.get(14).ok(),
+                mnemonic_salt: row.get(15).ok(),
+                mnemonic_nonce: row.get(16).ok(),
             })
         })
         .optional()?;
@@ -402,4 +419,37 @@ pub fn delete_channel_order(account_id: i32, order_id: String) -> Result<usize, 
         rusqlite::params![account_id, order_id],
     )?;
     Ok(rows_affected)
+}
+
+pub fn store_encrypted_mnemonic(
+    account_name: &str,
+    encrypted_mnemonic: &str,
+    salt: &str,
+    nonce: &str,
+) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "UPDATE Accounts SET encrypted_mnemonic = ?1, mnemonic_salt = ?2, mnemonic_nonce = ?3 WHERE name = ?4",
+        rusqlite::params![encrypted_mnemonic, salt, nonce, account_name],
+    )
+}
+
+pub fn get_encrypted_mnemonic(account_name: &str) -> Result<Option<(String, String, String)>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let mut stmt = conn.prepare(
+        "SELECT encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts WHERE name = ?"
+    )?;
+    
+    let result = stmt.query_row([account_name], |row| {
+        let encrypted: Option<String> = row.get(0)?;
+        let salt: Option<String> = row.get(1)?;
+        let nonce: Option<String> = row.get(2)?;
+        
+        match (encrypted, salt, nonce) {
+            (Some(e), Some(s), Some(n)) => Ok(Some((e, s, n))),
+            _ => Ok(None),
+        }
+    }).optional()?;
+    
+    Ok(result.flatten())
 }

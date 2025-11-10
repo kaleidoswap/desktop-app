@@ -20,6 +20,7 @@ export interface Fields {
   network: 'on-chain' | 'lightning'
   decodedInvoice?: DecodeInvoiceResponse | null
   donation?: boolean // Whether this is a gift/donation transfer (RGB only)
+  witness_amount_sat?: number // Bitcoin amount (in sats) for witness recipients
 }
 
 // Fee estimation interface

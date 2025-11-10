@@ -689,10 +689,10 @@ export const Layout = (props: Props) => {
             className={`flex-1 min-h-screen bg-background transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}
           >
-            {/* Top bar with notifications */}
-            <div className="sticky top-0 z-20 bg-blue-darkest/80 backdrop-blur-sm border-b border-divider/10 px-6 py-2">
+            {/* Top bar with page title and notifications */}
+            <div className="sticky top-0 z-20 bg-blue-darkest/95 backdrop-blur-md border-b border-cyan/10 px-6 py-4 shadow-lg">
               <div className="flex justify-between items-center">
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
                   {(() => {
                     // Get the current page icon and title
                     const mainNavItem = MAIN_NAV_ITEMS.find((item) =>
@@ -706,8 +706,10 @@ export const Layout = (props: Props) => {
 
                     return (
                       <>
-                        <div className="text-cyan mr-3">{icon}</div>
-                        <h1 className="text-xl font-semibold text-white">
+                        <div className="p-2 bg-cyan/10 rounded-lg text-cyan">
+                          {icon}
+                        </div>
+                        <h1 className="text-2xl font-bold text-white">
                           {title}
                         </h1>
                       </>

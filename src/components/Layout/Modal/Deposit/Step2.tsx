@@ -12,7 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../../../app/store/hooks'
@@ -31,6 +31,7 @@ import {
   nodeApi,
   Network,
   Channel,
+  AssignmentFungible,
 } from '../../../../slices/nodeApi/nodeApi.slice'
 
 interface Props {
@@ -50,6 +51,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
   const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
   const [usePrivacy, setUsePrivacy] = useState<boolean>(false)
+  const prevAmountRef = useRef<string>('')
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
@@ -180,11 +182,23 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }, [assetList, assetId])
 
+  // Reset address when amount changes (for both lightning and on-chain RGB invoices)
   useEffect(() => {
-    if (network === 'lightning' && address) {
-      setAddress(undefined)
+    // Only reset if address already exists and amount actually changed
+    if (address && amount !== prevAmountRef.current) {
+      if (network === 'lightning') {
+        setAddress(undefined)
+      } else if (
+        network === 'on-chain' &&
+        assetId &&
+        assetId !== BTC_ASSET_ID
+      ) {
+        setAddress(undefined)
+      }
     }
-  }, [amount, network])
+    // Update the ref to track the current amount
+    prevAmountRef.current = amount
+  }, [amount, address, network, assetId])
 
   const [recipientId, setRecipientId] = useState<string>()
 
@@ -280,24 +294,47 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }
 
-  const generateRgbInvoice = async () => {
+  const generateRgbInvoice = async (amountValue?: string) => {
     try {
-      const res = await rgbInvoice(
-        assetId
-          ? { asset_id: assetId, witness: !usePrivacy }
-          : { witness: !usePrivacy }
-      )
+      let assignment: AssignmentFungible | undefined = undefined
+
+      // If amount is provided, convert it to internal format (without decimals)
+      if (amountValue && amountValue.trim() !== '') {
+        const cleanAmount = amountValue.replace(/,/g, '')
+        const numericAmount = parseFloat(cleanAmount)
+
+        if (!isNaN(numericAmount) && numericAmount > 0) {
+          // Convert user-entered amount (with precision) to internal format (without decimals)
+          const asset = assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+          const rawAmount = parseAmount(cleanAmount, asset)
+          assignment = {
+            type: 'Fungible',
+            value: rawAmount,
+          }
+        }
+      }
+
+      const requestBody: any = assetId
+        ? { asset_id: assetId, witness: !usePrivacy }
+        : { witness: !usePrivacy }
+
+      if (assignment) {
+        requestBody.assignment = assignment
+      }
+
+      const res = await rgbInvoice(requestBody)
       setNoColorableUtxos(false)
+
+      // Check for errors in RTK Query response
       if ('error' in res && res.error) {
         const errorMessage =
-          'data' in res.error ? res.error.data?.error : 'Unknown error'
+          'data' in res.error && res.error.data
+            ? (res.error.data as any)?.error || 'Unknown error'
+            : 'Unknown error'
 
         // Check if this is a UTXO-related error
-        const wasHandled = handleApiError(
-          res.error,
-          'issuance',
-          0,
-          generateRgbInvoice
+        const wasHandled = handleApiError(res.error, 'issuance', 0, () =>
+          generateRgbInvoice(amountValue)
         )
 
         if (!wasHandled) {
@@ -308,11 +345,19 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             toast.error('Failed to generate RGB invoice: ' + errorMessage)
           }
         }
+        return // Exit early on error
+      }
+
+      // Success case - set address and recipient ID
+      if (res.data) {
+        setAddress(res.data.invoice)
+        setRecipientId(res.data.recipient_id)
       } else {
-        setAddress(res.data?.invoice)
-        setRecipientId(res.data?.recipient_id)
+        console.error('RGB invoice response missing data:', res)
+        toast.error('Failed to generate RGB invoice: Invalid response')
       }
     } catch (error) {
+      console.error('Error generating RGB invoice:', error)
       toast.error('Failed to generate RGB invoice')
     }
   }
@@ -350,7 +395,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           setAddress(res.data?.invoice)
         }
       } else if (!assetId || assetId !== BTC_ASSET_ID) {
-        await generateRgbInvoice()
+        await generateRgbInvoice(amount)
       } else {
         const res = await addressQuery()
         setAddress(res.data?.address)
@@ -535,6 +580,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   </span>{' '}
                   Uses a standard Bitcoin onchain address. Simpler but less
                   private.
+                  <br />
+                  <span className="text-yellow-400 font-medium">
+                    Note: When receiving an RGB asset on a witness receipt, the
+                    sender needs to add some sats to create a new UTXO for you,
+                    where the RGB assets will be allocated.
+                  </span>
+                  <br />
                 </>
               )}
             </div>
@@ -607,6 +659,41 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   <Wallet className="w-3.5 h-3.5" />
                   Create Colorable UTXOs
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Amount Input for On-chain RGB Invoices */}
+        {network === 'on-chain' && assetId && assetId !== BTC_ASSET_ID && (
+          <div className="space-y-1 animate-fadeIn">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-medium text-slate-400">
+                Amount (optional)
+              </label>
+              {assetTicker && (
+                <div className="text-xs text-slate-400">
+                  Precision:{' '}
+                  {getAssetPrecision(assetTicker, bitcoinUnit, assetList?.nia)}{' '}
+                  decimals
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <input
+                  className="w-full px-3 py-2 pr-16 bg-slate-800/50 rounded-xl border border-slate-700 
+                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                           placeholder:text-slate-600 transition-all duration-200 text-sm"
+                  inputMode="decimal"
+                  onChange={handleAmountChange}
+                  placeholder={`Enter amount (e.g., 10.23 for ${assetTicker})`}
+                  type="text"
+                  value={amount}
+                />
+              </div>
+              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
+                {assetTicker}
               </div>
             </div>
           </div>

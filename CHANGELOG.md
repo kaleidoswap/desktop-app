@@ -1,3 +1,28 @@
+## [Version 0.3.2] - 2025-11-10
+
+### 🚀 Features
+- **Witness RGB Asset Sending**: Added support for sending RGB assets to witness recipients with a new input field for specifying Bitcoin amount (in sats) required for witness UTXOs, with validation ensuring at least 512 sats
+- **RGB Invoice Assignment**: Enhanced RGB invoice handling with improved assignment functionality in deposit and withdrawal flows
+- **Windows Installer Enhancement**: Added WebView2 embedBootstrapper configuration to Tauri config, improving Windows installation experience by automatically installing required WebView2 components
+
+### 🔧 Improvements
+- **Withdrawal Form**: Enhanced error handling and validation for witness amount inputs, providing better user feedback during asset withdrawals
+- **Deposit Flow**: Improved RGB invoice assignment handling in Step2 component with better validation and user guidance
+
+## [Version 0.3.1] - 2025-11-03
+
+### 🚀 Features
+- **Mnemonic Viewer Modal**: Secure access to view your recovery phrase directly from the app with proper security warnings and confirmation
+- **Windows Installer Enhancement**: Improved Windows installation experience with NSIS configuration for better integration with Windows OS
+
+### 🐛 Bug Fixes
+- **RGB Asset On-chain Payments**: Fixed missing amount parameter when sending RGB assets on-chain, ensuring proper transaction amounts
+- **Withdrawal Form**: Fixed handling of null or undefined assignments in amount extraction, preventing crashes during withdrawals
+- **Invoice Details**: Improved clarity and user guidance in RGB invoice details and withdrawal forms
+
+### 🔧 Improvements
+- **Layout & Settings UI**: Enhanced user experience with improved layout and settings components
+- **Code Cleanup**: Removed unused assignment extraction logic for better code maintainability
 
 ## [Version 0.3.0] - 2025-10-20
 
@@ -22,6 +47,7 @@
 - **Buy Channel Modal Improvements**: New components and better organized sections for a smoother payment and order summary experience
 
 ### 🐛 Bug Fixes
+- **Database Migration Crash Fix**: Fixed critical crash when upgrading from previous versions due to missing database columns. The app now automatically migrates the database schema when detecting an older version
 - **Improved Error Messaging**: Enhanced conditions for displaying connection errors and managing error message timeouts, reducing confusion during rapid actions
 - **Wallet Status Loading State**: Clearer feedback with a loading animation when checking wallet status, ensuring you know when the wallet is being unlocked
 
