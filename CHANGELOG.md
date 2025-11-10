@@ -1,3 +1,14 @@
+## [Version 0.3.2] - 2025-11-10
+
+### 🚀 Features
+- **Witness RGB Asset Sending**: Added support for sending RGB assets to witness recipients with a new input field for specifying Bitcoin amount (in sats) required for witness UTXOs, with validation ensuring at least 512 sats
+- **RGB Invoice Assignment**: Enhanced RGB invoice handling with improved assignment functionality in deposit and withdrawal flows
+- **Windows Installer Enhancement**: Added WebView2 embedBootstrapper configuration to Tauri config, improving Windows installation experience by automatically installing required WebView2 components
+
+### 🔧 Improvements
+- **Withdrawal Form**: Enhanced error handling and validation for witness amount inputs, providing better user feedback during asset withdrawals
+- **Deposit Flow**: Improved RGB invoice assignment handling in Step2 component with better validation and user guidance
+
 ## [Version 0.3.1] - 2025-11-03
 
 ### 🚀 Features
