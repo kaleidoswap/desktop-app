@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -91,15 +92,6 @@ const checkPortAvailability = async (
   }
 }
 
-const WALLET_INIT_STEPS = [
-  { id: 'terms', label: 'Terms' },
-  { id: 'setup', label: 'Node Setup' },
-  { id: 'password', label: 'Password' },
-  { id: 'mnemonic', label: 'Recovery Phrase' },
-  { id: 'verify', label: 'Verification' },
-  { id: 'unlock', label: 'Unlock' },
-]
-
 interface NodeSetupFields {
   name: string
   network: BitcoinNetwork
@@ -120,6 +112,7 @@ type SetupStep =
   | 'unlock'
 
 export const Component = () => {
+  const { t } = useTranslation()
   const [currentStep, setCurrentStep] = useState<SetupStep>('terms')
   const [mnemonic, setMnemonic] = useState<string[]>([])
   const [isNodeError, setIsNodeError] = useState(false)
@@ -139,6 +132,15 @@ export const Component = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+
+  const WALLET_INIT_STEPS = [
+    { id: 'terms', label: t('walletInit.steps.terms') },
+    { id: 'setup', label: t('walletInit.steps.setup') },
+    { id: 'password', label: t('walletInit.steps.password') },
+    { id: 'mnemonic', label: t('walletInit.steps.mnemonic') },
+    { id: 'verify', label: t('walletInit.steps.verify') },
+    { id: 'unlock', label: t('walletInit.steps.unlock') },
+  ]
 
   // Separate forms for each step
   const nodeSetupForm = useForm<NodeSetupFields>({
@@ -237,7 +239,7 @@ export const Component = () => {
         name: data.name,
       })
       if (accountExists) {
-        setErrors(['An account with this name already exists'])
+        setErrors([t('walletInit.setupStep.accountExistsError')])
         return
       }
       const defaultMakerUrl = NETWORK_DEFAULTS[data.network].default_maker_url
@@ -261,7 +263,7 @@ export const Component = () => {
 
       handleStepChange('password')
     } catch (error) {
-      toast.error('Failed to set up node. Please try again.')
+      toast.error(t('walletInit.setupStep.failedToSetup'))
     }
   }
 
@@ -346,7 +348,7 @@ export const Component = () => {
         )
 
         if (ourConflictingPorts.length > 0) {
-          toast.info('Stopping existing nodes on conflicting ports...', {
+          toast.info(t('walletInit.passwordStep.stoppingExistingNodes'), {
             autoClose: false,
             toastId: 'stopping-nodes',
           })
@@ -364,7 +366,7 @@ export const Component = () => {
 
           toast.update('stopping-nodes', {
             autoClose: 2000,
-            render: 'Existing nodes stopped successfully',
+            render: t('walletInit.passwordStep.existingNodesStopped'),
             type: 'success',
           })
 
@@ -520,7 +522,7 @@ export const Component = () => {
       await checkAndStopExistingNode()
 
       try {
-        toast.info(`Starting RLN node...`, {
+        toast.info(t('walletInit.passwordStep.startingNode'), {
           autoClose: 2000,
           position: 'bottom-right',
         })
@@ -528,13 +530,10 @@ export const Component = () => {
         await startLocalNode(accountName, network, datapath)
       } catch (error) {
         // Show a warning toast when ports are in use
-        toast.warning(
-          'Cannot start node: Some ports are already in use by other processes. Please stop any running nodes or choose different ports.',
-          {
-            autoClose: false,
-            closeOnClick: true,
-          }
-        )
+        toast.warning(t('walletInit.passwordStep.portsInUse'), {
+          autoClose: false,
+          closeOnClick: true,
+        })
         setIsInitializing(false)
         return
       }
@@ -546,13 +545,13 @@ export const Component = () => {
         setMnemonic(mnemonic)
         await saveAccountSettings(accountName, network, datapath)
         handleStepChange('mnemonic')
-        toast.success('Node initialized successfully!')
+        toast.success(t('walletInit.passwordStep.nodeInitializedSuccess'))
       } catch (error) {
         if (
           error instanceof Error &&
           error.message === 'NODE_ALREADY_INITIALIZED'
         ) {
-          toast.info('Node is already initialized, attempting to unlock...')
+          toast.info(t('walletInit.passwordStep.nodeAlreadyInitialized'))
           setNodePassword(data.password)
           await unlockExistingNode(data.password)
           await saveAccountSettings(accountName, network, datapath)
@@ -563,7 +562,9 @@ export const Component = () => {
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Failed to initialize node'
+        error instanceof Error
+          ? error.message
+          : t('walletInit.passwordStep.failedToInitialize')
       toast.error(errorMessage, {
         autoClose: false,
       })
@@ -592,6 +593,7 @@ export const Component = () => {
       defaultLspUrl: NETWORK_DEFAULTS[network].default_lsp_url,
       defaultMakerUrl,
       indexerUrl: nodeSetupForm.getValues('indexer_url'),
+      language: 'en',
       ldkPeerListeningPort: nodeSetupForm.getValues('ldk_peer_listening_port'),
       makerUrls: defaultMakerUrl,
       name: accountName,
@@ -628,7 +630,7 @@ export const Component = () => {
   ) => {
     try {
       if (mnemonic.join(' ') !== data.mnemonic.trim()) {
-        setErrors(['Mnemonic does not match'])
+        setErrors([t('walletInit.verifyStep.mnemonicMismatch')])
         return
       }
 
@@ -648,9 +650,7 @@ export const Component = () => {
         console.log('Mnemonic encrypted and stored successfully')
       } catch (error) {
         console.error('Failed to store encrypted mnemonic:', error)
-        toast.error(
-          'Failed to securely store recovery phrase. Please try again.'
-        )
+        toast.error(t('walletInit.passwordStep.failedToStoreRecovery'))
         return
       }
 
@@ -667,7 +667,9 @@ export const Component = () => {
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'An unexpected error occurred'
+        error instanceof Error
+          ? error.message
+          : t('walletInit.verifyStep.unexpectedError')
       toast.error(errorMessage)
     }
   }
@@ -675,8 +677,8 @@ export const Component = () => {
   const copyMnemonicToClipboard = () => {
     navigator.clipboard
       .writeText(mnemonic.join(' '))
-      .then(() => toast.success('Mnemonic copied to clipboard'))
-      .catch(() => toast.error('Failed to copy mnemonic'))
+      .then(() => toast.success(t('walletInit.mnemonicStep.mnemonicCopied')))
+      .catch(() => toast.error(t('walletInit.mnemonicStep.failedToCopy')))
   }
 
   const handleUnlockComplete = async () => {
@@ -698,13 +700,13 @@ export const Component = () => {
       }).unwrap()
 
       if (unlockResult === undefined) {
-        throw new Error('Failed to unlock the node')
+        throw new Error(t('walletInit.unlockStep.failedToUnlock'))
       }
 
       // Verify node status after unlock
       const nodeInfoResult = await nodeInfo()
       if (!nodeInfoResult.isSuccess) {
-        throw new Error('Failed to verify node status after unlock')
+        throw new Error(t('walletInit.unlockStep.failedToVerify'))
       }
 
       // Format settings before dispatching
@@ -732,7 +734,7 @@ export const Component = () => {
       )
 
       // Show success message
-      toast.success('Wallet unlocked successfully!')
+      toast.success(t('walletInit.unlockStep.walletUnlockedSuccess'))
 
       // Navigate to trade path
       navigate(WALLET_DASHBOARD_PATH)
@@ -752,10 +754,10 @@ export const Component = () => {
     try {
       // Stop the node
       await invoke('stop_node')
-      toast.info('Node unlocking cancelled')
+      toast.info(t('walletInit.unlockStep.unlockingCancelled'))
       handleStepChange('verify')
     } catch (error) {
-      toast.error('Failed to cancel unlocking')
+      toast.error(t('walletInit.unlockStep.failedToCancel'))
     } finally {
       setIsUnlocking(false)
       setIsCancellingUnlock(false)

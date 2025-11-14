@@ -1,5 +1,6 @@
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 import { webSocketService } from '../../app/hubs/websocketService'
@@ -17,6 +18,7 @@ export const RootRoute = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const currentPath = location.pathname
@@ -75,29 +77,31 @@ export const RootRoute = () => {
               </div>
 
               <h2 className="text-2xl font-bold text-white mb-3">
-                Connection Error
+                {t('rootRoute.connectionErrorTitle')}
               </h2>
 
               <p className="text-gray-400 mb-6">
                 {nodeInfoResponse.error &&
                 'status' in nodeInfoResponse.error &&
                 nodeInfoResponse.error.status === 400
-                  ? 'No wallet found. Please set up your wallet to continue.'
-                  : 'The node is not running. Please try restarting the app.'}
+                  ? t('rootRoute.noWalletFound')
+                  : t('rootRoute.nodeNotRunning')}
               </p>
 
               <button
                 className="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors"
                 onClick={() => navigate(WALLET_SETUP_PATH)}
               >
-                Return to Wallet Setup
+                {t('rootRoute.returnToSetup')}
               </button>
 
               {nodeInfoResponse.error &&
                 'message' in nodeInfoResponse.error && (
                   <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg w-full">
                     <p className="text-sm text-red-400 break-all">
-                      Error: {nodeInfoResponse.error.message}
+                      {t('rootRoute.errorMessage', {
+                        message: nodeInfoResponse.error.message,
+                      })}
                     </p>
                   </div>
                 )}
@@ -108,10 +112,10 @@ export const RootRoute = () => {
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
           <h2 className="text-xl font-semibold text-white mb-2">
-            Connecting to Node
+            {t('rootRoute.connectingTitle')}
           </h2>
           <p className="text-gray-400">
-            Please wait while we establish connection...
+            {t('rootRoute.connectingDescription')}
           </p>
         </div>
       )}

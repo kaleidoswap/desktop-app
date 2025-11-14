@@ -7,6 +7,7 @@ import {
   Info,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../app/store/hooks'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
@@ -30,6 +31,8 @@ const InfoModal: React.FC<InfoModalProps> = ({
   asset,
   bitcoinUnit,
 }) => {
+  const { t } = useTranslation()
+
   if (!isOpen) return null
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -39,32 +42,51 @@ const InfoModal: React.FC<InfoModalProps> = ({
   }
 
   const infoRows = [
-    { label: 'Channel ID', value: channel.channel_id },
-    { label: 'Funding Transaction', value: channel.funding_txid },
-    { label: 'Peer Public Key', value: channel.peer_pubkey },
     {
-      label: 'Short Channel ID',
-      value: channel.short_channel_id?.toString() || 'N/A',
+      label: t('channelCard.infoModal.fields.channelId'),
+      value: channel.channel_id,
     },
-    { label: 'Status', value: channel.status },
     {
-      label: 'Capacity',
+      label: t('channelCard.infoModal.fields.fundingTx'),
+      value: channel.funding_txid,
+    },
+    {
+      label: t('channelCard.infoModal.fields.peerPubkey'),
+      value: channel.peer_pubkey,
+    },
+    {
+      label: t('channelCard.infoModal.fields.shortChannelId'),
+      value:
+        channel.short_channel_id?.toString() || t('channelCard.infoModal.na'),
+    },
+    {
+      label: t('channelCard.infoModal.fields.status'),
+      value: channel.status,
+    },
+    {
+      label: t('channelCard.infoModal.fields.capacity'),
       value: `${formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: 'Local Balance',
+      label: t('channelCard.infoModal.fields.localBalance'),
       value: `${formatBitcoinAmount(channel.local_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: 'Next HTLC Limit',
+      label: t('channelCard.infoModal.fields.nextHtlcLimit'),
       value: `${formatBitcoinAmount(channel.next_outbound_htlc_limit_msat / 1000, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: 'Next HTLC Minimum',
+      label: t('channelCard.infoModal.fields.nextHtlcMinimum'),
       value: `${formatBitcoinAmount(channel.next_outbound_htlc_minimum_msat / 1000, bitcoinUnit)} ${bitcoinUnit}`,
     },
-    { label: 'Public Channel', value: channel.public ? 'Yes' : 'No' },
-    { label: 'Usable', value: channel.is_usable ? 'Yes' : 'No' },
+    {
+      label: t('channelCard.infoModal.fields.publicChannel'),
+      value: channel.public ? t('common.yes') : t('common.no'),
+    },
+    {
+      label: t('channelCard.infoModal.fields.usable'),
+      value: channel.is_usable ? t('common.yes') : t('common.no'),
+    },
   ]
 
   if (channel.asset_id) {
@@ -78,13 +100,16 @@ const InfoModal: React.FC<InfoModalProps> = ({
     }
 
     infoRows.push(
-      { label: 'Asset ID', value: channel.asset_id },
       {
-        label: 'Asset Local Amount',
+        label: t('channelCard.infoModal.fields.assetId'),
+        value: channel.asset_id,
+      },
+      {
+        label: t('channelCard.infoModal.fields.assetLocalAmount'),
         value: `${formatAssetAmount(channel.asset_local_amount)} ${asset?.ticker}`,
       },
       {
-        label: 'Asset Remote Amount',
+        label: t('channelCard.infoModal.fields.assetRemoteAmount'),
         value: `${formatAssetAmount(channel.asset_remote_amount)} ${asset?.ticker}`,
       }
     )
@@ -97,7 +122,9 @@ const InfoModal: React.FC<InfoModalProps> = ({
     >
       <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-xl border border-gray-700/50">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold">Channel Information</h3>
+          <h3 className="text-xl font-semibold">
+            {t('channelCard.infoModal.title')}
+          </h3>
           <button
             className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50"
             onClick={(e) => {
@@ -129,7 +156,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
             }}
             type="button"
           >
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -167,6 +194,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { t } = useTranslation()
 
   const assetPrecision = asset?.precision ?? 8
 
@@ -212,7 +240,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               e.stopPropagation()
               setIsInfoModalOpen(true)
             }}
-            title="Channel Information"
+            title={t('channelCard.tooltips.info')}
             type="button"
           >
             <Info size={14} />
@@ -226,7 +254,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 : 'bg-amber-900/30 text-amber-300 border border-amber-800/20'
             }`}
           >
-            {isReady ? 'Open' : 'Pending'}
+            {isReady
+              ? t('channelCard.status.open')
+              : t('channelCard.status.pending')}
           </span>
           {isPublic ? (
             <Unlock className="text-slate-400" size={12} />
@@ -238,7 +268,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
       {/* Capacity section */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-700/30">
-        <div className="text-xs text-slate-400">Capacity</div>
+        <div className="text-xs text-slate-400">
+          {t('channelCard.labels.capacity')}
+        </div>
         <div className="font-medium flex items-center text-sm">
           {formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)}{' '}
           <span className="text-xs text-slate-400 ml-1">{bitcoinUnit}</span>
@@ -256,7 +288,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         <div className="flex justify-between items-center mb-2">
           <div className="text-xs text-slate-300 flex items-center">
             <AssetIcon className="h-3 w-3 mr-1 text-amber-400" ticker="BTC" />
-            <span className="font-medium">Bitcoin Liquidity</span>
+            <span className="font-medium">
+              {t('channelCard.labels.bitcoinLiquidity')}
+            </span>
           </div>
           <div className="flex text-xs space-x-3 text-slate-300">
             <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
@@ -292,7 +326,11 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           <div className="flex justify-between items-center mb-2">
             <div className="text-xs text-slate-300 flex items-center">
               <AssetIcon className="h-3 w-3 mr-1" ticker={asset.ticker} />
-              <span className="font-medium">{asset.ticker} Liquidity</span>
+              <span className="font-medium">
+                {t('channelCard.labels.assetLiquidity', {
+                  ticker: asset.ticker,
+                })}
+              </span>
             </div>
             <div className="flex text-xs space-x-3 text-slate-300">
               <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
@@ -329,7 +367,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         >
           <div className="flex items-center justify-center">
             <Info className="w-3 h-3 mr-1" />
-            Details
+            {t('channelCard.buttons.details')}
           </div>
         </button>
         <button
@@ -342,7 +380,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         >
           <div className="flex items-center justify-center">
             <X className="w-3 h-3 mr-1" />
-            Close
+            {t('channelCard.buttons.close')}
           </div>
         </button>
       </div>

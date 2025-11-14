@@ -1,0 +1,2067 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "close": "关闭",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "refresh": "刷新",
+    "clear": "清除",
+    "yes": "是",
+    "no": "否",
+    "ok": "确定",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "comingSoon": "即将推出"
+  },
+  "navigation": {
+    "dashboard": "仪表板",
+    "trade": "交易",
+    "history": "历史记录",
+    "channels": "通道",
+    "settings": "设置",
+    "marketMaker": "做市商",
+    "manualSwaps": "手动交换",
+    "nostrP2P": "Nostr 点对点",
+    "helpSupport": "帮助与支持",
+    "getHelpSupport": "获取帮助与支持"
+  },
+  "channels": {
+    "pageTitle": "闪电钱包仪表板",
+    "lastUpdated": "最后更新：{{time}}",
+    "loadingData": "加载数据中...",
+    "openChannel": "打开通道",
+    "buyChannel": "购买通道",
+    "refreshing": "刷新中...",
+    "refresh": "刷新",
+    "totalBalance": "总余额",
+    "inboundLiquidity": "入站流动性",
+    "outboundLiquidity": "出站流动性",
+    "yourChannels": "您的通道",
+    "all": "全部",
+    "bitcoin": "比特币",
+    "rgb": "RGB",
+    "filter": "筛选",
+    "filterBy": "筛选：",
+    "sortBy": "排序：",
+    "clearAll": "清除全部",
+    "clearFilters": "清除筛选",
+    "public": "公开",
+    "private": "私有",
+    "balanced": "平衡",
+    "unbalanced": "不平衡",
+    "ready": "就绪",
+    "pending": "待处理",
+    "capacityHighToLow": "容量（高到低）",
+    "capacityLowToHigh": "容量（低到高）",
+    "outboundHighToLow": "出站（高到低）",
+    "outboundLowToHigh": "出站（低到高）",
+    "inboundHighToLow": "入站（高到低）",
+    "inboundLowToHigh": "入站（低到高）",
+    "mostBalanced": "最平衡",
+    "leastBalanced": "最不平衡",
+    "noChannelsFound": "未找到{{type}}通道",
+    "noChannelsMatchFilters": "没有通道匹配当前筛选条件。请尝试调整筛选标准。",
+    "noChannelsYet": "您还没有打开任何通道。创建通道以开始使用闪电网络。",
+    "noBitcoinChannels": "您没有打开比特币通道。创建比特币通道以开始使用闪电网络。",
+    "noRgbChannels": "您没有打开 RGB 通道。创建 RGB 通道以开始在闪电网络上使用 RGB 资产。",
+    "openChannelType": "打开{{type}}通道",
+    "liquidityInfo": "通道流动性会随着您发送和接收付款而变化。保持通道平衡以获得最佳性能和更低的费用。"
+  },
+  "actions": {
+    "quickActions": "快速操作",
+    "deposit": "存入",
+    "withdraw": "提取"
+  },
+  "userProfile": {
+    "myWallet": "我的钱包",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "logout": "退出登录",
+    "settings": "设置"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "管理您的节点和应用程序首选项",
+    "applicationSettings": "应用程序设置",
+    "generalSettings": "常规设置",
+    "language": "语言",
+    "bitcoinUnit": "比特币单位",
+    "bitcoinUnitSat": "聪 (SAT)",
+    "bitcoinUnitBtc": "比特币 (BTC)",
+    "lspUrl": "LSP 地址",
+    "lspUrlPlaceholder": "例如：http://localhost:8000",
+    "makerSettings": "做市商设置",
+    "makerUrls": "做市商 URL",
+    "additionalMakerUrls": "附加做市商 URL",
+    "addMakerUrl": "添加做市商 URL",
+    "addUrl": "添加 URL",
+    "default": "默认",
+    "setAsDefault": "设为默认",
+    "currentDefault": "当前默认",
+    "removeUrl": "删除 URL",
+    "nodeConnectionSettings": "节点连接设置",
+    "requiresRestart": "需要重启",
+    "nodeConnectionString": "节点连接字符串",
+    "nodeConnectionStringPlaceholder": "例如：http://localhost:3001",
+    "bitcoindRpc": "Bitcoind RPC 连接 URL",
+    "bitcoindRpcPlaceholder": "例如：http://localhost:18443",
+    "indexerUrl": "索引器 URL",
+    "indexerUrlPlaceholder": "例如：http://localhost:3002",
+    "rgbProxyEndpoint": "RGB 代理端点",
+    "rgbProxyPlaceholder": "例如：http://localhost:3003",
+    "bearerToken": "Bearer 令牌",
+    "bearerTokenPlaceholder": "输入用于远程节点身份验证的 Bearer 令牌",
+    "optional": "可选",
+    "resetChanges": "重置更改",
+    "saveSettings": "保存设置",
+    "saving": "保存中...",
+    "securityBackup": "安全与备份",
+    "viewRecoveryPhrase": "查看恢复短语",
+    "accessSeedPhrase": "访问您的加密种子短语",
+    "backupWallet": "备份钱包",
+    "exportBackup": "导出加密钱包备份",
+    "nodeStatus": "节点状态",
+    "nodeRunning": "节点运行中",
+    "nodeOffline": "节点离线",
+    "connectionType": "连接类型",
+    "localNode": "本地节点",
+    "remoteNode": "远程节点",
+    "shutdown": "关闭",
+    "shutdownNode": "关闭节点",
+    "nodeLogs": "节点日志",
+    "show": "显示",
+    "entries": "条目",
+    "exportLogs": "导出日志",
+    "refreshLogs": "刷新日志",
+    "clearLogs": "清除日志",
+    "liveNodeLogs": "实时节点日志",
+    "page": "页",
+    "of": "共",
+    "totalEntries": "条总记录",
+    "noLogsAvailable": "无可用日志",
+    "loadingLogs": "加载日志中...",
+    "loadingSettings": "加载设置中",
+    "pleaseWait": "请稍候，正在加载您的设置...",
+    "version": "版本"
+  },
+  "modals": {
+    "logoutTitle": "确认退出登录",
+    "logoutMessage": "您确定要退出登录吗？这将锁定您的节点。",
+    "logoutSuccess": "退出登录成功",
+    "logoutSuccessMessage": "您已成功退出登录。",
+    "logoutFailed": "退出登录失败",
+    "logoutFailedMessage": "退出登录失败：{{error}}。仍然重定向。",
+    "shutdownTitle": "确认关闭",
+    "shutdownMessage": "您确定要关闭节点吗？此操作无法撤消。",
+    "shuttingDownTitle": "正在关闭节点",
+    "shuttingDownMessage": "请稍候，节点正在关闭...",
+    "restartTitle": "重启节点？",
+    "restartMessage": "您的节点设置已更改。是否立即重启节点以使更改生效？",
+    "restartNow": "立即重启",
+    "later": "稍后",
+    "nodeRestarted": "节点已重启",
+    "nodeRestartedMessage": "节点已使用新设置重启。",
+    "nodeRestartFailed": "节点重启失败",
+    "nodeRestartFailedMessage": "重启节点时出现问题。",
+    "settingsSaved": "设置已保存",
+    "settingsSavedMessage": "您的设置已成功保存。",
+    "settingsSaveFailed": "设置保存失败",
+    "settingsSaveFailedMessage": "保存设置时出现问题。",
+    "nodeSettingsChanged": "节点设置已更改",
+    "nodeSettingsChangedMessage": "节点连接设置已更改。是否立即重启节点以使更改生效？"
+  },
+  "notifications": {
+    "depositReceived": "收到存款",
+    "depositReceivedMessage": "新的存款已确认。",
+    "settingsSavedSuccess": "设置保存成功",
+    "logoutSuccess": "退出登录成功",
+    "nodeShutdownSuccess": "节点关闭成功",
+    "nodeShutdownFailed": "节点关闭失败",
+    "logsExportedSuccess": "日志导出成功",
+    "logsExportFailed": "日志导出失败",
+    "invalidLogsFormat": "从服务器收到无效的日志格式",
+    "logsLoadFailed": "加载日志失败：{{error}}",
+    "logsLoadingDisabled": "由于错误，日志加载暂时禁用",
+    "restartingNode": "正在停止当前节点...",
+    "startingNode": "正在使用新设置启动节点...",
+    "nodeRestartedSuccess": "节点已使用新设置成功重启",
+    "nodeRestartFailed": "节点重启失败：{{error}}",
+    "settingsSaveFailed": "设置保存失败：{{error}}"
+  },
+  "support": {
+    "resources": "支持资源",
+    "documentation": "文档",
+    "documentationDesc": "阅读我们全面的指南和教程",
+    "faq": "常见问题",
+    "faqDesc": "常见问题解答",
+    "telegramGroup": "Telegram 群组",
+    "telegramGroupDesc": "加入我们的社区获取支持",
+    "githubIssues": "GitHub 问题",
+    "githubIssuesDesc": "报告错误或请求功能"
+  },
+  "labels": {
+    "soon": "即将推出"
+  },
+  "dashboard": {
+    "title": "钱包仪表板",
+    "openChannel": "打开通道",
+    "manageUTXOs": "管理 UTXO",
+    "peers": "对等节点",
+    "refreshing": "刷新中...",
+    "refresh": "刷新",
+    "nodePublicKey": "节点公钥",
+    "nodePublicKeyCopied": "节点公钥已复制到剪贴板",
+    "network": "网络",
+    "blockHeight": "区块高度",
+    "totalBalance": "总余额",
+    "deposit": "存入",
+    "depositNow": "立即存入",
+    "withdraw": "提取",
+    "onChain": "链上",
+    "offChain": "链下",
+    "channels": "通道",
+    "active": "活跃",
+    "inboundLiquidity": "入站流动性",
+    "inboundLiquidityTooltip": "您可以通过 Lightning Network 通道接收的最大 {{unit}} 数量。这表示其他人可以向您发送的总金额。",
+    "outboundLiquidity": "出站流动性",
+    "outboundLiquidityTooltip": "您可以通过 Lightning Network 通道发送的最大 {{unit}} 数量。这表示您可用于支付的余额。",
+    "issueAsset": "发行资产",
+    "assets": "资产",
+    "asset": "资产",
+    "offChainBalance": "链下",
+    "onChainBalance": "链上",
+    "actions": "操作",
+    "lightningChannels": "闪电通道",
+    "noChannelsFound": "未找到通道",
+    "openFirstChannel": "打开您的第一个通道",
+    "liquidityInfo": "通道流动性会随着您发送和接收付款而变化。保持通道平衡以获得最佳性能。",
+    "noFunds": "无比特币资金",
+    "noFundsMessage": "您的钱包中没有比特币资金。存入资金以开始使用应用程序。",
+    "unknown": "未知"
+  },
+  "history": {
+    "description": "查看您的交易历史，包括存款、支付、提款和交换。",
+    "deposits": "存款",
+    "paymentsWithdrawals": "支付和提款",
+    "swaps": "交换",
+    "assets": "资产",
+    "channelOrders": "通道订单"
+  },
+  "walletSetup": {
+    "getHelpSupport": "获取帮助与支持",
+    "connectTitle": "连接到 RGB Lightning Network",
+    "connectSubtitle": "选择您喜欢的方式连接到网络",
+    "remoteNodeTitle": "远程节点",
+    "remoteNodeDescription": "连接到托管节点或自托管实例。推荐用于大多数用户和高级设置。",
+    "localNodeTitle": "本地节点",
+    "localNodeDescription": "在本地机器上运行节点。适合开发者和测试环境。",
+    "localNodeNotSupported": "Windows 不支持本地节点。请使用远程节点连接。",
+    "backToOptions": "返回连接选项",
+    "setupLocalTitle": "设置本地节点",
+    "setupLocalSubtitle": "选择一个选项以开始使用您的本地 RGB Lightning 节点",
+    "createWalletTitle": "创建新钱包",
+    "createWalletDescription": "使用新的助记词创建新钱包并设置您的节点。",
+    "restoreWalletTitle": "恢复钱包",
+    "restoreWalletDescription": "使用现有的加密备份恢复钱包。",
+    "connectRemoteTitle": "连接到远程节点",
+    "connectRemoteSubtitle": "连接到由您或提供商托管的现有 RGB Lightning 节点",
+    "continueSetup": "继续连接设置"
+  },
+  "createChannel": {
+    "checkingBalance": "检查余额中...",
+    "retry": "重试",
+    "stepPeerConnection": "对等连接",
+    "stepChannelSettings": "通道设置",
+    "stepReviewConfirm": "审核和确认",
+    "stepComplete": "完成",
+    "currentStep": "当前步骤",
+    "completed": "已完成",
+    "pending": "待处理",
+    "insufficientBalance": "余额不足",
+    "insufficientBalanceMessage": "您至少需要 {{amount}} 聪才能开通通道。请先为钱包充值。",
+    "deposit": "存入",
+    "infoMessage": "开通通道需要进行链上交易。请确保您有足够的比特币余额来支付通道容量和交易费用。",
+    "errorPeerRequired": "需要对等连接信息",
+    "errorMinCapacity": "通道容量必须至少为 {{amount}} 聪",
+    "errorFeeRequired": "请选择费率",
+    "errorFetchFeeRates": "获取费率失败。请重试。",
+    "errorFetchBalance": "获取余额失败",
+    "errorOpenChannel": "开通通道失败",
+    "step1": {
+      "title": "对等连接 - 步骤 1",
+      "subtitle": "从已连接的对等节点中选择或输入新的连接详细信息。",
+      "connectedPeers": "已连接的对等节点",
+      "loadingPeers": "加载已连接的对等节点...",
+      "noPeers": "当前没有已连接的对等节点。您可以在下面连接到新的对等节点。",
+      "or": "或",
+      "connectNewPeer": "连接到新对等节点",
+      "placeholder": "示例：039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735",
+      "invalidPeerFormat": "对等节点格式无效。预期：<66字符十六进制公钥>@主机名:端口 或有效公钥",
+      "helpText": "连接字符串应该是一个 66 字符的十六进制公钥，后跟 @ 符号，然后是主机地址和端口号（例如 :9735）",
+      "suggestedNodes": "从建议的节点中选择",
+      "loadingLsp": "加载 LSP 信息...",
+      "continue": "继续",
+      "connectDialog": {
+        "title": "连接到对等节点",
+        "message": "您想在开通通道之前连接到此对等节点吗？",
+        "connecting": "连接到对等节点中...",
+        "cancel": "取消",
+        "connect": "连接"
+      },
+      "errorNetworkUnavailable": "网络信息不可用",
+      "errorUnsupportedNetwork": "不支持的网络：{{network}}",
+      "errorNoLspUrl": "未为网络配置默认 LSP URL：{{network}}",
+      "errorFetchLsp": "获取 LSP 连接信息失败",
+      "errorInvalidPeerString": "对等连接字符串无效",
+      "errorConnectFailed": "连接到对等节点失败。请重试。"
+    },
+    "step2": {
+      "title": "开通通道 - 步骤 2",
+      "subtitle": "配置通道容量和资产",
+      "openingWith": "正在与节点开通通道：",
+      "capacityLabel": "通道容量（聪）",
+      "capacityHint": "（您想分配给此通道的 BTC 数量）",
+      "capacityPlaceholder": "输入聪数量",
+      "max": "最大",
+      "minLabel": "最小：{{amount}}",
+      "maxLabel": "最大：{{amount}}",
+      "rgbAssetsTitle": "RGB 资产",
+      "rgbAssetsSubtitle": "为资产转移向您的通道添加 RGB 资产",
+      "removeAsset": "移除资产",
+      "addAsset": "添加资产",
+      "selectAsset": "选择资产",
+      "chooseAsset": "为您的通道选择一个 RGB 资产",
+      "selectAssetPlaceholder": "选择一个 RGB 资产",
+      "searchPlaceholder": "按名称、代码或资产 ID 搜索...",
+      "selectAssetTitle": "选择 RGB 资产",
+      "assetRequired": "您必须选择一个资产才能继续。如果您不想添加资产，请取消选中\"添加资产\"选项。",
+      "assetAmount": "资产数量",
+      "fullAssetId": "完整资产 ID：",
+      "available": "可用：",
+      "maxForChannels": "通道最大值：",
+      "amountLabel": "数量（{{ticker}}）",
+      "clear": "清除",
+      "percent25": "25%",
+      "percent50": "50%",
+      "percentMax": "最大",
+      "exceedsMax": "⚠️ 超过最大可用量（{{amount}}）",
+      "nearMax": "⚡ 接近最大限制（{{amount}}）",
+      "validAmount": "✅ 有效数量",
+      "selectAssetFirst": "请先选择一个资产以输入数量",
+      "noSpendableAssets": "您没有可用于开通通道的可花费链上 RGB 资产。",
+      "transactionFeeRate": "交易费率",
+      "slow": "慢速",
+      "medium": "中速",
+      "fast": "快速",
+      "channelPrivacy": "通道隐私",
+      "publicChannel": "公开通道",
+      "privateChannel": "私有通道",
+      "publicDescription": "在闪电网络上可见，可用于路由支付",
+      "privateDescription": "仅双方知晓，不能用于路由",
+      "privacyInfo": "公开通道可被发现并可以为网络路由支付。私有通道提供直接连接而不具有网络可见性。",
+      "back": "返回",
+      "next": "下一步",
+      "formError": "请检查表单中的错误",
+      "errorCapacityRequired": "请输入通道容量。",
+      "errorMinCapacity": "通道容量必须至少为 {{amount}} 聪。",
+      "errorAssetRequired": "请选择一个资产或取消选中\"添加资产\"选项。",
+      "errorAssetAmountRequired": "请输入资产数量或移除资产选择。",
+      "errorAssetExceedsMax": "资产数量超过最大可用量：{{amount}}",
+      "warningAssetAdjusted": "数量超过最大可用量：{{amount}}。值已调整。",
+      "decimalPlaces": "小数位"
+    },
+    "step3": {
+      "title": "开通通道 - 审核",
+      "subtitle": "在继续之前确认您的通道详细信息",
+      "channelDetails": "通道详细信息",
+      "rgbAsset": "RGB 资产",
+      "bitcoin": "比特币",
+      "channelCapacity": "通道容量",
+      "sat": "聪",
+      "connectedNode": "已连接节点",
+      "nodeId": "节点 ID：",
+      "copyPubkey": "复制完整公钥",
+      "host": "主机：",
+      "status": "状态：",
+      "alreadyConnected": "已连接",
+      "errorInvalidNode": "请返回并输入有效的节点信息",
+      "transactionFeeRate": "交易费率",
+      "channelPrivacy": "通道隐私",
+      "public": "公开",
+      "private": "私有",
+      "visibleOnNetwork": "在闪电网络上可见",
+      "onlyKnownToParties": "仅各方知晓",
+      "rgbAssetChannel": "RGB 资产通道",
+      "rgbAssetInfo": "此通道将包括比特币流动性和 RGB 资产分配。RGB 资产（{{ticker}}）将分配 {{amount}} 单位。",
+      "back": "返回",
+      "opening": "开通中...",
+      "openChannel": "开通通道"
+    },
+    "step4": {
+      "failed": "通道创建失败",
+      "tryAgain": "重试",
+      "goToChannels": "转到通道页面",
+      "success": "通道创建成功！",
+      "successMessage": "通道已成功创建，您现在可以开始交易。"
+    }
+  },
+  "supportModal": {
+    "title": "支持与资源",
+    "troubleshooting": "故障排除",
+    "intro": "需要 KaleidoSwap 的帮助吗？以下是获取帮助的几种方式：",
+    "documentation": "文档",
+    "documentationDesc": "全面的指南和教程",
+    "faq": "常见问题",
+    "faqDesc": "查找常见问题的答案",
+    "telegramGroup": "Telegram 群组",
+    "telegramGroupDesc": "加入我们的社区获取支持和讨论",
+    "githubIssues": "GitHub 问题",
+    "githubIssuesDesc": "报告错误或请求新功能",
+    "commonIssues": "常见问题与解决方案",
+    "commonIssuesDesc": "常见问题的快速故障排除",
+    "backToSupport": "返回支持选项",
+    "troubleshootIntro": "以下是一些常见问题及其解决方案。如果您的问题未在此列出，请通过支持渠道之一联系我们。",
+    "solutions": "解决方案：",
+    "viewSolutions": "查看解决方案",
+    "stillHavingIssues": "仍有问题？从我们的社区和开发人员那里获取个性化帮助：",
+    "telegramSupport": "Telegram 支持",
+    "reportIssue": "报告问题",
+    "needMoreHelp": "需要更多帮助？",
+    "close": "关闭",
+    "back": "返回",
+    "connectionIssues": {
+      "title": "连接问题",
+      "description": "连接到 RGB Lightning 节点时出现问题",
+      "solution1": "检查您的节点是否正在运行",
+      "solution2": "在设置页面验证您的连接设置",
+      "solution3": "确保您的防火墙允许连接到所需端口",
+      "solution4": "尝试重启您的节点"
+    },
+    "channelCreationFailures": {
+      "title": "通道创建失败",
+      "description": "尝试创建新支付通道时出现问题",
+      "solution1": "确保您有足够的比特币余额",
+      "solution2": "检查您的对等节点是否在线并接受通道",
+      "solution3": "验证您和您的对等节点是否连接到同一个 RGB 代理服务器",
+      "solution4": "等待任何待处理的区块链确认"
+    },
+    "paymentFailures": {
+      "title": "支付失败",
+      "description": "发送或接收 RGB 支付时出现问题",
+      "solution1": "验证您的通道中有足够的出站流动性",
+      "solution2": "检查您的钱包中是否有足够的着色 UTXO",
+      "solution3": "验证发票是否正确且未过期"
+    }
+  },
+  "backupModal": {
+    "title": "创建备份",
+    "backupFilePath": "备份文件路径",
+    "nodePassword": "节点密码",
+    "nodePasswordPlaceholder": "输入节点密码",
+    "invalidBackupPath": "无效的备份路径",
+    "backupInProgressMessage": "请稍候，备份正在进行中...",
+    "backupLockedMessage": "在备份过程完成之前，节点将被锁定。",
+    "cancel": "取消",
+    "createBackup": "创建备份"
+  },
+  "logoutModal": {
+    "loggingOut": "正在退出登录",
+    "loggingOutMessage": "请稍候，正在锁定您的钱包...",
+    "confirmLogoutTitle": "确认退出登录",
+    "confirmLogoutMessage": "您确定要退出登录吗？这将锁定您的钱包。",
+    "cancel": "取消",
+    "confirmLogout": "确认退出登录",
+    "logout": "退出登录"
+  },
+  "closeChannelModal": {
+    "title": "关闭通道",
+    "confirmMessage": "您确定要关闭此通道吗？",
+    "settleMessage": "关闭通道将把当前余额结算到您的链上钱包。",
+    "forceClose": "强制关闭",
+    "useCautionLabel": "谨慎使用",
+    "forceCloseConditionsTitle": "仅在以下情况下使用强制关闭：",
+    "forceCloseCondition1": "对等节点离线或无响应",
+    "forceCloseCondition2": "通道卡住或处于问题状态",
+    "forceCloseCondition3": "常规合作关闭失败",
+    "forceCloseWarning": "强制关闭可能导致更高的费用和更长的确认时间。您的资金将被锁定在时间锁合约中，直到时间锁到期。",
+    "cooperativeCloseInfo": "合作关闭（默认）更快、更便宜，并在链上确认后将资金返还到您的钱包。",
+    "cannotCloseCooperatively": "无法合作关闭通道",
+    "forceCloseQuestion": "您想强制关闭此通道吗？强制关闭：",
+    "forceCloseReason1": "不需要您的对等节点在线",
+    "forceCloseReason2": "将暂时将您的资金锁定在时间锁合约中",
+    "forceCloseReason3": "可能导致更高的费用",
+    "closingMessage": "正在关闭通道... 请稍候",
+    "processing": "处理中...",
+    "forceCloseChannel": "强制关闭通道",
+    "closeChannel": "关闭通道",
+    "cancel": "取消",
+    "successMessage": "通道 {{channelId}}... 关闭 {{forceClose}} 已成功启动",
+    "errorMessage": "关闭通道失败：{{error}}"
+  },
+  "errorBoundary": {
+    "pageNotFound": "页面未找到",
+    "errorStatus": "错误 {{status}}",
+    "pageNotFoundMessage": "抱歉，我们找不到您要查找的页面。",
+    "unexpectedError": "发生意外错误",
+    "oopsSomethingWentWrong": "哎呀！出了点问题",
+    "unexpectedErrorMessage": "很抱歉，发生了意外错误。",
+    "goBack": "返回",
+    "goHome": "返回主页"
+  },
+  "walletInit": {
+    "steps": {
+      "terms": "条款",
+      "setup": "节点设置",
+      "password": "密码",
+      "mnemonic": "恢复短语",
+      "verify": "验证",
+      "unlock": "解锁"
+    },
+    "termsStep": {
+      "title": "欢迎使用 KaleidoSwap",
+      "subtitle": "请阅读并接受我们的条款和隐私政策以继续",
+      "description": "在开始使用 KaleidoSwap 之前，请查看并接受我们的服务条款和隐私政策。",
+      "reviewButton": "查看条款和隐私政策"
+    },
+    "setupStep": {
+      "title": "创建新钱包",
+      "subtitle": "设置您的本地节点以创建新的 RGB Lightning 钱包",
+      "description": "配置您的节点设置以创建新的 RGB Lightning 钱包。为您的钱包选择名称和网络。",
+      "accountNameLabel": "账户名称",
+      "accountNameDescription": "此名称将用于识别您的钱包",
+      "accountNamePlaceholder": "我的比特币钱包",
+      "accountNameRequired": "账户名称是必需的",
+      "accountExistsError": "已存在具有此名称的账户",
+      "bearerTokenLabel": "Bearer 令牌",
+      "bearerTokenDescription": "用于远程节点访问的可选身份验证令牌",
+      "bearerTokenPlaceholder": "输入您的 bearer 令牌",
+      "continueButton": "继续",
+      "failedToSetup": "设置节点失败。请重试。"
+    },
+    "passwordStep": {
+      "title": "创建密码",
+      "subtitle": "设置强密码以保护您的节点",
+      "initializingTitle": "正在初始化节点",
+      "initializingMessage": "请稍候，我们正在初始化您的节点。这可能需要一些时间...",
+      "settingUpWallet": "正在设置您的钱包...",
+      "startingNode": "正在启动 RLN 节点...",
+      "portsInUse": "无法启动节点：某些端口已被其他进程使用。请停止正在运行的节点或选择不同的端口。",
+      "nodeInitializedSuccess": "节点初始化成功！",
+      "nodeAlreadyInitialized": "节点已初始化，正在尝试解锁...",
+      "failedToInitialize": "初始化节点失败",
+      "failedToStoreRecovery": "安全存储恢复短语失败。请重试。",
+      "stoppingExistingNodes": "正在停止冲突端口上的现有节点...",
+      "existingNodesStopped": "现有节点已成功停止"
+    },
+    "mnemonicStep": {
+      "title": "恢复短语",
+      "subtitle": "将您的恢复短语保存在安全的地方",
+      "mnemonicCopied": "助记词已复制到剪贴板",
+      "failedToCopy": "复制助记词失败"
+    },
+    "verifyStep": {
+      "title": "验证恢复短语",
+      "subtitle": "确认您已正确保存恢复短语",
+      "mnemonicMismatch": "助记词不匹配",
+      "mnemonicStoredSuccess": "助记词已加密并成功存储",
+      "unexpectedError": "发生意外错误"
+    },
+    "unlockStep": {
+      "title": "正在启动节点",
+      "subtitle": "您的节点正在初始化",
+      "errorTitle": "节点错误",
+      "errorSubtitle": "初始化您的节点时出错",
+      "backToVerification": "返回验证",
+      "walletUnlockedSuccess": "钱包解锁成功！",
+      "failedToUnlock": "解锁节点失败",
+      "failedToVerify": "解锁后验证节点状态失败",
+      "unlockingCancelled": "节点解锁已取消",
+      "failedToCancel": "取消解锁失败"
+    },
+    "errors": {
+      "failedToCheckPorts": "检查端口可用性失败",
+      "portsInUse": "端口 {{ports}} 正在被其他应用程序使用。请选择不同的端口或停止冲突的应用程序。",
+      "failedToStopNode": "停止端口 {{port}} 上的现有节点失败",
+      "failedToStart": "启动节点失败",
+      "suggestedPorts": "建议的替代端口：\n- 守护进程端口：{{daemon}}\n- LDK 对等端口：{{ldk}}",
+      "nodeInitFailed": "节点初始化失败",
+      "invalidResponse": "无效响应：缺少助记词"
+    }
+  },
+  "walletUnlock": {
+    "title": "解锁您的钱包",
+    "subtitle": "输入您的密码以安全访问您的钱包",
+    "walletAccess": "钱包访问",
+    "connectionDetails": "连接详情",
+    "nodeUrl": "节点 URL",
+    "bitcoindRpc": "Bitcoind RPC 接口",
+    "indexerUrl": "索引器 URL",
+    "rgbProxyEndpoint": "RGB 代理端点",
+    "walletPassword": "钱包密码",
+    "passwordPlaceholder": "输入您的安全密码",
+    "passwordRequired": "密码是必需的",
+    "unlockButton": "解锁钱包",
+    "backToSetup": "返回钱包设置",
+    "checkingStatus": "正在检查钱包状态",
+    "checkingMessage": "请稍候，我们正在验证您的钱包...",
+    "initializeWalletTitle": "初始化钱包",
+    "initializeWalletMessage": "您的钱包尚未初始化。您想现在设置吗？",
+    "cancel": "取消",
+    "initialize": "初始化",
+    "successMessage": "钱包解锁成功！",
+    "invalidPassword": "密码无效",
+    "alreadyUnlocked": "节点已解锁",
+    "nodeStopped": "节点已停止",
+    "unlockCancelled": "解锁过程已取消",
+    "failedCheckStatus": "检查节点状态失败：{{error}}",
+    "failedGetNodeInfo": "解锁后获取节点信息失败"
+  },
+  "trade": {
+    "noChannels": {
+      "insufficientBalance": "比特币余额不足",
+      "insufficientBalanceMessage": "您需要一些比特币才能开通通道。请存入一些 BTC 以开始。",
+      "depositBTC": "存入 BTC",
+      "noRGBChannels": "没有可用的 RGB 通道",
+      "noRGBChannelsMessage": "要开始交换，您需要一个包含一些资产的通道",
+      "openChannel": "开通通道",
+      "buyFromLSP": "从 LSP 购买",
+      "marketMaker": "做市商",
+      "noTradingChannels": "没有可用的交易通道",
+      "buyChannel": "购买通道",
+      "availableTradingPairs": "可用交易对",
+      "supportedAssets": "支持的资产",
+      "quickStartGuide": "快速入门指南",
+      "quickStartMessage": "按照以下步骤开始交易 RGB 资产",
+      "checkSupportedAssets": "检查支持的资产",
+      "checkSupportedAssetsMessage": "访问注册表以查看此做市商支持哪些资产",
+      "createYourChannel": "创建您的通道",
+      "createChannelMessage": "从 LSP 购买通道或直接用您的资产开通",
+      "startTrading": "开始交易",
+      "startTradingMessage": "通道激活后返回此处开始交易",
+      "recommendationCompatible": "您已经拥有与此做市商兼容的资产。您可以直接开通通道。",
+      "recommendationBuy": "为了最快开始，我们建议从 LSP 购买一个支持此做市商资产的通道。",
+      "recommendationOpen": "此做市商支持特定资产。您可以使用这些资产开通通道。",
+      "recommendationDefault": "要与此做市商交易，您需要一个包含其支持资产之一的通道。"
+    },
+    "channelsNotReady": {
+      "title": "通道尚未就绪",
+      "message": "您的交易通道正在设置中。此过程通常需要几分钟。请稍候，我们正在为您准备一切。",
+      "channelStatus": "通道状态",
+      "initializing": "正在初始化...",
+      "checkStatus": "检查状态",
+      "setupTime": "设置时间",
+      "setupTimeMessage": "通道设置通常需要 3-5 分钟完成",
+      "autoRefresh": "自动刷新",
+      "autoRefreshMessage": "我们将每 30 秒自动检查一次状态"
+    },
+    "connectionIssues": {
+      "connectionLost": "做市商连接丢失",
+      "connectionLostMessage": "您的交易通道可用，但我们在维持与做市商的实时连接时遇到问题。",
+      "preventsTradingMessage": "这会阻止实时价格更新和交易。",
+      "retryConnection": "重试连接",
+      "connectionIssue": "连接问题",
+      "network": "网络",
+      "checkInternetMessage": "检查您的互联网连接",
+      "switchMaker": "切换做市商",
+      "tryDifferentMaker": "尝试上面的不同做市商",
+      "wait": "等待",
+      "serverBusy": "服务器可能暂时繁忙",
+      "currentMaker": "当前做市商：",
+      "marketMakerSelector": "如果当前做市商不可用，请切换到另一个以继续交易",
+      "connectingToMaker": "正在连接到做市商",
+      "connectionTimeout": "连接超时",
+      "establishingConnection": "正在建立连接",
+      "connectingMessage": "正在尝试连接到做市商...",
+      "usuallyFastMessage": "这通常只需要几秒钟。",
+      "timeoutMessage": "无法在 30 秒内连接到做市商。",
+      "serverUnreachableMessage": "服务器可能无法访问或遇到问题。",
+      "connectingForSeconds": "已连接 {{seconds}} 秒...",
+      "cancelAndRetry": "取消并重试",
+      "elapsedTime": "已过 {{seconds}} 秒",
+      "tryingSwitchMessage": "当前正在尝试连接。您可以切换尝试另一个做市商。",
+      "switchIfUnavailable": "如果当前做市商不可用，请切换到另一个",
+      "connectionInProgress": "连接进行中"
+    },
+    "manual": {
+      "balancesUpdated": "资产余额已更新",
+      "balancesFailed": "获取资产余额失败",
+      "swapInitiated": "交换已成功发起",
+      "swapInitiateFailed": "无法发起交换，请重试。",
+      "noActiveSwap": "没有可执行的交换",
+      "missingTakerPubkey": "请输入接收方公钥",
+      "swapExecuted": "交换执行成功",
+      "swapExecuteFailed": "执行交换失败，请重试。"
+    },
+    "taker": {
+      "balancesUpdated": "资产余额已更新",
+      "balancesFailed": "获取资产余额失败",
+      "missingSwapString": "请输入交换字符串",
+      "whitelistSuccess": "交易已成功加入白名单",
+      "whitelistFailed": "无法加入白名单，请重试。",
+      "pubkeyCopied": "公钥已复制到剪贴板"
+    },
+    "maker": {
+      "switching": "正在切换到新的做市商...",
+      "reconnected": "已成功重新连接做市商",
+      "reconnecting": "正在重新连接，请稍候...",
+      "changeFailed": "切换做市商失败",
+      "invalidUrl": "URL 格式无效",
+      "reconnectingStatus": "正在重新连接做市商...",
+      "reconnectionInitFailed": "启动重新连接失败，请重试。",
+      "reconnectionFailed": "重新连接做市商失败"
+    },
+    "statusToast": {
+      "swapSucceeded": "交换成功",
+      "swapExpired": "交换已过期",
+      "pendingSwaps_one": "{{count}} 个交换进行中",
+      "pendingSwaps_other": "{{count}} 个交换进行中"
+    }
+  },
+  "walletRestore": {
+    "title": "恢复钱包",
+    "subtitle": "从备份文件恢复您的钱包",
+    "steps": {
+      "backupSelection": "选择备份",
+      "restoration": "恢复中",
+      "completion": "完成"
+    },
+    "accountName": "账户名称",
+    "accountNameDescription": "此名称将用于创建您的账户文件夹",
+    "accountNamePlaceholder": "输入账户名称",
+    "accountNameRequired": "账户名称为必填项",
+    "backupFile": "备份文件",
+    "backupFileDescription": "选择您钱包的备份文件",
+    "backupFilePlaceholder": "选择您的备份文件",
+    "password": "密码",
+    "passwordDescription": "输入备份文件的密码",
+    "passwordPlaceholder": "输入您的密码",
+    "passwordRequired": "密码为必填项",
+    "restoreWallet": "恢复钱包",
+    "restoring": "恢复中...",
+    "restoringYourWallet": "正在恢复您的钱包",
+    "restoringMessage": "请稍候，我们正在从备份文件恢复您的钱包。这可能需要几分钟时间。",
+    "successTitle": "钱包恢复成功",
+    "successMessage": "您的钱包已恢复并可以使用。",
+    "errorTitle": "钱包恢复失败",
+    "errorMessage": "恢复钱包时出现问题。",
+    "accountExistsTitle": "账户已存在",
+    "accountExistsMessage": "已存在同名账户。请选择不同的名称。",
+    "nodeOperationFailedTitle": "节点操作失败",
+    "unexpectedErrorTitle": "意外错误",
+    "selectBackupFile": "请选择备份文件",
+    "passwordRequiredError": "密码为必填项",
+    "failedToSelectBackup": "选择备份文件失败",
+    "nodeStartedSuccess": "节点启动成功！",
+    "couldNotStartNode": "无法启动节点：{{error}}",
+    "errorRestoringWallet": "恢复钱包时出错：{{error}}",
+    "failedToRestore": "无法恢复钱包。请检查您的备份文件和密码。",
+    "failedToStartNode": "无法启动或操作节点：{{error}}",
+    "unexpectedError": "发生意外错误：{{error}}",
+    "continue": "继续",
+    "close": "关闭"
+  },
+  "deposits": {
+    "title": "存款历史",
+    "loading": "加载存款历史中...",
+    "errorLoading": "加载数据时出错",
+    "errorMessage": "加载您的存款历史时出错。请重试。",
+    "tryAgain": "重试",
+    "onChain": "链上",
+    "offChain": "链下",
+    "type": "类型",
+    "asset": "资产",
+    "amount": "金额",
+    "date": "日期",
+    "transactionId": "交易ID",
+    "status": "状态",
+    "completed": "已完成",
+    "searchPlaceholder": "搜索存款...",
+    "allTypes": "所有类型",
+    "allAssets": "所有资产",
+    "noDepositsFiltered": "未找到符合筛选条件的存款。",
+    "clearFilters": "清除筛选",
+    "noDeposits": "未找到存款。",
+    "refresh": "刷新"
+  },
+  "withdrawals": {
+    "title": "提款历史",
+    "loading": "加载提款历史中...",
+    "errorLoading": "加载数据时出错",
+    "errorMessage": "加载您的提款历史时出错。请重试。",
+    "tryAgain": "重试",
+    "onChain": "链上",
+    "offChain": "链下",
+    "type": "类型",
+    "asset": "资产",
+    "amount": "金额",
+    "date": "日期",
+    "transactionId": "交易ID",
+    "status": "状态",
+    "completed": "已完成",
+    "pending": "待处理",
+    "searchPlaceholder": "搜索提款...",
+    "allTypes": "所有类型",
+    "allAssets": "所有资产",
+    "noWithdrawalsFiltered": "未找到符合筛选条件的提款。",
+    "clearFilters": "清除筛选",
+    "noWithdrawals": "未找到提款。",
+    "refresh": "刷新"
+  },
+  "swaps": {
+    "title": "交换历史",
+    "loading": "加载交换历史中...",
+    "errorLoading": "加载数据时出错",
+    "errorMessage": "加载您的交换历史时出错。请重试。",
+    "tryAgain": "重试",
+    "maker": "做市商",
+    "taker": "接受方",
+    "type": "类型",
+    "from": "从",
+    "to": "到",
+    "date": "日期",
+    "paymentHash": "支付哈希",
+    "status": "状态",
+    "succeeded": "成功",
+    "failed": "失败",
+    "pending": "待处理",
+    "waiting": "等待中",
+    "expired": "已过期",
+    "searchPlaceholder": "搜索交换...",
+    "allTypes": "所有类型",
+    "allStatuses": "所有状态",
+    "allAssets": "所有资产",
+    "noSwapsFiltered": "未找到符合筛选条件的交换。",
+    "clearFilters": "清除筛选",
+    "noSwaps": "未找到交换。",
+    "refresh": "刷新"
+  },
+  "assets": {
+    "title": "资产转账",
+    "loading": "加载转账中...",
+    "refresh": "刷新",
+    "refreshing": "刷新中...",
+    "assetIdCopied": "资产ID已复制到剪贴板",
+    "transactionIdCopied": "交易ID已复制到剪贴板",
+    "recipientIdCopied": "接收方ID已复制到剪贴板",
+    "searchPlaceholder": "搜索交易...",
+    "allTypes": "所有类型",
+    "sent": "已发送",
+    "received": "已接收",
+    "issuance": "发行",
+    "allStatuses": "所有状态",
+    "type": "类型",
+    "amount": "数量",
+    "date": "日期",
+    "transactionId": "交易ID",
+    "status": "状态",
+    "noTransfersFiltered": "未找到符合您搜索条件的转账",
+    "noTransfers": "未找到此资产的转账",
+    "clearFilters": "清除筛选",
+    "transactionDetails": "交易详情",
+    "transactionIdLabel": "交易ID：",
+    "amountLabel": "数量：",
+    "typeLabel": "类型：",
+    "statusLabel": "状态：",
+    "dateLabel": "日期：",
+    "recipientIdLabel": "接收方ID："
+  },
+  "walletRemote": {
+    "apiUrlMissingParams": "基础 URL 和端点都是必需的",
+    "connectionVerifiedHeading": "✅ 连接已验证：",
+    "creatingAccount": "正在创建账户...",
+    "finalizingSetup": "正在完成设置...",
+    "processing": "处理中...",
+    "unknownTestError": "测试连接时发生未知错误。",
+    "unknownConnectionError": "连接到节点时发生未知错误。",
+    "unexpectedError": "意外错误",
+    "nodeUrlPlaceholderBitfinex": "http://localhost:3001（Bitfinex regtest）",
+    "regtestTypeLocal": "本地",
+    "regtestTypeBitfinex": "Bitfinex",
+    "authenticationFailedToast": "身份验证失败。请检查您的凭据。",
+    "nodeEndpointNotFoundToast": "未找到节点端点。请检查您的节点 URL。",
+    "serverErrorToast": "服务器错误。远程节点可能已关闭或配置错误。",
+    "connectionTimeout": "连接超时",
+    "connectionTimeoutDetails": "连接响应时间过长。请检查您的网络连接和节点 URL。",
+    "connectionTimeoutToast": "连接超时。",
+    "connectionFailed": "连接失败",
+    "title": "连接到远程节点",
+    "subtitle": "输入您的远程 RGB Lightning 节点详细信息",
+    "configureRemoteNode": "配置您的远程节点连接设置。输入现有 RGB Lightning 节点的详细信息。",
+    "accountName": "账户名称",
+    "accountNameDescription": "此名称将用于识别您的远程节点连接",
+    "accountNamePlaceholder": "我的远程节点",
+    "accountNameRequired": "账户名称是必需的",
+    "nodeUrl": "节点 URL",
+    "nodeUrlDescription": "您的远程 RGB Lightning 节点的 URL",
+    "nodeUrlDescriptionRegtest": "{{type}} regtest 连接的节点 URL",
+    "nodeUrlPlaceholder": "http://your-node-url:3000",
+    "nodeUrlPlaceholderRegtest": "http://localhost:3001",
+    "nodeUrlRequired": "节点 URL 是必需的",
+    "nodeUrlInvalidFormat": "从 URL 中删除 \"/nodeinfo\" - 它将自动添加",
+    "nodeUrlTrailingSlash": "从 URL 中删除多余的尾部斜杠",
+    "nodeUrlProtocol": "URL 必须以 http:// 或 https:// 开头",
+    "password": "节点密码",
+    "passwordPlaceholder": "密码",
+    "passwordRequired": "密码是必需的",
+    "useAuthToken": "使用身份验证令牌",
+    "authToken": "身份验证令牌",
+    "authTokenRequired": "身份验证令牌是必需的",
+    "testConnection": "测试连接",
+    "testingConnection": "正在测试连接...",
+    "testConnectionAndCreate": "测试连接并创建账户",
+    "connectionTestSuccessful": "连接测试成功",
+    "connectionTestSuccessMessage": "成功连接到远程节点！节点响应正常。",
+    "connectionVerified": "连接已验证！您现在可以安全地连接到节点。",
+    "nodeOnline": "节点在线且可访问",
+    "authWorking": "身份验证工作正常",
+    "nodeRespondingValidData": "节点响应有效数据",
+    "testConnectionError": "{{error}}",
+    "authenticationFailed": "身份验证失败",
+    "authenticationFailedDetails": "凭据或身份验证令牌无效。请检查您的密码或验证令牌。",
+    "nodeEndpointNotFound": "未找到节点端点",
+    "nodeEndpointNotFoundDetails": "未找到 /nodeinfo 端点。请验证节点 URL 是否正确。",
+    "serverError": "服务器错误",
+    "serverErrorDetails": "远程节点返回服务器错误（{{status}}）。节点可能已关闭或配置错误。",
+    "connectionTestFailed": "连接测试失败",
+    "connectionTestFailedDetails": "HTTP {{status}}: {{statusText}}",
+    "connectionTestFailedToast": "连接测试失败：{{status}}",
+    "invalidResponseFormat": "无效的响应格式",
+    "invalidResponseFormatDetails": "节点已响应但不是有效的 JSON。这可能不是 RGB Lightning 节点。",
+    "invalidResponseFormatToast": "连接测试期间收到无效响应。",
+    "networkConnectionFailed": "网络连接失败",
+    "networkConnectionFailedDetails": "测试期间无法访问远程节点。请检查您的互联网连接和节点 URL。",
+    "networkConnectionFailedToast": "连接测试期间出现网络错误。",
+    "connectionSuccessToast": "✅ 连接测试成功！节点可访问。",
+    "processingStep1": "步骤 1：正在测试与远程节点的连接...",
+    "processingStep2": "步骤 2：正在创建账户并保存设置...",
+    "processingStep3": "步骤 3：正在完成账户设置...",
+    "accountExists": "账户名称已存在",
+    "accountExistsMessage": "请选择其他账户名称或删除现有账户。",
+    "accountExistsToast": "已存在同名账户",
+    "failedCheckAccountExists": "检查账户存在性失败",
+    "failedCheckAccountExistsMessage": "无法验证账户名称是否可用。请重试。",
+    "failedCheckAccountExistsToast": "检查账户存在性失败。请重试。",
+    "connectionSuccessCreating": "✅ 连接成功！正在创建账户...",
+    "connectionFailedToast": "连接失败：{{status}} {{statusText}}",
+    "invalidResponseToast": "节点响应无效。请检查 URL。",
+    "connectionTimeoutLong": "连接超时。请检查您的网络并重试。",
+    "networkErrorToast": "网络错误。请检查您的连接和节点 URL。",
+    "corsError": "CORS 策略错误",
+    "corsErrorDetails": "远程节点未配置为接受来自此应用程序的请求。",
+    "corsErrorToast": "CORS 错误。远程节点可能未正确配置。",
+    "failedToConnectToast": "连接到远程节点失败。请检查您的设置。",
+    "accountCreatedSuccess": "🎉 账户创建成功！",
+    "failedToCreateAccount": "创建账户失败",
+    "failedToCreateAccountDetails": "连接成功后创建账户失败：{{error}}",
+    "failedToCreateAccountToast": "创建账户失败。请重试。",
+    "troubleshootingTips": "💡 故障排除提示：",
+    "verifyNodeUrl": "验证节点 URL 是否正确且可访问",
+    "checkNodeRunning": "检查节点是否正在运行并响应",
+    "ensurePortCorrect": "确保端口号正确",
+    "trySwitchingRegtest": "如果使用 regtest，请尝试在本地和远程 regtest 之间切换",
+    "authHelp": "🔑 身份验证帮助：",
+    "doubleCheckPassword": "仔细检查您的密码",
+    "verifyAuthToken": "如果使用身份验证令牌，请验证它",
+    "ensureNodeAccepts": "确保节点接受您的凭据",
+    "networkTroubleshooting": "🌐 网络故障排除：",
+    "checkInternet": "检查您的互联网连接",
+    "verifyNodeOnline": "验证节点是否在线且可访问",
+    "trySwitchingConnection": "如果使用 regtest，请尝试切换 regtest 连接类型",
+    "dismissAndRetry": "关闭并重试",
+    "requiresRestart": "需要重启"
+  },
+  "mnemonicViewer": {
+    "unlockTitle": "解锁恢复短语",
+    "displayTitle": "您的恢复短语",
+    "unlockSubtitle": "输入您的密码以解密并查看恢复短语",
+    "displaySubtitle": "请妥善保管此短语并保密",
+    "securityNoticeTitle": "安全提示",
+    "securityNoticeDescription": "您的恢复短语使用钱包密码加密。这确保只有您可以访问它。",
+    "retrievedSuccess": "恢复短语检索成功",
+    "incorrectPassword": "密码错误或未存储助记词",
+    "decryptFailed": "解密恢复短语失败。请检查您的密码。",
+    "copyFailed": "复制到剪贴板失败",
+    "decrypting": "解密中...",
+    "viewButton": "查看恢复短语",
+    "warningTitle": "⚠️ 严重安全警告",
+    "warningNeverShare": "切勿与任何人分享此短语",
+    "warningControlWallet": "任何拥有此短语的人都可以控制您的钱包",
+    "warningStoreSecurely": "将其存储在安全的离线位置",
+    "warningScreenPrivacy": "确保没有人可以看到您的屏幕",
+    "recoveryPhraseHeading": "您的 12 词恢复短语",
+    "copyButton": "复制到剪贴板",
+    "copySuccessButton": "已复制到剪贴板",
+    "closeButton": "关闭并隐藏"
+  },
+  "issueAssetModal": {
+    "title": "发行新资产",
+    "note": "注意：发行新资产需要着色 UTXO。如果您没有足够的着色 UTXO，该过程可能涉及链上交易。",
+    "tickerLabel": "代码符号",
+    "tickerPlaceholder": "BTC",
+    "nameLabel": "资产名称",
+    "namePlaceholder": "比特币",
+    "amountLabel": "发行数量",
+    "amountPlaceholder": "100",
+    "precisionLabel": "精度（小数位数）",
+    "precisionPlaceholder": "8",
+    "precisionError": "精度值必须在 0 到 10 之间。",
+    "previewPrefix": "您将发行：",
+    "submit": "发行资产",
+    "submitting": "发行中...",
+    "success": "资产发行成功！",
+    "failure": "资产发行失败"
+  },
+  "updater": {
+    "checkingTitle": "检查更新中",
+    "checkingDescription": "我们正在寻找最新版本以确保您拥有最佳体验。",
+    "errorTitle": "更新检查失败",
+    "errorGeneric": "检查更新失败。请稍后重试。",
+    "stuckError": "更新过程似乎卡住了。请重试。",
+    "timeoutError": "更新过程超时。请重试。",
+    "installError": "安装更新失败。请重试。",
+    "installToastError": "安装更新失败",
+    "tryAgain": "重试",
+    "downloadingTitle": "正在下载更新",
+    "versionLabel": "版本",
+    "installWarning": "请不要在更新期间关闭应用程序",
+    "downloadedLabel": "已下载",
+    "downloadingStatus": "下载中...",
+    "installingStatus": "安装中...",
+    "installingLabel": "安装中...",
+    "cancelHelp": "遇到问题？单击取消并重试",
+    "cancelledError": "用户取消更新",
+    "releaseNotesTitle": "新功能",
+    "availableTitle": "有新更新可用！",
+    "releasedOn": "发布于 {{date}}",
+    "installButton": "下载并安装",
+    "skipButton": "暂时跳过",
+    "recommendation": "我们建议更新以获取最新功能和安全改进。",
+    "completedTitle": "更新就绪！🎉",
+    "completedDescription": "版本 {{version}} 已成功下载。",
+    "completedSubtext": "重启应用程序以享受最新功能和改进。",
+    "restartButton": "立即重启",
+    "fileUnits": {
+      "bytes": "字节",
+      "kilobytes": "KB",
+      "megabytes": "MB",
+      "gigabytes": "GB"
+    }
+  },
+  "buyChannel": {
+    "totalPayment": "总支付金额",
+    "expires": "过期时间：{{time}}",
+    "lightningTab": "⚡ 闪电网络",
+    "onchainTab": "⛓️ 链上",
+    "lightningInstructions": "扫描二维码或复制发票以使用 Lightning 支付。",
+    "onchainInstructions": "将比特币发送到以下地址。需要 {{confirmations}} 次确认。",
+    "copySuccess": "已复制到剪贴板！",
+    "copyInvoice": "复制发票",
+    "copyAddress": "复制地址",
+    "lspFetchError": "获取 LSP 数据时出错。请稍后重试。",
+    "createOrderError": "创建通道订单时发生错误",
+    "orderIdMissing": "无法从服务器响应中获取订单 ID",
+    "lightningPaymentFailed": "Lightning 支付失败",
+    "lightningPaymentSuccess": "Lightning 支付成功启动！",
+    "onchainPaymentSuccess": "链上支付成功发送！",
+    "paymentFailed": "支付失败：{{error}}",
+    "unknownError": "未知错误"
+  },
+  "websocket": {
+    "connectionLost": "与做市商的连接已丢失。正在尝试重新连接...",
+    "serverError": "检测到服务器错误。正在尝试重新连接..."
+  },
+  "toolbar": {
+    "accounts": {
+      "fetchFailed": "获取账户失败",
+      "updateSuccess": "账户 \"{{name}}\" 更新成功",
+      "updateFailed": "更新账户失败：{{error}}",
+      "deleteSuccess": "账户 \"{{name}}\" 删除成功",
+      "deleteFailed": "删除账户 \"{{name}}\" 失败"
+    },
+    "nodes": {
+      "localNodeStarted": "本地节点 \"{{name}}\" 启动成功",
+      "startingLocalNode": "正在启动本地节点...",
+      "stoppingExisting": "正在停止冲突端口上的现有节点...",
+      "existingStopped": "现有节点停止成功",
+      "startFailed": "启动节点失败",
+      "startFailedWithReason": "启动节点失败：{{error}}",
+      "portErrors": "请修复端口配置错误",
+      "nodeUpdateSuccess": "节点 \"{{name}}\" 更新成功",
+      "nodeUpdateFailed": "更新节点失败"
+    },
+    "nodeCard": {
+      "local": "本地",
+      "remote": "远程"
+    },
+    "main": {
+      "errorLoading": "加载节点时出错：{{error}}",
+      "title": "您的节点",
+      "exitEditMode": "退出编辑模式",
+      "enterEditMode": "进入编辑模式",
+      "editNodes": "编辑节点",
+      "editModeInstructions": "编辑模式：点击节点进行编辑，或使用编辑/删除按钮",
+      "noNodesFound": "未找到节点",
+      "createNodeHint": "创建一个新节点以开始使用 Kaleidoswap"
+    },
+    "modal": {
+      "checkingNodeStatus": "正在检查节点状态...",
+      "nodeAlreadyRunning": "节点已在运行，正在切换上下文...",
+      "startingLocalNode": "正在启动本地节点...",
+      "connectingRemoteNode": "正在连接到远程节点...",
+      "unknownError": "切换节点时发生未知错误",
+      "localNode": "本地节点",
+      "remoteNode": "远程节点",
+      "switchNode": "切换节点",
+      "reviewDetails": "切换前查看节点详细信息",
+      "errorSwitchingNode": "切换节点时出错",
+      "useSuggestedPorts": "使用建议的端口",
+      "connectionDetails": "连接详情",
+      "nodeUrl": "节点 URL",
+      "rpcConnection": "RPC 连接",
+      "serviceEndpoints": "服务端点",
+      "indexerUrl": "索引器 URL",
+      "rgbProxy": "RGB 代理",
+      "portConfiguration": "端口配置",
+      "daemonPort": "守护进程端口",
+      "ldkPeerPort": "LDK 对等端口",
+      "dataPath": "数据路径",
+      "cancel": "取消",
+      "switching": "切换中...",
+      "switchToNode": "切换到此节点"
+    },
+    "delete": {
+      "title": "删除节点",
+      "confirmMessage": "您确定要删除节点 \"{{name}}\" 吗？",
+      "warningTitle": "⚠️ 警告",
+      "cannotUndo": "此操作无法撤销",
+      "localWarning1": "如果您没有备份您的节点，您将永久失去对资金的访问权限",
+      "localWarning2": "所有本地节点数据将被永久删除",
+      "localWarning3": "将要删除的数据路径：{{path}}",
+      "remoteWarning1": "这只会删除存储的连接设置",
+      "remoteWarning2": "远程节点将保持活动状态，必须直接在远程机器上管理",
+      "remoteWarning3": "如果您想稍后重新连接，请确保您可以访问远程节点的凭据",
+      "cancel": "取消",
+      "deleteNode": "删除节点",
+      "deleteConnection": "删除连接"
+    },
+    "edit": {
+      "title": "编辑节点",
+      "tabs": {
+        "basic": "基本设置",
+        "advanced": "高级设置"
+      },
+      "sections": {
+        "connectionSettings": "连接设置",
+        "serviceEndpoints": "服务端点",
+        "portConfiguration": "端口配置",
+        "makerSettings": "做市商设置"
+      },
+      "fields": {
+        "nodeName": "节点名称",
+        "nodeUrl": "节点 URL",
+        "rpcConnectionUrl": "RPC 连接 URL",
+        "bitcoindRpcUrl": "Bitcoind RPC URL",
+        "indexerUrl": "索引器 URL",
+        "rgbProxyEndpoint": "RGB 代理端点",
+        "dataPath": "数据路径",
+        "dataPathHint": "账户创建后无法更改数据路径",
+        "daemonListeningPort": "守护进程监听端口",
+        "daemonListeningPortHint": "RGB Lightning 节点守护进程 API 的端口（1024-65535）",
+        "ldkPeerListeningPort": "LDK 对等监听端口",
+        "ldkPeerListeningPortHint": "闪电网络对等连接的端口（1024-65535）",
+        "defaultMakerUrl": "默认做市商 URL",
+        "defaultLspUrl": "默认 LSP URL"
+      },
+      "validation": {
+        "daemonPortRequired": "守护进程端口是必需的",
+        "daemonPortRange": "守护进程端口必须在 1024 到 65535 之间",
+        "ldkPortRequired": "LDK 对等端口是必需的",
+        "ldkPortRange": "LDK 对等端口必须在 1024 到 65535 之间",
+        "portsMustDiffer": "守护进程和 LDK 端口必须不同"
+      },
+      "cancel": "取消",
+      "saveChanges": "保存更改"
+    }
+  },
+  "orderChannel": {
+    "step1": {
+      "checkPeerFailed": "检查对等连接状态失败",
+      "lspFetchSuccess": "LSP 信息获取成功",
+      "lspUrlMissing": "获取 LSP 连接 URL 失败",
+      "lspFetchFailed": "获取 LSP 信息失败",
+      "timeout": "请求超时。LSP 服务器未响应。请检查 URL 并重试。",
+      "networkError": "网络错误。请检查您的连接和 LSP URL。",
+      "waitForConnectionUrl": "请等待 LSP 连接 URL 获取完成",
+      "alreadyConnected": "继续使用 LSP？",
+      "alreadyConnectedToast": "已连接到 LSP",
+      "connectedSuccess": "成功连接到 LSP",
+      "kaleidoLspFetched": "Kaleidoswap LSP 信息获取成功",
+      "kaleidoLspFailed": "选择 Kaleidoswap LSP 失败",
+      "noDefaultLsp": "未为网络配置默认 LSP URL：{{network}}"
+    },
+    "step2": {
+      "fees": {
+        "fetchFailed": "获取数据时出错。请稍后重试。"
+      },
+      "capacityRequired": "请输入通道容量。",
+      "liquidityRequired": "请输入您的通道流动性。",
+      "assetRequired": "请在继续之前选择资产。",
+      "assetUnsupported": "此 LSP 不支持所选资产。请刷新并选择支持的资产。",
+      "assetAmountRequired": "请在继续之前输入资产数量。",
+      "capacityAdjusted": "通道容量已调整为最小值：{{amount}} sats",
+      "liquidityAdjusted": "通道流动性已调整为最小值：{{amount}} sats",
+      "assetAdjusted": "资产数量已调整为最小值：{{amount}} {{ticker}}",
+      "assetExceedsMax": "数量超过最大限制 {{amount}} {{ticker}}。请在继续之前输入有效数量。",
+      "adjustmentsMade": "某些值已调整以满足要求。",
+      "formError": "表单数据出现错误。请检查您的输入。",
+      "unexpectedError": "发生意外错误。请重试。"
+    },
+    "step3": {
+      "lightningSuccess": "Lightning 支付成功启动！",
+      "onchainSuccess": "链上支付成功发送！",
+      "paymentFailed": "支付失败：{{error}}",
+      "unknownError": "未知错误"
+    },
+    "orderCopy": "订单 ID 已复制！",
+    "paymentCopied": "支付详情已复制到剪贴板！"
+  },
+  "rootRoute": {
+    "connectionErrorTitle": "连接错误",
+    "noWalletFound": "未找到钱包。请设置您的钱包以继续。",
+    "nodeNotRunning": "节点未运行。请尝试重启应用程序。",
+    "returnToSetup": "返回钱包设置",
+    "connectingTitle": "正在连接到节点",
+    "connectingDescription": "请稍候，正在建立连接...",
+    "errorMessage": "错误：{{message}}"
+  },
+  "createUtxos": {
+    "title": "创建着色 UTXO",
+    "description": "着色 UTXO 是开通 RGB 资产闪电通道所必需的。它们允许创建特定于资产的支付通道，在闪电网络上实现 RGB 资产的快速安全交易。",
+    "fields": {
+      "numberOfUtxos": "UTXO 数量",
+      "numberPlaceholder": "输入数量",
+      "sizeLabel": "UTXO 大小（以聪为单位）",
+      "sizePlaceholder": "输入大小",
+      "feeRate": "费率"
+    },
+    "feeOptions": {
+      "slow": "慢速（{{fee}} sat/vB）",
+      "normal": "正常（{{fee}} sat/vB）",
+      "fast": "快速（{{fee}} sat/vB）",
+      "custom": "自定义"
+    },
+    "availableBalance": "可用余额：{{amount}} sats",
+    "actions": {
+      "create": "创建 UTXO"
+    },
+    "toastSuccess": "UTXO 创建成功"
+  },
+  "legal": {
+    "common": {
+      "noticeTitle": "重要提示："
+    },
+    "privacy": {
+      "title": "KaleidoSwap 隐私政策",
+      "lastUpdated": "最后更新：{{date}}",
+      "noticeBody": "虽然 RGB 协议和 RGB 测试网络协议试图在 RGB 代币或 RGB 测试网络代币的交易中构建增强的隐私保护（如适用），但任何加密或隐私增强系统都不可能完全安全。RGB 协议和 RGB 测试网络协议都是实验性协议，应用程序是这些实验性协议的实验性钱包应用程序。应用程序可能出现故障并可能包含缺陷。您使用应用程序进行的交易可能会暴露。我们不能也无法保证通过应用程序传输的数据的安全性；任何传输均由您自行承担风险。",
+      "error": "加载隐私政策失败"
+    },
+    "terms": {
+      "title": "测试网络 KALEIDOSWAP 使用条款",
+      "effectiveDate": "生效日期：{{date}}",
+      "noticeItems": [
+        "本应用程序在 RGB 测试网络协议和测试网络比特币区块链上运行。",
+        "本应用程序是一个实验性数字资产钱包应用程序。",
+        "使用本应用程序的所有风险由您自行承担。",
+        "您不应使用本应用程序发送或接收您无法承受完全损失的测试网络 BTC 或 RGB 测试网络代币。"
+      ],
+      "error": "加载服务条款失败"
+    }
+  },
+  "tradeManual": {
+    "errors": {
+      "initializationFailed": "初始化手动交换组件失败。请重试。"
+    },
+    "toast": {
+      "refreshSuccess": "数据刷新成功",
+      "refreshError": "刷新数据失败。请重试。"
+    },
+    "roles": {
+      "maker": "做市方",
+      "taker": "接单方"
+    },
+    "roleSelector": {
+      "title": "您的角色",
+      "refresh": "刷新数据",
+      "makerDescription": "作为 <maker>maker</maker>，您可以发起并执行交换。切换到 <taker>taker</taker> 角色以将传入的交换加入白名单。",
+      "takerDescription": "作为 <taker>taker</taker>，您可以将传入的交换加入白名单。切换到 <maker>maker</maker> 角色以发起并执行交换。"
+    },
+    "swapExplanation": {
+      "title": "原子交换的工作原理",
+      "cards": {
+        "trustless": {
+          "title": "无需信任的交换",
+          "description": "原子交换允许双方在不信任彼此或使用第三方的情况下交换不同的资产。"
+        },
+        "locks": {
+          "title": "密码学锁",
+          "description": "交换使用密码学哈希锁来确保双方都收到其资产，或者都不收到。"
+        },
+        "guarantee": {
+          "title": "原子性保证",
+          "description": "\"原子性\"属性确保交换要么完全完成，要么根本不完成，消除了交易对手风险。"
+        }
+      },
+      "process": {
+        "title": "交换流程",
+        "makerInitiates": {
+          "title": "Maker 发起",
+          "description": "Maker 定义要交换的资产和数量，并生成交换字符串。"
+        },
+        "takerWhitelists": {
+          "title": "Taker 将其加入白名单",
+          "description": "Taker 审查交换条款并将交换字符串加入白名单以接受交易。"
+        },
+        "makerExecutes": {
+          "title": "Maker 执行",
+          "description": "Maker 执行交换，触发双方之间的资产原子交换。"
+        }
+      },
+      "makerRole": {
+        "title": "Maker 角色",
+        "intro": "作为 maker，您可以：",
+        "items": [
+          "通过定义资产和数量来发起交换",
+          "生成并与 taker 分享交换字符串",
+          "在 taker 将您加入白名单后执行交换",
+          "控制发起和执行两个阶段"
+        ]
+      },
+      "takerRole": {
+        "title": "Taker 角色",
+        "intro": "作为 taker，您可以：",
+        "items": [
+          "从 maker 接收交换字符串",
+          "审查提议的交换条款",
+          "将交换字符串加入白名单以接受交易",
+          "等待 maker 执行交换"
+        ]
+      },
+      "liquidity": {
+        "title": "流动性要求",
+        "intro": "为了使原子交换成功，双方需要：",
+        "items": [
+          "在其闪电通道中拥有足够的被交换资产的流动性",
+          "用于在 maker 和 taker 之间路由支付的比特币流动性",
+          "连接双方的活跃且平衡的通道"
+        ],
+        "note": "如果流动性不足，即使已正确加入白名单，交换也可能失败。"
+      },
+      "collapsedHint": "单击展开并了解有关原子交换如何工作以及涉及的角色的更多信息。"
+    }
+  },
+  "channelCard": {
+    "infoModal": {
+      "title": "通道信息",
+      "fields": {
+        "channelId": "通道 ID",
+        "fundingTx": "资金交易",
+        "peerPubkey": "对等公钥",
+        "shortChannelId": "短通道 ID",
+        "status": "状态",
+        "capacity": "容量",
+        "localBalance": "本地余额",
+        "nextHtlcLimit": "下一个 HTLC 限制",
+        "nextHtlcMinimum": "下一个 HTLC 最小值",
+        "publicChannel": "公开通道",
+        "usable": "可用",
+        "assetId": "资产 ID",
+        "assetLocalAmount": "资产本地数量",
+        "assetRemoteAmount": "资产远程数量"
+      },
+      "na": "不适用"
+    },
+    "status": {
+      "open": "打开",
+      "pending": "待处理"
+    },
+    "labels": {
+      "capacity": "容量",
+      "bitcoinLiquidity": "比特币流动性",
+      "assetLiquidity": "{{ticker}} 流动性"
+    },
+    "buttons": {
+      "details": "详情",
+      "close": "关闭"
+    },
+    "tooltips": {
+      "info": "通道信息"
+    }
+  },
+  "utxoManagement": {
+    "title": "UTXO 管理",
+    "status": {
+      "colorable": "可着色",
+      "colored": "已着色",
+      "normal": "普通"
+    },
+    "summary": {
+      "colorable": {
+        "title": "可着色 UTXO",
+        "bullets": ["UTXO RGB 就绪但尚未分配", "接收链上 RGB 资产"]
+      },
+      "colored": {
+        "title": "已着色 UTXO",
+        "bullets": ["开通 RGB Lightning 通道", "发送链上 RGB 资产"]
+      },
+      "normal": {
+        "title": "普通 UTXO",
+        "bullets": ["开通比特币 Lightning 通道", "常规交易"]
+      },
+      "countLabel": "{{count}} 个 UTXO"
+    },
+    "card": {
+      "rgbAllocations": "RGB 分配："
+    },
+    "actions": {
+      "create": "创建新 UTXO"
+    },
+    "sections": {
+      "colorable": "可着色 UTXO",
+      "colored": "已着色 UTXO",
+      "normal": "普通 UTXO"
+    },
+    "empty": "未找到 UTXO。创建一些以开始使用。"
+  },
+  "updaterModal": {
+    "fileSizes": ["字节", "KB", "MB", "GB"],
+    "fileSizeZero": "0 字节",
+    "errors": {
+      "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
+      "installFailed": "安装更新失败：{{message}}。请重试或从 GitHub 手动下载。",
+      "cancelled": "用户取消更新"
+    },
+    "common": {
+      "whatsNew": "新功能"
+    },
+    "completed": {
+      "title": "更新完成！🎉",
+      "success": "版本 {{version}} 已成功安装。",
+      "restartNote": "应用程序正在自动重启以应用更新...",
+      "restarting": "重启中...",
+      "manualRestart": "如果应用程序在几秒钟内没有自动重启，请手动重启以应用更新。"
+    },
+    "installing": {
+      "title": "正在下载更新",
+      "versionLabel": "版本 {{version}}",
+      "warning": "请不要在更新期间关闭应用程序",
+      "downloadedLabel": "已下载",
+      "downloading": "下载中...",
+      "installing": "安装中...",
+      "cancelHelp": "遇到问题？单击取消并重试"
+    },
+    "error": {
+      "title": "更新失败",
+      "retry": "重试"
+    },
+    "default": {
+      "title": "有更新可用！",
+      "versionLabel": "版本",
+      "releasedOn": "发布于 {{date}}",
+      "installing": "安装中...",
+      "installCta": "下载并安装",
+      "remindLater": "稍后提醒",
+      "recommendation": "我们建议更新以获取最新功能和安全改进。"
+    }
+  },
+  "depositModal": {
+    "progress": {
+      "selectAsset": "选择资产",
+      "details": "存款详情"
+    },
+    "common": {
+      "continue": "继续",
+      "back": "返回",
+      "finish": "完成"
+    },
+    "step1": {
+      "title": "选择资产",
+      "subtitle": "选择您想存入钱包的资产",
+      "selectorPlaceholder": "选择一个资产",
+      "newAssetLabel": "新资产",
+      "searchPlaceholder": "搜索资产...",
+      "addNewAsset": "添加新资产",
+      "noResults": "未找到匹配 \"{{query}}\" 的资产",
+      "selected": "已选择",
+      "genericAsset": "资产",
+      "newAssetInfo": "如果您不知道资产 ID，可以不输入即可继续。系统将生成一个可以接收任何 RGB 资产的存款地址。",
+      "assetIdLabel": "资产 ID（可选）",
+      "assetIdPlaceholder": "输入资产 ID（可选）"
+    },
+    "step2": {
+      "titleWithTicker": "存入 {{ticker}}",
+      "titleGeneric": "存入资产",
+      "titleAny": "存入任何 RGB 资产",
+      "intro": "选择您喜欢的存款方式并按照以下步骤操作",
+      "network": {
+        "onchain": "链上",
+        "lightning": "闪电网络",
+        "requiresAsset": "需要资产 ID"
+      },
+      "privacy": {
+        "title": "隐私接收",
+        "modePrivacy": "使用盲化 UTXO（增强隐私）",
+        "modeWitness": "使用链上地址（基于 witness 的接收）",
+        "privacyLabel": "隐私模式：",
+        "privacyDescription": "使用可着色和盲化的 UTXO 以增强隐私。需要可用的可着色 UTXO。",
+        "witnessLabel": "Witness 模式：",
+        "witnessDescription": "使用标准的比特币链上地址。更简单但隐私性较低。",
+        "witnessNote": "注意：在 witness 接收时接收 RGB 资产时，发送方需要添加一些 sats 来为您创建新的 UTXO，RGB 资产将在其中分配。"
+      },
+      "networkInfo": {
+        "using": "使用 {{network}} 网络",
+        "description": {
+          "signet": "从 Mutinynet 水龙头获取测试币以试用应用程序。",
+          "regtest": "从 RGB Tools 机器人获取测试币以试用应用程序。",
+          "testnet": "从测试网水龙头获取测试币以试用应用程序。"
+        },
+        "button": {
+          "signet": "访问 Mutinynet 水龙头",
+          "regtest": "打开 RGB Tools 机器人",
+          "testnet": "访问测试网水龙头"
+        }
+      },
+      "noColorable": {
+        "title": "需要可着色 UTXO",
+        "description": "要接收链上 RGB 资产，您需要可着色 UTXO。",
+        "cta": "创建可着色 UTXO"
+      },
+      "actions": {
+        "copy": "复制到剪贴板",
+        "generateAddress": "生成新地址"
+      },
+      "labels": {
+        "lnInvoice": "LN 发票",
+        "btcAddress": "BTC 地址",
+        "rgbInvoice": "RGB 发票"
+      },
+      "toasts": {
+        "generateAddressError": "生成地址失败",
+        "rgbInvoiceError": "生成 RGB 发票失败：{{error}}",
+        "rgbInvoiceInvalid": "生成 RGB 发票失败：无效响应",
+        "rgbInvoiceUnknown": "生成 RGB 发票失败",
+        "invalidAmount": "请输入有效的正数金额",
+        "lnInvoiceError": "生成 Lightning 发票失败",
+        "addressCopied": "地址已复制到剪贴板",
+        "addressCopyError": "复制地址失败",
+        "recipientCopied": "接收方 ID 已复制到剪贴板",
+        "recipientCopyError": "复制接收方 ID 失败",
+        "lightningSuccess": "Lightning 存款接收成功！",
+        "lightningFailed": "Lightning 存款失败：{{status}}"
+      }
+    }
+  },
+  "trade": {
+    "header": {
+      "title": "交易"
+    },
+    "feeSection": {
+      "title": "费用明细",
+      "percentOfTrade": "交易的 {{rate}}%",
+      "baseFee": "基础费用",
+      "baseFeeTooltip": "无论交易金额多少都会收取的固定费用",
+      "variableFee": "可变费用",
+      "variableFeeTooltip": "根据交易金额计算的百分比费用",
+      "totalFee": "总费用",
+      "percentOfTradeValue": "交易价值的 {{rate}}%",
+      "feeDeduction": "费用扣除",
+      "feeDeductionDesc": "费用会自动从您收到的金额中扣除。显示的「您将收到」金额已经包含了所有费用。"
+    },
+    "swapButton": {
+      "connecting": "连接中...",
+      "buyChannel": "在通道中购买 {{asset}}",
+      "gettingQuote": "获取最新报价...",
+      "preparingSwap": "准备交换...",
+      "noChannels": "没有可用通道",
+      "noTradablePairs": "没有可交易对",
+      "exceedsMax": "超过最大可接收量",
+      "channelAwaiting": "通道等待确认",
+      "invalidAmount": "无效金额",
+      "enterAmount": "输入金额",
+      "swapInProgress": "交换进行中...",
+      "waitingQuote": "等待报价...",
+      "swapNow": "立即交换"
+    },
+    "swapInput": {
+      "available": "可用：",
+      "refreshAmounts": "刷新金额",
+      "estimating": "估算中...",
+      "loading": "加载中...",
+      "placeholder": "0.00",
+      "selectAsset": "选择资产",
+      "searchAsset": "按代码或资产 ID 搜索...",
+      "selectAssetTitle": "选择资产",
+      "quickAmount": "快速金额",
+      "percentAvailable": "可用的 %",
+      "min": "最小",
+      "max": "最大",
+      "maxHtlc": "最大 HTLC",
+      "maxHtlcTooltip": "可通过此支付通道发送的最大金额"
+    },
+    "exchangeRate": {
+      "justNow": "刚刚",
+      "secondsAgo": "{{seconds}}秒前",
+      "oneMinuteAgo": "1分钟前",
+      "minutesAgo": "{{minutes}}分钟前",
+      "oneHourAgo": "1小时前",
+      "hoursAgo": "{{hours}}小时前",
+      "updated": "更新",
+      "never": "从未",
+      "live": "实时",
+      "stale": "过时",
+      "loadingRate": "加载汇率中...",
+      "updatingRate": "更新汇率中..."
+    },
+    "maker": {
+      "selectMaker": "选择做市商",
+      "connected": "已连接",
+      "reconnect": "重新连接",
+      "marketMakers": "做市商",
+      "enterUrl": "输入做市商 URL...",
+      "cancel": "取消",
+      "addMaker": "添加做市商",
+      "addNewMaker": "添加新做市商",
+      "notConnected": "未连接到做市商",
+      "switching": "切换做市商中...",
+      "reconnected": "成功重新连接到做市商",
+      "reconnecting": "重新连接中...",
+      "changeFailed": "切换做市商失败",
+      "invalidUrl": "请输入有效的 URL",
+      "reconnectingStatus": "正在连接到做市商...",
+      "reconnectionInitFailed": "无法启动重新连接",
+      "reconnectionFailed": "重新连接失败"
+    },
+    "nostrP2P": {
+      "title": "Nostr P2P 交易",
+      "description": "通过 Nostr 进行点对点交易即将推出！直接与其他用户交易，无需依赖中心化做市商。",
+      "directSwaps": "直接交换",
+      "directSwapsDesc": "无需中介直接与其他用户交易",
+      "limitOrders": "限价订单",
+      "limitOrdersDesc": "设置你的价格并等待匹配",
+      "notifications": "通知",
+      "notificationsDesc": "当你的订单匹配时收到提醒",
+      "trustlessSwaps": "无信任交换",
+      "trustlessSwapsDesc": "原子交换确保双方都收到资产或交易不会发生",
+      "globalMarketplace": "全球市场",
+      "globalMarketplaceDesc": "通过 Nostr 网络与全球交易者连接",
+      "notifyPrompt": "想在 Nostr P2P 交易推出时收到通知吗？",
+      "starGithub": "给我们的 GitHub 仓库加星"
+    },
+    "tradablePairs": {
+      "title": "可用交易对",
+      "noPairs": "没有可用的交易对",
+      "pairCount": "{{count}} 个交易对",
+      "clickToCopy": "点击复制：{{id}}",
+      "active": "活跃",
+      "inactive": "不活跃",
+      "morePairs": "+ 还有 {{count}} 个交易对",
+      "openChannelHint": "使用这些资产中的任何一个开通通道以开始交易"
+    },
+    "supportedAssets": {
+      "title": "支持的资产",
+      "assetCount": "{{count}} 个资产",
+      "clickToCopyAssetId": "点击复制资产 ID：{{id}}",
+      "tradeHint": "您可以在这些资产的任何组合之间进行交易"
+    },
+    "tradeForm": {
+      "available": "可用：",
+      "youSend": "您发送",
+      "canReceive": "最多可接收：",
+      "youReceive": "您将收到（估算）"
+    },
+    "assetModal": {
+      "none": "无",
+      "selected": "已选择",
+      "copyAssetId": "复制完整资产 ID",
+      "title": "选择资产",
+      "searchPlaceholder": "按代码、名称或资产 ID 搜索...",
+      "close": "关闭",
+      "assetsFound": "找到 {{count}} 个资产",
+      "noAssetsFound": "未找到资产",
+      "searchHint": "尝试按代码（例如 \"BTC\"）、名称或资产 ID 搜索",
+      "clearSearch": "清除搜索并显示所有资产",
+      "tip": "提示：您可以按代码搜索或粘贴完整资产 ID",
+      "selectedLabel": "已选择"
+    }
+  },
+  "tradeMarketMaker": {
+    "loading": {
+      "checkingBalance": "正在检查钱包余额和要求...",
+      "verifyingChannels": "正在验证通道可用性和流动性...",
+      "connectingMaker": "正在连接到做市商并获取交易对...",
+      "initializingInfrastructure": "正在初始化交易基础设施...",
+      "connectingToMaker": "正在连接到做市商",
+      "initializingInterface": "正在初始化交易界面"
+    },
+    "header": {
+      "liveTrading": "实时交易",
+      "via": "通过",
+      "ready": "就绪",
+      "noPairs": "无交易对",
+      "noMaker": "无做市商",
+      "reconnect": "重新连接"
+    },
+    "form": {
+      "youSend": "您发送",
+      "youReceive": "您接收（预估）",
+      "available": "可用：",
+      "onchainAvailable": "链上可用：",
+      "canReceiveUpTo": "最多可接收：",
+      "status": "状态：",
+      "channelNeeded": "需要通道"
+    },
+    "banners": {
+      "tradingOnchain": "使用链上余额交易",
+      "noChannelsYet": "您还没有任何交易通道。当您购买资产时，将自动使用您的链上 BTC 余额创建新通道。",
+      "channelNotReady": "通道未就绪：{{asset}}",
+      "channelsNotReady": "通道未就绪：{{assets}}",
+      "channelAwaiting": "您的 {{asset}} 通道正在等待区块链确认。您可以查看交易对，但在通道确认之前交换将被禁用。这通常需要几分钟。",
+      "channelsAwaiting": "您的 {{assets}} {{channelText}} 正在等待区块链确认。您可以查看交易对，但在 {{confirmText}} 确认之前交换将被禁用。这通常需要几分钟。",
+      "additionalChannelsPending": "其他通道待处理",
+      "channelPendingConfirmation_one": "{{asset}} 通道等待确认中。",
+      "channelPendingConfirmation_other": "{{count}} 个通道（{{assets}}）等待确认中。"
+    },
+    "channelWarning": {
+      "title": "需要 {{asset}} 通道",
+      "sendMessage": "要发送 {{asset}}，您需要为此资产创建闪电通道。",
+      "receiveMessage": "要接收 {{asset}}，您需要为此资产创建闪电通道。该资产将以当前汇率购买并存入您的新通道。"
+    },
+    "error": {
+      "title": "交易错误",
+      "maxLimitExceeded": "超过最大限制",
+      "copyErrorMessage": "复制错误消息",
+      "unableToGetQuote": "无法从做市商获取报价。请重试。",
+      "pairNotAvailable": "此交易对当前不可用。",
+      "assetNotValid": "所选资产之一无效。",
+      "unableToCalculateQuote": "无法计算报价。请尝试不同的金额。",
+      "amountOutsideRange": "您输入的金额超出此交易对的有效范围。",
+      "amountMustBeBetween": "金额必须在 {{min}} 和 {{max}} {{asset}} 之间。",
+      "swapDisabledOnchain": "使用链上余额交易时不支持资产交换。您只能用 BTC 购买资产。",
+      "cannotSwapSameAsset": "无法为两种资产选择 {{asset}}",
+      "noTradingPairs": "没有可用于 {{asset}} 的交易对",
+      "failedToFindPair": "未能找到有效的交易对",
+      "cannotSwapZeroAmounts": "无法交换零金额。请输入有效金额。",
+      "noValidQuote": "没有可用的有效报价。请尝试刷新报价。",
+      "channelAwaitingConfirmation": "您的 {{asset}} 通道正在等待确认。请等待其就绪后再进行交换。",
+      "noAssetChannel": "您没有 {{asset}} 通道。请打开一个包含 {{asset}} 的通道以进行交换。",
+      "noAssetChannelReceive": "您没有 {{asset}} 通道。请打开一个包含 {{asset}} 的通道以接收。",
+      "canOnlyReceiveUpTo": "您最多只能接收 {{amount}} {{asset}}。",
+      "channelAwaitingPlural": "{{asset}} 的通道正在等待确认。请等待其就绪。",
+      "pleaseWaitChannelConfirmation": "请等待您的通道确认后再进行交易。"
+    },
+    "swap": {
+      "exchangeRateQuote": "汇率和报价",
+      "refresh": "↻ 刷新",
+      "errorDetailsClipboard": "错误详情已复制到剪贴板",
+      "swapFailed": "交换失败：{{error}}"
+    },
+    "noChannels": {
+      "insufficientBalance": "比特币余额不足",
+      "insufficientBalanceMessage": "您需要比特币才能开通交易通道。请存入一些 BTC 以开始交易。",
+      "depositBitcoin": "存入比特币",
+      "noChannelsAvailable": "没有可用通道",
+      "noChannelsMessage": "要开始交易，您需要创建一个包含一些资产的通道或从闪电服务提供商购买一个。",
+      "createChannel": "创建通道",
+      "buyFromLSP": "从 LSP 购买"
+    },
+    "toast": {
+      "swapCompleted": "交换成功完成！",
+      "reconnectWait": "请等待应用程序完成加载后再重新连接。",
+      "reconnectSuccess": "成功重新连接到做市商！",
+      "reconnectFailed": "无法重新连接到做市商。请检查做市商 URL 和您的网络连接。",
+      "reconnectError": "重新连接失败：{{error}}",
+      "channelOrderCreating": "正在创建通道订单以使用链上余额购买您的资产！",
+      "createAssetChannel": "让我们为您创建一个 {{asset}} 通道！",
+      "needChannelToTrade": "您需要一个通道才能交易。让我们创建一个包含您所需资产的通道。",
+      "channelCreatedSuccess": "通道创建成功！正在刷新...",
+      "failedToRefreshAmounts": "刷新金额失败。请重试。",
+      "initializationFailed": "初始化交易界面失败。请重试。",
+      "connectionError": "发生连接错误。交易可能受限。",
+      "connectionFailed": "无法建立与做市商的实时连接。请检查做市商 URL 并重试。"
+    },
+    "assetConflict": {
+      "warning": "警告：检测到多个版本的 \"{{ticker}}\"。仅一个版本可用于交易。",
+      "multipleConflicts": "发现 {{conflictCount}} 个资产冲突。排除了 {{excludedPairs}} 个交易对。{{validPairs}} 个有效交易对可用。",
+      "noTradablePairs": "此做市商没有可交易的交易对。做市商不提供您拥有通道的资产的交易对。",
+      "noValidPairs": "过滤资产冲突后没有可用的有效交易对。",
+      "tickerConflict": "检测到资产冲突：\"{{ticker}}\" 有多个资产 ID（{{assetIds}}）。为安全起见，排除了 {{pairCount}} 个交易对。",
+      "assetInfo": "发现 {{count}} 个资产冲突。查看注册表以了解支持哪些资产。"
+    },
+    "validation": {
+      "insufficientBalance": "余额不足。您没有可用于发送的 {{asset}}。",
+      "enterAmount": "请输入要发送的金额。",
+      "minimumOrderSize": "最小订单量为 {{amount}} {{asset}}。",
+      "maxSendAmount": "您最多只能发送 {{amount}} {{asset}}。",
+      "unableToReceive": "无法接收 {{asset}}。没有可用的通道容量。",
+      "maxReceiveAmount": "您最多只能接收 {{amount}} {{asset}}。",
+      "htlcLimit": "由于通道限制，您在单笔交易中最多只能发送 {{amount}} {{asset}}。",
+      "minOrderSize": "{{asset}} 的最小订单量为 {{amount}}。",
+      "maxOrderSize": "{{asset}} 的最大订单量为 {{amount}}。",
+      "invalidAmount": "无效金额。请检查此交易对的最小和最大订单量。"
+    }
+  },
+  "withdrawModal": {
+    "balance": {
+      "btcLabel": "可用 BTC 余额：",
+      "assetLabel": "可用 {{ticker}} 余额：",
+      "available": "可用余额："
+    },
+    "form": {
+      "addressPlaceholder": "粘贴比特币地址、Lightning 发票、Lightning 地址或 RGB 发票",
+      "addressRequired": "地址或发票是必需的",
+      "clear": "清除",
+      "detected": {
+        "label": "检测到：",
+        "types": {
+          "lightningInvoice": "Lightning 发票",
+          "lightningAddress": "Lightning 地址",
+          "bitcoinAddress": "比特币地址",
+          "rgbInvoice": "RGB 发票"
+        }
+      },
+      "lightningCapacity": {
+        "title": "最大 Lightning 容量：",
+        "withdrawable": "最大可提取（扣除费用后）："
+      },
+      "units": {
+        "sats": "聪"
+      },
+      "witness": {
+        "label": "Witness UTXO 的比特币金额（sats）",
+        "placeholder": "输入 sats 金额（最小：512，例如：1200）",
+        "errors": {
+          "min": "金额必须至少为 512 sats",
+          "required": "Witness 金额是必需的"
+        },
+        "note": "注意：向 witness 接收方发送 RGB 资产时，您需要添加一些比特币来为接收方创建新的 UTXO，RGB 资产将在其中分配。建议：1000-2000 sats。"
+      },
+      "assetSelector": {
+        "label": "资产",
+        "placeholder": "选择资产"
+      },
+      "amount": {
+        "label": "金额",
+        "optionalLabel": "金额（可选）",
+        "requiredLabel": "金额",
+        "precision": "精度：{{value}} 位小数",
+        "example": "输入金额（例如，{{ticker}} 为 10.23）",
+        "maxLabel": "最大：{{amount}} {{asset}}",
+        "maxPlaceholder": "输入金额（最大 {{amount}}）",
+        "notAvailable": "不适用",
+        "maxButton": "最大",
+        "equivalent": "等值于 {{unit}}：",
+        "exceedsAvailable": "金额超过可用余额。点击\"最大\"使用您的全部余额。",
+        "lightningLimit": {
+          "title": "Lightning 限制：",
+          "description": "最大可提取金额受您的通道容量和 HTLC 限制约束。"
+        },
+        "rgbNote": "注意：RGB 资产转账需要 3,000 sats。",
+        "noChannels": "警告：未找到活跃的 Lightning 通道。Lightning 存款不可用。",
+        "minBitcoinSat": "1 聪",
+        "minBitcoinBtc": "0.00000001 BTC",
+        "minAssetAmount": "{{amount}} {{ticker}}"
+      },
+      "fees": {
+        "label": "费率",
+        "customLabel": "自定义费率（sat/vB）",
+        "options": {
+          "slow": "慢速",
+          "normal": "标准",
+          "fast": "快速",
+          "custom": "自定义"
+        }
+      },
+      "donation": {
+        "label": "作为礼物/捐赠发送",
+        "description": "礼物转账允许即时发送，无需接收方验证。适用于小费和赠品。请谨慎使用。"
+      },
+      "status": {
+        "pending": "等待付款中...",
+        "success": "付款已收到！",
+        "failed": "付款失败（{{status}}）"
+      },
+      "actions": {
+        "copy": "复制到剪贴板",
+        "generateAddress": "生成新地址",
+        "generateInvoice": "生成发票",
+        "generateAddressCta": "生成地址"
+      },
+      "submit": {
+        "lightning": "支付发票",
+        "rgb": "发送 RGB 资产",
+        "onchain": "提取"
+      }
+    },
+    "main": {
+      "title": {
+        "form": "提取资金",
+        "confirm": "确认提取"
+      },
+      "subtitle": {
+        "form": "将您的资金发送到比特币地址、Lightning 发票、Lightning 地址或 RGB 发票。",
+        "confirm": "请在确认之前查看您的提取详细信息。"
+      },
+      "buttons": {
+        "cancel": "取消"
+      },
+      "labels": {
+        "assetFallback": "资产",
+        "unknownAsset": "未知"
+      },
+      "toasts": {
+        "lightningSuccess": "Lightning 付款成功！",
+        "btcSuccess": "BTC 提取成功",
+        "rgbSuccess": "RGB 资产提取成功"
+      },
+      "errors": {
+        "zeroBalance": "错误：您的 {{asset}} 余额为零。无法继续提取。",
+        "fetchBalance": "错误：获取 {{asset}} 余额失败。无法继续提取。",
+        "assetMissing": "错误：您没有此资产。无法继续提取。",
+        "fetchAssetBalance": "错误：获取此资产余额失败。无法继续提取。",
+        "invoiceAssetCapacity": "错误：发票请求 {{requested}} 个资产 {{asset}}…，但您的最大通道容量仅为 {{capacity}}。无法继续付款。",
+        "invoiceBtcCapacity": "错误：发票需要 {{requested}} sats，但您的最大 BTC 通道容量为 {{capacity}} sats。无法继续付款。",
+        "invoiceExceedsBalance": "错误：发票金额（{{amount}} sats）超过您的可用余额 {{balance}} {{unit}}。无法继续付款。",
+        "invoiceExceedsCapacity": "错误：发票金额（{{amount}} sats）超过您的出站通道容量（{{capacity}} sats）。无法继续付款。",
+        "rgbAssetMissing": "错误：您没有请求的资产 {{asset}}…。无法继续付款。",
+        "paymentFailedGeneric": "错误：付款失败。请检查详细信息或重试。",
+        "paymentPendingTimeout": "错误：付款在 60 秒后仍处于待处理状态。请手动检查状态或重试。",
+        "decodeRgbFailed": "解码 RGB 发票失败。请检查发票是否有效。",
+        "invalidFormat": "地址格式无效。请输入有效的比特币地址、Lightning 发票、Lightning 地址或 RGB 发票。",
+        "decodeInputFailed": "解码输入失败。请检查地址格式。",
+        "lightningCapacityNeeded": "错误：出站容量不足。需要 {{amount}} sats，但只有 {{capacity}} sats 可用。",
+        "invalidLightningInvoice": "Lightning 发票无效。",
+        "rgbMissingRecipient": "解码的 RGB 发票缺少接收方 ID。",
+        "rgbMissingTransport": "解码的 RGB 发票缺少传输端点。",
+        "witnessAmountTooLow": "对于 witness 接收方，witness 金额必须至少为 512 sats。",
+        "proxyEndpointMissing": "代理传输端点未配置。",
+        "rgbPaymentFailed": "RGB 资产付款失败。",
+        "unknownPayment": "未知付款错误",
+        "lightningImmediateFailure": "付款立即失败，状态：{{status}}",
+        "lightningFailedDetailed": "Lightning 付款失败：{{error}}",
+        "withdrawalFailedToast": "提取失败：{{error}}",
+        "withdrawalFailedDetails": "提取失败：{{error}}",
+        "withdrawalFailedDefault": "提取失败",
+        "onchainExceedsBalance": "提取金额（{{amount}}）超过可用余额（{{balance}}）",
+        "capacityToast": "无法继续：发票金额（{{amount}} sats）超过您的出站容量（{{capacity}} sats）。"
+      },
+      "warnings": {
+        "invoiceAdjusted": "警告：发票请求 {{requested}} {{asset}}，但您的余额仅为 {{balance}} {{asset}}。已调整为最大可发送金额。",
+        "noRgbAssets": "警告：没有可用于发送的 RGB 资产。"
+      }
+    },
+    "details": {
+      "lightning": {
+        "title": "Lightning 发票详情",
+        "assetLabel": "资产：",
+        "assetAmountLabel": "资产金额：",
+        "lightningBalanceLabel": "您的 Lightning 余额：",
+        "btcAmountLabel": "BTC 金额：",
+        "amountLabel": "金额：",
+        "descriptionLabel": "描述：",
+        "descriptionPayment": "付款 #{{hash}}",
+        "descriptionFallback": "无描述",
+        "expiresLabel": "过期时间：",
+        "payeeLabel": "收款方：",
+        "maxOutboundLabel": "您的最大出站容量：",
+        "satValue": "{{value}} 聪",
+        "capacityMin": "0 聪",
+        "capacityUsage": "使用 {{percentage}}% 的容量",
+        "lowCapacityWarning": "可见容量低。您仍然可以尝试付款，但可能会失败。",
+        "withinCapacity": "付款金额在您的出站容量范围内",
+        "insufficientAsset": "闪电通道中的 {{ticker}} 不足以完成此付款。"
+      },
+      "rgb": {
+        "title": "RGB 发票详情",
+        "assetLabel": "资产：",
+        "requestedAmountLabel": "请求金额：",
+        "amountNotSpecified": "未指定",
+        "amountHint": "💡 如果需要，您可以在下面修改金额",
+        "recipientLabel": "接收方 ID：",
+        "expiresLabel": "过期时间：",
+        "transportLabel": "传输：",
+        "transportValue": "{{count}} 个端点",
+        "balanceLabel": "您的余额："
+      }
+    },
+    "paymentStatus": {
+      "pending": "付款进行中...",
+      "succeeded": "付款成功！",
+      "failed": "付款失败",
+      "expired": "付款已过期"
+    },
+    "confirmation": {
+      "overlay": {
+        "title": "付款失败",
+        "body": "您的 Lightning 付款无法处理。",
+        "closing": "自动关闭中..."
+      },
+      "status": {
+        "checking": "正在检查付款状态... 这可能需要一些时间。",
+        "pending": "付款正在进行中。请稍候，Lightning Network 正在处理您的付款。",
+        "failedTitle": "付款失败",
+        "failedDescription": "您的 Lightning 付款无法处理。请查看以下错误详细信息。"
+      },
+      "labels": {
+        "type": "类型：",
+        "asset": "资产：",
+        "amount": "金额：",
+        "btcAmount": "BTC 金额：",
+        "transferType": "转账类型：",
+        "paymentHash": "付款哈希：",
+        "assetId": "资产 ID：",
+        "assetAmount": "资产金额：",
+        "feeRate": "费率：",
+        "invoice": "发票：",
+        "address": "地址："
+      },
+      "types": {
+        "lightning": "Lightning 付款",
+        "onchain": "链上提取"
+      },
+      "donation": "礼物/捐赠",
+      "rgbNotice": "这是 RGB 资产转账。该过程可能需要几分钟才能完成，并需要接收方确认。",
+      "validation": {
+        "errorPrefix": "错误：",
+        "warningPrefix": "警告："
+      },
+      "buttons": {
+        "back": "返回",
+        "confirm": "确认"
+      },
+      "fee": {
+        "custom": "{{rate}} sat/vB（自定义）",
+        "predefined": "{{rate}} sat/vB（{{label}}）"
+      }
+    }
+  },
+  "components": {
+    "alert": {
+      "testNetworkWarning": "测试网络警告",
+      "testNetworkMessage": "您当前在 {{network}} 上。此网络上的任何代币都没有实际价值，仅用于测试目的。",
+      "requestTestCoins": "您可以从",
+      "faucetLink": "{{network}} 水龙头"
+    }
+  }
+}

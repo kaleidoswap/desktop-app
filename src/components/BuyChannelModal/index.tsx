@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { X, Info, Clock, Zap, Rocket, Settings } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
@@ -86,6 +87,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   onSuccess,
   preselectedAsset,
 }) => {
+  const { t } = useTranslation()
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -275,7 +277,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           }
         }
       } catch (error) {
-        toast.error('Error fetching LSP data. Please try again later.')
+        toast.error(t('buyChannel.lspFetchError'))
       } finally {
         setLoading(false)
       }
@@ -744,7 +746,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
         const orderId = channelResponse.data?.order_id
         if (!orderId) {
-          throw new Error('Could not get order id from server response')
+          throw new Error(t('buyChannel.orderIdMissing'))
         }
 
         setOrderId(orderId)
@@ -754,9 +756,9 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         setStep(2)
       } catch (error) {
         toast.error(
-          error instanceof Error
+          error instanceof Error && error.message
             ? error.message
-            : 'An error occurred while creating the channel order'
+            : t('buyChannel.createOrderError')
         )
       } finally {
         setLoading(false)
@@ -794,10 +796,10 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         const response = result.data as SendPaymentResponse
 
         if (response.status === 'Failed') {
-          throw new Error('Lightning payment failed')
+          throw new Error(t('buyChannel.lightningPaymentFailed'))
         }
 
-        toast.success('Lightning payment initiated successfully!')
+        toast.success(t('buyChannel.lightningPaymentSuccess'))
         setPaymentReceived(true)
         setIsProcessingPayment(true)
 
@@ -832,7 +834,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           throw new Error(error.data.error)
         }
 
-        toast.success('On-chain payment sent successfully!')
+        toast.success(t('buyChannel.onchainPaymentSuccess'))
         setPaymentReceived(true)
         setIsProcessingPayment(true)
 
@@ -854,10 +856,11 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
       setShowWalletConfirmation(false)
     } catch (error) {
-      toast.error(
-        'Payment failed: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      )
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : t('buyChannel.unknownError')
+      toast.error(t('buyChannel.paymentFailed', { error: errorMessage }))
       setPaymentStatus('error')
     } finally {
       setIsProcessingWalletPayment(false)

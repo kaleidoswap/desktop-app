@@ -1,5 +1,6 @@
 import { X, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
@@ -19,6 +20,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
   channelId,
   peerPubkey,
 }) => {
+  const { t } = useTranslation()
   const [closeChannel] = nodeApi.endpoints.closeChannel.useLazyQuery()
   const [forceClose, setForceClose] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
@@ -60,7 +62,10 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
       }
 
       toast.success(
-        `Channel ${channelId.substring(0, 8)}... closing ${forceClose ? '(force)' : ''} initiated successfully`
+        t('closeChannelModal.successMessage', {
+          channelId: channelId.substring(0, 8),
+          forceClose: forceClose ? '(force)' : '',
+        })
       )
 
       if (onSuccess) {
@@ -100,7 +105,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
       setSuggestForceClose(true)
       setForceClose(true)
     } else {
-      toast.error(`Failed to close channel: ${errorMessage}`)
+      toast.error(t('closeChannelModal.errorMessage', { error: errorMessage }))
     }
   }
 
@@ -117,7 +122,9 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
     >
       <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-700/50">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-white">Close Channel</h3>
+          <h3 className="text-xl font-semibold text-white">
+            {t('closeChannelModal.title')}
+          </h3>
           <button
             className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50"
             disabled={isClosing}
@@ -137,29 +144,28 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
               <AlertCircle className="h-5 w-5 mr-3 flex-shrink-0" />
               <div>
                 <p className="font-medium">
-                  Channel cannot be closed cooperatively
+                  {t('closeChannelModal.cannotCloseCooperatively')}
                 </p>
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>
             <p className="text-gray-300">
-              Would you like to force close this channel instead? Force closing:
+              {t('closeChannelModal.forceCloseQuestion')}
             </p>
             <ul className="text-sm text-gray-400 space-y-1 list-disc pl-5 mt-2">
-              <li>Does not require your peer to be online</li>
-              <li>Will lock your funds in a timelock contract temporarily</li>
-              <li>May result in higher fees</li>
+              <li>{t('closeChannelModal.forceCloseReason1')}</li>
+              <li>{t('closeChannelModal.forceCloseReason2')}</li>
+              <li>{t('closeChannelModal.forceCloseReason3')}</li>
             </ul>
           </div>
         ) : (
           <>
             <div className="mb-4">
               <p className="text-gray-300">
-                Are you sure you want to close this channel?
+                {t('closeChannelModal.confirmMessage')}
               </p>
               <p className="text-gray-400 text-sm mt-2">
-                Closing a channel will settle the current balance to your
-                on-chain wallet.
+                {t('closeChannelModal.settleMessage')}
               </p>
             </div>
 
@@ -178,9 +184,9 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
                     className="font-medium text-white flex items-center"
                     htmlFor="force-close"
                   >
-                    Force close
+                    {t('closeChannelModal.forceClose')}
                     <span className="ml-2 px-2 py-0.5 text-xs bg-red-900/40 text-red-300 rounded-full border border-red-900/40">
-                      Use with caution
+                      {t('closeChannelModal.useCautionLabel')}
                     </span>
                   </label>
                 </div>
@@ -188,20 +194,18 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
 
               <div className="ml-7">
                 <p className="text-sm text-gray-300 mb-3">
-                  Only use force close if:
+                  {t('closeChannelModal.forceCloseConditionsTitle')}
                 </p>
                 <ul className="text-xs text-gray-400 space-y-2 list-disc pl-5">
-                  <li>The peer is offline or unresponsive</li>
-                  <li>The channel is stuck or in a problematic state</li>
-                  <li>A regular cooperative close has failed</li>
+                  <li>{t('closeChannelModal.forceCloseCondition1')}</li>
+                  <li>{t('closeChannelModal.forceCloseCondition2')}</li>
+                  <li>{t('closeChannelModal.forceCloseCondition3')}</li>
                 </ul>
 
                 <div className="mt-3 flex items-start text-xs">
                   <AlertTriangle className="text-amber-400 mt-0.5 mr-2 h-4 w-4 flex-shrink-0" />
                   <p className="text-amber-300">
-                    Force closing may result in higher fees and longer
-                    confirmation times. Your funds will be locked in a
-                    time-locked contract until the timelock expires.
+                    {t('closeChannelModal.forceCloseWarning')}
                   </p>
                 </div>
               </div>
@@ -211,8 +215,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
               <div className="mt-4 flex items-start text-xs">
                 <CheckCircle className="text-green-400 mt-0.5 mr-2 h-4 w-4 flex-shrink-0" />
                 <p className="text-green-300">
-                  Cooperative closing (default) is faster, cheaper, and returns
-                  funds to your wallet after on-chain confirmation.
+                  {t('closeChannelModal.cooperativeCloseInfo')}
                 </p>
               </div>
             )}
@@ -232,7 +235,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
           <div className="mt-4 text-center">
             <div className="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-400 rounded-full"></div>
             <p className="text-blue-300 text-sm mt-2">
-              Closing channel... Please wait
+              {t('closeChannelModal.closingMessage')}
             </p>
           </div>
         )}
@@ -247,7 +250,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
             }}
             type="button"
           >
-            Cancel
+            {t('closeChannelModal.cancel')}
           </button>
           <button
             className={`px-4 py-2 rounded-lg flex items-center justify-center ${
@@ -269,20 +272,20 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
             {isClosing ? (
               <>
                 <span className="animate-spin mr-2">⟳</span>
-                Processing...
+                {t('closeChannelModal.processing')}
               </>
             ) : suggestForceClose ? (
               <>
                 <AlertTriangle className="w-4 h-4 mr-2" />
-                Force Close Channel
+                {t('closeChannelModal.forceCloseChannel')}
               </>
             ) : forceClose ? (
               <>
                 <AlertTriangle className="w-4 h-4 mr-2" />
-                Force Close
+                {t('closeChannelModal.forceClose')}
               </>
             ) : (
-              'Close Channel'
+              t('closeChannelModal.closeChannel')
             )}
           </button>
         </div>

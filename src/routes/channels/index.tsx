@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -87,6 +88,7 @@ type FilterOption = {
 }
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
   const [listChannels, listChannelsResponse] =
     nodeApi.endpoints.listChannels.useLazyQuery()
   const [listAssets, listAssetsResponse] =
@@ -100,7 +102,7 @@ export const Component: React.FC = () => {
   // Sorting and filtering state
   const [sortBy, setSortBy] = useState<SortOption>({
     direction: 'desc',
-    label: 'Capacity (High to Low)',
+    label: t('channels.capacityHighToLow'),
     value: 'capacity',
   })
   const [filterOptions, setFilterOptions] = useState<FilterOption[]>([])
@@ -256,24 +258,48 @@ export const Component: React.FC = () => {
 
   // Available filter options
   const availableFilters: FilterOption[] = [
-    { label: 'Public', value: 'public' },
-    { label: 'Private', value: 'private' },
-    { label: 'Balanced', value: 'balanced' },
-    { label: 'Unbalanced', value: 'unbalanced' },
-    { label: 'Ready', value: 'ready' },
-    { label: 'Pending', value: 'pending' },
+    { label: t('channels.public'), value: 'public' },
+    { label: t('channels.private'), value: 'private' },
+    { label: t('channels.balanced'), value: 'balanced' },
+    { label: t('channels.unbalanced'), value: 'unbalanced' },
+    { label: t('channels.ready'), value: 'ready' },
+    { label: t('channels.pending'), value: 'pending' },
   ]
 
   // Available sort options
   const sortOptions: SortOption[] = [
-    { direction: 'desc', label: 'Capacity (High to Low)', value: 'capacity' },
-    { direction: 'asc', label: 'Capacity (Low to High)', value: 'capacity' },
-    { direction: 'desc', label: 'Outbound (High to Low)', value: 'outbound' },
-    { direction: 'asc', label: 'Outbound (Low to High)', value: 'outbound' },
-    { direction: 'desc', label: 'Inbound (High to Low)', value: 'inbound' },
-    { direction: 'asc', label: 'Inbound (Low to High)', value: 'inbound' },
-    { direction: 'asc', label: 'Most Balanced', value: 'balance' },
-    { direction: 'desc', label: 'Least Balanced', value: 'balance' },
+    {
+      direction: 'desc',
+      label: t('channels.capacityHighToLow'),
+      value: 'capacity',
+    },
+    {
+      direction: 'asc',
+      label: t('channels.capacityLowToHigh'),
+      value: 'capacity',
+    },
+    {
+      direction: 'desc',
+      label: t('channels.outboundHighToLow'),
+      value: 'outbound',
+    },
+    {
+      direction: 'asc',
+      label: t('channels.outboundLowToHigh'),
+      value: 'outbound',
+    },
+    {
+      direction: 'desc',
+      label: t('channels.inboundHighToLow'),
+      value: 'inbound',
+    },
+    {
+      direction: 'asc',
+      label: t('channels.inboundLowToHigh'),
+      value: 'inbound',
+    },
+    { direction: 'asc', label: t('channels.mostBalanced'), value: 'balance' },
+    { direction: 'desc', label: t('channels.leastBalanced'), value: 'balance' },
   ]
 
   // Clear all filters
@@ -285,11 +311,11 @@ export const Component: React.FC = () => {
     <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Lightning Wallet Dashboard</h1>
+          <h1 className="text-2xl font-bold">{t('channels.pageTitle')}</h1>
           <p className="text-gray-400 text-sm mt-1">
             {lastUpdated
-              ? `Last updated: ${formatTimeAgo(lastUpdated)}`
-              : 'Loading data...'}
+              ? t('channels.lastUpdated', { time: formatTimeAgo(lastUpdated) })
+              : t('channels.loadingData')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -298,14 +324,14 @@ export const Component: React.FC = () => {
             onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
-            Open Channel
+            {t('channels.openChannel')}
           </button>
           <button
             className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center"
             onClick={() => navigate(ORDER_CHANNEL_PATH)}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
-            Buy Channel
+            {t('channels.buyChannel')}
           </button>
           <button
             className={`px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 transition text-gray-200 font-medium flex items-center ${
@@ -317,7 +343,7 @@ export const Component: React.FC = () => {
             <RefreshCw
               className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
             />
-            {isLoading ? 'Refreshing...' : 'Refresh'}
+            {isLoading ? t('channels.refreshing') : t('channels.refresh')}
           </button>
         </div>
       </div>
@@ -325,20 +351,20 @@ export const Component: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-3 mb-8">
         <StatCard
           icon={<Zap className="h-4 w-4 text-yellow-400" />}
-          title="Total Balance"
+          title={t('channels.totalBalance')}
           trend="neutral"
           value={`${totalBalance.toLocaleString()} sats`}
         />
         <StatCard
           icon={<ArrowDownRight className="h-4 w-4 text-green-400" />}
-          title="Inbound Liquidity"
+          title={t('channels.inboundLiquidity')}
           trend="up"
           // trendValue="4.5% this week"
           value={`${totalInboundLiquidity.toLocaleString()} sats`}
         />
         <StatCard
           icon={<ArrowUpRight className="h-4 w-4 text-blue-400" />}
-          title="Outbound Liquidity"
+          title={t('channels.outboundLiquidity')}
           trend="down"
           // trendValue="2.3% this week"
           value={`${totalOutboundLiquidity.toLocaleString()} sats`}
@@ -347,7 +373,7 @@ export const Component: React.FC = () => {
 
       <div className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-700/50 shadow-lg py-6 px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-          <h2 className="text-xl font-bold">Your Channels</h2>
+          <h2 className="text-xl font-bold">{t('channels.yourChannels')}</h2>
 
           <div className="flex items-center space-x-2">
             {/* Channel type tabs */}
@@ -361,7 +387,7 @@ export const Component: React.FC = () => {
                 onClick={() => setActiveTab('all')}
               >
                 <Zap className="h-3.5 w-3.5 mr-1.5" />
-                All ({channels.length})
+                {t('channels.all')} ({channels.length})
               </button>
               <button
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
@@ -372,7 +398,7 @@ export const Component: React.FC = () => {
                 onClick={() => setActiveTab('bitcoin')}
               >
                 <Bolt className="h-3.5 w-3.5 mr-1.5" />
-                Bitcoin ({bitcoinChannels.length})
+                {t('channels.bitcoin')} ({bitcoinChannels.length})
               </button>
               <button
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
@@ -383,7 +409,7 @@ export const Component: React.FC = () => {
                 onClick={() => setActiveTab('rgb')}
               >
                 <Layers className="h-3.5 w-3.5 mr-1.5" />
-                RGB ({rgbChannels.length})
+                {t('channels.rgb')} ({rgbChannels.length})
               </button>
             </div>
           </div>
@@ -413,7 +439,7 @@ export const Component: React.FC = () => {
                   className="text-xs text-gray-400 hover:text-white underline"
                   onClick={clearFilters}
                 >
-                  Clear all
+                  {t('channels.clearAll')}
                 </button>
               </div>
             )}
@@ -427,14 +453,14 @@ export const Component: React.FC = () => {
                 onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
               >
                 <Filter className="mr-1.5" size={14} />
-                Filter
+                {t('channels.filter')}
                 <ChevronDown className="ml-1.5" size={14} />
               </button>
 
               {isFilterMenuOpen && (
                 <div className="absolute right-0 mt-1 bg-gray-800 rounded-lg shadow-lg p-2 z-10 w-48">
                   <div className="text-xs text-gray-400 mb-1 px-2">
-                    Filter by:
+                    {t('channels.filterBy')}
                   </div>
                   {availableFilters.map((filter) => (
                     <div
@@ -471,7 +497,7 @@ export const Component: React.FC = () => {
               {isSortMenuOpen && (
                 <div className="absolute right-0 mt-1 bg-gray-800 rounded-lg shadow-lg p-2 z-10 w-56">
                   <div className="text-xs text-gray-400 mb-1 px-2">
-                    Sort by:
+                    {t('channels.sortBy')}
                   </div>
                   {sortOptions.map((option) => (
                     <div
@@ -516,22 +542,23 @@ export const Component: React.FC = () => {
               <AlertCircle className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold mb-2">
-              No{' '}
-              {activeTab !== 'all'
-                ? activeTab === 'bitcoin'
-                  ? 'Bitcoin'
-                  : 'RGB'
-                : ''}{' '}
-              Channels Found
+              {t('channels.noChannelsFound', {
+                type:
+                  activeTab !== 'all'
+                    ? activeTab === 'bitcoin'
+                      ? t('channels.bitcoin')
+                      : t('channels.rgb')
+                    : '',
+              })}
             </h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
               {filterOptions.length > 0
-                ? 'No channels match your current filters. Try adjusting your filter criteria.'
+                ? t('channels.noChannelsMatchFilters')
                 : activeTab === 'all'
-                  ? "You don't have any open channels yet. Create a channel to start using Lightning Network."
+                  ? t('channels.noChannelsYet')
                   : activeTab === 'bitcoin'
-                    ? "You don't have any Bitcoin channels open. Create a Bitcoin channel to start using Lightning Network."
-                    : "You don't have any RGB channels open. Create an RGB channel to start using RGB assets over Lightning."}
+                    ? t('channels.noBitcoinChannels')
+                    : t('channels.noRgbChannels')}
             </p>
             {filterOptions.length > 0 ? (
               <button
@@ -539,7 +566,7 @@ export const Component: React.FC = () => {
                 onClick={clearFilters}
               >
                 <X className="mr-2 h-4 w-4" />
-                Clear Filters
+                {t('channels.clearFilters')}
               </button>
             ) : (
               <button
@@ -547,13 +574,14 @@ export const Component: React.FC = () => {
                 onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Open{' '}
-                {activeTab !== 'all'
-                  ? activeTab === 'bitcoin'
-                    ? 'Bitcoin'
-                    : 'RGB'
-                  : ''}{' '}
-                Channel
+                {t('channels.openChannelType', {
+                  type:
+                    activeTab !== 'all'
+                      ? activeTab === 'bitcoin'
+                        ? t('channels.bitcoin')
+                        : t('channels.rgb')
+                      : '',
+                })}
               </button>
             )}
           </div>
@@ -562,10 +590,7 @@ export const Component: React.FC = () => {
 
       <div className="flex items-center space-x-2 text-sm text-gray-400 mt-6 p-4 bg-blue-900/20 border border-blue-800/30 rounded-lg">
         <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
-        <p>
-          Channel liquidity changes as you send and receive payments. Keep your
-          channels balanced for optimal performance and lower fees.
-        </p>
+        <p>{t('channels.liquidityInfo')}</p>
       </div>
     </div>
   )

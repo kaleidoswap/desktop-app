@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { SuccessCheckmark } from '../../components/SuccessCheckmark'
 
 interface Props {
@@ -7,6 +9,7 @@ interface Props {
 }
 
 export const Step4 = (props: Props) => {
+  const { t } = useTranslation()
   if (props.error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 max-w-2xl mx-auto">
@@ -14,7 +17,7 @@ export const Step4 = (props: Props) => {
 
         <div className="text-center mt-6 bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-700 transition-all duration-300 ease-in-out">
           <h3 className="text-3xl font-bold text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600">
-            Channel creation failed
+            {t('createChannel.step4.failed')}
           </h3>
 
           <p className="text-red-400 mb-8 py-3 px-4 bg-red-900/20 rounded-lg border border-red-800/50">
@@ -30,7 +33,7 @@ export const Step4 = (props: Props) => {
                 shadow-md hover:shadow-lg"
               onClick={props.onRetry}
             >
-              Try Again
+              {t('createChannel.step4.tryAgain')}
             </button>
 
             <button
@@ -41,7 +44,7 @@ export const Step4 = (props: Props) => {
                 shadow-lg hover:shadow-xl"
               onClick={props.onFinish}
             >
-              Go to Channels Page
+              {t('createChannel.step4.goToChannels')}
             </button>
           </div>
         </div>
@@ -57,11 +60,11 @@ export const Step4 = (props: Props) => {
 
       <div className="text-center mt-8 bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-700 transition-all duration-300 ease-in-out">
         <h3 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
-          Channel successfully created!
+          {t('createChannel.step4.success')}
         </h3>
 
         <p className="text-gray-300 mb-8 py-3 px-4 bg-blue-900/20 rounded-lg border border-blue-800/30">
-          The channel has been successfully created, you can now start trading.
+          {t('createChannel.step4.successMessage')}
         </p>
 
         <button
@@ -72,7 +75,7 @@ export const Step4 = (props: Props) => {
             shadow-lg hover:shadow-xl"
           onClick={props.onFinish}
         >
-          Go to Channels Page
+          {t('createChannel.step4.goToChannels')}
         </button>
       </div>
     </div>

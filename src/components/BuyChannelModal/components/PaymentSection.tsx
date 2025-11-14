@@ -1,6 +1,7 @@
 import { Copy, Info, Clock } from 'lucide-react'
 import QRCode from 'qrcode.react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { formatNumberWithCommas } from '../../../helpers/number'
@@ -16,6 +17,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
   paymentMethod,
   onTabChange,
 }) => {
+  const { t, i18n } = useTranslation()
   const currentPayment =
     paymentMethod === 'lightning' ? paymentData?.bolt11 : paymentData?.onchain
 
@@ -33,7 +35,9 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
     <div className="space-y-4">
       {/* Total Amount */}
       <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/50 rounded-xl p-4 text-center">
-        <p className="text-gray-300 text-sm mb-1">Total Payment</p>
+        <p className="text-gray-300 text-sm mb-1">
+          {t('buyChannel.totalPayment')}
+        </p>
         <p className="text-2xl font-bold text-white">
           {formatNumberWithCommas(totalAmount || 0)}{' '}
           <span className="text-lg text-gray-300">sats</span>
@@ -42,8 +46,11 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           <div className="flex items-center justify-center gap-2 mt-2 text-yellow-300 text-xs">
             <Clock className="w-3 h-3" />
             <span>
-              Expires:{' '}
-              {new Date(currentPayment.expires_at).toLocaleTimeString()}
+              {t('buyChannel.expires', {
+                time: new Date(currentPayment.expires_at).toLocaleTimeString(
+                  i18n.language || undefined
+                ),
+              })}
             </span>
           </div>
         )}
@@ -59,7 +66,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           }`}
           onClick={() => onTabChange('lightning')}
         >
-          ⚡ Lightning
+          {t('buyChannel.lightningTab')}
         </button>
         <button
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -69,7 +76,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           }`}
           onClick={() => onTabChange('onchain')}
         >
-          ⛓️ On-chain
+          {t('buyChannel.onchainTab')}
         </button>
       </div>
 
@@ -79,8 +86,11 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-gray-300">
             {paymentMethod === 'lightning'
-              ? 'Scan the QR code or copy the invoice to pay with Lightning.'
-              : `Send Bitcoin to the address below. Requires ${currentPayment?.min_onchain_payment_confirmations || 1} confirmation(s).`}
+              ? t('buyChannel.lightningInstructions')
+              : t('buyChannel.onchainInstructions', {
+                  confirmations:
+                    currentPayment?.min_onchain_payment_confirmations || 1,
+                })}
           </p>
         </div>
       </div>
@@ -98,12 +108,14 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
         </div>
 
         <CopyToClipboard
-          onCopy={() => toast.success('Copied to clipboard!')}
+          onCopy={() => toast.success(t('buyChannel.copySuccess'))}
           text={paymentValue || ''}
         >
           <button className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
             <Copy className="w-4 h-4" />
-            Copy {paymentMethod === 'lightning' ? 'Invoice' : 'Address'}
+            {paymentMethod === 'lightning'
+              ? t('buyChannel.copyInvoice')
+              : t('buyChannel.copyAddress')}
           </button>
         </CopyToClipboard>
       </div>

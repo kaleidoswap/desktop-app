@@ -1,6 +1,7 @@
 import { ArrowLeft, Clock, Rocket, Settings, Zap } from 'lucide-react'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
@@ -31,6 +32,7 @@ import {
   Fields,
   PaymentStatus,
   HTLCStatus,
+  ValidationMessage,
 } from './types'
 
 const isLightningAddress = (input: string): boolean => {
@@ -65,6 +67,7 @@ const createFungibleAssignment = (amount: number): AssignmentFungible => {
 
 export const WithdrawModalContent: React.FC = () => {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
   const transportEndpoint = useAppSelector(
     (state) => state.nodeSettings.data.proxy_endpoint
@@ -86,7 +89,8 @@ export const WithdrawModalContent: React.FC = () => {
   const [pendingData, setPendingData] = useState<Fields | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [addressType, setAddressType] = useState<AddressType>('unknown')
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [validationMessage, setValidationMessage] =
+    useState<ValidationMessage | null>(null)
   const [maxLightningCapacity, setMaxLightningCapacity] = useState(0)
   const [maxAssetCapacities, setMaxAssetCapacities] = useState<
     Record<string, number>
@@ -138,10 +142,26 @@ export const WithdrawModalContent: React.FC = () => {
   )
 
   const feeRates: FeeRateOption[] = [
-    { label: 'Slow', rate: feeEstimations.slow, value: 'slow' },
-    { label: 'Normal', rate: feeEstimations.normal, value: 'normal' },
-    { label: 'Fast', rate: feeEstimations.fast, value: 'fast' },
-    { label: 'Custom', rate: customFee, value: 'custom' },
+    {
+      label: t('withdrawModal.form.fees.options.slow'),
+      rate: feeEstimations.slow,
+      value: 'slow',
+    },
+    {
+      label: t('withdrawModal.form.fees.options.normal'),
+      rate: feeEstimations.normal,
+      value: 'normal',
+    },
+    {
+      label: t('withdrawModal.form.fees.options.fast'),
+      rate: feeEstimations.fast,
+      value: 'fast',
+    },
+    {
+      label: t('withdrawModal.form.fees.options.custom'),
+      rate: customFee,
+      value: 'custom',
+    },
   ]
 
   // Memoized balance fetching functions
@@ -160,18 +180,20 @@ export const WithdrawModalContent: React.FC = () => {
 
       // Check if BTC balance is zero
       if (spendableBalance === 0) {
-        setValidationError(
-          `Error: You have zero balance for BTC. Cannot proceed with withdrawal.`
-        )
+        setValidationMessage({
+          message: t('withdrawModal.main.errors.zeroBalance', { asset: 'BTC' }),
+          type: 'error',
+        })
       }
     } catch (error) {
       console.error('Error fetching BTC balance:', error)
       setAssetBalance(0)
-      setValidationError(
-        `Error: Failed to fetch BTC balance. Cannot proceed with withdrawal.`
-      )
+      setValidationMessage({
+        message: t('withdrawModal.main.errors.fetchBalance', { asset: 'BTC' }),
+        type: 'error',
+      })
     }
-  }, [dispatch, bitcoinUnit])
+  }, [dispatch, bitcoinUnit, t])
 
   const fetchAssetBalance = useCallback(
     async (assetId: string) => {
@@ -190,10 +212,14 @@ export const WithdrawModalContent: React.FC = () => {
           const assetInfo = assets.data?.nia.find(
             (a: NiaAsset) => a.asset_id === assetId
           )
-          const ticker = assetInfo?.ticker || 'asset'
-          setValidationError(
-            `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`
-          )
+          const ticker =
+            assetInfo?.ticker || t('withdrawModal.main.labels.assetFallback')
+          setValidationMessage({
+            message: t('withdrawModal.main.errors.zeroBalance', {
+              asset: ticker,
+            }),
+            type: 'error',
+          })
         }
       } catch (error) {
         console.error(`Error fetching asset balance for ${assetId}:`, error)
@@ -203,17 +229,19 @@ export const WithdrawModalContent: React.FC = () => {
           (asset: NiaAsset) => asset.asset_id === assetId
         )
         if (!assetExists) {
-          setValidationError(
-            `Error: You don't have this asset. Cannot proceed with withdrawal.`
-          )
+          setValidationMessage({
+            message: t('withdrawModal.main.errors.assetMissing'),
+            type: 'error',
+          })
         } else {
-          setValidationError(
-            `Error: Failed to fetch balance for this asset. Cannot proceed with withdrawal.`
-          )
+          setValidationMessage({
+            message: t('withdrawModal.main.errors.fetchAssetBalance'),
+            type: 'error',
+          })
         }
       }
     },
-    [dispatch, fetchBtcBalance, assets.data?.nia]
+    [dispatch, fetchBtcBalance, assets.data?.nia, t]
   )
 
   // Calculate max lightning outbound capacity for BTC and assets
@@ -300,7 +328,7 @@ export const WithdrawModalContent: React.FC = () => {
               console.log(`Payment status changed to: ${currentStatus}`)
 
               // Show success toast and close modal immediately
-              toast.success('Lightning payment successful!', {
+              toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
                 autoClose: 5000,
                 progressStyle: { background: '#3B82F6' },
               })
@@ -315,9 +343,10 @@ export const WithdrawModalContent: React.FC = () => {
               return // Exit early to prevent further status changes
             } else {
               // Failed
-              setValidationError(
-                'Payment failed. Please check the details or try again.'
-              )
+              setValidationMessage({
+                message: t('withdrawModal.main.errors.paymentFailedGeneric'),
+                type: 'error',
+              })
             }
           }
         }
@@ -340,9 +369,10 @@ export const WithdrawModalContent: React.FC = () => {
         setIsPollingStatus(false) // This will clean up in the next render
         setIsConfirming(false)
         setPaymentStatus(HTLCStatus.Failed)
-        setValidationError(
-          'Payment is still pending after 60 seconds. Please check the status manually or try again.'
-        )
+        setValidationMessage({
+          message: t('withdrawModal.main.errors.paymentPendingTimeout'),
+          type: 'error',
+        })
         // Go back to the form instead of closing the modal
         setShowConfirmation(false)
       }, POLLING_TIMEOUT_MS)
@@ -364,7 +394,7 @@ export const WithdrawModalContent: React.FC = () => {
       setPaymentHash(null)
       setIsPollingStatus(false)
       setPaymentStatus(null)
-      setValidationError(null)
+      setValidationMessage(null)
     }
   }, [])
 
@@ -375,7 +405,7 @@ export const WithdrawModalContent: React.FC = () => {
         setAddressType('unknown')
         setDecodedInvoice(null)
         setDecodedRgbInvoice(null)
-        setValidationError(null)
+        setValidationMessage(null)
         setPaymentHash(null) // Clear payment hash when input is cleared
         return
       }
@@ -384,7 +414,7 @@ export const WithdrawModalContent: React.FC = () => {
       setAddressType('unknown')
       setDecodedInvoice(null)
       setDecodedRgbInvoice(null)
-      setValidationError(null)
+      setValidationMessage(null)
       setPaymentHash(null) // Clear payment hash before decoding
 
       try {
@@ -409,9 +439,14 @@ export const WithdrawModalContent: React.FC = () => {
 
             // Check asset amount against channel capacity
             if (decoded.asset_amount > maxAssetAmount) {
-              setValidationError(
-                `Error: Invoice requests ${decoded.asset_amount} of asset ${decoded.asset_id.substring(0, 8)}... but your max channel capacity is only ${maxAssetAmount}. Cannot proceed with payment.`
-              )
+              setValidationMessage({
+                message: t('withdrawModal.main.errors.invoiceAssetCapacity', {
+                  asset: decoded.asset_id.substring(0, 8),
+                  capacity: maxAssetAmount.toLocaleString(),
+                  requested: decoded.asset_amount.toLocaleString(),
+                }),
+                type: 'error',
+              })
             }
 
             // Also validate BTC amount if present (for the 3000 sat RGB fee)
@@ -419,9 +454,13 @@ export const WithdrawModalContent: React.FC = () => {
               if (decoded.amt_msat > maxLightningCapacity) {
                 const invoiceAmountSats = decoded.amt_msat / 1000
                 const maxCapacitySats = maxLightningCapacity / 1000
-                setValidationError(
-                  `Error: Invoice requires ${invoiceAmountSats.toLocaleString()} sats but your max BTC channel capacity is ${maxCapacitySats.toLocaleString()} sats. Cannot proceed with payment.`
-                )
+                setValidationMessage({
+                  message: t('withdrawModal.main.errors.invoiceBtcCapacity', {
+                    capacity: maxCapacitySats.toLocaleString(),
+                    requested: invoiceAmountSats.toLocaleString(),
+                  }),
+                  type: 'error',
+                })
               }
             }
           }
@@ -439,15 +478,24 @@ export const WithdrawModalContent: React.FC = () => {
                 : invoiceAmountSats / 100000000
 
             if (amountInUnit > assetBalance) {
-              setValidationError(
-                `Error: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your available balance of ${assetBalance.toLocaleString()} ${bitcoinUnit}. Cannot proceed with payment.`
-              )
+              setValidationMessage({
+                message: t('withdrawModal.main.errors.invoiceExceedsBalance', {
+                  amount: invoiceAmountSats.toLocaleString(),
+                  balance: assetBalance.toLocaleString(),
+                  unit: bitcoinUnit,
+                }),
+                type: 'error',
+              })
             }
             // Check channel capacity after balance check - upgraded to Error from Warning
             else if (decoded.amt_msat > maxLightningCapacity) {
-              setValidationError(
-                `Error: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your outbound channel capacity (${maxCapacitySats.toLocaleString()} sats). Cannot proceed with payment.`
-              )
+              setValidationMessage({
+                message: t('withdrawModal.main.errors.invoiceExceedsCapacity', {
+                  amount: invoiceAmountSats.toLocaleString(),
+                  capacity: maxCapacitySats.toLocaleString(),
+                }),
+                type: 'error',
+              })
             }
           }
         } else if (input.startsWith('rgb')) {
@@ -477,9 +525,12 @@ export const WithdrawModalContent: React.FC = () => {
                 (asset: NiaAsset) => asset.asset_id === decodedRgb.asset_id
               )
               if (!assetExists && decodedRgb.asset_id !== BTC_ASSET_ID) {
-                setValidationError(
-                  `Error: You don't have the requested asset: ${decodedRgb.asset_id.substring(0, 8)}... Cannot proceed with payment.`
-                )
+                setValidationMessage({
+                  message: t('withdrawModal.main.errors.rgbAssetMissing', {
+                    asset: decodedRgb.asset_id.substring(0, 8),
+                  }),
+                  type: 'error',
+                })
               } else {
                 // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
@@ -490,10 +541,15 @@ export const WithdrawModalContent: React.FC = () => {
 
                 // Check if balance is zero
                 if (rgbBalance === 0) {
-                  const ticker = assetInfo?.ticker || 'asset'
-                  setValidationError(
-                    `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`
-                  )
+                  const ticker =
+                    assetInfo?.ticker ||
+                    t('withdrawModal.main.labels.assetFallback')
+                  setValidationMessage({
+                    message: t('withdrawModal.main.errors.zeroBalance', {
+                      asset: ticker,
+                    }),
+                    type: 'error',
+                  })
                   return
                 }
 
@@ -501,7 +557,9 @@ export const WithdrawModalContent: React.FC = () => {
                   decodedRgb.assignment
                 )
                 if (assignmentAmount) {
-                  const ticker = assetInfo?.ticker || 'Unknown'
+                  const ticker =
+                    assetInfo?.ticker ||
+                    t('withdrawModal.main.labels.unknownAsset')
 
                   // Format the amount as a string for the form field
                   const formattedAmountStr = formatAssetAmountWithPrecision(
@@ -519,9 +577,17 @@ export const WithdrawModalContent: React.FC = () => {
 
                   if (assignmentAmount > rgbBalance) {
                     setValue('amount', formattedBalanceStr)
-                    setValidationError(
-                      `Warning: The invoice requested ${formattedAmountStr} ${ticker} but your balance is only ${formattedBalanceStr} ${ticker}. Adjusted to maximum sendable amount.`
-                    )
+                    setValidationMessage({
+                      message: t(
+                        'withdrawModal.main.warnings.invoiceAdjusted',
+                        {
+                          asset: ticker,
+                          balance: formattedBalanceStr,
+                          requested: formattedAmountStr,
+                        }
+                      ),
+                      type: 'warning',
+                    })
                   } else {
                     setValue('amount', formattedAmountStr)
                   }
@@ -535,14 +601,18 @@ export const WithdrawModalContent: React.FC = () => {
                 setValue('asset_id', firstRgbAsset.value)
                 await fetchAssetBalance(firstRgbAsset.value)
               } else {
-                setValidationError('Warning: No RGB assets available to send.')
+                setValidationMessage({
+                  message: t('withdrawModal.main.warnings.noRgbAssets'),
+                  type: 'warning',
+                })
               }
             }
           } catch (error) {
             console.error('Failed to decode RGB invoice:', error)
-            setValidationError(
-              'Failed to decode RGB invoice. Please check that the invoice is valid.'
-            )
+            setValidationMessage({
+              message: t('withdrawModal.main.errors.decodeRgbFailed'),
+              type: 'error',
+            })
             setAddressType('invalid')
           }
         } else if (input.startsWith('bc') || input.startsWith('tb')) {
@@ -563,16 +633,18 @@ export const WithdrawModalContent: React.FC = () => {
         } else if (input) {
           // Invalid input
           setAddressType('invalid')
-          setValidationError(
-            'Invalid address format. Please enter a valid Bitcoin address, Lightning invoice, Lightning address, or RGB invoice.'
-          )
+          setValidationMessage({
+            message: t('withdrawModal.main.errors.invalidFormat'),
+            type: 'error',
+          })
         }
       } catch (error) {
         console.error('Failed to decode input', error)
         setAddressType('invalid')
-        setValidationError(
-          'Failed to decode input. Please check the address format.'
-        )
+        setValidationMessage({
+          message: t('withdrawModal.main.errors.decodeInputFailed'),
+          type: 'error',
+        })
       } finally {
         setIsDecodingInvoice(false)
       }
@@ -589,6 +661,7 @@ export const WithdrawModalContent: React.FC = () => {
       availableAssets,
       bitcoinUnit,
       assetBalance,
+      t,
     ]
   ) // Added bitcoinUnit, assetBalance, and maxAssetCapacities dependencies
 
@@ -633,17 +706,23 @@ export const WithdrawModalContent: React.FC = () => {
 
   const getMinAmountMessage = useCallback(() => {
     if (assetId === BTC_ASSET_ID) {
-      return bitcoinUnit === 'SAT' ? '1 SAT' : '0.00000001 BTC'
+      return bitcoinUnit === 'SAT'
+        ? t('withdrawModal.form.amount.minBitcoinSat')
+        : t('withdrawModal.form.amount.minBitcoinBtc')
     }
 
     const assetInfo = assets.data?.nia.find(
       (a: NiaAsset) => a.asset_id === assetId
     )
-    const ticker = assetInfo?.ticker || 'Unknown'
+    const ticker =
+      assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
     const precision = getAssetPrecision(ticker, bitcoinUnit, assets.data?.nia)
     const minAmount = 1 / Math.pow(10, precision)
-    return `${minAmount} ${ticker}`
-  }, [assetId, bitcoinUnit, assets.data?.nia])
+    return t('withdrawModal.form.amount.minAssetAmount', {
+      amount: minAmount,
+      ticker,
+    })
+  }, [assetId, assets.data?.nia, bitcoinUnit, t])
 
   const getFeeIcon = useCallback((type: string) => {
     switch (type) {
@@ -660,31 +739,25 @@ export const WithdrawModalContent: React.FC = () => {
 
   const onSubmit = useCallback(
     async (data: Fields) => {
-      // Block submission if there's an error that starts with "Error:"
-      if (validationError && validationError.startsWith('Error:')) {
-        toast.error(validationError, {
+      if (validationMessage?.type === 'error') {
+        toast.error(validationMessage.message, {
           autoClose: 5000,
         })
         return
       }
 
-      // Check if user has the asset
       if (data.asset_id !== BTC_ASSET_ID) {
         const assetExists = assets.data?.nia.some(
           (asset: NiaAsset) => asset.asset_id === data.asset_id
         )
         if (!assetExists) {
-          toast.error(
-            `Error: You don't have this asset. Cannot proceed with withdrawal.`,
-            {
-              autoClose: 5000,
-            }
-          )
+          toast.error(t('withdrawModal.main.errors.assetMissing'), {
+            autoClose: 5000,
+          })
           return
         }
       }
 
-      // Check if balance is zero
       if (assetBalance === 0) {
         const assetInfo =
           data.asset_id === BTC_ASSET_ID
@@ -694,9 +767,11 @@ export const WithdrawModalContent: React.FC = () => {
               )
         const ticker =
           assetInfo?.ticker ||
-          (data.asset_id === BTC_ASSET_ID ? 'BTC' : 'asset')
+          (data.asset_id === BTC_ASSET_ID
+            ? 'BTC'
+            : t('withdrawModal.main.labels.assetFallback'))
         toast.error(
-          `Error: You have zero balance for ${ticker}. Cannot proceed with withdrawal.`,
+          t('withdrawModal.main.errors.zeroBalance', { asset: ticker }),
           {
             autoClose: 5000,
           }
@@ -708,7 +783,10 @@ export const WithdrawModalContent: React.FC = () => {
         const enteredAmount = Number(data.amount)
         if (enteredAmount > assetBalance) {
           toast.error(
-            `Withdrawal amount (${enteredAmount}) exceeds available balance (${assetBalance})`,
+            t('withdrawModal.main.errors.onchainExceedsBalance', {
+              amount: enteredAmount,
+              balance: assetBalance,
+            }),
             {
               autoClose: 5000,
             }
@@ -727,7 +805,10 @@ export const WithdrawModalContent: React.FC = () => {
           // Final capacity check
           if (decodedInvoice.amt_msat > maxLightningCapacity) {
             toast.error(
-              `Cannot proceed: Invoice amount (${invoiceAmountSats.toLocaleString()} sats) exceeds your outbound capacity (${maxCapacitySats.toLocaleString()} sats)`,
+              t('withdrawModal.main.errors.capacityToast', {
+                amount: invoiceAmountSats.toLocaleString(),
+                capacity: maxCapacitySats.toLocaleString(),
+              }),
               {
                 autoClose: 5000,
               }
@@ -771,13 +852,14 @@ export const WithdrawModalContent: React.FC = () => {
       setShowConfirmation(true)
     },
     [
-      validationError,
+      validationMessage,
       assetBalance,
       BTC_ASSET_ID,
       decodedInvoice,
       bitcoinUnit,
       maxLightningCapacity,
       assets.data?.nia,
+      t,
     ]
   )
 
@@ -795,22 +877,28 @@ export const WithdrawModalContent: React.FC = () => {
         const maxCapacitySats = maxLightningCapacity / 1000
 
         if (pendingData.decodedInvoice.amt_msat > maxLightningCapacity) {
-          setValidationError(
-            `Error: Not enough outbound capacity. Need ${invoiceAmountSats.toLocaleString()} sats but only have ${maxCapacitySats.toLocaleString()} sats available.`
-          )
+          setValidationMessage({
+            message: t('withdrawModal.main.errors.lightningCapacityNeeded', {
+              amount: invoiceAmountSats.toLocaleString(),
+              capacity: maxCapacitySats.toLocaleString(),
+            }),
+            type: 'error',
+          })
           return
         }
       }
     }
 
     setIsConfirming(true)
-    setValidationError(null)
+    setValidationMessage(null)
     setPaymentStatus(null)
 
     try {
       if (pendingData.network === 'lightning') {
         if (!pendingData.address.startsWith('ln')) {
-          throw new Error('Invalid Lightning invoice')
+          throw new Error(
+            t('withdrawModal.main.errors.invalidLightningInvoice')
+          )
         }
 
         console.log('Processing Lightning payment...')
@@ -839,7 +927,7 @@ export const WithdrawModalContent: React.FC = () => {
             console.log('Payment succeeded immediately')
 
             // Show success toast and close modal immediately
-            toast.success('Lightning payment successful!', {
+            toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
               autoClose: 5000,
               progressStyle: { background: '#3B82F6' },
             })
@@ -852,20 +940,26 @@ export const WithdrawModalContent: React.FC = () => {
             dispatch(uiSliceActions.setModal({ type: 'none' }))
           } else {
             console.log('Payment failed immediately:', res.status)
-            const failureMsg = `Payment failed immediately with status: ${res.status}`
+            const failureMsg = t(
+              'withdrawModal.main.errors.lightningImmediateFailure',
+              { status: res.status }
+            )
 
             // Reset all states and go back to form to allow editing
             setIsPollingStatus(false)
             setIsConfirming(false)
             setPaymentStatus(null)
             setShowConfirmation(false) // Go back to form
-            setValidationError(failureMsg) // Show error in form
+            setValidationMessage({
+              message: failureMsg,
+              type: 'error',
+            })
           }
         } catch (error: any) {
           console.error('Lightning payment error:', error)
 
           // Extract detailed error information for Lightning payments
-          let errorMessage = 'Unknown payment error'
+          let errorMessage = t('withdrawModal.main.errors.unknownPayment')
 
           if (error?.data?.error) {
             errorMessage = error.data.error
@@ -877,7 +971,10 @@ export const WithdrawModalContent: React.FC = () => {
             errorMessage = error
           }
 
-          const fullErrorMessage = `Lightning payment failed: ${errorMessage}`
+          const fullErrorMessage = t(
+            'withdrawModal.main.errors.lightningFailedDetailed',
+            { error: errorMessage }
+          )
 
           // Also show in toast for immediate visibility
           toast.error(fullErrorMessage, {
@@ -889,7 +986,10 @@ export const WithdrawModalContent: React.FC = () => {
           setIsPollingStatus(false)
           setPaymentStatus(null) // Clear payment status to prevent overlay
           setShowConfirmation(false) // Go back to form
-          setValidationError(fullErrorMessage) // Show error in form
+          setValidationMessage({
+            message: fullErrorMessage,
+            type: 'error',
+          })
         }
       } else if (pendingData.network === 'on-chain') {
         if (pendingData.asset_id === BTC_ASSET_ID) {
@@ -912,17 +1012,19 @@ export const WithdrawModalContent: React.FC = () => {
 
           if ('error' in res) {
             throw new Error(
-              (res.error as ApiError)?.data?.error || 'Payment failed'
+              (res.error as ApiError)?.data?.error ||
+                t('withdrawModal.main.errors.paymentFailedGeneric')
             )
           }
-          toast.success('BTC Withdrawal successful', {
+          toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
             progressStyle: { background: '#3B82F6' },
           })
         } else {
           const assetInfo = assets.data?.nia.find(
             (a: NiaAsset) => a.asset_id === pendingData.asset_id
           )
-          const ticker = assetInfo?.ticker || 'Unknown'
+          const ticker =
+            assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
           const rawAmount = parseAssetAmountWithPrecision(
             pendingData.amount.toString(),
             ticker,
@@ -938,14 +1040,16 @@ export const WithdrawModalContent: React.FC = () => {
 
           if (pendingData.address.startsWith('rgb') && decodedRgbInvoice) {
             if (!decodedRgbInvoice.recipient_id) {
-              throw new Error('Decoded RGB invoice is missing a recipient ID.')
+              throw new Error(
+                t('withdrawModal.main.errors.rgbMissingRecipient')
+              )
             }
             if (
               !decodedRgbInvoice.transport_endpoints ||
               decodedRgbInvoice.transport_endpoints.length === 0
             ) {
               throw new Error(
-                'Decoded RGB invoice is missing transport endpoints.'
+                t('withdrawModal.main.errors.rgbMissingTransport')
               )
             }
 
@@ -972,7 +1076,7 @@ export const WithdrawModalContent: React.FC = () => {
               const witnessAmountSat = pendingData.witness_amount_sat || 1200
               if (!witnessAmountSat || witnessAmountSat < 512) {
                 throw new Error(
-                  'Witness amount (sats) must be at least 512 sats for witness recipients.'
+                  t('withdrawModal.main.errors.witnessAmountTooLow')
                 )
               }
               witnessData = {
@@ -996,7 +1100,9 @@ export const WithdrawModalContent: React.FC = () => {
             }).unwrap()
           } else {
             if (!transportEndpoint) {
-              throw new Error('Proxy transport endpoint is not configured.')
+              throw new Error(
+                t('withdrawModal.main.errors.proxyEndpointMissing')
+              )
             }
             res = await sendAsset({
               asset_id: pendingData.asset_id,
@@ -1015,10 +1121,11 @@ export const WithdrawModalContent: React.FC = () => {
 
           if ('error' in res) {
             throw new Error(
-              (res.error as ApiError)?.data?.error || 'RGB Asset payment failed'
+              (res.error as ApiError)?.data?.error ||
+                t('withdrawModal.main.errors.rgbPaymentFailed')
             )
           }
-          toast.success('RGB Asset Withdrawal successful', {
+          toast.success(t('withdrawModal.main.toasts.rgbSuccess'), {
             progressStyle: { background: '#3B82F6' },
           })
         }
@@ -1036,7 +1143,7 @@ export const WithdrawModalContent: React.FC = () => {
       console.error('Withdrawal error:', error)
 
       // Extract more detailed error information
-      let errorMessage = 'Withdrawal failed'
+      let errorMessage = t('withdrawModal.main.errors.withdrawalFailedDefault')
 
       if (error?.data?.error) {
         // API error with detailed message
@@ -1053,9 +1160,14 @@ export const WithdrawModalContent: React.FC = () => {
       }
 
       // Show detailed error in toast
-      toast.error(`Withdrawal failed: ${errorMessage}`, {
-        autoClose: 8000, // Longer time for reading detailed errors
-      })
+      toast.error(
+        t('withdrawModal.main.errors.withdrawalFailedToast', {
+          error: errorMessage,
+        }),
+        {
+          autoClose: 8000, // Longer time for reading detailed errors
+        }
+      )
 
       // Reset all confirmation states to allow user to go back and edit
       setIsConfirming(false)
@@ -1066,7 +1178,12 @@ export const WithdrawModalContent: React.FC = () => {
       setShowConfirmation(false)
 
       // Always set validation error to show in the form
-      setValidationError(errorMessage)
+      setValidationMessage({
+        message: t('withdrawModal.main.errors.withdrawalFailedDetails', {
+          error: errorMessage,
+        }),
+        type: 'error',
+      })
     }
   }, [
     pendingData,
@@ -1080,6 +1197,7 @@ export const WithdrawModalContent: React.FC = () => {
     sendAsset,
     transportEndpoint,
     dispatch,
+    t,
   ])
 
   // Effect to fetch fee estimations when necessary
@@ -1119,7 +1237,7 @@ export const WithdrawModalContent: React.FC = () => {
 
   // Function to clear validation errors - helps users fix errors more easily
   const clearValidationError = useCallback(() => {
-    setValidationError(null)
+    setValidationMessage(null)
   }, [])
 
   return (
@@ -1127,12 +1245,14 @@ export const WithdrawModalContent: React.FC = () => {
       <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
         <div className="mb-4">
           <h3 className="text-2xl font-bold text-white text-center mb-2">
-            {showConfirmation ? 'Confirm Withdrawal' : 'Withdraw Funds'}
+            {showConfirmation
+              ? t('withdrawModal.main.title.confirm')
+              : t('withdrawModal.main.title.form')}
           </h3>
           <p className="text-slate-400 text-center text-sm mb-4">
             {showConfirmation
-              ? 'Please review your withdrawal details before confirming'
-              : 'Send your funds to a Bitcoin address, Lightning invoice, Lightning address, or RGB invoice'}
+              ? t('withdrawModal.main.subtitle.confirm')
+              : t('withdrawModal.main.subtitle.form')}
           </p>
         </div>
 
@@ -1153,7 +1273,7 @@ export const WithdrawModalContent: React.FC = () => {
                   if (isPollingStatus) {
                     setIsPollingStatus(false)
                     setPaymentStatus(null) // Reset status
-                    setValidationError(null) // Clear any polling error
+                    setValidationMessage(null) // Clear any polling error
                     setIsConfirming(false) // Stop loading indicator
                   }
                 }}
@@ -1161,7 +1281,7 @@ export const WithdrawModalContent: React.FC = () => {
                 paymentHash={paymentHash}
                 paymentStatus={paymentStatus}
                 pendingData={pendingData}
-                validationError={validationError}
+                validationMessage={validationMessage}
               />
             ) : (
               <WithdrawForm
@@ -1195,7 +1315,7 @@ export const WithdrawModalContent: React.FC = () => {
                 setShowAssetDropdown={setShowAssetDropdown}
                 setValue={setValueWrapper}
                 showAssetDropdown={showAssetDropdown}
-                validationError={validationError}
+                validationMessage={validationMessage}
               />
             )}
           </div>
@@ -1212,7 +1332,7 @@ export const WithdrawModalContent: React.FC = () => {
                 setIsConfirming(false)
                 setIsPollingStatus(false)
                 setPaymentStatus(null)
-                setValidationError(null)
+                setValidationMessage(null)
 
                 // Close the modal
                 dispatch(uiSliceActions.setModal({ type: 'none' }))
@@ -1220,7 +1340,7 @@ export const WithdrawModalContent: React.FC = () => {
               type="button"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Cancel</span>
+              <span>{t('withdrawModal.main.buttons.cancel')}</span>
             </button>
           </div>
         )}

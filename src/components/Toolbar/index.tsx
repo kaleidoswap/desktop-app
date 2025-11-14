@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { Trash2, Edit, X, Server, Cloud, AlertTriangle } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -28,6 +29,7 @@ export interface Account {
   rpc_connection_url: string
   daemon_listening_port: string
   ldk_peer_listening_port: string
+  language?: string
 }
 
 interface ModalProps {
@@ -95,8 +97,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { t } = useTranslation()
   const NodeIcon = account.datapath ? Server : Cloud
-  const nodeType = account.datapath ? 'Local' : 'Remote'
+  const nodeType = account.datapath
+    ? t('toolbar.nodeCard.local')
+    : t('toolbar.nodeCard.remote')
   const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
 
   // Handle card click based on edit mode
@@ -240,6 +245,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
 // Custom Hooks
 const useAccounts = () => {
+  const { t } = useTranslation()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -251,9 +257,11 @@ const useAccounts = () => {
         setAccounts(fetchedAccounts)
       } catch (err) {
         setError(
-          err instanceof Error ? err : new Error('Failed to fetch accounts')
+          err instanceof Error
+            ? err
+            : new Error(t('toolbar.accounts.fetchFailed'))
         )
-        toast.error('Failed to fetch accounts')
+        toast.error(t('toolbar.accounts.fetchFailed'))
       } finally {
         setIsLoading(false)
       }
@@ -293,9 +301,15 @@ const useAccounts = () => {
         )
       )
 
-      toast.success(`Account "${updatedAccount.name}" updated successfully`)
+      toast.success(
+        t('toolbar.accounts.updateSuccess', { name: updatedAccount.name })
+      )
     } catch (error) {
-      toast.error(`Failed to update account: ${error}`)
+      toast.error(
+        t('toolbar.accounts.updateFailed', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+      )
       throw error
     }
   }, [])
@@ -304,9 +318,9 @@ const useAccounts = () => {
     try {
       await invoke('delete_account', { name: account.name })
       setAccounts((prev) => prev.filter((a) => a.name !== account.name))
-      toast.success(`Account "${account.name}" deleted successfully`)
+      toast.success(t('toolbar.accounts.deleteSuccess', { name: account.name }))
     } catch (error) {
-      toast.error(`Failed to delete account "${account.name}"`)
+      toast.error(t('toolbar.accounts.deleteFailed', { name: account.name }))
       throw error
     }
   }, [])
@@ -326,6 +340,7 @@ interface ToolbarProps {
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
+  const { t } = useTranslation()
   const { accounts, isLoading, error, updateAccount, deleteAccount } =
     useAccounts()
 
@@ -367,15 +382,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       if (timeoutId) window.clearTimeout(timeoutId)
 
       // Show the toast
-      toast.success(`Local node "${event.payload}" started successfully`, {
-        autoClose: 3000,
-        onClose: () => {
-          // Reset the flag when the toast closes
-          isToastActive = false
-        },
-        position: 'bottom-right',
-        toastId: 'node-started',
-      })
+      toast.success(
+        t('toolbar.nodes.localNodeStarted', { name: event.payload }),
+        {
+          autoClose: 3000,
+          onClose: () => {
+            // Reset the flag when the toast closes
+            isToastActive = false
+          },
+          position: 'bottom-right',
+          toastId: 'node-started',
+        }
+      )
 
       // Set a timeout to reset the flag (in case onClose doesn't fire)
       timeoutId = window.setTimeout(() => {
@@ -389,7 +407,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       if (timeoutId) window.clearTimeout(timeoutId)
       unlisten.then((fn) => fn())
     }
-  }, [])
+  }, [t])
 
   const toggleEditMode = () => {
     setIsEditing(!isEditing)
@@ -472,7 +490,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         node.node_url.startsWith('http://localhost:') &&
         node.datapath !== ''
       ) {
-        toast.info('Starting local node...', {
+        toast.info(t('toolbar.nodes.startingLocalNode'), {
           autoClose: 2000,
           position: 'bottom-right',
         })
@@ -502,7 +520,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
             if (ourConflictingPorts.length > 0) {
               // If ports are used by our nodes, try to stop them
-              toast.info('Stopping existing nodes on conflicting ports...', {
+              toast.info(t('toolbar.nodes.stoppingExisting'), {
                 autoClose: false,
                 toastId: 'stopping-nodes',
               })
@@ -524,7 +542,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
               toast.update('stopping-nodes', {
                 autoClose: 2000,
-                render: 'Existing nodes stopped successfully',
+                render: t('toolbar.nodes.existingStopped'),
                 type: 'success',
               })
 
@@ -604,8 +622,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       dispatch(nodeSettingsActions.resetNodeSettings())
       toast.error(
         error instanceof Error
-          ? `Failed to start node: ${error.message}`
-          : 'Failed to start node'
+          ? t('toolbar.nodes.startFailedWithReason', {
+              error: error.message,
+            })
+          : t('toolbar.nodes.startFailed')
       )
     } finally {
       setIsSwitching(false)
@@ -616,7 +636,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        Error loading nodes: {error.message}
+        {t('toolbar.main.errorLoading', { error: error.message })}
       </div>
     )
   }
@@ -637,13 +657,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         >
           {/* Title - completely hidden in collapsed state, no hover effect */}
           {!isCollapsed && (
-            <h2 className="text-xl font-semibold text-white">Your Nodes</h2>
+            <h2 className="text-xl font-semibold text-white">
+              {t('toolbar.main.title')}
+            </h2>
           )}
 
           {/* Only show edit button if there are nodes */}
           {accounts.length > 0 && !isCollapsed && (
             <button
-              aria-label={isEditing ? 'Exit Edit Mode' : 'Enter Edit Mode'}
+              aria-label={
+                isEditing
+                  ? t('toolbar.main.exitEditMode')
+                  : t('toolbar.main.enterEditMode')
+              }
               className={`p-2 rounded-lg text-gray-400 hover:text-white 
                 transition-colors duration-200 ${isEditing ? 'bg-blue-darker text-cyan' : ''}`}
               onClick={toggleEditMode}
@@ -651,12 +677,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
               {isEditing ? (
                 <>
                   <X size={18} />
-                  <span className="ml-2 text-sm">Exit Edit Mode</span>
+                  <span className="ml-2 text-sm">
+                    {t('toolbar.main.exitEditMode')}
+                  </span>
                 </>
               ) : (
                 <>
                   <Edit size={18} />
-                  <span className="ml-2 text-sm">Edit Nodes</span>
+                  <span className="ml-2 text-sm">
+                    {t('toolbar.main.editNodes')}
+                  </span>
                 </>
               )}
             </button>
@@ -668,7 +698,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
           <div className="px-4 py-2 bg-cyan/10 border-y border-cyan/20 flex-shrink-0">
             <p className="text-sm text-cyan flex items-center">
               <Edit className="w-4 h-4 mr-2" />
-              Edit Mode: Click a node to edit, or use the edit/delete buttons
+              {t('toolbar.main.editModeInstructions')}
             </p>
           </div>
         )}
@@ -680,9 +710,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               {!isCollapsed && (
                 <div className={`bg-blue-darker/50 rounded-xl p-6 max-w-xs`}>
-                  <p className="text-gray-400 mb-2">No nodes found</p>
+                  <p className="text-gray-400 mb-2">
+                    {t('toolbar.main.noNodesFound')}
+                  </p>
                   <p className="text-sm text-gray-500">
-                    Create a new node to get started with Kaleidoswap
+                    {t('toolbar.main.createNodeHint')}
                   </p>
                 </div>
               )}
@@ -754,6 +786,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
   const [suggestedPorts, setSuggestedPorts] = useState<{
     daemon: string
@@ -767,7 +800,10 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
 
   const handleConfirm = async () => {
     try {
-      setLoadingState({ message: 'Checking node status...', step: 1 })
+      setLoadingState({
+        message: t('toolbar.modal.checkingNodeStatus'),
+        step: 1,
+      })
       setError(null)
 
       // Check if node is already running
@@ -777,13 +813,19 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
 
       if (isNodeRunning) {
         setLoadingState({
-          message: 'Node is already running, switching context...',
+          message: t('toolbar.modal.nodeAlreadyRunning'),
           step: 2,
         })
       } else if (account.datapath) {
-        setLoadingState({ message: 'Starting local node...', step: 2 })
+        setLoadingState({
+          message: t('toolbar.modal.startingLocalNode'),
+          step: 2,
+        })
       } else {
-        setLoadingState({ message: 'Connecting to remote node...', step: 2 })
+        setLoadingState({
+          message: t('toolbar.modal.connectingRemoteNode'),
+          step: 2,
+        })
       }
 
       await onConfirm(account)
@@ -803,7 +845,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           })
         }
       } else {
-        setError('An unknown error occurred while switching nodes')
+        setError(t('toolbar.modal.unknownError'))
       }
     } finally {
       setLoadingState(null)
@@ -830,7 +872,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   }
 
   const NodeIcon = account.datapath ? Server : Cloud
-  const nodeType = account.datapath ? 'Local Node' : 'Remote Node'
+  const nodeType = account.datapath
+    ? t('toolbar.modal.localNode')
+    : t('toolbar.modal.remoteNode')
   const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
   const bgColor = account.datapath
     ? 'from-green-500/5 to-transparent'
@@ -839,9 +883,11 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   return (
     <div className="max-h-[80vh] overflow-y-auto">
       <div className="sticky top-0 bg-gray-800 pb-4 z-10">
-        <h2 className="text-2xl font-bold mb-2">Switch Node</h2>
+        <h2 className="text-2xl font-bold mb-2">
+          {t('toolbar.modal.switchNode')}
+        </h2>
         <p className="text-gray-400 text-sm">
-          Review the node details before switching
+          {t('toolbar.modal.reviewDetails')}
         </p>
       </div>
 
@@ -880,7 +926,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-500 font-medium">Error switching node</p>
+              <p className="text-red-500 font-medium">
+                {t('toolbar.modal.errorSwitchingNode')}
+              </p>
               <p className="text-sm text-red-400/80 mt-1 whitespace-pre-line">
                 {error}
               </p>
@@ -890,7 +938,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
                     className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
                     onClick={handleUseSuggestedPorts}
                   >
-                    Use suggested ports
+                    {t('toolbar.modal.useSuggestedPorts')}
                   </button>
                 </div>
               )}
@@ -939,7 +987,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
             onClick={() => toggleSection('connection')}
           >
-            <span className="font-medium text-white">Connection Details</span>
+            <span className="font-medium text-white">
+              {t('toolbar.modal.connectionDetails')}
+            </span>
             <div
               className={`transform transition-transform ${expandedSection === 'connection' ? 'rotate-180' : ''}`}
             >
@@ -961,13 +1011,17 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           {expandedSection === 'connection' && (
             <div className="px-4 pb-4 space-y-3">
               <div>
-                <label className="text-sm text-gray-400">Node URL</label>
+                <label className="text-sm text-gray-400">
+                  {t('toolbar.modal.nodeUrl')}
+                </label>
                 <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
                   {account.node_url}
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400">RPC Connection</label>
+                <label className="text-sm text-gray-400">
+                  {t('toolbar.modal.rpcConnection')}
+                </label>
                 <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
                   {account.rpc_connection_url}
                 </div>
@@ -982,7 +1036,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
             onClick={() => toggleSection('services')}
           >
-            <span className="font-medium text-white">Service Endpoints</span>
+            <span className="font-medium text-white">
+              {t('toolbar.modal.serviceEndpoints')}
+            </span>
             <div
               className={`transform transition-transform ${expandedSection === 'services' ? 'rotate-180' : ''}`}
             >
@@ -1004,13 +1060,17 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           {expandedSection === 'services' && (
             <div className="px-4 pb-4 space-y-3">
               <div>
-                <label className="text-sm text-gray-400">Indexer URL</label>
+                <label className="text-sm text-gray-400">
+                  {t('toolbar.modal.indexerUrl')}
+                </label>
                 <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
                   {account.indexer_url}
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400">RGB Proxy</label>
+                <label className="text-sm text-gray-400">
+                  {t('toolbar.modal.rgbProxy')}
+                </label>
                 <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
                   {account.proxy_endpoint}
                 </div>
@@ -1026,7 +1086,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
               className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
               onClick={() => toggleSection('ports')}
             >
-              <span className="font-medium text-white">Port Configuration</span>
+              <span className="font-medium text-white">
+                {t('toolbar.modal.portConfiguration')}
+              </span>
               <div
                 className={`transform transition-transform ${expandedSection === 'ports' ? 'rotate-180' : ''}`}
               >
@@ -1048,19 +1110,25 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             {expandedSection === 'ports' && (
               <div className="px-4 pb-4 space-y-3">
                 <div>
-                  <label className="text-sm text-gray-400">Daemon Port</label>
+                  <label className="text-sm text-gray-400">
+                    {t('toolbar.modal.daemonPort')}
+                  </label>
                   <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
                     {account.daemon_listening_port}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">LDK Peer Port</label>
+                  <label className="text-sm text-gray-400">
+                    {t('toolbar.modal.ldkPeerPort')}
+                  </label>
                   <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
                     {account.ldk_peer_listening_port}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Data Path</label>
+                  <label className="text-sm text-gray-400">
+                    {t('toolbar.modal.dataPath')}
+                  </label>
                   <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
                     {account.datapath}
                   </div>
@@ -1079,7 +1147,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             onClick={onCancel}
             type="button"
           >
-            Cancel
+            {t('toolbar.modal.cancel')}
           </button>
           <button
             className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors
@@ -1095,10 +1163,10 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             {isLoading || loadingState ? (
               <div className="flex items-center justify-center gap-2">
                 <Spinner size={20} />
-                <span>Switching...</span>
+                <span>{t('toolbar.modal.switching')}</span>
               </div>
             ) : (
-              'Switch to This Node'
+              t('toolbar.modal.switchToNode')
             )}
           </button>
         </div>
@@ -1118,6 +1186,7 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const { t } = useTranslation()
   const handleDelete = () => {
     try {
       onConfirm(account)
@@ -1132,41 +1201,36 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
     <>
       <div className="flex flex-col items-center mb-6">
         <AlertTriangle className="text-yellow-500 w-16 h-16 mb-4" />
-        <h2 className="text-2xl font-bold">Delete Node</h2>
+        <h2 className="text-2xl font-bold">{t('toolbar.delete.title')}</h2>
       </div>
 
       <div className="space-y-4 mb-8">
         <p className="text-gray-300">
-          Are you sure you want to delete the node "
-          <span className="font-semibold text-white">{account.name}</span>"?
+          {t('toolbar.delete.confirmMessage', { name: account.name })}
         </p>
 
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-left">
-          <p className="text-yellow-500 font-medium mb-2">⚠️ Warning</p>
+          <p className="text-yellow-500 font-medium mb-2">
+            {t('toolbar.delete.warningTitle')}
+          </p>
           <ul className="text-yellow-100/80 space-y-2 text-sm">
-            <li>• This action cannot be undone</li>
+            <li>• {t('toolbar.delete.cannotUndo')}</li>
             {account.datapath ? (
               <>
-                <li>
-                  • If you haven't backed up your node, you will permanently
-                  lose access to your funds
-                </li>
-                <li>• All local node data will be permanently deleted</li>
+                <li>• {t('toolbar.delete.localWarning1')}</li>
+                <li>• {t('toolbar.delete.localWarning2')}</li>
                 <li className="break-all">
-                  • Data path to be deleted: {account.datapath}
+                  •{' '}
+                  {t('toolbar.delete.localWarning3', {
+                    path: account.datapath,
+                  })}
                 </li>
               </>
             ) : (
               <>
-                <li>• This will only delete the stored connection settings</li>
-                <li>
-                  • The remote node will remain active and must be managed
-                  directly on the remote machine
-                </li>
-                <li>
-                  • Make sure you have access to the remote node's credentials
-                  if you want to reconnect later
-                </li>
+                <li>• {t('toolbar.delete.remoteWarning1')}</li>
+                <li>• {t('toolbar.delete.remoteWarning2')}</li>
+                <li>• {t('toolbar.delete.remoteWarning3')}</li>
               </>
             )}
           </ul>
@@ -1179,7 +1243,7 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
           onClick={onCancel}
           type="button"
         >
-          Cancel
+          {t('toolbar.delete.cancel')}
         </button>
         <button
           className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
@@ -1187,7 +1251,9 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
           type="button"
         >
           <Trash2 size={20} />
-          Delete {account.datapath ? 'Node' : 'Connection'}
+          {account.datapath
+            ? t('toolbar.delete.deleteNode')
+            : t('toolbar.delete.deleteConnection')}
         </button>
       </div>
     </>
@@ -1205,6 +1271,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   onClose,
   onSave,
 }) => {
+  const { t } = useTranslation()
   const [formData, setFormData] = useState(account)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'basic' | 'advanced'>('basic')
@@ -1221,22 +1288,22 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
     // Validate daemon port
     if (!daemonPort || isNaN(daemonPortNum)) {
-      errors.daemon = 'Daemon port is required'
+      errors.daemon = t('toolbar.edit.validation.daemonPortRequired')
     } else if (daemonPortNum < 1024 || daemonPortNum > 65535) {
-      errors.daemon = 'Daemon port must be between 1024 and 65535'
+      errors.daemon = t('toolbar.edit.validation.daemonPortRange')
     }
 
     // Validate LDK port
     if (!ldkPort || isNaN(ldkPortNum)) {
-      errors.ldk = 'LDK peer port is required'
+      errors.ldk = t('toolbar.edit.validation.ldkPortRequired')
     } else if (ldkPortNum < 1024 || ldkPortNum > 65535) {
-      errors.ldk = 'LDK peer port must be between 1024 and 65535'
+      errors.ldk = t('toolbar.edit.validation.ldkPortRange')
     }
 
     // Check if ports are the same
     if (daemonPort && ldkPort && daemonPort === ldkPort) {
-      errors.daemon = 'Daemon and LDK ports must be different'
-      errors.ldk = 'Daemon and LDK ports must be different'
+      errors.daemon = t('toolbar.edit.validation.portsMustDiffer')
+      errors.ldk = t('toolbar.edit.validation.portsMustDiffer')
     }
 
     setPortErrors(errors)
@@ -1260,7 +1327,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       formData.ldk_peer_listening_port
     )
     if (!isValidPorts) {
-      toast.error('Please fix the port configuration errors')
+      toast.error(t('toolbar.nodes.portErrors'))
       return
     }
 
@@ -1268,9 +1335,11 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     try {
       await onSave(formData)
       onClose()
-      toast.success(`Node "${formData.name}" updated successfully`)
+      toast.success(
+        t('toolbar.nodes.nodeUpdateSuccess', { name: formData.name })
+      )
     } catch (error) {
-      toast.error('Failed to update node')
+      toast.error(t('toolbar.nodes.nodeUpdateFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -1298,7 +1367,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Edit Node</h2>
+        <h2 className="text-2xl font-bold">{t('toolbar.edit.title')}</h2>
         <div className="flex items-center">
           <MinidenticonImg
             className="rounded-lg mr-3"
@@ -1323,7 +1392,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           onClick={() => setActiveTab('basic')}
           type="button"
         >
-          Basic Settings
+          {t('toolbar.edit.tabs.basic')}
           {activeTab === 'basic' && (
             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan" />
           )}
@@ -1338,7 +1407,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           onClick={() => setActiveTab('advanced')}
           type="button"
         >
-          Advanced Settings
+          {t('toolbar.edit.tabs.advanced')}
           {activeTab === 'advanced' && (
             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan" />
           )}
@@ -1350,13 +1419,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           <>
             <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
               <h3 className="text-sm font-medium text-gray-300 mb-4">
-                Connection Settings
+                {t('toolbar.edit.sections.connectionSettings')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Node Name
+                    {t('toolbar.edit.fields.nodeName')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1370,7 +1439,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Node URL
+                    {t('toolbar.edit.fields.nodeUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1387,7 +1456,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    RPC Connection URL
+                    {t('toolbar.edit.fields.rpcConnectionUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1410,13 +1479,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           <>
             <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
               <h3 className="text-sm font-medium text-gray-300 mb-4">
-                Service Endpoints
+                {t('toolbar.edit.sections.serviceEndpoints')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Bitcoind RPC URL
+                    {t('toolbar.edit.fields.bitcoindRpcUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1433,7 +1502,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Indexer URL
+                    {t('toolbar.edit.fields.indexerUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1450,7 +1519,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    RGB Proxy Endpoint
+                    {t('toolbar.edit.fields.rgbProxyEndpoint')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1468,7 +1537,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 {account.datapath && (
                   <div>
                     <label className="block text-gray-300 text-sm mb-1.5">
-                      Data Path
+                      {t('toolbar.edit.fields.dataPath')}
                     </label>
                     <div className="flex items-center">
                       <input
@@ -1479,7 +1548,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                       />
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
-                      Data path cannot be changed after account creation
+                      {t('toolbar.edit.fields.dataPathHint')}
                     </p>
                   </div>
                 )}
@@ -1488,13 +1557,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
             <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
               <h3 className="text-sm font-medium text-gray-300 mb-4">
-                Port Configuration
+                {t('toolbar.edit.sections.portConfiguration')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Daemon Listening Port
+                    {t('toolbar.edit.fields.daemonListeningPort')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1522,14 +1591,14 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                     </p>
                   ) : (
                     <p className="text-xs text-gray-400 mt-1">
-                      Port for the RGB Lightning Node daemon API (1024-65535)
+                      {t('toolbar.edit.fields.daemonListeningPortHint')}
                     </p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    LDK Peer Listening Port
+                    {t('toolbar.edit.fields.ldkPeerListeningPort')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1557,7 +1626,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                     </p>
                   ) : (
                     <p className="text-xs text-gray-400 mt-1">
-                      Port for Lightning Network peer connections (1024-65535)
+                      {t('toolbar.edit.fields.ldkPeerListeningPortHint')}
                     </p>
                   )}
                 </div>
@@ -1566,13 +1635,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
             <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
               <h3 className="text-sm font-medium text-gray-300 mb-4">
-                Maker Settings
+                {t('toolbar.edit.sections.makerSettings')}
               </h3>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Default Maker URL
+                    {t('toolbar.edit.fields.defaultMakerUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1589,7 +1658,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 <div>
                   <label className="block text-gray-300 text-sm mb-1.5">
-                    Default LSP URL
+                    {t('toolbar.edit.fields.defaultLspUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
@@ -1614,14 +1683,14 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
             onClick={onClose}
             type="button"
           >
-            Cancel
+            {t('toolbar.edit.cancel')}
           </button>
           <button
             className="flex-1 px-6 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors text-white font-medium flex items-center justify-center"
             disabled={isLoading}
             type="submit"
           >
-            {isLoading ? <Spinner size={20} /> : 'Save Changes'}
+            {isLoading ? <Spinner size={20} /> : t('toolbar.edit.saveChanges')}
           </button>
         </div>
       </form>

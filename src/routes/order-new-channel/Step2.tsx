@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import * as z from 'zod'
 
@@ -44,6 +45,7 @@ const FormFieldsSchema = z.object({
 type FormFields = z.infer<typeof FormFieldsSchema>
 
 export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
   const [addAsset, setAddAsset] = useState(true)
@@ -115,18 +117,16 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         }
       } catch (error: any) {
         // Check if it's a timeout error
-        let errorMessage = 'Error fetching data. Please try again later.'
+        let errorMessage = t('orderChannel.step2.fees.fetchFailed')
         if (
           error?.status === 'TIMEOUT_ERROR' ||
           (error?.error &&
             typeof error.error === 'string' &&
             error.error.includes('timeout'))
         ) {
-          errorMessage =
-            'Request timed out. The LSP server is not responding. Please check your connection and try again.'
+          errorMessage = t('orderChannel.step1.timeout')
         } else if (error?.status === 'FETCH_ERROR') {
-          errorMessage =
-            'Network error. Please check your connection to the LSP server.'
+          errorMessage = t('orderChannel.step1.networkError')
         }
 
         toast.error(errorMessage, {
@@ -166,7 +166,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     (data: FormFields) => {
       // Check if required fields are filled, but don't block on minimum values
       if (!data.capacitySat) {
-        toast.error('Please enter a channel capacity.', {
+        toast.error(t('orderChannel.step2.capacityRequired'), {
           autoClose: 5000,
           position: 'bottom-right',
         })
@@ -174,7 +174,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
       }
 
       if (!data.clientBalanceSat) {
-        toast.error('Please enter your channel liquidity.', {
+        toast.error(t('orderChannel.step2.liquidityRequired'), {
           autoClose: 5000,
           position: 'bottom-right',
         })
@@ -182,7 +182,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
       }
 
       if (addAsset && !data.assetId) {
-        toast.error('Please select an asset before proceeding.', {
+        toast.error(t('orderChannel.step2.assetRequired'), {
           autoClose: 5000,
           position: 'bottom-right',
         })
@@ -191,13 +191,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
       // Validate that selected asset is supported by LSP
       if (addAsset && data.assetId && !assetMap[data.assetId]) {
-        toast.error(
-          'The selected asset is not supported by this LSP. Please refresh and select a supported asset.',
-          {
-            autoClose: 5000,
-            position: 'bottom-right',
-          }
-        )
+        toast.error(t('orderChannel.step2.assetUnsupported'), {
+          autoClose: 5000,
+          position: 'bottom-right',
+        })
         return
       }
 
@@ -206,7 +203,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         data.assetId &&
         (data.lspAssetAmount === '' || data.lspAssetAmount === '0')
       ) {
-        toast.error('Please enter an asset amount before proceeding.', {
+        toast.error(t('orderChannel.step2.assetAmountRequired'), {
           autoClose: 5000,
           position: 'bottom-right',
         })
@@ -227,7 +224,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         capacitySat = effectiveMinCapacity.toString()
         setValue('capacitySat', capacitySat)
         toast.info(
-          `Channel capacity adjusted to minimum: ${formatNumberWithCommas(capacitySat)} sats`,
+          t('orderChannel.step2.capacityAdjusted', {
+            amount: formatNumberWithCommas(capacitySat),
+          }),
           {
             autoClose: 3000,
             position: 'bottom-right',
@@ -248,7 +247,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         clientBalanceSat = minClientBalance.toString()
         setValue('clientBalanceSat', clientBalanceSat)
         toast.info(
-          `Channel liquidity adjusted to minimum: ${formatNumberWithCommas(clientBalanceSat)} sats`,
+          t('orderChannel.step2.liquidityAdjusted', {
+            amount: formatNumberWithCommas(clientBalanceSat),
+          }),
           {
             autoClose: 3000,
             position: 'bottom-right',
@@ -275,7 +276,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             const adjustedAmount = minAssetAmount.toString()
             setValue('lspAssetAmount', adjustedAmount)
             toast.info(
-              `Asset amount adjusted to minimum: ${formatNumberWithCommas(adjustedAmount)} ${assetInfo.ticker}`,
+              t('orderChannel.step2.assetAdjusted', {
+                amount: formatNumberWithCommas(adjustedAmount),
+                ticker: assetInfo.ticker,
+              }),
               {
                 autoClose: 3000,
                 position: 'bottom-right',
@@ -286,7 +290,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           // Validate maximum amount and PREVENT submission if exceeded
           if (parsedAmount > maxAssetAmount) {
             toast.error(
-              `Amount exceeds maximum limit of ${formatNumberWithCommas(maxAssetAmount.toString())} ${assetInfo.ticker}. Please enter a valid amount before proceeding.`,
+              t('orderChannel.step2.assetExceedsMax', {
+                amount: formatNumberWithCommas(maxAssetAmount.toString()),
+                ticker: assetInfo.ticker,
+              }),
               {
                 autoClose: 5000,
                 position: 'bottom-right',
@@ -364,7 +371,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           })
 
           if (madeAdjustments) {
-            toast.info('Some values were adjusted to meet requirements.', {
+            toast.info(t('orderChannel.step2.adjustmentsMade'), {
               autoClose: 3000,
               position: 'bottom-right',
             })
@@ -377,11 +384,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             return
           }
 
-          toast.error(
-            'There was an error with the form data. Please check your inputs.'
-          )
+          toast.error(t('orderChannel.step2.formError'))
         } else {
-          toast.error('An unexpected error occurred. Please try again.')
+          toast.error(t('orderChannel.step2.unexpectedError'))
         }
       }
     },

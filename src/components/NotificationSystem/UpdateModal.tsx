@@ -12,6 +12,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface UpdateModalProps {
   isOpen: boolean
@@ -24,6 +25,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   onClose,
   update,
 }) => {
+  const { t, i18n } = useTranslation()
   const [isInstalling, setIsInstalling] = useState(false)
   const [contentLength, setContentLength] = useState<number | undefined>(
     undefined
@@ -34,16 +36,19 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
   if (!isOpen) return null
 
+  const sizeUnits =
+    (t('updaterModal.fileSizes', { returnObjects: true }) as string[]) || []
+
   const formatFileSize = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    if (bytes === 0) return '0 Bytes'
+    const sizes = sizeUnits.length > 0 ? sizeUnits : ['Bytes', 'KB', 'MB', 'GB']
+    if (bytes === 0) return t('updaterModal.fileSizeZero')
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
   }
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(i18n.language || 'en-US', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -63,9 +68,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     // Add timeout protection like the old Updater - but with better error handling
     const timeoutId = setTimeout(() => {
       console.log('Update timeout - resetting state after 5 minutes')
-      setError(
-        'Update process timed out after 5 minutes. Please check your internet connection and try again.'
-      )
+      setError(t('updaterModal.errors.timeout'))
       setIsInstalling(false)
       setCompleted(false)
     }, 300000) // 5 minutes timeout
@@ -157,7 +160,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
       const errorMessage =
         err instanceof Error ? err.message : 'Unknown error occurred'
       setError(
-        `Failed to install update: ${errorMessage}. Please try again or download manually from GitHub.`
+        t('updaterModal.errors.installFailed', { message: errorMessage })
       )
       setIsInstalling(false)
       setCompleted(false)
@@ -174,29 +177,26 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               <CheckCircle2 className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-3">
-              Update Complete! 🎉
+              {t('updaterModal.completed.title')}
             </h2>
             <p className="text-green-100/80 text-sm leading-relaxed mb-2">
-              Version{' '}
-              <span className="font-semibold text-green-200">
-                {update.version}
-              </span>{' '}
-              has been installed successfully.
+              {t('updaterModal.completed.success', { version: update.version })}
             </p>
             <p className="text-green-100/60 text-xs mb-8">
-              The application is restarting automatically to apply the update...
+              {t('updaterModal.completed.restartNote')}
             </p>
 
             {/* Loading indicator for restart */}
             <div className="flex items-center justify-center gap-3 mb-6">
               <RefreshCw className="w-5 h-5 text-green-400 animate-spin" />
-              <span className="text-sm text-green-200">Restarting...</span>
+              <span className="text-sm text-green-200">
+                {t('updaterModal.completed.restarting')}
+              </span>
             </div>
 
             <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
               <p className="text-xs text-green-100/70">
-                If the application doesn't restart automatically within a few
-                seconds, please restart it manually to apply the update.
+                {t('updaterModal.completed.manualRestart')}
               </p>
             </div>
           </div>
@@ -221,16 +221,15 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-2">
-              Downloading Update
+              {t('updaterModal.installing.title')}
             </h2>
             <p className="text-purple-100/80 text-sm mb-2">
-              Version{' '}
-              <span className="font-semibold text-purple-200">
-                {update.version}
-              </span>
+              {t('updaterModal.installing.versionLabel', {
+                version: update.version,
+              })}
             </p>
             <p className="text-purple-100/60 text-xs mb-8">
-              Please don't close the application during the update
+              {t('updaterModal.installing.warning')}
             </p>
 
             <div className="space-y-4">
@@ -289,7 +288,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 {/* Download info */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-purple-200/80">Downloaded</span>
+                    <span className="text-purple-200/80">
+                      {t('updaterModal.installing.downloadedLabel')}
+                    </span>
                     <span className="font-medium text-purple-100">
                       {downloadedSize} / {totalSize}
                     </span>
@@ -327,7 +328,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                       ></div>
                     </div>
                     <span className="text-xs text-purple-200/60 ml-2">
-                      {progress < 100 ? 'Downloading...' : 'Installing...'}
+                      {progress < 100
+                        ? t('updaterModal.installing.downloading')
+                        : t('updaterModal.installing.installing')}
                     </span>
                   </div>
 
@@ -339,10 +342,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                         console.log('User cancelled update')
                         setIsInstalling(false)
                         setCompleted(false)
-                        setError('Update cancelled by user')
+                        setError(t('updaterModal.errors.cancelled'))
                       }}
                     >
-                      Having issues? Click to cancel and try again
+                      {t('updaterModal.installing.cancelHelp')}
                     </button>
                   </div>
                 </div>
@@ -354,7 +357,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-purple-300" />
                   <span className="text-sm font-medium text-purple-200">
-                    What's New
+                    {t('updaterModal.common.whatsNew')}
                   </span>
                 </div>
                 <p className="text-xs text-purple-100/70 leading-relaxed">
@@ -375,7 +378,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         <div className="max-w-md w-full bg-blue-darkest border border-red-600/30 rounded-3xl p-8 shadow-2xl">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-3">
-              Update Failed
+              {t('updaterModal.error.title')}
             </h2>
             <p className="text-red-100/80 text-sm leading-relaxed mb-6">
               {error}
@@ -385,13 +388,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200 border border-white/20"
                 onClick={() => setError(null)}
               >
-                Try Again
+                {t('updaterModal.error.retry')}
               </button>
               <button
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg"
                 onClick={onClose}
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -420,11 +423,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </div>
 
             <h2 className="text-3xl font-bold text-white mb-2">
-              Update Available!
+              {t('updaterModal.default.title')}
             </h2>
 
             <div className="flex items-center justify-center gap-2 mb-6">
-              <span className="text-amber-100/80">Version</span>
+              <span className="text-amber-100/80">
+                {t('updaterModal.default.versionLabel')}
+              </span>
               <span className="px-3 py-1 bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-200 font-semibold rounded-full border border-amber-400/30">
                 {update.version}
               </span>
@@ -434,7 +439,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               <div className="flex items-center justify-center gap-2 mb-6 text-amber-100/60">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">
-                  Released {formatDate(update.date)}
+                  {t('updaterModal.default.releasedOn', {
+                    date: formatDate(update.date),
+                  })}
                 </span>
               </div>
             )}
@@ -444,7 +451,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-amber-300" />
                   <span className="text-sm font-medium text-amber-200">
-                    What's New
+                    {t('updaterModal.common.whatsNew')}
                   </span>
                 </div>
                 <p className="text-sm text-amber-100/80 leading-relaxed">
@@ -462,12 +469,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 {isInstalling ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Installing...
+                    {t('updaterModal.default.installing')}
                   </>
                 ) : (
                   <>
                     <Download className="w-5 h-5" />
-                    Download & Install
+                    {t('updaterModal.default.installCta')}
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </>
                 )}
@@ -477,13 +484,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 disabled={isInstalling}
                 onClick={onClose}
               >
-                Maybe Later
+                {t('updaterModal.default.remindLater')}
               </button>
             </div>
 
             <p className="text-xs text-amber-100/40 mt-4">
-              We recommend updating to get the latest features and security
-              improvements.
+              {t('updaterModal.default.recommendation')}
             </p>
           </div>
         </div>

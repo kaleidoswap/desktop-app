@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -38,10 +39,12 @@ import {
   StatusModal,
 } from '../../components/StatusModal'
 import { useBackup } from '../../hooks/useBackup'
+import { LANGUAGES } from '../../i18n'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
   setBitcoinUnit,
+  setLanguage,
   setNodeConnectionString,
 } from '../../slices/settings/settings.slice'
 
@@ -49,6 +52,7 @@ import { TerminalLogDisplay } from './TerminalLogDisplay'
 
 interface FormFields {
   bitcoinUnit: string
+  language: string
   nodeConnectionString: string
   lspUrl: string
   rpcConnectionUrl: string
@@ -60,9 +64,10 @@ interface FormFields {
 }
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, nodeConnectionString } = useSelector(
+  const { bitcoinUnit, nodeConnectionString, language } = useSelector(
     (state: RootState) => state.settings
   )
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
@@ -113,6 +118,7 @@ export const Component: React.FC = () => {
         bitcoinUnit,
         defaultMakerUrl: nodeSettings.default_maker_url || '',
         indexerUrl: nodeSettings.indexer_url || '',
+        language: language || 'en',
         lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
         makerUrls: Array.isArray(nodeSettings.maker_urls)
           ? nodeSettings.maker_urls
@@ -231,6 +237,7 @@ export const Component: React.FC = () => {
       bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
+      language: language || 'en',
       lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
@@ -242,7 +249,7 @@ export const Component: React.FC = () => {
       proxyEndpoint: nodeSettings.proxy_endpoint || '',
       rpcConnectionUrl: nodeSettings.rpc_connection_url || '',
     })
-  }, [bitcoinUnit, nodeConnectionString, nodeSettings, reset])
+  }, [bitcoinUnit, language, nodeConnectionString, nodeSettings, reset])
 
   const handleRestartNode = async () => {
     try {
@@ -303,6 +310,7 @@ export const Component: React.FC = () => {
       // Batch state updates to reduce renders
       const updates = async () => {
         dispatch(setBitcoinUnit(data.bitcoinUnit))
+        dispatch(setLanguage(data.language))
         dispatch(setNodeConnectionString(data.nodeConnectionString))
 
         await invoke('update_account', {
@@ -312,6 +320,7 @@ export const Component: React.FC = () => {
           defaultLspUrl: data.lspUrl,
           defaultMakerUrl: data.defaultMakerUrl,
           indexerUrl: data.indexerUrl,
+          language: data.language || 'en',
           ldkPeerListeningPort: currentAccount.ldk_peer_listening_port,
           makerUrls: data.makerUrls.join(','),
           name: currentAccount.name,
@@ -329,6 +338,7 @@ export const Component: React.FC = () => {
             default_lsp_url: data.lspUrl,
             default_maker_url: data.defaultMakerUrl,
             indexer_url: data.indexerUrl,
+            language: data.language || 'en',
             ldk_peer_listening_port: currentAccount.ldk_peer_listening_port,
             maker_urls: data.makerUrls,
             node_url: data.nodeConnectionString,
@@ -442,6 +452,7 @@ export const Component: React.FC = () => {
       bitcoinUnit,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
+      language: language || 'en',
       lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
@@ -529,9 +540,7 @@ export const Component: React.FC = () => {
     <div className="flex flex-col min-h-screen py-8 px-4">
       {/* Page Header */}
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <p className="text-gray-400 text-sm">
-          Manage your node and application preferences
-        </p>
+        <p className="text-gray-400 text-sm">{t('settings.subtitle')}</p>
       </div>
 
       {/* Main Content Grid */}
@@ -546,7 +555,7 @@ export const Component: React.FC = () => {
                 <div className="flex items-center gap-2 mb-6">
                   <Settings className="w-5 h-5 text-blue-400" />
                   <h3 className="text-xl font-semibold text-white">
-                    Application Settings
+                    {t('settings.applicationSettings')}
                   </h3>
                 </div>
 
@@ -554,7 +563,7 @@ export const Component: React.FC = () => {
                   {/* General Settings */}
                   <div>
                     <h4 className="text-sm font-semibold text-gray-400 mb-4">
-                      General Settings
+                      {t('settings.generalSettings')}
                     </h4>
                     <div className="space-y-6">
                       {/* Bitcoin Unit */}
@@ -564,15 +573,47 @@ export const Component: React.FC = () => {
                         render={({ field }) => (
                           <div className="group transition-all duration-300 hover:translate-x-1">
                             <label className="block text-sm font-semibold text-gray-300 mb-2">
-                              Bitcoin Unit
+                              {t('settings.bitcoinUnit')}
                             </label>
                             <div className="relative">
                               <select
                                 {...field}
                                 className="block w-full pl-4 pr-10 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                               >
-                                <option value="SAT">Satoshi (SAT)</option>
-                                <option value="BTC">Bitcoin (BTC)</option>
+                                <option value="SAT">
+                                  {t('settings.bitcoinUnitSat')}
+                                </option>
+                                <option value="BTC">
+                                  {t('settings.bitcoinUnitBtc')}
+                                </option>
+                              </select>
+                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+                            </div>
+                          </div>
+                        )}
+                      />
+
+                      {/* Language Selector */}
+                      <Controller
+                        control={control}
+                        name="language"
+                        render={({ field }) => (
+                          <div className="group transition-all duration-300 hover:translate-x-1">
+                            <label className="block text-sm font-semibold text-gray-300 mb-2">
+                              {t('settings.language')}
+                            </label>
+                            <div className="relative">
+                              <select
+                                {...field}
+                                className="block w-full pl-4 pr-10 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                              >
+                                {Object.entries(LANGUAGES).map(
+                                  ([code, { name, flag }]) => (
+                                    <option key={code} value={code}>
+                                      {flag} {name}
+                                    </option>
+                                  )
+                                )}
                               </select>
                               <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
                             </div>
@@ -587,12 +628,12 @@ export const Component: React.FC = () => {
                         render={({ field }) => (
                           <div className="group transition-all duration-300 hover:translate-x-1">
                             <label className="block text-sm font-semibold text-gray-300 mb-2">
-                              LSP URL
+                              {t('settings.lspUrl')}
                             </label>
                             <input
                               {...field}
                               className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                              placeholder="e.g., http://localhost:8000"
+                              placeholder={t('settings.lspUrlPlaceholder')}
                               type="text"
                             />
                           </div>
@@ -604,13 +645,13 @@ export const Component: React.FC = () => {
                   {/* Maker Settings */}
                   <div className="pt-6 border-t border-gray-700">
                     <h4 className="text-sm font-semibold text-gray-400 mb-4">
-                      Maker Settings
+                      {t('settings.makerSettings')}
                     </h4>
                     <div className="space-y-6">
                       {/* Additional Maker URLs */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-300 mb-4">
-                          Maker URLs
+                          {t('settings.makerUrls')}
                         </label>
                         <Controller
                           control={control}
@@ -697,7 +738,7 @@ export const Component: React.FC = () => {
                                 }}
                                 type="button"
                               >
-                                Add Maker URL
+                                {t('settings.addMakerUrl')}
                               </button>
                             </div>
                           )}
@@ -714,13 +755,13 @@ export const Component: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Server className="w-5 h-5 text-blue-400" />
                     <h3 className="text-xl font-semibold text-white">
-                      Node Connection Settings
+                      {t('settings.nodeConnectionSettings')}
                     </h3>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                     <AlertTriangle className="w-4 h-4 text-yellow-500" />
                     <span className="text-xs text-yellow-500">
-                      Requires restart
+                      {t('settings.requiresRestart')}
                     </span>
                   </div>
                 </div>
@@ -733,7 +774,7 @@ export const Component: React.FC = () => {
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
                         <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Node Connection String
+                          {t('settings.nodeConnectionString')}
                         </label>
                         <input
                           {...field}
@@ -752,7 +793,7 @@ export const Component: React.FC = () => {
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
                         <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Bitcoind RPC Connection URL
+                          {t('settings.bitcoindRpc')}
                         </label>
                         <input
                           {...field}
@@ -771,7 +812,7 @@ export const Component: React.FC = () => {
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
                         <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Indexer URL
+                          {t('settings.indexerUrl')}
                         </label>
                         <input
                           {...field}
@@ -808,7 +849,7 @@ export const Component: React.FC = () => {
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
                         <label className="block text-sm font-semibold text-gray-300 mb-2">
-                          Bearer Token
+                          {t('settings.bearerToken')}
                         </label>
                         <input
                           {...field}
@@ -833,7 +874,7 @@ export const Component: React.FC = () => {
                       type="button"
                     >
                       <Undo className="w-5 h-5 mr-2.5" />
-                      Reset Changes
+                      {t('settings.resetChanges')}
                     </button>
                     <button
                       className="flex-1 flex items-center justify-center px-6 py-3.5 bg-[#4361EE] text-white rounded-xl hover:bg-[#3651DE] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
@@ -843,12 +884,12 @@ export const Component: React.FC = () => {
                       {isSaving ? (
                         <>
                           <div className="w-5 h-5 mr-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Saving...
+                          {t('settings.saving')}
                         </>
                       ) : (
                         <>
                           <Save className="w-5 h-5 mr-2.5" />
-                          Save Settings
+                          {t('settings.saveSettings')}
                         </>
                       )}
                     </button>

@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import { toast } from 'react-toastify'
 
 import { logger } from '../../../utils/logger'
@@ -119,7 +120,8 @@ export const createRefreshAmountsHandler = (
   ) => Promise<string | null>,
   setIsLoading: (isLoading: boolean) => void,
   setMaxFromAmount: (amount: number) => void,
-  setMaxToAmount: (amount: number) => void
+  setMaxToAmount: (amount: number) => void,
+  t: TFunction
 ) => {
   return async () => {
     if (!selectedPair) return
@@ -146,7 +148,7 @@ export const createRefreshAmountsHandler = (
       await updateMinMaxAmounts()
     } catch (error) {
       logger.error('Error refreshing amounts:', error)
-      toast.error('Failed to refresh amounts. Please try again.')
+      toast.error(t('tradeMarketMaker.toast.failedToRefreshAmounts'))
     } finally {
       setIsLoading(false)
     }

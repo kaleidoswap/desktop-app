@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { BTC_ASSET_ID } from '../../../../../constants'
 import {
@@ -76,6 +77,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   secondaryValue,
   secondaryUnit,
 }) => {
+  const { t } = useTranslation()
   const [displayValue, setDisplayValue] = useState(
     value ? formatNumberWithCommas(value) : ''
   )
@@ -180,7 +182,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
         <div className="mt-1 px-3 py-1.5 bg-slate-800/30 rounded-lg border border-slate-700/50">
           <div className="flex justify-between items-center">
             <span className="text-xs text-slate-400">
-              Equivalent in {secondaryUnit}:
+              {t('withdrawModal.form.amount.equivalent', {
+                unit: secondaryUnit,
+              })}
             </span>
             <span className="text-xs text-blue-400 font-medium">
               {secondaryValue} {secondaryUnit}
@@ -210,7 +214,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 const WithdrawForm: React.FC<WithdrawFormProps> = ({
   form,
   addressType,
-  validationError,
+  validationMessage,
   clearValidationError,
   maxAssetCapacities,
   isDecodingInvoice,
@@ -240,6 +244,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   setCustomFee,
   onSubmit,
 }) => {
+  const { t } = useTranslation()
   const {
     control,
     formState: { errors, isSubmitting },
@@ -254,6 +259,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
     // Otherwise, show all assets
     return true
   })
+
+  const validationText = validationMessage?.message ?? null
+  const hasValidationMessage = Boolean(validationMessage)
+  const isValidationError = validationMessage?.type === 'error'
 
   // Calculate max withdraw amount based on HTLC limits for Lightning
   const calculateMaxWithdrawAmount = (assetId: string): number => {
@@ -327,7 +336,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                           text-white placeholder:text-slate-600 text-sm
                           ${
                             errors.address ||
-                            validationError ||
+                            hasValidationMessage ||
                             addressType === 'invalid'
                               ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                               : 'border-slate-700 focus:border-blue-500 focus:ring-blue-500'
@@ -336,16 +345,16 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   field.onChange(e)
                   handleInvoiceChange(e)
                   // Clear validation errors when user starts typing new address
-                  if (validationError && e.target.value !== '') {
+                  if (validationMessage && e.target.value !== '') {
                     clearValidationError()
                   }
                 }}
-                placeholder="Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice"
+                placeholder={t('withdrawModal.form.addressPlaceholder')}
                 type="text"
               />
             )}
             rules={{
-              required: 'Address or invoice is required',
+              required: t('withdrawModal.form.addressRequired') as string,
             }}
           />
           <button
@@ -362,14 +371,34 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         )}
 
         {/* Validation error message */}
-        {validationError && (
-          <div className="mt-1 p-2 bg-red-500/10 rounded-lg border border-red-500/20 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        {validationMessage && (
+          <div
+            className={`mt-1 p-2 rounded-lg border flex items-start gap-2 ${
+              isValidationError
+                ? 'bg-red-500/10 border-red-500/20'
+                : 'bg-yellow-500/10 border-yellow-500/20'
+            }`}
+          >
+            <AlertTriangle
+              className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                isValidationError ? 'text-red-400' : 'text-yellow-400'
+              }`}
+            />
             <div className="flex-1">
-              <p className="text-red-400 text-xs">{validationError}</p>
+              <p
+                className={`text-xs ${
+                  isValidationError ? 'text-red-400' : 'text-yellow-400'
+                }`}
+              >
+                {validationText}
+              </p>
             </div>
             <button
-              className="text-red-400 hover:text-red-300 text-xs underline flex-shrink-0"
+              className={`text-xs underline flex-shrink-0 ${
+                isValidationError
+                  ? 'text-red-400 hover:text-red-300'
+                  : 'text-yellow-400 hover:text-yellow-300'
+              }`}
               onClick={() => {
                 clearValidationError()
                 // Only clear the amount field, keep the address
@@ -378,7 +407,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               }}
               type="button"
             >
-              Clear
+              {t('withdrawModal.form.clear')}
             </button>
           </div>
         )}
@@ -387,7 +416,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         {addressType !== 'unknown' &&
           addressType !== 'invalid' &&
           !errors.address &&
-          !validationError && (
+          !hasValidationMessage && (
             <div className="flex items-center mt-1 gap-1">
               {addressType === 'lightning' && (
                 <Zap className="w-3 h-3 text-blue-400" />
@@ -402,7 +431,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 <ChainIcon className="w-3 h-3 text-green-400" />
               )}
               <span className="text-xs text-slate-400">
-                Detected:{' '}
+                {t('withdrawModal.form.detected.label')}{' '}
                 <span
                   className={`font-medium ${
                     addressType === 'lightning' ||
@@ -414,12 +443,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   }`}
                 >
                   {addressType === 'lightning'
-                    ? 'Lightning Invoice'
+                    ? t('withdrawModal.form.detected.types.lightningInvoice')
                     : addressType === 'lightning-address'
-                      ? 'Lightning Address'
+                      ? t('withdrawModal.form.detected.types.lightningAddress')
                       : addressType === 'bitcoin'
-                        ? 'Bitcoin Address'
-                        : 'RGB Invoice'}
+                        ? t('withdrawModal.form.detected.types.bitcoinAddress')
+                        : t('withdrawModal.form.detected.types.rgbInvoice')}
                 </span>
               </span>
             </div>
@@ -428,12 +457,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
       {/* Lightning channel capacity for lightning payments */}
       {(addressType === 'lightning' || addressType === 'lightning-address') &&
-        !validationError && (
+        !hasValidationMessage && (
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 text-sm">
-                  Max Lightning Capacity:
+                  {t('withdrawModal.form.lightningCapacity.title')}
                 </span>
                 <span className="text-white font-medium">
                   {(maxLightningCapacity / 1000).toLocaleString()} sat
@@ -442,7 +471,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               {assetId === BTC_ASSET_ID && (
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400 text-sm">
-                    Max Withdrawable (after fees):
+                    {t('withdrawModal.form.lightningCapacity.withdrawable')}
                   </span>
                   <span className="text-blue-400 font-medium">
                     {formatAmount(
@@ -490,7 +519,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         addressType === 'rgb' && (
           <div className="space-y-1 animate-fadeIn">
             <label className="text-xs font-medium text-slate-400">
-              Bitcoin Amount (sats) for Witness UTXO
+              {t('withdrawModal.form.witness.label')}
             </label>
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
@@ -507,22 +536,22 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         const value = e.target.value.replace(/[^\d]/g, '')
                         field.onChange(value ? parseInt(value, 10) : '')
                       }}
-                      placeholder="Enter amount in sats (min: 512, e.g., 1200)"
+                      placeholder={t('withdrawModal.form.witness.placeholder')}
                       type="text"
                       value={field.value || ''}
                     />
                   )}
                   rules={{
                     min: {
-                      message: 'Amount must be at least 512 sats',
+                      message: t('withdrawModal.form.witness.errors.min'),
                       value: 512,
                     },
-                    required: 'Witness amount is required',
+                    required: t('withdrawModal.form.witness.errors.required'),
                   }}
                 />
               </div>
               <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
-                sats
+                {t('withdrawModal.form.units.sats')}
               </div>
             </div>
             {form.formState.errors.witness_amount_sat && (
@@ -532,10 +561,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             )}
             <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
               <p className="text-xs text-yellow-400">
-                <span className="font-medium">Note:</span> When sending an RGB
-                asset to a witness recipient, you need to add some Bitcoin
-                (sats) to create a new UTXO for the recipient where the RGB
-                assets will be allocated. Recommended: 1000-2000 sats.
+                {t('withdrawModal.form.witness.note')}
               </p>
             </div>
           </div>
@@ -560,7 +586,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             addressType === 'lightning-address') && (
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-400">
-                Asset
+                {t('withdrawModal.form.assetSelector.label')}
               </label>
               <div className="relative">
                 <button
@@ -573,7 +599,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   <span>
                     {filteredAvailableAssets.find(
                       (a: AssetOption) => a.value === assetId
-                    )?.label || 'Select Asset'}
+                    )?.label ||
+                      t('withdrawModal.form.assetSelector.placeholder')}
                   </span>
                   <ChevronDown
                     className={`w-5 h-5 text-slate-400 transition-transform duration-200 
@@ -617,7 +644,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 <div className="mt-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/50">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-slate-400">
-                      Available Balance:
+                      {t('withdrawModal.balance.available')}
                     </span>
                     <span className="text-xs text-white font-medium">
                       {assetId === BTC_ASSET_ID
@@ -729,7 +756,11 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   const displayUnit =
                     filteredAvailableAssets.find(
                       (a: AssetOption) => a.value === assetId
-                    )?.label || 'SAT'
+                    )?.label ||
+                    getDisplayAsset(
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetId,
+                      bitcoinUnit
+                    )
 
                   // Calculate secondary value for BTC conversion
                   const getSecondaryValue = () => {
@@ -763,7 +794,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       // User entered BTC, show sats equivalent
                       const satsValue = BTCtoSatoshi(numericValue)
                       return {
-                        secondaryUnit: 'sats',
+                        secondaryUnit: t('withdrawModal.form.units.sats'),
                         secondaryValue: satsValue.toLocaleString(),
                       }
                     }
@@ -777,7 +808,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         className="group transition-all duration-300 hover:translate-x-1"
                         displayUnit={displayUnit}
                         error={errors.amount?.message}
-                        label="Amount"
+                        label={t('withdrawModal.form.amount.label')}
                         max={maxWithdrawable}
                         min={minAmount}
                         onChange={(value) => {
@@ -787,7 +818,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                             form.clearErrors('amount')
                           }
                           // Also clear general validation errors when user starts editing
-                          if (validationError) {
+                          if (validationMessage) {
                             clearValidationError()
                           }
                         }}
@@ -798,7 +829,15 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                             form.clearErrors('amount')
                           }
                         }}
-                        placeholder={`Enter amount (max ${maxWithdrawable > 0 ? maxWithdrawable.toLocaleString() : 'N/A'})`}
+                        placeholder={t(
+                          'withdrawModal.form.amount.maxPlaceholder',
+                          {
+                            amount:
+                              maxWithdrawable > 0
+                                ? maxWithdrawable.toLocaleString()
+                                : t('withdrawModal.form.amount.notAvailable'),
+                          }
+                        )}
                         precision={precision}
                         secondaryUnit={secondaryUnit}
                         secondaryValue={secondaryValue}
@@ -834,7 +873,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         }}
                         type="button"
                       >
-                        Max
+                        {t('withdrawModal.form.amount.maxButton')}
                       </button>
                     </div>
                   )
@@ -919,7 +958,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       } else {
                         // For on-chain, compare against balance
                         if (inputRawUnits > assetBalance) {
-                          return 'Amount exceeds available balance. Click "Max" to use your full balance.'
+                          return t('withdrawModal.form.amount.exceedsAvailable')
                         }
                       }
 
@@ -950,9 +989,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 maxLightningCapacity > 0 && (
                   <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
                     <p className="text-xs text-blue-400">
-                      <span className="font-medium">Lightning Limit:</span> Max
-                      withdrawable amount is limited by your channel capacity
-                      and HTLC limits.
+                      <span className="font-medium">
+                        {t('withdrawModal.form.amount.lightningLimit.title')}
+                      </span>{' '}
+                      {t(
+                        'withdrawModal.form.amount.lightningLimit.description'
+                      )}
                     </p>
                   </div>
                 )}
@@ -964,7 +1006,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             (addressType === 'bitcoin' || addressType === 'rgb') && (
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-400">
-                  Fee Rate
+                  {t('withdrawModal.form.fees.label')}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {feeRates.map((fee) => (
@@ -1001,7 +1043,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             (addressType === 'bitcoin' || addressType === 'rgb') && (
               <div className="space-y-1 animate-fadeIn">
                 <label className="text-xs font-medium text-slate-400">
-                  Custom Fee Rate (sat/vB)
+                  {t('withdrawModal.form.fees.customLabel')}
                 </label>
                 <input
                   className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
@@ -1021,11 +1063,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-xs font-medium text-slate-400">
-                    Send as Gift/Donation
+                    {t('withdrawModal.form.donation.label')}
                   </label>
                   <p className="text-[10px] text-slate-500 mt-0.5">
-                    Gift transfers allow instant sending without receiver
-                    validation. Useful for tips and giveaways. Use with caution.
+                    {t('withdrawModal.form.donation.description')}
                   </p>
                 </div>
                 <Controller
@@ -1066,8 +1107,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           isSubmitting === true ||
           addressType === 'unknown' ||
           addressType === 'invalid' ||
-          // Only disable for "Error" type validation messages, not for "Warning" type messages
-          (validationError !== null && !validationError.startsWith('Warning'))
+          validationMessage?.type === 'error'
         }
         type="submit"
       >
@@ -1078,10 +1118,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             <span>
               {addressType === 'lightning' ||
               addressType === 'lightning-address'
-                ? 'Pay Invoice'
+                ? t('withdrawModal.form.submit.lightning')
                 : addressType === 'rgb'
-                  ? 'Send RGB Asset'
-                  : 'Withdraw'}
+                  ? t('withdrawModal.form.submit.rgb')
+                  : t('withdrawModal.form.submit.onchain')}
             </span>
             {addressType === 'lightning' ||
             addressType === 'lightning-address' ? (

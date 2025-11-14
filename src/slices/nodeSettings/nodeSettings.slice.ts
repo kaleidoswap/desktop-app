@@ -16,6 +16,7 @@ export interface Account {
   daemon_listening_port: string
   ldk_peer_listening_port: string
   bearer_token?: string
+  language?: string
 }
 
 export interface NodeSettingsState {

@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { CREATE_NEW_CHANNEL_PATH } from '../../app/router/paths'
@@ -41,6 +42,7 @@ import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
 export const Component = () => {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [assets, assetsResponse] = nodeApi.endpoints.listAssets.useLazyQuery()
@@ -189,12 +191,11 @@ export const Component = () => {
           <Alert
             className="mb-6"
             icon={<AlertCircle className="w-5 h-5" />}
-            title="No Bitcoin Funds"
+            title={t('dashboard.noFunds')}
             variant="warning"
           >
             <p className="text-sm">
-              You don't have any Bitcoin funds in your wallet. Deposit funds to
-              start using the application.
+              {t('dashboard.noFundsMessage')}
               <Button
                 className="ml-4 mt-2"
                 icon={<ArrowDownRight className="w-3.5 h-3.5" />}
@@ -209,7 +210,7 @@ export const Component = () => {
                 size="sm"
                 variant="success"
               >
-                Deposit Now
+                {t('dashboard.depositNow')}
               </Button>
             </p>
           </Alert>
@@ -226,7 +227,9 @@ export const Component = () => {
       <div className="flex flex-col items-center mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Wallet className="w-8 h-8 text-blue-500" />
-          <h3 className="text-xl font-bold text-white">Wallet Dashboard</h3>
+          <h3 className="text-xl font-bold text-white">
+            {t('dashboard.title')}
+          </h3>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
@@ -235,7 +238,7 @@ export const Component = () => {
             onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
             size="md"
           >
-            Open Channel
+            {t('dashboard.openChannel')}
           </Button>
 
           <Button
@@ -243,7 +246,7 @@ export const Component = () => {
             onClick={() => setShowUTXOModal(true)}
             size="md"
           >
-            Manage UTXOs
+            {t('dashboard.manageUTXOs')}
           </Button>
 
           <Button
@@ -251,7 +254,7 @@ export const Component = () => {
             onClick={() => setShowPeerModal(true)}
             size="md"
           >
-            Peers
+            {t('dashboard.peers')}
           </Button>
 
           <Button
@@ -267,34 +270,36 @@ export const Component = () => {
             size="sm"
             variant="outline"
           >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            {isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}
           </Button>
         </div>
 
         <InfoCardGrid className="grid-cols-3 gap-3">
           <InfoCard
-            copySuccessMessage="Node public key copied to clipboard"
+            copySuccessMessage={t('dashboard.nodePublicKeyCopied')}
             copyText={nodeInfoResponse.data?.pubkey}
             copyable
             icon={<ChainIcon className="w-4 h-4 text-blue-500" />}
-            label="Node Public Key"
+            label={t('dashboard.nodePublicKey')}
             value={nodeInfoResponse.data?.pubkey || '...'}
           />
 
           <InfoCard
             icon={<Network className="w-4 h-4 text-blue-500" />}
-            label="Network"
+            label={t('dashboard.network')}
             value={
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span>{networkInfoResponse.data?.network || 'Unknown'}</span>
+                <span>
+                  {networkInfoResponse.data?.network || t('dashboard.unknown')}
+                </span>
               </div>
             }
           />
 
           <InfoCard
             icon={<Blocks className="w-4 h-4 text-blue-500" />}
-            label="Block Height"
+            label={t('dashboard.blockHeight')}
             value={`#${networkInfoResponse.data?.height || '...'}`}
           />
         </InfoCardGrid>
@@ -316,7 +321,7 @@ export const Component = () => {
           <div className="flex justify-between items-center mb-2">
             <div>
               <h2 className="text-sm font-medium text-slate-400">
-                Total Balance
+                {t('dashboard.totalBalance')}
               </h2>
               <div className="text-lg font-bold text-white">
                 {isLoading ? (
@@ -340,7 +345,7 @@ export const Component = () => {
                 size="sm"
                 variant="success"
               >
-                Deposit
+                {t('dashboard.deposit')}
               </Button>
               <Button
                 icon={<ArrowUpRight className="w-3.5 h-3.5" />}
@@ -355,7 +360,7 @@ export const Component = () => {
                 size="sm"
                 variant="danger"
               >
-                Withdraw
+                {t('dashboard.withdraw')}
               </Button>
             </div>
           </div>
@@ -377,7 +382,7 @@ export const Component = () => {
             <div className="bg-slate-900/50 rounded-lg p-2.5">
               <span className="text-sm text-slate-400 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-blue-500" />
-                Off-chain
+                {t('dashboard.offChain')}
               </span>
               <div className="text-base text-white font-medium">
                 {isLoading ? (
@@ -390,12 +395,17 @@ export const Component = () => {
               <div className="mt-1.5 flex items-center text-xs text-slate-400">
                 <div className="flex items-center mr-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1"></div>
-                  <span>{channels.length} Channels</span>
+                  <span>
+                    {channels.length} {t('dashboard.channels')}
+                  </span>
                 </div>
                 {channels.length > 0 && (
                   <div className="flex items-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1"></div>
-                    <span>{channels.filter((c) => c.ready).length} Active</span>
+                    <span>
+                      {channels.filter((c) => c.ready).length}{' '}
+                      {t('dashboard.active')}
+                    </span>
                   </div>
                 )}
               </div>
@@ -409,8 +419,10 @@ export const Component = () => {
             bitcoinUnit={bitcoinUnit}
             icon={<ArrowDownRight className="h-4 w-4 text-blue-500" />}
             isLoading={isLoading}
-            title="Inbound Liquidity"
-            tooltipDescription={`Maximum amount of ${bitcoinUnit} that you can receive through Lightning Network channels. This represents the total amount others can send to you.`}
+            title={t('dashboard.inboundLiquidity')}
+            tooltipDescription={t('dashboard.inboundLiquidityTooltip', {
+              unit: bitcoinUnit,
+            })}
             totalCapacity={totalChannelCapacity}
             type="inbound"
           />
@@ -420,8 +432,10 @@ export const Component = () => {
             bitcoinUnit={bitcoinUnit}
             icon={<ArrowUpRight className="h-4 w-4 text-blue-500" />}
             isLoading={isLoading}
-            title="Outbound Liquidity"
-            tooltipDescription={`Maximum amount of ${bitcoinUnit} that you can send through Lightning Network channels. This represents your available balance for making payments.`}
+            title={t('dashboard.outboundLiquidity')}
+            tooltipDescription={t('dashboard.outboundLiquidityTooltip', {
+              unit: bitcoinUnit,
+            })}
             totalCapacity={totalChannelCapacity}
             type="outbound"
           />
@@ -435,18 +449,18 @@ export const Component = () => {
             onClick={() => setShowIssueAssetModal(true)}
             size="sm"
           >
-            Issue Asset
+            {t('dashboard.issueAsset')}
           </Button>
         }
         className="mb-6"
-        title="Assets"
+        title={t('dashboard.assets')}
       >
         <div className="rounded-lg overflow-hidden">
           <div className="grid grid-cols-4 text-grey-light text-xs">
-            <div className="py-2 px-4">Asset</div>
-            <div className="py-2 px-4">Off Chain</div>
-            <div className="py-2 px-4">On Chain</div>
-            <div className="py-2 px-4">Actions</div>
+            <div className="py-2 px-4">{t('dashboard.asset')}</div>
+            <div className="py-2 px-4">{t('dashboard.offChainBalance')}</div>
+            <div className="py-2 px-4">{t('dashboard.onChainBalance')}</div>
+            <div className="py-2 px-4">{t('dashboard.actions')}</div>
           </div>
 
           {assetsResponse.data?.nia.map((asset) => (
@@ -468,7 +482,7 @@ export const Component = () => {
         </div>
       </Card>
 
-      <Card className="mb-6" title="Lightning Channels">
+      <Card className="mb-6" title={t('dashboard.lightningChannels')}>
         {channels.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {channels.map((channel) => {
@@ -485,28 +499,27 @@ export const Component = () => {
           </div>
         ) : (
           <div className="text-center py-6">
-            <div className="text-slate-400 mb-3">No channels found</div>
+            <div className="text-slate-400 mb-3">
+              {t('dashboard.noChannelsFound')}
+            </div>
             <Button
               className="mx-auto"
               icon={<Plus className="w-4 h-4" />}
               onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
               size="md"
             >
-              Open Your First Channel
+              {t('dashboard.openFirstChannel')}
             </Button>
           </div>
         )}
       </Card>
 
       <div
-        className="flex items-center gap-2 text-xs text-slate-400 mt-4 p-3 
+        className="flex items-center gap-2 text-xs text-slate-400 mt-4 p-3
                     bg-slate-800/30 rounded-xl border border-slate-700"
       >
         <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />
-        <p>
-          Channel liquidity changes as you send and receive payments. Keep your
-          channels balanced for optimal performance.
-        </p>
+        <p>{t('dashboard.liquidityInfo')}</p>
       </div>
     </div>
   )

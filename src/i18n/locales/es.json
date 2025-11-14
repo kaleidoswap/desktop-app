@@ -1,0 +1,1844 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "refresh": "Actualizar",
+    "clear": "Limpiar",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "Aceptar",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información",
+    "comingSoon": "Próximamente"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "trade": "Intercambio",
+    "history": "Historial",
+    "channels": "Canales",
+    "settings": "Configuración",
+    "marketMaker": "Creador de Mercado",
+    "manualSwaps": "Intercambios Manuales",
+    "nostrP2P": "Nostr P2P",
+    "helpSupport": "Ayuda y Soporte",
+    "getHelpSupport": "Obtener Ayuda y Soporte"
+  },
+  "channels": {
+    "pageTitle": "Panel de Billetera Lightning",
+    "lastUpdated": "Última actualización: {{time}}",
+    "loadingData": "Cargando datos...",
+    "openChannel": "Abrir Canal",
+    "buyChannel": "Comprar Canal",
+    "refreshing": "Actualizando...",
+    "refresh": "Actualizar",
+    "totalBalance": "Saldo Total",
+    "inboundLiquidity": "Liquidez Entrante",
+    "outboundLiquidity": "Liquidez Saliente",
+    "yourChannels": "Tus Canales",
+    "all": "Todos",
+    "bitcoin": "Bitcoin",
+    "rgb": "RGB",
+    "filter": "Filtrar",
+    "filterBy": "Filtrar por:",
+    "sortBy": "Ordenar por:",
+    "clearAll": "Limpiar todo",
+    "clearFilters": "Limpiar Filtros",
+    "public": "Público",
+    "private": "Privado",
+    "balanced": "Equilibrado",
+    "unbalanced": "Desequilibrado",
+    "ready": "Listo",
+    "pending": "Pendiente",
+    "capacityHighToLow": "Capacidad (Alta a Baja)",
+    "capacityLowToHigh": "Capacidad (Baja a Alta)",
+    "outboundHighToLow": "Saliente (Alta a Baja)",
+    "outboundLowToHigh": "Saliente (Baja a Alta)",
+    "inboundHighToLow": "Entrante (Alta a Baja)",
+    "inboundLowToHigh": "Entrante (Baja a Alta)",
+    "mostBalanced": "Más Equilibrado",
+    "leastBalanced": "Menos Equilibrado",
+    "noChannelsFound": "No se Encontraron Canales {{type}}",
+    "noChannelsMatchFilters": "Ningún canal coincide con los filtros actuales. Intenta ajustar los criterios de filtro.",
+    "noChannelsYet": "Aún no tienes canales abiertos. Crea un canal para comenzar a usar Lightning Network.",
+    "noBitcoinChannels": "No tienes canales Bitcoin abiertos. Crea un canal Bitcoin para comenzar a usar Lightning Network.",
+    "noRgbChannels": "No tienes canales RGB abiertos. Crea un canal RGB para comenzar a usar activos RGB en Lightning.",
+    "openChannelType": "Abrir Canal {{type}}",
+    "liquidityInfo": "La liquidez del canal cambia cuando envías y recibes pagos. Mantén tus canales equilibrados para un rendimiento óptimo y comisiones más bajas."
+  },
+  "actions": {
+    "quickActions": "Acciones Rápidas",
+    "deposit": "Depositar",
+    "withdraw": "Retirar"
+  },
+  "userProfile": {
+    "myWallet": "Mi Billetera",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "logout": "Cerrar Sesión",
+    "settings": "Configuración"
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestiona las preferencias de tu nodo y aplicación",
+    "applicationSettings": "Configuración de la Aplicación",
+    "generalSettings": "Configuración General",
+    "language": "Idioma",
+    "bitcoinUnit": "Unidad de Bitcoin",
+    "bitcoinUnitSat": "Satoshi (SAT)",
+    "bitcoinUnitBtc": "Bitcoin (BTC)",
+    "lspUrl": "URL LSP",
+    "lspUrlPlaceholder": "ej., http://localhost:8000",
+    "makerSettings": "Configuración de Maker",
+    "makerUrls": "URLs de Maker",
+    "additionalMakerUrls": "URLs de Maker Adicionales",
+    "addMakerUrl": "Agregar URL de Maker",
+    "addUrl": "Agregar URL",
+    "default": "Predeterminado",
+    "setAsDefault": "Establecer como predeterminado",
+    "currentDefault": "Predeterminado actual",
+    "removeUrl": "Eliminar URL",
+    "nodeConnectionSettings": "Configuración de Conexión del Nodo",
+    "requiresRestart": "Requiere reinicio",
+    "nodeConnectionString": "Cadena de Conexión del Nodo",
+    "nodeConnectionStringPlaceholder": "ej., http://localhost:3001",
+    "bitcoindRpc": "URL de Conexión RPC de Bitcoind",
+    "bitcoindRpcPlaceholder": "ej., http://localhost:18443",
+    "indexerUrl": "URL del Indexador",
+    "indexerUrlPlaceholder": "ej., http://localhost:3002",
+    "rgbProxyEndpoint": "Endpoint del Proxy RGB",
+    "rgbProxyPlaceholder": "ej., http://localhost:3003",
+    "bearerToken": "Token Bearer",
+    "bearerTokenPlaceholder": "Introduce el token bearer para la autenticación del nodo remoto",
+    "optional": "Opcional",
+    "resetChanges": "Restablecer Cambios",
+    "saveSettings": "Guardar Configuración",
+    "saving": "Guardando...",
+    "securityBackup": "Seguridad y Respaldo",
+    "viewRecoveryPhrase": "Ver Frase de Recuperación",
+    "accessSeedPhrase": "Accede a tu frase semilla cifrada",
+    "backupWallet": "Respaldar Billetera",
+    "exportBackup": "Exportar respaldo cifrado de la billetera",
+    "nodeStatus": "Estado del Nodo",
+    "nodeRunning": "Nodo en Ejecución",
+    "nodeOffline": "Nodo Desconectado",
+    "connectionType": "Tipo de Conexión",
+    "localNode": "Nodo Local",
+    "remoteNode": "Nodo Remoto",
+    "shutdown": "Apagar",
+    "shutdownNode": "Apagar Nodo",
+    "nodeLogs": "Registros del Nodo",
+    "show": "Mostrar",
+    "entries": "entradas",
+    "exportLogs": "Exportar registros",
+    "refreshLogs": "Actualizar registros",
+    "clearLogs": "Limpiar registros",
+    "liveNodeLogs": "Registros del Nodo en Tiempo Real",
+    "page": "Página",
+    "of": "de",
+    "totalEntries": "entradas totales",
+    "noLogsAvailable": "No hay registros disponibles",
+    "loadingLogs": "Cargando registros...",
+    "loadingSettings": "Cargando Configuración",
+    "pleaseWait": "Por favor espera mientras cargamos tu configuración...",
+    "version": "Versión"
+  },
+  "modals": {
+    "logoutTitle": "Confirmar Cierre de Sesión",
+    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión? Esto bloqueará tu nodo.",
+    "logoutSuccess": "Cierre de Sesión Exitoso",
+    "logoutSuccessMessage": "Has cerrado sesión exitosamente.",
+    "logoutFailed": "Cierre de Sesión Fallido",
+    "logoutFailedMessage": "Cierre de sesión fallido: {{error}}. Redirigiendo de todos modos.",
+    "shutdownTitle": "Confirmar Apagado",
+    "shutdownMessage": "¿Estás seguro de que quieres apagar el nodo? Esta acción no se puede deshacer.",
+    "shuttingDownTitle": "Apagando Nodo",
+    "shuttingDownMessage": "Por favor espera mientras se apaga el nodo...",
+    "restartTitle": "¿Reiniciar el Nodo?",
+    "restartMessage": "La configuración de tu nodo ha cambiado. ¿Quieres reiniciar el nodo ahora para que los cambios surtan efecto?",
+    "restartNow": "Reiniciar Ahora",
+    "later": "Más Tarde",
+    "nodeRestarted": "Nodo Reiniciado",
+    "nodeRestartedMessage": "El nodo ha sido reiniciado con tu nueva configuración.",
+    "nodeRestartFailed": "Reinicio del Nodo Fallido",
+    "nodeRestartFailedMessage": "Hubo un problema al reiniciar el nodo.",
+    "settingsSaved": "Configuración Guardada",
+    "settingsSavedMessage": "Tu configuración ha sido guardada exitosamente.",
+    "settingsSaveFailed": "Fallo al Guardar Configuración",
+    "settingsSaveFailedMessage": "Hubo un problema al guardar tu configuración.",
+    "nodeSettingsChanged": "Configuración del Nodo Cambiada",
+    "nodeSettingsChangedMessage": "La configuración de conexión del nodo ha cambiado. ¿Quieres reiniciar el nodo ahora para que los cambios surtan efecto?"
+  },
+  "notifications": {
+    "depositReceived": "Depósito Recibido",
+    "depositReceivedMessage": "Se ha confirmado un nuevo depósito.",
+    "settingsSavedSuccess": "Configuración guardada exitosamente",
+    "logoutSuccess": "Cierre de sesión exitoso",
+    "nodeShutdownSuccess": "Nodo apagado exitosamente",
+    "nodeShutdownFailed": "Error al apagar el nodo",
+    "logsExportedSuccess": "Registros exportados exitosamente",
+    "logsExportFailed": "Error al exportar los registros",
+    "invalidLogsFormat": "Formato de registros no válido recibido del servidor",
+    "logsLoadFailed": "Error al cargar los registros: {{error}}",
+    "logsLoadingDisabled": "Carga de registros temporalmente deshabilitada debido a errores",
+    "restartingNode": "Deteniendo el nodo actual...",
+    "startingNode": "Iniciando nodo con la nueva configuración...",
+    "nodeRestartedSuccess": "Nodo reiniciado exitosamente con la nueva configuración",
+    "nodeRestartFailed": "Error al reiniciar el nodo: {{error}}",
+    "settingsSaveFailed": "Error al guardar la configuración: {{error}}"
+  },
+  "support": {
+    "resources": "Recursos de Soporte",
+    "documentation": "Documentación",
+    "documentationDesc": "Lee nuestras guías y tutoriales completos",
+    "faq": "Preguntas frecuentes",
+    "faqDesc": "Preguntas frecuentes",
+    "telegramGroup": "Grupo de Telegram",
+    "telegramGroupDesc": "Únete a nuestra comunidad para soporte",
+    "githubIssues": "Problemas de GitHub",
+    "githubIssuesDesc": "Reporta errores o solicita funcionalidades"
+  },
+  "labels": {
+    "soon": "Pronto"
+  },
+  "dashboard": {
+    "title": "Panel de Billetera",
+    "openChannel": "Abrir Canal",
+    "manageUTXOs": "Gestionar UTXOs",
+    "peers": "Pares",
+    "refreshing": "Actualizando...",
+    "refresh": "Actualizar",
+    "nodePublicKey": "Clave Pública del Nodo",
+    "nodePublicKeyCopied": "Clave pública del nodo copiada al portapapeles",
+    "network": "Red",
+    "blockHeight": "Altura de Bloque",
+    "totalBalance": "Saldo Total",
+    "deposit": "Depositar",
+    "depositNow": "Depositar Ahora",
+    "withdraw": "Retirar",
+    "onChain": "En cadena",
+    "offChain": "Fuera de cadena",
+    "channels": "Canales",
+    "active": "Activos",
+    "inboundLiquidity": "Liquidez Entrante",
+    "inboundLiquidityTooltip": "Cantidad máxima de {{unit}} que puedes recibir a través de canales Lightning Network. Esto representa la cantidad total que otros pueden enviarte.",
+    "outboundLiquidity": "Liquidez Saliente",
+    "outboundLiquidityTooltip": "Cantidad máxima de {{unit}} que puedes enviar a través de canales Lightning Network. Esto representa tu saldo disponible para realizar pagos.",
+    "issueAsset": "Emitir Asset",
+    "assets": "Activos",
+    "asset": "Activo",
+    "offChainBalance": "Saldo fuera de cadena",
+    "onChainBalance": "Saldo en cadena",
+    "actions": "Acciones",
+    "lightningChannels": "Canales Lightning",
+    "noChannelsFound": "No se encontraron canales",
+    "openFirstChannel": "Abre Tu Primer Canal",
+    "liquidityInfo": "La liquidez del canal cambia cuando envías y recibes pagos. Mantén tus canales equilibrados para un rendimiento óptimo.",
+    "noFunds": "Sin Fondos de Bitcoin",
+    "noFundsMessage": "No tienes fondos de Bitcoin en tu billetera. Deposita fondos para comenzar a usar la aplicación.",
+    "unknown": "Desconocido"
+  },
+  "history": {
+    "description": "Consulta tu historial de transacciones, incluidos depósitos, pagos, retiros e intercambios.",
+    "deposits": "Depósitos",
+    "paymentsWithdrawals": "Pagos y Retiros",
+    "swaps": "Intercambios",
+    "assets": "Activos",
+    "channelOrders": "Órdenes de Canal"
+  },
+  "walletSetup": {
+    "getHelpSupport": "Obtener Ayuda y Soporte",
+    "connectTitle": "Conectar a RGB Lightning Network",
+    "connectSubtitle": "Elige tu forma preferida de conectarte a la red",
+    "remoteNodeTitle": "Nodo Remoto",
+    "remoteNodeDescription": "Conéctate a un nodo hospedado o instancia auto-hospedada. Recomendado para la mayoría de usuarios y configuraciones avanzadas.",
+    "localNodeTitle": "Nodo Local",
+    "localNodeDescription": "Ejecuta un nodo en tu máquina local. Ideal para desarrolladores y entornos de prueba.",
+    "localNodeNotSupported": "El nodo local no es compatible con Windows. Usa una conexión de nodo remoto en su lugar.",
+    "backToOptions": "Volver a Opciones de Conexión",
+    "setupLocalTitle": "Configurar Nodo Local",
+    "setupLocalSubtitle": "Elige una opción para comenzar con tu nodo RGB Lightning local",
+    "createWalletTitle": "Crear Nueva Billetera",
+    "createWalletDescription": "Crea una nueva billetera con una frase semilla nueva y configura tu nodo.",
+    "restoreWalletTitle": "Restaurar Billetera",
+    "restoreWalletDescription": "Restaura una billetera usando tu respaldo cifrado existente.",
+    "connectRemoteTitle": "Conectar a Nodo Remoto",
+    "connectRemoteSubtitle": "Conéctate a un nodo RGB Lightning existente hospedado por ti o un proveedor",
+    "continueSetup": "Continuar a Configuración de Conexión"
+  },
+  "createChannel": {
+    "checkingBalance": "Verificando saldo...",
+    "retry": "Reintentar",
+    "stepPeerConnection": "Conexión de Par",
+    "stepChannelSettings": "Configuración del Canal",
+    "stepReviewConfirm": "Revisión y Confirmación",
+    "stepComplete": "Completar",
+    "currentStep": "Paso actual",
+    "completed": "Completado",
+    "pending": "Pendiente",
+    "insufficientBalance": "Saldo Insuficiente",
+    "insufficientBalanceMessage": "Necesitas al menos {{amount}} satoshis para abrir un canal. Por favor, financia tu billetera primero.",
+    "deposit": "Depositar",
+    "infoMessage": "Abrir un canal requiere una transacción on-chain. Asegúrate de tener un saldo Bitcoin suficiente para cubrir la capacidad del canal y las comisiones de transacción.",
+    "errorPeerRequired": "Se requiere información de conexión de par",
+    "errorMinCapacity": "La capacidad del canal debe ser al menos {{amount}} satoshis",
+    "errorFeeRequired": "Por favor selecciona una tarifa",
+    "errorFetchFeeRates": "Error al obtener las tarifas. Por favor, inténtalo de nuevo.",
+    "errorFetchBalance": "Error al obtener el saldo",
+    "errorOpenChannel": "Error al abrir el canal",
+    "step1": {
+      "title": "Conexión de Par - Paso 1",
+      "subtitle": "Selecciona de pares conectados o ingresa nuevos detalles de conexión.",
+      "connectedPeers": "Pares Conectados",
+      "loadingPeers": "Cargando pares conectados...",
+      "noPeers": "No hay pares conectados actualmente. Puedes conectarte a un nuevo par a continuación.",
+      "or": "o",
+      "connectNewPeer": "Conectar a Nuevo Par",
+      "placeholder": "Ejemplo: 039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735",
+      "invalidPeerFormat": "Formato de par no válido. Esperado: <pubkey-hex-66-caracteres>@hostname:puerto o pubkey válida",
+      "helpText": "La cadena de conexión debe ser una clave pública hexadecimal de 66 caracteres, seguida del símbolo @, luego la dirección del host y el número de puerto (ej. :9735)",
+      "suggestedNodes": "Selecciona de Nodos Sugeridos",
+      "loadingLsp": "Cargando información LSP...",
+      "continue": "Continuar",
+      "connectDialog": {
+        "title": "Conectar a Par",
+        "message": "¿Te gustaría conectarte a este par antes de abrir un canal?",
+        "connecting": "Conectando al par...",
+        "cancel": "Cancelar",
+        "connect": "Conectar"
+      },
+      "errorNetworkUnavailable": "Información de red no disponible",
+      "errorUnsupportedNetwork": "Red no compatible: {{network}}",
+      "errorNoLspUrl": "No hay URL LSP predeterminada configurada para la red: {{network}}",
+      "errorFetchLsp": "Error al obtener información de conexión LSP",
+      "errorInvalidPeerString": "Cadena de conexión de par no válida",
+      "errorConnectFailed": "Error al conectar al par. Por favor, inténtalo de nuevo."
+    },
+    "step2": {
+      "title": "Abrir un Canal - Paso 2",
+      "subtitle": "Configura la capacidad del canal y los activos",
+      "openingWith": "Abriendo Canal con Nodo:",
+      "capacityLabel": "Capacidad del Canal (satoshis)",
+      "capacityHint": "(La cantidad de BTC que deseas asignar a este canal)",
+      "capacityPlaceholder": "Ingresa la cantidad en sats",
+      "max": "máximo",
+      "minLabel": "Mín: {{amount}}",
+      "maxLabel": "Máx: {{amount}}",
+      "rgbAssetsTitle": "Activos RGB",
+      "rgbAssetsSubtitle": "Agrega activos RGB a tu canal para transferencias de activos",
+      "removeAsset": "Eliminar Activo",
+      "addAsset": "Agregar Activo",
+      "selectAsset": "Seleccionar Activo",
+      "chooseAsset": "Elige un activo RGB para tu canal",
+      "selectAssetPlaceholder": "Selecciona un activo RGB",
+      "searchPlaceholder": "Buscar por nombre, ticker o ID de activo...",
+      "selectAssetTitle": "Seleccionar Activo RGB",
+      "assetRequired": "Debes seleccionar un activo para continuar. Si no deseas agregar un activo, desmarca la opción \"Agregar Activo\".",
+      "assetAmount": "Cantidad de Activo",
+      "fullAssetId": "ID de Activo Completo:",
+      "available": "Disponible:",
+      "maxForChannels": "Máx para Canales:",
+      "amountLabel": "Cantidad ({{ticker}})",
+      "clear": "Limpiar",
+      "percent25": "25%",
+      "percent50": "50%",
+      "percentMax": "Máx",
+      "exceedsMax": "⚠️ Excede el máximo disponible ({{amount}})",
+      "nearMax": "⚡ Cerca del límite máximo ({{amount}})",
+      "validAmount": "✅ Cantidad válida",
+      "selectAssetFirst": "Por favor selecciona primero un activo para ingresar una cantidad",
+      "noSpendableAssets": "No tienes activos RGB gastables on-chain para abrir un canal.",
+      "transactionFeeRate": "Tarifa de Comisión de Transacción",
+      "slow": "lenta",
+      "medium": "media",
+      "fast": "rápida",
+      "channelPrivacy": "Privacidad del Canal",
+      "publicChannel": "Canal Público",
+      "privateChannel": "Canal Privado",
+      "publicDescription": "Visible en Lightning Network y puede usarse para enrutar pagos",
+      "privateDescription": "Solo conocido por las dos partes y no puede usarse para enrutamiento",
+      "privacyInfo": "Los canales públicos son descubribles y pueden enrutar pagos para la red. Los canales privados proporcionan conectividad directa sin visibilidad de red.",
+      "back": "Atrás",
+      "next": "Siguiente",
+      "formError": "Por favor verifica el formulario en busca de errores",
+      "errorCapacityRequired": "Por favor ingresa una capacidad de canal.",
+      "errorMinCapacity": "La capacidad del canal debe ser al menos {{amount}} sats.",
+      "errorAssetRequired": "Por favor selecciona un activo o desmarca la opción \"Agregar Activo\".",
+      "errorAssetAmountRequired": "Por favor ingresa una cantidad de activo o elimina la selección de activo.",
+      "errorAssetExceedsMax": "La cantidad del activo excede el máximo disponible: {{amount}}",
+      "warningAssetAdjusted": "La cantidad excede el máximo disponible: {{amount}}. El valor ha sido ajustado.",
+      "decimalPlaces": "decimales"
+    },
+    "step3": {
+      "title": "Abrir un Canal - Revisión",
+      "subtitle": "Confirma los detalles del canal antes de continuar",
+      "channelDetails": "Detalles del Canal",
+      "rgbAsset": "Activo RGB",
+      "bitcoin": "Bitcoin",
+      "channelCapacity": "Capacidad del Canal",
+      "sat": "SAT",
+      "connectedNode": "Nodo Conectado",
+      "nodeId": "ID del Nodo:",
+      "copyPubkey": "Copiar pubkey completa",
+      "host": "Servidor:",
+      "status": "Estado:",
+      "alreadyConnected": "Ya Conectado",
+      "errorInvalidNode": "Por favor regresa e ingresa información válida del nodo",
+      "transactionFeeRate": "Tarifa de Comisión de Transacción",
+      "channelPrivacy": "Privacidad del Canal",
+      "public": "Público",
+      "private": "Privado",
+      "visibleOnNetwork": "Visible en Lightning Network",
+      "onlyKnownToParties": "Solo conocido por las partes",
+      "rgbAssetChannel": "Canal de Activo RGB",
+      "rgbAssetInfo": "Este canal incluirá tanto liquidez Bitcoin como asignación de activo RGB. El activo RGB ({{ticker}}) se asignará con {{amount}} unidades.",
+      "back": "Atrás",
+      "opening": "Abriendo...",
+      "openChannel": "Abrir Canal"
+    },
+    "step4": {
+      "failed": "Creación de canal fallida",
+      "tryAgain": "Intentar de Nuevo",
+      "goToChannels": "Ir a la Página de Canales",
+      "success": "¡Canal creado exitosamente!",
+      "successMessage": "El canal ha sido creado exitosamente, ahora puedes comenzar a operar."
+    }
+  },
+  "supportModal": {
+    "title": "Soporte y Recursos",
+    "troubleshooting": "Solución de Problemas",
+    "intro": "¿Necesitas ayuda con KaleidoSwap? Aquí hay varias formas de obtener asistencia:",
+    "documentation": "Documentación",
+    "documentationDesc": "Guías y tutoriales completos",
+    "faq": "Preguntas Frecuentes",
+    "faqDesc": "Encuentra respuestas a preguntas comunes",
+    "telegramGroup": "Grupo de Telegram",
+    "telegramGroupDesc": "Únete a nuestra comunidad para soporte y discusión",
+    "githubIssues": "Problemas de GitHub",
+    "githubIssuesDesc": "Reporta errores o solicita nuevas funcionalidades",
+    "commonIssues": "Problemas Comunes y Soluciones",
+    "commonIssuesDesc": "Solución rápida de problemas comunes",
+    "backToSupport": "Volver a Opciones de Soporte",
+    "troubleshootIntro": "Aquí hay algunos problemas comunes y sus soluciones. Si tu problema no está listado aquí, contáctanos a través de uno de los canales de soporte.",
+    "solutions": "Soluciones:",
+    "viewSolutions": "Ver Soluciones",
+    "stillHavingIssues": "¿Sigues teniendo problemas? Obtén ayuda personalizada de nuestra comunidad y desarrolladores:",
+    "telegramSupport": "Soporte de Telegram",
+    "reportIssue": "Reportar un Problema",
+    "needMoreHelp": "¿Necesitas más ayuda?",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "connectionIssues": {
+      "title": "Problemas de conexión",
+      "description": "Problemas al conectarse a tu nodo RGB Lightning",
+      "solution1": "Verifica que tu nodo esté en ejecución",
+      "solution2": "Verifica tu configuración de conexión en la página de Configuración",
+      "solution3": "Asegúrate de que tu firewall permita conexiones a los puertos requeridos",
+      "solution4": "Intenta reiniciar tu nodo"
+    },
+    "channelCreationFailures": {
+      "title": "Fallos en la creación de canales",
+      "description": "Problemas al intentar crear nuevos canales de pago",
+      "solution1": "Asegúrate de tener saldo de Bitcoin suficiente",
+      "solution2": "Verifica que tu peer esté en línea y aceptando canales",
+      "solution3": "Verifica que tú y tu peer estén conectados al mismo servidor proxy RGB",
+      "solution4": "Espera a que se completen las confirmaciones blockchain pendientes"
+    },
+    "paymentFailures": {
+      "title": "Fallos de pago",
+      "description": "Problemas al enviar o recibir pagos RGB",
+      "solution1": "Verifica que tengas liquidez de salida suficiente en tus canales",
+      "solution2": "Verifica que tengas suficientes UTXOs coloreados en tu billetera",
+      "solution3": "Verifica que la factura sea correcta y no haya expirado"
+    }
+  },
+  "backupModal": {
+    "title": "Crear Copia de Seguridad",
+    "backupFilePath": "Ruta del Archivo de Copia de Seguridad",
+    "nodePassword": "Contraseña del Nodo",
+    "nodePasswordPlaceholder": "Introduce la contraseña del nodo",
+    "invalidBackupPath": "Ruta de copia de seguridad no válida",
+    "backupInProgressMessage": "Por favor espera, la copia de seguridad está en progreso...",
+    "backupLockedMessage": "El nodo estará bloqueado hasta que finalice el proceso de copia de seguridad.",
+    "cancel": "Cancelar",
+    "createBackup": "Crear Copia de Seguridad"
+  },
+  "logoutModal": {
+    "loggingOut": "Cerrando Sesión",
+    "loggingOutMessage": "Por favor espera mientras se bloquea tu billetera...",
+    "confirmLogoutTitle": "Confirmar Cierre de Sesión",
+    "confirmLogoutMessage": "¿Estás seguro de que quieres cerrar sesión? Esto bloqueará tu billetera.",
+    "cancel": "Cancelar",
+    "confirmLogout": "Confirmar Cierre de Sesión",
+    "logout": "Cerrar Sesión"
+  },
+  "closeChannelModal": {
+    "title": "Cerrar Canal",
+    "confirmMessage": "¿Estás seguro de que quieres cerrar este canal?",
+    "settleMessage": "Cerrar un canal liquidará el saldo actual en tu billetera on-chain.",
+    "forceClose": "Cierre forzado",
+    "useCautionLabel": "Usar con precaución",
+    "forceCloseConditionsTitle": "Solo usa el cierre forzado si:",
+    "forceCloseCondition1": "El peer está desconectado o no responde",
+    "forceCloseCondition2": "El canal está atascado o en un estado problemático",
+    "forceCloseCondition3": "Un cierre cooperativo regular ha fallado",
+    "forceCloseWarning": "El cierre forzado puede resultar en tarifas más altas y tiempos de confirmación más largos. Tus fondos se bloquearán en un contrato con timelock hasta que expire el timelock.",
+    "cooperativeCloseInfo": "El cierre cooperativo (predeterminado) es más rápido, más barato y devuelve los fondos a tu billetera después de la confirmación on-chain.",
+    "cannotCloseCooperatively": "El canal no puede cerrarse de forma cooperativa",
+    "forceCloseQuestion": "¿Quieres cerrar forzadamente este canal en su lugar? El cierre forzado:",
+    "forceCloseReason1": "No requiere que tu peer esté en línea",
+    "forceCloseReason2": "Bloqueará tus fondos temporalmente en un contrato timelock",
+    "forceCloseReason3": "Puede resultar en tarifas más altas",
+    "closingMessage": "Cerrando canal... Por favor espera",
+    "processing": "Procesando...",
+    "forceCloseChannel": "Cerrar Canal Forzadamente",
+    "closeChannel": "Cerrar Canal",
+    "cancel": "Cancelar",
+    "successMessage": "Canal {{channelId}}... cierre {{forceClose}} iniciado exitosamente",
+    "errorMessage": "Error al cerrar el canal: {{error}}"
+  },
+  "errorBoundary": {
+    "pageNotFound": "Página No Encontrada",
+    "errorStatus": "Error {{status}}",
+    "pageNotFoundMessage": "Lo sentimos, no pudimos encontrar la página que buscas.",
+    "unexpectedError": "Ocurrió un error inesperado",
+    "oopsSomethingWentWrong": "¡Ups! Algo salió mal",
+    "unexpectedErrorMessage": "Lo sentimos, pero ha ocurrido un error inesperado.",
+    "goBack": "Volver",
+    "goHome": "Ir al Inicio"
+  },
+  "walletInit": {
+    "steps": {
+      "terms": "Términos",
+      "setup": "Configuración del Nodo",
+      "password": "Contraseña",
+      "mnemonic": "Frase de Recuperación",
+      "verify": "Verificación",
+      "unlock": "Desbloquear"
+    },
+    "termsStep": {
+      "title": "Bienvenido a KaleidoSwap",
+      "subtitle": "Lee y acepta nuestros términos y política de privacidad para continuar",
+      "description": "Antes de comenzar a usar KaleidoSwap, revisa y acepta nuestros Términos de Servicio y Política de Privacidad.",
+      "reviewButton": "Revisar Términos y Política de Privacidad"
+    },
+    "setupStep": {
+      "title": "Crear Nueva Billetera",
+      "subtitle": "Configura tu nodo local para crear una nueva billetera RGB Lightning",
+      "description": "Configura los ajustes de tu nodo para crear una nueva billetera RGB Lightning. Elige un nombre y red para tu billetera.",
+      "accountNameLabel": "Nombre de la Cuenta",
+      "accountNameDescription": "Este nombre se utilizará para identificar tu billetera",
+      "accountNamePlaceholder": "Mi Billetera Bitcoin",
+      "accountNameRequired": "El nombre de la cuenta es obligatorio",
+      "accountExistsError": "Ya existe una cuenta con este nombre",
+      "bearerTokenLabel": "Token Bearer",
+      "bearerTokenDescription": "Token de autenticación opcional para acceso al nodo remoto",
+      "bearerTokenPlaceholder": "Introduce tu token bearer",
+      "continueButton": "Continuar",
+      "failedToSetup": "Error al configurar el nodo. Por favor, inténtalo de nuevo."
+    },
+    "passwordStep": {
+      "title": "Crear Contraseña",
+      "subtitle": "Establece una contraseña segura para proteger tu nodo",
+      "initializingTitle": "Inicializando Nodo",
+      "initializingMessage": "Por favor espera mientras inicializamos tu nodo. Esto puede tomar unos momentos...",
+      "settingUpWallet": "Configurando tu billetera...",
+      "startingNode": "Iniciando nodo RLN...",
+      "portsInUse": "No se puede iniciar el nodo: Algunos puertos ya están en uso por otros procesos. Detén los nodos en ejecución o elige puertos diferentes.",
+      "nodeInitializedSuccess": "¡Nodo inicializado exitosamente!",
+      "nodeAlreadyInitialized": "El nodo ya está inicializado, intentando desbloquear...",
+      "failedToInitialize": "Error al inicializar el nodo",
+      "failedToStoreRecovery": "Error al almacenar de forma segura la frase de recuperación. Por favor, inténtalo de nuevo.",
+      "stoppingExistingNodes": "Deteniendo nodos existentes en puertos en conflicto...",
+      "existingNodesStopped": "Nodos existentes detenidos exitosamente"
+    },
+    "mnemonicStep": {
+      "title": "Frase de Recuperación",
+      "subtitle": "Guarda tu frase de recuperación en un lugar seguro",
+      "mnemonicCopied": "Mnemotecnia copiada al portapapeles",
+      "failedToCopy": "Error al copiar mnemotecnia"
+    },
+    "verifyStep": {
+      "title": "Verificar Frase de Recuperación",
+      "subtitle": "Confirma que has guardado correctamente tu frase de recuperación",
+      "mnemonicMismatch": "La mnemotecnia no coincide",
+      "mnemonicStoredSuccess": "Mnemotecnia encriptada y almacenada exitosamente",
+      "unexpectedError": "Ocurrió un error inesperado"
+    },
+    "unlockStep": {
+      "title": "Iniciando Nodo",
+      "subtitle": "Tu nodo está siendo inicializado",
+      "errorTitle": "Error del Nodo",
+      "errorSubtitle": "Hubo un error al inicializar tu nodo",
+      "backToVerification": "Volver a Verificación",
+      "walletUnlockedSuccess": "¡Billetera desbloqueada exitosamente!",
+      "failedToUnlock": "Error al desbloquear el nodo",
+      "failedToVerify": "Error al verificar el estado del nodo después del desbloqueo",
+      "unlockingCancelled": "Desbloqueo del nodo cancelado",
+      "failedToCancel": "Error al cancelar el desbloqueo"
+    },
+    "errors": {
+      "failedToCheckPorts": "Error al verificar la disponibilidad de puertos",
+      "portsInUse": "Los puertos {{ports}} están en uso por otras aplicaciones. Elige puertos diferentes o detén las aplicaciones en conflicto.",
+      "failedToStopNode": "Error al detener el nodo existente en el puerto {{port}}",
+      "failedToStart": "Error al iniciar el nodo",
+      "suggestedPorts": "Puertos alternativos sugeridos:\n- Puerto daemon: {{daemon}}\n- Puerto peer LDK: {{ldk}}",
+      "nodeInitFailed": "Inicialización del nodo fallida",
+      "invalidResponse": "Respuesta inválida: mnemotecnia faltante"
+    }
+  },
+  "walletUnlock": {
+    "title": "Desbloquear Tu Billetera",
+    "subtitle": "Introduce tu contraseña para acceder de forma segura a tu billetera",
+    "walletAccess": "Acceso a la Billetera",
+    "connectionDetails": "Detalles de Conexión",
+    "nodeUrl": "URL del Nodo",
+    "bitcoindRpc": "RPC de Bitcoind",
+    "indexerUrl": "URL del Indexador",
+    "rgbProxyEndpoint": "Endpoint del Proxy RGB",
+    "walletPassword": "Contraseña de la Billetera",
+    "passwordPlaceholder": "Introduce tu contraseña segura",
+    "passwordRequired": "La contraseña es obligatoria",
+    "unlockButton": "Desbloquear Billetera",
+    "backToSetup": "Volver a la Configuración de la Billetera",
+    "checkingStatus": "Verificando Estado de la Billetera",
+    "checkingMessage": "Por favor espera mientras verificamos tu billetera...",
+    "initializeWalletTitle": "Inicializar Billetera",
+    "initializeWalletMessage": "Tu billetera aún no ha sido inicializada. ¿Quieres configurarla ahora?",
+    "cancel": "Cancelar",
+    "initialize": "Inicializar",
+    "successMessage": "¡Billetera desbloqueada exitosamente!",
+    "invalidPassword": "Contraseña inválida",
+    "alreadyUnlocked": "El nodo ya está desbloqueado",
+    "nodeStopped": "Nodo detenido",
+    "unlockCancelled": "Proceso de desbloqueo cancelado",
+    "failedCheckStatus": "Error al verificar el estado del nodo: {{error}}",
+    "failedGetNodeInfo": "Error al obtener información del nodo después del desbloqueo"
+  },
+  "trade": {
+    "noChannels": {
+      "insufficientBalance": "Saldo de Bitcoin Insuficiente",
+      "insufficientBalanceMessage": "Necesitas bitcoin para abrir un canal. Por favor deposita BTC para comenzar.",
+      "depositBTC": "Depositar BTC",
+      "noRGBChannels": "No Hay Canales RGB Disponibles",
+      "noRGBChannelsMessage": "Para comenzar a intercambiar, necesitas un canal con algunos activos",
+      "openChannel": "Abrir Canal",
+      "buyFromLSP": "Comprar de LSP",
+      "marketMaker": "Creador de Mercado",
+      "noTradingChannels": "No Hay Canales de Trading Disponibles",
+      "buyChannel": "Comprar Canal",
+      "availableTradingPairs": "Pares de Trading Disponibles",
+      "supportedAssets": "Activos Soportados",
+      "quickStartGuide": "Guía de Inicio Rápido",
+      "quickStartMessage": "Sigue estos pasos para comenzar a operar con activos RGB",
+      "checkSupportedAssets": "Verificar activos soportados",
+      "checkSupportedAssetsMessage": "Visita el registro para ver qué activos soporta este creador",
+      "createYourChannel": "Crea Tu Canal",
+      "createChannelMessage": "Compra un canal de un LSP o ábrelo directamente con tus activos",
+      "startTrading": "Comenzar a Operar",
+      "startTradingMessage": "Regresa aquí una vez que tu canal esté activo para comenzar a operar",
+      "recommendationCompatible": "Ya tienes activos compatibles con este creador de mercado. Puedes abrir un canal directamente.",
+      "recommendationBuy": "Para el inicio más rápido, recomendamos comprar un canal de un LSP con activos soportados por este creador.",
+      "recommendationOpen": "Este creador de mercado soporta activos específicos. Puedes abrir un canal con estos activos.",
+      "recommendationDefault": "Para operar con este creador de mercado, necesitas un canal con uno de sus activos soportados."
+    },
+    "channelsNotReady": {
+      "title": "Canales Aún No Listos",
+      "message": "Tus canales de trading se están configurando. Este proceso suele tomar unos minutos. Por favor espera mientras preparamos todo para ti.",
+      "channelStatus": "Estado del Canal",
+      "initializing": "Inicializando...",
+      "checkStatus": "Verificar Estado",
+      "setupTime": "Tiempo de Configuración",
+      "setupTimeMessage": "La configuración del canal generalmente toma de 3 a 5 minutos",
+      "autoRefresh": "Auto-Actualización",
+      "autoRefreshMessage": "Verificaremos automáticamente el estado cada 30 segundos"
+    },
+    "connectionIssues": {
+      "connectionLost": "Conexión al Creador de Mercado Perdida",
+      "connectionLostMessage": "Tus canales de trading están disponibles, pero tenemos problemas para mantener una conexión en tiempo real con el creador de mercado.",
+      "preventsTradingMessage": "Esto impide las actualizaciones de precios en vivo y el trading.",
+      "retryConnection": "Reintentar Conexión",
+      "connectionIssue": "Problema de Conexión",
+      "network": "Red",
+      "checkInternetMessage": "Verifica tu conexión a internet",
+      "switchMaker": "Cambiar Creador",
+      "tryDifferentMaker": "Prueba un creador de mercado diferente arriba",
+      "wait": "Esperar",
+      "serverBusy": "El servidor puede estar temporalmente ocupado",
+      "currentMaker": "Creador actual:",
+      "marketMakerSelector": "Si el creador actual no está disponible, cambia a otro para continuar operando",
+      "connectingToMaker": "Conectando al Creador de Mercado",
+      "connectionTimeout": "Tiempo de Conexión Agotado",
+      "establishingConnection": "Estableciendo Conexión",
+      "connectingMessage": "Intentando conectar al creador de mercado...",
+      "usuallyFastMessage": "Esto generalmente toma solo unos segundos.",
+      "timeoutMessage": "No se pudo conectar al creador de mercado en 30 segundos.",
+      "serverUnreachableMessage": "El servidor puede estar inaccesible o experimentando problemas.",
+      "connectingForSeconds": "Conectando durante {{seconds}} segundos...",
+      "cancelAndRetry": "Cancelar y Reintentar",
+      "elapsedTime": "{{seconds}}s transcurridos",
+      "tryingSwitchMessage": "Actualmente intentando conectar. Puedes cambiar para probar otro creador.",
+      "switchIfUnavailable": "Cambia a un creador diferente si el actual no está disponible",
+      "connectionInProgress": "Conexión en progreso"
+    },
+    "manual": {
+      "balancesUpdated": "Saldos de activos actualizados",
+      "balancesFailed": "Error al obtener los saldos de activos",
+      "swapInitiated": "Intercambio iniciado correctamente",
+      "swapInitiateFailed": "Error al iniciar el intercambio. Inténtalo de nuevo.",
+      "noActiveSwap": "No hay un intercambio activo para ejecutar",
+      "missingTakerPubkey": "Introduce la clave pública del tomador",
+      "swapExecuted": "Intercambio ejecutado correctamente",
+      "swapExecuteFailed": "Error al ejecutar el intercambio. Inténtalo de nuevo."
+    },
+    "taker": {
+      "balancesUpdated": "Saldos de activos actualizados",
+      "balancesFailed": "Error al obtener los saldos de activos",
+      "missingSwapString": "Introduce una cadena de intercambio",
+      "whitelistSuccess": "Operación añadida a la lista blanca correctamente",
+      "whitelistFailed": "Error al añadir la operación a la lista blanca. Inténtalo de nuevo.",
+      "pubkeyCopied": "Clave pública copiada al portapapeles"
+    },
+    "maker": {
+      "switching": "Cambiando a un nuevo market maker...",
+      "reconnected": "Reconexión con el creador de mercado exitosa",
+      "reconnecting": "Reconexión en curso. Espera por favor...",
+      "changeFailed": "Error al cambiar de maker",
+      "invalidUrl": "Formato de URL no válido",
+      "reconnectingStatus": "Reconectando con el maker...",
+      "reconnectionInitFailed": "Error al iniciar la reconexión. Inténtalo de nuevo.",
+      "reconnectionFailed": "Error al reconectar con el maker"
+    },
+    "statusToast": {
+      "swapSucceeded": "Intercambio completado",
+      "swapExpired": "El intercambio expiró",
+      "pendingSwaps_one": "{{count}} intercambio en curso",
+      "pendingSwaps_other": "{{count}} intercambios en curso"
+    }
+  },
+  "walletRestore": {
+    "title": "Restaurar Billetera",
+    "subtitle": "Restaura tu billetera desde un archivo de respaldo",
+    "steps": {
+      "backupSelection": "Selección de Respaldo",
+      "restoration": "Restauración",
+      "completion": "Finalización"
+    },
+    "accountName": "Nombre de Cuenta",
+    "accountNameDescription": "Este nombre se utilizará para crear la carpeta de tu cuenta",
+    "accountNamePlaceholder": "Ingresa un nombre para tu cuenta",
+    "accountNameRequired": "El nombre de cuenta es obligatorio",
+    "backupFile": "Archivo de Respaldo",
+    "backupFileDescription": "Selecciona el archivo de respaldo para tu billetera",
+    "backupFilePlaceholder": "Selecciona tu archivo de respaldo",
+    "password": "Contraseña",
+    "passwordDescription": "Ingresa la contraseña para tu archivo de respaldo",
+    "passwordPlaceholder": "Ingresa tu contraseña",
+    "passwordRequired": "La contraseña es obligatoria",
+    "restoreWallet": "Restaurar Billetera",
+    "restoring": "Restaurando...",
+    "restoringYourWallet": "Restaurando Tu Billetera",
+    "restoringMessage": "Por favor espera mientras restauramos tu billetera desde el archivo de respaldo. Esto puede tomar unos minutos.",
+    "successTitle": "Billetera Restaurada Exitosamente",
+    "successMessage": "Tu billetera ha sido restaurada y está lista para usar.",
+    "errorTitle": "Restauración de Billetera Fallida",
+    "errorMessage": "Hubo un problema al restaurar tu billetera.",
+    "accountExistsTitle": "La Cuenta Ya Existe",
+    "accountExistsMessage": "Ya existe una cuenta con este nombre. Por favor elige un nombre diferente.",
+    "nodeOperationFailedTitle": "Operación del Nodo Fallida",
+    "unexpectedErrorTitle": "Error Inesperado",
+    "selectBackupFile": "Por favor selecciona un archivo de respaldo",
+    "passwordRequiredError": "La contraseña es obligatoria",
+    "failedToSelectBackup": "Error al seleccionar el archivo de respaldo",
+    "nodeStartedSuccess": "¡Nodo iniciado exitosamente!",
+    "couldNotStartNode": "No se pudo iniciar el nodo: {{error}}",
+    "errorRestoringWallet": "Error al restaurar la billetera: {{error}}",
+    "failedToRestore": "No se pudo restaurar la billetera. Por favor verifica tu archivo de respaldo y contraseña.",
+    "failedToStartNode": "Error al iniciar u operar el nodo: {{error}}",
+    "unexpectedError": "Ocurrió un error inesperado: {{error}}",
+    "continue": "Continuar",
+    "close": "Cerrar"
+  },
+  "deposits": {
+    "title": "Historial de Depósitos",
+    "loading": "Cargando historial de depósitos...",
+    "errorLoading": "Error al Cargar Datos",
+    "errorMessage": "Hubo un error al cargar tu historial de depósitos. Por favor intenta nuevamente.",
+    "tryAgain": "Intentar Nuevamente",
+    "onChain": "En cadena",
+    "offChain": "Fuera de cadena",
+    "type": "Tipo",
+    "asset": "Activo",
+    "amount": "Cantidad",
+    "date": "Fecha",
+    "transactionId": "ID de Transacción",
+    "status": "Estado",
+    "completed": "Completado",
+    "searchPlaceholder": "Buscar depósitos...",
+    "allTypes": "Todos los Tipos",
+    "allAssets": "Todos los Activos",
+    "noDepositsFiltered": "No se encontraron depósitos que coincidan con tus filtros.",
+    "clearFilters": "Limpiar Filtros",
+    "noDeposits": "No se encontraron depósitos.",
+    "refresh": "Actualizar"
+  },
+  "withdrawals": {
+    "title": "Historial de Retiros",
+    "loading": "Cargando historial de retiros...",
+    "errorLoading": "Error al Cargar Datos",
+    "errorMessage": "Hubo un error al cargar tu historial de retiros. Por favor intenta nuevamente.",
+    "tryAgain": "Intentar Nuevamente",
+    "onChain": "En cadena",
+    "offChain": "Fuera de cadena",
+    "type": "Tipo",
+    "asset": "Activo",
+    "amount": "Cantidad",
+    "date": "Fecha",
+    "transactionId": "ID de Transacción",
+    "status": "Estado",
+    "completed": "Completado",
+    "pending": "Pendiente",
+    "searchPlaceholder": "Buscar retiros...",
+    "allTypes": "Todos los Tipos",
+    "allAssets": "Todos los Activos",
+    "noWithdrawalsFiltered": "No se encontraron retiros que coincidan con tus filtros.",
+    "clearFilters": "Limpiar Filtros",
+    "noWithdrawals": "No se encontraron retiros.",
+    "refresh": "Actualizar"
+  },
+  "swaps": {
+    "title": "Historial de Intercambios",
+    "loading": "Cargando historial de intercambios...",
+    "errorLoading": "Error al Cargar Datos",
+    "errorMessage": "Hubo un error al cargar tu historial de intercambios. Por favor intenta nuevamente.",
+    "tryAgain": "Intentar Nuevamente",
+    "maker": "Creador",
+    "taker": "Tomador",
+    "type": "Tipo",
+    "from": "Desde",
+    "to": "Hasta",
+    "date": "Fecha",
+    "paymentHash": "Hash de Pago",
+    "status": "Estado",
+    "succeeded": "Exitoso",
+    "failed": "Fallido",
+    "pending": "Pendiente",
+    "waiting": "Esperando",
+    "expired": "Expirado",
+    "searchPlaceholder": "Buscar intercambios...",
+    "allTypes": "Todos los Tipos",
+    "allStatuses": "Todos los Estados",
+    "allAssets": "Todos los Activos",
+    "noSwapsFiltered": "No se encontraron intercambios que coincidan con tus filtros.",
+    "clearFilters": "Limpiar Filtros",
+    "noSwaps": "No se encontraron intercambios.",
+    "refresh": "Actualizar"
+  },
+  "assets": {
+    "title": "Transferencias de Activos",
+    "loading": "Cargando transferencias...",
+    "refresh": "Actualizar",
+    "refreshing": "Actualizando...",
+    "assetIdCopied": "ID de activo copiado al portapapeles",
+    "transactionIdCopied": "ID de transacción copiado al portapapeles",
+    "recipientIdCopied": "ID de destinatario copiado al portapapeles",
+    "searchPlaceholder": "Buscar transacciones...",
+    "allTypes": "Todos los Tipos",
+    "sent": "Enviado",
+    "received": "Recibido",
+    "issuance": "Emisión",
+    "allStatuses": "Todos los Estados",
+    "type": "Tipo",
+    "amount": "Cantidad",
+    "date": "Fecha",
+    "transactionId": "ID de Transacción",
+    "status": "Estado",
+    "noTransfersFiltered": "No se encontraron transferencias que coincidan con tus criterios de búsqueda",
+    "noTransfers": "No se encontraron transferencias para este activo",
+    "clearFilters": "Limpiar Filtros",
+    "transactionDetails": "Detalles de Transacción",
+    "transactionIdLabel": "ID de Transacción:",
+    "amountLabel": "Cantidad:",
+    "typeLabel": "Tipo:",
+    "statusLabel": "Estado:",
+    "dateLabel": "Fecha:",
+    "recipientIdLabel": "ID de Destinatario:"
+  },
+  "walletRemote": {
+    "title": "Conectar a Nodo Remoto",
+    "subtitle": "Introduce los detalles de tu nodo RGB Lightning remoto",
+    "configureRemoteNode": "Configura los ajustes de conexión de tu nodo remoto. Introduce los detalles de tu nodo RGB Lightning existente.",
+    "accountName": "Nombre de Cuenta",
+    "accountNameDescription": "Este nombre se utilizará para identificar tu conexión de nodo remoto",
+    "accountNamePlaceholder": "Mi Nodo Remoto",
+    "accountNameRequired": "Se requiere el nombre de cuenta",
+    "nodeUrl": "URL del Nodo",
+    "nodeUrlDescription": "La URL de tu nodo RGB Lightning remoto",
+    "nodeUrlDescriptionRegtest": "URL del nodo para conexión regtest {{type}}",
+    "nodeUrlPlaceholder": "http://tu-url-nodo:3000",
+    "nodeUrlPlaceholderRegtest": "http://localhost:3001",
+    "nodeUrlRequired": "Se requiere la URL del nodo",
+    "nodeUrlInvalidFormat": "Elimina \"/nodeinfo\" de la URL - se agregará automáticamente",
+    "nodeUrlTrailingSlash": "Elimina las barras diagonales finales adicionales de la URL",
+    "nodeUrlProtocol": "La URL debe comenzar con http:// o https://",
+    "password": "Contraseña del Nodo",
+    "passwordPlaceholder": "Contraseña",
+    "passwordRequired": "Se requiere la contraseña",
+    "useAuthToken": "Usar Token de Autenticación",
+    "authToken": "Token de Autenticación",
+    "authTokenRequired": "Se requiere el token de autenticación",
+    "testConnection": "Probar Conexión",
+    "testingConnection": "Probando Conexión...",
+    "testConnectionAndCreate": "Probar Conexión y Crear Cuenta",
+    "connectionTestSuccessful": "Prueba de conexión exitosa",
+    "connectionTestSuccessMessage": "¡Conectado exitosamente al nodo remoto! El nodo está respondiendo correctamente.",
+    "connectionVerified": "¡Conexión verificada! Ahora puedes conectarte de forma segura al nodo.",
+    "nodeOnline": "El nodo está en línea y accesible",
+    "authWorking": "La autenticación está funcionando correctamente",
+    "nodeRespondingValidData": "El nodo está respondiendo con datos válidos",
+    "testConnectionError": "{{error}}",
+    "authenticationFailed": "Fallo de autenticación",
+    "authenticationFailedDetails": "Credenciales o token de autenticación no válidos. Por favor verifica tu contraseña o token de autenticación.",
+    "authenticationFailedToast": "Fallo de autenticación. Por favor verifica tus credenciales.",
+    "nodeEndpointNotFound": "Endpoint del nodo no encontrado",
+    "nodeEndpointNotFoundDetails": "No se encontró el endpoint /nodeinfo. Por favor verifica que la URL del nodo sea correcta.",
+    "nodeEndpointNotFoundToast": "Endpoint del nodo no encontrado. Por favor verifica la URL de tu nodo.",
+    "serverError": "Error del servidor",
+    "serverErrorDetails": "El nodo remoto devolvió un error del servidor ({{status}}). El nodo puede estar caído o mal configurado.",
+    "serverErrorToast": "Error del servidor. El nodo remoto puede estar caído o mal configurado.",
+    "connectionTestFailed": "Prueba de conexión fallida",
+    "connectionTestFailedDetails": "HTTP {{status}}: {{statusText}}",
+    "connectionTestFailedToast": "Prueba de conexión fallida: {{status}}",
+    "invalidResponseFormat": "Formato de respuesta no válido",
+    "invalidResponseFormatDetails": "El nodo respondió pero no con JSON válido. Esto puede no ser un nodo RGB Lightning.",
+    "invalidResponseFormatToast": "Respuesta no válida durante la prueba de conexión.",
+    "connectionTimeout": "Tiempo de espera de conexión agotado",
+    "connectionTimeoutDetails": "La conexión tardó demasiado en responder. Por favor verifica tu conexión de red y la URL del nodo.",
+    "connectionTimeoutToast": "Tiempo de espera de conexión agotado.",
+    "networkConnectionFailed": "Fallo de conexión de red",
+    "networkConnectionFailedDetails": "No se pudo alcanzar el nodo remoto durante la prueba. Por favor verifica tu conexión a internet y la URL del nodo.",
+    "networkConnectionFailedToast": "Error de red durante la prueba de conexión.",
+    "connectionSuccessToast": "✅ ¡Prueba de conexión exitosa! El nodo es accesible.",
+    "processingStep1": "Paso 1: Probando conexión al nodo remoto...",
+    "processingStep2": "Paso 2: Creando cuenta y guardando configuración...",
+    "processingStep3": "Paso 3: Finalizando configuración de cuenta...",
+    "accountExists": "El nombre de cuenta ya existe",
+    "accountExistsMessage": "Por favor elige un nombre de cuenta diferente o elimina la cuenta existente.",
+    "accountExistsToast": "Ya existe una cuenta con este nombre",
+    "failedCheckAccountExists": "Error al verificar la existencia de la cuenta",
+    "failedCheckAccountExistsMessage": "No se pudo verificar si el nombre de cuenta está disponible. Por favor inténtalo de nuevo.",
+    "failedCheckAccountExistsToast": "Error al verificar la existencia de la cuenta. Por favor inténtalo de nuevo.",
+    "connectionSuccessCreating": "✅ ¡Conexión exitosa! Creando cuenta...",
+    "connectionFailedToast": "Conexión fallida: {{status}} {{statusText}}",
+    "invalidResponseToast": "Respuesta no válida del nodo. Por favor verifica la URL.",
+    "connectionTimeoutLong": "Tiempo de espera de conexión agotado. Por favor verifica tu red e inténtalo de nuevo.",
+    "networkErrorToast": "Error de red. Por favor verifica tu conexión y la URL del nodo.",
+    "corsError": "Error de política CORS",
+    "corsErrorDetails": "El nodo remoto no está configurado para aceptar solicitudes de esta aplicación.",
+    "corsErrorToast": "Error CORS. El nodo remoto puede no estar configurado correctamente.",
+    "failedToConnectToast": "Error al conectar al nodo remoto. Por favor verifica tu configuración.",
+    "accountCreatedSuccess": "¡Cuenta creada exitosamente!",
+    "failedToCreateAccount": "Error al crear la cuenta",
+    "failedToCreateAccountDetails": "La creación de la cuenta falló después de una conexión exitosa: {{error}}",
+    "failedToCreateAccountToast": "Error al crear la cuenta. Por favor inténtalo de nuevo.",
+    "troubleshootingTips": "Consejos de solución de problemas:",
+    "verifyNodeUrl": "Verifica que la URL del nodo sea correcta y accesible",
+    "checkNodeRunning": "Verifica si el nodo está en ejecución y respondiendo",
+    "ensurePortCorrect": "Asegúrate de que el número de puerto sea correcto",
+    "trySwitchingRegtest": "Intenta cambiar entre regtest local y remoto si usas regtest",
+    "authHelp": "Ayuda con autenticación:",
+    "doubleCheckPassword": "Verifica dos veces tu contraseña",
+    "verifyAuthToken": "Verifica el token de autenticación si usas uno",
+    "ensureNodeAccepts": "Asegúrate de que el nodo acepte tus credenciales",
+    "networkTroubleshooting": "Solución de problemas de red:",
+    "checkInternet": "Verifica tu conexión a internet",
+    "verifyNodeOnline": "Verifica que el nodo esté en línea y accesible",
+    "trySwitchingConnection": "Intenta cambiar el tipo de conexión regtest si usas regtest",
+    "dismissAndRetry": "Descartar e intentar de nuevo",
+    "requiresRestart": "Requiere reinicio",
+    "apiUrlMissingParams": "Se requieren tanto la URL base como el endpoint",
+    "connectionVerifiedHeading": "✅ Conexión verificada:",
+    "creatingAccount": "Creando Cuenta...",
+    "finalizingSetup": "Finalizando Configuración...",
+    "processing": "Procesando...",
+    "unknownTestError": "Ocurrió un error desconocido al probar la conexión.",
+    "unknownConnectionError": "Ocurrió un error desconocido al conectar al nodo.",
+    "unexpectedError": "Error inesperado",
+    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (regtest de Bitfinex)",
+    "regtestTypeLocal": "local",
+    "regtestTypeBitfinex": "Bitfinex",
+    "connectionFailed": "Conexión fallida"
+  },
+  "mnemonicViewer": {
+    "unlockTitle": "Desbloquear Frase de Recuperación",
+    "displayTitle": "Tu Frase de Recuperación",
+    "unlockSubtitle": "Introduce tu contraseña para descifrar y ver tu frase de recuperación",
+    "displaySubtitle": "Mantén esta frase segura y en secreto",
+    "securityNoticeTitle": "Aviso de Seguridad",
+    "securityNoticeDescription": "Tu frase de recuperación está cifrada con la contraseña de tu billetera. Esto garantiza que solo tú puedas acceder a ella.",
+    "retrievedSuccess": "Frase de recuperación recuperada exitosamente",
+    "incorrectPassword": "Contraseña incorrecta o no hay mnemónico almacenado",
+    "decryptFailed": "Error al descifrar la frase de recuperación. Por favor verifica tu contraseña.",
+    "copyFailed": "Error al copiar al portapapeles",
+    "decrypting": "Descifrando...",
+    "viewButton": "Ver Frase de Recuperación",
+    "warningTitle": "⚠️ Advertencia de Seguridad Crítica",
+    "warningNeverShare": "Nunca compartas esta frase con nadie",
+    "warningControlWallet": "Cualquiera con esta frase puede controlar tu billetera",
+    "warningStoreSecurely": "Guárdala en un lugar seguro sin conexión",
+    "warningScreenPrivacy": "Asegúrate de que nadie pueda ver tu pantalla",
+    "recoveryPhraseHeading": "Tu Frase de Recuperación de 12 Palabras",
+    "copyButton": "Copiar al Portapapeles",
+    "copySuccessButton": "Copiado al Portapapeles",
+    "closeButton": "Cerrar y Ocultar"
+  },
+  "issueAssetModal": {
+    "title": "Emitir Nuevo Activo",
+    "note": "Nota: Emitir un nuevo activo requiere UTXOs coloreados. El proceso puede involucrar una transacción on-chain si no tienes suficientes UTXOs coloreados.",
+    "tickerLabel": "Símbolo Ticker",
+    "tickerPlaceholder": "BTC",
+    "nameLabel": "Nombre del Activo",
+    "namePlaceholder": "Bitcoin",
+    "amountLabel": "Cantidad a Emitir",
+    "amountPlaceholder": "100",
+    "precisionLabel": "Precisión (decimales)",
+    "precisionPlaceholder": "8",
+    "precisionError": "El valor de precisión debe estar entre 0 y 10.",
+    "previewPrefix": "Emitirás:",
+    "submit": "Emitir Activo",
+    "submitting": "Emitiendo...",
+    "success": "¡Activo emitido exitosamente!",
+    "failure": "Error al emitir el activo"
+  },
+  "updater": {
+    "checkingTitle": "Buscando Actualizaciones",
+    "checkingDescription": "Estamos buscando la última versión para garantizar que tengas la mejor experiencia.",
+    "errorTitle": "Error al Buscar Actualizaciones",
+    "errorGeneric": "No se pudieron buscar actualizaciones. Por favor, inténtalo de nuevo más tarde.",
+    "stuckError": "El proceso de actualización parece estar atascado. Por favor, inténtalo de nuevo.",
+    "timeoutError": "Se agotó el tiempo del proceso de actualización. Por favor, inténtalo de nuevo.",
+    "installError": "Error al instalar la actualización. Por favor, inténtalo de nuevo.",
+    "installToastError": "Error al instalar la actualización",
+    "tryAgain": "Intentar de Nuevo",
+    "downloadingTitle": "Descargando Actualización",
+    "versionLabel": "Versión",
+    "installWarning": "Por favor no cierres la aplicación durante la actualización",
+    "downloadedLabel": "Descargado",
+    "downloadingStatus": "Descargando...",
+    "installingStatus": "Instalando...",
+    "installingLabel": "Instalando...",
+    "cancelHelp": "¿Tienes problemas? Haz clic para cancelar e intentar de nuevo",
+    "cancelledError": "Actualización cancelada por el usuario",
+    "releaseNotesTitle": "Novedades",
+    "availableTitle": "¡Nueva Actualización Disponible!",
+    "releasedOn": "Publicado el {{date}}",
+    "installButton": "Descargar e Instalar",
+    "skipButton": "Omitir por ahora",
+    "recommendation": "Recomendamos actualizar para obtener las últimas funcionalidades y mejoras de seguridad.",
+    "completedTitle": "¡Actualización Lista! 🎉",
+    "completedDescription": "La versión {{version}} se ha descargado exitosamente.",
+    "completedSubtext": "Reinicia la aplicación para disfrutar de las últimas funcionalidades y mejoras.",
+    "restartButton": "Reiniciar Ahora",
+    "fileUnits": {
+      "bytes": "bytes",
+      "kilobytes": "kilobytes",
+      "megabytes": "megabytes",
+      "gigabytes": "gigabytes"
+    }
+  },
+  "buyChannel": {
+    "totalPayment": "Pago Total",
+    "expires": "Expira: {{time}}",
+    "lightningTab": "⚡ Lightning",
+    "onchainTab": "⛓️ En cadena",
+    "lightningInstructions": "Escanea el código QR o copia la factura para pagar con Lightning.",
+    "onchainInstructions": "Envía Bitcoin a la dirección a continuación. Requiere {{confirmations}} confirmación(es).",
+    "copySuccess": "¡Copiado al portapapeles!",
+    "copyInvoice": "Copiar Factura",
+    "copyAddress": "Copiar Dirección",
+    "lspFetchError": "Error al obtener datos del LSP. Por favor, inténtalo de nuevo más tarde.",
+    "createOrderError": "Ocurrió un error al crear la orden de canal",
+    "orderIdMissing": "No se pudo obtener el ID de la orden de la respuesta del servidor",
+    "lightningPaymentFailed": "Pago Lightning fallido",
+    "lightningPaymentSuccess": "¡Pago Lightning iniciado exitosamente!",
+    "onchainPaymentSuccess": "¡Pago on-chain enviado exitosamente!",
+    "paymentFailed": "Pago fallido: {{error}}",
+    "unknownError": "Error desconocido"
+  },
+  "websocket": {
+    "connectionLost": "Se perdió la conexión con el maker. Intentando reconectar...",
+    "serverError": "Error del servidor detectado. Intentando reconectar..."
+  },
+  "toolbar": {
+    "accounts": {
+      "fetchFailed": "Error al obtener las cuentas",
+      "updateSuccess": "Cuenta \"{{name}}\" actualizada exitosamente",
+      "updateFailed": "Error al actualizar la cuenta: {{error}}",
+      "deleteSuccess": "Cuenta \"{{name}}\" eliminada exitosamente",
+      "deleteFailed": "Error al eliminar la cuenta \"{{name}}\""
+    },
+    "nodes": {
+      "localNodeStarted": "Nodo local \"{{name}}\" iniciado exitosamente",
+      "startingLocalNode": "Iniciando nodo local...",
+      "stoppingExisting": "Deteniendo nodos existentes en puertos en conflicto...",
+      "existingStopped": "Nodos existentes detenidos exitosamente",
+      "startFailed": "Error al iniciar el nodo",
+      "startFailedWithReason": "Error al iniciar el nodo: {{error}}",
+      "portErrors": "Por favor corrige los errores de configuración de puerto",
+      "nodeUpdateSuccess": "Nodo \"{{name}}\" actualizado exitosamente",
+      "nodeUpdateFailed": "Error al actualizar el nodo"
+    }
+  },
+  "orderChannel": {
+    "step1": {
+      "checkPeerFailed": "Error al verificar el estado de conexión del peer",
+      "lspFetchSuccess": "Información del LSP obtenida exitosamente",
+      "lspUrlMissing": "Error al obtener la URL de conexión del LSP",
+      "lspFetchFailed": "Error al obtener la información del LSP",
+      "timeout": "Se agotó el tiempo de la solicitud. El servidor LSP no responde. Por favor verifica la URL e inténtalo de nuevo.",
+      "networkError": "Error de red. Por favor verifica tu conexión y la URL del LSP.",
+      "waitForConnectionUrl": "Por favor espera a que se obtenga la URL de conexión del LSP",
+      "alreadyConnected": "¿Continuar con el LSP?",
+      "alreadyConnectedToast": "Ya conectado al LSP",
+      "connectedSuccess": "Conectado exitosamente al LSP",
+      "kaleidoLspFetched": "Información del LSP de Kaleidoswap obtenida exitosamente",
+      "kaleidoLspFailed": "Error al seleccionar el LSP de Kaleidoswap",
+      "noDefaultLsp": "No hay URL de LSP predeterminada configurada para la red: {{network}}"
+    },
+    "step2": {
+      "fees": {
+        "fetchFailed": "Error al obtener los datos. Por favor, inténtalo de nuevo más tarde."
+      },
+      "capacityRequired": "Por favor introduce una capacidad de canal.",
+      "liquidityRequired": "Por favor introduce la liquidez de tu canal.",
+      "assetRequired": "Por favor selecciona un activo antes de continuar.",
+      "assetUnsupported": "El activo seleccionado no es compatible con este LSP. Por favor actualiza y selecciona un activo compatible.",
+      "assetAmountRequired": "Por favor introduce una cantidad de activo antes de continuar.",
+      "capacityAdjusted": "Capacidad del canal ajustada al mínimo: {{amount}} sats",
+      "liquidityAdjusted": "Liquidez del canal ajustada al mínimo: {{amount}} sats",
+      "assetAdjusted": "Cantidad de activo ajustada al mínimo: {{amount}} {{ticker}}",
+      "assetExceedsMax": "La cantidad excede el límite máximo de {{amount}} {{ticker}}. Por favor introduce una cantidad válida antes de continuar.",
+      "adjustmentsMade": "Algunos valores fueron ajustados para cumplir con los requisitos.",
+      "formError": "Hubo un error con los datos del formulario. Por favor verifica tus entradas.",
+      "unexpectedError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo."
+    },
+    "step3": {
+      "lightningSuccess": "¡Pago Lightning iniciado exitosamente!",
+      "onchainSuccess": "¡Pago on-chain enviado exitosamente!",
+      "paymentFailed": "Pago fallido: {{error}}",
+      "unknownError": "Error desconocido"
+    },
+    "orderCopy": "¡ID de orden copiado!",
+    "paymentCopied": "¡Detalles del pago copiados al portapapeles!"
+  },
+  "rootRoute": {
+    "connectionErrorTitle": "Error de Conexión",
+    "noWalletFound": "No se encontró billetera. Por favor configura tu billetera para continuar.",
+    "nodeNotRunning": "El nodo no está en ejecución. Por favor intenta reiniciar la aplicación.",
+    "returnToSetup": "Volver a Configuración de Billetera",
+    "connectingTitle": "Conectando al Nodo",
+    "connectingDescription": "Por favor espera mientras establecemos la conexión...",
+    "errorMessage": "Error: {{message}}"
+  },
+  "createUtxos": {
+    "title": "Crear UTXOs Coloreados",
+    "description": "Los UTXOs coloreados son necesarios para abrir canales lightning de activos RGB. Permiten la creación de canales de pago específicos para activos, habilitando transacciones rápidas y seguras de activos RGB sobre Lightning Network.",
+    "fields": {
+      "numberOfUtxos": "Número de UTXOs",
+      "numberPlaceholder": "Introduce la cantidad",
+      "sizeLabel": "Tamaño del UTXO (en satoshis)",
+      "sizePlaceholder": "Introduce el tamaño",
+      "feeRate": "Tarifa de Comisión"
+    },
+    "feeOptions": {
+      "slow": "Lenta ({{fee}} sat/vB)",
+      "normal": "Estándar ({{fee}} sat/vB)",
+      "fast": "Rápida ({{fee}} sat/vB)",
+      "custom": "Personalizada"
+    },
+    "availableBalance": "Saldo Disponible: {{amount}} sats",
+    "actions": {
+      "create": "Crear UTXOs"
+    },
+    "toastSuccess": "UTXOs creados exitosamente"
+  },
+  "legal": {
+    "common": {
+      "noticeTitle": "AVISO IMPORTANTE:"
+    },
+    "privacy": {
+      "title": "Política de Privacidad de KaleidoSwap",
+      "lastUpdated": "Última actualización: {{date}}",
+      "noticeBody": "Aunque el protocolo RGB y el protocolo RGB test net intentan incorporar mayor privacidad en las transacciones de tokens RGB o tokens RGB test net, según corresponda, ningún sistema de cifrado o mejora de privacidad es completamente seguro. El protocolo RGB y el protocolo RGB test net son protocolos experimentales y las Apps son aplicaciones de billetera experimentales para estos protocolos experimentales. Las Apps están sujetas a fallos y pueden contener defectos. Tus transacciones usando las Apps pueden quedar expuestas. No garantizamos ni podemos garantizar la seguridad de tus datos transmitidos a través de las Apps; cualquier transmisión es bajo tu propio riesgo.",
+      "error": "Error al cargar la política de privacidad"
+    },
+    "terms": {
+      "title": "TÉRMINOS DE USO DE KALEIDOSWAP TEST NET",
+      "effectiveDate": "Fecha de Vigencia: {{date}}",
+      "noticeItems": [
+        "LA APP OPERA EN EL PROTOCOLO RGB TEST NET Y LA BLOCKCHAIN BITCOIN TEST NET.",
+        "LA APP ES UNA APLICACIÓN DE BILLETERA DE ACTIVOS DIGITALES EXPERIMENTAL.",
+        "TODO USO DE LA APP ES BAJO TU PROPIO RIESGO.",
+        "NO DEBES USAR LA APP PARA ENVIAR O RECIBIR BTC TEST NET O TOKENS RGB TEST NET QUE NO ESTÉS PREPARADO PARA PERDER COMPLETAMENTE."
+      ],
+      "error": "Error al cargar los términos de servicio"
+    }
+  },
+  "tradeManual": {
+    "errors": {
+      "initializationFailed": "Error al inicializar el componente de intercambio manual. Por favor, inténtalo de nuevo."
+    },
+    "toast": {
+      "refreshSuccess": "Datos actualizados exitosamente",
+      "refreshError": "Error al actualizar los datos. Por favor, inténtalo de nuevo."
+    },
+    "roles": {
+      "maker": "Creador",
+      "taker": "Tomador"
+    },
+    "roleSelector": {
+      "title": "Tu Rol",
+      "refresh": "Actualizar datos",
+      "makerDescription": "Como <maker>maker</maker>, puedes iniciar y ejecutar intercambios. Cambia al rol <taker>taker</taker> para incluir en lista blanca intercambios entrantes.",
+      "takerDescription": "Como <taker>taker</taker>, puedes incluir en lista blanca intercambios entrantes. Cambia al rol <maker>maker</maker> para iniciar y ejecutar intercambios."
+    },
+    "swapExplanation": {
+      "title": "Cómo Funcionan los Intercambios Atómicos",
+      "cards": {
+        "trustless": {
+          "title": "Intercambio sin Confianza",
+          "description": "Los intercambios atómicos permiten a dos partes intercambiar diferentes activos sin tener que confiar el uno en el otro o usar un tercero."
+        },
+        "locks": {
+          "title": "Bloqueos Criptográficos",
+          "description": "El intercambio usa bloqueos hash criptográficos para asegurar que ambas partes reciban sus activos o ninguna lo haga."
+        },
+        "guarantee": {
+          "title": "Garantía Atómica",
+          "description": "La propiedad \"atómica\" asegura que el intercambio se complete totalmente o no se realice en absoluto, eliminando el riesgo de contraparte."
+        }
+      },
+      "process": {
+        "title": "Proceso de Intercambio",
+        "makerInitiates": {
+          "title": "El Maker Inicia",
+          "description": "El maker define los activos y cantidades a intercambiar y genera una cadena de intercambio."
+        },
+        "takerWhitelists": {
+          "title": "El Taker Aprueba",
+          "description": "El taker revisa los términos del intercambio e incluye en lista blanca la cadena de intercambio para aceptar el trade."
+        },
+        "makerExecutes": {
+          "title": "El Maker Ejecuta",
+          "description": "El maker ejecuta el intercambio, activando el intercambio atómico de activos entre ambas partes."
+        }
+      },
+      "makerRole": {
+        "title": "Rol de Maker",
+        "intro": "Como maker, puedes:",
+        "items": [
+          "Iniciar intercambios definiendo activos y cantidades",
+          "Generar y compartir cadenas de intercambio con takers",
+          "Ejecutar intercambios una vez que el taker te haya incluido en lista blanca",
+          "Controlar tanto la fase de inicio como de ejecución"
+        ]
+      },
+      "takerRole": {
+        "title": "Rol de Taker",
+        "intro": "Como taker, puedes:",
+        "items": [
+          "Recibir cadenas de intercambio de makers",
+          "Revisar los términos de intercambio propuestos",
+          "Incluir en lista blanca la cadena de intercambio para aceptar el trade",
+          "Esperar a que el maker ejecute el intercambio"
+        ]
+      },
+      "liquidity": {
+        "title": "Requisitos de Liquidez",
+        "intro": "Para que los intercambios atómicos tengan éxito, ambas partes necesitan:",
+        "items": [
+          "Liquidez suficiente de los activos que se intercambian en sus canales lightning",
+          "Liquidez Bitcoin para enrutar pagos entre el maker y el taker",
+          "Canales activos y equilibrados que conecten a ambas partes"
+        ],
+        "note": "Si la liquidez es insuficiente, el intercambio puede fallar incluso si ha sido correctamente incluido en lista blanca."
+      },
+      "collapsedHint": "Haz clic para expandir y aprender más sobre cómo funcionan los intercambios atómicos y los roles involucrados."
+    }
+  },
+  "channelCard": {
+    "infoModal": {
+      "title": "Información del Canal",
+      "fields": {
+        "channelId": "ID del Canal",
+        "fundingTx": "Transacción de Financiamiento",
+        "peerPubkey": "Clave Pública del Peer",
+        "shortChannelId": "ID Corto del Canal",
+        "status": "Estado",
+        "capacity": "Capacidad",
+        "localBalance": "Saldo Local",
+        "nextHtlcLimit": "Límite HTLC Siguiente",
+        "nextHtlcMinimum": "Mínimo HTLC Siguiente",
+        "publicChannel": "Canal Público",
+        "usable": "Utilizable",
+        "assetId": "ID del Activo",
+        "assetLocalAmount": "Cantidad Local del Activo",
+        "assetRemoteAmount": "Cantidad Remota del Activo"
+      },
+      "na": "N/D"
+    },
+    "status": {
+      "open": "Abierto",
+      "pending": "Pendiente"
+    },
+    "labels": {
+      "capacity": "Capacidad",
+      "bitcoinLiquidity": "Liquidez Bitcoin",
+      "assetLiquidity": "Liquidez {{ticker}}"
+    },
+    "buttons": {
+      "details": "Detalles",
+      "close": "Cerrar"
+    },
+    "tooltips": {
+      "info": "Información del canal"
+    }
+  },
+  "utxoManagement": {
+    "title": "Gestión de UTXOs",
+    "status": {
+      "colorable": "Coloreable",
+      "colored": "Coloreado",
+      "normal": "Normal"
+    },
+    "summary": {
+      "colorable": {
+        "title": "UTXOs Coloreables",
+        "bullets": [
+          "UTXO listo para RGB aún no asignado",
+          "Recibir activos RGB on-chain"
+        ]
+      },
+      "colored": {
+        "title": "UTXOs Coloreados",
+        "bullets": [
+          "Abrir canales Lightning RGB",
+          "Enviar activos RGB on-chain"
+        ]
+      },
+      "normal": {
+        "title": "UTXOs Normales",
+        "bullets": [
+          "Abrir canales Lightning Bitcoin",
+          "Transacciones regulares"
+        ]
+      },
+      "countLabel": "{{count}} UTXOs"
+    },
+    "card": {
+      "rgbAllocations": "Asignaciones RGB:"
+    },
+    "actions": {
+      "create": "Crear Nuevos UTXOs"
+    },
+    "sections": {
+      "colorable": "UTXOs Coloreables",
+      "colored": "UTXOs Coloreados",
+      "normal": "UTXOs Normales"
+    },
+    "empty": "No se encontraron UTXOs. Crea algunos para comenzar."
+  },
+  "updaterModal": {
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
+    "fileSizeZero": "0 bytes",
+    "errors": {
+      "timeout": "El proceso de actualización se agotó después de 5 minutos. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
+      "installFailed": "Error al instalar la actualización: {{message}}. Por favor inténtalo de nuevo o descarga manualmente desde GitHub.",
+      "cancelled": "Actualización cancelada por el usuario"
+    },
+    "common": {
+      "whatsNew": "Novedades"
+    },
+    "completed": {
+      "title": "¡Actualización Completa! 🎉",
+      "success": "La versión {{version}} se ha instalado exitosamente.",
+      "restartNote": "La aplicación se está reiniciando automáticamente para aplicar la actualización...",
+      "restarting": "Reiniciando...",
+      "manualRestart": "Si la aplicación no se reinicia automáticamente en unos segundos, por favor reiníciala manualmente para aplicar la actualización."
+    },
+    "installing": {
+      "title": "Descargando Actualización",
+      "versionLabel": "Versión {{version}}",
+      "warning": "Por favor no cierres la aplicación durante la actualización",
+      "downloadedLabel": "Descargado",
+      "downloading": "Descargando...",
+      "installing": "Instalando...",
+      "cancelHelp": "¿Tienes problemas? Haz clic para cancelar e intentar de nuevo"
+    },
+    "error": {
+      "title": "Actualización Fallida",
+      "retry": "Intentar de Nuevo"
+    },
+    "default": {
+      "title": "¡Actualización Disponible!",
+      "versionLabel": "Versión",
+      "releasedOn": "Publicado el {{date}}",
+      "installing": "Instalando...",
+      "installCta": "Descargar e Instalar",
+      "remindLater": "Quizás Más Tarde",
+      "recommendation": "Recomendamos actualizar para obtener las últimas funcionalidades y mejoras de seguridad."
+    }
+  },
+  "depositModal": {
+    "progress": {
+      "selectAsset": "Seleccionar Asset",
+      "details": "Detalles del Depósito"
+    },
+    "common": {
+      "continue": "Continuar",
+      "back": "Atrás",
+      "finish": "Finalizar"
+    },
+    "step1": {
+      "title": "Seleccionar Asset",
+      "subtitle": "Elige el asset que deseas depositar en tu billetera",
+      "selectorPlaceholder": "Selecciona un asset",
+      "newAssetLabel": "Nuevo Asset",
+      "searchPlaceholder": "Buscar assets...",
+      "addNewAsset": "Agregar Nuevo Asset",
+      "noResults": "No se encontraron assets que coincidan con \"{{query}}\"",
+      "selected": "Seleccionado",
+      "genericAsset": "Activo",
+      "newAssetInfo": "Si no conoces el ID del asset, puedes continuar sin introducirlo. El sistema generará una dirección de depósito que puede recibir cualquier asset RGB.",
+      "assetIdLabel": "ID del Asset (opcional)",
+      "assetIdPlaceholder": "Introduce el ID del asset (opcional)"
+    },
+    "step2": {
+      "titleWithTicker": "Depositar {{ticker}}",
+      "titleGeneric": "Depositar Asset",
+      "titleAny": "Depositar Cualquier Asset RGB",
+      "intro": "Elige tu método de depósito preferido y sigue los pasos a continuación",
+      "network": {
+        "onchain": "En cadena",
+        "lightning": "Lightning",
+        "requiresAsset": "Requiere ID de asset"
+      },
+      "privacy": {
+        "title": "Recibir con Privacidad",
+        "modePrivacy": "Usando UTXO ciego (privacidad mejorada)",
+        "modeWitness": "Usando dirección on-chain (recepción basada en witness)",
+        "privacyLabel": "Modo Privacidad:",
+        "privacyDescription": "Usa un UTXO coloreable y ciego para mayor privacidad. Requiere UTXOs coloreables disponibles.",
+        "witnessLabel": "Modo Witness:",
+        "witnessDescription": "Usa una dirección Bitcoin on-chain estándar. Más simple pero menos privado.",
+        "witnessNote": "Nota: Al recibir un asset RGB en un recibo witness, el remitente necesita agregar algunos sats para crear un nuevo UTXO para ti, donde se asignarán los assets RGB."
+      },
+      "networkInfo": {
+        "using": "Usando la red {{network}}",
+        "description": {
+          "signet": "Obtén monedas de prueba del faucet de Mutinynet para probar la aplicación.",
+          "regtest": "Obtén monedas de prueba del bot RGB Tools para probar la aplicación.",
+          "testnet": "Obtén monedas de prueba del faucet de testnet para probar la aplicación."
+        },
+        "button": {
+          "signet": "Visitar Faucet de Mutinynet",
+          "regtest": "Abrir Bot RGB Tools",
+          "testnet": "Visitar Faucet de Testnet"
+        }
+      },
+      "noColorable": {
+        "title": "Se Requieren UTXOs Coloreables",
+        "description": "Para recibir assets RGB on-chain, necesitas UTXOs coloreables.",
+        "cta": "Crear UTXOs Coloreables"
+      },
+      "actions": {
+        "copy": "Copiar al portapapeles",
+        "generateAddress": "Generar nueva dirección"
+      },
+      "labels": {
+        "lnInvoice": "Factura LN",
+        "btcAddress": "Dirección BTC",
+        "rgbInvoice": "Factura RGB"
+      },
+      "toasts": {
+        "generateAddressError": "Error al generar la dirección",
+        "rgbInvoiceError": "Error al generar la factura RGB: {{error}}",
+        "rgbInvoiceInvalid": "Error al generar la factura RGB: Respuesta no válida",
+        "rgbInvoiceUnknown": "Error al generar la factura RGB",
+        "invalidAmount": "Por favor, introduce una cantidad positiva válida",
+        "lnInvoiceError": "Error al generar la factura Lightning",
+        "addressCopied": "Dirección copiada al portapapeles",
+        "addressCopyError": "Error al copiar la dirección",
+        "recipientCopied": "ID del destinatario copiado al portapapeles",
+        "recipientCopyError": "Error al copiar el ID del destinatario",
+        "lightningSuccess": "¡Depósito Lightning recibido exitosamente!",
+        "lightningFailed": "Depósito Lightning fallido: {{status}}"
+      }
+    }
+  },
+  "tradeMarketMaker": {
+    "loading": {
+      "checkingBalance": "Checking wallet balance and requirements...",
+      "verifyingChannels": "Verifying channel availability and liquidity...",
+      "connectingMaker": "Connecting to market maker and fetching trading pairs...",
+      "initializingInfrastructure": "Initializing trading infrastructure...",
+      "connectingToMaker": "Connecting to Market Maker",
+      "initializingInterface": "Initializing Trading Interface"
+    },
+    "header": {
+      "liveTrading": "Live Trading",
+      "via": "via",
+      "ready": "Ready",
+      "noPairs": "No Pairs",
+      "noMaker": "No Maker",
+      "reconnect": "Reconnect"
+    },
+    "form": {
+      "youSend": "You Send",
+      "youReceive": "You Receive (Estimated)",
+      "available": "Available:",
+      "onchainAvailable": "Onchain Available:",
+      "canReceiveUpTo": "Can receive up to:",
+      "status": "Status:",
+      "channelNeeded": "Channel needed"
+    },
+    "banners": {
+      "tradingOnchain": "Trading with onchain balance",
+      "noChannelsYet": "You don't have any trading channels yet. When you buy an asset, a new channel will be created automatically using your onchain BTC balance.",
+      "channelNotReady": "Channel Not Ready: {{asset}}",
+      "channelsNotReady": "Channels Not Ready: {{assets}}",
+      "channelAwaiting": "Your {{asset}} channel is awaiting blockchain confirmation. You can view the trading pair, but swapping will be disabled until the channel is confirmed. This usually takes a few minutes.",
+      "channelsAwaiting": "Your {{assets}} {{channelText}} awaiting blockchain confirmation. You can view the trading pair, but swapping will be disabled until {{confirmText}} confirmed. This usually takes a few minutes.",
+      "additionalChannelsPending": "Additional Channels Pending",
+      "channelPendingConfirmation_one": "{{asset}} channel pending confirmation.",
+      "channelPendingConfirmation_other": "{{count}} channels ({{assets}}) pending confirmation."
+    },
+    "channelWarning": {
+      "title": "{{asset}} Channel Required",
+      "sendMessage": "To send {{asset}}, you need to create a Lightning channel for this asset.",
+      "receiveMessage": "To receive {{asset}}, you need to create a Lightning channel for this asset. The asset will be purchased at the current rate and deposited into your new channel."
+    },
+    "error": {
+      "title": "Trading Error",
+      "maxLimitExceeded": "Maximum Limit Exceeded",
+      "copyErrorMessage": "Copy error message",
+      "unableToGetQuote": "Unable to get quote from market maker. Please try again.",
+      "pairNotAvailable": "This trading pair is not currently available.",
+      "assetNotValid": "One of the selected assets is not valid.",
+      "unableToCalculateQuote": "Unable to calculate quote. Please try a different amount.",
+      "amountOutsideRange": "The amount you entered is outside the valid range for this trading pair.",
+      "amountMustBeBetween": "Amount must be between {{min}} and {{max}} {{asset}}.",
+      "swapDisabledOnchain": "Asset swapping is not available when trading with onchain balance. You can only buy assets with BTC.",
+      "cannotSwapSameAsset": "Cannot select {{asset}} for both assets",
+      "noTradingPairs": "No trading pairs available for {{asset}}",
+      "failedToFindPair": "Failed to find a valid trading pair",
+      "cannotSwapZeroAmounts": "Cannot swap zero amounts. Please enter a valid amount.",
+      "noValidQuote": "No valid quote available. Please try refreshing the quote.",
+      "channelAwaitingConfirmation": "Your {{asset}} channel is awaiting confirmation. Please wait for it to be ready before swapping.",
+      "noAssetChannel": "You don't have a {{asset}} channel. Please open a channel with {{asset}} to swap.",
+      "noAssetChannelReceive": "You don't have a {{asset}} channel. Please open a channel with {{asset}} to receive.",
+      "canOnlyReceiveUpTo": "You can only receive up to {{amount}} {{asset}}.",
+      "channelAwaitingPlural": "Channel for {{asset}} is awaiting confirmation. Please wait for it to be ready.",
+      "pleaseWaitChannelConfirmation": "Please wait for your channel to be confirmed before trading."
+    },
+    "swap": {
+      "exchangeRateQuote": "Exchange Rate & Quote",
+      "refresh": "↻ Refresh"
+    },
+    "noChannels": {
+      "insufficientBalance": "Insufficient Bitcoin Balance",
+      "insufficientBalanceMessage": "You need bitcoin to open a trading channel. Please deposit some BTC to get started with trading.",
+      "depositBitcoin": "Deposit Bitcoin",
+      "noChannelsAvailable": "No Channels Available",
+      "noChannelsMessage": "To start trading, you need to create a channel with some assets or buy one from a Lightning Service Provider.",
+      "createChannel": "Create Channel",
+      "buyFromLSP": "Buy from LSP"
+    },
+    "toast": {
+      "swapCompleted": "Swap completed successfully!",
+      "reconnectWait": "Please wait for the app to finish loading before reconnecting.",
+      "reconnectSuccess": "Reconnected to market maker successfully!",
+      "reconnectFailed": "Failed to reconnect to market maker. Please check the maker URL and your network connection.",
+      "reconnectError": "Failed to reconnect: {{error}}",
+      "channelOrderCreating": "Creating a channel order to buy your asset with onchain balance!",
+      "createAssetChannel": "Let's create a {{asset}} channel for you!",
+      "needChannelToTrade": "You need a channel to trade. Let's create one with your desired asset.",
+      "channelCreatedSuccess": "Channel created successfully! Refreshing...",
+      "failedToRefreshAmounts": "Failed to refresh amounts. Please try again.",
+      "initializationFailed": "Failed to initialize the trading interface. Please try again.",
+      "connectionError": "Connection error occurred. Trading may be limited.",
+      "connectionFailed": "Failed to establish live connection to market maker. Please check the maker URL and try again."
+    },
+    "assetConflict": {
+      "warning": "Warning: Multiple versions of \"{{ticker}}\" detected. Only one version will be available for trading.",
+      "multipleConflicts": "Found {{conflictCount}} asset conflicts. Excluded {{excludedPairs}} trading pairs. {{validPairs}} valid pairs available for trading.",
+      "noTradablePairs": "No tradable pairs available with this market maker. The maker does not offer trading pairs for assets you have channels with.",
+      "noValidPairs": "No valid trading pairs available after filtering asset conflicts.",
+      "tickerConflict": "Asset conflict detected: \"{{ticker}}\" has multiple asset IDs ({{assetIds}}). {{pairCount}} trading pairs excluded for safety.",
+      "assetInfo": "Found {{count}} asset conflicts. View the registry to see which assets are supported."
+    },
+    "validation": {
+      "insufficientBalance": "Insufficient balance. You don't have any {{asset}} available to send.",
+      "enterAmount": "Please enter an amount to send.",
+      "minimumOrderSize": "The minimum order size is {{amount}} {{asset}}.",
+      "maxSendAmount": "You can only send up to {{amount}} {{asset}}.",
+      "unableToReceive": "Unable to receive {{asset}}. No channel capacity available.",
+      "maxReceiveAmount": "You can only receive up to {{amount}} {{asset}}.",
+      "htlcLimit": "Due to channel constraints, you can only send up to {{amount}} {{asset}} in a single transaction.",
+      "minOrderSize": "The minimum order size for {{asset}} is {{amount}}.",
+      "maxOrderSize": "The maximum order size for {{asset}} is {{amount}}.",
+      "invalidAmount": "Invalid amount. Please check the minimum and maximum order sizes for this trading pair."
+    },
+    "swap": {
+      "errorDetailsClipboard": "Error details copied to clipboard",
+      "swapFailed": "Swap Failed: {{error}}"
+    }
+  },
+  "withdrawModal": {
+    "balance": {
+      "btcLabel": "Saldo BTC Disponible:",
+      "assetLabel": "Saldo {{ticker}} Disponible:",
+      "available": "Saldo Disponible:"
+    },
+    "form": {
+      "addressPlaceholder": "Pega una dirección Bitcoin, factura Lightning, dirección Lightning o factura RGB",
+      "addressRequired": "Se requiere dirección o factura",
+      "clear": "Limpiar",
+      "detected": {
+        "label": "Detectado:",
+        "types": {
+          "lightningInvoice": "Factura Lightning",
+          "lightningAddress": "Dirección Lightning",
+          "bitcoinAddress": "Dirección Bitcoin",
+          "rgbInvoice": "Factura RGB"
+        }
+      },
+      "lightningCapacity": {
+        "title": "Capacidad Lightning Máxima:",
+        "withdrawable": "Máximo Retirable (después de comisiones):"
+      },
+      "units": {
+        "sats": "satoshis"
+      },
+      "witness": {
+        "label": "Cantidad de Bitcoin (sats) para UTXO Witness",
+        "placeholder": "Introduce la cantidad en sats (mín: 512, ej., 1200)",
+        "errors": {
+          "min": "La cantidad debe ser al menos 512 sats",
+          "required": "Se requiere la cantidad witness"
+        },
+        "note": "Nota: Al enviar un asset RGB a un destinatario witness, necesitas agregar algunos Bitcoin para crear un nuevo UTXO para el destinatario donde se asignarán los assets RGB. Recomendado: 1000-2000 sats."
+      },
+      "assetSelector": {
+        "label": "Activo",
+        "placeholder": "Seleccionar Asset"
+      },
+      "amount": {
+        "label": "Cantidad",
+        "optionalLabel": "Cantidad (opcional)",
+        "requiredLabel": "Cantidad",
+        "precision": "Precisión: {{value}} decimales",
+        "example": "Introduce la cantidad (ej., 10.23 para {{ticker}})",
+        "maxLabel": "Máx: {{amount}} {{asset}}",
+        "maxPlaceholder": "Introduce la cantidad (máx {{amount}})",
+        "notAvailable": "N/D",
+        "maxButton": "Máx",
+        "equivalent": "Equivalente en {{unit}}:",
+        "exceedsAvailable": "La cantidad excede el saldo disponible. Haz clic en \"Máx\" para usar tu saldo completo.",
+        "lightningLimit": {
+          "title": "Límite Lightning:",
+          "description": "La cantidad máxima retirable está limitada por tu capacidad de canal y límites HTLC."
+        },
+        "rgbNote": "Nota: Se requieren 3,000 sats para transferencias de assets RGB.",
+        "noChannels": "Advertencia: No se encontraron canales Lightning activos. Los depósitos Lightning no están disponibles.",
+        "minBitcoinSat": "1 SAT",
+        "minBitcoinBtc": "0.00000001 BTC",
+        "minAssetAmount": "{{amount}} {{ticker}}"
+      },
+      "fees": {
+        "label": "Tarifa de Comisión",
+        "customLabel": "Tarifa de Comisión Personalizada (sat/vB)",
+        "options": {
+          "slow": "Lenta",
+          "normal": "Normal",
+          "fast": "Rápida",
+          "custom": "Personalizada"
+        }
+      },
+      "donation": {
+        "label": "Enviar como Regalo/Donación",
+        "description": "Las transferencias de regalo permiten el envío instantáneo sin validación del receptor. Útil para propinas y obsequios. Usar con precaución."
+      },
+      "status": {
+        "pending": "Esperando el pago...",
+        "success": "¡Pago recibido!",
+        "failed": "Pago fallido ({{status}})"
+      },
+      "actions": {
+        "copy": "Copiar al portapapeles",
+        "generateAddress": "Generar nueva dirección",
+        "generateInvoice": "Generar Factura",
+        "generateAddressCta": "Generar Dirección"
+      },
+      "submit": {
+        "lightning": "Pagar Factura",
+        "rgb": "Enviar Asset RGB",
+        "onchain": "Retirar"
+      }
+    },
+    "main": {
+      "title": {
+        "form": "Retirar Fondos",
+        "confirm": "Confirmar Retiro"
+      },
+      "subtitle": {
+        "form": "Envía tus fondos a una dirección Bitcoin, factura Lightning, dirección Lightning o factura RGB.",
+        "confirm": "Por favor revisa los detalles de tu retiro antes de confirmar."
+      },
+      "buttons": {
+        "cancel": "Cancelar"
+      },
+      "labels": {
+        "assetFallback": "activo",
+        "unknownAsset": "Desconocido"
+      },
+      "toasts": {
+        "lightningSuccess": "¡Pago Lightning exitoso!",
+        "btcSuccess": "Retiro de BTC exitoso",
+        "rgbSuccess": "Retiro de asset RGB exitoso"
+      },
+      "errors": {
+        "zeroBalance": "Error: Tienes saldo cero para {{asset}}. No se puede proceder con el retiro.",
+        "fetchBalance": "Error: No se pudo obtener el saldo de {{asset}}. No se puede proceder con el retiro.",
+        "assetMissing": "Error: No tienes este asset. No se puede proceder con el retiro.",
+        "fetchAssetBalance": "Error: No se pudo obtener el saldo de este asset. No se puede proceder con el retiro.",
+        "invoiceAssetCapacity": "Error: La factura solicita {{requested}} del asset {{asset}}… pero tu capacidad máxima de canal es solo {{capacity}}. No se puede proceder con el pago.",
+        "invoiceBtcCapacity": "Error: La factura requiere {{requested}} sats pero tu capacidad máxima de canal BTC es {{capacity}} sats. No se puede proceder con el pago.",
+        "invoiceExceedsBalance": "Error: El monto de la factura ({{amount}} sats) excede tu saldo disponible de {{balance}} {{unit}}. No se puede proceder con el pago.",
+        "invoiceExceedsCapacity": "Error: El monto de la factura ({{amount}} sats) excede tu capacidad de canal saliente ({{capacity}} sats). No se puede proceder con el pago.",
+        "rgbAssetMissing": "Error: No tienes el asset solicitado {{asset}}…. No se puede proceder con el pago.",
+        "paymentFailedGeneric": "Error: Pago fallido. Por favor verifica los detalles o inténtalo de nuevo.",
+        "paymentPendingTimeout": "Error: El pago sigue pendiente después de 60 segundos. Por favor verifica el estado manualmente o inténtalo de nuevo.",
+        "decodeRgbFailed": "No se pudo decodificar la factura RGB. Por favor verifica que la factura sea válida.",
+        "invalidFormat": "Formato de dirección no válido. Por favor introduce una dirección Bitcoin, factura Lightning, dirección Lightning o factura RGB válida.",
+        "decodeInputFailed": "No se pudo decodificar la entrada. Por favor verifica el formato de la dirección.",
+        "lightningCapacityNeeded": "Error: Capacidad saliente insuficiente. Se necesitan {{amount}} sats pero solo hay {{capacity}} sats disponibles.",
+        "invalidLightningInvoice": "Factura Lightning no válida.",
+        "rgbMissingRecipient": "La factura RGB decodificada no tiene un ID de destinatario.",
+        "rgbMissingTransport": "La factura RGB decodificada no tiene endpoints de transporte.",
+        "witnessAmountTooLow": "La cantidad witness debe ser al menos 512 sats para destinatarios witness.",
+        "proxyEndpointMissing": "El endpoint de transporte proxy no está configurado.",
+        "rgbPaymentFailed": "Pago de asset RGB fallido.",
+        "unknownPayment": "Error de pago desconocido",
+        "lightningImmediateFailure": "El pago falló inmediatamente con estado: {{status}}",
+        "lightningFailedDetailed": "Pago Lightning fallido: {{error}}",
+        "withdrawalFailedToast": "Retiro fallido: {{error}}",
+        "withdrawalFailedDetails": "Retiro fallido: {{error}}",
+        "withdrawalFailedDefault": "Retiro fallido",
+        "onchainExceedsBalance": "El monto del retiro ({{amount}}) excede el saldo disponible ({{balance}})",
+        "capacityToast": "No se puede proceder: El monto de la factura ({{amount}} sats) excede tu capacidad saliente ({{capacity}} sats)."
+      },
+      "warnings": {
+        "invoiceAdjusted": "Advertencia: La factura solicitó {{requested}} {{asset}} pero tu saldo es solo {{balance}} {{asset}}. Ajustado al monto máximo enviable.",
+        "noRgbAssets": "Advertencia: No hay assets RGB disponibles para enviar."
+      }
+    },
+    "details": {
+      "lightning": {
+        "title": "Detalles de la Factura Lightning",
+        "assetLabel": "Activo:",
+        "assetAmountLabel": "Cantidad del Asset:",
+        "lightningBalanceLabel": "Tu Saldo Lightning:",
+        "btcAmountLabel": "Cantidad BTC:",
+        "amountLabel": "Cantidad:",
+        "descriptionLabel": "Descripción:",
+        "descriptionPayment": "Pago #{{hash}}",
+        "descriptionFallback": "Sin descripción",
+        "expiresLabel": "Expira:",
+        "payeeLabel": "Beneficiario:",
+        "maxOutboundLabel": "Tu Máximo Saliente:",
+        "satValue": "{{value}} sat",
+        "capacityMin": "0 sat",
+        "capacityUsage": "Usando {{percentage}}% de capacidad",
+        "lowCapacityWarning": "Capacidad visible baja. Aún puedes intentar el pago, pero podría fallar.",
+        "withinCapacity": "El monto del pago está dentro de tu capacidad saliente",
+        "insufficientAsset": "{{ticker}} insuficiente en canales lightning para este pago."
+      },
+      "rgb": {
+        "title": "Detalles de la Factura RGB",
+        "assetLabel": "Activo:",
+        "requestedAmountLabel": "Cantidad Solicitada:",
+        "amountNotSpecified": "No especificado",
+        "amountHint": "💡 Puedes modificar la cantidad a continuación si es necesario",
+        "recipientLabel": "ID del Destinatario:",
+        "expiresLabel": "Expira:",
+        "transportLabel": "Transporte:",
+        "transportValue": "{{count}} puntos finales",
+        "balanceLabel": "Tu Saldo:"
+      }
+    },
+    "paymentStatus": {
+      "pending": "Pago en progreso...",
+      "succeeded": "¡Pago exitoso!",
+      "failed": "Pago fallido",
+      "expired": "Pago expirado"
+    },
+    "confirmation": {
+      "overlay": {
+        "title": "Pago Fallido",
+        "body": "Tu pago lightning no pudo ser procesado.",
+        "closing": "Cerrando automáticamente..."
+      },
+      "status": {
+        "checking": "Verificando estado del pago... Esto puede tomar un momento.",
+        "pending": "El pago está en progreso. Por favor espera mientras la Lightning Network procesa tu pago.",
+        "failedTitle": "Pago Fallido",
+        "failedDescription": "Tu pago Lightning no pudo ser procesado. Por favor verifica los detalles del error a continuación."
+      },
+      "labels": {
+        "type": "Tipo:",
+        "asset": "Activo:",
+        "amount": "Cantidad:",
+        "btcAmount": "Cantidad BTC:",
+        "transferType": "Tipo de Transferencia:",
+        "paymentHash": "Hash del Pago:",
+        "assetId": "ID del Asset:",
+        "assetAmount": "Cantidad del Asset:",
+        "feeRate": "Tarifa de Comisión:",
+        "invoice": "Factura:",
+        "address": "Dirección:"
+      },
+      "types": {
+        "lightning": "Pago Lightning",
+        "onchain": "Retiro On-chain"
+      },
+      "donation": "Regalo/Donación",
+      "rgbNotice": "Esta es una transferencia de asset RGB. El proceso puede tomar unos minutos en completarse y requiere confirmación del destinatario.",
+      "validation": {
+        "errorPrefix": "Error:",
+        "warningPrefix": "Advertencia:"
+      },
+      "buttons": {
+        "back": "Atrás",
+        "confirm": "Confirmar"
+      },
+      "fee": {
+        "custom": "{{rate}} sat/vB (Personalizada)",
+        "predefined": "{{rate}} sat/vB ({{label}})"
+      }
+    }
+  }
+}

@@ -1,9 +1,30 @@
 import Decimal from 'decimal.js'
+import i18n from 'i18next'
 
 import { NiaAsset } from '../slices/nodeApi/nodeApi.slice'
 
 export const SATOSHIS_PER_BTC = 100000000
 export const MSATS_PER_SAT = 1000
+
+/**
+ * Get the locale code for number formatting based on the current language
+ */
+export const getNumberLocale = (): string => {
+  const language = i18n.language || 'en'
+
+  // Map language codes to locale codes for number formatting
+  const localeMap: Record<string, string> = {
+    de: 'de-DE',
+    en: 'en-US',
+    es: 'es-ES',
+    fr: 'fr-FR',
+    it: 'it-IT',
+    ja: 'ja-JP',
+    zh: 'zh-CN',
+  }
+
+  return localeMap[language] || 'en-US'
+}
 
 export const msatToSat = (msats: number): number => msats / MSATS_PER_SAT
 export const satToMsat = (sats: number): number => sats * MSATS_PER_SAT
@@ -24,13 +45,14 @@ export const formatBitcoinAmount = (
   bitcoinUnit: string,
   precision: number = 8
 ): string => {
+  const locale = getNumberLocale()
   if (bitcoinUnit === 'SAT') {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
       useGrouping: true,
     }).format(Math.round(amount))
   } else {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       maximumFractionDigits: precision,
       minimumFractionDigits: precision,
       useGrouping: true,
@@ -56,13 +78,14 @@ export const formatAmount = (
   assets: NiaAsset[],
   bitcoinUnit: 'BTC' | 'SAT'
 ): string => {
+  const locale = getNumberLocale()
   const asset = assets.find((a) => a.ticker === asset_ticker) || {
     precision: 8,
   }
   if (asset_ticker === 'BTC') {
     return formatBitcoinAmount(amount, bitcoinUnit, asset.precision)
   } else {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       maximumFractionDigits: asset.precision,
       minimumFractionDigits: asset.precision,
       useGrouping: true,
@@ -88,6 +111,7 @@ export const parseAssetAmount = (
 }
 
 export const formatNumberInput = (value: string, precision: number): string => {
+  const locale = getNumberLocale()
   // Remove all characters except digits and decimal point
   let cleanValue = value.replace(/[^\d.]/g, '')
 
@@ -116,7 +140,7 @@ export const formatNumberInput = (value: string, precision: number): string => {
     }
 
     // Only format complete numbers
-    return num.toLocaleString('en-US', {
+    return num.toLocaleString(locale, {
       maximumFractionDigits: precision,
       minimumFractionDigits: 0,
     })
@@ -186,12 +210,13 @@ export const formatAssetAmountWithPrecision = (
   bitcoinUnit: string,
   assets?: NiaAsset[]
 ): string => {
+  const locale = getNumberLocale()
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
 
   // For precision 0, the amount is already in base units, no division needed
   // Example: amount = 3000, precision = 0 -> display as "3,000"
   if (precision === 0) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(locale, {
       maximumFractionDigits: 0,
       minimumFractionDigits: 0,
       useGrouping: true,
@@ -203,7 +228,7 @@ export const formatAssetAmountWithPrecision = (
   const divisor = Math.pow(10, precision)
   const formattedAmount = (amount / divisor).toFixed(precision)
 
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(locale, {
     maximumFractionDigits: precision,
     minimumFractionDigits: precision,
     useGrouping: true,
@@ -280,9 +305,10 @@ export const calculateExchangeRate = (
  * @returns Formatted exchange rate string
  */
 export const formatExchangeRate = (rate: number, precision: number): string => {
+  const locale = getNumberLocale()
   const adjustedPrecision = precision > 4 ? precision : 4
 
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat(locale, {
     maximumFractionDigits: adjustedPrecision,
     minimumFractionDigits: precision,
     useGrouping: true,
@@ -393,7 +419,8 @@ export const calculateAndFormatRate = (
   }
 
   // Format the rate with the determined precision
-  const formattedRate = new Intl.NumberFormat('en-US', {
+  const locale = getNumberLocale()
+  const formattedRate = new Intl.NumberFormat(locale, {
     maximumFractionDigits: displayPrecision,
     minimumFractionDigits: displayPrecision,
     useGrouping: true,

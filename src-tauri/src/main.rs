@@ -268,6 +268,7 @@ fn insert_account(
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
     bearer_token: Option<String>,
+    language: Option<String>,
 ) -> Result<usize, String> {
     match db::insert_account(
         name,
@@ -283,6 +284,7 @@ fn insert_account(
         daemon_listening_port,
         ldk_peer_listening_port,
         bearer_token,
+        language,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),
@@ -304,6 +306,7 @@ fn update_account(
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
     bearer_token: Option<String>,
+    language: Option<String>,
 ) -> Result<usize, String> {
     match db::update_account(
         name,
@@ -319,6 +322,7 @@ fn update_account(
         daemon_listening_port,
         ldk_peer_listening_port,
         bearer_token,
+        language,
     ) {
         Ok(num_rows) => Ok(num_rows),
         Err(e) => Err(e.to_string()),

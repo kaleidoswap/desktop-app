@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { PaymentStatusProps } from '../types'
 
@@ -8,6 +9,8 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({
   paymentStatus,
   isPollingStatus,
 }) => {
+  const { t } = useTranslation()
+
   if (!paymentStatus || !isPollingStatus) return null
 
   return (
@@ -25,21 +28,25 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({
           <>
             <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
             <span className="text-blue-400 text-sm">
-              Payment in progress...
+              {t('withdrawModal.paymentStatus.pending')}
             </span>
           </>
         )}
         {paymentStatus === 'Succeeded' && (
           <>
             <CheckCircle className="w-4 h-4 text-green-400" />
-            <span className="text-green-400 text-sm">Payment successful!</span>
+            <span className="text-green-400 text-sm">
+              {t('withdrawModal.paymentStatus.succeeded')}
+            </span>
           </>
         )}
         {(paymentStatus === 'Failed' || paymentStatus === 'Expired') && (
           <>
             <AlertTriangle className="w-4 h-4 text-red-400" />
             <span className="text-red-400 text-sm">
-              Payment {paymentStatus.toLowerCase()}
+              {paymentStatus === 'Failed'
+                ? t('withdrawModal.paymentStatus.failed')
+                : t('withdrawModal.paymentStatus.expired')}
             </span>
           </>
         )}

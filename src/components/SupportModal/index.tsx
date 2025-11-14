@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface SupportModalProps {
   isOpen: boolean
@@ -30,6 +31,7 @@ interface CommonIssue {
 }
 
 export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
+  const { t } = useTranslation()
   const [activeSection, setActiveSection] = useState('main')
   const [expandedIssue, setExpandedIssue] = useState<number | null>(null)
 
@@ -43,33 +45,33 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
   // Common issues for the troubleshooting section
   const COMMON_ISSUES: CommonIssue[] = [
     {
-      description: 'Problems connecting to your RGB Lightning Node',
+      description: t('supportModal.connectionIssues.description'),
       solutions: [
-        'Check that your node is running',
-        'Verify your connection settings in the Settings page',
-        'Ensure your firewall allows connections to the required ports',
-        'Try restarting your node',
+        t('supportModal.connectionIssues.solution1'),
+        t('supportModal.connectionIssues.solution2'),
+        t('supportModal.connectionIssues.solution3'),
+        t('supportModal.connectionIssues.solution4'),
       ],
-      title: 'Connection issues',
+      title: t('supportModal.connectionIssues.title'),
     },
     {
-      description: 'Issues when trying to create new payment channels',
+      description: t('supportModal.channelCreationFailures.description'),
       solutions: [
-        'Ensure you have sufficient Bitcoin balance',
-        'Check that your peer is online and accepting channels',
-        'Verify you and your peer are connected to the same RGB proxy server',
-        'Wait for any pending blockchain confirmations',
+        t('supportModal.channelCreationFailures.solution1'),
+        t('supportModal.channelCreationFailures.solution2'),
+        t('supportModal.channelCreationFailures.solution3'),
+        t('supportModal.channelCreationFailures.solution4'),
       ],
-      title: 'Channel creation failures',
+      title: t('supportModal.channelCreationFailures.title'),
     },
     {
-      description: 'Problems sending or receiving RGB payments',
+      description: t('supportModal.paymentFailures.description'),
       solutions: [
-        'Verify you have sufficient outbound liquidity in your channels',
-        'Check that have enough colored UTXOs in your wallet',
-        'Verify the invoice is correct and not expired',
+        t('supportModal.paymentFailures.solution1'),
+        t('supportModal.paymentFailures.solution2'),
+        t('supportModal.paymentFailures.solution3'),
       ],
-      title: 'Payment failures',
+      title: t('supportModal.paymentFailures.title'),
     },
   ]
 
@@ -98,10 +100,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
             <HelpCircle className="w-6 h-6 text-cyan" />
             <h2 className="text-xl font-bold text-white">
               {activeSection === 'main'
-                ? 'Support & Resources'
+                ? t('supportModal.title')
                 : activeSection === 'troubleshoot'
-                  ? 'Troubleshooting'
-                  : 'Support'}
+                  ? t('supportModal.troubleshooting')
+                  : t('supportModal.title')}
             </h2>
           </div>
           <button
@@ -117,10 +119,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
         <div className="p-6">
           {activeSection === 'main' && (
             <div className="space-y-6">
-              <p className="text-gray-300">
-                Need help with KaleidoSwap? Here are several ways to get
-                assistance:
-              </p>
+              <p className="text-gray-300">{t('supportModal.intro')}</p>
 
               {/* Support Options */}
               <div className="grid gap-4">
@@ -137,10 +136,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white">
-                        Documentation
+                        {t('supportModal.documentation')}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Comprehensive guides and tutorials
+                        {t('supportModal.documentationDesc')}
                       </p>
                     </div>
                     <ExternalLink className="w-5 h-5 text-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -162,10 +161,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white">
-                        Frequently Asked Questions
+                        {t('supportModal.faq')}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Find answers to common questions
+                        {t('supportModal.faqDesc')}
                       </p>
                     </div>
                     <ExternalLink className="w-5 h-5 text-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -183,10 +182,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white">
-                        Telegram Group
+                        {t('supportModal.telegramGroup')}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Join our community for support and discussion
+                        {t('supportModal.telegramGroupDesc')}
                       </p>
                     </div>
                     <ExternalLink className="w-5 h-5 text-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -208,10 +207,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white">
-                        GitHub Issues
+                        {t('supportModal.githubIssues')}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Report bugs or request new features
+                        {t('supportModal.githubIssuesDesc')}
                       </p>
                     </div>
                     <ExternalLink className="w-5 h-5 text-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -229,10 +228,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-white">
-                        Common Issues & Solutions
+                        {t('supportModal.commonIssues')}
                       </h3>
                       <p className="text-sm text-gray-400">
-                        Quick troubleshooting for common problems
+                        {t('supportModal.commonIssuesDesc')}
                       </p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -249,13 +248,11 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                 onClick={goBack}
               >
                 <ChevronRight className="w-4 h-4 rotate-180" />
-                <span>Back to Support Options</span>
+                <span>{t('supportModal.backToSupport')}</span>
               </button>
 
               <p className="text-gray-300 mb-4">
-                Here are some common issues and their solutions. If your issue
-                isn't listed here, please contact us through one of the support
-                channels.
+                {t('supportModal.troubleshootIntro')}
               </p>
 
               <div className="space-y-4">
@@ -283,7 +280,9 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                         {expandedIssue === index ? (
                           <X className="w-5 h-5" />
                         ) : (
-                          <span className="text-cyan">View Solutions</span>
+                          <span className="text-cyan">
+                            {t('supportModal.viewSolutions')}
+                          </span>
                         )}
                       </button>
                     </div>
@@ -291,7 +290,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     {expandedIssue === index && (
                       <div className="px-5 pb-5 pt-2 border-t border-divider/20 bg-blue-darkest/30">
                         <h4 className="text-sm font-semibold text-cyan mb-3">
-                          Solutions:
+                          {t('supportModal.solutions')}
                         </h4>
                         <ul className="space-y-2">
                           {issue.solutions.map((solution, sIndex) => (
@@ -312,8 +311,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
               <div className="p-5 bg-blue-darker/30 rounded-xl mt-4 border border-divider/20">
                 <p className="text-gray-300 mb-4">
-                  Still having issues? Get personalized help from our community
-                  and developers:
+                  {t('supportModal.stillHavingIssues')}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <button
@@ -321,7 +319,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     onClick={() => openExternalLink('https://t.me/kaleidoswap')}
                   >
                     <MessageCircle className="w-4 h-4" />
-                    Telegram Support
+                    {t('supportModal.telegramSupport')}
                   </button>
                   <button
                     className="px-4 py-2 bg-blue-dark text-cyan rounded-lg hover:bg-blue-dark/80 transition-colors flex items-center gap-2 text-sm"
@@ -332,7 +330,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                     }
                   >
                     <Github className="w-4 h-4" />
-                    Report an Issue
+                    {t('supportModal.reportIssue')}
                   </button>
                 </div>
               </div>
@@ -344,7 +342,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
         <div className="p-5 border-t border-divider/10 bg-blue-darkest">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <div className="text-sm text-gray-400">
-              Need more help?{' '}
+              {t('supportModal.needMoreHelp')}{' '}
               <button
                 className="text-cyan hover:underline"
                 onClick={() => {
@@ -359,14 +357,14 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                 className="px-4 py-2 bg-blue-dark/60 text-white rounded-lg hover:bg-blue-dark/80 transition-colors"
                 onClick={onClose}
               >
-                Close
+                {t('supportModal.close')}
               </button>
               {activeSection !== 'main' && (
                 <button
                   className="px-4 py-2 bg-cyan/20 text-cyan rounded-lg hover:bg-cyan/30 transition-colors"
                   onClick={goBack}
                 >
-                  Back
+                  {t('supportModal.back')}
                 </button>
               )}
             </div>

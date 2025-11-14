@@ -1,6 +1,7 @@
 import { Folder, Loader2 } from 'lucide-react'
 import React from 'react'
 import { Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 interface BackupModalProps {
   showModal: boolean
@@ -25,18 +26,20 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   onSelectFolder,
   setValue,
 }) => {
+  const { t } = useTranslation()
+
   if (!showModal) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-white">
-          Create Backup
+          {t('backupModal.title')}
         </h2>
         <form className="space-y-4" onSubmit={onSubmit}>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Backup File Path
+              {t('backupModal.backupFilePath')}
             </label>
             <div className="flex">
               <input
@@ -54,7 +57,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
               </button>
             </div>
             {formState.errors.backupPath && (
-              <p className="mt-1 text-sm text-red-500">Invalid backup path</p>
+              <p className="mt-1 text-sm text-red-500">
+                {t('backupModal.invalidBackupPath')}
+              </p>
             )}
           </div>
           <Controller
@@ -63,12 +68,12 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             render={({ field }) => (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Node Password
+                  {t('backupModal.nodePassword')}
                 </label>
                 <input
                   {...field}
                   className="w-full px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter node password"
+                  placeholder={t('backupModal.nodePasswordPlaceholder')}
                   type="password"
                 />
               </div>
@@ -80,9 +85,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
               </div>
               <p className="text-white text-center">
-                Please wait, the backup is in progress...
+                {t('backupModal.backupInProgressMessage')}
                 <br />
-                The node will be locked until the backup process is finished.
+                {t('backupModal.backupLockedMessage')}
               </p>
             </div>
           )}
@@ -93,14 +98,14 @@ export const BackupModal: React.FC<BackupModalProps> = ({
               onClick={onClose}
               type="button"
             >
-              Cancel
+              {t('backupModal.cancel')}
             </button>
             <button
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isBackupInProgress}
               type="submit"
             >
-              Create Backup
+              {t('backupModal.createBackup')}
             </button>
           </div>
         </form>

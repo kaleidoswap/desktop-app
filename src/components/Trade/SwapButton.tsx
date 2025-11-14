@@ -10,6 +10,7 @@ import {
   ShoppingCart,
 } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { twJoin } from 'tailwind-merge'
 
 interface SwapButtonProps {
@@ -43,33 +44,37 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   hasValidQuote = false,
   missingChannelAsset = null,
 }) => {
+  const { t } = useTranslation()
   // Check if we have an unconfirmed channel (channel pending confirmation)
   const hasUnconfirmedChannel = errorMessage?.includes('awaiting confirmation')
 
   const getButtonText = () => {
-    if (!wsConnected) return 'Connecting...'
+    if (!wsConnected) return t('trade.swapButton.connecting')
     // Only show "Buy channel" if there's truly no channel (not just unconfirmed)
     if (missingChannelAsset && !hasUnconfirmedChannel) {
-      return `Buy ${missingChannelAsset.asset} in Channel`
+      return t('trade.swapButton.buyChannel', {
+        asset: missingChannelAsset.asset,
+      })
     }
-    if (isQuoteLoading && !hasValidQuote) return 'Getting Latest Quote...'
+    if (isQuoteLoading && !hasValidQuote)
+      return t('trade.swapButton.gettingQuote')
     if (!hasValidQuote && (isToAmountLoading || isPriceLoading))
-      return 'Preparing Swap...'
-    if (!hasChannels) return 'No Channels Available'
-    if (!hasTradablePairs) return 'No Tradable Pairs'
+      return t('trade.swapButton.preparingSwap')
+    if (!hasChannels) return t('trade.swapButton.noChannels')
+    if (!hasTradablePairs) return t('trade.swapButton.noTradablePairs')
     if (errorMessage) {
       if (errorMessage.includes('You can only receive up to')) {
-        return 'Exceeds Max Receivable'
+        return t('trade.swapButton.exceedsMax')
       }
       if (hasUnconfirmedChannel) {
-        return 'Channel Awaiting Confirmation'
+        return t('trade.swapButton.channelAwaiting')
       }
-      return 'Invalid Amount'
+      return t('trade.swapButton.invalidAmount')
     }
-    if (hasZeroAmount) return 'Enter Amount'
-    if (isSwapInProgress) return 'Swap in Progress...'
-    if (!hasValidQuote) return 'Waiting for Quote...'
-    return 'Swap Now'
+    if (hasZeroAmount) return t('trade.swapButton.enterAmount')
+    if (isSwapInProgress) return t('trade.swapButton.swapInProgress')
+    if (!hasValidQuote) return t('trade.swapButton.waitingQuote')
+    return t('trade.swapButton.swapNow')
   }
 
   const getButtonIcon = () => {

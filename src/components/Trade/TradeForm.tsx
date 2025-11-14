@@ -1,5 +1,6 @@
 import { ArrowDownUp } from 'lucide-react'
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { twJoin } from 'tailwind-merge'
 
 import { logger } from '../../utils/logger'
@@ -58,6 +59,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   updateMinMaxAmounts,
   parseAssetAmount,
 }) => {
+  const { t } = useTranslation()
   const [isFromAmountLoading, setIsFromAmountLoading] = useState(false)
   const [isToAmountLoading, setIsToAmountLoading] = useState(false)
   const [isSwapping, setIsSwapping] = useState(false)
@@ -155,12 +157,12 @@ export const TradeForm: React.FC<TradeFormProps> = ({
               asset={form.getValues().fromAsset}
               assetOptions={getAssetOptions(form.getValues().toAsset)}
               availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
-              availableAmountLabel="Available:"
+              availableAmountLabel={t('trade.tradeForm.available')}
               disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
               formatAmount={formatAmount}
               getDisplayAsset={displayAsset}
               isLoading={isFromAmountLoading}
-              label="You Send"
+              label={t('trade.tradeForm.youSend')}
               maxAmount={maxFromAmount}
               maxHtlcAmount={max_outbound_htlc_sat}
               minAmount={minFromAmount}
@@ -201,12 +203,12 @@ export const TradeForm: React.FC<TradeFormProps> = ({
                 asset={form.getValues().toAsset}
                 assetOptions={getAssetOptions(form.getValues().fromAsset)}
                 availableAmount={`${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`}
-                availableAmountLabel="Can receive up to:"
+                availableAmountLabel={t('trade.tradeForm.canReceive')}
                 disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
                 formatAmount={formatAmount}
                 getDisplayAsset={displayAsset}
                 isLoading={isToAmountLoading}
-                label="You Receive (Estimated)"
+                label={t('trade.tradeForm.youReceive')}
                 maxAmount={maxToAmount}
                 onAmountChange={handleToAmountChange}
                 onAssetChange={(value) => handleAssetChange('toAsset', value)}

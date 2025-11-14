@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -38,12 +39,6 @@ import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
-
-const steps = [
-  { id: 'backup-selection', label: 'Backup Selection' },
-  { id: 'restoration', label: 'Restoration' },
-  { id: 'completion', label: 'Completion' },
-]
 
 const ModalType = {
   ERROR: 'error',
@@ -96,6 +91,8 @@ const StatusModal = ({
   autoCloseDelay = 3000,
   isOpen,
 }: StatusModalProps) => {
+  const { t } = useTranslation()
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     if (autoClose && isOpen) {
@@ -169,7 +166,9 @@ const StatusModal = ({
                 className={`px-4 py-2 rounded-lg ${config.buttonColor} text-white font-medium transition-colors duration-200`}
                 onClick={onClose}
               >
-                {type === ModalType.SUCCESS ? 'Continue' : 'Close'}
+                {type === ModalType.SUCCESS
+                  ? t('walletRestore.continue')
+                  : t('walletRestore.close')}
               </button>
             </div>
           </div>
@@ -180,11 +179,18 @@ const StatusModal = ({
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const [isStartingNode, setIsStartingNode] = useState(false)
   const [additionalErrors, setAdditionalErrors] = useState<string[]>([])
   const [currentStep, setCurrentStep] = useState<string>('backup-selection')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const isSubmitting = useRef(false)
+
+  const steps = [
+    { id: 'backup-selection', label: t('walletRestore.steps.backupSelection') },
+    { id: 'restoration', label: t('walletRestore.steps.restoration') },
+    { id: 'completion', label: t('walletRestore.steps.completion') },
+  ]
 
   const [modalState, setModalState] = useState<ModalState>({
     autoClose: false,
@@ -241,8 +247,8 @@ export const Component = () => {
       autoClose: true,
       details: '',
       isOpen: true,
-      message: 'Your wallet has been restored and is ready to use.',
-      title: 'Wallet Restored Successfully',
+      message: t('walletRestore.successMessage'),
+      title: t('walletRestore.successTitle'),
       type: ModalType.SUCCESS,
     })
   }
@@ -252,7 +258,7 @@ export const Component = () => {
       autoClose: false,
       details,
       isOpen: true,
-      message: 'There was a problem restoring your wallet.',
+      message: t('walletRestore.errorMessage'),
       title,
       type: ModalType.ERROR,
     })
@@ -266,7 +272,7 @@ export const Component = () => {
     setAdditionalErrors([])
 
     try {
-      let nodeInfoRes = await nodeInfo()
+      const nodeInfoRes = await nodeInfo()
       if (nodeInfoRes.isSuccess) {
         navigate(WALLET_DASHBOARD_PATH)
         return
@@ -274,13 +280,13 @@ export const Component = () => {
 
       // Validate required fields
       if (!data.backup_path) {
-        setAdditionalErrors(['Please select a backup file'])
+        setAdditionalErrors([t('walletRestore.selectBackupFile')])
         isSubmitting.current = false
         return
       }
 
       if (!data.password) {
-        setAdditionalErrors(['Password is required'])
+        setAdditionalErrors([t('walletRestore.passwordRequiredError')])
         isSubmitting.current = false
         return
       }
@@ -298,8 +304,8 @@ export const Component = () => {
       })
       if (accountExists) {
         showErrorModal(
-          'Account Already Exists',
-          'An account with this name already exists. Please choose a different name.'
+          t('walletRestore.accountExistsTitle'),
+          t('walletRestore.accountExistsMessage')
         )
         isSubmitting.current = false
         return
@@ -334,9 +340,9 @@ export const Component = () => {
             ldkPeerListeningPort: data.ldk_peer_listening_port,
             network: data.network,
           })
-          toast.success('Node started successfully!')
+          toast.success(t('walletRestore.nodeStartedSuccess'))
         } catch (error) {
-          toast.error(`Could not start node: ${error}`)
+          toast.error(t('walletRestore.couldNotStartNode', { error }))
           throw new Error(`Could not start node: ${error}`)
         }
 
@@ -355,6 +361,7 @@ export const Component = () => {
             defaultLspUrl: NETWORK_DEFAULTS[data.network].default_lsp_url,
             defaultMakerUrl,
             indexerUrl: data.indexer_url,
+            language: 'en',
             ldkPeerListeningPort: data.ldk_peer_listening_port,
             makerUrls: defaultMakerUrl,
             name: data.name,
@@ -371,24 +378,30 @@ export const Component = () => {
           showSuccessModal()
         } else {
           showErrorModal(
-            'Wallet Restore Failed',
+            t('walletRestore.errorTitle'),
             restoreResponse.error
-              ? `Error restoring wallet: ${JSON.stringify(restoreResponse.error)}`
-              : 'Failed to restore the wallet. Please check your backup file and password.'
+              ? t('walletRestore.errorRestoringWallet', {
+                  error: JSON.stringify(restoreResponse.error),
+                })
+              : t('walletRestore.failedToRestore')
           )
           await invoke('stop_node')
         }
       } catch (error) {
         await invoke('stop_node')
         showErrorModal(
-          'Node Operation Failed',
-          `Failed to start or operate the node: ${error instanceof Error ? error.message : String(error)}`
+          t('walletRestore.nodeOperationFailedTitle'),
+          t('walletRestore.failedToStartNode', {
+            error: error instanceof Error ? error.message : String(error),
+          })
         )
       }
     } catch (error) {
       showErrorModal(
-        'Unexpected Error',
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`
+        t('walletRestore.unexpectedErrorTitle'),
+        t('walletRestore.unexpectedError', {
+          error: error instanceof Error ? error.message : String(error),
+        })
       )
       await invoke('stop_node')
     } finally {
@@ -413,7 +426,7 @@ export const Component = () => {
         form.setValue('backup_path', selected)
       }
     } catch (error) {
-      toast.error('Failed to select backup file')
+      toast.error(t('walletRestore.failedToSelectBackup'))
     }
   }
 
@@ -424,8 +437,8 @@ export const Component = () => {
         icon={<ArrowLeftRight />}
         maxWidth="xl"
         onBack={() => navigate(WALLET_SETUP_PATH)}
-        subtitle="Restore your wallet from a backup file"
-        title="Restore Wallet"
+        subtitle={t('walletRestore.subtitle')}
+        title={t('walletRestore.title')}
       >
         <div className="mb-8">
           <StepIndicator currentStep={currentStep} steps={steps} />
@@ -439,7 +452,7 @@ export const Component = () => {
                   {additionalErrors.length > 0 && (
                     <Alert
                       icon={<AlertCircle className="w-5 h-5" />}
-                      title="Error"
+                      title={t('common.error')}
                       variant="error"
                     >
                       <ul className="text-sm space-y-1">
@@ -453,16 +466,16 @@ export const Component = () => {
                   )}
 
                   <FormField
-                    description="This name will be used to create your account folder"
+                    description={t('walletRestore.accountNameDescription')}
                     error={form.formState.errors.name?.message}
                     htmlFor="name"
-                    label="Account Name"
+                    label={t('walletRestore.accountName')}
                   >
                     <Input
                       id="name"
-                      placeholder="Enter a name for your account"
+                      placeholder={t('walletRestore.accountNamePlaceholder')}
                       {...form.register('name', {
-                        required: 'Account name is required',
+                        required: t('walletRestore.accountNameRequired'),
                       })}
                       error={!!form.formState.errors.name}
                     />
@@ -475,16 +488,16 @@ export const Component = () => {
                   />
 
                   <FormField
-                    description="Select the backup file for your wallet"
+                    description={t('walletRestore.backupFileDescription')}
                     error={form.formState.errors.backup_path?.message}
                     htmlFor="backup_path"
-                    label="Backup File"
+                    label={t('walletRestore.backupFile')}
                   >
                     <div className="flex items-center gap-2">
                       <Input
                         error={!!form.formState.errors.backup_path}
                         id="backup_path"
-                        placeholder="Select your backup file"
+                        placeholder={t('walletRestore.backupFilePlaceholder')}
                         readOnly
                         value={form.watch('backup_path')}
                       />
@@ -500,10 +513,10 @@ export const Component = () => {
                   </FormField>
 
                   <FormField
-                    description="Enter the password for your backup file"
+                    description={t('walletRestore.passwordDescription')}
                     error={form.formState.errors.password?.message}
                     htmlFor="password"
-                    label="Password"
+                    label={t('walletRestore.password')}
                   >
                     <PasswordInput
                       id="password"
@@ -511,9 +524,9 @@ export const Component = () => {
                       onToggleVisibility={() =>
                         setIsPasswordVisible(!isPasswordVisible)
                       }
-                      placeholder="Enter your password"
+                      placeholder={t('walletRestore.passwordPlaceholder')}
                       {...form.register('password', {
-                        required: 'Password is required',
+                        required: t('walletRestore.passwordRequired'),
                       })}
                       error={!!form.formState.errors.password}
                     />
@@ -534,10 +547,10 @@ export const Component = () => {
                     {isStartingNode ? (
                       <span className="flex items-center justify-center gap-2">
                         <Spinner size="sm" />
-                        Restoring...
+                        {t('walletRestore.restoring')}
                       </span>
                     ) : (
-                      'Restore Wallet'
+                      t('walletRestore.restoreWallet')
                     )}
                   </Button>
                 </div>
@@ -553,11 +566,10 @@ export const Component = () => {
                 <Spinner size="lg" />
               </div>
               <h3 className="text-xl font-medium mb-2">
-                Restoring Your Wallet
+                {t('walletRestore.restoringYourWallet')}
               </h3>
               <p className="text-gray-400">
-                Please wait while we restore your wallet from the backup file.
-                This may take a few minutes.
+                {t('walletRestore.restoringMessage')}
               </p>
             </div>
           </SetupSection>

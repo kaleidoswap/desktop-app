@@ -1,5 +1,6 @@
 import { AlertTriangle, Wallet, Info } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { CHANNELS_PATH } from '../../app/router/paths'
@@ -35,6 +36,7 @@ const initialFormState: TNewChannelForm = {
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [feeRates, setFeeRates] = useState(DEFAULT_FEE_RATES)
   const [formError, setFormError] = useState<string | null>(null)
@@ -88,12 +90,12 @@ export const Component = () => {
           slow: slowFee.fee_rate,
         })
       } catch (e) {
-        setFormError('Failed to fetch fee rates. Please try again.')
+        setFormError(t('createChannel.errorFetchFeeRates'))
       }
     }
 
     fetchFees()
-  }, [estimateFee, getNetworkInfo])
+  }, [estimateFee, getNetworkInfo, t])
 
   useEffect(() => {
     const checkInitialBalance = async () => {
@@ -106,33 +108,37 @@ export const Component = () => {
 
           setInsufficientBalance(totalSpendable < MIN_CHANNEL_CAPACITY)
         } else {
-          throw new Error('Failed to fetch balance')
+          throw new Error(t('createChannel.errorFetchBalance'))
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch balance')
+        setError(
+          err instanceof Error
+            ? err.message
+            : t('createChannel.errorFetchBalance')
+        )
       } finally {
         setIsLoading(false)
       }
     }
 
     checkInitialBalance()
-  }, [getBtcBalance])
+  }, [getBtcBalance, t])
 
   const validateForm = () => {
     if (!formData.pubKeyAndAddress) {
-      setFormError('Peer connection information is required')
+      setFormError(t('createChannel.errorPeerRequired'))
       return false
     }
 
     if (!formData.capacitySat || formData.capacitySat < MIN_CHANNEL_CAPACITY) {
       setFormError(
-        `Channel capacity must be at least ${MIN_CHANNEL_CAPACITY} satoshis`
+        t('createChannel.errorMinCapacity', { amount: MIN_CHANNEL_CAPACITY })
       )
       return false
     }
 
     if (!formData.fee) {
-      setFormError('Please select a fee rate')
+      setFormError(t('createChannel.errorFeeRequired'))
       return false
     }
 
@@ -202,7 +208,9 @@ export const Component = () => {
       <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
         <div className="flex justify-center items-center h-64">
           <Spinner color="#8FD5EA" overlay={false} size={120} />
-          <div className="ml-4 text-gray-400">Checking balance...</div>
+          <div className="ml-4 text-gray-400">
+            {t('createChannel.checkingBalance')}
+          </div>
         </div>
       </div>
     )
@@ -217,7 +225,7 @@ export const Component = () => {
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             onClick={() => window.location.reload()}
           >
-            Retry
+            {t('createChannel.retry')}
           </button>
         </div>
       </div>
@@ -238,14 +246,14 @@ export const Component = () => {
               </div>
               <div className="ml-2">
                 <p className="font-medium text-white text-sm">
-                  Peer Connection
+                  {t('createChannel.stepPeerConnection')}
                 </p>
                 <p className="text-xs text-gray-400">
                   {step === 1
-                    ? 'Current step'
+                    ? t('createChannel.currentStep')
                     : step > 1
-                      ? 'Completed'
-                      : 'Pending'}
+                      ? t('createChannel.completed')
+                      : t('createChannel.pending')}
                 </p>
               </div>
             </div>
@@ -264,14 +272,14 @@ export const Component = () => {
               </div>
               <div className="ml-2">
                 <p className="font-medium text-white text-sm">
-                  Channel Settings
+                  {t('createChannel.stepChannelSettings')}
                 </p>
                 <p className="text-xs text-gray-400">
                   {step === 2
-                    ? 'Current step'
+                    ? t('createChannel.currentStep')
                     : step > 2
-                      ? 'Completed'
-                      : 'Pending'}
+                      ? t('createChannel.completed')
+                      : t('createChannel.pending')}
                 </p>
               </div>
             </div>
@@ -290,14 +298,14 @@ export const Component = () => {
               </div>
               <div className="ml-2">
                 <p className="font-medium text-white text-sm">
-                  Review & Confirm
+                  {t('createChannel.stepReviewConfirm')}
                 </p>
                 <p className="text-xs text-gray-400">
                   {step === 3
-                    ? 'Current step'
+                    ? t('createChannel.currentStep')
                     : step > 3
-                      ? 'Completed'
-                      : 'Pending'}
+                      ? t('createChannel.completed')
+                      : t('createChannel.pending')}
                 </p>
               </div>
             </div>
@@ -315,9 +323,13 @@ export const Component = () => {
                 4
               </div>
               <div className="ml-2">
-                <p className="font-medium text-white text-sm">Complete</p>
+                <p className="font-medium text-white text-sm">
+                  {t('createChannel.stepComplete')}
+                </p>
                 <p className="text-xs text-gray-400">
-                  {step === 4 ? 'Current step' : 'Pending'}
+                  {step === 4
+                    ? t('createChannel.currentStep')
+                    : t('createChannel.pending')}
                 </p>
               </div>
             </div>
@@ -330,14 +342,12 @@ export const Component = () => {
               <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-3">
-              Insufficient Balance
+              {t('createChannel.insufficientBalance')}
             </h3>
             <p className="text-gray-300 mb-6 text-center max-w-md">
-              You need at least{' '}
-              <span className="font-medium text-white">
-                {MIN_CHANNEL_CAPACITY} satoshis
-              </span>{' '}
-              to open a channel. Please fund your wallet first.
+              {t('createChannel.insufficientBalanceMessage', {
+                amount: MIN_CHANNEL_CAPACITY,
+              })}
             </p>
             <div className="flex gap-4">
               <button
@@ -352,7 +362,7 @@ export const Component = () => {
                 }
               >
                 <Wallet className="h-5 w-5" />
-                Deposit
+                {t('createChannel.deposit')}
               </button>
             </div>
           </div>
@@ -402,11 +412,7 @@ export const Component = () => {
         {/* Info Section */}
         <div className="flex items-center space-x-2 text-sm text-gray-400 mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
           <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
-          <p>
-            Opening a channel requires an on-chain transaction. Make sure you
-            have sufficient Bitcoin balance to cover the channel capacity and
-            transaction fees.
-          </p>
+          <p>{t('createChannel.infoMessage')}</p>
         </div>
       </div>
 

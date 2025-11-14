@@ -1,6 +1,7 @@
 import { RefreshCw, Wallet, Info } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../app/store/hooks'
@@ -22,6 +23,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
   formatAmount,
   getAssetPrecision: propsGetAssetPrecision,
 }) => {
+  const { t } = useTranslation()
   const [swapDetails, setSwapDetails] = useState<any>(null)
   const [isWhitelisting, setIsWhitelisting] = useState(false)
   const [isDecoding, setIsDecoding] = useState(false)
@@ -108,10 +110,10 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       }
 
       setAssetBalances(newBalances)
-      toast.success('Asset balances updated')
+      toast.success(t('trade.taker.balancesUpdated'))
     } catch (error) {
       console.error('Failed to fetch asset balances:', error)
-      toast.error('Failed to fetch asset balances')
+      toast.error(t('trade.taker.balancesFailed'))
     } finally {
       setIsLoadingBalances(false)
       setIsRefreshing(false)
@@ -156,7 +158,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
 
   const onWhitelistMaker = async () => {
     if (!swapString) {
-      toast.error('Please enter a swap string')
+      toast.error(t('trade.taker.missingSwapString'))
       return
     }
 
@@ -167,11 +169,11 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
         swapstring: swapString,
       })
 
-      toast.success('Trade whitelisted successfully')
+      toast.success(t('trade.taker.whitelistSuccess'))
       setWhitelistSuccess(true)
     } catch (error) {
       console.error('Failed to whitelist trade:', error)
-      toast.error('Failed to whitelist trade. Please try again.')
+      toast.error(t('trade.taker.whitelistFailed'))
     } finally {
       setIsWhitelisting(false)
     }
@@ -449,7 +451,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                         className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 transition-colors"
                         onClick={() => {
                           navigator.clipboard.writeText(nodeInfoData.pubkey)
-                          toast.success('Public key copied to clipboard')
+                          toast.success(t('trade.taker.pubkeyCopied'))
                         }}
                         title="Copy to clipboard"
                       >

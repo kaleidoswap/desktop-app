@@ -1,5 +1,6 @@
 import { Coins, Search, RefreshCw, Copy, ArrowDownRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -37,6 +38,7 @@ const getAssignmentAmount = (
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const urlAssetId = searchParams.get('assetId')
 
@@ -167,11 +169,11 @@ export const Component = () => {
     }
   }
 
-  const copyToClipboard = (text: string, message: string) => {
+  const copyToClipboard = (text: string, translationKey: string) => {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        toast.success(message)
+        toast.success(t(translationKey))
       })
       .catch((err) => {
         console.error('Failed to copy:', err)
@@ -261,10 +263,7 @@ export const Component = () => {
                   <button
                     className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
                     onClick={() =>
-                      copyToClipboard(
-                        selectedAssetId,
-                        'Asset ID copied to clipboard'
-                      )
+                      copyToClipboard(selectedAssetId, 'assets.assetIdCopied')
                     }
                   >
                     <Copy className="h-3.5 w-3.5" />
@@ -285,7 +284,7 @@ export const Component = () => {
                 size="sm"
                 variant="outline"
               >
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                {isRefreshing ? t('assets.refreshing') : t('assets.refresh')}
               </Button>
             </div>
           </div>
@@ -298,7 +297,7 @@ export const Component = () => {
               <input
                 className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search transactions..."
+                placeholder={t('assets.searchPlaceholder')}
                 type="text"
                 value={searchTerm}
               />
@@ -310,10 +309,10 @@ export const Component = () => {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 value={typeFilter}
               >
-                <option value="all">All Types</option>
-                <option value="sent">Sent</option>
-                <option value="received">Received</option>
-                <option value="issuance">Issuance</option>
+                <option value="all">{t('assets.allTypes')}</option>
+                <option value="sent">{t('assets.sent')}</option>
+                <option value="received">{t('assets.received')}</option>
+                <option value="issuance">{t('assets.issuance')}</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <ArrowDownRight className="h-4 w-4 text-gray-400" />
@@ -342,7 +341,7 @@ export const Component = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 value={statusFilter}
               >
-                <option value="all">All Statuses</option>
+                <option value="all">{t('assets.allStatuses')}</option>
                 {uniqueStatuses.map((status) => (
                   <option key={status} value={status}>
                     {status}
@@ -422,7 +421,7 @@ export const Component = () => {
                     </Badge>
                   ),
                   className: 'col-span-1',
-                  header: 'Type',
+                  header: t('assets.type'),
                 },
                 {
                   accessor: (transfer: Transfer) => (
@@ -436,13 +435,13 @@ export const Component = () => {
                     </span>
                   ),
                   className: 'col-span-1',
-                  header: 'Amount',
+                  header: t('assets.amount'),
                 },
                 {
                   accessor: (transfer: Transfer) =>
                     renderDateField(transfer.created_at * 1000),
                   className: 'col-span-1',
-                  header: 'Date',
+                  header: t('assets.date'),
                 },
                 {
                   accessor: (transfer: Transfer) =>
@@ -450,10 +449,10 @@ export const Component = () => {
                       transfer.txid,
                       true,
                       4,
-                      'Transaction ID'
+                      t('assets.transactionId')
                     ),
                   className: 'col-span-1',
-                  header: 'Transaction ID',
+                  header: t('assets.transactionId'),
                 },
                 {
                   accessor: (transfer: Transfer) =>
@@ -462,15 +461,15 @@ export const Component = () => {
                       getStatusBadgeVariant(transfer.status)
                     ),
                   className: 'col-span-1',
-                  header: 'Status',
+                  header: t('assets.status'),
                 },
               ]}
               data={filteredTransfers}
               emptyState={
                 <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
                   {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                    ? 'No transfers found matching your search criteria'
-                    : 'No transfers found for this asset'}
+                    ? t('assets.noTransfersFiltered')
+                    : t('assets.noTransfers')}
                   {(searchTerm ||
                     statusFilter !== 'all' ||
                     typeFilter !== 'all') && (
@@ -484,7 +483,7 @@ export const Component = () => {
                       size="sm"
                       variant="outline"
                     >
-                      Clear Filters
+                      {t('assets.clearFilters')}
                     </Button>
                   )}
                 </div>
@@ -505,8 +504,8 @@ export const Component = () => {
             <div className="py-12 text-center">
               <p className="text-gray-400">
                 {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                  ? 'No transfers found matching your search criteria'
-                  : 'No transfers found for this asset'}
+                  ? t('assets.noTransfersFiltered')
+                  : t('assets.noTransfers')}
               </p>
               {(searchTerm ||
                 statusFilter !== 'all' ||
@@ -521,7 +520,7 @@ export const Component = () => {
                   size="sm"
                   variant="outline"
                 >
-                  Clear Filters
+                  {t('assets.clearFilters')}
                 </Button>
               )}
             </div>
@@ -538,11 +537,11 @@ export const Component = () => {
                   <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
                     <div>
                       <h4 className="text-sm font-medium text-gray-300 mb-1">
-                        Transaction Details
+                        {t('assets.transactionDetails')}
                       </h4>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400">
-                          Transaction ID:
+                          {t('assets.transactionIdLabel')}
                         </span>
                         <div className="flex items-center">
                           <span className="text-xs text-gray-300">
@@ -554,7 +553,7 @@ export const Component = () => {
                               e.stopPropagation()
                               copyToClipboard(
                                 transfer.txid,
-                                'Transaction ID copied to clipboard'
+                                'assets.transactionIdCopied'
                               )
                             }}
                           >
@@ -565,7 +564,9 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Amount:</span>
+                      <span className="text-xs text-gray-400">
+                        {t('assets.amountLabel')}
+                      </span>
                       <span
                         className={`text-xs ${getKindColor(transfer.kind)}`}
                       >
@@ -578,21 +579,27 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Type:</span>
+                      <span className="text-xs text-gray-400">
+                        {t('assets.typeLabel')}
+                      </span>
                       <Badge variant={getKindBadgeVariant(transfer.kind)}>
                         {getKindLabel(transfer.kind)}
                       </Badge>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Status:</span>
+                      <span className="text-xs text-gray-400">
+                        {t('assets.statusLabel')}
+                      </span>
                       <Badge variant={getStatusBadgeVariant(transfer.status)}>
                         {transfer.status}
                       </Badge>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Date:</span>
+                      <span className="text-xs text-gray-400">
+                        {t('assets.dateLabel')}
+                      </span>
                       <span className="text-xs text-gray-300">
                         {formatDate(transfer.created_at * 1000)}
                       </span>
@@ -601,7 +608,7 @@ export const Component = () => {
                     {transfer.recipient_id && (
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400">
-                          Recipient ID:
+                          {t('assets.recipientIdLabel')}
                         </span>
                         <div className="flex items-center">
                           <span className="text-xs text-gray-300 truncate max-w-[200px]">
@@ -613,7 +620,7 @@ export const Component = () => {
                               e.stopPropagation()
                               copyToClipboard(
                                 transfer.recipient_id || '',
-                                'Recipient ID copied to clipboard'
+                                'assets.recipientIdCopied'
                               )
                             }}
                           >

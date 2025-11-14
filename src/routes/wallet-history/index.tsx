@@ -7,6 +7,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { twJoin } from 'tailwind-merge'
 
@@ -17,39 +18,6 @@ import {
   WALLET_HISTORY_TRADES_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
 } from '../../app/router/paths'
-
-const TABS = [
-  {
-    color: 'green',
-    icon: <ArrowDown className="w-5 h-5" />,
-    label: 'Deposits',
-    path: WALLET_HISTORY_DEPOSITS_PATH,
-  },
-  {
-    color: 'red',
-    icon: <ArrowUp className="w-5 h-5" />,
-    label: 'Payments & Withdrawals',
-    path: WALLET_HISTORY_WITHDRAWALS_PATH,
-  },
-  {
-    color: 'blue',
-    icon: <ArrowDownUp className="w-5 h-5" />,
-    label: 'Swaps',
-    path: WALLET_HISTORY_TRADES_PATH,
-  },
-  {
-    color: 'purple',
-    icon: <Coins className="w-5 h-5" />,
-    label: 'Assets',
-    path: WALLET_HISTORY_ASSETS_PATH,
-  },
-  {
-    color: 'orange',
-    icon: <ArrowDownUp className="w-5 h-5" />,
-    label: 'Channel Orders',
-    path: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
-  },
-]
 
 const getIndicatorColor = (color: string) => {
   switch (color) {
@@ -82,8 +50,42 @@ const getIconBgColor = (color: string) => {
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const TABS = [
+    {
+      color: 'green',
+      icon: <ArrowDown className="w-5 h-5" />,
+      label: t('history.deposits'),
+      path: WALLET_HISTORY_DEPOSITS_PATH,
+    },
+    {
+      color: 'red',
+      icon: <ArrowUp className="w-5 h-5" />,
+      label: t('history.paymentsWithdrawals'),
+      path: WALLET_HISTORY_WITHDRAWALS_PATH,
+    },
+    {
+      color: 'blue',
+      icon: <ArrowDownUp className="w-5 h-5" />,
+      label: t('history.swaps'),
+      path: WALLET_HISTORY_TRADES_PATH,
+    },
+    {
+      color: 'purple',
+      icon: <Coins className="w-5 h-5" />,
+      label: t('history.assets'),
+      path: WALLET_HISTORY_ASSETS_PATH,
+    },
+    {
+      color: 'orange',
+      icon: <ArrowDownUp className="w-5 h-5" />,
+      label: t('history.channelOrders'),
+      path: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
+    },
+  ]
 
   const activeTabData = TABS.find((tab) =>
     location.pathname.startsWith(tab.path)
@@ -92,10 +94,7 @@ export const Component = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="mb-6">
-        <p className="text-slate-400 text-sm">
-          View your transaction history, including deposits, payments,
-          withdrawals, and swaps.
-        </p>
+        <p className="text-slate-400 text-sm">{t('history.description')}</p>
       </div>
 
       {/* Desktop Tabs */}

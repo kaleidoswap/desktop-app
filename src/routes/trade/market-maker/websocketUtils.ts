@@ -4,7 +4,7 @@ import { webSocketService } from '../../../app/hubs/websocketService'
 import { logger } from '../../../utils/logger'
 
 // Rate limiting backoff parameters
-let rateLimit = {
+const rateLimit = {
   attempts: 0,
   baseDelay: 500,
   currentDelay: 500,

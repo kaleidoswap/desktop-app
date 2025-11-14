@@ -1,7 +1,7 @@
 import { Link as ChainIcon } from 'lucide-react'
 
 import { formatBitcoinAmount } from '../../helpers/number'
-import { OverlayTooltip , LoadingPlaceholder } from '../ui'
+import { OverlayTooltip, LoadingPlaceholder } from '../ui'
 
 export const OnChainDetailsOverlay = ({
   onChainBalance,

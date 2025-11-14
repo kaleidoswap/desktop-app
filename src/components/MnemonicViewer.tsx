@@ -10,6 +10,7 @@ import {
   Shield,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { Button } from './ui'
@@ -23,6 +24,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation()
   const [step, setStep] = useState<'password' | 'display'>('password')
   const [password, setPassword] = useState('')
   const [mnemonic, setMnemonic] = useState<string | null>(null)
@@ -47,7 +49,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
     e.preventDefault()
 
     if (!password) {
-      setError('Password is required')
+      setError(t('walletUnlock.passwordRequired'))
       return
     }
 
@@ -61,16 +63,14 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
       setMnemonic(decryptedMnemonic)
       setStep('display')
-      toast.success('Recovery phrase retrieved successfully')
+      toast.success(t('mnemonicViewer.retrievedSuccess'))
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.toString()
-          : 'Incorrect password or no mnemonic stored'
+          : t('mnemonicViewer.incorrectPassword')
       setError(errorMessage)
-      toast.error(
-        'Failed to decrypt recovery phrase. Please check your password.'
-      )
+      toast.error(t('mnemonicViewer.decryptFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -82,10 +82,10 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
     try {
       await navigator.clipboard.writeText(mnemonic)
       setCopied(true)
-      toast.success('Recovery phrase copied to clipboard')
+      toast.success(t('walletInit.mnemonicStep.mnemonicCopied'))
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      toast.error('Failed to copy to clipboard')
+      toast.error(t('mnemonicViewer.copyFailed'))
     }
   }
 
@@ -110,13 +110,13 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-white">
                   {step === 'password'
-                    ? 'Unlock Recovery Phrase'
-                    : 'Your Recovery Phrase'}
+                    ? t('mnemonicViewer.unlockTitle')
+                    : t('mnemonicViewer.displayTitle')}
                 </h2>
                 <p className="text-sm text-gray-400">
                   {step === 'password'
-                    ? 'Enter your password to decrypt and view your recovery phrase'
-                    : 'Keep this phrase safe and secret'}
+                    ? t('mnemonicViewer.unlockSubtitle')
+                    : t('mnemonicViewer.displaySubtitle')}
                 </p>
               </div>
             </div>
@@ -139,11 +139,10 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   <Lock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h4 className="text-sm font-semibold text-blue-400 mb-1">
-                      Security Notice
+                      {t('mnemonicViewer.securityNoticeTitle')}
                     </h4>
                     <p className="text-xs text-blue-200/80">
-                      Your recovery phrase is encrypted with your wallet
-                      password. This ensures that only you can access it.
+                      {t('mnemonicViewer.securityNoticeDescription')}
                     </p>
                   </div>
                 </div>
@@ -151,7 +150,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Wallet Password
+                  {t('walletUnlock.walletPassword')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -163,7 +162,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                       setPassword(e.target.value)
                       setError(null)
                     }}
-                    placeholder="Enter your wallet password"
+                    placeholder={t('walletUnlock.passwordPlaceholder')}
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                   />
@@ -196,7 +195,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   onClick={handleClose}
                   type="button"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -206,12 +205,12 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   {isLoading ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      Decrypting...
+                      {t('mnemonicViewer.decrypting')}
                     </>
                   ) : (
                     <>
                       <Eye className="w-5 h-5 mr-2" />
-                      View Recovery Phrase
+                      {t('mnemonicViewer.viewButton')}
                     </>
                   )}
                 </Button>
@@ -226,13 +225,13 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
                   <div className="flex-1">
                     <h4 className="text-base font-bold text-yellow-400 mb-2">
-                      ⚠️ Critical Security Warning
+                      {t('mnemonicViewer.warningTitle')}
                     </h4>
                     <ul className="text-sm text-yellow-200/90 space-y-1 list-disc list-inside">
-                      <li>Never share this phrase with anyone</li>
-                      <li>Anyone with this phrase can control your wallet</li>
-                      <li>Store it in a secure location offline</li>
-                      <li>Make sure no one can see your screen</li>
+                      <li>{t('mnemonicViewer.warningNeverShare')}</li>
+                      <li>{t('mnemonicViewer.warningControlWallet')}</li>
+                      <li>{t('mnemonicViewer.warningStoreSecurely')}</li>
+                      <li>{t('mnemonicViewer.warningScreenPrivacy')}</li>
                     </ul>
                   </div>
                 </div>
@@ -241,7 +240,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               {/* Mnemonic Grid */}
               <div className="bg-gray-800/50 border-2 border-gray-700 rounded-xl p-6">
                 <h3 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wide">
-                  Your 12-Word Recovery Phrase
+                  {t('mnemonicViewer.recoveryPhraseHeading')}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {mnemonicWords.map((word, index) => (
@@ -269,12 +268,12 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   {copied ? (
                     <>
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Copied to Clipboard
+                      {t('mnemonicViewer.copySuccessButton')}
                     </>
                   ) : (
                     <>
                       <Copy className="w-5 h-5 mr-2" />
-                      Copy to Clipboard
+                      {t('mnemonicViewer.copyButton')}
                     </>
                   )}
                 </Button>
@@ -283,7 +282,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   onClick={handleClose}
                 >
                   <EyeOff className="w-5 h-5 mr-2" />
-                  Close & Hide
+                  {t('mnemonicViewer.closeButton')}
                 </Button>
               </div>
             </div>

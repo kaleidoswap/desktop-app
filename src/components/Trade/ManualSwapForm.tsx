@@ -1,6 +1,7 @@
 import { Copy, RefreshCw, Wallet, Info } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../app/store/hooks'
@@ -39,6 +40,7 @@ interface FormValues {
 }
 
 export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
+  const { t } = useTranslation()
   const [swapString, setSwapString] = useState<string>('')
   const [paymentSecret, setPaymentSecret] = useState<string>('')
   const [swapInitiated, setSwapInitiated] = useState(false)
@@ -158,9 +160,9 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       }
 
       setAssetBalances(newBalances)
-      toast.success('Asset balances updated')
+      toast.success(t('trade.manual.balancesUpdated'))
     } catch (error) {
-      toast.error('Failed to fetch asset balances')
+      toast.error(t('trade.manual.balancesFailed'))
     } finally {
       setIsLoadingBalances(false)
       setIsRefreshing(false)
@@ -342,8 +344,8 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       setIsInitiating(true)
 
       // Parse amounts for API - this should convert from display format to raw numbers
-      let fromAmountValue = parseAssetAmount(data.fromAmount, data.fromAsset)
-      let toAmountValue = parseAssetAmount(data.toAmount, data.toAsset)
+      const fromAmountValue = parseAssetAmount(data.fromAmount, data.fromAsset)
+      const toAmountValue = parseAssetAmount(data.toAmount, data.toAsset)
 
       // Prepare request object with required fields
       const requestPayload: {
@@ -381,9 +383,9 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       setSwapString(response.swapstring)
       setPaymentSecret(response.payment_secret)
       setSwapInitiated(true)
-      toast.success('Swap initiated successfully')
+      toast.success(t('trade.manual.swapInitiated'))
     } catch (error) {
-      toast.error('Failed to initiate swap. Please try again.')
+      toast.error(t('trade.manual.swapInitiateFailed'))
     } finally {
       setIsInitiating(false)
     }
@@ -391,12 +393,12 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
   const onExecuteSwap = async () => {
     if (!swapString || !paymentSecret) {
-      toast.error('No active swap to execute')
+      toast.error(t('trade.manual.noActiveSwap'))
       return
     }
 
     if (!takerPubkey) {
-      toast.error('Please enter the taker pubkey')
+      toast.error(t('trade.manual.missingTakerPubkey'))
       return
     }
 
@@ -408,14 +410,14 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
         taker_pubkey: takerPubkey,
       }).unwrap()
 
-      toast.success('Swap executed successfully')
+      toast.success(t('trade.manual.swapExecuted'))
       // Reset form after successful execution
       setSwapInitiated(false)
       setSwapString('')
       setPaymentSecret('')
       setValue('takerPubkey', '')
     } catch (error) {
-      toast.error('Failed to execute swap. Please try again.')
+      toast.error(t('trade.manual.swapExecuteFailed'))
     } finally {
       setIsExecuting(false)
     }

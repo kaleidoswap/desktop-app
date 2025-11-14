@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../../../app/store/hooks'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
@@ -10,6 +11,7 @@ export const DepositModalContent = () => {
   const dispatch = useAppDispatch()
   const [step, setStep] = useState<number>(1)
   const [assetId, setAssetId] = useState<string>()
+  const { t } = useTranslation()
 
   const progress = (step / 2) * 100
 
@@ -26,10 +28,10 @@ export const DepositModalContent = () => {
           </div>
           <div className="flex justify-between mt-2 text-sm text-slate-400">
             <span className={step === 1 ? 'text-blue-400 font-medium' : ''}>
-              Select Asset
+              {t('depositModal.progress.selectAsset')}
             </span>
             <span className={step === 2 ? 'text-blue-400 font-medium' : ''}>
-              Deposit Details
+              {t('depositModal.progress.details')}
             </span>
           </div>
         </div>

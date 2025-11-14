@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import { twJoin } from 'tailwind-merge'
 import { z } from 'zod'
@@ -62,6 +63,7 @@ export const Step2 = ({
   formData,
   onFormUpdate,
 }: Props) => {
+  const { t } = useTranslation()
   const [maxCapacity, setMaxCapacity] = useState<number>(MAX_CHANNEL_CAPACITY)
   const [addAsset, setAddAsset] = useState<boolean>(false)
   const [hasAvailableAssets, setHasAvailableAssets] = useState<boolean>(false)
@@ -335,10 +337,10 @@ export const Step2 = ({
     <form className="max-w-3xl mx-auto" onSubmit={handleSubmit(onSubmit)}>
       <div className="text-center mb-10">
         <h3 className="text-3xl font-bold text-white mb-4">
-          Open a Channel - Step 2
+          {t('createChannel.step2.title')}
         </h3>
         <h4 className="text-xl text-gray-400">
-          Configure your channel capacity and assets
+          {t('createChannel.step2.subtitle')}
         </h4>
       </div>
 
@@ -346,7 +348,7 @@ export const Step2 = ({
         {/* PubKey display section */}
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-400 mb-2">
-            Opening Channel with Node:
+            {t('createChannel.step2.openingWith')}
           </label>
           <div className="bg-gray-900/50 px-4 py-3 rounded-lg break-all font-mono text-sm text-white">
             {formData.pubKeyAndAddress}
@@ -355,21 +357,21 @@ export const Step2 = ({
 
         <div className="mb-8">
           <label className="block text-sm font-medium text-gray-400 mb-2">
-            Channel Capacity (satoshis)
+            {t('createChannel.step2.capacityLabel')}
             <span className="text-xs text-gray-500 ml-2">
-              (The amount of BTC you want to allocate to this channel)
+              {t('createChannel.step2.capacityHint')}
             </span>
           </label>
           <div className="flex items-center space-x-4">
             <input
               className="flex-grow rounded bg-blue-dark px-4 py-3 outline-none text-white"
               onChange={(e) => handleCapacityChange(e.target.value)}
-              placeholder="Enter amount in sats"
+              placeholder={t('createChannel.step2.capacityPlaceholder')}
               type="text"
               value={capacitySat ? formatNumber(parseFloat(capacitySat)) : ''}
             />
             <span className="text-sm text-gray-400">
-              {formatNumber(maxCapacity)} max
+              {formatNumber(maxCapacity)} {t('createChannel.step2.max')}
             </span>
           </div>
           {capacitySat && parseFloat(capacitySat) > 0 && (
@@ -384,8 +386,16 @@ export const Step2 = ({
                 value={parseFloat(capacitySat)}
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Min: {formatNumber(MIN_CHANNEL_CAPACITY)}</span>
-                <span>Max: {formatNumber(maxCapacity)}</span>
+                <span>
+                  {t('createChannel.step2.minLabel', {
+                    amount: formatNumber(MIN_CHANNEL_CAPACITY),
+                  })}
+                </span>
+                <span>
+                  {t('createChannel.step2.maxLabel', {
+                    amount: formatNumber(maxCapacity),
+                  })}
+                </span>
               </div>
             </>
           )}
@@ -403,9 +413,11 @@ export const Step2 = ({
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h5 className="text-lg font-semibold text-white">RGB Assets</h5>
+                <h5 className="text-lg font-semibold text-white">
+                  {t('createChannel.step2.rgbAssetsTitle')}
+                </h5>
                 <p className="text-sm text-gray-400 mt-1">
-                  Add RGB assets to your channel for asset transfers
+                  {t('createChannel.step2.rgbAssetsSubtitle')}
                 </p>
               </div>
               <button
@@ -418,7 +430,9 @@ export const Step2 = ({
                 onClick={() => handleAddAssetToggle(!addAsset)}
                 type="button"
               >
-                {addAsset ? 'Remove Asset' : 'Add Asset'}
+                {addAsset
+                  ? t('createChannel.step2.removeAsset')
+                  : t('createChannel.step2.addAsset')}
               </button>
             </div>
 
@@ -426,7 +440,7 @@ export const Step2 = ({
               <div className="space-y-6">
                 <div className="bg-gray-900/50 p-6 rounded-lg">
                   <label className="block text-sm font-medium text-gray-400 mb-3">
-                    Select Asset
+                    {t('createChannel.step2.selectAsset')}
                   </label>
                   <Controller
                     control={control}
@@ -435,7 +449,7 @@ export const Step2 = ({
                       <>
                         <AssetSelectWithModal
                           className="w-full"
-                          fieldLabel="Choose an RGB asset for your channel"
+                          fieldLabel={t('createChannel.step2.chooseAsset')}
                           onChange={(value) => {
                             field.onChange(value)
                             handleAssetSelect(value)

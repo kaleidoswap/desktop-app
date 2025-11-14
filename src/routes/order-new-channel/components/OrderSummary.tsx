@@ -1,5 +1,6 @@
 import React from 'react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { formatBitcoinAmount } from '../../../helpers/number'
@@ -21,6 +22,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   assetInfo,
   orderPayload,
 }) => {
+  const { t } = useTranslation()
   const totalCapacity = order.lsp_balance_sat + order.client_balance_sat
 
   return (
@@ -32,7 +34,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
         </h3>
         {order.order_id && (
           <CopyToClipboard
-            onCopy={() => toast.success('Order ID copied!')}
+            onCopy={() => toast.success(t('orderChannel.orderCopy'))}
             text={order.order_id}
           >
             <button className="text-xs text-gray-400 hover:text-white font-mono bg-gray-900/50 px-2 py-1 rounded transition-colors">

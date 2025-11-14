@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
@@ -15,6 +16,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation()
   const [ticker, setTicker] = useState('')
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
@@ -72,7 +74,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
     try {
       await issueAssetOperation()
-      toast.success('Asset issued successfully!')
+      toast.success(t('issueAssetModal.success'))
       onSuccess()
       onClose()
     } catch (error: any) {
@@ -88,7 +90,9 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
       if (!wasHandled) {
         toast.error(
           error?.data?.error ||
-            (error instanceof Error ? error.message : 'Failed to issue asset')
+            (error instanceof Error
+              ? error.message
+              : t('issueAssetModal.failure'))
         )
       }
     } finally {
@@ -101,7 +105,9 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-md">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Issue New Asset</h2>
+            <h2 className="text-xl font-bold text-white">
+              {t('issueAssetModal.title')}
+            </h2>
             <button
               className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
               onClick={onClose}
@@ -111,23 +117,19 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
           </div>
 
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-            <p className="text-blue-400 text-sm">
-              Note: Issuing a new asset requires colored UTXOs. The process may
-              involve an on-chain transaction if you don't have enough colored
-              UTXOs.
-            </p>
+            <p className="text-blue-400 text-sm">{t('issueAssetModal.note')}</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Ticker Symbol
+                {t('issueAssetModal.tickerLabel')}
               </label>
               <input
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
                 maxLength={5}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                placeholder="BTC"
+                placeholder={t('issueAssetModal.tickerPlaceholder')}
                 required
                 type="text"
                 value={ticker}
@@ -136,12 +138,12 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Asset Name
+                {t('issueAssetModal.nameLabel')}
               </label>
               <input
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Bitcoin"
+                placeholder={t('issueAssetModal.namePlaceholder')}
                 required
                 type="text"
                 value={name}
@@ -150,13 +152,13 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Amount to Issue
+                {t('issueAssetModal.amountLabel')}
               </label>
               <input
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
                 min="0"
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="100"
+                placeholder={t('issueAssetModal.amountPlaceholder')}
                 required
                 type="number"
                 value={amount}
@@ -165,7 +167,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                Precision (decimal places)
+                {t('issueAssetModal.precisionLabel')}
               </label>
               <input
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
@@ -173,11 +175,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 min="0"
                 onChange={(e) => {
                   // removing fraction inputs
-                  let val = e.target.value
+                  const val = e.target.value
                   const floored = Math.floor(Number(val))
                   setPrecision(String(floored))
                 }}
-                placeholder="8"
+                placeholder={t('issueAssetModal.precisionPlaceholder')}
                 required
                 step="1"
                 type="number"
@@ -186,14 +188,14 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
               {(Number(precision) > 10 || Number(precision) < 0) &&
                 precision !== '' && (
                   <p className="text-red-500 text-xs mt-1">
-                    Precision value must be between 0 and 10.
+                    {t('issueAssetModal.precisionError')}
                   </p>
                 )}
             </div>
 
             {amount && (
               <p className="mt-2 text-sm text-slate-400">
-                You will issue:{' '}
+                {t('issueAssetModal.previewPrefix')}{' '}
                 <span className="text-white font-medium">{previewAmount}</span>
               </p>
             )}
@@ -204,7 +206,9 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
               disabled={isLoading}
               type="submit"
             >
-              {isLoading ? 'Issuing...' : 'Issue Asset'}
+              {isLoading
+                ? t('issueAssetModal.submitting')
+                : t('issueAssetModal.submit')}
             </button>
           </form>
         </div>

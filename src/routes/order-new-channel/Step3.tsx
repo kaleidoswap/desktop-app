@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
@@ -54,6 +55,7 @@ export const Step3: React.FC<StepProps> = ({
   isProcessingPayment = false,
   detectedPaymentMethod = null,
 }) => {
+  const { t } = useTranslation()
   const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'onchain'>(
     'lightning'
   )
@@ -220,7 +222,7 @@ export const Step3: React.FC<StepProps> = ({
           throw new Error('Lightning payment failed')
         }
 
-        toast.success('Lightning payment initiated successfully!')
+        toast.success(t('orderChannel.step3.lightningSuccess'))
         setLocalPaymentState('processing')
       } else if (paymentMethod === 'onchain' && order?.payment?.onchain) {
         const feeRate =
@@ -239,15 +241,19 @@ export const Step3: React.FC<StepProps> = ({
           throw new Error(error.data.error)
         }
 
-        toast.success('On-chain payment sent successfully!')
+        toast.success(t('orderChannel.step3.onchainSuccess'))
         setLocalPaymentState('processing')
       }
 
       setShowWalletConfirmation(false)
     } catch (error) {
       toast.error(
-        'Payment failed: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
+        t('orderChannel.step3.paymentFailed', {
+          error:
+            error instanceof Error && error.message
+              ? error.message
+              : t('orderChannel.step3.unknownError'),
+        })
       )
       setLocalPaymentState('error')
     } finally {
@@ -256,8 +262,8 @@ export const Step3: React.FC<StepProps> = ({
   }
 
   const handleCopy = useCallback(() => {
-    toast.success('Payment details copied to clipboard!')
-  }, [])
+    toast.success(t('orderChannel.paymentCopied'))
+  }, [t])
 
   if (loading || !order) {
     return (

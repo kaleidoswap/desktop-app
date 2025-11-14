@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -31,6 +32,7 @@ import {
 } from '../../components/wallet-setup'
 
 export const Component = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -110,7 +112,7 @@ export const Component = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-cyan/5 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
               <HelpCircle className="w-4 h-4 relative z-10" />
               <span className="relative z-10 font-medium">
-                Get Help & Support
+                {t('walletSetup.getHelpSupport')}
               </span>
             </button>
             <AppVersion className="relative" />
@@ -149,10 +151,10 @@ export const Component = () => {
                         <div className="absolute inset-0 bg-cyan/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
-                        Connect to RGB Lightning Network
+                        {t('walletSetup.connectTitle')}
                       </h1>
                       <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                        Choose your preferred way to connect to the network
+                        {t('walletSetup.connectSubtitle')}
                       </p>
                       <div className="mt-4 flex items-center justify-center space-x-2">
                         <div className="h-1 w-1 rounded-full bg-cyan/60 animate-pulse" />
@@ -164,18 +166,18 @@ export const Component = () => {
                       className={`grid gap-6 ${isLocalNodeSupported ? 'grid-cols-1 md:grid-cols-2' : 'max-w-md mx-auto'}`}
                     >
                       <NodeOption
-                        description="Connect to a hosted node or self-hosted instance. Recommended for most users and advanced setups."
+                        description={t('walletSetup.remoteNodeDescription')}
                         icon={<Cloud className="w-6 h-6" />}
                         onClick={() => handleNodeTypeChange('remote')}
                         recommended={true}
-                        title="Remote Node"
+                        title={t('walletSetup.remoteNodeTitle')}
                       />
                       {isLocalNodeSupported && (
                         <NodeOption
-                          description="Run a node on your local machine. Ideal for developers and testing environments."
+                          description={t('walletSetup.localNodeDescription')}
                           icon={<Server className="w-6 h-6" />}
                           onClick={() => handleNodeTypeChange('local')}
-                          title="Local Node"
+                          title={t('walletSetup.localNodeTitle')}
                         />
                       )}
                     </div>
@@ -184,8 +186,7 @@ export const Component = () => {
                         <div className="inline-flex items-center space-x-2 px-4 py-3 bg-blue-dark/40 border border-cyan/20 rounded-xl">
                           <div className="w-2 h-2 rounded-full bg-cyan/60 animate-pulse" />
                           <p className="text-gray-400 text-sm">
-                            Local node is not supported on Windows. Use a remote
-                            node connection instead.
+                            {t('walletSetup.localNodeNotSupported')}
                           </p>
                         </div>
                       </div>
@@ -201,15 +202,15 @@ export const Component = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Back to Connection Options
+                        {t('walletSetup.backToOptions')}
                       </Button>
                     </div>
 
                     <div className="text-center mb-10 slide-in">
                       <div className="relative inline-flex mb-6 group">
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30 
-                          rounded-2xl shadow-2xl shadow-cyan/15 
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30
+                          rounded-2xl shadow-2xl shadow-cyan/15
                           relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
                         >
                           <Server className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
@@ -217,11 +218,10 @@ export const Component = () => {
                         <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
-                        Set Up Local Node
+                        {t('walletSetup.setupLocalTitle')}
                       </h1>
                       <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                        Choose an option to get started with your local RGB
-                        Lightning node
+                        {t('walletSetup.setupLocalSubtitle')}
                       </p>
                     </div>
                     {/* TODO: Add local node warning after mainnet launch */}
@@ -229,17 +229,17 @@ export const Component = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <WalletAction
-                        description="Create a new wallet with a fresh seed phrase and set up your node."
+                        description={t('walletSetup.createWalletDescription')}
                         icon={<Wallet className="w-6 h-6 text-white" />}
                         onClick={() => navigate(WALLET_INIT_PATH)}
                         primary
-                        title="Create New Wallet"
+                        title={t('walletSetup.createWalletTitle')}
                       />
                       <WalletAction
-                        description="Restore a wallet using your existing encrypted backup."
+                        description={t('walletSetup.restoreWalletDescription')}
                         icon={<ArrowLeftRight className="w-6 h-6 text-white" />}
                         onClick={() => navigate(WALLET_RESTORE_PATH)}
-                        title="Restore Wallet"
+                        title={t('walletSetup.restoreWalletTitle')}
                       />
                     </div>
                   </>
@@ -253,15 +253,15 @@ export const Component = () => {
                         size="sm"
                         variant="outline"
                       >
-                        Back to Connection Options
+                        {t('walletSetup.backToOptions')}
                       </Button>
                     </div>
 
                     <div className="text-center mb-10 slide-in">
                       <div className="relative inline-flex mb-6 group">
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30 
-                          rounded-2xl shadow-2xl shadow-cyan/15 
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30
+                          rounded-2xl shadow-2xl shadow-cyan/15
                           relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
                         >
                           <Cloud className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
@@ -269,11 +269,10 @@ export const Component = () => {
                         <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
-                        Connect to Remote Node
+                        {t('walletSetup.connectRemoteTitle')}
                       </h1>
                       <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                        Connect to an existing RGB Lightning node hosted by you
-                        or a provider
+                        {t('walletSetup.connectRemoteSubtitle')}
                       </p>
                     </div>
 
@@ -291,7 +290,7 @@ export const Component = () => {
                         variant="primary"
                       >
                         <span className="relative z-10">
-                          Continue to Connection Setup
+                          {t('walletSetup.continueSetup')}
                         </span>
                         <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-white/10 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                       </Button>

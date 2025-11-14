@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { RootState } from '../../app/store'
@@ -106,6 +107,7 @@ const ConnectPopup: React.FC<{
 )
 
 export const Step1: React.FC<Props> = ({ onNext }) => {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
   const [showConnectPopup, setShowConnectPopup] = useState(false)
@@ -139,7 +141,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         }
         return false
       } catch (error) {
-        toast.error('Failed to check peer connection status')
+        toast.error(t('orderChannel.step1.checkPeerFailed'))
         console.error('Failed to check peer connection status:', error)
         return false
       }
@@ -176,26 +178,24 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         setConnectionUrl(response.lsp_connection_url)
         // Just check connection status silently, don't show popup
         await checkPeerConnection(response.lsp_connection_url)
-        toast.success('LSP information fetched successfully')
+        toast.success(t('orderChannel.step1.lspFetchSuccess'))
       } else {
-        toast.error('Failed to get LSP connection URL')
+        toast.error(t('orderChannel.step1.lspUrlMissing'))
       }
     } catch (error: any) {
       console.error('Error fetching LSP info:', error)
 
       // Check if it's a timeout error
-      let errorMessage = 'Failed to fetch LSP information'
+      let errorMessage = t('orderChannel.step1.lspFetchFailed')
       if (
         error?.status === 'TIMEOUT_ERROR' ||
         (error?.error &&
           typeof error.error === 'string' &&
           error.error.includes('timeout'))
       ) {
-        errorMessage =
-          'Request timed out. The LSP server is not responding. Please check the URL and try again.'
+        errorMessage = t('orderChannel.step1.timeout')
       } else if (error?.status === 'FETCH_ERROR') {
-        errorMessage =
-          'Network error. Please check your connection and the LSP URL.'
+        errorMessage = t('orderChannel.step1.networkError')
       }
 
       toast.error(errorMessage)
@@ -261,14 +261,14 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     if (connectionUrl) {
       setShowConnectPopup(true)
     } else {
-      toast.error('Please wait for LSP connection URL to be fetched')
+      toast.error(t('orderChannel.step1.waitForConnectionUrl'))
     }
   }
 
   const handleConnect = async () => {
     setShowConnectPopup(false)
     if (isAlreadyConnected) {
-      toast.info('Already connected to LSP', {
+      toast.info(t('orderChannel.step1.alreadyConnectedToast'), {
         autoClose: 2000,
       })
       onNext({ connectionUrl, success: true })
@@ -289,7 +289,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
       }
 
       // LSP URL was already updated when fetching info, connection succeeded
-      toast.success('Successfully connected to LSP')
+      toast.success(t('orderChannel.step1.connectedSuccess'))
       onNext({ connectionUrl, success: true })
     } catch (error) {
       toast.error(`${error}`)
@@ -347,23 +347,22 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         setConnectionUrl(response.lsp_connection_url)
         // Just check connection status silently, don't show popup
         await checkPeerConnection(response.lsp_connection_url)
-        toast.success('Kaleidoswap LSP information fetched successfully')
+        toast.success(t('orderChannel.step1.kaleidoLspFetched'))
       } else {
-        toast.error('Failed to get LSP connection URL')
+        toast.error(t('orderChannel.step1.lspUrlMissing'))
       }
     } catch (error: any) {
       // Check if it's a timeout error
-      let errorMessage = 'Failed to select Kaleidoswap LSP'
+      let errorMessage = t('orderChannel.step1.kaleidoLspFailed')
       if (
         error?.status === 'TIMEOUT_ERROR' ||
         (error?.error &&
           typeof error.error === 'string' &&
           error.error.includes('timeout'))
       ) {
-        errorMessage =
-          'Request timed out. The Kaleidoswap LSP server is not responding. Please try again later.'
+        errorMessage = t('orderChannel.step1.timeout')
       } else if (error?.status === 'FETCH_ERROR') {
-        errorMessage = 'Network error. Please check your connection.'
+        errorMessage = t('orderChannel.step1.networkError')
       }
 
       toast.error(errorMessage)
@@ -660,7 +659,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               {connectionUrl && (
                 <CopyToClipboard
                   onCopy={() =>
-                    toast.success('Connection string copied!', {
+                    toast.success(t('orderChannel.step1.connectionCopied'), {
                       autoClose: 2000,
                       position: 'bottom-right',
                     })

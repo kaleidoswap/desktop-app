@@ -1,5 +1,6 @@
 import { Search, ChevronDown, Plus } from 'lucide-react'
 import { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../../app/store/hooks'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
@@ -25,6 +26,7 @@ export const Step1 = ({ onNext }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isNewAsset, setIsNewAsset] = useState(false)
+  const { t } = useTranslation()
 
   const assets = nodeApi.useListAssetsQuery()
 
@@ -73,9 +75,11 @@ export const Step1 = ({ onNext }: Props) => {
         ) : (
           <img alt="RGB Asset" className="w-10 h-10 mb-3" src={rgbLogo} />
         )}
-        <h3 className="text-2xl font-bold text-white mb-2">Select Asset</h3>
+        <h3 className="text-2xl font-bold text-white mb-2">
+          {t('depositModal.step1.title')}
+        </h3>
         <p className="text-slate-400 text-center max-w-md text-sm">
-          Choose the asset you want to deposit into your wallet
+          {t('depositModal.step1.subtitle')}
         </p>
       </div>
 
@@ -109,7 +113,9 @@ export const Step1 = ({ onNext }: Props) => {
                 </>
               ) : (
                 <span className="text-slate-400">
-                  {isNewAsset ? 'New Asset' : 'Select an asset'}
+                  {isNewAsset
+                    ? t('depositModal.step1.newAssetLabel')
+                    : t('depositModal.step1.selectorPlaceholder')}
                 </span>
               )}
             </div>
@@ -134,7 +140,7 @@ export const Step1 = ({ onNext }: Props) => {
                              text-white placeholder:text-slate-500 focus:border-blue-500 
                              focus:ring-1 focus:ring-blue-500 text-sm"
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search assets..."
+                    placeholder={t('depositModal.step1.searchPlaceholder')}
                     type="text"
                     value={searchQuery}
                   />
@@ -149,13 +155,15 @@ export const Step1 = ({ onNext }: Props) => {
                   onClick={handleAddNewAsset}
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Add New Asset</span>
+                  <span>{t('depositModal.step1.addNewAsset')}</span>
                 </button>
 
                 <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                   {filteredAssets.length === 0 ? (
                     <div className="p-3 text-center text-slate-500 text-sm">
-                      No assets found matching "{searchQuery}"
+                      {t('depositModal.step1.noResults', {
+                        query: searchQuery,
+                      })}
                     </div>
                   ) : (
                     filteredAssets.map((asset) => (
@@ -185,12 +193,12 @@ export const Step1 = ({ onNext }: Props) => {
                             <span>{asset.ticker}</span>
                             {asset.asset_id === assetId && (
                               <span className="text-blue-400 text-xs bg-blue-500/10 px-1.5 py-0.5 rounded-lg">
-                                Selected
+                                {t('depositModal.step1.selected')}
                               </span>
                             )}
                           </div>
                           <div className="text-xs text-slate-400 truncate">
-                            {asset.name || 'Asset'}
+                            {asset.name || t('depositModal.step1.genericAsset')}
                           </div>
                         </div>
                       </button>
@@ -207,21 +215,19 @@ export const Step1 = ({ onNext }: Props) => {
           <div className="space-y-3 animate-fadeIn">
             <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
               <p className="text-blue-400 text-xs">
-                If you don't know the asset ID, you can proceed without entering
-                it. The system will generate a deposit address that can receive
-                any RGB asset.
+                {t('depositModal.step1.newAssetInfo')}
               </p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-400">
-                Asset ID (optional)
+                {t('depositModal.step1.assetIdLabel')}
               </label>
               <input
                 className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
                          placeholder:text-slate-600 text-sm"
                 onChange={(e) => setAssetId(e.target.value)}
-                placeholder="Enter asset ID (optional)"
+                placeholder={t('depositModal.step1.assetIdPlaceholder')}
                 type="text"
               />
             </div>
@@ -235,7 +241,7 @@ export const Step1 = ({ onNext }: Props) => {
                    justify-center gap-2 sticky bottom-0"
           onClick={handleSubmit}
         >
-          Continue
+          {t('depositModal.common.continue')}
         </button>
       </div>
     </div>

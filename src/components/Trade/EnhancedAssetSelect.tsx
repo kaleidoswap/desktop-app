@@ -186,12 +186,12 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
 
       setDropdownPosition({
         left: rect.left + window.scrollX,
-        openUpward: shouldOpenUpward, 
+        openUpward: shouldOpenUpward,
         top: shouldOpenUpward
           ? rect.top + window.scrollY - dropdownHeight - 4 // Reduced gap for better connection
           : rect.bottom + window.scrollY + 4,
         // Reduced gap for better connection
-width: rect.width,
+        width: rect.width,
       })
     }
   }

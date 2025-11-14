@@ -1,6 +1,7 @@
 import { Dispatch } from '@reduxjs/toolkit'
 import { toast } from 'react-toastify'
 
+import { i18n } from '../../i18n'
 import {
   handleRateLimitError,
   resetRateLimitBackoff,
@@ -945,18 +946,15 @@ class WebSocketService {
       logger.warn(
         'WebSocketService: Abnormal closure (code 1006) - The connection was closed abnormally'
       )
-      toast.warning(
-        'Connection to maker was lost. Attempting to reconnect...',
-        {
-          autoClose: 5000,
-          toastId: 'websocket-lost-connection',
-        }
-      )
+      toast.warning(i18n.t('websocket.connectionLost'), {
+        autoClose: 5000,
+        toastId: 'websocket-lost-connection',
+      })
     } else if (event.code === 1011) {
       logger.error(
         'WebSocketService: Server error (code 1011) - The server encountered an error'
       )
-      toast.error('Server error detected. Attempting to reconnect...', {
+      toast.error(i18n.t('websocket.serverError'), {
         autoClose: 5000,
         toastId: 'websocket-server-error',
       })

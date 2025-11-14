@@ -3,6 +3,7 @@ import axios from 'axios'
 import { Users, CheckCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
@@ -26,6 +27,7 @@ interface FormFields {
 }
 
 export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
   const [showConnectionDialog, setShowConnectionDialog] = useState(false)
@@ -59,8 +61,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
             )
           },
           {
-            message:
-              'Invalid peer format. Expected: <66-char-hex-pubkey>@hostname:port or valid pubkey',
+            message: t('createChannel.step1.invalidPeerFormat'),
             path: ['pubKeyAndAddress'],
           }
         )
@@ -93,9 +94,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       /^[0-9a-f]+$/i.test(data.pubKeyAndAddress)
 
     if (!isPubkeyOnly && !isValidPubkeyAndAddress(data.pubKeyAndAddress)) {
-      setLocalError(
-        'Invalid peer format. Expected format: <66-char-hex-pubkey>@hostname:port or valid pubkey'
-      )
+      setLocalError(t('createChannel.step1.invalidPeerFormat'))
       return
     }
 
@@ -144,7 +143,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       const networkInfo = await getNetworkInfo().unwrap()
 
       if (!networkInfo?.network) {
-        throw new Error('Network information not available')
+        throw new Error(t('createChannel.step1.errorNetworkUnavailable'))
       }
 
       // Normalize network name to match NETWORK_DEFAULTS keys
@@ -153,12 +152,16 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         .replace(/^\w/, (c) => c.toUpperCase())
 
       if (!NETWORK_DEFAULTS[network]) {
-        throw new Error(`Unsupported network: ${networkInfo.network}`)
+        throw new Error(
+          t('createChannel.step1.errorUnsupportedNetwork', {
+            network: networkInfo.network,
+          })
+        )
       }
 
       const apiUrl = NETWORK_DEFAULTS[network].default_lsp_url
       if (!apiUrl) {
-        throw new Error(`No default LSP URL configured for network: ${network}`)
+        throw new Error(t('createChannel.step1.errorNoLspUrl', { network }))
       }
 
       const response = await axios.get(`${apiUrl}api/v1/lsps1/get_info`)
@@ -182,7 +185,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       setLocalError(
         err instanceof Error
           ? err.message
-          : 'Failed to fetch LSP connection information'
+          : t('createChannel.step1.errorFetchLsp')
       )
     } finally {
       setIsLoading(false)
@@ -202,7 +205,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
 
   const handleConnect = async () => {
     if (!selectedPeerInfo || !isValidPubkeyAndAddress(selectedPeerInfo)) {
-      setLocalError('Invalid peer connection string')
+      setLocalError(t('createChannel.step1.errorInvalidPeerString'))
       return
     }
 
@@ -221,7 +224,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       setLocalError(
         err instanceof Error
           ? err.message
-          : 'Failed to connect to peer. Please try again.'
+          : t('createChannel.step1.errorConnectFailed')
       )
     } finally {
       setIsConnecting(false)
@@ -232,25 +235,25 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="text-center mb-10">
         <h3 className="text-3xl font-bold text-white mb-4">
-          Peer Connection - Step 1
+          {t('createChannel.step1.title')}
         </h3>
-        <p className="text-gray-400">
-          Select from connected peers or enter new connection details.
-        </p>
+        <p className="text-gray-400">{t('createChannel.step1.subtitle')}</p>
       </div>
 
       {/* Connected Peers Section */}
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-blue-500" />
-          <h4 className="text-lg font-semibold text-white">Connected Peers</h4>
+          <h4 className="text-lg font-semibold text-white">
+            {t('createChannel.step1.connectedPeers')}
+          </h4>
         </div>
 
         {loadingPeers ? (
           <div className="flex items-center justify-center py-4">
             <Spinner color="#3B82F6" size={24} />
             <span className="ml-2 text-gray-400">
-              Loading connected peers...
+              {t('createChannel.step1.loadingPeers')}
             </span>
           </div>
         ) : connectedPeers.length > 0 ? (
@@ -280,18 +283,20 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           </div>
         ) : (
           <div className="text-center py-6 text-gray-400">
-            No peers currently connected. You can connect to a new peer below.
+            {t('createChannel.step1.noPeers')}
           </div>
         )}
       </div>
 
       {/* Separator */}
-      <div className="text-center py-4 font-medium text-gray-400">or</div>
+      <div className="text-center py-4 font-medium text-gray-400">
+        {t('createChannel.step1.or')}
+      </div>
 
       {/* Manual Peer Connection Section */}
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8">
         <h4 className="text-lg font-semibold text-white mb-4">
-          Connect to New Peer
+          {t('createChannel.step1.connectNewPeer')}
         </h4>
 
         <Controller
@@ -305,9 +310,9 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                     fieldState.error || localError
                       ? 'border-red-500 focus:border-red-500'
                       : 'border-gray-600 focus:border-blue-500'
-                  } 
+                  }
                   focus:ring-1 focus:ring-blue-500 font-mono text-sm min-h-[6rem] resize-none`}
-                placeholder="Example: 039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735"
+                placeholder={t('createChannel.step1.placeholder')}
                 {...field}
                 onChange={(e) => {
                   field.onChange(e)
@@ -333,18 +338,18 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                 </p>
               )}
               <p className="text-gray-400 text-xs">
-                The connection string should be a 66-character hex public key,
-                followed by @ symbol, then the host address, and port number
-                (e.g. :9735)
+                {t('createChannel.step1.helpText')}
               </p>
             </div>
           )}
         />
 
-        <div className="text-center py-6 font-medium text-gray-400">or</div>
+        <div className="text-center py-6 font-medium text-gray-400">
+          {t('createChannel.step1.or')}
+        </div>
 
         <div className="mb-6 text-center font-medium text-white">
-          Select from Suggested Nodes
+          {t('createChannel.step1.suggestedNodes')}
         </div>
 
         <div className="flex justify-center space-x-6">
@@ -362,7 +367,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           <div className="flex justify-center items-center mt-4">
             <Spinner color="#3B82F6" size={24} />
             <span className="ml-2 text-gray-400">
-              Loading LSP information...
+              {t('createChannel.step1.loadingLsp')}
             </span>
           </div>
         )}
@@ -377,7 +382,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           type="submit"
           variant="primary"
         >
-          Continue
+          {t('createChannel.step1.continue')}
         </Button>
       </div>
 
@@ -386,17 +391,17 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 max-w-md w-full mx-4">
             <h3 className="text-2xl font-bold text-white mb-4">
-              Connect to Peer
+              {t('createChannel.step1.connectDialog.title')}
             </h3>
             <p className="text-gray-400 mb-6">
-              Would you like to connect to this peer before opening a channel?
+              {t('createChannel.step1.connectDialog.message')}
             </p>
 
             {isConnecting && (
               <div className="flex items-center justify-center mb-4">
                 <Spinner color="#3B82F6" size={24} />
                 <span className="ml-2 text-gray-400">
-                  Connecting to peer...
+                  {t('createChannel.step1.connectDialog.connecting')}
                 </span>
               </div>
             )}
@@ -408,7 +413,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                 type="button"
                 variant="secondary"
               >
-                Cancel
+                {t('createChannel.step1.connectDialog.cancel')}
               </Button>
               <Button
                 disabled={isConnecting}
@@ -418,7 +423,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                 type="button"
                 variant="primary"
               >
-                Connect
+                {t('createChannel.step1.connectDialog.connect')}
               </Button>
             </div>
           </div>

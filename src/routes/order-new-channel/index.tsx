@@ -46,11 +46,11 @@ export const Component = () => {
     makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
 
-  let toastId: string | number | null = null
+  const toastId: string | number | null = null
 
   useEffect(() => {
     if (orderId && step === 3) {
-      let timeoutId: ReturnType<typeof setTimeout> | null = null
+      const timeoutId: ReturnType<typeof setTimeout> | null = null
 
       const intervalId = setInterval(async () => {
         const orderResponse = await getOrderRequest({ order_id: orderId })

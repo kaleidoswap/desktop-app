@@ -1,6 +1,7 @@
 import { Copy, Wallet, Link, Plus, ShoppingCart, Clock } from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -91,6 +92,9 @@ import { Fields } from './types'
 import { initializeWebSocketWithRetry } from './websocketUtils'
 
 export const Component = () => {
+  // Add translation hook
+  const { t } = useTranslation()
+
   // Declare makerConnectionUrl at the very top
   const makerConnectionUrl = useAppSelector(
     (state) => state.nodeSettings.data.default_maker_url
@@ -313,7 +317,7 @@ export const Component = () => {
           const fromTicker = getAssetTicker(currentSwap.from_asset)
           const toTicker = getAssetTicker(currentSwap.to_asset)
 
-          let message = `Swap completed successfully!`
+          let message = t('tradeMarketMaker.toast.swapCompleted')
 
           // Add asset details if available
           if (currentSwap.qty_from && currentSwap.qty_to) {
@@ -408,7 +412,8 @@ export const Component = () => {
         setIsToAmountLoading,
         () => hasValidQuote,
         maxFromAmount,
-        minFromAmount
+        minFromAmount,
+        t
       ),
     [
       form,
@@ -418,6 +423,7 @@ export const Component = () => {
       hasValidQuote,
       maxFromAmount,
       minFromAmount,
+      t,
     ]
   )
 
@@ -496,7 +502,7 @@ export const Component = () => {
                   if (prev && prev.includes('awaiting confirmation')) {
                     return prev
                   }
-                  return 'Unable to get quote from market maker. Please try again.'
+                  return t('tradeMarketMaker.error.unableToGetQuote')
                 })
               }
               errorMessageTimeoutRef.current = null
@@ -773,18 +779,20 @@ export const Component = () => {
           const formattedMax = formatAmount(displayMax, fromAsset)
           const displayAssetName = displayAsset(fromAsset)
 
-          userFriendlyError = `Amount must be between ${formattedMin} and ${formattedMax} ${displayAssetName}.`
+          userFriendlyError = t('tradeMarketMaker.error.amountMustBeBetween', {
+            asset: displayAssetName,
+            max: formattedMax,
+            min: formattedMin,
+          })
         } else {
-          userFriendlyError =
-            'The amount you entered is outside the valid range for this trading pair.'
+          userFriendlyError = t('tradeMarketMaker.error.amountOutsideRange')
         }
       } else if (quoteError.includes('No tradable pair found')) {
-        userFriendlyError = 'This trading pair is not currently available.'
+        userFriendlyError = t('tradeMarketMaker.error.pairNotAvailable')
       } else if (quoteError.includes('Invalid asset')) {
-        userFriendlyError = 'One of the selected assets is not valid.'
+        userFriendlyError = t('tradeMarketMaker.error.assetNotValid')
       } else if (quoteError.includes('Failed to calculate quote')) {
-        userFriendlyError =
-          'Unable to calculate quote. Please try a different amount.'
+        userFriendlyError = t('tradeMarketMaker.error.unableToCalculateQuote')
       }
 
       // Show the user-friendly error message, but preserve unconfirmed channel errors
@@ -1220,7 +1228,10 @@ export const Component = () => {
         if (currentToAmount > newMaxToAmount && newMaxToAmount > 0) {
           const formattedMaxToAmount = formatAmount(newMaxToAmount, toAsset)
           const displayedAsset = displayAsset(toAsset)
-          const errorMsg = `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
+          const errorMsg = t('tradeMarketMaker.error.canOnlyReceiveUpTo', {
+            amount: formattedMaxToAmount,
+            asset: displayedAsset,
+          })
           logger.warn(
             `Current to amount (${currentToAmount}) exceeds maximum receivable amount (${newMaxToAmount})`
           )
@@ -1316,9 +1327,7 @@ export const Component = () => {
     // Disable swapping when using onchain balance (must be BTC → Asset only)
     if (isUsingOnchainBalance && !hasTradableChannels(channels)) {
       return async () => {
-        toast.warning(
-          'Asset swapping is not available when trading with onchain balance. You can only buy assets with BTC.'
-        )
+        toast.warning(t('tradeMarketMaker.error.swapDisabledOnchain'))
         logger.info('Swap disabled: using onchain balance')
       }
     }
@@ -1349,7 +1358,8 @@ export const Component = () => {
       calculateMaxTradableAmount,
       setFromAmount,
       setSelectedPair,
-      setMaxFromAmount
+      setMaxFromAmount,
+      t
     )
 
     // Return enhanced handler that also saves preferences
@@ -1391,7 +1401,8 @@ export const Component = () => {
         setFromAmount,
         setIsLoading,
         setMaxFromAmount,
-        setMaxToAmount
+        setMaxToAmount,
+        t
       ),
     [
       selectedPair,
@@ -1403,6 +1414,7 @@ export const Component = () => {
       setIsLoading,
       setMaxFromAmount,
       setMaxToAmount,
+      t,
     ]
   )
 
@@ -1448,7 +1460,8 @@ export const Component = () => {
         isToAmountLoading,
         isQuoteLoading,
         isPriceLoading,
-        missingChannelAsset
+        missingChannelAsset,
+        t
       )
 
       // Preserve unconfirmed channel errors - they take priority over amount validation errors
@@ -1491,7 +1504,8 @@ export const Component = () => {
         setTradingPairs,
         setTradablePairs,
         setSelectedPair,
-        setIsPairsLoading
+        setIsPairsLoading,
+        t
       ),
     [
       getPairs,
@@ -1503,6 +1517,7 @@ export const Component = () => {
       isInitialDataLoaded,
       isAssetsLoaded,
       isChannelsLoaded,
+      t,
     ]
   )
 
@@ -1519,7 +1534,8 @@ export const Component = () => {
         setTradingPairs,
         setTradablePairs,
         setSelectedPair,
-        setIsPairsLoading
+        setIsPairsLoading,
+        t
       )(),
     [
       getPairs,
@@ -1530,6 +1546,7 @@ export const Component = () => {
       setTradablePairs,
       setSelectedPair,
       setIsPairsLoading,
+      t,
     ]
   )
 
@@ -2002,14 +2019,11 @@ export const Component = () => {
         setValidationError('setup-error')
 
         // Show specific error message for timeout
-        let errorMessage =
-          'Failed to initialize the trading interface. Please try again.'
+        let errorMessage = t('tradeMarketMaker.toast.initializationFailed')
         if (error?.status === 'TIMEOUT_ERROR') {
-          errorMessage =
-            'Request timed out while initializing. Please check your connection and try again.'
+          errorMessage = t('tradeMarketMaker.toast.reconnectFailed')
         } else if (error?.status === 'FETCH_ERROR') {
-          errorMessage =
-            'Network error while initializing. Please check your connection.'
+          errorMessage = t('tradeMarketMaker.toast.connectionError')
         } else if (error?.message) {
           errorMessage = error.message
         }
@@ -2154,13 +2168,11 @@ export const Component = () => {
           const diagnostics = webSocketService.getDiagnostics()
           logger.debug('WebSocket failure diagnostics:', diagnostics)
 
-          toast.error(
-            'Failed to establish live connection to market maker. Please check the maker URL and try again.'
-          )
+          toast.error(t('tradeMarketMaker.toast.connectionFailed'))
         }
       } catch (error) {
         logger.error('Error initializing WebSocket:', error)
-        toast.error('Connection error occurred. Trading may be limited.')
+        toast.error(t('tradeMarketMaker.toast.connectionError'))
       }
     }
 
@@ -2305,7 +2317,7 @@ export const Component = () => {
 
   // Function to copy error details to clipboard
   const copyToClipboard = (text: string) => {
-    copyToClipboardUtil(text)
+    copyToClipboardUtil(text, t)
   }
 
   // Use our utility function to create a swap executor
@@ -2324,7 +2336,8 @@ export const Component = () => {
         execSwap,
         setSwapRecapDetails,
         setShowRecap,
-        setErrorMessage
+        setErrorMessage,
+        t
       ),
     [
       assets,
@@ -2340,6 +2353,7 @@ export const Component = () => {
       setSwapRecapDetails,
       setShowRecap,
       setErrorMessage,
+      t,
     ]
   )
 
@@ -2605,12 +2619,9 @@ export const Component = () => {
           isAssetsLoaded,
           isChannelsLoaded,
         })
-        toast.warning(
-          'Please wait for the app to finish loading before reconnecting.',
-          {
-            autoClose: 3000,
-          }
-        )
+        toast.warning(t('tradeMarketMaker.toast.reconnectWait'), {
+          autoClose: 3000,
+        })
         return
       }
 
@@ -2650,7 +2661,7 @@ export const Component = () => {
           debouncedQuoteRequest(requestQuote)
         }, 500) // Small delay to ensure connection is fully stable
 
-        toast.success('Reconnected to market maker successfully!', {
+        toast.success(t('tradeMarketMaker.toast.reconnectSuccess'), {
           autoClose: 3000,
           toastId: 'market-maker-reconnection-success',
         })
@@ -2661,22 +2672,22 @@ export const Component = () => {
         const diagnostics = webSocketService.getDiagnostics()
         logger.debug('Reconnection failure diagnostics:', diagnostics)
 
-        toast.error(
-          'Failed to reconnect to market maker. Please check the maker URL and your network connection.',
-          {
-            autoClose: 5000,
-            toastId: 'market-maker-reconnection-failed',
-          }
-        )
+        toast.error(t('tradeMarketMaker.toast.reconnectFailed'), {
+          autoClose: 5000,
+          toastId: 'market-maker-reconnection-failed',
+        })
       }
     } catch (error) {
       logger.error('Error reconnecting to market maker:', error)
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error'
-      toast.error(`Failed to reconnect: ${errorMessage}`, {
-        autoClose: 5000,
-        toastId: 'market-maker-reconnection-failed',
-      })
+      toast.error(
+        t('tradeMarketMaker.toast.reconnectError', { error: errorMessage }),
+        {
+          autoClose: 5000,
+          toastId: 'market-maker-reconnection-failed',
+        }
+      )
     } finally {
       setIsQuoteLoading(false)
     }
@@ -2692,15 +2703,13 @@ export const Component = () => {
 
     // Check for zero amounts
     if (fromAmount === 0 || toAmount === 0) {
-      setErrorMessage('Cannot swap zero amounts. Please enter a valid amount.')
+      setErrorMessage(t('tradeMarketMaker.error.cannotSwapZeroAmounts'))
       return
     }
 
     // Verify we have a valid RFQ ID first
     if (!rfqId) {
-      setErrorMessage(
-        'No valid quote available. Please try refreshing the quote.'
-      )
+      setErrorMessage(t('tradeMarketMaker.error.noValidQuote'))
       return
     }
 
@@ -2710,9 +2719,7 @@ export const Component = () => {
         'User is buying asset with onchain balance - opening channel order modal'
       )
       setShowBuyChannelModal(true)
-      toast.info(
-        'Creating a channel order to buy your asset with onchain balance!'
-      )
+      toast.info(t('tradeMarketMaker.toast.channelOrderCreating'))
       return
     }
 
@@ -2721,22 +2728,22 @@ export const Component = () => {
     if (missingChannelAsset) {
       // Check if the error is about an unconfirmed channel
       if (errorMessage && errorMessage.includes('awaiting confirmation')) {
-        toast.warning(
-          'Please wait for your channel to be confirmed before trading.'
-        )
+        toast.warning(t('tradeMarketMaker.error.pleaseWaitChannelConfirmation'))
         return
       }
       setShowBuyChannelModal(true)
-      toast.info(`Let's create a ${missingChannelAsset.asset} channel for you!`)
+      toast.info(
+        t('tradeMarketMaker.toast.createAssetChannel', {
+          asset: missingChannelAsset.asset,
+        })
+      )
       return
     }
 
     // If user has no channels at all (shouldn't reach here due to earlier checks)
     if (!hasTradableChannels(channels)) {
       setShowBuyChannelModal(true)
-      toast.info(
-        "You need a channel to trade. Let's create one with your desired asset."
-      )
+      toast.info(t('tradeMarketMaker.toast.needChannelToTrade'))
       return
     }
 
@@ -2748,13 +2755,15 @@ export const Component = () => {
       if (!fromAssetStatus.hasReadyChannels) {
         if (fromAssetStatus.allUnconfirmed) {
           setErrorMessage(
-            `Your ${fromAsset} channel is awaiting confirmation. Please wait for it to be ready before swapping.`
+            t('tradeMarketMaker.error.channelAwaitingConfirmation', {
+              asset: fromAsset,
+            })
           )
           logger.warn(`Cannot swap: ${fromAsset} channel not ready`)
           return
         } else if (!fromAssetStatus.hasChannels) {
           setErrorMessage(
-            `You don't have a ${fromAsset} channel. Please open a channel with ${fromAsset} to swap.`
+            t('tradeMarketMaker.error.noAssetChannel', { asset: fromAsset })
           )
           logger.warn(`Cannot swap: No ${fromAsset} channel found`)
           return
@@ -2770,13 +2779,17 @@ export const Component = () => {
       if (!toAssetStatus.hasReadyChannels) {
         if (toAssetStatus.allUnconfirmed) {
           setErrorMessage(
-            `Your ${toAsset} channel is awaiting confirmation. Please wait for it to be ready before swapping.`
+            t('tradeMarketMaker.error.channelAwaitingConfirmation', {
+              asset: toAsset,
+            })
           )
           logger.warn(`Cannot swap: ${toAsset} channel not ready`)
           return
         } else if (!toAssetStatus.hasChannels) {
           setErrorMessage(
-            `You don't have a ${toAsset} channel. Please open a channel with ${toAsset} to receive.`
+            t('tradeMarketMaker.error.noAssetChannelReceive', {
+              asset: toAsset,
+            })
           )
           logger.warn(`Cannot swap: No ${toAsset} channel found`)
           return
@@ -2789,7 +2802,10 @@ export const Component = () => {
       const formattedMaxToAmount = formatAmount(maxToAmount, toAsset)
       const displayedAsset = displayAsset(toAsset)
       setErrorMessage(
-        `You can only receive up to ${formattedMaxToAmount} ${displayedAsset}.`
+        t('tradeMarketMaker.error.canOnlyReceiveUpTo', {
+          amount: formattedMaxToAmount,
+          asset: displayedAsset,
+        })
       )
       return
     }
@@ -3050,7 +3066,7 @@ export const Component = () => {
                         }
                         formatAmount={formatAmount}
                         getDisplayAsset={displayAsset}
-                        label="You Send"
+                        label={t('tradeMarketMaker.form.youSend')}
                         maxAmount={maxFromAmount}
                         maxHtlcAmount={max_outbound_htlc_sat}
                         minAmount={minFromAmount}
@@ -3131,7 +3147,7 @@ export const Component = () => {
                         formatAmount={formatAmount}
                         getDisplayAsset={displayAsset}
                         isLoading={isToAmountLoading}
-                        label="You Receive (Estimated)"
+                        label={t('tradeMarketMaker.form.youReceive')}
                         maxAmount={maxToAmount}
                         onAmountChange={(e) => {
                           const baseHandler = createToAmountChangeHandler(
@@ -3210,7 +3226,7 @@ export const Component = () => {
                           <button
                             className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
                             onClick={() => copyToClipboard(errorMessage)}
-                            title="Copy error message"
+                            title={t('tradeMarketMaker.error.copyErrorMessage')}
                           >
                             <Copy className="w-4 h-4 text-red-400" />
                           </button>
@@ -3639,7 +3655,7 @@ export const Component = () => {
         onClose={() => setShowBuyChannelModal(false)}
         onSuccess={() => {
           setShowBuyChannelModal(false)
-          toast.success('Channel created successfully! Refreshing...')
+          toast.success(t('tradeMarketMaker.toast.channelCreatedSuccess'))
           setTimeout(() => {
             refreshChannelsAndAmounts()
           }, 1000)

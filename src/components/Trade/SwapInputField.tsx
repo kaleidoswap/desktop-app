@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { logger } from '../../utils/logger'
 
@@ -44,12 +45,12 @@ interface SwapInputFieldProps {
 export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   label,
   availableAmount,
-  availableAmountLabel = 'Available:',
+  availableAmountLabel,
   maxAmount,
   minAmount,
   maxHtlcAmount,
   isLoading,
-  isLoadingLabel = 'Estimating...',
+  isLoadingLabel,
   disabled,
   value,
   asset,
@@ -68,6 +69,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   readOnly = false,
   useEnhancedSelector = true,
 }) => {
+  const { t } = useTranslation()
   useEffect(() => {
     logger.debug(
       `SwapInputField rendering: label=${label}, value=${value}, isLoading=${isLoading}, readOnly=${readOnly}`
@@ -143,7 +145,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                 className={`flex items-center gap-2 text-xs ${amountAnimationClass}`}
               >
                 <span className="font-medium text-slate-400">
-                  {availableAmountLabel}{' '}
+                  {availableAmountLabel || t('trade.swapInput.available')}{' '}
                   <span className="text-slate-200 font-semibold group-hover:text-white transition-colors">
                     {availableAmount}
                   </span>
@@ -153,7 +155,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                     className="p-1.5 rounded-lg hover:bg-slate-700/60 active:scale-95 transition-all duration-200 group/refresh"
                     disabled={disabled}
                     onClick={onRefresh}
-                    title="Refresh amounts"
+                    title={t('trade.swapInput.refreshAmounts')}
                     type="button"
                   >
                     <RefreshCw
@@ -190,9 +192,11 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                   <div className="flex items-center space-x-2.5">
                     <div className="w-4 h-4 border-2 border-blue-500/80 border-t-transparent rounded-full animate-spin"></div>
                     <span className="hidden sm:inline bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
-                      {isLoadingLabel}
+                      {isLoadingLabel || t('trade.swapInput.estimating')}
                     </span>
-                    <span className="sm:hidden">Loading...</span>
+                    <span className="sm:hidden">
+                      {t('trade.swapInput.loading')}
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -216,7 +220,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                   `}
                   disabled={disabled}
                   onChange={handleAmountChange}
-                  placeholder="0.00"
+                  placeholder={t('trade.swapInput.placeholder')}
                   readOnly={readOnly}
                   type="text"
                   value={value}
@@ -233,9 +237,9 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                   fieldLabel={label}
                   onChange={onAssetChange}
                   options={enhancedAssetOptions}
-                  placeholder="Select asset"
-                  searchPlaceholder="Search by ticker or asset ID..."
-                  title="Select Asset"
+                  placeholder={t('trade.swapInput.selectAsset')}
+                  searchPlaceholder={t('trade.swapInput.searchAsset')}
+                  title={t('trade.swapInput.selectAssetTitle')}
                   value={asset}
                 />
               ) : (
@@ -254,10 +258,10 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
             <div className="mt-4 pt-4 border-t border-slate-700/20">
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs font-medium text-slate-300">
-                  Quick Amount
+                  {t('trade.swapInput.quickAmount')}
                 </span>
                 <span className="text-xs text-slate-500 hidden sm:block">
-                  % of available
+                  {t('trade.swapInput.percentAvailable')}
                 </span>
               </div>
               <div className="grid grid-cols-4 gap-2">
@@ -299,7 +303,9 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
               {showMinAmount && minAmount && (
                 <div className={`text-slate-400 ${amountAnimationClass}`}>
-                  <span className="text-slate-500">Min:</span>{' '}
+                  <span className="text-slate-500">
+                    {t('trade.swapInput.min')}:
+                  </span>{' '}
                   <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
                     {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
                   </span>
@@ -307,7 +313,9 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               )}
               {showMaxAmount && maxAmount && (
                 <div className={`text-slate-400 ${amountAnimationClass}`}>
-                  <span className="text-slate-500">Max:</span>{' '}
+                  <span className="text-slate-500">
+                    {t('trade.swapInput.max')}:
+                  </span>{' '}
                   <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
                     {formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}
                   </span>
@@ -327,7 +335,9 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                       ${amountAnimationClass}
                     `}
                   >
-                    <span className="text-slate-500">Max HTLC:</span>{' '}
+                    <span className="text-slate-500">
+                      {t('trade.swapInput.maxHtlc')}:
+                    </span>{' '}
                     <span className="font-medium group-hover:text-white">
                       {formatAmount(maxHtlcAmount, 'BTC')}{' '}
                       {getDisplayAsset('BTC')}
@@ -358,8 +368,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                     "
                   >
                     <div className="relative">
-                      Maximum amount that can be sent through this payment
-                      channel
+                      {t('trade.swapInput.maxHtlcTooltip')}
                       <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-800/95 border-r border-b border-slate-600/50 rotate-45"></div>
                     </div>
                   </div>

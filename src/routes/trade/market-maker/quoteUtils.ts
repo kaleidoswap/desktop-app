@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import { ChangeEvent } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -78,7 +79,8 @@ export const createQuoteRequestHandler = (
   setIsToAmountLoading?: (loading: boolean) => void,
   hasValidQuote?: () => boolean,
   maxFromAmount?: number,
-  minFromAmount?: number
+  minFromAmount?: number,
+  t?: TFunction
 ) => {
   return async () => {
     // Skip if trading pairs haven't been loaded yet - prevents race condition on initialization
@@ -197,7 +199,8 @@ export const createQuoteRequestHandler = (
       toAssetTicker,
       fromAmount,
       assets,
-      tradingPairs
+      tradingPairs,
+      t
     ).catch((error) => {
       logger.error('Error in async quote request:', error)
     })
@@ -212,7 +215,8 @@ const sendQuoteRequest = async (
   toAssetTicker: string,
   fromAmount: number, // This fromAmount is in standard units (e.g., sats for BTC, base units for RGB)
   assets: NiaAsset[],
-  tradingPairs: TradingPair[]
+  tradingPairs: TradingPair[],
+  t?: TFunction
 ) => {
   // We use asset tickers in the UI, but need to send asset IDs to the websocket
   // Get the actual asset IDs to send in the request
@@ -270,20 +274,23 @@ const sendQuoteRequest = async (
 
       // Show error toast only if it's been enough time since the last similar error toast
       if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
-        toast.error(
-          'Failed to send quote request. Connection may be unstable.',
-          {
-            autoClose: 4000, // Increased from 3000ms to 4000ms
-            toastId: 'quote-request-failed',
-          }
-        )
+        const errorMsg = t
+          ? t('tradeMarketMaker.toast.connectionError')
+          : 'Failed to send quote request. Connection may be unstable.'
+        toast.error(errorMsg, {
+          autoClose: 4000, // Increased from 3000ms to 4000ms
+          toastId: 'quote-request-failed',
+        })
         lastQuoteErrorToastTime = Date.now()
       }
     }
   } catch (error) {
     logger.error('Error in sendQuoteRequest:', error)
     if (Date.now() - lastQuoteErrorToastTime > ERROR_TOAST_COOLDOWN_MS) {
-      toast.error('An unexpected error occurred while requesting the quote.', {
+      const errorMsg = t
+        ? t('tradeMarketMaker.error.unableToGetQuote')
+        : 'An unexpected error occurred while requesting the quote.'
+      toast.error(errorMsg, {
         autoClose: 4000, // Increased from 3000ms to 4000ms
         toastId: 'quote-request-exception',
       })

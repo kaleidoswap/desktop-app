@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router-dom'
 
@@ -9,6 +10,15 @@ export const Component = () => {
   const [content, setContent] = useState('')
   const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { t } = useTranslation()
+
+  const noticeItems = useMemo(
+    () =>
+      t('legal.terms.noticeItems', {
+        returnObjects: true,
+      }) as string[],
+    [t]
+  )
 
   useEffect(() => {
     const loadContent = async () => {
@@ -18,12 +28,12 @@ export const Component = () => {
         })
         setContent(content as string)
       } catch (error) {
-        setError('Failed to load terms of service')
+        setError(t('legal.terms.error'))
         console.error('Failed to load terms of service:', error)
       }
     }
     loadContent()
-  }, [])
+  }, [t])
 
   return (
     <Layout>
@@ -35,29 +45,21 @@ export const Component = () => {
             </div>
           ) : (
             <>
-              <h1>TEST NET KALEIDOSWAP TERMS OF USE</h1>
+              <h1>{t('legal.terms.title')}</h1>
               <p>
-                <strong>Effective Date: 14 July 2025</strong>
+                <strong>
+                  {t('legal.terms.effectiveDate', { date: '14 July 2025' })}
+                </strong>
               </p>
 
               <div className="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-4 my-6">
                 <p className="text-yellow-300 font-bold mb-4">
-                  IMPORTANT NOTICE:
+                  {t('legal.common.noticeTitle')}
                 </p>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>
-                    THE APP OPERATES ON THE RGB TEST NET PROTOCOL AND TEST NET
-                    BITCOIN BLOCKCHAIN.
-                  </li>
-                  <li>
-                    THE APP IS AN EXPERIMENTAL DIGITAL ASSET WALLET APPLICATION.
-                  </li>
-                  <li>ALL USE OF THE APP IS AT YOUR OWN RISK.</li>
-                  <li>
-                    YOU SHOULD NOT USE THE APP TO SEND OR RECEIVE TEST NET BTC
-                    OR RGB TEST NET TOKENS THAT YOU ARE NOT PREPARED TO LOSE
-                    ENTIRELY.
-                  </li>
+                  {noticeItems.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
                 </ul>
               </div>
 
@@ -68,7 +70,7 @@ export const Component = () => {
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                   onClick={() => navigate(-1)}
                 >
-                  Okay
+                  {t('common.ok')}
                 </button>
               </div>
             </>

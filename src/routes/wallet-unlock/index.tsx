@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -31,6 +32,7 @@ interface Fields {
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
   const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
@@ -106,13 +108,13 @@ export const Component = () => {
 
         const nodeInfoRes = await nodeInfo()
         if (nodeInfoRes.isSuccess) {
-          toast.success('Wallet unlocked successfully!', {
+          toast.success(t('walletUnlock.successMessage'), {
             autoClose: 3000,
             position: 'bottom-right',
           })
           navigate(WALLET_DASHBOARD_PATH)
         } else {
-          throw new Error('Failed to get node info after unlock')
+          throw new Error(t('walletUnlock.failedGetNodeInfo'))
         }
 
         shouldRetry = false
@@ -165,8 +167,8 @@ export const Component = () => {
         }
 
         if (error?.status === 401 && errorMessage === 'Invalid password') {
-          setUnlockError('Invalid password')
-          toast.error('Invalid password', {
+          setUnlockError(t('walletUnlock.invalidPassword'))
+          toast.error(t('walletUnlock.invalidPassword'), {
             autoClose: 5000,
             position: 'top-right',
           })
@@ -182,7 +184,7 @@ export const Component = () => {
           setShowInitModal(true)
           shouldRetry = false
         } else if (errorMessage === 'Node has already been unlocked') {
-          toast.info('Node is already unlocked', {
+          toast.info(t('walletUnlock.alreadyUnlocked'), {
             autoClose: 3000,
             position: 'bottom-right',
           })
@@ -210,7 +212,7 @@ export const Component = () => {
     if (nodeSettings.datapath) {
       try {
         await invoke('stop_node')
-        toast.info('Node stopped', {
+        toast.info(t('walletUnlock.nodeStopped'), {
           autoClose: 2000,
           position: 'bottom-right',
         })
@@ -224,7 +226,7 @@ export const Component = () => {
   const handleCancelUnlocking = () => {
     setIsUnlocking(false)
     setUnlockError(null)
-    toast.info('Unlocking process cancelled', {
+    toast.info(t('walletUnlock.unlockCancelled'), {
       autoClose: 3000,
       position: 'bottom-right',
     })

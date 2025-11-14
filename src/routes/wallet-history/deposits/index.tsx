@@ -7,6 +7,7 @@ import {
   Search,
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../../../app/store'
@@ -74,6 +75,7 @@ export type DepositType = {
 }
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'on-chain' | 'off-chain'
   >('all')
@@ -131,24 +133,22 @@ export const Component: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <LoaderIcon className="w-12 h-12 animate-spin text-cyan" />
-        <p className="text-slate-400">Loading deposit history...</p>
+        <p className="text-slate-400">{t('deposits.loading')}</p>
       </div>
     )
   }
 
   if (isError) {
     return (
-      <Alert title="Error Loading Data" variant="error">
-        <p>
-          There was an error loading your deposit history. Please try again.
-        </p>
+      <Alert title={t('deposits.errorLoading')} variant="error">
+        <p>{t('deposits.errorMessage')}</p>
         <div className="mt-4">
           <Button
             icon={<RefreshCw className="w-4 h-4" />}
             onClick={handleRefresh}
             variant="outline"
           >
-            Try Again
+            {t('deposits.tryAgain')}
           </Button>
         </div>
       </Alert>
@@ -244,15 +244,15 @@ export const Component: React.FC = () => {
             size="sm"
             variant="primary"
           >
-            On-chain
+            {t('deposits.onChain')}
           </Badge>
         ) : (
           <Badge icon={<Zap className="w-3 h-3" />} size="sm" variant="info">
-            Off-chain
+            {t('deposits.offChain')}
           </Badge>
         ),
       className: 'col-span-1',
-      header: 'Type',
+      header: t('deposits.type'),
     },
     {
       accessor: (deposit: DepositWithTimestamp) => (
@@ -261,7 +261,7 @@ export const Component: React.FC = () => {
         </span>
       ),
       className: 'col-span-1',
-      header: 'Asset',
+      header: t('deposits.asset'),
     },
     {
       accessor: (deposit: DepositWithTimestamp) => (
@@ -275,24 +275,24 @@ export const Component: React.FC = () => {
         </span>
       ),
       className: 'col-span-1',
-      header: 'Amount',
+      header: t('deposits.amount'),
     },
     {
       accessor: (deposit: DepositWithTimestamp) =>
         renderDateField(deposit.timestamp ? deposit.timestamp * 1000 : null),
       className: 'col-span-1',
-      header: 'Date',
+      header: t('deposits.date'),
     },
     {
       accessor: (deposit: DepositWithTimestamp) =>
-        renderCopyableField(deposit.txId, true, 4, 'Transaction ID'),
+        renderCopyableField(deposit.txId, true, 4, t('deposits.transactionId')),
       className: 'col-span-1',
-      header: 'Transaction ID',
+      header: t('deposits.transactionId'),
     },
     {
-      accessor: () => renderStatusBadge('Completed', 'success'),
+      accessor: () => renderStatusBadge(t('deposits.completed'), 'success'),
       className: 'col-span-1',
-      header: 'Status',
+      header: t('deposits.status'),
     },
   ]
 
@@ -303,11 +303,13 @@ export const Component: React.FC = () => {
           <div className="p-2.5 rounded-lg bg-green-500/10">
             <Chain className="h-6 w-6 text-green-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Deposit History</h2>
+          <h2 className="text-xl font-bold text-white">
+            {t('deposits.title')}
+          </h2>
         </div>
 
         <IconButton
-          aria-label="Refresh"
+          aria-label={t('deposits.refresh')}
           disabled={isRefreshing}
           icon={
             isRefreshing ? (
@@ -329,7 +331,7 @@ export const Component: React.FC = () => {
           <input
             className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search deposits..."
+            placeholder={t('deposits.searchPlaceholder')}
             type="text"
             value={searchTerm}
           />
@@ -341,9 +343,9 @@ export const Component: React.FC = () => {
             onChange={(e) => setTypeFilter(e.target.value as any)}
             value={typeFilter}
           >
-            <option value="all">All Types</option>
-            <option value="on-chain">On-chain</option>
-            <option value="off-chain">Off-chain</option>
+            <option value="all">{t('deposits.allTypes')}</option>
+            <option value="on-chain">{t('deposits.onChain')}</option>
+            <option value="off-chain">{t('deposits.offChain')}</option>
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Chain className="h-4 w-4 text-gray-400" />
@@ -372,7 +374,7 @@ export const Component: React.FC = () => {
             onChange={(e) => setAssetFilter(e.target.value)}
             value={assetFilter}
           >
-            <option value="all">All Assets</option>
+            <option value="all">{t('deposits.allAssets')}</option>
             {uniqueAssets.map((asset) => (
               <option key={asset} value={asset}>
                 {asset}
@@ -405,7 +407,7 @@ export const Component: React.FC = () => {
         <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
           {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
             <>
-              <p>No deposits found matching your filters.</p>
+              <p>{t('deposits.noDepositsFiltered')}</p>
               <Button
                 className="mt-4"
                 onClick={() => {
@@ -416,11 +418,11 @@ export const Component: React.FC = () => {
                 size="sm"
                 variant="outline"
               >
-                Clear Filters
+                {t('deposits.clearFilters')}
               </Button>
             </>
           ) : (
-            <p>No deposits found.</p>
+            <p>{t('deposits.noDeposits')}</p>
           )}
         </div>
       ) : (

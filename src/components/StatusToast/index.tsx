@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import React, { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../app/store/hooks'
@@ -143,6 +144,7 @@ interface SwapNotificationState {
 export const StatusToast: React.FC<{
   assets: NiaAsset[]
 }> = ({ assets }) => {
+  const { t } = useTranslation()
   const { addNotification, removeNotification } = useNotification()
   const swapStates = useRef<Record<string, SwapNotificationState>>({})
   const autoRemoveTimeoutsRef = useRef<Record<string, number>>({})
@@ -234,9 +236,9 @@ export const StatusToast: React.FC<{
             ) as unknown as number
 
             if (swap.status === 'Succeeded') {
-              toast.success('Swap succeeded')
+              toast.success(t('trade.statusToast.swapSucceeded'))
             } else if (swap.status === 'Expired') {
-              toast.error('Swap expired')
+              toast.error(t('trade.statusToast.swapExpired'))
             }
           }
         }
@@ -276,12 +278,16 @@ export const StatusToast: React.FC<{
         }
       }
     })
-  }, [data, assets, addNotification, removeNotification])
+  }, [data, assets, addNotification, removeNotification, t])
 
   // Add a subtle floating component to draw attention to pending swaps
   const pendingSwapCount = Object.values(swapStates.current).filter(
     (state) => state.status === 'Pending' && !state.dismissed
   ).length
+
+  const pendingText = t('trade.statusToast.pendingSwaps', {
+    count: pendingSwapCount,
+  })
 
   const hasNewSwaps = pendingSwapCount > 0
 
@@ -296,10 +302,7 @@ export const StatusToast: React.FC<{
       <div className="bg-gradient-to-r from-blue-900 to-blue-800 backdrop-blur-md p-3 rounded-lg shadow-xl border border-blue-700 flex items-center">
         <div className="text-white font-medium flex items-center">
           <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse mr-3"></div>
-          <span>
-            {pendingSwapCount} {pendingSwapCount === 1 ? 'Swap' : 'Swaps'} in
-            progress
-          </span>
+          <span>{pendingText}</span>
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 type UpdaterProps = {
@@ -19,6 +20,7 @@ type UpdaterProps = {
 }
 
 export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
+  const { t, i18n } = useTranslation()
   const [update, setUpdate] = useState<null | Update>(null)
   const [isCheckingUpdate, setIsCheckingUpdate] = useState<boolean>(true)
   const [contentLength, setContentLength] = useState<number | undefined>(
@@ -42,7 +44,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
         console.log('Update check result:', _update)
       } catch (e) {
         console.log('Update check error:', e)
-        setError('Failed to check for updates. Please try again later.')
+        setError(t('updater.errorGeneric'))
       } finally {
         setIsCheckingUpdate(false)
       }
@@ -57,7 +59,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
     }
 
     checkForUpdate()
-  }, [setUpdateChecked])
+  }, [setUpdateChecked, t])
 
   // Auto-reset stuck installing state after 10 minutes
   useEffect(() => {
@@ -67,7 +69,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
       resetTimer = setTimeout(() => {
         console.log('Auto-resetting stuck installing state')
         setIsInstalling(false)
-        setError('Update process seems to be stuck. Please try again.')
+        setError(t('updater.stuckError'))
       }, 600000) // 10 minutes
     }
 
@@ -76,22 +78,30 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
         clearTimeout(resetTimer)
       }
     }
-  }, [isInstalling, completed])
+  }, [isInstalling, completed, t])
 
   const formatFileSize = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    if (bytes === 0) return '0 Bytes'
+    const sizes = [
+      t('updater.fileUnits.bytes'),
+      t('updater.fileUnits.kilobytes'),
+      t('updater.fileUnits.megabytes'),
+      t('updater.fileUnits.gigabytes'),
+    ]
+    if (bytes === 0) return `0 ${sizes[0]}`
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
   }
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      })
+      return new Date(dateString).toLocaleDateString(
+        i18n.language || undefined,
+        {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }
+      )
     } catch {
       return dateString
     }
@@ -108,11 +118,10 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 <Loader2 className="w-8 h-8 text-white animate-spin" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">
-                Checking for Updates
+                {t('updater.checkingTitle')}
               </h2>
               <p className="text-blue-100/80 text-sm leading-relaxed">
-                We're looking for the latest version to ensure you have the best
-                experience.
+                {t('updater.checkingDescription')}
               </p>
               <div className="mt-6 flex justify-center">
                 <div className="flex space-x-1">
@@ -148,7 +157,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 <AlertCircle className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-3">
-                Update Check Failed
+                {t('updater.errorTitle')}
               </h2>
               <p className="text-red-100/80 text-sm leading-relaxed mb-6">
                 {error}
@@ -158,13 +167,13 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                   className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200 border border-white/20"
                   onClick={() => window.location.reload()}
                 >
-                  Try Again
+                  {t('updater.tryAgain')}
                 </button>
                 <button
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg"
                   onClick={() => setUpdateChecked(true)}
                 >
-                  Continue
+                  {t('common.continue')}
                 </button>
               </div>
             </div>
@@ -183,7 +192,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
     // Add timeout protection
     const timeoutId = setTimeout(() => {
       console.log('Update timeout - resetting state')
-      setError('Update process timed out. Please try again.')
+      setError(t('updater.timeoutError'))
       setIsInstalling(false)
       setCompleted(false)
     }, 300000) // 5 minutes timeout
@@ -220,10 +229,10 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
     } catch (err) {
       console.error('Download/install error:', err)
       clearTimeout(timeoutId)
-      setError('Failed to install update. Please try again.')
+      setError(t('updater.installError'))
       setIsInstalling(false)
       setCompleted(false)
-      toast.error('Failed to install update')
+      toast.error(t('updater.installToastError'))
     }
   }
 
@@ -238,25 +247,20 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 <CheckCircle2 className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-3">
-                Update Ready! 🎉
+                {t('updater.completedTitle')}
               </h2>
               <p className="text-green-100/80 text-sm leading-relaxed mb-2">
-                Version{' '}
-                <span className="font-semibold text-green-200">
-                  {update.version}
-                </span>{' '}
-                has been downloaded successfully.
+                {t('updater.completedDescription', { version: update.version })}
               </p>
               <p className="text-green-100/60 text-xs mb-8">
-                Restart the application to enjoy the latest features and
-                improvements.
+                {t('updater.completedSubtext')}
               </p>
               <button
                 className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-green-500/25 transform hover:scale-[1.02] flex items-center justify-center gap-2"
                 onClick={() => relaunch()}
               >
                 <RefreshCw className="w-5 h-5" />
-                Restart Now
+                {t('updater.restartButton')}
               </button>
             </div>
           </div>
@@ -284,16 +288,16 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
               </div>
 
               <h2 className="text-2xl font-bold text-white mb-2">
-                Downloading Update
+                {t('updater.downloadingTitle')}
               </h2>
               <p className="text-purple-100/80 text-sm mb-2">
-                Version{' '}
+                {t('updater.versionLabel')}{' '}
                 <span className="font-semibold text-purple-200">
                   {update.version}
                 </span>
               </p>
               <p className="text-purple-100/60 text-xs mb-8">
-                Please don't close the application during the update
+                {t('updater.installWarning')}
               </p>
 
               {/* Enhanced Progress Section */}
@@ -351,7 +355,9 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 {/* Download info */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-purple-200/80">Downloaded</span>
+                    <span className="text-purple-200/80">
+                      {t('updater.downloadedLabel')}
+                    </span>
                     <span className="font-medium text-purple-100">
                       {downloadedSize} / {totalSize}
                     </span>
@@ -389,7 +395,9 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                       ></div>
                     </div>
                     <span className="text-xs text-purple-200/60 ml-2">
-                      {progress < 100 ? 'Downloading...' : 'Installing...'}
+                      {progress < 100
+                        ? t('updater.downloadingStatus')
+                        : t('updater.installingStatus')}
                     </span>
                   </div>
 
@@ -401,10 +409,10 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                         console.log('User cancelled update')
                         setIsInstalling(false)
                         setCompleted(false)
-                        setError('Update cancelled by user')
+                        setError(t('updater.cancelledError'))
                       }}
                     >
-                      Having issues? Click to cancel and try again
+                      {t('updater.cancelHelp')}
                     </button>
                   </div>
                 </div>
@@ -416,7 +424,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                   <div className="flex items-center gap-2 mb-3">
                     <FileText className="w-4 h-4 text-purple-300" />
                     <span className="text-sm font-medium text-purple-200">
-                      What's New
+                      {t('updater.releaseNotesTitle')}
                     </span>
                   </div>
                   <p className="text-xs text-purple-100/70 leading-relaxed">
@@ -444,11 +452,13 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
             </div>
 
             <h2 className="text-3xl font-bold text-white mb-2">
-              New Update Available!
+              {t('updater.availableTitle')}
             </h2>
 
             <div className="flex items-center justify-center gap-2 mb-6">
-              <span className="text-amber-100/80">Version</span>
+              <span className="text-amber-100/80">
+                {t('updater.versionLabel')}
+              </span>
               <span className="px-3 py-1 bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-200 font-semibold rounded-full border border-amber-400/30">
                 {update.version}
               </span>
@@ -459,7 +469,9 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
               <div className="flex items-center justify-center gap-2 mb-6 text-amber-100/60">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">
-                  Released {formatDate(update.date)}
+                  {t('updater.releasedOn', {
+                    date: formatDate(update.date),
+                  })}
                 </span>
               </div>
             )}
@@ -470,7 +482,7 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 <div className="flex items-center gap-2 mb-3">
                   <FileText className="w-4 h-4 text-amber-300" />
                   <span className="text-sm font-medium text-amber-200">
-                    What's New
+                    {t('updater.releaseNotesTitle')}
                   </span>
                 </div>
                 <p className="text-sm text-amber-100/80 leading-relaxed">
@@ -489,12 +501,12 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 {isInstalling ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Installing...
+                    {t('updater.installingLabel')}
                   </>
                 ) : (
                   <>
                     <Download className="w-5 h-5" />
-                    Download & Install
+                    {t('updater.installButton')}
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </>
                 )}
@@ -504,13 +516,12 @@ export const Updater = ({ setUpdateChecked }: UpdaterProps) => {
                 disabled={isInstalling}
                 onClick={() => setUpdateChecked(true)}
               >
-                Skip for now
+                {t('updater.skipButton')}
               </button>
             </div>
 
             <p className="text-xs text-amber-100/40 mt-4">
-              We recommend updating to get the latest features and security
-              improvements.
+              {t('updater.recommendation')}
             </p>
           </div>
         </div>

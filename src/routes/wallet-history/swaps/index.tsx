@@ -7,6 +7,7 @@ import {
   Calendar,
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../../../app/store'
@@ -77,6 +78,7 @@ const getStatusBadgeVariant = (status: SwapStatus) => {
 }
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [assetFilter, setAssetFilter] = useState<string>('all')
@@ -209,22 +211,22 @@ export const Component: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <Loader className="w-12 h-12 animate-spin text-blue-500" />
-        <p className="text-slate-400">Loading swap history...</p>
+        <p className="text-slate-400">{t('swaps.loading')}</p>
       </div>
     )
   }
 
   if (isError) {
     return (
-      <Alert title="Error Loading Data" variant="error">
-        <p>There was an error loading your swap history. Please try again.</p>
+      <Alert title={t('swaps.errorLoading')} variant="error">
+        <p>{t('swaps.errorMessage')}</p>
         <div className="mt-4">
           <Button
             icon={<RefreshCw className="w-4 h-4" />}
             onClick={handleRefresh}
             variant="outline"
           >
-            Try Again
+            {t('swaps.tryAgain')}
           </Button>
         </div>
       </Alert>
@@ -238,11 +240,11 @@ export const Component: React.FC = () => {
           <div className="p-2.5 rounded-lg bg-blue-500/10">
             <ArrowDownUp className="h-6 w-6 text-blue-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Swap History</h2>
+          <h2 className="text-xl font-bold text-white">{t('swaps.title')}</h2>
         </div>
 
         <IconButton
-          aria-label="Refresh"
+          aria-label={t('swaps.refresh')}
           disabled={isRefreshing}
           icon={
             isRefreshing ? (
@@ -264,7 +266,7 @@ export const Component: React.FC = () => {
           <input
             className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search swaps..."
+            placeholder={t('swaps.searchPlaceholder')}
             type="text"
             value={searchTerm}
           />
@@ -276,9 +278,9 @@ export const Component: React.FC = () => {
             onChange={(e) => setTypeFilter(e.target.value)}
             value={typeFilter}
           >
-            <option value="all">All Types</option>
-            <option value="maker">Maker</option>
-            <option value="taker">Taker</option>
+            <option value="all">{t('swaps.allTypes')}</option>
+            <option value="maker">{t('swaps.maker')}</option>
+            <option value="taker">{t('swaps.taker')}</option>
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <ArrowDownUp className="h-4 w-4 text-gray-400" />
@@ -307,7 +309,7 @@ export const Component: React.FC = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             value={statusFilter}
           >
-            <option value="all">All Statuses</option>
+            <option value="all">{t('swaps.allStatuses')}</option>
             {Object.values(SwapStatus).map((status) => (
               <option key={status} value={status}>
                 {status}
@@ -341,7 +343,7 @@ export const Component: React.FC = () => {
             onChange={(e) => setAssetFilter(e.target.value)}
             value={assetFilter}
           >
-            <option value="all">All Assets</option>
+            <option value="all">{t('swaps.allAssets')}</option>
             {uniqueAssets.map((asset) => (
               <option key={asset} value={asset}>
                 {asset}
@@ -377,7 +379,7 @@ export const Component: React.FC = () => {
           typeFilter !== 'all' ||
           assetFilter !== 'all' ? (
             <>
-              <p>No swaps found matching your filters.</p>
+              <p>{t('swaps.noSwapsFiltered')}</p>
               <Button
                 className="mt-4"
                 onClick={() => {
@@ -389,11 +391,11 @@ export const Component: React.FC = () => {
                 size="sm"
                 variant="outline"
               >
-                Clear Filters
+                {t('swaps.clearFilters')}
               </Button>
             </>
           ) : (
-            <p>No swaps found.</p>
+            <p>{t('swaps.noSwaps')}</p>
           )}
         </div>
       ) : (

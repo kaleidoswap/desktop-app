@@ -1,5 +1,6 @@
 import { TrendingUp, Clock, RefreshCw } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { calculateAndFormatRate } from '../../helpers/number'
 import {
@@ -12,16 +13,25 @@ import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { AssetOption } from './AssetComponents'
 
 // Helper function to format time difference
-const formatTimeDifference = (timestamp: number): string => {
+const formatTimeDifference = (
+  timestamp: number,
+  t: (key: string, params?: any) => string
+): string => {
   const now = Date.now()
   const diffInSeconds = Math.floor((now - timestamp) / 1000)
 
-  if (diffInSeconds < 5) return 'just now'
-  if (diffInSeconds < 60) return `${diffInSeconds}s ago`
-  if (diffInSeconds < 120) return '1m ago'
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-  if (diffInSeconds < 7200) return '1h ago'
-  return `${Math.floor(diffInSeconds / 3600)}h ago`
+  if (diffInSeconds < 5) return t('trade.exchangeRate.justNow')
+  if (diffInSeconds < 60)
+    return t('trade.exchangeRate.secondsAgo', { seconds: diffInSeconds })
+  if (diffInSeconds < 120) return t('trade.exchangeRate.oneMinuteAgo')
+  if (diffInSeconds < 3600)
+    return t('trade.exchangeRate.minutesAgo', {
+      minutes: Math.floor(diffInSeconds / 60),
+    })
+  if (diffInSeconds < 7200) return t('trade.exchangeRate.oneHourAgo')
+  return t('trade.exchangeRate.hoursAgo', {
+    hours: Math.floor(diffInSeconds / 3600),
+  })
 }
 
 // Constants for price freshness
@@ -53,6 +63,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   lastQuoteTimestamp,
   isPriceFresh = true,
 }) => {
+  const { t } = useTranslation()
   // Get display tickers for assets (especially important for RGB assets)
   const fromDisplayTicker =
     isAssetId(fromAsset) && assets.length > 0
@@ -109,11 +120,13 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
       <div className="flex items-center justify-between text-xs bg-slate-800/30 rounded-lg px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Clock className="w-3 h-3 text-slate-500" />
-          <span className="text-slate-500">Updated:</span>
+          <span className="text-slate-500">
+            {t('trade.exchangeRate.updated')}:
+          </span>
           <span className="text-slate-300 font-medium">
             {lastQuoteTimestamp
-              ? formatTimeDifference(lastQuoteTimestamp)
-              : 'Never'}
+              ? formatTimeDifference(lastQuoteTimestamp, t)
+              : t('trade.exchangeRate.never')}
           </span>
         </div>
 
@@ -131,7 +144,9 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
               }`}
             ></div>
             <span className="text-xs font-semibold">
-              {isPriceFresh ? 'Live' : 'Stale'}
+              {isPriceFresh
+                ? t('trade.exchangeRate.live')
+                : t('trade.exchangeRate.stale')}
             </span>
           </div>
         </div>
@@ -163,6 +178,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   getAssetPrecision,
   assets = [],
 }) => {
+  const { t } = useTranslation()
   const [showPriceUpdate, setShowPriceUpdate] = useState(false)
   const [prevPrice, setPrevPrice] = useState<number | null>(null)
   const [lastQuoteTimestamp, setLastQuoteTimestamp] = useState<number | null>(
@@ -246,7 +262,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
       <div className="flex items-center justify-center py-8 text-slate-400">
         <div className="flex items-center gap-2">
           <RefreshCw className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Loading exchange rate...</span>
+          <span className="text-sm">{t('trade.exchangeRate.loadingRate')}</span>
         </div>
       </div>
     )
@@ -274,7 +290,9 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
         <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
           <div className="flex items-center gap-3 text-slate-300">
             <RefreshCw className="w-5 h-5 animate-spin" />
-            <span className="font-medium">Updating rate...</span>
+            <span className="font-medium">
+              {t('trade.exchangeRate.updatingRate')}
+            </span>
           </div>
         </div>
       )}

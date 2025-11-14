@@ -1,10 +1,14 @@
+import { TFunction } from 'i18next'
 import { toast } from 'react-toastify'
 
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
 import { Channel, NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../utils/logger'
 
-import { ASSET_CONFLICT_MESSAGES } from './errorMessages'
+import {
+  ASSET_CONFLICT_MESSAGES,
+  createAssetConflictMessages,
+} from './errorMessages'
 
 const MSATS_PER_SAT = 1000
 
@@ -72,7 +76,8 @@ export const createAssetChangeHandler = (
     percentageOfMax?: number
   ) => Promise<string | null>,
   setSelectedPair: (pair: TradingPair | null) => void,
-  setMaxFromAmount: (amount: number) => void
+  setMaxFromAmount: (amount: number) => void,
+  t: TFunction
 ) => {
   return async (field: 'fromAsset' | 'toAsset', newValue: string) => {
     const currentFromAsset = form.getValues().fromAsset
@@ -103,7 +108,9 @@ export const createAssetChangeHandler = (
 
       if (complementaryAssets.length === 0) {
         logger.error(`No complementary assets found for ${newValue}`)
-        toast.error(`Cannot select ${newValue} for both assets`)
+        toast.error(
+          t('tradeMarketMaker.error.cannotSwapSameAsset', { asset: newValue })
+        )
         return
       }
 
@@ -130,7 +137,9 @@ export const createAssetChangeHandler = (
       )
 
       if (pairsWithNewAsset.length === 0) {
-        toast.error(`No trading pairs available for ${newValue}`)
+        toast.error(
+          t('tradeMarketMaker.error.noTradingPairs', { asset: newValue })
+        )
         return
       }
 
@@ -176,7 +185,7 @@ export const createAssetChangeHandler = (
       logger.error(
         `Unexpected: No matching tradable pair found for ${newFromAsset}/${newToAsset}`
       )
-      toast.error('Failed to find a valid trading pair')
+      toast.error(t('tradeMarketMaker.error.failedToFindPair'))
       form.setValue('fromAsset', previousFromAsset)
       form.setValue('toAsset', previousToAsset)
       return
@@ -557,7 +566,8 @@ export const createFetchAndSetPairsHandler = (
   setTradingPairs: (pairs: TradingPair[]) => void,
   setTradablePairs: (pairs: TradingPair[]) => void,
   setSelectedPair: (pair: TradingPair | null) => void,
-  setIsPairsLoading?: (loading: boolean) => void
+  setIsPairsLoading?: (loading: boolean) => void,
+  t?: TFunction
 ) => {
   // Add a static flag to prevent multiple simultaneous calls
   let isCurrentlyFetching = false
@@ -601,10 +611,15 @@ export const createFetchAndSetPairsHandler = (
         // Log detailed conflict information for debugging
         logAssetConflicts(conflicts)
 
+        // Create the conflict messages with translation support
+        const conflictMessages = t
+          ? createAssetConflictMessages(t)
+          : ASSET_CONFLICT_MESSAGES
+
         // Show individual conflict warnings
         conflicts.forEach((conflict) => {
           toast.warn(
-            ASSET_CONFLICT_MESSAGES.TICKER_CONFLICT(
+            conflictMessages.TICKER_CONFLICT(
               conflict.ticker,
               conflict.assetIds,
               conflict.conflictingPairs.length
@@ -615,7 +630,7 @@ export const createFetchAndSetPairsHandler = (
         // Show summary if multiple conflicts
         if (conflicts.length > 1) {
           toast.info(
-            ASSET_CONFLICT_MESSAGES.MULTIPLE_CONFLICTS(
+            conflictMessages.MULTIPLE_CONFLICTS(
               conflicts.length,
               totalExcludedPairs,
               validatedPairs.length
@@ -687,13 +702,17 @@ export const createFetchAndSetPairsHandler = (
       logger.error('Error fetching pairs:', error)
 
       // Show specific error message for timeout
-      let errorMessage = 'Failed to fetch trading pairs'
+      let errorMessage = t
+        ? t('tradeMarketMaker.toast.initializationFailed')
+        : 'Failed to fetch trading pairs'
       if (error?.status === 'TIMEOUT_ERROR') {
-        errorMessage =
-          'Request timed out while fetching trading pairs. The maker server is not responding.'
+        errorMessage = t
+          ? t('tradeMarketMaker.toast.connectionFailed')
+          : 'Request timed out while fetching trading pairs. The maker server is not responding.'
       } else if (error?.status === 'FETCH_ERROR') {
-        errorMessage =
-          'Network error while fetching trading pairs. Please check your connection.'
+        errorMessage = t
+          ? t('tradeMarketMaker.toast.connectionError')
+          : 'Network error while fetching trading pairs. Please check your connection.'
       }
 
       toast.error(errorMessage)

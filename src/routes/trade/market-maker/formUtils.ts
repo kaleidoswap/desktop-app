@@ -70,11 +70,11 @@ export const createFromAmountChangeHandler = (
       : Infinity
 
     // Ensure value doesn't exceed max
-    let finalValue =
+    const finalValue =
       numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
 
     // Format the value with proper number formatting
-    let formattedValue = formatNumberInput(finalValue, precision)
+    const formattedValue = formatNumberInput(finalValue, precision)
 
     // Set the formatted value in the form
     form.setValue('from', formattedValue, { shouldValidate: true })
@@ -161,11 +161,11 @@ export const createToAmountChangeHandler = (
       : Infinity
 
     // Ensure value doesn't exceed max
-    let finalValue =
+    const finalValue =
       numericValue > maxDisplayValue ? maxDisplayValue.toString() : cleanValue
 
     // Format the value with proper number formatting
-    let formattedValue = formatNumberInput(finalValue, precision)
+    const formattedValue = formatNumberInput(finalValue, precision)
 
     form.setValue('to', formattedValue, { shouldValidate: true })
   }

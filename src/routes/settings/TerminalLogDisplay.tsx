@@ -3,6 +3,7 @@ import { CSSProperties, useEffect, useRef, memo, useMemo } from 'react'
 // Move parseAnsi outside component to avoid recreating on every render
 const parseAnsi = (log: string) => {
   const segments = []
+  // eslint-disable-next-line no-control-regex
   const ansiRegex = /\x1b\[([\d;]*?)m/g
   let lastIndex = 0
 

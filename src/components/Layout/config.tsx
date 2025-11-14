@@ -1,3 +1,4 @@
+import { TFunction } from 'i18next'
 import {
   FileText,
   HelpCircle,
@@ -54,32 +55,32 @@ export interface NavItem {
 }
 
 // Define main navigation items with icons
-export const MAIN_NAV_ITEMS = [
+export const getMainNavItems = (t: TFunction) => [
   {
     icon: <Home className="w-5 h-5" />,
-    label: 'Dashboard',
+    label: t('navigation.dashboard'),
     matchPath: WALLET_DASHBOARD_PATH,
     to: WALLET_DASHBOARD_PATH,
   },
   {
     icon: <Zap className="w-5 h-5" />,
-    label: 'Trade',
+    label: t('navigation.trade'),
     matchPath: TRADE_PATH,
     subMenu: [
       {
         icon: <Store className="w-4 h-4" />,
-        label: 'Market Maker',
+        label: t('navigation.marketMaker'),
         to: TRADE_MARKET_MAKER_PATH,
       },
       {
         icon: <Zap className="w-4 h-4" />,
-        label: 'Manual Swaps',
+        label: t('navigation.manualSwaps'),
         to: TRADE_MANUAL_PATH,
       },
       {
         disabled: true,
         icon: <Users className="w-4 h-4" />,
-        label: 'Nostr P2P',
+        label: t('navigation.nostrP2P'),
         to: TRADE_NOSTR_P2P_PATH,
       },
     ],
@@ -87,39 +88,48 @@ export const MAIN_NAV_ITEMS = [
   },
   {
     icon: <Clock className="w-5 h-5" />,
-    label: 'History',
+    label: t('navigation.history'),
     matchPath: WALLET_HISTORY_PATH,
     to: WALLET_HISTORY_PATH,
   },
   {
     icon: <Activity className="w-5 h-5" />,
-    label: 'Channels',
+    label: t('navigation.channels'),
     matchPath: CHANNELS_PATH,
     to: CHANNELS_PATH,
   },
 ]
 
+// Keep the old export for backward compatibility (will be deprecated)
+export const MAIN_NAV_ITEMS = getMainNavItems(
+  ((key: string) => key.split('.').pop() || key) as any
+)
+
 // Channel menu items
-export const CHANNEL_MENU_ITEMS = [
+export const getChannelMenuItems = (t: TFunction) => [
   {
     icon: <Plus className="w-4 h-4" />,
-    label: 'Create New Channel',
+    label: t('channels.createNewChannel'),
     to: CREATE_NEW_CHANNEL_PATH,
   },
   {
     icon: <ShoppingCart className="w-4 h-4" />,
-    label: 'Buy a Channel',
+    label: t('channels.buyAChannel'),
     to: ORDER_CHANNEL_PATH,
   },
   {
     icon: <Settings className="w-4 h-4" />,
-    label: 'Manage Channels',
+    label: t('channels.manageChannels'),
     to: CHANNELS_PATH,
   },
 ]
 
+export const CHANNEL_MENU_ITEMS = getChannelMenuItems(
+  ((key: string) => key.split('.').pop() || key) as any
+)
+
 // Transaction menu items
-export const TRANSACTION_MENU_ITEMS = [
+export const getTransactionMenuItems = (t: TFunction) => [
   {
     action: 'deposit',
     icon: (
@@ -127,7 +137,7 @@ export const TRANSACTION_MENU_ITEMS = [
         <ArrowDownLeft className="w-4 h-4" />
       </div>
     ),
-    label: 'Deposit',
+    label: t('actions.deposit'),
   },
   {
     action: 'withdraw',
@@ -136,95 +146,107 @@ export const TRANSACTION_MENU_ITEMS = [
         <ArrowUpRight className="w-4 h-4" />
       </div>
     ),
-    label: 'Withdraw',
+    label: t('actions.withdraw'),
   },
 ]
 
+export const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(
+  ((key: string) => key.split('.').pop() || key) as any
+)
+
 // User settings menu items
-export const USER_MENU_ITEMS = [
+export const getUserMenuItems = (t: TFunction) => [
   {
     icon: <Settings className="w-4 h-4" />,
-    label: 'Settings',
+    label: t('navigation.settings'),
     to: SETTINGS_PATH,
   },
   {
     action: 'support',
     icon: <HelpCircle className="w-4 h-4" />,
-    label: 'Help & Support',
+    label: t('navigation.helpSupport'),
   },
 ]
 
+export const USER_MENU_ITEMS = getUserMenuItems(
+  ((key: string) => key.split('.').pop() || key) as any
+)
+
 // Support resources for the Help menu
-export const SUPPORT_RESOURCES = [
+export const getSupportResources = (t: TFunction) => [
   {
-    description: 'Read our comprehensive guides and tutorials',
+    description: t('support.documentationDesc'),
     icon: <FileText className="w-4 h-4" />,
-    name: 'Documentation',
+    name: t('support.documentation'),
     url: 'https://docs.kaleidoswap.com',
   },
   {
-    description: 'Frequently asked questions',
+    description: t('support.faqDesc'),
     icon: <HelpCircle className="w-4 h-4" />,
-    name: 'FAQ',
+    name: t('support.faq'),
     url: 'https://docs.kaleidoswap.com/desktop-app/faq',
   },
   {
-    description: 'Join our community for support',
+    description: t('support.telegramGroupDesc'),
     icon: <MessageCircle className="w-4 h-4" />,
-    name: 'Telegram Group',
+    name: t('support.telegramGroup'),
     url: 'https://t.me/kaleidoswap',
   },
   {
-    description: 'Report bugs or request features',
+    description: t('support.githubIssuesDesc'),
     icon: <Github className="w-4 h-4" />,
-    name: 'GitHub Issues',
+    name: t('support.githubIssues'),
     url: 'https://github.com/kaleidoswap/desktop-app',
   },
 ]
 
+export const SUPPORT_RESOURCES = getSupportResources(
+  ((key: string) => key.split('.').pop() || key) as any
+)
+
 // Page configuration mapping
-export const PAGE_CONFIG = {
+export const getPageConfig = (t: TFunction) => ({
   [CHANNELS_PATH]: {
     icon: <Activity className="w-5 h-5" />,
-    title: 'Channels',
-  },
-  [CHANNELS_PATH]: {
-    icon: <Activity className="w-5 h-5" />,
-    title: 'Channels',
+    title: t('navigation.channels'),
   },
   [CREATE_NEW_CHANNEL_PATH]: {
     icon: <Plus className="w-5 h-5" />,
-    title: 'Create New Channel',
+    title: t('channels.createNewChannel'),
   },
   [ORDER_CHANNEL_PATH]: {
     icon: <ShoppingCart className="w-5 h-5" />,
-    title: 'Buy a Channel',
+    title: t('channels.buyAChannel'),
   },
   [SETTINGS_PATH]: {
     icon: <Settings className="w-5 h-5" />,
-    title: 'Settings',
+    title: t('navigation.settings'),
   },
   [TRADE_MANUAL_PATH]: {
     icon: <Zap className="w-5 h-5" />,
-    title: 'Manual Swaps',
+    title: t('navigation.manualSwaps'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
     icon: <Store className="w-5 h-5" />,
-    title: 'Market Maker',
+    title: t('navigation.marketMaker'),
   },
   [TRADE_PATH]: {
     icon: <Zap className="w-5 h-5" />,
-    title: 'Trade',
+    title: t('navigation.trade'),
   },
   [WALLET_DASHBOARD_PATH]: {
     icon: <Home className="w-5 h-5" />,
-    title: 'Dashboard',
+    title: t('navigation.dashboard'),
   },
   [WALLET_HISTORY_DEPOSITS_PATH]: {
     icon: <Clock className="w-5 h-5" />,
-    title: 'History',
+    title: t('navigation.history'),
   },
-}
+})
+
+export const PAGE_CONFIG = getPageConfig(
+  ((key: string) => key.split('.').pop() || key) as any
+)
 
 export const HIDE_NAVBAR_PATHS = [
   WALLET_SETUP_PATH,

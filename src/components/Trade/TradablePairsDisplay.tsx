@@ -1,5 +1,6 @@
 import { ArrowRightLeft, TrendingUp, Coins, Copy } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 
@@ -11,9 +12,11 @@ interface TradablePairsDisplayProps {
 
 export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
   pairs,
-  title = 'Available Trading Pairs',
+  title,
   maxPairsToShow = 6,
 }) => {
+  const { t } = useTranslation()
+  const displayTitle = title || t('trade.tradablePairs.title')
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -26,7 +29,7 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
       <div className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg">
         <div className="flex items-center justify-center text-slate-400 py-4">
           <Coins className="w-5 h-5 mr-2" />
-          <span className="text-sm">No trading pairs available</span>
+          <span className="text-sm">{t('trade.tradablePairs.noPairs')}</span>
         </div>
       </div>
     )
@@ -39,9 +42,9 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
     <div className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg">
       <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
         <TrendingUp className="w-4 h-4 text-emerald-400" />
-        {title}
+        {displayTitle}
         <span className="text-xs text-slate-400 font-normal">
-          ({pairs.length} pairs)
+          ({t('trade.tradablePairs.pairCount', { count: pairs.length })})
         </span>
       </h3>
 
@@ -67,7 +70,9 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
                   onClick={() =>
                     pair.base_asset_id && copyToClipboard(pair.base_asset_id)
                   }
-                  title={`Click to copy: ${pair.base_asset_id}`}
+                  title={t('trade.tradablePairs.clickToCopy', {
+                    id: pair.base_asset_id,
+                  })}
                 >
                   {pair.base_asset_id?.slice(0, 8)}...
                   <Copy className="w-2 h-2 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -78,7 +83,9 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
                   onClick={() =>
                     pair.quote_asset_id && copyToClipboard(pair.quote_asset_id)
                   }
-                  title={`Click to copy: ${pair.quote_asset_id}`}
+                  title={t('trade.tradablePairs.clickToCopy', {
+                    id: pair.quote_asset_id,
+                  })}
                 >
                   {pair.quote_asset_id?.slice(0, 8)}...
                   <Copy className="w-2 h-2 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -91,7 +98,9 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
                 className={`w-2 h-2 rounded-full ${pair.is_active ? 'bg-emerald-400' : 'bg-slate-500'}`}
               ></div>
               <span className="text-xs text-slate-400">
-                {pair.is_active ? 'Active' : 'Inactive'}
+                {pair.is_active
+                  ? t('trade.tradablePairs.active')
+                  : t('trade.tradablePairs.inactive')}
               </span>
             </div>
           </div>
@@ -99,14 +108,14 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
 
         {remainingCount > 0 && (
           <div className="flex items-center justify-center p-2 text-slate-400 text-xs">
-            + {remainingCount} more pairs available
+            {t('trade.tradablePairs.morePairs', { count: remainingCount })}
           </div>
         )}
       </div>
 
       <div className="mt-3 pt-3 border-t border-slate-600/30">
         <div className="text-xs text-slate-400 text-center">
-          Open a channel with any of these assets to start trading
+          {t('trade.tradablePairs.openChannelHint')}
         </div>
       </div>
     </div>
@@ -121,8 +130,10 @@ interface SupportedAssetsDisplayProps {
 
 export const SupportedAssetsDisplay: React.FC<SupportedAssetsDisplayProps> = ({
   pairs,
-  title = 'Supported Assets',
+  title,
 }) => {
+  const { t } = useTranslation()
+  const displayTitle = title || t('trade.supportedAssets.title')
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -159,9 +170,13 @@ export const SupportedAssetsDisplay: React.FC<SupportedAssetsDisplayProps> = ({
     <div className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/40 w-full max-w-lg">
       <h3 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
         <Coins className="w-4 h-4 text-blue-400" />
-        {title}
+        {displayTitle}
         <span className="text-xs text-slate-400 font-normal">
-          ({uniqueAssets.length} assets)
+          (
+          {t('trade.supportedAssets.assetCount', {
+            count: uniqueAssets.length,
+          })}
+          )
         </span>
       </h3>
 
@@ -171,7 +186,9 @@ export const SupportedAssetsDisplay: React.FC<SupportedAssetsDisplayProps> = ({
             className="px-3 py-2 bg-slate-700/50 rounded-lg border border-slate-600/30 flex flex-col gap-1 hover:bg-slate-600/50 hover:border-blue-500/30 transition-colors group"
             key={`${asset.assetId}-${index}`}
             onClick={() => copyToClipboard(asset.assetId)}
-            title={`Click to copy Asset ID: ${asset.assetId}`}
+            title={t('trade.supportedAssets.clickToCopyAssetId', {
+              id: asset.assetId,
+            })}
           >
             <div className="flex items-center gap-1">
               <span className="text-sm font-medium text-white">
@@ -188,7 +205,7 @@ export const SupportedAssetsDisplay: React.FC<SupportedAssetsDisplayProps> = ({
 
       <div className="mt-3 pt-3 border-t border-slate-600/30">
         <div className="text-xs text-slate-400 text-center">
-          You can trade between any combination of these assets
+          {t('trade.supportedAssets.tradeHint')}
         </div>
       </div>
     </div>

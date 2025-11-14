@@ -22,6 +22,7 @@ pub struct Account {
     pub encrypted_mnemonic: Option<String>,
     pub mnemonic_salt: Option<String>,
     pub mnemonic_nonce: Option<String>,
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -64,15 +65,19 @@ pub fn init() {
             terms_accepted INTEGER DEFAULT 0,
             encrypted_mnemonic TEXT,
             mnemonic_salt TEXT,
-            mnemonic_nonce TEXT
+            mnemonic_nonce TEXT,
+            language TEXT DEFAULT 'en'
         )",
         [],
     ).unwrap();
-    
+
     // Add mnemonic encryption columns if they don't exist (migration)
     let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN encrypted_mnemonic TEXT", ());
     let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_salt TEXT", ());
     let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_nonce TEXT", ());
+
+    // Add language column if it doesn't exist (migration)
+    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN language TEXT DEFAULT 'en'", ());
     // Add ChannelOrders table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
@@ -184,7 +189,7 @@ fn migrate_existing_orders(conn: &Connection) {
 
 pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts")?;
+    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce, language FROM Accounts")?;
     let accounts = stmt
         .query_map([], |row| {
             Ok(Account {
@@ -205,6 +210,7 @@ pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
                 encrypted_mnemonic: row.get(14).ok(),
                 mnemonic_salt: row.get(15).ok(),
                 mnemonic_nonce: row.get(16).ok(),
+                language: row.get(17).ok(),
             })
         })?
         .map(|res| res.unwrap())
@@ -227,6 +233,7 @@ pub fn insert_account(
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
     bearer_token: Option<String>,
+    language: Option<String>,
 ) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
 
@@ -242,9 +249,9 @@ pub fn insert_account(
     }
 
     conn.execute(
-        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, terms_accepted) 
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 1)",
-        rusqlite::params![name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token],
+        "INSERT INTO Accounts (name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, terms_accepted, language)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 1, ?14)",
+        rusqlite::params![name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, language],
     )
 }
 
@@ -262,23 +269,25 @@ pub fn update_account(
     daemon_listening_port: String,
     ldk_peer_listening_port: String,
     bearer_token: Option<String>,
+    language: Option<String>,
 ) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(
-        "UPDATE Accounts SET 
-            network = ?1, 
-            datapath = ?2, 
-            rpc_connection_url = ?3, 
-            node_url = ?4, 
-            indexer_url = ?5, 
-            proxy_endpoint = ?6, 
+        "UPDATE Accounts SET
+            network = ?1,
+            datapath = ?2,
+            rpc_connection_url = ?3,
+            node_url = ?4,
+            indexer_url = ?5,
+            proxy_endpoint = ?6,
             default_lsp_url = ?7,
             maker_urls = ?8,
             default_maker_url = ?9,
             daemon_listening_port = ?10,
             ldk_peer_listening_port = ?11,
-            bearer_token = ?12
-         WHERE name = ?13",
+            bearer_token = ?12,
+            language = ?13
+         WHERE name = ?14",
         rusqlite::params![
             network,
             datapath,
@@ -292,6 +301,7 @@ pub fn update_account(
             daemon_listening_port,
             ldk_peer_listening_port,
             bearer_token,
+            language,
             name
         ],
     )
@@ -299,7 +309,7 @@ pub fn update_account(
 
 pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts WHERE name = ?")?;
+    let mut stmt = conn.prepare("SELECT id, name, network, datapath, rpc_connection_url, node_url, indexer_url, proxy_endpoint, default_lsp_url, maker_urls, default_maker_url, daemon_listening_port, ldk_peer_listening_port, bearer_token, encrypted_mnemonic, mnemonic_salt, mnemonic_nonce, language FROM Accounts WHERE name = ?")?;
     let account = stmt
         .query_row([name], |row| {
             Ok(Account {
@@ -320,6 +330,7 @@ pub fn get_account_by_name(name: &str) -> Result<Option<Account>, rusqlite::Erro
                 encrypted_mnemonic: row.get(14).ok(),
                 mnemonic_salt: row.get(15).ok(),
                 mnemonic_nonce: row.get(16).ok(),
+                language: row.get(17).ok(),
             })
         })
         .optional()?;

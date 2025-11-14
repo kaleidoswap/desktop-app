@@ -48,6 +48,11 @@ export interface AssetOption {
   value: string
 }
 
+export interface ValidationMessage {
+  type: 'error' | 'warning'
+  message: string
+}
+
 // Fee rate option interface
 export interface FeeRateOption {
   label: string
@@ -109,7 +114,7 @@ export interface ConfirmationModalProps {
   isConfirming: boolean
   onCancel: () => void
   onConfirm: () => void
-  validationError?: string | null
+  validationMessage?: ValidationMessage | null
   paymentStatus?: PaymentStatus
   isPollingStatus?: boolean
   paymentHash?: string | null
@@ -119,7 +124,7 @@ export interface ConfirmationModalProps {
 export interface WithdrawFormProps {
   form: any
   addressType: AddressType
-  validationError: string | null
+  validationMessage: ValidationMessage | null
   clearValidationError: () => void
   isDecodingInvoice: boolean
   showAssetDropdown: boolean

@@ -12,6 +12,7 @@ import {
   User,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 
@@ -30,12 +31,12 @@ import { SupportModal } from '../SupportModal'
 
 import 'react-toastify/dist/ReactToastify.min.css'
 import {
-  MAIN_NAV_ITEMS,
-  CHANNEL_MENU_ITEMS,
-  TRANSACTION_MENU_ITEMS,
-  USER_MENU_ITEMS,
-  SUPPORT_RESOURCES,
-  PAGE_CONFIG,
+  getMainNavItems,
+  getChannelMenuItems,
+  getTransactionMenuItems,
+  getUserMenuItems,
+  getSupportResources,
+  getPageConfig,
   HIDE_NAVBAR_PATHS,
   NavItem,
 } from './config'
@@ -80,6 +81,7 @@ interface UserProfileProps {
 
 // NavItem component for sidebar
 const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
+  const { t } = useTranslation()
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -163,7 +165,7 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
                 <span>{subItem.label}</span>
                 {subItem.disabled && (
                   <span className="text-[0.6rem] bg-blue-500/20 text-blue-300 px-0.5 py-px rounded ml-0.5">
-                    Soon
+                    {t('labels.soon')}
                   </span>
                 )}
               </div>
@@ -254,11 +256,15 @@ const UserProfile = ({
   onSupportClick,
   onLogout,
 }: UserProfileProps) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
   const navigate = useNavigate()
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
+
+  // Get translated menu items
+  const USER_MENU_ITEMS = getUserMenuItems(t)
 
   useOnClickOutside(menuRef, () => setIsOpen(false))
 
@@ -294,10 +300,12 @@ const UserProfile = ({
             <>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-white">
-                  {accountName || 'My Wallet'}
+                  {accountName || t('userProfile.myWallet')}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {nodeInfo.isSuccess ? 'Connected' : 'Disconnected'}
+                  {nodeInfo.isSuccess
+                    ? t('userProfile.connected')
+                    : t('userProfile.disconnected')}
                 </span>
               </div>
               <ChevronRight
@@ -320,14 +328,16 @@ const UserProfile = ({
               </div>
               <div>
                 <div className="text-sm font-medium text-white">
-                  {accountName || 'My Wallet'}
+                  {accountName || t('userProfile.myWallet')}
                 </div>
                 <div className="text-xs text-gray-400 flex items-center space-x-1">
                   <div
                     className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green' : 'bg-red'}`}
                   ></div>
                   <span>
-                    {nodeInfo.isSuccess ? 'Connected' : 'Disconnected'}
+                    {nodeInfo.isSuccess
+                      ? t('userProfile.connected')
+                      : t('userProfile.disconnected')}
                   </span>
                 </div>
               </div>
@@ -357,6 +367,7 @@ const UserProfile = ({
 }
 
 export const Layout = (props: Props) => {
+  const { t } = useTranslation()
   const [lastDeposit, setLastDeposit] = useState<number | undefined>(undefined)
   const [isRetrying, setIsRetrying] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -375,6 +386,13 @@ export const Layout = (props: Props) => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+
+  // Get translated menu items
+  const MAIN_NAV_ITEMS = getMainNavItems(t)
+  const CHANNEL_MENU_ITEMS = getChannelMenuItems(t)
+  const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(t)
+  const SUPPORT_RESOURCES = getSupportResources(t)
+  const PAGE_CONFIG = getPageConfig(t)
 
   const [lock] = nodeApi.endpoints.lock.useLazyQuery()
 
@@ -409,8 +427,8 @@ export const Layout = (props: Props) => {
         dispatch(nodeSettingsActions.resetNodeSettings())
         addNotification({
           autoClose: 3000,
-          message: 'You have been logged out successfully.',
-          title: 'Logout Successful',
+          message: t('modals.logoutSuccessMessage'),
+          title: t('modals.logoutSuccess'),
           type: 'success',
         })
         navigate(WALLET_SETUP_PATH)
@@ -420,8 +438,10 @@ export const Layout = (props: Props) => {
     } catch (error) {
       addNotification({
         autoClose: 5000,
-        message: `Logout failed: ${error instanceof Error ? error.message : ''}. Redirecting anyway.`,
-        title: 'Logout Failed',
+        message: t('modals.logoutFailedMessage', {
+          error: error instanceof Error ? error.message : '',
+        }),
+        title: t('modals.logoutFailed'),
         type: 'error',
       })
       navigate(WALLET_SETUP_PATH)
@@ -488,8 +508,8 @@ export const Layout = (props: Props) => {
       ) {
         addNotification({
           autoClose: 5000,
-          message: 'A new deposit has been confirmed.',
-          title: 'Deposit Received',
+          message: t('notifications.depositReceivedMessage'),
+          title: t('notifications.depositReceived'),
           type: 'success',
         })
         setLastDeposit(highestBlockDeposit?.confirmation_time?.height)
@@ -608,7 +628,7 @@ export const Layout = (props: Props) => {
                 <>
                   <div className="mb-6">
                     <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Quick Actions
+                      {t('actions.quickActions')}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -620,7 +640,9 @@ export const Layout = (props: Props) => {
                         <div className="p-1 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20 transition-colors">
                           <ArrowDownLeft className="w-4 h-4" />
                         </div>
-                        <span className="font-medium text-sm">Deposit</span>
+                        <span className="font-medium text-sm">
+                          {t('actions.deposit')}
+                        </span>
                       </button>
                       <button
                         className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
@@ -631,7 +653,9 @@ export const Layout = (props: Props) => {
                         <div className="p-1 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20 transition-colors">
                           <ArrowUpRight className="w-4 h-4" />
                         </div>
-                        <span className="font-medium text-sm">Withdraw</span>
+                        <span className="font-medium text-sm">
+                          {t('actions.withdraw')}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -639,7 +663,7 @@ export const Layout = (props: Props) => {
                   {/* Channel management section */}
                   <div className="mb-6">
                     <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Channels
+                      {t('navigation.channels')}
                     </h3>
                     <div className="space-y-1">
                       {CHANNEL_MENU_ITEMS.map((item) => (
@@ -784,7 +808,7 @@ export const Layout = (props: Props) => {
                       menuRef={channelMenuRef}
                       onItemClick={() => {}} // Add empty function to satisfy the type
                       setIsOpen={setIsChannelMenuOpen}
-                      title="Channels"
+                      title={t('navigation.channels')}
                     />
 
                     <DropdownMenu
@@ -796,7 +820,7 @@ export const Layout = (props: Props) => {
                         handleTransactionAction(item.action)
                       }
                       setIsOpen={setIsTransactionMenuOpen}
-                      title="Transactions"
+                      title={t('actions.quickActions')}
                     />
 
                     {/* Support dropdown for mobile */}
@@ -807,7 +831,7 @@ export const Layout = (props: Props) => {
                         {
                           action: 'support',
                           icon: <HelpCircle className="w-4 h-4" />,
-                          label: 'Get Help & Support',
+                          label: t('navigation.getHelpSupport'),
                         },
                         ...SUPPORT_RESOURCES.map((resource) => ({
                           icon: resource.icon,
@@ -825,7 +849,7 @@ export const Layout = (props: Props) => {
                         }
                       }}
                       setIsOpen={setIsSupportMenuOpen}
-                      title="Help & Support"
+                      title={t('navigation.helpSupport')}
                     />
                   </div>
                 </div>

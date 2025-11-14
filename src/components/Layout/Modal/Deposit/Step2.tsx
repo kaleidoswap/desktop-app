@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { useAppSelector } from '../../../../app/store/hooks'
@@ -55,6 +56,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
+  const { t } = useTranslation()
 
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
   const [addressQuery] = nodeApi.endpoints.address.useLazyQuery()
@@ -70,7 +72,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           const res = await addressQuery()
           setAddress(res.data?.address)
         } catch (error) {
-          toast.error('Failed to generate address')
+          toast.error(t('depositModal.step2.toasts.generateAddressError'))
         } finally {
           setLoading(false)
         }
@@ -181,6 +183,19 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       setAssetName('Bitcoin')
     }
   }, [assetList, assetId])
+
+  const titleText = assetId
+    ? assetTicker
+      ? t('depositModal.step2.titleWithTicker', { ticker: assetTicker })
+      : t('depositModal.step2.titleGeneric')
+    : t('depositModal.step2.titleAny')
+
+  const addressLabel =
+    network === 'lightning'
+      ? t('depositModal.step2.labels.lnInvoice')
+      : assetId === BTC_ASSET_ID
+        ? t('depositModal.step2.labels.btcAddress')
+        : t('depositModal.step2.labels.rgbInvoice')
 
   // Reset address when amount changes (for both lightning and on-chain RGB invoices)
   useEffect(() => {
@@ -342,7 +357,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           if (errorMessage.includes('No uncolored UTXOs are available')) {
             setNoColorableUtxos(true)
           } else {
-            toast.error('Failed to generate RGB invoice: ' + errorMessage)
+            toast.error(
+              t('depositModal.step2.toasts.rgbInvoiceError', {
+                error: errorMessage,
+              })
+            )
           }
         }
         return // Exit early on error
@@ -354,11 +373,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         setRecipientId(res.data.recipient_id)
       } else {
         console.error('RGB invoice response missing data:', res)
-        toast.error('Failed to generate RGB invoice: Invalid response')
+        toast.error(t('depositModal.step2.toasts.rgbInvoiceInvalid'))
       }
     } catch (error) {
       console.error('Error generating RGB invoice:', error)
-      toast.error('Failed to generate RGB invoice')
+      toast.error(t('depositModal.step2.toasts.rgbInvoiceUnknown'))
     }
   }
 
@@ -367,7 +386,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     try {
       if (network === 'lightning') {
         if (!amount || parseFloat(amount.replace(/,/g, '')) <= 0) {
-          toast.error('Please enter a valid positive amount')
+          toast.error(t('depositModal.step2.toasts.invalidAmount'))
           setLoading(false)
           return
         }
@@ -390,7 +409,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               }
         )
         if ('error' in res) {
-          toast.error('Failed to generate Lightning invoice')
+          toast.error(t('depositModal.step2.toasts.lnInvoiceError'))
         } else {
           setAddress(res.data?.invoice)
         }
@@ -401,7 +420,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         setAddress(res.data?.address)
       }
     } catch (error) {
-      toast.error('Failed to generate address')
+      toast.error(t('depositModal.step2.toasts.generateAddressError'))
     } finally {
       setLoading(false)
     }
@@ -410,18 +429,18 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(address ?? '')
-      toast.success('Address copied to clipboard')
+      toast.success(t('depositModal.step2.toasts.addressCopied'))
     } catch (error) {
-      toast.error('Failed to copy address')
+      toast.error(t('depositModal.step2.toasts.addressCopyError'))
     }
   }
 
   const handleCopyRecipientId = async () => {
     try {
       await navigator.clipboard.writeText(recipientId ?? '')
-      toast.success('Recipient ID copied to clipboard')
+      toast.success(t('depositModal.step2.toasts.recipientCopied'))
     } catch (error) {
-      toast.error('Failed to copy recipient ID')
+      toast.error(t('depositModal.step2.toasts.recipientCopyError'))
     }
   }
 
@@ -456,7 +475,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         />
         <span className="font-medium">{label}</span>
         {isDisabled && (
-          <span className="text-xs text-slate-500">Requires asset ID</span>
+          <span className="text-xs text-slate-500">
+            {t('depositModal.step2.network.requiresAsset')}
+          </span>
         )}
       </button>
     )
@@ -478,7 +499,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   useEffect(() => {
     if (invoiceStatus?.status === 'Succeeded') {
       // Show success toast notification
-      toast.success(`Lightning deposit received successfully!`, {
+      toast.success(t('depositModal.step2.toasts.lightningSuccess'), {
         autoClose: 5000,
         progressStyle: { background: '#3B82F6' },
       })
@@ -488,9 +509,14 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       invoiceStatus?.status === 'Expired'
     ) {
       // Show failure toast notification
-      toast.error(`Lightning deposit failed: ${invoiceStatus.status}`, {
-        autoClose: 5000,
-      })
+      toast.error(
+        t('depositModal.step2.toasts.lightningFailed', {
+          status: invoiceStatus?.status,
+        }),
+        {
+          autoClose: 5000,
+        }
+      )
     }
   }, [invoiceStatus, onNext])
 
@@ -505,13 +531,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         )}
 
         {/* Show the asset name and ticker prominently */}
-        <h3 className="text-2xl font-bold text-white mb-1">
-          {assetId
-            ? assetTicker
-              ? `Deposit ${assetTicker}`
-              : 'Deposit Asset'
-            : 'Deposit Any RGB Asset'}
-        </h3>
+        <h3 className="text-2xl font-bold text-white mb-1">{titleText}</h3>
 
         {assetName && (
           <div className="text-slate-400 mb-1 text-sm">{assetName}</div>
@@ -524,15 +544,23 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         )}
 
         <p className="text-slate-400 text-center max-w-md mt-2 text-xs">
-          Choose your preferred deposit method and follow the steps below
+          {t('depositModal.step2.intro')}
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Network Selection - Made more compact and sticky */}
         <div className="flex gap-3 mb-3 top-[60px] z-20 pb-2 pt-1 bg-slate-900/95 backdrop-blur-sm">
-          <NetworkOption icon={ChainIcon} label="On-chain" type="on-chain" />
-          <NetworkOption icon={Zap} label="Lightning" type="lightning" />
+          <NetworkOption
+            icon={ChainIcon}
+            label={t('depositModal.step2.network.onchain')}
+            type="on-chain"
+          />
+          <NetworkOption
+            icon={Zap}
+            label={t('depositModal.step2.network.lightning')}
+            type="lightning"
+          />
         </div>
 
         {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
@@ -541,12 +569,12 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-white mb-1">
-                  Receive with Privacy
+                  {t('depositModal.step2.privacy.title')}
                 </h4>
                 <p className="text-xs text-slate-400">
                   {usePrivacy
-                    ? 'Using blinded UTXO (enhanced privacy)'
-                    : 'Using onchain address (witness-based receive)'}
+                    ? t('depositModal.step2.privacy.modePrivacy')
+                    : t('depositModal.step2.privacy.modeWitness')}
                 </p>
               </div>
               <button
@@ -568,23 +596,19 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               {usePrivacy ? (
                 <>
                   <span className="font-medium text-slate-300">
-                    Privacy Mode:
+                    {t('depositModal.step2.privacy.privacyLabel')}
                   </span>{' '}
-                  Uses a colorable and blinded UTXO for enhanced privacy.
-                  Requires available colorable UTXOs.
+                  {t('depositModal.step2.privacy.privacyDescription')}
                 </>
               ) : (
                 <>
                   <span className="font-medium text-slate-300">
-                    Witness Mode:
+                    {t('depositModal.step2.privacy.witnessLabel')}
                   </span>{' '}
-                  Uses a standard Bitcoin onchain address. Simpler but less
-                  private.
+                  {t('depositModal.step2.privacy.witnessDescription')}
                   <br />
                   <span className="text-yellow-400 font-medium">
-                    Note: When receiving an RGB asset on a witness receipt, the
-                    sender needs to add some sats to create a new UTXO for you,
-                    where the RGB assets will be allocated.
+                    {t('depositModal.step2.privacy.witnessNote')}
                   </span>
                   <br />
                 </>
@@ -596,46 +620,51 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {/* Show network info and faucet suggestion in a more compact format */}
         {networkInfo && (
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-500/20 text-xs font-medium">
-                  {networkInfo.network}
-                </span>
-                <span className="text-blue-400 text-xs">
-                  Using {networkInfo.network} network
-                </span>
-              </div>
+            {(() => {
+              const faucetKey =
+                networkInfo.network === Network.Signet
+                  ? 'signet'
+                  : networkInfo.network === Network.Regtest
+                    ? 'regtest'
+                    : 'testnet'
+              const link =
+                faucetKey === 'regtest'
+                  ? 'https://t.me/rgb_lightning_bot'
+                  : 'https://faucet.mutinynet.com/'
 
-              <div className="text-xs text-blue-400 mt-1">
-                <p className="mb-1.5">
-                  Get test coins from the
-                  {networkInfo.network === Network.Signet
-                    ? ' Mutinynet faucet'
-                    : networkInfo.network === Network.Regtest
-                      ? ' RGB Tools bot'
-                      : ' Testnet faucet'}{' '}
-                  to try the application.
-                </p>
-                <button
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 
+              return (
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-500/20 text-xs font-medium">
+                      {networkInfo.network}
+                    </span>
+                    <span className="text-blue-400 text-xs">
+                      {t('depositModal.step2.networkInfo.using', {
+                        network: networkInfo.network,
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-blue-400 mt-1">
+                    <p className="mb-1.5">
+                      {t(
+                        `depositModal.step2.networkInfo.description.${faucetKey}`
+                      )}
+                    </p>
+                    <button
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 
                           hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors text-xs"
-                  onClick={() => {
-                    const link =
-                      networkInfo.network === Network.Regtest
-                        ? 'https://t.me/rgb_lightning_bot'
-                        : 'https://faucet.mutinynet.com/'
-                    openUrl(link)
-                  }}
-                >
-                  <ArrowRight className="w-3 h-3" />
-                  {networkInfo.network === Network.Signet
-                    ? 'Visit Mutinynet Faucet'
-                    : networkInfo.network === Network.Regtest
-                      ? 'Open RGB Tools Bot'
-                      : 'Visit Testnet Faucet'}
-                </button>
-              </div>
-            </div>
+                      onClick={() => {
+                        openUrl(link)
+                      }}
+                    >
+                      <ArrowRight className="w-3 h-3" />
+                      {t(`depositModal.step2.networkInfo.button.${faucetKey}`)}
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -646,10 +675,10 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               <AlertTriangle className="text-yellow-500 w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
               <div>
                 <h4 className="text-yellow-400 font-medium text-sm mb-1">
-                  Colorable UTXOs Required
+                  {t('depositModal.step2.noColorable.title')}
                 </h4>
                 <p className="text-yellow-300/80 text-xs mb-2">
-                  To receive onchain RGB assets, you need colorable UTXOs.
+                  {t('depositModal.step2.noColorable.description')}
                 </p>
                 <button
                   className="px-3 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 
@@ -657,7 +686,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   onClick={() => setShowUtxoModal(true)}
                 >
                   <Wallet className="w-3.5 h-3.5" />
-                  Create Colorable UTXOs
+                  {t('depositModal.step2.noColorable.cta')}
                 </button>
               </div>
             </div>
@@ -669,13 +698,17 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <div className="space-y-1 animate-fadeIn">
             <div className="flex justify-between items-center">
               <label className="text-xs font-medium text-slate-400">
-                Amount (optional)
+                {t('depositModal.step2.amount.optionalLabel')}
               </label>
               {assetTicker && (
                 <div className="text-xs text-slate-400">
-                  Precision:{' '}
-                  {getAssetPrecision(assetTicker, bitcoinUnit, assetList?.nia)}{' '}
-                  decimals
+                  {t('depositModal.step2.amount.precision', {
+                    value: getAssetPrecision(
+                      assetTicker,
+                      bitcoinUnit,
+                      assetList?.nia
+                    ),
+                  })}
                 </div>
               )}
             </div>
@@ -687,7 +720,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                            placeholder:text-slate-600 transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
-                  placeholder={`Enter amount (e.g., 10.23 for ${assetTicker})`}
+                  placeholder={t('depositModal.step2.amount.example', {
+                    ticker: assetTicker,
+                  })}
                   type="text"
                   value={amount}
                 />
@@ -704,19 +739,20 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <div className="space-y-1 animate-fadeIn">
             <div className="flex justify-between items-center">
               <label className="text-xs font-medium text-slate-400">
-                Amount
+                {t('depositModal.step2.amount.requiredLabel')}
               </label>
               {maxDepositAmount > 0 && (
                 <div className="text-xs text-slate-400">
-                  Max:{' '}
-                  {formatAmount(
-                    maxDepositAmount,
-                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                  )}{' '}
-                  {getDisplayAsset(
-                    assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
-                    bitcoinUnit
-                  )}
+                  {t('depositModal.step2.amount.maxLabel', {
+                    amount: formatAmount(
+                      maxDepositAmount,
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                    ),
+                    asset: getDisplayAsset(
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
+                      bitcoinUnit
+                    ),
+                  })}
                 </div>
               )}
             </div>
@@ -729,7 +765,15 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                            placeholder:text-slate-600 transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
-                  placeholder={`Enter amount (max ${maxDepositAmount > 0 ? formatAmount(maxDepositAmount, assetId === BTC_ASSET_ID ? 'BTC' : assetTicker) : 'N/A'})`}
+                  placeholder={t('depositModal.step2.amount.maxPlaceholder', {
+                    amount:
+                      maxDepositAmount > 0
+                        ? formatAmount(
+                            maxDepositAmount,
+                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                          )
+                        : t('depositModal.step2.amount.notAvailable'),
+                  })}
                   type="text"
                   value={amount}
                 />
@@ -741,7 +785,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     onClick={handleSetMaxAmount}
                     type="button"
                   >
-                    Max
+                    {t('depositModal.step2.amount.maxButton')}
                   </button>
                 )}
               </div>
@@ -763,17 +807,16 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   ) > maxDepositAmount && (
                     <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
                       <p className="text-xs text-red-400">
-                        <span className="font-medium">Error:</span> Amount
-                        exceeds maximum deposit limit of{' '}
-                        {formatAmount(
-                          maxDepositAmount,
-                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                        )}{' '}
-                        {getDisplayAsset(
-                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
-                          bitcoinUnit
-                        )}
-                        .
+                        {t('depositModal.step2.amount.exceeds', {
+                          amount: formatAmount(
+                            maxDepositAmount,
+                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                          ),
+                          asset: getDisplayAsset(
+                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
+                            bitcoinUnit
+                          ),
+                        })}
                       </p>
                     </div>
                   )}
@@ -783,8 +826,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {assetId && assetId !== BTC_ASSET_ID && (
               <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
                 <p className="text-xs text-blue-400">
-                  <span className="font-medium">Note:</span> 3,000 sats required
-                  for RGB asset transfers.
+                  {t('depositModal.step2.amount.rgbNote')}
                 </p>
               </div>
             )}
@@ -792,9 +834,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {maxDepositAmount === 0 && (
               <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                 <p className="text-xs text-yellow-400">
-                  <span className="font-medium">Warning:</span> No active
-                  Lightning channels found. Lightning deposits are not
-                  available.
+                  {t('depositModal.step2.amount.noChannels')}
                 </p>
               </div>
             )}
@@ -826,7 +866,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             ) : (
               <>
                 <span>
-                  Generate {network === 'lightning' ? 'Invoice' : 'Address'}
+                  {network === 'lightning'
+                    ? t('depositModal.step2.actions.generateInvoice')
+                    : t('depositModal.step2.actions.generateAddressCta')}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
@@ -842,17 +884,21 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 {invoiceStatus.status === 'Pending' ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin" />
-                    <span>Waiting for payment...</span>
+                    <span>{t('depositModal.step2.status.pending')}</span>
                   </>
                 ) : invoiceStatus.status === 'Succeeded' ? (
                   <>
                     <CircleCheckBig className="w-4 h-4" />
-                    <span>Payment received!</span>
+                    <span>{t('depositModal.step2.status.success')}</span>
                   </>
                 ) : (
                   <>
                     <CircleX className="w-4 h-4" />
-                    <span>{invoiceStatus.status}</span>
+                    <span>
+                      {t('depositModal.step2.status.failed', {
+                        status: invoiceStatus.status,
+                      })}
+                    </span>
                   </>
                 )}
               </div>
@@ -887,13 +933,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   }
                 `}
                 >
-                  {assetId === BTC_ASSET_ID
-                    ? network === 'lightning'
-                      ? 'LN Invoice'
-                      : 'BTC Address'
-                    : network === 'lightning'
-                      ? 'LN Invoice'
-                      : 'RGB Invoice'}
+                  {addressLabel}
                 </span>
                 {address.length > 45 ? `${address.slice(0, 42)}...` : address}
               </div>
@@ -904,7 +944,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                            disabled:cursor-not-allowed"
                   disabled={loading}
                   onClick={generateAddress}
-                  title="Generate new address"
+                  title={t('depositModal.step2.actions.generateAddress')}
                 >
                   <Loader
                     className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -914,7 +954,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
                            text-slate-400 hover:text-blue-500"
                   onClick={handleCopy}
-                  title="Copy to clipboard"
+                  title={t('depositModal.step2.actions.copy')}
                 >
                   <Copy className="w-4 h-4" />
                 </button>
@@ -940,6 +980,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
                            text-slate-400 hover:text-blue-500"
                     onClick={handleCopyRecipientId}
+                    title={t('depositModal.step2.actions.copy')}
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -956,7 +997,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             onClick={onBack}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
+            <span>{t('depositModal.common.back')}</span>
           </button>
 
           <button
@@ -964,7 +1005,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                      transition-colors flex items-center gap-1.5 text-sm"
             onClick={onNext}
           >
-            <span>Finish</span>
+            <span>{t('depositModal.common.finish')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

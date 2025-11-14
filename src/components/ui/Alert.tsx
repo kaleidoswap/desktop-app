@@ -1,6 +1,7 @@
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { Info, AlertTriangle, CheckCircle, XCircle, X } from 'lucide-react'
 import React, { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export type AlertVariant = 'info' | 'warning' | 'success' | 'error'
 
@@ -76,23 +77,24 @@ export const NetworkWarningAlert: React.FC<{
   network: string
   faucetUrl?: string
 }> = ({ network, faucetUrl }) => {
+  const { t } = useTranslation()
+
   return (
-    <Alert title="Test Network Warning" variant="warning">
+    <Alert title={t('components.alert.testNetworkWarning')} variant="warning">
       <p>
-        You are currently on {network}. Any tokens on this network have no real
-        value and are for testing purposes only.
+        {t('components.alert.testNetworkMessage', { network })}
         {faucetUrl && (
           <>
             {' '}
             <br />
-            You can request test coins from the{' '}
+            {t('components.alert.requestTestCoins')}{' '}
             <button
               className="text-blue-400 hover:text-blue-300 underline"
               onClick={() => {
                 openUrl(faucetUrl)
               }}
             >
-              {network} Faucet
+              {t('components.alert.faucetLink', { network })}
             </button>
             .
           </>

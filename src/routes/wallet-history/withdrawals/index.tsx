@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js'
 import { Link as Chain, Zap, RefreshCw, Loader, Search } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../../../app/store'
@@ -59,6 +60,7 @@ const formatAssetAmount = (
 }
 
 export const Component: React.FC = () => {
+  const { t } = useTranslation()
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'on-chain' | 'off-chain'
   >('all')
@@ -116,24 +118,22 @@ export const Component: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <Loader className="w-12 h-12 animate-spin text-red-500" />
-        <p className="text-slate-400">Loading withdrawal history...</p>
+        <p className="text-slate-400">{t('withdrawals.loading')}</p>
       </div>
     )
   }
 
   if (isError) {
     return (
-      <Alert title="Error Loading Data" variant="error">
-        <p>
-          There was an error loading your withdrawal history. Please try again.
-        </p>
+      <Alert title={t('withdrawals.errorLoading')} variant="error">
+        <p>{t('withdrawals.errorMessage')}</p>
         <div className="mt-4">
           <Button
             icon={<RefreshCw className="w-4 h-4" />}
             onClick={handleRefresh}
             variant="outline"
           >
-            Try Again
+            {t('withdrawals.tryAgain')}
           </Button>
         </div>
       </Alert>
@@ -225,11 +225,13 @@ export const Component: React.FC = () => {
           <div className="p-2.5 rounded-lg bg-red-500/10">
             <Chain className="h-6 w-6 text-red-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Withdrawal History</h2>
+          <h2 className="text-xl font-bold text-white">
+            {t('withdrawals.title')}
+          </h2>
         </div>
 
         <IconButton
-          aria-label="Refresh"
+          aria-label={t('withdrawals.refresh')}
           disabled={isRefreshing}
           icon={
             isRefreshing ? (
@@ -251,7 +253,7 @@ export const Component: React.FC = () => {
           <input
             className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search withdrawals..."
+            placeholder={t('withdrawals.searchPlaceholder')}
             type="text"
             value={searchTerm}
           />
@@ -263,9 +265,9 @@ export const Component: React.FC = () => {
             onChange={(e) => setTypeFilter(e.target.value as any)}
             value={typeFilter}
           >
-            <option value="all">All Types</option>
-            <option value="on-chain">On-chain</option>
-            <option value="off-chain">Off-chain</option>
+            <option value="all">{t('withdrawals.allTypes')}</option>
+            <option value="on-chain">{t('withdrawals.onChain')}</option>
+            <option value="off-chain">{t('withdrawals.offChain')}</option>
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Chain className="h-4 w-4 text-gray-400" />
@@ -294,7 +296,7 @@ export const Component: React.FC = () => {
             onChange={(e) => setAssetFilter(e.target.value)}
             value={assetFilter}
           >
-            <option value="all">All Assets</option>
+            <option value="all">{t('withdrawals.allAssets')}</option>
             {uniqueAssets.map((asset) => (
               <option key={asset} value={asset}>
                 {asset}
@@ -327,7 +329,7 @@ export const Component: React.FC = () => {
         <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
           {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
             <>
-              <p>No withdrawals found matching your filters.</p>
+              <p>{t('withdrawals.noWithdrawalsFiltered')}</p>
               <Button
                 className="mt-4"
                 onClick={() => {
@@ -338,11 +340,11 @@ export const Component: React.FC = () => {
                 size="sm"
                 variant="outline"
               >
-                Clear Filters
+                {t('withdrawals.clearFilters')}
               </Button>
             </>
           ) : (
-            <p>No withdrawals found.</p>
+            <p>{t('withdrawals.noWithdrawals')}</p>
           )}
         </div>
       ) : (
@@ -356,7 +358,7 @@ export const Component: React.FC = () => {
                     size="sm"
                     variant="primary"
                   >
-                    On-chain
+                    {t('withdrawals.onChain')}
                   </Badge>
                 ) : (
                   <Badge
@@ -364,11 +366,11 @@ export const Component: React.FC = () => {
                     size="sm"
                     variant="info"
                   >
-                    Off-chain
+                    {t('withdrawals.offChain')}
                   </Badge>
                 ),
               className: 'col-span-1',
-              header: 'Type',
+              header: t('withdrawals.type'),
             },
             {
               accessor: (withdrawal: Withdrawal) => (
@@ -377,7 +379,7 @@ export const Component: React.FC = () => {
                 </span>
               ),
               className: 'col-span-1',
-              header: 'Asset',
+              header: t('withdrawals.asset'),
             },
             {
               accessor: (withdrawal: Withdrawal) => (
@@ -391,7 +393,7 @@ export const Component: React.FC = () => {
                 </span>
               ),
               className: 'col-span-1',
-              header: 'Amount',
+              header: t('withdrawals.amount'),
             },
             {
               accessor: (withdrawal: Withdrawal) =>
@@ -399,18 +401,24 @@ export const Component: React.FC = () => {
                   withdrawal.timestamp ? withdrawal.timestamp * 1000 : null
                 ),
               className: 'col-span-1',
-              header: 'Date',
+              header: t('withdrawals.date'),
             },
             {
               accessor: (withdrawal: Withdrawal) =>
-                renderCopyableField(withdrawal.txId, true, 4, 'Transaction ID'),
+                renderCopyableField(
+                  withdrawal.txId,
+                  true,
+                  4,
+                  t('withdrawals.transactionId')
+                ),
               className: 'col-span-1',
-              header: 'Transaction ID',
+              header: t('withdrawals.transactionId'),
             },
             {
-              accessor: () => renderStatusBadge('Sent', 'danger'),
+              accessor: () =>
+                renderStatusBadge(t('withdrawals.completed'), 'danger'),
               className: 'col-span-1',
-              header: 'Status',
+              header: t('withdrawals.status'),
             },
           ]}
           data={filteredWithdrawals}

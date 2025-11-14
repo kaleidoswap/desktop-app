@@ -7,6 +7,7 @@ import {
   Server,
 } from 'lucide-react'
 import React, { useState, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
 import { twJoin } from 'tailwind-merge'
@@ -25,6 +26,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   onMakerChange,
   show = true,
 }) => {
+  const { t } = useTranslation()
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
   const wsConnected = useAppSelector((state) => state.pairs.wsConnected)
   const [isOpen, setIsOpen] = useState(false)
@@ -59,7 +61,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         })
       )
 
-      toast.info('Switching to new maker...', {
+      toast.info(t('trade.maker.switching'), {
         autoClose: 2000,
         icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
         toastId: 'switching-maker',
@@ -69,7 +71,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         try {
           setTimeout(() => {
             if (webSocketService.isConnected()) {
-              toast.success('Successfully reconnected to market maker', {
+              toast.success(t('trade.maker.reconnected'), {
                 autoClose: 2000,
                 toastId: 'maker-selector-reconnection-success',
               })
@@ -77,7 +79,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
           }, 2000)
         } catch (reconnectError) {
           console.error('Error during reconnection:', reconnectError)
-          toast.warning('Reconnection in progress. Please wait...', {
+          toast.warning(t('trade.maker.reconnecting'), {
             autoClose: 2000,
             toastId: 'maker-reconnection-progress',
           })
@@ -85,7 +87,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
       }, 500)
     } catch (error) {
       console.error('Failed to change maker:', error)
-      toast.error('Failed to change maker', {
+      toast.error(t('trade.maker.changeFailed'), {
         autoClose: 5000,
         toastId: 'maker-change-failed',
       })
@@ -101,7 +103,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
     try {
       if (!newMakerUrl) return
 
-      let url = newMakerUrl
+      const url = newMakerUrl
       new URL(url)
 
       if (!allMakerUrls.includes(url)) {
@@ -119,7 +121,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
       setNewMakerUrl('')
       setIsAddingNew(false)
     } catch (error) {
-      toast.error('Invalid URL format', {
+      toast.error(t('trade.maker.invalidUrl'), {
         autoClose: 5000,
         toastId: 'invalid-maker-url',
       })
@@ -133,7 +135,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
       const reconnectInitiated = webSocketService.reconnect()
 
       if (reconnectInitiated) {
-        toast.info('Reconnecting to maker...', {
+        toast.info(t('trade.maker.reconnectingStatus'), {
           autoClose: 3000,
           icon: () => <RefreshCw className="animate-spin h-4 w-4" />,
           toastId: 'maker-reconnecting',
@@ -145,25 +147,25 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
           if (onMakerChange) {
             await onMakerChange()
           }
-          toast.success('Successfully reconnected to market maker', {
+          toast.success(t('trade.maker.reconnected'), {
             autoClose: 3000,
             toastId: 'maker-selector-reconnection-success',
           })
         } else {
-          toast.warning('Reconnection in progress. Please wait...', {
+          toast.warning(t('trade.maker.reconnecting'), {
             autoClose: 3000,
             toastId: 'maker-reconnection-progress',
           })
         }
       } else {
-        toast.error('Failed to initiate reconnection. Please try again.', {
+        toast.error(t('trade.maker.reconnectionInitFailed'), {
           autoClose: 5000,
           toastId: 'maker-reconnection-initiation-failed',
         })
       }
     } catch (error) {
       console.error('Failed to refresh connection:', error)
-      toast.error('Failed to reconnect to maker', {
+      toast.error(t('trade.maker.reconnectionFailed'), {
         autoClose: 5000,
         toastId: 'maker-refresh-connection-failed',
       })
@@ -223,7 +225,9 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             <div className="relative flex items-center gap-2.5 min-w-0">
               <Server className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-medium text-slate-200 overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px]">
-                {currentUrl ? new URL(currentUrl).hostname : 'Select Maker'}
+                {currentUrl
+                  ? new URL(currentUrl).hostname
+                  : t('trade.maker.selectMaker')}
               </span>
               {isLoading ? (
                 <RefreshCw className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
@@ -241,7 +245,11 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
           <button
             className={refreshButtonClasses}
             onClick={handleRefreshConnection}
-            title={wsConnected ? 'Connected' : 'Reconnect'}
+            title={
+              wsConnected
+                ? t('trade.maker.connected')
+                : t('trade.maker.reconnect')
+            }
             type="button"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-slate-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -261,7 +269,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
               {/* Maker List */}
               <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
                 <div className="px-3 py-2 text-xs font-bold text-white bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent uppercase tracking-wider border-b border-slate-600/40 mb-2">
-                  Market Makers
+                  {t('trade.maker.marketMakers')}
                 </div>
                 {allMakerUrls.map((url) => (
                   <button
@@ -299,7 +307,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     <input
                       className="w-full px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20"
                       onChange={(e) => setNewMakerUrl(e.target.value)}
-                      placeholder="Enter maker URL..."
+                      placeholder={t('trade.maker.enterUrl')}
                       type="text"
                       value={newMakerUrl}
                     />
@@ -312,14 +320,14 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                         }}
                         type="button"
                       >
-                        Cancel
+                        {t('trade.maker.cancel')}
                       </button>
                       <button
                         className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-sm font-medium text-blue-300 hover:bg-blue-500/30 hover:text-blue-200 transition-all"
                         onClick={handleAddNewMaker}
                         type="button"
                       >
-                        Add Maker
+                        {t('trade.maker.addMaker')}
                       </button>
                     </div>
                   </div>
@@ -330,7 +338,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     type="button"
                   >
                     <Plus className="w-4 h-4" />
-                    Add New Maker
+                    {t('trade.maker.addNewMaker')}
                   </button>
                 )}
               </div>
@@ -342,9 +350,13 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   )
 }
 
-export const MakerNotConnected: React.FC = () => (
-  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/20 border border-red-500/40 text-red-200">
-    <Server className="w-4 h-4" />
-    <span className="text-sm">Not connected to maker</span>
-  </div>
-)
+export const MakerNotConnected: React.FC = () => {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/20 border border-red-500/40 text-red-200">
+      <Server className="w-4 h-4" />
+      <span className="text-sm">{t('trade.maker.notConnected')}</span>
+    </div>
+  )
+}

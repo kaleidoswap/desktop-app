@@ -1,3 +1,5 @@
+import { TFunction } from 'i18next'
+
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
 
 import { mapAssetIdToTicker, isAssetId } from './assetUtils'
@@ -5,6 +7,34 @@ import { mapAssetIdToTicker, isAssetId } from './assetUtils'
 /**
  * Error message constants for asset conflicts
  */
+export const createAssetConflictMessages = (t: TFunction) => ({
+  CONFLICT_WARNING: (ticker: string) =>
+    t('tradeMarketMaker.assetConflict.warning', { ticker }),
+
+  MULTIPLE_CONFLICTS: (
+    conflictCount: number,
+    excludedPairs: number,
+    validPairs: number
+  ) =>
+    t('tradeMarketMaker.assetConflict.multipleConflicts', {
+      conflictCount,
+      excludedPairs,
+      validPairs,
+    }),
+
+  NO_TRADABLE_PAIRS: t('tradeMarketMaker.assetConflict.noTradablePairs'),
+
+  NO_VALID_PAIRS: t('tradeMarketMaker.assetConflict.noValidPairs'),
+
+  TICKER_CONFLICT: (ticker: string, assetIds: string[], pairCount: number) =>
+    t('tradeMarketMaker.assetConflict.tickerConflict', {
+      assetIds: assetIds.join(', '),
+      pairCount,
+      ticker,
+    }),
+})
+
+// Keep the original export for backward compatibility
 export const ASSET_CONFLICT_MESSAGES = {
   CONFLICT_WARNING: (ticker: string) =>
     `Warning: Multiple versions of "${ticker}" detected. Only one version will be available for trading.`,
@@ -35,7 +65,8 @@ export const parseAmountValidationError = (
   errorMessage: string,
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
-  assets: NiaAsset[] = []
+  assets: NiaAsset[] = [],
+  t?: TFunction
 ): string | null => {
   // Pattern to match: "For pair BTC/USDT, the amount must be between X and Y but got Z"
   const amountErrorPattern =
@@ -59,14 +90,29 @@ export const parseAmountValidationError = (
     const constraintAsset = fromDisplayAsset
 
     if (gotAmount < minAmount) {
+      if (t) {
+        return t('tradeMarketMaker.validation.minOrderSize', {
+          amount: formatAmount(minAmount, constraintAsset),
+          asset: displayAsset(constraintAsset),
+        })
+      }
       return `The minimum order size for ${displayAsset(constraintAsset)} is ${formatAmount(minAmount, constraintAsset)}.`
     } else if (gotAmount > maxAmount) {
+      if (t) {
+        return t('tradeMarketMaker.validation.maxOrderSize', {
+          amount: formatAmount(maxAmount, constraintAsset),
+          asset: displayAsset(constraintAsset),
+        })
+      }
       return `The maximum order size for ${displayAsset(constraintAsset)} is ${formatAmount(maxAmount, constraintAsset)}.`
     }
   }
 
   // Fallback for other amount-related errors
   if (errorMessage.includes('amount must be between')) {
+    if (t) {
+      return t('tradeMarketMaker.validation.invalidAmount')
+    }
     return 'Invalid amount. Please check the minimum and maximum order sizes for this trading pair.'
   }
 
@@ -95,7 +141,8 @@ export const getValidationError = (
     asset: string
     assetId: string
     isFromAsset: boolean
-  } | null = null
+  } | null = null,
+  t?: TFunction
 ): string | null => {
   // Don't show validation errors while any quote-related loading is happening
   if (isToAmountLoading || isQuoteLoading || isPriceLoading) {
@@ -121,16 +168,30 @@ export const getValidationError = (
 
   // Check if available balance is zero - show error immediately
   if (maxFromAmount === 0) {
+    if (t) {
+      return t('tradeMarketMaker.validation.insufficientBalance', {
+        asset: displayAsset(fromDisplayAsset),
+      })
+    }
     return `Insufficient balance. You don't have any ${displayAsset(fromDisplayAsset)} available to send.`
   }
 
   // Zero amounts - only check fromAmount during loading
   if (fromAmount === 0) {
+    if (t) {
+      return t('tradeMarketMaker.validation.enterAmount')
+    }
     return 'Please enter an amount to send.'
   }
 
   // Minimum amount check
   if (fromAmount < minFromAmount) {
+    if (t) {
+      return t('tradeMarketMaker.validation.minimumOrderSize', {
+        amount: formatAmount(minFromAmount, fromDisplayAsset),
+        asset: displayAsset(fromDisplayAsset),
+      })
+    }
     return `The minimum order size is ${formatAmount(
       minFromAmount,
       fromDisplayAsset
@@ -141,7 +202,18 @@ export const getValidationError = (
   if (fromAmount > maxFromAmount) {
     // Special case: if max is 0, show a clearer insufficient balance message
     if (maxFromAmount === 0) {
+      if (t) {
+        return t('tradeMarketMaker.validation.insufficientBalance', {
+          asset: displayAsset(fromDisplayAsset),
+        })
+      }
       return `Insufficient balance. You don't have any ${displayAsset(fromDisplayAsset)} available to send.`
+    }
+    if (t) {
+      return t('tradeMarketMaker.validation.maxSendAmount', {
+        amount: formatAmount(maxFromAmount, fromDisplayAsset),
+        asset: displayAsset(fromDisplayAsset),
+      })
     }
     return `You can only send up to ${formatAmount(
       maxFromAmount,
@@ -158,7 +230,18 @@ export const getValidationError = (
   ) {
     // Special case: if max is 0, show a clearer message
     if (maxToAmount === 0) {
+      if (t) {
+        return t('tradeMarketMaker.validation.unableToReceive', {
+          asset: displayAsset(toDisplayAsset),
+        })
+      }
       return `Unable to receive ${displayAsset(toDisplayAsset)}. No channel capacity available.`
+    }
+    if (t) {
+      return t('tradeMarketMaker.validation.maxReceiveAmount', {
+        amount: formatAmount(maxToAmount, toDisplayAsset),
+        asset: displayAsset(toDisplayAsset),
+      })
     }
     return `You can only receive up to ${formatAmount(
       maxToAmount,
@@ -168,6 +251,12 @@ export const getValidationError = (
 
   // HTLC limit for BTC
   if (fromAsset === 'BTC' && fromAmount > maxOutboundHtlcSat) {
+    if (t) {
+      return t('tradeMarketMaker.validation.htlcLimit', {
+        amount: formatAmount(maxOutboundHtlcSat, 'BTC'),
+        asset: displayAsset('BTC'),
+      })
+    }
     return `Due to channel constraints, you can only send up to ${formatAmount(
       maxOutboundHtlcSat,
       'BTC'

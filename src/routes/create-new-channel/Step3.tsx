@@ -11,6 +11,7 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import BitcoinLogo from '../../assets/bitcoin-logo.svg'
 import {
@@ -42,6 +43,7 @@ const formatPubKey = (pubKey: string) => {
 }
 
 export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
+  const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [assetPrecision, setAssetPrecision] = useState<number>(8) // Default to 8 decimals
 
@@ -131,11 +133,9 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
     <div className="max-w-lg mx-auto">
       <div className="text-center mb-6">
         <h3 className="text-3xl font-bold text-white mb-2">
-          Open a Channel - Review
+          {t('createChannel.step3.title')}
         </h3>
-        <p className="text-gray-400">
-          Confirm your channel details before proceeding
-        </p>
+        <p className="text-gray-400">{t('createChannel.step3.subtitle')}</p>
       </div>
 
       {error && (
@@ -149,7 +149,9 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
           <div className="p-2 bg-blue-500/10 rounded-lg">
             <Zap className="w-5 h-5 text-blue-500" />
           </div>
-          <h3 className="text-xl font-bold text-white">Channel Details</h3>
+          <h3 className="text-xl font-bold text-white">
+            {t('createChannel.step3.channelDetails')}
+          </h3>
           <Badge
             className="ml-auto"
             icon={
@@ -161,20 +163,23 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
             }
             variant={isAssetChannel ? 'info' : 'primary'}
           >
-            {isAssetChannel ? 'RGB Asset' : 'Bitcoin'}
+            {isAssetChannel
+              ? t('createChannel.step3.rgbAsset')
+              : t('createChannel.step3.bitcoin')}
           </Badge>
         </div>
 
         <InfoCardGrid className="mb-6" columns={1}>
           <InfoCard
             icon={<Wallet className="w-4 h-4 text-blue-500" />}
-            label="Channel Capacity"
+            label={t('createChannel.step3.channelCapacity')}
             value={
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
                   <span className="text-blue-400 font-bold">
-                    {formatNumber(formData.capacitySat)} SAT
+                    {formatNumber(formData.capacitySat)}{' '}
+                    {t('createChannel.step3.sat')}
                   </span>
                 </div>
                 {isAssetChannel && (
@@ -192,13 +197,13 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         <InfoCardGrid className="mb-6" columns={1}>
           <InfoCard
             icon={<Users className="w-4 h-4 text-blue-500" />}
-            label="Connected Node"
+            label={t('createChannel.step3.connectedNode')}
             value={
               hasValidNodeInfo ? (
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center">
                     <span className="text-xs text-slate-400 mr-2">
-                      Node ID:
+                      {t('createChannel.step3.nodeId')}
                     </span>
                     <span className="text-sm text-white font-mono truncate">
                       {formatPubKey(
@@ -212,7 +217,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                           connectionDetails.pubKey || formData.pubKeyAndAddress
                         )
                       }
-                      title="Copy full pubkey"
+                      title={t('createChannel.step3.copyPubkey')}
                       type="button"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -220,7 +225,9 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                   </div>
                   {connectionDetails.host && connectionDetails.port ? (
                     <div className="flex items-center">
-                      <span className="text-xs text-slate-400 mr-2">Host:</span>
+                      <span className="text-xs text-slate-400 mr-2">
+                        {t('createChannel.step3.host')}
+                      </span>
                       <span className="text-sm text-white font-mono">
                         {connectionDetails.host}:{connectionDetails.port}
                       </span>
@@ -228,17 +235,17 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                   ) : (
                     <div className="flex items-center">
                       <span className="text-xs text-slate-400 mr-2">
-                        Status:
+                        {t('createChannel.step3.status')}
                       </span>
                       <span className="text-sm text-green-400">
-                        Already Connected
+                        {t('createChannel.step3.alreadyConnected')}
                       </span>
                     </div>
                   )}
                 </div>
               ) : (
                 <span className="text-red-500 text-sm">
-                  Please go back and enter valid node information
+                  {t('createChannel.step3.errorInvalidNode')}
                 </span>
               )
             }
@@ -248,7 +255,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         <InfoCardGrid columns={1}>
           <InfoCard
             icon={<Activity className="w-4 h-4 text-blue-500" />}
-            label="Transaction Fee Rate"
+            label={t('createChannel.step3.transactionFeeRate')}
             value={
               <div className="flex items-center justify-between">
                 <span className="text-white capitalize">{formData.fee}</span>
@@ -269,16 +276,18 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 <EyeOff className="w-4 h-4 text-blue-500" />
               )
             }
-            label="Channel Privacy"
+            label={t('createChannel.step3.channelPrivacy')}
             value={
               <div className="flex items-center justify-between">
                 <span className="text-white capitalize">
-                  {formData.public ? 'Public' : 'Private'}
+                  {formData.public
+                    ? t('createChannel.step3.public')
+                    : t('createChannel.step3.private')}
                 </span>
                 <span className="text-slate-400 text-sm ml-2">
                   {formData.public
-                    ? 'Visible on Lightning Network'
-                    : 'Only known to parties'}
+                    ? t('createChannel.step3.visibleOnNetwork')
+                    : t('createChannel.step3.onlyKnownToParties')}
                 </span>
               </div>
             }
@@ -294,12 +303,13 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
             </div>
             <div>
               <h4 className="text-sm font-medium text-white mb-1">
-                RGB Asset Channel
+                {t('createChannel.step3.rgbAssetChannel')}
               </h4>
               <p className="text-xs text-slate-400">
-                This channel will include both Bitcoin liquidity and RGB asset
-                allocation. The RGB asset ({formData.assetTicker}) will be
-                allocated with {formatAssetAmount} units.
+                {t('createChannel.step3.rgbAssetInfo', {
+                  amount: formatAssetAmount,
+                  ticker: formData.assetTicker,
+                })}
               </p>
             </div>
           </div>
@@ -313,7 +323,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
           size="lg"
           variant="secondary"
         >
-          Back
+          {t('createChannel.step3.back')}
         </Button>
 
         <Button
@@ -325,7 +335,9 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
           size="lg"
           variant="primary"
         >
-          {isSubmitting ? 'Opening...' : 'Open Channel'}
+          {isSubmitting
+            ? t('createChannel.step3.opening')
+            : t('createChannel.step3.openChannel')}
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Search, X, Copy, Check, ArrowRight } from 'lucide-react'
 import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { twJoin } from 'tailwind-merge'
 
 import defaultIcon from '../../assets/rgb-symbol-color.svg'
@@ -33,8 +34,9 @@ const AssetOption = React.memo(
     onCopyAssetId,
     onClick,
   }: AssetOptionProps) => {
+    const { t } = useTranslation()
     const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null)
-    const displayTicker = ticker || 'None'
+    const displayTicker = ticker || t('trade.assetModal.none')
     const iconTicker =
       displayTicker === 'SAT'
         ? 'BTC'
@@ -77,7 +79,7 @@ const AssetOption = React.memo(
               </span>
               {isSelected && (
                 <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30">
-                  Selected
+                  {t('trade.assetModal.selected')}
                 </span>
               )}
             </div>
@@ -95,7 +97,7 @@ const AssetOption = React.memo(
                   <button
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-600/50 rounded"
                     onClick={handleCopyAssetId}
-                    title="Copy full asset ID"
+                    title={t('trade.assetModal.copyAssetId')}
                   >
                     {copiedAssetId === assetId ? (
                       <Check className="w-3 h-3 text-green-400" />
@@ -139,10 +141,14 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
   options,
   value,
   onChange,
-  title = 'Select Asset',
-  searchPlaceholder = 'Search by ticker, name or asset ID...',
+  title,
+  searchPlaceholder,
   fieldLabel,
 }) => {
+  const { t } = useTranslation()
+  const displayTitle = title || t('trade.assetModal.title')
+  const displaySearchPlaceholder =
+    searchPlaceholder || t('trade.assetModal.searchPlaceholder')
   const [searchTerm, setSearchTerm] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -241,7 +247,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
         <div className="p-6 border-b border-slate-700/50 bg-slate-800/50">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">{title}</h2>
+              <h2 className="text-xl font-bold text-white">{displayTitle}</h2>
               {fieldLabel && (
                 <p className="text-sm text-slate-400 mt-1">{fieldLabel}</p>
               )}
@@ -249,7 +255,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
             <button
               className="p-2 hover:bg-slate-700/50 rounded-full transition-colors text-slate-400 hover:text-white"
               onClick={onClose}
-              title="Close"
+              title={t('trade.assetModal.close')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -261,7 +267,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
             <input
               className="w-full pl-10 pr-10 py-3 bg-slate-900/70 border border-slate-600/50 rounded-xl text-white text-sm placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={displaySearchPlaceholder}
               ref={searchInputRef}
               type="text"
               value={searchTerm}
@@ -279,8 +285,9 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
           {/* Search Results Count */}
           {searchTerm && (
             <div className="mt-2 text-xs text-slate-400">
-              {filteredOptions.length} asset
-              {filteredOptions.length !== 1 ? 's' : ''} found
+              {t('trade.assetModal.assetsFound', {
+                count: filteredOptions.length,
+              })}
             </div>
           )}
         </div>
@@ -307,17 +314,15 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
                 <Search className="w-12 h-12 mx-auto text-slate-600" />
                 <div>
                   <p className="text-lg font-medium text-slate-300">
-                    No assets found
+                    {t('trade.assetModal.noAssetsFound')}
                   </p>
-                  <p className="text-sm">
-                    Try searching by ticker (e.g., "BTC"), name, or asset ID
-                  </p>
+                  <p className="text-sm">{t('trade.assetModal.searchHint')}</p>
                   {searchTerm && (
                     <button
                       className="mt-3 text-sm text-blue-400 hover:text-blue-300 underline"
                       onClick={clearSearch}
                     >
-                      Clear search and show all assets
+                      {t('trade.assetModal.clearSearch')}
                     </button>
                   )}
                 </div>
@@ -330,11 +335,11 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
         <div className="p-4 border-t border-slate-700/50 bg-slate-800/30">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              💡 Tip: You can search by ticker or paste full asset ID
+              💡 {t('trade.assetModal.tip')}
             </p>
             {selectedOption && (
               <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span>Selected:</span>
+                <span>{t('trade.assetModal.selectedLabel')}:</span>
                 <span className="font-medium text-blue-300">
                   {selectedOption.ticker}
                 </span>

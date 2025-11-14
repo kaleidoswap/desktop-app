@@ -1,4 +1,5 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import { TFunction } from 'i18next'
 import { toast } from 'react-toastify'
 
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
@@ -25,13 +26,13 @@ export interface SwapDetails {
 /**
  * Copies error details to clipboard
  */
-export const copyToClipboard = (text: string) => {
+export const copyToClipboard = (text: string, t: TFunction) => {
   navigator.clipboard.write([
     new ClipboardItem({
       'text/plain': new Blob([text], { type: 'text/plain' }),
     }),
   ])
-  toast.success('Error details copied to clipboard')
+  toast.success(t('tradeMarketMaker.swap.errorDetailsClipboard'))
 }
 
 /**
@@ -101,7 +102,8 @@ export const createSwapExecutor = (
   execSwap: any,
   setSwapRecapDetails: (details: SwapDetails) => void,
   setShowRecap: (show: boolean) => void,
-  setErrorMessage: (message: string | null) => void
+  setErrorMessage: (message: string | null) => void,
+  t: TFunction
 ) => {
   return async (data: Fields): Promise<void> => {
     let toastId: string | number | null = null
@@ -279,16 +281,19 @@ export const createSwapExecutor = (
       // Clear any existing toasts first
       toast.dismiss()
 
-      toast.error(`Swap Failed: ${errorMessage}`, {
-        autoClose: 5000,
-        closeButton: true,
-        closeOnClick: false,
-        draggable: false,
-        isLoading: false,
-        onClick: (e) => e.stopPropagation(),
-        pauseOnFocusLoss: false,
-        pauseOnHover: true,
-      })
+      toast.error(
+        t('tradeMarketMaker.swap.swapFailed', { error: errorMessage }),
+        {
+          autoClose: 5000,
+          closeButton: true,
+          closeOnClick: false,
+          draggable: false,
+          isLoading: false,
+          onClick: (e) => e.stopPropagation(),
+          pauseOnFocusLoss: false,
+          pauseOnHover: true,
+        }
+      )
 
       if (timeoutId !== null) {
         clearTimeout(timeoutId)

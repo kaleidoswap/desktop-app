@@ -4,8 +4,10 @@ import WebFont from 'webfontloader'
 
 import { Router } from './app/router'
 import { store } from './app/store'
+import { I18nProvider } from './components/I18nProvider'
 import { UpdateProvider } from './components/UpdateChecker'
 
+import './i18n/config'
 import './styles.css'
 
 WebFont.load({
@@ -16,8 +18,10 @@ WebFont.load({
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <Provider store={store}>
-    <UpdateProvider>
-      <Router />
-    </UpdateProvider>
+    <I18nProvider>
+      <UpdateProvider>
+        <Router />
+      </UpdateProvider>
+    </I18nProvider>
   </Provider>
 )

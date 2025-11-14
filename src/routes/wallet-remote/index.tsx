@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { Cloud, ArrowRight, AlertTriangle, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
@@ -46,21 +47,8 @@ interface Fields {
   ldk_peer_listening_port: string
 }
 
-// Helper function to properly construct API URLs
-const constructApiUrl = (baseUrl: string, endpoint: string): string => {
-  if (!baseUrl || !endpoint) {
-    throw new Error('Both baseUrl and endpoint are required')
-  }
-
-  // Remove trailing slashes from base URL
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
-  // Ensure endpoint starts with a slash but doesn't have multiple slashes
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
-
-  return `${cleanBaseUrl}${cleanEndpoint}`
-}
-
 export const Component = () => {
+  const { t } = useTranslation()
   const [isConnecting, setIsConnecting] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const [connectionStep, setConnectionStep] = useState<
@@ -77,6 +65,16 @@ export const Component = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const constructApiUrl = (baseUrl: string, endpoint: string): string => {
+    if (!baseUrl || !endpoint) {
+      throw new Error(t('walletRemote.apiUrlMissingParams'))
+    }
+
+    const cleanBaseUrl = baseUrl.replace(/\/+$/, '')
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+
+    return `${cleanBaseUrl}${cleanEndpoint}`
+  }
 
   const form = useForm<Fields>({
     defaultValues: {
@@ -86,10 +84,10 @@ export const Component = () => {
       indexer_url: NETWORK_DEFAULTS.BitfinexRegtest.indexer_url,
       ldk_peer_listening_port:
         NETWORK_DEFAULTS.BitfinexRegtest.ldk_peer_listening_port,
-      name: 'Test Account',
+      name: t('walletRemote.accountNamePlaceholder'),
       network: 'Regtest',
       node_url: `http://localhost:${NETWORK_DEFAULTS.BitfinexRegtest.daemon_listening_port}`,
-      password: 'password',
+      password: t('walletRemote.passwordPlaceholder'),
       proxy_endpoint: NETWORK_DEFAULTS.BitfinexRegtest.proxy_endpoint,
       regtestConnectionType: 'bitfinex',
       rpc_connection_url: NETWORK_DEFAULTS.BitfinexRegtest.rpc_connection_url,
@@ -192,43 +190,50 @@ export const Component = () => {
 
       if (response.status === 403) {
         setConnectionError({
-          details:
-            'Invalid credentials or authentication token. Please check your password or auth token.',
-          message: 'Authentication failed',
+          details: t('walletRemote.authenticationFailedDetails'),
+          message: t('walletRemote.authenticationFailed'),
           type: 'auth',
         })
-        toast.error('Authentication failed during test.')
+        toast.error(t('walletRemote.authenticationFailedToast'))
         return
       }
 
       if (response.status === 404) {
         setConnectionError({
-          details:
-            'The /nodeinfo endpoint was not found. Please verify the node URL is correct.',
-          message: 'Node endpoint not found',
+          details: t('walletRemote.nodeEndpointNotFoundDetails'),
+          message: t('walletRemote.nodeEndpointNotFound'),
           type: 'connection',
         })
-        toast.error('Node endpoint not found during test.')
+        toast.error(t('walletRemote.nodeEndpointNotFoundToast'))
         return
       }
 
       if (response.status >= 500) {
         setConnectionError({
-          details: `The remote node returned a server error (${response.status}). The node may be down or misconfigured.`,
-          message: 'Server error',
+          details: t('walletRemote.serverErrorDetails', {
+            status: response.status,
+          }),
+          message: t('walletRemote.serverError'),
           type: 'network',
         })
-        toast.error('Server error during connection test.')
+        toast.error(t('walletRemote.serverErrorToast'))
         return
       }
 
       if (!response.ok) {
         setConnectionError({
-          details: `HTTP ${response.status}: ${response.statusText}`,
-          message: 'Connection test failed',
+          details: t('walletRemote.connectionTestFailedDetails', {
+            status: response.status,
+            statusText: response.statusText,
+          }),
+          message: t('walletRemote.connectionTestFailed'),
           type: 'connection',
         })
-        toast.error(`Connection test failed: ${response.status}`)
+        toast.error(
+          t('walletRemote.connectionTestFailedToast', {
+            status: response.status,
+          })
+        )
         return
       }
 
@@ -236,45 +241,40 @@ export const Component = () => {
       try {
         await response.json()
         setConnectionSuccess(true)
-        toast.success('✅ Connection test successful! Node is reachable.')
+        toast.success(t('walletRemote.connectionSuccessToast'))
       } catch (jsonError) {
         setConnectionError({
-          details:
-            'The node responded but not with valid JSON. This may not be an RGB Lightning node.',
-          message: 'Invalid response format',
+          details: t('walletRemote.invalidResponseFormatDetails'),
+          message: t('walletRemote.invalidResponseFormat'),
           type: 'connection',
         })
-        toast.error('Invalid response during connection test.')
+        toast.error(t('walletRemote.invalidResponseFormatToast'))
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
         setConnectionError({
-          details:
-            'The test connection took too long to respond. Please check your network connection and node URL.',
-          message: 'Connection test timeout',
+          details: t('walletRemote.connectionTimeoutDetails'),
+          message: t('walletRemote.connectionTimeout'),
           type: 'connection',
         })
-        toast.error('Connection test timed out.')
+        toast.error(t('walletRemote.connectionTimeoutToast'))
       } else if (
         error.message?.includes('Failed to fetch') ||
         error.message?.includes('Network Error')
       ) {
         setConnectionError({
-          details:
-            'Unable to reach the remote node during test. Please check your internet connection and node URL.',
-          message: 'Network connection failed',
+          details: t('walletRemote.networkConnectionFailedDetails'),
+          message: t('walletRemote.networkConnectionFailed'),
           type: 'network',
         })
-        toast.error('Network error during connection test.')
+        toast.error(t('walletRemote.networkConnectionFailedToast'))
       } else {
         setConnectionError({
-          details:
-            error.message ||
-            'An unknown error occurred while testing the connection.',
-          message: 'Connection test failed',
+          details: error.message || t('walletRemote.unknownTestError'),
+          message: t('walletRemote.connectionTestFailed'),
           type: 'connection',
         })
-        toast.error('Connection test failed.')
+        toast.error(t('walletRemote.connectionTestFailed'))
       }
     } finally {
       setIsTestingConnection(false)
@@ -300,24 +300,22 @@ export const Component = () => {
       })
       if (accountExists) {
         setConnectionError({
-          details:
-            'Please choose a different account name or delete the existing account.',
-          message: 'Account name already exists',
+          details: t('walletRemote.accountExistsMessage'),
+          message: t('walletRemote.accountExists'),
           type: 'account',
         })
-        toast.error('An account with this name already exists')
+        toast.error(t('walletRemote.accountExistsToast'))
         setIsConnecting(false)
         setConnectionStep('idle')
         return
       }
     } catch (error) {
       setConnectionError({
-        details:
-          'Unable to verify if account name is available. Please try again.',
-        message: 'Failed to check account existence',
+        details: t('walletRemote.failedCheckAccountExistsMessage'),
+        message: t('walletRemote.failedCheckAccountExists'),
         type: 'account',
       })
-      toast.error('Failed to check account existence. Please try again.')
+      toast.error(t('walletRemote.failedCheckAccountExistsToast'))
       setIsConnecting(false)
       setConnectionStep('idle')
       return
@@ -349,12 +347,11 @@ export const Component = () => {
 
       if (response.status === 403) {
         setConnectionError({
-          details:
-            'Invalid credentials or authentication token. Please check your password or auth token.',
-          message: 'Authentication failed',
+          details: t('walletRemote.authenticationFailedDetails'),
+          message: t('walletRemote.authenticationFailed'),
           type: 'auth',
         })
-        toast.error('Authentication failed. Please check your credentials.')
+        toast.error(t('walletRemote.authenticationFailedToast'))
         setIsConnecting(false)
         setConnectionStep('idle')
         return
@@ -362,12 +359,11 @@ export const Component = () => {
 
       if (response.status === 404) {
         setConnectionError({
-          details:
-            'The /nodeinfo endpoint was not found. Please verify the node URL is correct.',
-          message: 'Node endpoint not found',
+          details: t('walletRemote.nodeEndpointNotFoundDetails'),
+          message: t('walletRemote.nodeEndpointNotFound'),
           type: 'connection',
         })
-        toast.error('Node endpoint not found. Please check your node URL.')
+        toast.error(t('walletRemote.nodeEndpointNotFoundToast'))
         setIsConnecting(false)
         setConnectionStep('idle')
         return
@@ -375,11 +371,13 @@ export const Component = () => {
 
       if (response.status >= 500) {
         setConnectionError({
-          details: `The remote node returned a server error (${response.status}). The node may be down or misconfigured.`,
-          message: 'Server error',
+          details: t('walletRemote.serverErrorDetails', {
+            status: response.status,
+          }),
+          message: t('walletRemote.serverError'),
           type: 'network',
         })
-        toast.error('Server error. The remote node may be down.')
+        toast.error(t('walletRemote.serverErrorToast'))
         setIsConnecting(false)
         setConnectionStep('idle')
         return
@@ -387,12 +385,18 @@ export const Component = () => {
 
       if (!response.ok) {
         setConnectionError({
-          details: `HTTP ${response.status}: ${response.statusText}`,
-          message: 'Connection failed',
+          details: t('walletRemote.connectionTestFailedDetails', {
+            status: response.status,
+            statusText: response.statusText,
+          }),
+          message: t('walletRemote.connectionFailed'),
           type: 'connection',
         })
         toast.error(
-          `Connection failed: ${response.status} ${response.statusText}`
+          t('walletRemote.connectionFailedToast', {
+            status: response.status,
+            statusText: response.statusText,
+          })
         )
         setIsConnecting(false)
         setConnectionStep('idle')
@@ -403,15 +407,14 @@ export const Component = () => {
       try {
         await response.json()
         setConnectionStep('creating')
-        toast.success('✅ Connection successful! Creating account...')
+        toast.success(t('walletRemote.connectionSuccessCreating'))
       } catch (jsonError) {
         setConnectionError({
-          details:
-            'The node responded but not with valid JSON. This may not be an RGB Lightning node.',
-          message: 'Invalid response format',
+          details: t('walletRemote.invalidResponseFormatDetails'),
+          message: t('walletRemote.invalidResponseFormat'),
           type: 'connection',
         })
-        toast.error('Invalid response from node. Please check the URL.')
+        toast.error(t('walletRemote.invalidResponseToast'))
         setIsConnecting(false)
         setConnectionStep('idle')
         return
@@ -422,46 +425,35 @@ export const Component = () => {
 
       if (error.name === 'AbortError') {
         setConnectionError({
-          details:
-            'The connection took too long to respond. Please check your network connection and node URL.',
-          message: 'Connection timeout',
+          details: t('walletRemote.connectionTimeoutDetails'),
+          message: t('walletRemote.connectionTimeout'),
           type: 'connection',
         })
-        toast.error(
-          'Connection timeout. Please check your network and try again.'
-        )
+        toast.error(t('walletRemote.connectionTimeoutLong'))
       } else if (
         error.message?.includes('Failed to fetch') ||
         error.message?.includes('Network Error')
       ) {
         setConnectionError({
-          details:
-            'Unable to reach the remote node. Please check your internet connection and node URL.',
-          message: 'Network connection failed',
+          details: t('walletRemote.networkConnectionFailedDetails'),
+          message: t('walletRemote.networkConnectionFailed'),
           type: 'network',
         })
-        toast.error('Network error. Please check your connection and node URL.')
+        toast.error(t('walletRemote.networkErrorToast'))
       } else if (error.message?.includes('CORS')) {
         setConnectionError({
-          details:
-            'The remote node is not configured to accept requests from this application.',
-          message: 'CORS policy error',
+          details: t('walletRemote.corsErrorDetails'),
+          message: t('walletRemote.corsError'),
           type: 'connection',
         })
-        toast.error(
-          'CORS error. The remote node may not be properly configured.'
-        )
+        toast.error(t('walletRemote.corsErrorToast'))
       } else {
         setConnectionError({
-          details:
-            error.message ||
-            'An unknown error occurred while connecting to the node.',
-          message: 'Unexpected error',
+          details: error.message || t('walletRemote.unknownConnectionError'),
+          message: t('walletRemote.unexpectedError'),
           type: 'connection',
         })
-        toast.error(
-          'Failed to connect to remote node. Please check your settings.'
-        )
+        toast.error(t('walletRemote.failedToConnectToast'))
       }
       return
     }
@@ -515,6 +507,7 @@ export const Component = () => {
         defaultMakerUrl,
 
         indexerUrl: data.indexer_url,
+        language: 'en',
         // Empty for remote nodes
         ldkPeerListeningPort: '',
         makerUrls: defaultMakerUrl,
@@ -528,7 +521,7 @@ export const Component = () => {
       // Set as current account
       await invoke('set_current_account', { accountName: data.name })
 
-      toast.success('🎉 Account created successfully!')
+      toast.success(t('walletRemote.accountCreatedSuccess'))
       setIsConnecting(false)
       setConnectionStep('idle')
       navigate(WALLET_DASHBOARD_PATH)
@@ -536,13 +529,33 @@ export const Component = () => {
       setIsConnecting(false)
       setConnectionStep('idle')
       setConnectionError({
-        details: `Account creation failed after successful connection: ${error.message || 'Unknown error'}`,
-        message: 'Failed to create account',
+        details: t('walletRemote.failedToCreateAccountDetails', {
+          error: error.message || t('walletRemote.unexpectedError'),
+        }),
+        message: t('walletRemote.failedToCreateAccount'),
         type: 'account',
       })
-      toast.error('Failed to create account. Please try again.')
+      toast.error(t('walletRemote.failedToCreateAccountToast'))
     }
   }
+
+  const selectedNetwork = form.watch('network')
+  const regtestConnectionType = form.watch('regtestConnectionType')
+  const nodeUrlDescription =
+    selectedNetwork === 'Regtest'
+      ? t('walletRemote.nodeUrlDescriptionRegtest', {
+          type:
+            regtestConnectionType === 'local'
+              ? t('walletRemote.regtestTypeLocal')
+              : t('walletRemote.regtestTypeBitfinex'),
+        })
+      : t('walletRemote.nodeUrlDescription')
+  const nodeUrlPlaceholder =
+    selectedNetwork === 'Regtest'
+      ? regtestConnectionType === 'local'
+        ? t('walletRemote.nodeUrlPlaceholderRegtest')
+        : t('walletRemote.nodeUrlPlaceholderBitfinex')
+      : t('walletRemote.nodeUrlPlaceholder')
 
   return (
     <>
@@ -553,8 +566,8 @@ export const Component = () => {
           icon={<Cloud />}
           maxWidth="3xl"
           onBack={() => navigate(WALLET_SETUP_PATH)}
-          subtitle="Enter the details of your remote RGB Lightning node"
-          title="Connect to Remote Node"
+          subtitle={t('walletRemote.subtitle')}
+          title={t('walletRemote.title')}
         >
           {connectionError && (
             <Alert
@@ -569,39 +582,38 @@ export const Component = () => {
                 </p>
                 {connectionError.type === 'connection' && (
                   <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
-                    <p className="font-medium mb-1">💡 Troubleshooting tips:</p>
+                    <p className="font-medium mb-1">
+                      {t('walletRemote.troubleshootingTips')}
+                    </p>
                     <ul className="space-y-1 list-disc list-inside">
-                      <li>Verify the node URL is correct and accessible</li>
-                      <li>Check if the node is running and responding</li>
-                      <li>Ensure the port number is correct</li>
-                      <li>
-                        Try switching between local and remote regtest if using
-                        regtest
-                      </li>
+                      <li>{t('walletRemote.verifyNodeUrl')}</li>
+                      <li>{t('walletRemote.checkNodeRunning')}</li>
+                      <li>{t('walletRemote.ensurePortCorrect')}</li>
+                      <li>{t('walletRemote.trySwitchingRegtest')}</li>
                     </ul>
                   </div>
                 )}
                 {connectionError.type === 'auth' && (
                   <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
-                    <p className="font-medium mb-1">🔑 Authentication help:</p>
+                    <p className="font-medium mb-1">
+                      {t('walletRemote.authHelp')}
+                    </p>
                     <ul className="space-y-1 list-disc list-inside">
-                      <li>Double-check your password</li>
-                      <li>Verify the authentication token if using one</li>
-                      <li>Ensure the node accepts your credentials</li>
+                      <li>{t('walletRemote.doubleCheckPassword')}</li>
+                      <li>{t('walletRemote.verifyAuthToken')}</li>
+                      <li>{t('walletRemote.ensureNodeAccepts')}</li>
                     </ul>
                   </div>
                 )}
                 {connectionError.type === 'network' && (
                   <div className="text-xs text-red-300 bg-red-500/10 p-2 rounded border border-red-500/20">
                     <p className="font-medium mb-1">
-                      🌐 Network troubleshooting:
+                      {t('walletRemote.networkTroubleshooting')}
                     </p>
                     <ul className="space-y-1 list-disc list-inside">
-                      <li>Check your internet connection</li>
-                      <li>Verify the node is online and accessible</li>
-                      <li>
-                        Try switching regtest connection type if using regtest
-                      </li>
+                      <li>{t('walletRemote.checkInternet')}</li>
+                      <li>{t('walletRemote.verifyNodeOnline')}</li>
+                      <li>{t('walletRemote.trySwitchingConnection')}</li>
                     </ul>
                   </div>
                 )}
@@ -610,7 +622,7 @@ export const Component = () => {
                   onClick={() => setConnectionError(null)}
                   type="button"
                 >
-                  Dismiss and try again
+                  {t('walletRemote.dismissAndRetry')}
                 </button>
               </div>
             </Alert>
@@ -620,20 +632,21 @@ export const Component = () => {
             <Alert
               className="mb-6"
               icon={<Check className="w-4 h-4" />}
-              title="Connection test successful"
+              title={t('walletRemote.connectionTestSuccessful')}
               variant="success"
             >
               <div className="space-y-2">
                 <p className="text-sm text-green-200">
-                  Successfully connected to the remote node! The node is
-                  responding correctly.
+                  {t('walletRemote.connectionTestSuccessMessage')}
                 </p>
                 <div className="text-xs text-green-300 bg-green-500/10 p-2 rounded border border-green-500/20">
-                  <p className="font-medium mb-1">✅ Connection verified:</p>
+                  <p className="font-medium mb-1">
+                    {t('walletRemote.connectionVerifiedHeading')}
+                  </p>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>Node is online and accessible</li>
-                    <li>Authentication is working correctly</li>
-                    <li>Node is responding with valid data</li>
+                    <li>{t('walletRemote.nodeOnline')}</li>
+                    <li>{t('walletRemote.authWorking')}</li>
+                    <li>{t('walletRemote.nodeRespondingValidData')}</li>
                   </ul>
                 </div>
                 <button
@@ -641,7 +654,7 @@ export const Component = () => {
                   onClick={() => setConnectionSuccess(false)}
                   type="button"
                 >
-                  Dismiss
+                  {t('common.close')}
                 </button>
               </div>
             </Alert>
@@ -649,8 +662,7 @@ export const Component = () => {
 
           <div className="w-full">
             <p className="text-slate-400 mb-6 leading-relaxed">
-              Configure your remote node connection settings. Enter the details
-              of your existing RGB Lightning node.
+              {t('walletRemote.configureRemoteNode')}
             </p>
 
             <Card className="p-6 bg-blue-dark/40 border border-white/5">
@@ -660,51 +672,41 @@ export const Component = () => {
               >
                 <SetupSection>
                   <FormField
-                    description="This name will be used to identify your remote node connection"
+                    description={t('walletRemote.accountNameDescription')}
                     error={form.formState.errors.name?.message}
                     htmlFor="name"
-                    label="Account Name"
+                    label={t('walletRemote.accountName')}
                   >
                     <Input
                       id="name"
-                      placeholder="My Remote Node"
+                      placeholder={t('walletRemote.accountNamePlaceholder')}
                       {...form.register('name', {
-                        required: 'Account name is required',
+                        required: t('walletRemote.accountNameRequired'),
                       })}
                       error={!!form.formState.errors.name}
                     />
                   </FormField>
                   <FormField
-                    description={
-                      form.watch('network') === 'Regtest'
-                        ? `Node URL for ${form.watch('regtestConnectionType') === 'local' ? 'local' : 'Bitfinex'} regtest connection`
-                        : 'The URL of your remote RGB Lightning node'
-                    }
+                    description={nodeUrlDescription}
                     error={form.formState.errors.node_url?.message}
                     htmlFor="node_url"
-                    label="Node URL"
+                    label={t('walletRemote.nodeUrl')}
                   >
                     <Input
                       id="node_url"
-                      placeholder={
-                        form.watch('network') === 'Regtest'
-                          ? form.watch('regtestConnectionType') === 'local'
-                            ? 'http://localhost:3001'
-                            : 'http://localhost:3001 (Bitfinex regtest)'
-                          : 'http://your-node-url:3000'
-                      }
+                      placeholder={nodeUrlPlaceholder}
                       {...form.register('node_url', {
-                        required: 'Node URL is required',
+                        required: t('walletRemote.nodeUrlRequired'),
                         validate: (value) => {
                           // Check for common URL formatting issues
                           if (value.includes('//nodeinfo')) {
-                            return 'Remove "/nodeinfo" from the URL - it will be added automatically'
+                            return t('walletRemote.nodeUrlInvalidFormat')
                           }
                           if (value.match(/\/\/+$/)) {
-                            return 'Remove extra trailing slashes from the URL'
+                            return t('walletRemote.nodeUrlTrailingSlash')
                           }
                           if (!value.match(/^https?:\/\//)) {
-                            return 'URL must start with http:// or https://'
+                            return t('walletRemote.nodeUrlProtocol')
                           }
                           return true
                         },
@@ -718,23 +720,23 @@ export const Component = () => {
                   <NetworkSelector
                     className="mb-4"
                     onChange={(network) => form.setValue('network', network)}
-                    selectedNetwork={form.watch('network')}
+                    selectedNetwork={selectedNetwork}
                   />
 
-                  {form.watch('network') === 'Regtest' && (
+                  {selectedNetwork === 'Regtest' && (
                     <div className="mb-6 p-4 bg-blue-dark/20 border border-blue-500/20 rounded-xl">
                       <RegtestConnectionSelector
                         onChange={(type) =>
                           form.setValue('regtestConnectionType', type)
                         }
-                        selectedType={form.watch('regtestConnectionType')}
+                        selectedType={regtestConnectionType}
                       />
                     </div>
                   )}
                   <FormField
                     error={form.formState.errors.password?.message}
                     htmlFor="password"
-                    label="Node Password"
+                    label={t('walletRemote.password')}
                   >
                     <PasswordInput
                       id="password"
@@ -742,9 +744,9 @@ export const Component = () => {
                       onToggleVisibility={() =>
                         setIsPasswordVisible(!isPasswordVisible)
                       }
-                      placeholder="Password"
+                      placeholder={t('walletRemote.passwordPlaceholder')}
                       {...form.register('password', {
-                        required: 'Password is required',
+                        required: t('walletRemote.passwordRequired'),
                       })}
                       error={!!form.formState.errors.password}
                     />
@@ -766,7 +768,7 @@ export const Component = () => {
                         className="ml-2 text-xs font-medium text-gray-300"
                         htmlFor="useAuth"
                       >
-                        Use Authentication Token
+                        {t('walletRemote.useAuthToken')}
                       </label>
                     </div>
 
@@ -774,13 +776,13 @@ export const Component = () => {
                       <FormField
                         error={form.formState.errors.authToken?.message}
                         htmlFor="authToken"
-                        label="Authentication Token"
+                        label={t('walletRemote.authToken')}
                       >
                         <Input
                           id="authToken"
                           {...form.register('authToken', {
                             required: form.watch('useAuth')
-                              ? 'Authentication token is required'
+                              ? t('walletRemote.authTokenRequired')
                               : false,
                           })}
                           error={!!form.formState.errors.authToken}
@@ -798,11 +800,11 @@ export const Component = () => {
                       <div className="flex-1">
                         <p className="text-sm font-medium text-white">
                           {connectionStep === 'testing' &&
-                            'Step 1: Testing connection to remote node...'}
+                            t('walletRemote.processingStep1')}
                           {connectionStep === 'creating' &&
-                            'Step 2: Creating account and saving settings...'}
+                            t('walletRemote.processingStep2')}
                           {connectionStep === 'finalizing' &&
-                            'Step 3: Finalizing account setup...'}
+                            t('walletRemote.processingStep3')}
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex gap-1">
@@ -846,8 +848,8 @@ export const Component = () => {
                     variant="secondary"
                   >
                     {isTestingConnection
-                      ? 'Testing Connection...'
-                      : 'Test Connection'}
+                      ? t('walletRemote.testingConnection')
+                      : t('walletRemote.testConnection')}
                   </Button>
 
                   {/* Main Submit Button */}
@@ -868,19 +870,18 @@ export const Component = () => {
                   >
                     {isConnecting
                       ? connectionStep === 'testing'
-                        ? 'Testing Connection...'
+                        ? t('walletRemote.testingConnection')
                         : connectionStep === 'creating'
-                          ? 'Creating Account...'
+                          ? t('walletRemote.creatingAccount')
                           : connectionStep === 'finalizing'
-                            ? 'Finalizing Setup...'
-                            : 'Processing...'
-                      : 'Test Connection & Create Account'}
+                            ? t('walletRemote.finalizingSetup')
+                            : t('walletRemote.processing')
+                      : t('walletRemote.testConnectionAndCreate')}
                   </Button>
 
                   {connectionSuccess && (
                     <p className="text-xs text-center text-green-400">
-                      Connection verified! You can now safely connect to the
-                      node.
+                      {t('walletRemote.connectionVerified')}
                     </p>
                   )}
                 </div>
