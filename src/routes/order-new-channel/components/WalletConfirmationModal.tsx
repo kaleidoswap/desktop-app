@@ -147,8 +147,8 @@ export const WalletConfirmationModal: React.FC<
                       </span>
                       <span className="text-white font-medium">
                         {selectedFee === 'custom'
-                          ? `${customFee} sat/vB`
-                          : `${feeRates.find((rate) => rate.value === selectedFee)?.rate} sat/vB`}
+                          ? `${customFee} ${t('orderChannel.feeUnit')}`
+                          : `${feeRates.find((rate) => rate.value === selectedFee)?.rate} ${t('orderChannel.feeUnit')}`}
                       </span>
                     </div>
                   </div>

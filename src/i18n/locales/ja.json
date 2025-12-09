@@ -602,7 +602,12 @@
       "connectedSuccess": "LSPへの接続に成功しました",
       "kaleidoLspFetched": "Kaleidoswap LSP情報が正常に取得されました",
       "kaleidoLspFailed": "Kaleidoswap LSPの選択に失敗しました",
-      "noDefaultLsp": "ネットワーク{{network}}用のデフォルトLSP URLが設定されていません"
+      "noDefaultLsp": "ネットワーク{{network}}用のデフォルトLSP URLが設定されていません",
+      "copyToClipboard": "クリップボードにコピー",
+      "failedToConnectPeer": "ピアへの接続に失敗しました",
+      "networkInfoNotAvailable": "ネットワーク情報が利用できません",
+      "unsupportedNetwork": "サポートされていないネットワーク: {{network}}",
+      "noDefaultLspUrl": "ネットワーク用のデフォルトLSP URLが設定されていません: {{network}}"
     },
     "step2": {
       "title": "チャネルを設定",
@@ -675,7 +680,8 @@
       "lightningSuccess": "Lightning支払いが正常に開始されました！",
       "onchainSuccess": "オンチェーン支払いが正常に送信されました！",
       "paymentFailed": "支払いに失敗しました：{{error}}",
-      "unknownError": "不明なエラー"
+      "unknownError": "不明なエラー",
+      "lightningPaymentFailed": "Lightning支払いが失敗しました"
     },
     "step4": {
       "success": {
@@ -712,7 +718,11 @@
     },
     "orderCopy": "注文IDがコピーされました！",
     "paymentCopied": "支払い詳細がクリップボードにコピーされました！",
-    "infoMessage": "LSPチャネルは、オンチェーントランザクションを管理する必要なく、即座に流動性を提供します。LSPがチャネル開設を処理し、支払いを受け取るためのインバウンド流動性を提供します。"
+    "infoMessage": "LSPチャネルは、オンチェーントランザクションを管理する必要なく、即座に流動性を提供します。LSPがチャネル開設を処理し、支払いを受け取るためのインバウンド流動性を提供します。",
+    "formErrors": {
+      "formSubmissionError": "フォームの送信中にエラーが発生しました。"
+    },
+    "feeUnit": "sat/vB"
   },
   "rootRoute": {
     "connectionErrorTitle": "接続エラー",
@@ -2119,7 +2129,19 @@
       "configureChannel": "チャネルとアセットのパラメータを設定してください",
       "payForChannel": "注文を完了するためにチャネルの料金をお支払いください",
       "orderCompleted": "チャネル注文が正常に完了しました！",
-      "orderStatusSubtitle": "注文ステータス"
+      "orderStatusSubtitle": "注文ステータス",
+      "confirmPurchase": "購入を確認",
+      "purchaseDescription": "ライトニングチャネルで{{amount}} {{ticker}}を購入します。確認して続行するか、カスタマイズしてください。",
+      "assetCost": "アセットコスト",
+      "yourLiquidity": "あなたの流動性",
+      "fees": "手数料",
+      "total": "合計",
+      "cancel": "キャンセル",
+      "customize": "カスタマイズ",
+      "loading": "読み込み中...",
+      "proceedToPayment": "支払いに進む",
+      "payWithWallet": "ウォレットで支払う",
+      "assetPurchase": "アセット購入"
     },
     "feeBreakdown": {
       "channelFees": "チャネル手数料:"

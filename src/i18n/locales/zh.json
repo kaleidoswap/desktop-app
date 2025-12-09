@@ -1267,7 +1267,12 @@
       "connectedSuccess": "成功连接到 LSP",
       "kaleidoLspFetched": "Kaleidoswap LSP 信息获取成功",
       "kaleidoLspFailed": "选择 Kaleidoswap LSP 失败",
-      "noDefaultLsp": "未为网络配置默认 LSP URL：{{network}}"
+      "noDefaultLsp": "未为网络配置默认 LSP URL：{{network}}",
+      "copyToClipboard": "复制到剪贴板",
+      "failedToConnectPeer": "连接到对等方失败",
+      "networkInfoNotAvailable": "网络信息不可用",
+      "unsupportedNetwork": "不支持的网络: {{network}}",
+      "noDefaultLspUrl": "未为网络配置默认 LSP URL: {{network}}"
     },
     "step2": {
       "title": "配置您的通道",
@@ -1340,7 +1345,8 @@
       "lightningSuccess": "Lightning 支付成功启动！",
       "onchainSuccess": "链上支付成功发送！",
       "paymentFailed": "支付失败：{{error}}",
-      "unknownError": "未知错误"
+      "unknownError": "未知错误",
+      "lightningPaymentFailed": "闪电网络支付失败"
     },
     "step4": {
       "success": {
@@ -1377,7 +1383,11 @@
     },
     "orderCopy": "订单 ID 已复制！",
     "paymentCopied": "支付详情已复制到剪贴板！",
-    "infoMessage": "LSP 通道提供即时流动性，无需您管理链上交易。LSP 处理通道开设并提供接收支付所需的入站流动性。"
+    "infoMessage": "LSP 通道提供即时流动性，无需您管理链上交易。LSP 处理通道开设并提供接收支付所需的入站流动性。",
+    "formErrors": {
+      "formSubmissionError": "提交表单时出错。"
+    },
+    "feeUnit": "sat/vB"
   },
   "rootRoute": {
     "connectionErrorTitle": "连接错误",
@@ -2239,7 +2249,19 @@
       "configureChannel": "配置您的通道和资产参数",
       "payForChannel": "支付您的通道以完成订单",
       "orderCompleted": "通道订单成功完成！",
-      "orderStatusSubtitle": "订单状态"
+      "orderStatusSubtitle": "订单状态",
+      "confirmPurchase": "确认购买",
+      "purchaseDescription": "您将在闪电网络通道中购买 {{amount}} {{ticker}}。查看并继续或自定义。",
+      "assetCost": "资产成本",
+      "yourLiquidity": "您的流动性",
+      "fees": "费用",
+      "total": "总计",
+      "cancel": "取消",
+      "customize": "自定义",
+      "loading": "加载中...",
+      "proceedToPayment": "进行支付",
+      "payWithWallet": "使用钱包支付",
+      "assetPurchase": "资产购买"
     },
     "feeBreakdown": {
       "channelFees": "通道费用:"

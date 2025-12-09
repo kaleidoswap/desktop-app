@@ -944,17 +944,15 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <h3 className="text-lg font-semibold text-blue-200 mb-1">
-                      Confirm Purchase
+                      {t('components.buyChannelModal.confirmPurchase')}
                     </h3>
                     <p className="text-blue-200/80 text-sm">
-                      You'll purchase{' '}
-                      <strong>
-                        {formatNumberWithCommas(
+                      {t('components.buyChannelModal.purchaseDescription', {
+                        amount: formatNumberWithCommas(
                           preselectedAsset.amount.toString()
-                        )}{' '}
-                        {assetMap[preselectedAsset.assetId].ticker}
-                      </strong>{' '}
-                      in a Lightning channel. Review and proceed or customize.
+                        ),
+                        ticker: assetMap[preselectedAsset.assetId].ticker,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -972,7 +970,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               {fees && quote && (
                 <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700/30 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Asset Cost</span>
+                    <span className="text-gray-400">{t('components.buyChannelModal.assetCost')}</span>
                     <span className="text-emerald-300">
                       {formatNumberWithCommas(
                         (quote.from_amount / 1000).toString()
@@ -981,19 +979,19 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Your Liquidity</span>
+                    <span className="text-gray-400">{t('components.buyChannelModal.yourLiquidity')}</span>
                     <span className="text-gray-200">
                       {formatNumberWithCommas(clientBalanceSat)} sats
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Fees</span>
+                    <span className="text-gray-400">{t('components.buyChannelModal.fees')}</span>
                     <span className="text-gray-200">
                       {formatNumberWithCommas(fees.total_fee)} sats
                     </span>
                   </div>
                   <div className="flex justify-between pt-2 mt-2 border-t border-gray-700">
-                    <span className="text-white font-semibold">Total</span>
+                    <span className="text-white font-semibold">{t('components.buyChannelModal.total')}</span>
                     <span className="text-white font-semibold">
                       {formatNumberWithCommas(
                         quote.from_amount / 1000 +
@@ -1016,14 +1014,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   onClick={handleClose}
                   type="button"
                 >
-                  Cancel
+                  {t('components.buyChannelModal.cancel')}
                 </button>
                 <button
                   className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
                   onClick={() => setShowPreselectedConfirmation(false)}
                   type="button"
                 >
-                  Customize
+                  {t('components.buyChannelModal.customize')}
                 </button>
                 <button
                   className="flex-1 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
@@ -1032,8 +1030,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   type="button"
                 >
                   {quoteLoading || loading
-                    ? 'Loading...'
-                    : 'Proceed to Payment'}
+                    ? t('components.buyChannelModal.loading')
+                    : t('components.buyChannelModal.proceedToPayment')}
                 </button>
               </div>
             </div>
@@ -1307,7 +1305,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                             }
                             onClick={() => setShowWalletConfirmation(true)}
                           >
-                            Pay with Wallet
+                            {t('components.buyChannelModal.payWithWallet')}
                           </button>
                         </>
                       )}
@@ -1472,13 +1470,13 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                           {
                             amount: quote.from_amount / 1000,
                             className: 'text-emerald-300 font-medium',
-                            label: 'Asset Purchase',
+                            label: t('components.buyChannelModal.assetPurchase'),
                           },
                           {
                             amount: parseInt(
                               clientBalanceSat.replace(/[^0-9]/g, '') || '0'
                             ),
-                            label: 'Your Liquidity',
+                            label: t('components.buyChannelModal.yourLiquidity'),
                           },
                         ]
                       : []),

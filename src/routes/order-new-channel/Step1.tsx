@@ -309,7 +309,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
       const networkInfo = await getNetworkInfo().unwrap()
 
       if (!networkInfo?.network) {
-        throw new Error('Network information not available')
+        throw new Error(t('orderChannel.step1.networkInfoNotAvailable'))
       }
 
       const network = networkInfo.network
@@ -317,13 +317,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         .replace(/^\w/, (c) => c.toUpperCase())
 
       if (!NETWORK_DEFAULTS[network]) {
-        throw new Error(`Unsupported network: ${networkInfo.network}`)
+        throw new Error(t('orderChannel.step1.unsupportedNetwork', { network: networkInfo.network }))
       }
 
       const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
       if (!defaultLspUrl) {
         throw new Error(
-          `No default LSP URL configured for network: ${networkInfo.network}`
+          t('orderChannel.step1.noDefaultLspUrl', { network: networkInfo.network })
         )
       }
 
@@ -676,7 +676,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                 >
                   <button
                     className="absolute right-3 top-3 p-2 bg-gray-700/80 hover:bg-gray-600 rounded-lg transition-colors group"
-                    title="Copy to clipboard"
+                    title={t('orderChannel.step1.copyToClipboard')}
                     type="button"
                   >
                     <Copy className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />

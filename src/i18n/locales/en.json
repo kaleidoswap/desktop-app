@@ -1291,7 +1291,12 @@
       "establishConnection": "Establish a connection with the Lightning Service Provider to continue.",
       "lspConnectionLabel": "LSP Connection String",
       "completed": "Completed",
-      "nextStep": "Next step"
+      "nextStep": "Next step",
+      "copyToClipboard": "Copy to clipboard",
+      "failedToConnectPeer": "Failed to connect to peer",
+      "networkInfoNotAvailable": "Network information not available",
+      "unsupportedNetwork": "Unsupported network: {{network}}",
+      "noDefaultLspUrl": "No default LSP URL configured for network: {{network}}"
     },
     "step2": {
       "title": "Configure Your Channel",
@@ -1364,7 +1369,8 @@
       "lightningSuccess": "Lightning payment initiated successfully!",
       "onchainSuccess": "On-chain payment sent successfully!",
       "paymentFailed": "Payment failed: {{error}}",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "lightningPaymentFailed": "Lightning payment failed"
     },
     "step4": {
       "success": {
@@ -1401,7 +1407,11 @@
     },
     "orderCopy": "Order ID copied!",
     "paymentCopied": "Payment details copied to clipboard!",
-    "infoMessage": "LSP channels provide instant liquidity without requiring you to manage on-chain transactions. The LSP handles channel opening and provides inbound liquidity for receiving payments."
+    "infoMessage": "LSP channels provide instant liquidity without requiring you to manage on-chain transactions. The LSP handles channel opening and provides inbound liquidity for receiving payments.",
+    "formErrors": {
+      "formSubmissionError": "There was an error submitting the form."
+    },
+    "feeUnit": "sat/vB"
   },
   "rootRoute": {
     "connectionErrorTitle": "Connection Error",
@@ -2268,7 +2278,19 @@
       "configureChannel": "Configure your channel and asset parameters",
       "payForChannel": "Pay for your channel to complete the order",
       "orderCompleted": "Channel order completed successfully!",
-      "orderStatusSubtitle": "Order status"
+      "orderStatusSubtitle": "Order status",
+      "confirmPurchase": "Confirm Purchase",
+      "purchaseDescription": "You'll purchase {{amount}} {{ticker}} in a Lightning channel. Review and proceed or customize.",
+      "assetCost": "Asset Cost",
+      "yourLiquidity": "Your Liquidity",
+      "fees": "Fees",
+      "total": "Total",
+      "cancel": "Cancel",
+      "customize": "Customize",
+      "loading": "Loading...",
+      "proceedToPayment": "Proceed to Payment",
+      "payWithWallet": "Pay with Wallet",
+      "assetPurchase": "Asset Purchase"
     },
     "feeBreakdown": {
       "channelFees": "Channel Fees:"

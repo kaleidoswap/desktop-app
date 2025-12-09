@@ -219,7 +219,7 @@ export const Step3: React.FC<StepProps> = ({
         const response = result.data as SendPaymentResponse
 
         if (response.status === 'Failed') {
-          throw new Error('Lightning payment failed')
+          throw new Error(t('orderChannel.step3.lightningPaymentFailed'))
         }
 
         toast.success(t('orderChannel.step3.lightningSuccess'))

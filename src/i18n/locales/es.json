@@ -1174,7 +1174,12 @@
       "connectedSuccess": "Conectado exitosamente al LSP",
       "kaleidoLspFetched": "Información del LSP de Kaleidoswap obtenida exitosamente",
       "kaleidoLspFailed": "Error al seleccionar el LSP de Kaleidoswap",
-      "noDefaultLsp": "No hay URL de LSP predeterminada configurada para la red: {{network}}"
+      "noDefaultLsp": "No hay URL de LSP predeterminada configurada para la red: {{network}}",
+      "copyToClipboard": "Copiar al portapapeles",
+      "failedToConnectPeer": "No se pudo conectar al peer",
+      "networkInfoNotAvailable": "Información de red no disponible",
+      "unsupportedNetwork": "Red no compatible: {{network}}",
+      "noDefaultLspUrl": "No hay URL LSP predeterminada configurada para la red: {{network}}"
     },
     "step2": {
       "title": "Configura Tu Canal",
@@ -1247,7 +1252,8 @@
       "lightningSuccess": "¡Pago Lightning iniciado exitosamente!",
       "onchainSuccess": "¡Pago on-chain enviado exitosamente!",
       "paymentFailed": "Pago fallido: {{error}}",
-      "unknownError": "Error desconocido"
+      "unknownError": "Error desconocido",
+      "lightningPaymentFailed": "Pago Lightning fallido"
     },
     "step4": {
       "success": {
@@ -1284,7 +1290,11 @@
     },
     "orderCopy": "¡ID de orden copiado!",
     "paymentCopied": "¡Detalles del pago copiados al portapapeles!",
-    "infoMessage": "Los canales LSP proporcionan liquidez instantánea sin requerir que gestiones transacciones on-chain. El LSP maneja la apertura del canal y proporciona liquidez entrante para recibir pagos."
+    "infoMessage": "Los canales LSP proporcionan liquidez instantánea sin requerir que gestiones transacciones on-chain. El LSP maneja la apertura del canal y proporciona liquidez entrante para recibir pagos.",
+    "formErrors": {
+      "formSubmissionError": "Hubo un error al enviar el formulario."
+    },
+    "feeUnit": "sat/vB"
   },
   "rootRoute": {
     "connectionErrorTitle": "Error de Conexión",
@@ -2125,7 +2135,19 @@
       "configureChannel": "Configure los parámetros de su canal y activo",
       "payForChannel": "Pague por su canal para completar el pedido",
       "orderCompleted": "¡Pedido de canal completado exitosamente!",
-      "orderStatusSubtitle": "Estado del pedido"
+      "orderStatusSubtitle": "Estado del pedido",
+      "confirmPurchase": "Confirmar compra",
+      "purchaseDescription": "Comprarás {{amount}} {{ticker}} en un canal Lightning. Revisa y continúa o personaliza.",
+      "assetCost": "Costo del activo",
+      "yourLiquidity": "Tu liquidez",
+      "fees": "Tarifas",
+      "total": "Total",
+      "cancel": "Cancelar",
+      "customize": "Personalizar",
+      "loading": "Cargando...",
+      "proceedToPayment": "Proceder al pago",
+      "payWithWallet": "Pagar con billetera",
+      "assetPurchase": "Compra de activo"
     },
     "feeBreakdown": {
       "channelFees": "Tarifas del Canal:"
