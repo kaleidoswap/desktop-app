@@ -56,10 +56,14 @@
 
 /* Base Styles */
 body {
-  @apply bg-slate-950 text-slate-50 antialiased;
+  @apply bg-slate-950 text-slate-50 antialiased m-0 p-0;
   font-feature-settings:
     'rlig' 1,
     'calt' 1;
+}
+
+html {
+  @apply m-0 p-0;
 }
 
 /* Modern Card Styles */

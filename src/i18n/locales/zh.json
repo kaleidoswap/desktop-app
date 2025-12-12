@@ -159,15 +159,6 @@
     "loadingSettings": "加载设置中",
     "pleaseWait": "请稍候，正在加载您的设置...",
     "version": "版本",
-    "securityBackup": "安全与备份",
-    "viewRecoveryPhrase": "查看恢复短语",
-    "accessSeedPhrase": "访问您的加密种子短语",
-    "backupWallet": "备份钱包",
-    "exportBackup": "导出加密钱包备份",
-    "nodeStatus": "节点状态",
-    "nodeRunning": "节点运行中",
-    "nodeOffline": "节点离线",
-    "connectionType": "连接类型",
     "logout": "退出登录",
     "confirmLogout": "确认退出登录",
     "logoutMessage": "您确定要退出登录吗？这将锁定您的节点。",
@@ -277,6 +268,25 @@
     "noFunds": "无比特币资金",
     "noFundsMessage": "您的钱包中没有比特币资金。存入资金以开始使用应用程序。",
     "unknown": "未知"
+  },
+  "peerManagement": {
+    "title": "对等节点",
+    "connectToPeer": "连接到对等节点",
+    "peerPlaceholder": "pubkey@host:port",
+    "connect": "连接",
+    "cancel": "取消",
+    "disconnect": "断开",
+    "disconnectTooltip": "断开对等节点",
+    "loading": "正在加载对等节点...",
+    "noPeers": "没有已连接的对等节点。连接一些对等节点以开始。",
+    "success": {
+      "connected": "成功连接到对等节点",
+      "disconnected": "已断开与对等节点的连接"
+    },
+    "errors": {
+      "connectFailed": "连接到对等节点失败",
+      "disconnectFailed": "断开对等节点失败"
+    }
   },
   "history": {
     "description": "查看您的交易历史，包括存款、支付、提款和交换。",
@@ -665,104 +675,136 @@
     "unknownError": "发生未知错误"
   },
   "trade": {
-    "noChannels": {
-      "insufficientBalance": "比特币余额不足",
-      "insufficientBalanceMessage": "您需要一些比特币才能开通通道。请存入一些 BTC 以开始。",
-      "depositBTC": "存入 BTC",
-      "noRGBChannels": "没有可用的 RGB 通道",
-      "noRGBChannelsMessage": "要开始交换，您需要一个包含一些资产的通道",
-      "openChannel": "开通通道",
-      "buyFromLSP": "从 LSP 购买",
-      "marketMaker": "做市商",
-      "noTradingChannels": "没有可用的交易通道",
-      "buyChannel": "购买通道",
-      "availableTradingPairs": "可用交易对",
-      "supportedAssets": "支持的资产",
-      "quickStartGuide": "快速入门指南",
-      "quickStartMessage": "按照以下步骤开始交易 RGB 资产",
-      "checkSupportedAssets": "检查支持的资产",
-      "checkSupportedAssetsMessage": "访问注册表以查看此做市商支持哪些资产",
-      "createYourChannel": "创建您的通道",
-      "createChannelMessage": "从 LSP 购买通道或直接用您的资产开通",
-      "startTrading": "开始交易",
-      "startTradingMessage": "通道激活后返回此处开始交易",
-      "recommendationCompatible": "您已经拥有与此做市商兼容的资产。您可以直接开通通道。",
-      "recommendationBuy": "为了最快开始，我们建议从 LSP 购买一个支持此做市商资产的通道。",
-      "recommendationOpen": "此做市商支持特定资产。您可以使用这些资产开通通道。",
-      "recommendationDefault": "要与此做市商交易，您需要一个包含其支持资产之一的通道。"
+    "header": {
+      "title": "交易"
     },
-    "channelsNotReady": {
-      "title": "通道尚未就绪",
-      "message": "您的交易通道正在设置中。此过程通常需要几分钟。请稍候，我们正在为您准备一切。",
-      "channelStatus": "通道状态",
-      "initializing": "正在初始化...",
-      "checkStatus": "检查状态",
-      "setupTime": "设置时间",
-      "setupTimeMessage": "通道设置通常需要 3-5 分钟完成",
-      "autoRefresh": "自动刷新",
-      "autoRefreshMessage": "我们将每 30 秒自动检查一次状态"
+    "feeSection": {
+      "title": "费用明细",
+      "percentOfTrade": "交易的 {{rate}}%",
+      "baseFee": "基础费用",
+      "baseFeeTooltip": "无论交易金额多少都会收取的固定费用",
+      "variableFee": "可变费用",
+      "variableFeeTooltip": "根据交易金额计算的百分比费用",
+      "totalFee": "总费用",
+      "percentOfTradeValue": "交易价值的 {{rate}}%",
+      "feeDeduction": "费用扣除",
+      "feeDeductionDesc": "费用会自动从您收到的金额中扣除。显示的「您将收到」金额已经包含了所有费用。"
     },
-    "connectionIssues": {
-      "connectionLost": "做市商连接丢失",
-      "connectionLostMessage": "您的交易通道可用，但我们在维持与做市商的实时连接时遇到问题。",
-      "preventsTradingMessage": "这会阻止实时价格更新和交易。",
-      "retryConnection": "重试连接",
-      "connectionIssue": "连接问题",
-      "network": "网络",
-      "checkInternetMessage": "检查您的互联网连接",
-      "switchMaker": "切换做市商",
-      "tryDifferentMaker": "尝试上面的不同做市商",
-      "wait": "等待",
-      "serverBusy": "服务器可能暂时繁忙",
-      "currentMaker": "当前做市商：",
-      "marketMakerSelector": "如果当前做市商不可用，请切换到另一个以继续交易",
-      "connectingToMaker": "正在连接到做市商",
-      "connectionTimeout": "连接超时",
-      "establishingConnection": "正在建立连接",
-      "connectingMessage": "正在尝试连接到做市商...",
-      "usuallyFastMessage": "这通常只需要几秒钟。",
-      "timeoutMessage": "无法在 30 秒内连接到做市商。",
-      "serverUnreachableMessage": "服务器可能无法访问或遇到问题。",
-      "connectingForSeconds": "已连接 {{seconds}} 秒...",
-      "cancelAndRetry": "取消并重试",
-      "elapsedTime": "已过 {{seconds}} 秒",
-      "tryingSwitchMessage": "当前正在尝试连接。您可以切换尝试另一个做市商。",
-      "switchIfUnavailable": "如果当前做市商不可用，请切换到另一个",
-      "connectionInProgress": "连接进行中"
+    "swapButton": {
+      "connecting": "连接中...",
+      "buyChannel": "在通道中购买 {{asset}}",
+      "gettingQuote": "获取最新报价...",
+      "preparingSwap": "准备交换...",
+      "noChannels": "没有可用通道",
+      "noTradablePairs": "没有可交易对",
+      "exceedsMax": "超过最大可接收量",
+      "channelAwaiting": "通道等待确认",
+      "invalidAmount": "无效金额",
+      "enterAmount": "输入金额",
+      "swapInProgress": "交换进行中...",
+      "waitingQuote": "等待报价...",
+      "swapNow": "立即交换"
     },
-    "manual": {
-      "balancesUpdated": "资产余额已更新",
-      "balancesFailed": "获取资产余额失败",
-      "swapInitiated": "交换已成功发起",
-      "swapInitiateFailed": "无法发起交换，请重试。",
-      "noActiveSwap": "没有可执行的交换",
-      "missingTakerPubkey": "请输入接收方公钥",
-      "swapExecuted": "交换执行成功",
-      "swapExecuteFailed": "执行交换失败，请重试。"
+    "swapInput": {
+      "available": "可用：",
+      "refreshAmounts": "刷新金额",
+      "estimating": "估算中...",
+      "loading": "加载中...",
+      "placeholder": "0.00",
+      "selectAsset": "选择资产",
+      "searchAsset": "按代码或资产 ID 搜索...",
+      "selectAssetTitle": "选择资产",
+      "quickAmount": "快速金额",
+      "percentAvailable": "可用的 %",
+      "min": "最小",
+      "max": "最大",
+      "maxHtlc": "最大 HTLC",
+      "maxHtlcTooltip": "可通过此支付通道发送的最大金额"
     },
-    "taker": {
-      "balancesUpdated": "资产余额已更新",
-      "balancesFailed": "获取资产余额失败",
-      "missingSwapString": "请输入交换字符串",
-      "whitelistSuccess": "交易已成功加入白名单",
-      "whitelistFailed": "无法加入白名单，请重试。",
-      "pubkeyCopied": "公钥已复制到剪贴板"
+    "exchangeRate": {
+      "justNow": "刚刚",
+      "secondsAgo": "{{seconds}}秒前",
+      "oneMinuteAgo": "1分钟前",
+      "minutesAgo": "{{minutes}}分钟前",
+      "oneHourAgo": "1小时前",
+      "hoursAgo": "{{hours}}小时前",
+      "updated": "更新",
+      "never": "从未",
+      "live": "实时",
+      "stale": "过时",
+      "loadingRate": "加载汇率中...",
+      "updatingRate": "更新汇率中..."
     },
     "maker": {
-      "switching": "正在切换到新的做市商...",
-      "reconnected": "已成功重新连接做市商",
-      "reconnecting": "正在重新连接，请稍候...",
+      "selectMaker": "选择做市商",
+      "connected": "已连接",
+      "reconnect": "重新连接",
+      "marketMakers": "做市商",
+      "enterUrl": "输入做市商 URL...",
+      "cancel": "取消",
+      "addMaker": "添加做市商",
+      "addNewMaker": "添加新做市商",
+      "notConnected": "未连接到做市商",
+      "switching": "切换做市商中...",
+      "reconnected": "成功重新连接到做市商",
+      "reconnecting": "重新连接中...",
       "changeFailed": "切换做市商失败",
-      "invalidUrl": "URL 格式无效",
-      "reconnectingStatus": "正在重新连接做市商...",
-      "reconnectionInitFailed": "启动重新连接失败，请重试。",
-      "reconnectionFailed": "重新连接做市商失败"
+      "invalidUrl": "请输入有效的 URL",
+      "reconnectingStatus": "正在连接到做市商...",
+      "reconnectionInitFailed": "无法启动重新连接",
+      "reconnectionFailed": "重新连接失败"
     },
-    "statusToast": {
-      "swapSucceeded": "交换成功",
-      "swapExpired": "交换已过期",
-      "pendingSwaps_one": "{{count}} 个交换进行中",
-      "pendingSwaps_other": "{{count}} 个交换进行中"
+    "nostrP2P": {
+      "title": "Nostr P2P 交易",
+      "description": "通过 Nostr 进行点对点交易即将推出！直接与其他用户交易，无需依赖中心化做市商。",
+      "directSwaps": "直接交换",
+      "directSwapsDesc": "无需中介直接与其他用户交易",
+      "limitOrders": "限价订单",
+      "limitOrdersDesc": "设置你的价格并等待匹配",
+      "notifications": "通知",
+      "notificationsDesc": "当你的订单匹配时收到提醒",
+      "trustlessSwaps": "无信任交换",
+      "trustlessSwapsDesc": "原子交换确保双方都收到资产或交易不会发生",
+      "globalMarketplace": "全球市场",
+      "globalMarketplaceDesc": "通过 Nostr 网络与全球交易者连接",
+      "notifyPrompt": "想在 Nostr P2P 交易推出时收到通知吗？",
+      "starGithub": "给我们的 GitHub 仓库加星"
+    },
+    "tradablePairs": {
+      "title": "可用交易对",
+      "noPairs": "没有可用的交易对",
+      "pairCount": "{{count}} 个交易对",
+      "clickToCopy": "点击复制：{{id}}",
+      "active": "活跃",
+      "inactive": "不活跃",
+      "morePairs": "+ 还有 {{count}} 个交易对",
+      "openChannelHint": "使用这些资产中的任何一个开通通道以开始交易"
+    },
+    "supportedAssets": {
+      "title": "支持的资产",
+      "assetCount": "{{count}} 个资产",
+      "clickToCopyAssetId": "点击复制资产 ID：{{id}}",
+      "tradeHint": "您可以在这些资产的任何组合之间进行交易"
+    },
+    "tradeForm": {
+      "available": "可用：",
+      "youSend": "您发送",
+      "canReceive": "最多可接收：",
+      "youReceive": "您将收到（估算）"
+    },
+    "assetModal": {
+      "none": "无",
+      "selected": "已选择",
+      "copyAssetId": "复制完整资产 ID",
+      "title": "选择资产",
+      "searchPlaceholder": "按代码、名称或资产 ID 搜索...",
+      "close": "关闭",
+      "assetsFound": "找到 {{count}} 个资产",
+      "noAssetsFound": "未找到资产",
+      "searchHint": "尝试按代码（例如 \"BTC\"）、名称或资产 ID 搜索",
+      "clearSearch": "清除搜索并显示所有资产",
+      "tip": "提示：您可以按代码搜索或粘贴完整资产 ID",
+      "selectedLabel": "已选择"
     }
   },
   "walletRestore": {
@@ -1268,6 +1310,30 @@
       "kaleidoLspFetched": "Kaleidoswap LSP 信息获取成功",
       "kaleidoLspFailed": "选择 Kaleidoswap LSP 失败",
       "noDefaultLsp": "未为网络配置默认 LSP URL：{{network}}",
+      "verifyingConnection": "请稍候，我们正在验证您的连接",
+      "currentStep": "当前步骤",
+      "setParameters": "设置参数",
+      "completeSetup": "完成设置",
+      "lspReadyConnect": "LSP 准备连接",
+      "alreadyConnectedInfo": "您已经连接到此 LSP。点击下方继续或获取不同的 LSP 进行连接。",
+      "lspReadyInfo": "LSP 连接详情已加载。点击下方连接并继续",
+      "connectionStringLabel": "LSP 连接字符串",
+      "connectionStringPlaceholder": "连接字符串将显示在此处...",
+      "connectionStringWaiting": "等待 LSP 连接详情...",
+      "connectionStringInfo": "此唯一连接 URL 标识您的 LSP 对等方",
+      "fetchLspInfo": "获取 LSP 信息",
+      "fetching": "获取中...",
+      "enterLspInstructions": "输入您的 LSP 服务器 URL 或使用下面的默认 Kaleidoswap LSP",
+      "useDefaultKaleidoLsp": "使用默认 Kaleidoswap LSP",
+      "continueWithConnectedLsp": "继续使用已连接的 LSP",
+      "waitingForLspUrl": "等待 LSP URL...",
+      "connecting": "连接中...",
+      "connectLsp": "连接 LSP",
+      "alreadyConnectedPopup": "您已经连接到此 LSP。您想继续购买通道吗？",
+      "establishConnection": "建立与闪电网络服务提供商的连接以继续。",
+      "lspConnectionLabel": "LSP 连接字符串",
+      "completed": "已完成",
+      "nextStep": "下一步",
       "copyToClipboard": "复制到剪贴板",
       "failedToConnectPeer": "连接到对等方失败",
       "networkInfoNotAvailable": "网络信息不可用",
@@ -1388,6 +1454,66 @@
       "formSubmissionError": "提交表单时出错。"
     },
     "feeUnit": "sat/vB"
+  },
+  "channelConfiguration": {
+    "bitcoinChannel": {
+      "title": "比特币通道",
+      "channelCapacity": "通道容量",
+      "liquidityDistribution": "流动性分配",
+      "spending": "支出",
+      "receiving": "接收",
+      "total": "总计",
+      "sats": "聪",
+      "spendingBalance": "支出余额",
+      "spendingBalanceInfo": "（蓝色）：您的出站流动性 - 用于发送付款和购买资产。",
+      "receivingCapacity": "接收容量",
+      "receivingCapacityInfo": "（紫色）：来自LSP的入站流动性 - 决定您可以接收的金额。",
+      "feeReserve": "每侧预留{{amount}}聪用于手续费",
+      "feeReserveTitle": "为什么要预留手续费？",
+      "feeReserveExplanation": "通道的每一侧（您的支出余额和LSP的接收容量）都预留了<strong>{{amount}}聪</strong>以支付未来的链上交易手续费。",
+      "clientFeeReserve": "<strong>客户端侧（{{amount}}聪）：</strong>从您的支出余额中预留，用于支付潜在的通道关闭手续费",
+      "lspFeeReserve": "<strong>LSP侧（{{amount}}聪）：</strong>从LSP的接收容量中预留，用于通道管理操作",
+      "feeReserveConclusion": "这些预留金确保双方始终能够承担必要的链上操作，如协作关闭通道。",
+      "spendingPercentage": "{{percent}}% 支出",
+      "zeroSpending": "0% 支出",
+      "fullSpending": "100% 支出"
+    },
+    "assetChannel": {
+      "title": "{{ticker}}资产通道",
+      "totalCapacity": "总资产容量",
+      "assetDistribution": "资产分配",
+      "yourAssets": "您的资产",
+      "lspReserve": "LSP储备",
+      "total": "总计",
+      "yourAssetsInfo": "（绿色）：您将购买并拥有的资产 - 用于发送或交易。",
+      "lspReserveInfo": "（青色）：LSP持有的资产 - 决定您以后可以接收的金额。"
+    },
+    "assetSection": {
+      "noAssetsTitle": "无可用资产",
+      "noAssetsMessage": "目前没有可添加到您的通道的资产。请稍后重试或在不添加资产的情况下继续。",
+      "chooseAsset": "为您的通道选择RGB资产",
+      "searchPlaceholder": "按名称、代码或资产ID搜索...",
+      "selectAssetTitle": "选择RGB资产"
+    },
+    "feeBreakdown": {
+      "totalCostBreakdown": "总成本明细",
+      "estimatedCosts": "预估成本",
+      "calculating": "（计算中...）",
+      "setupFee": "设置费",
+      "capacityFee": "容量费",
+      "durationFee": "期限费",
+      "discount": "折扣（{{code}}）",
+      "channelFees": "通道费用",
+      "totalPayment": "总支付额",
+      "feeExplanation": "此费用涵盖设置和维护您的通道的成本。您需要支付的总金额包括此费用加上您所需的通道流动性。"
+    },
+    "duration": {
+      "oneMonth": "1个月",
+      "threeMonths": "3个月",
+      "sixMonths": "6个月",
+      "label": "通道锁定期限",
+      "tooltipInfo": "LSP保证保持您的通道开放的最短时间。较长的期限提供更高的稳定性，但可能影响费用。1个月 = 4,320个区块，3个月 = 12,960个区块，6个月 = 25,920个区块。默认：3个月。"
+    }
   },
   "rootRoute": {
     "connectionErrorTitle": "连接错误",
@@ -1522,6 +1648,107 @@
         "note": "如果流动性不足，即使已正确加入白名单，交换也可能失败。"
       },
       "collapsedHint": "单击展开并了解有关原子交换如何工作以及涉及的角色的更多信息。"
+    },
+    "makerForm": {
+      "title": "手动交换",
+      "description": "作为 maker 创建并执行原子交换",
+      "initiateTitle": "发起交换（Maker）",
+      "labels": {
+        "fromAsset": "来源资产",
+        "toAsset": "目标资产",
+        "amountToSend": "发送数量",
+        "amountToReceive": "接收数量",
+        "timeout": "超时（秒）",
+        "takerPubkey": "Taker 公钥"
+      },
+      "placeholders": {
+        "selectAsset": "请选择资产",
+        "enterAmount": "输入数量",
+        "takerPubkey": "输入 taker 的公钥"
+      },
+      "buttons": {
+        "initiateSwap": "发起交换",
+        "initiating": "发起交换中...",
+        "shareWithTaker": "与 Taker 分享",
+        "executeSwap": "执行交换",
+        "executing": "执行交换中..."
+      },
+      "info": {
+        "initiateDescription": "定义您要交换的资产和数量，然后发起交换以生成交换字符串。",
+        "swapInitiated": "交换已发起。请与 taker 分享以下交换字符串。",
+        "swapStringLabel": "交换字符串",
+        "copyButton": "复制",
+        "copiedToClipboard": "已复制到剪贴板！",
+        "executeInfo": "taker 将您的交换字符串加入白名单后，您可以在下方执行交换。",
+        "statusLabel": "交换状态",
+        "sufficientBalanceWarning": "请确保您在所选资产中有足够的余额。如果资金不足，交换将失败。",
+        "timeoutDescription": "交换在过期前的有效时间",
+        "minTimeout": "最小超时时间为 10 秒",
+        "maxTimeout": "最大超时时间为 86400 秒（24 小时）",
+        "canReceiveUpTo": "最多可接收"
+      },
+      "errors": {
+        "amountExceedsBalance": "数量超过可用余额",
+        "swapInitiationFailed": "发起交换失败。请重试。",
+        "swapExecutionFailed": "执行交换失败。请重试。",
+        "invalidSwapString": "无效的交换字符串",
+        "enterTakerPubkey": "请输入 taker 的公钥"
+      },
+      "success": {
+        "swapInitiated": "交换发起成功",
+        "swapExecuted": "交换执行成功"
+      },
+      "balance": {
+        "available": "可用",
+        "sendingMore": "发送超过可用数量"
+      }
+    },
+    "takerForm": {
+      "title": "接收交换",
+      "description": "作为 taker 将传入的原子交换加入白名单",
+      "pasteTitle": "粘贴交换字符串",
+      "labels": {
+        "swapString": "交换字符串"
+      },
+      "placeholders": {
+        "pasteSwapString": "在此处粘贴 maker 的交换字符串"
+      },
+      "buttons": {
+        "whitelist": "加入白名单",
+        "whitelisting": "加入白名单中...",
+        "whitelistedSuccessfully": "已成功加入白名单",
+        "reset": "重置"
+      },
+      "review": {
+        "title": "审查交换详情",
+        "youReceive": "您接收",
+        "youSend": "您发送",
+        "currentBalance": "当前余额",
+        "additionalDetails": "其他详情",
+        "timeout": "超时",
+        "seconds": "秒"
+      },
+      "info": {
+        "pasteDescription": "粘贴 maker 的交换字符串以自动解码并查看交换详情。",
+        "decoding": "解码交换字符串中...",
+        "reviewDescription": "在加入白名单之前审查交换详情。",
+        "loading": "加载中...",
+        "liquidityWarning": "为了交换成功，您需要在您和 maker 之间的闪电通道中为涉及的两种资产拥有足够的流动性。这包括用于路由支付的比特币流动性。",
+        "insufficientBalanceWarning": "您没有足够的 {{asset}} 来完成此交换。如果资金不足，交换将失败。",
+        "whitelistInfo": "加入白名单后，通知 maker 可以执行交换。一旦执行，资产将自动交换。请确保您和 maker 之间的闪电通道中有足够的两种资产和比特币流动性，以确保交换成功。",
+        "waitingForMaker": "等待 maker 执行交换。这可能需要片刻。",
+        "balanceWarning": "您没有足够的余额来完成此交换。"
+      },
+      "errors": {
+        "whitelistFailed": "加入白名单失败。请重试。",
+        "invalidSwapString": "无效的交换字符串。请检查并重试。",
+        "insufficientBalance": "余额不足以完成此交换"
+      },
+      "success": {
+        "whitelisted": "交易已成功加入白名单",
+        "whitelistedMessage": "请通知 maker 您已准备好交换。maker 执行交换后，资产将自动交换。",
+        "yourNodePubkey": "您的节点公钥（maker 需要）："
+      }
     }
   },
   "channelCard": {
@@ -1572,15 +1799,24 @@
     "summary": {
       "colorable": {
         "title": "可着色 UTXO",
-        "bullets": ["UTXO RGB 就绪但尚未分配", "接收链上 RGB 资产"]
+        "bullets": [
+          "UTXO RGB 就绪但尚未分配",
+          "接收链上 RGB 资产"
+        ]
       },
       "colored": {
         "title": "已着色 UTXO",
-        "bullets": ["开通 RGB Lightning 通道", "发送链上 RGB 资产"]
+        "bullets": [
+          "开通 RGB Lightning 通道",
+          "发送链上 RGB 资产"
+        ]
       },
       "normal": {
         "title": "普通 UTXO",
-        "bullets": ["开通比特币 Lightning 通道", "常规交易"]
+        "bullets": [
+          "开通比特币 Lightning 通道",
+          "常规交易"
+        ]
       },
       "countLabel": "{{count}} 个 UTXO"
     },
@@ -1598,7 +1834,12 @@
     "empty": "未找到 UTXO。创建一些以开始使用。"
   },
   "updaterModal": {
-    "fileSizes": ["字节", "KB", "MB", "GB"],
+    "fileSizes": [
+      "字节",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 字节",
     "errors": {
       "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
@@ -1725,139 +1966,6 @@
       }
     }
   },
-  "trade": {
-    "header": {
-      "title": "交易"
-    },
-    "feeSection": {
-      "title": "费用明细",
-      "percentOfTrade": "交易的 {{rate}}%",
-      "baseFee": "基础费用",
-      "baseFeeTooltip": "无论交易金额多少都会收取的固定费用",
-      "variableFee": "可变费用",
-      "variableFeeTooltip": "根据交易金额计算的百分比费用",
-      "totalFee": "总费用",
-      "percentOfTradeValue": "交易价值的 {{rate}}%",
-      "feeDeduction": "费用扣除",
-      "feeDeductionDesc": "费用会自动从您收到的金额中扣除。显示的「您将收到」金额已经包含了所有费用。"
-    },
-    "swapButton": {
-      "connecting": "连接中...",
-      "buyChannel": "在通道中购买 {{asset}}",
-      "gettingQuote": "获取最新报价...",
-      "preparingSwap": "准备交换...",
-      "noChannels": "没有可用通道",
-      "noTradablePairs": "没有可交易对",
-      "exceedsMax": "超过最大可接收量",
-      "channelAwaiting": "通道等待确认",
-      "invalidAmount": "无效金额",
-      "enterAmount": "输入金额",
-      "swapInProgress": "交换进行中...",
-      "waitingQuote": "等待报价...",
-      "swapNow": "立即交换"
-    },
-    "swapInput": {
-      "available": "可用：",
-      "refreshAmounts": "刷新金额",
-      "estimating": "估算中...",
-      "loading": "加载中...",
-      "placeholder": "0.00",
-      "selectAsset": "选择资产",
-      "searchAsset": "按代码或资产 ID 搜索...",
-      "selectAssetTitle": "选择资产",
-      "quickAmount": "快速金额",
-      "percentAvailable": "可用的 %",
-      "min": "最小",
-      "max": "最大",
-      "maxHtlc": "最大 HTLC",
-      "maxHtlcTooltip": "可通过此支付通道发送的最大金额"
-    },
-    "exchangeRate": {
-      "justNow": "刚刚",
-      "secondsAgo": "{{seconds}}秒前",
-      "oneMinuteAgo": "1分钟前",
-      "minutesAgo": "{{minutes}}分钟前",
-      "oneHourAgo": "1小时前",
-      "hoursAgo": "{{hours}}小时前",
-      "updated": "更新",
-      "never": "从未",
-      "live": "实时",
-      "stale": "过时",
-      "loadingRate": "加载汇率中...",
-      "updatingRate": "更新汇率中..."
-    },
-    "maker": {
-      "selectMaker": "选择做市商",
-      "connected": "已连接",
-      "reconnect": "重新连接",
-      "marketMakers": "做市商",
-      "enterUrl": "输入做市商 URL...",
-      "cancel": "取消",
-      "addMaker": "添加做市商",
-      "addNewMaker": "添加新做市商",
-      "notConnected": "未连接到做市商",
-      "switching": "切换做市商中...",
-      "reconnected": "成功重新连接到做市商",
-      "reconnecting": "重新连接中...",
-      "changeFailed": "切换做市商失败",
-      "invalidUrl": "请输入有效的 URL",
-      "reconnectingStatus": "正在连接到做市商...",
-      "reconnectionInitFailed": "无法启动重新连接",
-      "reconnectionFailed": "重新连接失败"
-    },
-    "nostrP2P": {
-      "title": "Nostr P2P 交易",
-      "description": "通过 Nostr 进行点对点交易即将推出！直接与其他用户交易，无需依赖中心化做市商。",
-      "directSwaps": "直接交换",
-      "directSwapsDesc": "无需中介直接与其他用户交易",
-      "limitOrders": "限价订单",
-      "limitOrdersDesc": "设置你的价格并等待匹配",
-      "notifications": "通知",
-      "notificationsDesc": "当你的订单匹配时收到提醒",
-      "trustlessSwaps": "无信任交换",
-      "trustlessSwapsDesc": "原子交换确保双方都收到资产或交易不会发生",
-      "globalMarketplace": "全球市场",
-      "globalMarketplaceDesc": "通过 Nostr 网络与全球交易者连接",
-      "notifyPrompt": "想在 Nostr P2P 交易推出时收到通知吗？",
-      "starGithub": "给我们的 GitHub 仓库加星"
-    },
-    "tradablePairs": {
-      "title": "可用交易对",
-      "noPairs": "没有可用的交易对",
-      "pairCount": "{{count}} 个交易对",
-      "clickToCopy": "点击复制：{{id}}",
-      "active": "活跃",
-      "inactive": "不活跃",
-      "morePairs": "+ 还有 {{count}} 个交易对",
-      "openChannelHint": "使用这些资产中的任何一个开通通道以开始交易"
-    },
-    "supportedAssets": {
-      "title": "支持的资产",
-      "assetCount": "{{count}} 个资产",
-      "clickToCopyAssetId": "点击复制资产 ID：{{id}}",
-      "tradeHint": "您可以在这些资产的任何组合之间进行交易"
-    },
-    "tradeForm": {
-      "available": "可用：",
-      "youSend": "您发送",
-      "canReceive": "最多可接收：",
-      "youReceive": "您将收到（估算）"
-    },
-    "assetModal": {
-      "none": "无",
-      "selected": "已选择",
-      "copyAssetId": "复制完整资产 ID",
-      "title": "选择资产",
-      "searchPlaceholder": "按代码、名称或资产 ID 搜索...",
-      "close": "关闭",
-      "assetsFound": "找到 {{count}} 个资产",
-      "noAssetsFound": "未找到资产",
-      "searchHint": "尝试按代码（例如 \"BTC\"）、名称或资产 ID 搜索",
-      "clearSearch": "清除搜索并显示所有资产",
-      "tip": "提示：您可以按代码搜索或粘贴完整资产 ID",
-      "selectedLabel": "已选择"
-    }
-  },
   "tradeMarketMaker": {
     "loading": {
       "checkingBalance": "正在检查钱包余额和要求...",
@@ -1924,8 +2032,6 @@
       "pleaseWaitChannelConfirmation": "请等待您的通道确认后再进行交易。"
     },
     "swap": {
-      "exchangeRateQuote": "汇率和报价",
-      "refresh": "↻ 刷新",
       "errorDetailsClipboard": "错误详情已复制到剪贴板",
       "swapFailed": "交换失败：{{error}}"
     },

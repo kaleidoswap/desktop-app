@@ -159,15 +159,6 @@
     "loadingSettings": "Caricamento Impostazioni",
     "pleaseWait": "Attendere mentre carichiamo le impostazioni...",
     "version": "Versione",
-    "securityBackup": "Sicurezza e Backup",
-    "viewRecoveryPhrase": "Visualizza Frase di Recupero",
-    "accessSeedPhrase": "Accedi alla tua frase seed cifrata",
-    "backupWallet": "Backup Portafoglio",
-    "exportBackup": "Esporta backup cifrato del portafoglio",
-    "nodeStatus": "Stato Nodo",
-    "nodeRunning": "Nodo in Esecuzione",
-    "nodeOffline": "Nodo Offline",
-    "connectionType": "Tipo di Connessione",
     "logout": "Esci",
     "confirmLogout": "Conferma Disconnessione",
     "logoutMessage": "Sei sicuro di voler uscire? Questo bloccherà il tuo nodo.",
@@ -277,6 +268,25 @@
     "noFunds": "Nessun Fondo Bitcoin",
     "noFundsMessage": "Non hai fondi Bitcoin nel tuo portafoglio. Deposita fondi per iniziare a utilizzare l'applicazione.",
     "unknown": "Sconosciuto"
+  },
+  "peerManagement": {
+    "title": "Peer",
+    "connectToPeer": "Connetti al Peer",
+    "peerPlaceholder": "pubkey@host:port",
+    "connect": "Connetti",
+    "cancel": "Annulla",
+    "disconnect": "Disconnetti",
+    "disconnectTooltip": "Disconnetti peer",
+    "loading": "Caricamento peer...",
+    "noPeers": "Nessun peer connesso. Connettiti ad alcuni peer per iniziare.",
+    "success": {
+      "connected": "Connesso al peer con successo",
+      "disconnected": "Disconnesso dal peer"
+    },
+    "errors": {
+      "connectFailed": "Connessione al peer fallita",
+      "disconnectFailed": "Disconnessione dal peer fallita"
+    }
   },
   "history": {
     "description": "Visualizza la cronologia delle transazioni, inclusi depositi, pagamenti, prelievi e scambi.",
@@ -665,104 +675,136 @@
     "unknownError": "Si è verificato un errore sconosciuto"
   },
   "trade": {
-    "noChannels": {
-      "insufficientBalance": "Saldo Bitcoin Insufficiente",
-      "insufficientBalanceMessage": "Hai bisogno di bitcoin per aprire un canale. Deposita del BTC per iniziare.",
-      "depositBTC": "Deposita BTC",
-      "noRGBChannels": "Nessun Canale RGB Disponibile",
-      "noRGBChannelsMessage": "Per iniziare a scambiare, hai bisogno di un canale con alcuni asset",
-      "openChannel": "Apri Canale",
-      "buyFromLSP": "Acquista da LSP",
-      "marketMaker": "Creatore di mercato",
-      "noTradingChannels": "Nessun Canale di Trading Disponibile",
-      "buyChannel": "Acquista Canale",
-      "availableTradingPairs": "Coppie di Trading Disponibili",
-      "supportedAssets": "Asset Supportati",
-      "quickStartGuide": "Guida Rapida",
-      "quickStartMessage": "Segui questi passaggi per iniziare a fare trading con asset RGB",
-      "checkSupportedAssets": "Verifica asset supportati",
-      "checkSupportedAssetsMessage": "Visita il registro per vedere quali asset supporta questo maker",
-      "createYourChannel": "Crea il Tuo Canale",
-      "createChannelMessage": "Acquista un canale da un LSP o aprilo direttamente con i tuoi asset",
-      "startTrading": "Inizia a Fare Trading",
-      "startTradingMessage": "Torna qui una volta che il tuo canale è attivo per iniziare a fare trading",
-      "recommendationCompatible": "Hai già asset compatibili con questo market maker. Puoi aprire un canale direttamente.",
-      "recommendationBuy": "Per un avvio più rapido, consigliamo di acquistare un canale da un LSP con asset supportati da questo maker.",
-      "recommendationOpen": "Questo market maker supporta asset specifici. Puoi aprire un canale con questi asset.",
-      "recommendationDefault": "Per fare trading con questo market maker, hai bisogno di un canale con uno dei suoi asset supportati."
+    "header": {
+      "title": "Trading"
     },
-    "channelsNotReady": {
-      "title": "Canali Non Ancora Pronti",
-      "message": "I tuoi canali di trading sono in fase di configurazione. Questo processo richiede solitamente alcuni minuti. Attendere mentre prepariamo tutto per te.",
-      "channelStatus": "Stato del Canale",
-      "initializing": "Inizializzazione...",
-      "checkStatus": "Controlla Stato",
-      "setupTime": "Tempo di Configurazione",
-      "setupTimeMessage": "La configurazione del canale richiede tipicamente 3-5 minuti",
-      "autoRefresh": "Aggiornamento Automatico",
-      "autoRefreshMessage": "Controlleremo automaticamente lo stato ogni 30 secondi"
+    "feeSection": {
+      "title": "Dettaglio Commissioni",
+      "percentOfTrade": "{{rate}}% della transazione",
+      "baseFee": "Commissione Base",
+      "baseFeeTooltip": "Commissione fissa applicata indipendentemente dall'importo della transazione",
+      "variableFee": "Commissione Variabile",
+      "variableFeeTooltip": "Commissione percentuale calcolata sull'importo della transazione",
+      "totalFee": "Commissione Totale",
+      "percentOfTradeValue": "{{rate}}% del valore della transazione",
+      "feeDeduction": "Detrazione Commissioni",
+      "feeDeductionDesc": "Le commissioni vengono detratte automaticamente dall'importo che ricevi. L'importo visualizzato in \"Riceverai\" tiene già conto di tutte le commissioni."
     },
-    "connectionIssues": {
-      "connectionLost": "Connessione al Market Maker Persa",
-      "connectionLostMessage": "I tuoi canali di trading sono disponibili, ma abbiamo problemi a mantenere una connessione in tempo reale al market maker.",
-      "preventsTradingMessage": "Questo impedisce gli aggiornamenti dei prezzi in tempo reale e il trading.",
-      "retryConnection": "Riprova Connessione",
-      "connectionIssue": "Problema di Connessione",
-      "network": "Rete",
-      "checkInternetMessage": "Verifica la tua connessione internet",
-      "switchMaker": "Cambia Maker",
-      "tryDifferentMaker": "Prova un market maker diverso sopra",
-      "wait": "Attendi",
-      "serverBusy": "Il server potrebbe essere temporaneamente occupato",
-      "currentMaker": "Maker corrente:",
-      "marketMakerSelector": "Se il maker corrente non è disponibile, passa a un altro per continuare a fare trading",
-      "connectingToMaker": "Connessione al Market Maker",
-      "connectionTimeout": "Timeout della Connessione",
-      "establishingConnection": "Stabilendo Connessione",
-      "connectingMessage": "Tentativo di connessione al market maker...",
-      "usuallyFastMessage": "Di solito ci vogliono solo pochi secondi.",
-      "timeoutMessage": "Impossibile connettersi al market maker entro 30 secondi.",
-      "serverUnreachableMessage": "Il server potrebbe essere irraggiungibile o avere problemi.",
-      "connectingForSeconds": "Connessione da {{seconds}} secondi...",
-      "cancelAndRetry": "Annulla e Riprova",
-      "elapsedTime": "{{seconds}}s trascorsi",
-      "tryingSwitchMessage": "Attualmente in fase di connessione. Puoi passare a un altro maker.",
-      "switchIfUnavailable": "Passa a un maker diverso se quello corrente non è disponibile",
-      "connectionInProgress": "Connessione in corso"
+    "swapButton": {
+      "connecting": "Connessione...",
+      "buyChannel": "Acquista {{asset}} nel Canale",
+      "gettingQuote": "Ottenimento Ultima Quotazione...",
+      "preparingSwap": "Preparazione Swap...",
+      "noChannels": "Nessun Canale Disponibile",
+      "noTradablePairs": "Nessuna Coppia Scambiabile",
+      "exceedsMax": "Supera il Massimo Ricevibile",
+      "channelAwaiting": "Canale in Attesa di Conferma",
+      "invalidAmount": "Importo Non Valido",
+      "enterAmount": "Inserisci Importo",
+      "swapInProgress": "Swap in Corso...",
+      "waitingQuote": "In Attesa di Quotazione...",
+      "swapNow": "Scambia Ora"
     },
-    "manual": {
-      "balancesUpdated": "Saldi asset aggiornati",
-      "balancesFailed": "Impossibile recuperare i saldi degli asset",
-      "swapInitiated": "Swap avviato con successo",
-      "swapInitiateFailed": "Impossibile avviare lo swap. Riprova.",
-      "noActiveSwap": "Nessuno swap attivo da eseguire",
-      "missingTakerPubkey": "Inserisci la pubkey del taker",
-      "swapExecuted": "Swap eseguito con successo",
-      "swapExecuteFailed": "Impossibile eseguire lo swap. Riprova."
+    "swapInput": {
+      "available": "Disponibile:",
+      "refreshAmounts": "Aggiorna importi",
+      "estimating": "Stima in corso...",
+      "loading": "Caricamento...",
+      "placeholder": "0.00",
+      "selectAsset": "Seleziona asset",
+      "searchAsset": "Cerca per ticker o ID asset...",
+      "selectAssetTitle": "Seleziona Asset",
+      "quickAmount": "Importo Rapido",
+      "percentAvailable": "% di disponibile",
+      "min": "Min",
+      "max": "Max",
+      "maxHtlc": "Max HTLC",
+      "maxHtlcTooltip": "Importo massimo che può essere inviato attraverso questo canale di pagamento"
     },
-    "taker": {
-      "balancesUpdated": "Saldi asset aggiornati",
-      "balancesFailed": "Impossibile recuperare i saldi degli asset",
-      "missingSwapString": "Inserisci uno swap string",
-      "whitelistSuccess": "Trade aggiunto alla whitelist con successo",
-      "whitelistFailed": "Impossibile aggiungere il trade alla whitelist. Riprova.",
-      "pubkeyCopied": "Chiave pubblica copiata negli appunti"
+    "exchangeRate": {
+      "justNow": "proprio ora",
+      "secondsAgo": "{{seconds}}s fa",
+      "oneMinuteAgo": "1m fa",
+      "minutesAgo": "{{minutes}}m fa",
+      "oneHourAgo": "1h fa",
+      "hoursAgo": "{{hours}}h fa",
+      "updated": "Aggiornato",
+      "never": "Mai",
+      "live": "Live",
+      "stale": "Obsoleto",
+      "loadingRate": "Caricamento tasso di cambio...",
+      "updatingRate": "Aggiornamento tasso..."
     },
     "maker": {
-      "switching": "Connessione a un nuovo maker...",
-      "reconnected": "Riconnessione al market maker riuscita",
-      "reconnecting": "Riconnessione in corso. Attendere...",
+      "selectMaker": "Seleziona Maker",
+      "connected": "Connesso",
+      "reconnect": "Riconnetti",
+      "marketMakers": "Market Maker",
+      "enterUrl": "Inserisci URL maker...",
+      "cancel": "Annulla",
+      "addMaker": "Aggiungi Maker",
+      "addNewMaker": "Aggiungi Nuovo Maker",
+      "notConnected": "Non connesso al maker",
+      "switching": "Cambio maker in corso...",
+      "reconnected": "Riconnesso al maker con successo",
+      "reconnecting": "Riconnessione...",
       "changeFailed": "Impossibile cambiare maker",
-      "invalidUrl": "Formato URL non valido",
+      "invalidUrl": "Inserisci un URL valido",
       "reconnectingStatus": "Riconnessione al maker...",
-      "reconnectionInitFailed": "Impossibile avviare la riconnessione. Riprova.",
-      "reconnectionFailed": "Impossibile riconnettersi al maker"
+      "reconnectionInitFailed": "Impossibile avviare la riconnessione",
+      "reconnectionFailed": "Riconnessione fallita"
     },
-    "statusToast": {
-      "swapSucceeded": "Swap riuscito",
-      "swapExpired": "Swap scaduto",
-      "pendingSwaps_one": "{{count}} swap in corso",
-      "pendingSwaps_other": "{{count}} swap in corso"
+    "nostrP2P": {
+      "title": "Trading P2P Nostr",
+      "description": "Il trading peer-to-peer tramite Nostr è in arrivo! Scambia direttamente con altri utenti senza fare affidamento su maker centralizzati.",
+      "directSwaps": "Scambi Diretti",
+      "directSwapsDesc": "Scambia direttamente con altri utenti senza intermediari",
+      "limitOrders": "Ordini Limite",
+      "limitOrdersDesc": "Imposta il tuo prezzo e attendi le corrispondenze",
+      "notifications": "Notifiche",
+      "notificationsDesc": "Ricevi avvisi quando i tuoi ordini corrispondono",
+      "trustlessSwaps": "Scambi Senza Fiducia",
+      "trustlessSwapsDesc": "Gli atomic swap garantiscono che entrambe le parti ricevano i propri asset o lo scambio non avvenga",
+      "globalMarketplace": "Marketplace Globale",
+      "globalMarketplaceDesc": "Connettiti con trader in tutto il mondo attraverso la rete Nostr",
+      "notifyPrompt": "Vuoi essere avvisato quando verrà lanciato il trading P2P Nostr?",
+      "starGithub": "Metti una stella al nostro repo GitHub"
+    },
+    "tradablePairs": {
+      "title": "Coppie di Trading Disponibili",
+      "noPairs": "Nessuna coppia di trading disponibile",
+      "pairCount": "{{count}} coppie",
+      "clickToCopy": "Clicca per copiare: {{id}}",
+      "active": "Attivo",
+      "inactive": "Inattivo",
+      "morePairs": "+ {{count}} coppie disponibili in più",
+      "openChannelHint": "Apri un canale con uno qualsiasi di questi asset per iniziare a fare trading"
+    },
+    "supportedAssets": {
+      "title": "Asset Supportati",
+      "assetCount": "{{count}} asset",
+      "clickToCopyAssetId": "Clicca per copiare Asset ID: {{id}}",
+      "tradeHint": "Puoi scambiare tra qualsiasi combinazione di questi asset"
+    },
+    "tradeForm": {
+      "available": "Disponibile:",
+      "youSend": "Invii",
+      "canReceive": "Puoi ricevere fino a:",
+      "youReceive": "Riceverai (Stimato)"
+    },
+    "assetModal": {
+      "none": "Nessuno",
+      "selected": "Selezionato",
+      "copyAssetId": "Copia ID asset completo",
+      "title": "Seleziona Asset",
+      "searchPlaceholder": "Cerca per ticker, nome o ID asset...",
+      "close": "Chiudi",
+      "assetsFound": "{{count}} asset trovati",
+      "noAssetsFound": "Nessun asset trovato",
+      "searchHint": "Prova a cercare per ticker (es. \"BTC\"), nome o ID asset",
+      "clearSearch": "Cancella la ricerca e mostra tutti gli asset",
+      "tip": "Suggerimento: Puoi cercare per ticker o incollare l'ID asset completo",
+      "selectedLabel": "Selezionato"
     }
   },
   "walletRestore": {
@@ -1268,6 +1310,30 @@
       "kaleidoLspFetched": "Informazioni LSP di Kaleidoswap recuperate con successo",
       "kaleidoLspFailed": "Impossibile selezionare l'LSP Kaleidoswap",
       "noDefaultLsp": "Nessun URL LSP predefinito configurato per la rete: {{network}}",
+      "verifyingConnection": "Attendere mentre verifichiamo la connessione",
+      "currentStep": "Passaggio corrente",
+      "setParameters": "Imposta parametri",
+      "completeSetup": "Completa configurazione",
+      "lspReadyConnect": "LSP Pronto per Connettersi",
+      "alreadyConnectedInfo": "Sei già connesso a questo LSP. Clicca qui sotto per procedere o recupera un LSP diverso per connetterti ad esso.",
+      "lspReadyInfo": "Dettagli di connessione LSP caricati. Clicca qui sotto per connetterti e continuare",
+      "connectionStringLabel": "Stringa di Connessione LSP",
+      "connectionStringPlaceholder": "La stringa di connessione apparirà qui...",
+      "connectionStringWaiting": "In attesa dei dettagli di connessione LSP...",
+      "connectionStringInfo": "Questo URL di connessione univoco identifica il tuo peer LSP",
+      "fetchLspInfo": "Recupera Info LSP",
+      "fetching": "Recupero...",
+      "enterLspInstructions": "Inserisci l'URL del tuo server LSP o usa il LSP Kaleidoswap predefinito qui sotto",
+      "useDefaultKaleidoLsp": "Usa LSP Kaleidoswap Predefinito",
+      "continueWithConnectedLsp": "Continua con LSP Connesso",
+      "waitingForLspUrl": "In attesa dell'URL LSP...",
+      "connecting": "Connessione...",
+      "connectLsp": "Connetti LSP",
+      "alreadyConnectedPopup": "Sei già connesso a questo LSP. Vuoi procedere con l'acquisto di un canale?",
+      "establishConnection": "Stabilisci una connessione con il Lightning Service Provider per continuare.",
+      "lspConnectionLabel": "Stringa di Connessione LSP",
+      "completed": "Completato",
+      "nextStep": "Prossimo passaggio",
       "copyToClipboard": "Copia negli appunti",
       "failedToConnectPeer": "Connessione al peer non riuscita",
       "networkInfoNotAvailable": "Informazioni di rete non disponibili",
@@ -1388,6 +1454,66 @@
       "formSubmissionError": "Si è verificato un errore nell'invio del modulo."
     },
     "feeUnit": "sat/vB"
+  },
+  "channelConfiguration": {
+    "bitcoinChannel": {
+      "title": "Canale Bitcoin",
+      "channelCapacity": "Capacità del Canale",
+      "liquidityDistribution": "Distribuzione di Liquidità",
+      "spending": "Spesa",
+      "receiving": "Ricezione",
+      "total": "Totale",
+      "sats": "sats",
+      "spendingBalance": "Saldo di Spesa",
+      "spendingBalanceInfo": " (blu): La tua liquidità in uscita - usala per inviare pagamenti e acquistare asset.",
+      "receivingCapacity": "Capacità di Ricezione",
+      "receivingCapacityInfo": " (viola): Liquidità in entrata dall'LSP - determina quanto puoi ricevere.",
+      "feeReserve": "{{amount}} sats riservati per le commissioni su ciascun lato",
+      "feeReserveTitle": "Perché le commissioni sono riservate?",
+      "feeReserveExplanation": "Ciascun lato del canale (il tuo saldo di spesa e la capacità di ricezione dell'LSP) ha <strong>{{amount}} sats</strong> riservati per coprire future commissioni di transazione on-chain.",
+      "clientFeeReserve": "<strong>Lato client ({{amount}} sats):</strong> Riservati dal tuo saldo di spesa per coprire potenziali commissioni di chiusura del canale",
+      "lspFeeReserve": "<strong>Lato LSP ({{amount}} sats):</strong> Riservati dalla capacità di ricezione dell'LSP per operazioni di gestione del canale",
+      "feeReserveConclusion": "Queste riserve garantiscono che entrambe le parti possano sempre permettersi di eseguire operazioni on-chain necessarie come chiusure cooperative del canale.",
+      "spendingPercentage": "{{percent}}% Spesa",
+      "zeroSpending": "0% Spesa",
+      "fullSpending": "100% Spesa"
+    },
+    "assetChannel": {
+      "title": "Canale Asset {{ticker}}",
+      "totalCapacity": "Capacità Totale dell'Asset",
+      "assetDistribution": "Distribuzione degli Asset",
+      "yourAssets": "I Tuoi Asset",
+      "lspReserve": "Riserva LSP",
+      "total": "Totale",
+      "yourAssetsInfo": " (verde): Asset che acquisterai e possiederai - usali per inviare o scambiare.",
+      "lspReserveInfo": " (turchese): Asset detenuti dall'LSP - determina quanto potrai ricevere successivamente."
+    },
+    "assetSection": {
+      "noAssetsTitle": "Nessun Asset Disponibile",
+      "noAssetsMessage": "Al momento non ci sono asset disponibili da aggiungere al tuo canale. Riprova più tardi o procedi senza aggiungere un asset.",
+      "chooseAsset": "Scegli un asset RGB per il tuo canale",
+      "searchPlaceholder": "Cerca per nome, ticker o ID asset...",
+      "selectAssetTitle": "Seleziona Asset RGB"
+    },
+    "feeBreakdown": {
+      "totalCostBreakdown": "Riepilogo Costi Totali",
+      "estimatedCosts": "Costi Stimati",
+      "calculating": "(in calcolo...)",
+      "setupFee": "Commissione di Configurazione",
+      "capacityFee": "Commissione di Capacità",
+      "durationFee": "Commissione di Durata",
+      "discount": "Sconto ({{code}})",
+      "channelFees": "Commissioni del Canale",
+      "totalPayment": "Pagamento Totale",
+      "feeExplanation": "Questa commissione copre il costo di configurazione e manutenzione del tuo canale. L'importo totale che dovrai pagare include questa commissione più la liquidità del canale desiderata."
+    },
+    "duration": {
+      "oneMonth": "1 mese",
+      "threeMonths": "3 mesi",
+      "sixMonths": "6 mesi",
+      "label": "Durata di Blocco del Canale",
+      "tooltipInfo": "Il tempo minimo in cui l'LSP garantisce di mantenere aperto il tuo canale. Durate più lunghe offrono maggiore stabilità ma possono influenzare le commissioni. 1 mese = 4.320 blocchi, 3 mesi = 12.960 blocchi, 6 mesi = 25.920 blocchi. Predefinito: 3 mesi."
+    }
   },
   "rootRoute": {
     "connectionErrorTitle": "Errore di Connessione",
@@ -1522,6 +1648,107 @@
         "note": "Se la liquidità è insufficiente, lo scambio potrebbe fallire anche se è stato correttamente autorizzato."
       },
       "collapsedHint": "Clicca per espandere e scoprire di più su come funzionano gli atomic swap e i ruoli coinvolti."
+    },
+    "makerForm": {
+      "title": "Scambio Manuale",
+      "description": "Crea ed esegui atomic swap come maker",
+      "initiateTitle": "Avvia Scambio (Maker)",
+      "labels": {
+        "fromAsset": "Da Asset",
+        "toAsset": "A Asset",
+        "amountToSend": "Importo da Inviare",
+        "amountToReceive": "Importo da Ricevere",
+        "timeout": "Timeout (secondi)",
+        "takerPubkey": "Chiave Pubblica del Taker"
+      },
+      "placeholders": {
+        "selectAsset": "Seleziona un asset",
+        "enterAmount": "Inserisci importo",
+        "takerPubkey": "Inserisci la chiave pubblica del taker"
+      },
+      "buttons": {
+        "initiateSwap": "Avvia Scambio",
+        "initiating": "Avvio Scambio...",
+        "shareWithTaker": "Condividi con il Taker",
+        "executeSwap": "Esegui Scambio",
+        "executing": "Esecuzione Scambio..."
+      },
+      "info": {
+        "initiateDescription": "Definisci gli asset e gli importi che vuoi scambiare, poi avvia lo scambio per generare una stringa di scambio.",
+        "swapInitiated": "Lo scambio è stato avviato. Condividi la stringa di scambio qui sotto con il taker.",
+        "swapStringLabel": "Stringa di Scambio",
+        "copyButton": "Copia",
+        "copiedToClipboard": "Copiato negli appunti!",
+        "executeInfo": "Una volta che il taker ha autorizzato la tua stringa di scambio, puoi eseguire lo scambio qui sotto.",
+        "statusLabel": "Stato dello Scambio",
+        "sufficientBalanceWarning": "Assicurati di avere un saldo sufficiente nell'asset selezionato. Lo scambio fallirà se non hai fondi sufficienti.",
+        "timeoutDescription": "Quanto tempo lo scambio sarà valido prima che scada",
+        "minTimeout": "Il timeout minimo è di 10 secondi",
+        "maxTimeout": "Il timeout massimo è di 86400 secondi (24 ore)",
+        "canReceiveUpTo": "Può ricevere fino a"
+      },
+      "errors": {
+        "amountExceedsBalance": "L'importo supera il saldo disponibile",
+        "swapInitiationFailed": "Impossibile avviare lo scambio. Riprova.",
+        "swapExecutionFailed": "Impossibile eseguire lo scambio. Riprova.",
+        "invalidSwapString": "Stringa di scambio non valida",
+        "enterTakerPubkey": "Inserisci la chiave pubblica del taker"
+      },
+      "success": {
+        "swapInitiated": "Scambio avviato con successo",
+        "swapExecuted": "Scambio eseguito con successo"
+      },
+      "balance": {
+        "available": "Disponibile",
+        "sendingMore": "Invio superiore al disponibile"
+      }
+    },
+    "takerForm": {
+      "title": "Ricevi Scambio",
+      "description": "Autorizza atomic swap in arrivo come taker",
+      "pasteTitle": "Incolla Stringa di Scambio",
+      "labels": {
+        "swapString": "Stringa di Scambio"
+      },
+      "placeholders": {
+        "pasteSwapString": "Incolla qui la stringa di scambio del maker"
+      },
+      "buttons": {
+        "whitelist": "Autorizza Scambio",
+        "whitelisting": "Autorizzazione...",
+        "whitelistedSuccessfully": "Autorizzato con Successo",
+        "reset": "Reimposta"
+      },
+      "review": {
+        "title": "Rivedi Dettagli Scambio",
+        "youReceive": "Tu Ricevi",
+        "youSend": "Tu Invii",
+        "currentBalance": "Saldo Attuale",
+        "additionalDetails": "Dettagli Aggiuntivi",
+        "timeout": "Timeout",
+        "seconds": "secondi"
+      },
+      "info": {
+        "pasteDescription": "Incolla la stringa di scambio del maker per decodificare automaticamente e visualizzare i dettagli dello scambio.",
+        "decoding": "Decodifica stringa di scambio...",
+        "reviewDescription": "Rivedi i dettagli dello scambio prima di autorizzarlo.",
+        "loading": "Caricamento...",
+        "liquidityWarning": "Perché lo scambio abbia successo, hai bisogno di liquidità sufficiente nei canali lightning tra te e il maker per entrambi gli asset coinvolti. Questo include la liquidità Bitcoin per l'instradamento dei pagamenti.",
+        "insufficientBalanceWarning": "Non hai abbastanza {{asset}} per completare questo scambio. Lo scambio fallirà se procedi senza fondi sufficienti.",
+        "whitelistInfo": "Dopo l'autorizzazione, informa il maker che ora può eseguire lo scambio. Gli asset verranno scambiati automaticamente una volta che lui eseguirà. Assicurati di avere liquidità sufficiente di entrambi gli asset e Bitcoin nei canali lightning tra te e il maker perché lo scambio abbia successo.",
+        "waitingForMaker": "In attesa che il maker esegua lo scambio. Potrebbe richiedere alcuni istanti.",
+        "balanceWarning": "Non hai saldo sufficiente per completare questo scambio."
+      },
+      "errors": {
+        "whitelistFailed": "Impossibile autorizzare lo scambio. Riprova.",
+        "invalidSwapString": "Stringa di scambio non valida. Controlla e riprova.",
+        "insufficientBalance": "Saldo insufficiente per completare questo scambio"
+      },
+      "success": {
+        "whitelisted": "Lo scambio è stato autorizzato con successo",
+        "whitelistedMessage": "Informa il maker che sei pronto per lo scambio. Gli asset verranno scambiati automaticamente una volta che lui eseguirà lo scambio.",
+        "yourNodePubkey": "La Tua Chiave Pubblica del Nodo (necessaria al maker):"
+      }
     }
   },
   "channelCard": {
@@ -1579,11 +1806,17 @@
       },
       "colored": {
         "title": "UTXO Colorati",
-        "bullets": ["Apri canali Lightning RGB", "Invia asset RGB on-chain"]
+        "bullets": [
+          "Apri canali Lightning RGB",
+          "Invia asset RGB on-chain"
+        ]
       },
       "normal": {
         "title": "UTXO Normali",
-        "bullets": ["Apri canali Lightning Bitcoin", "Transazioni regolari"]
+        "bullets": [
+          "Apri canali Lightning Bitcoin",
+          "Transazioni regolari"
+        ]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -1601,7 +1834,12 @@
     "empty": "Nessun UTXO trovato. Creane alcuni per iniziare."
   },
   "updaterModal": {
-    "fileSizes": ["Byte", "KB", "MB", "GB"],
+    "fileSizes": [
+      "Byte",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 Byte",
     "errors": {
       "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",
@@ -1728,139 +1966,6 @@
       }
     }
   },
-  "trade": {
-    "header": {
-      "title": "Trading"
-    },
-    "feeSection": {
-      "title": "Dettaglio Commissioni",
-      "percentOfTrade": "{{rate}}% della transazione",
-      "baseFee": "Commissione Base",
-      "baseFeeTooltip": "Commissione fissa applicata indipendentemente dall'importo della transazione",
-      "variableFee": "Commissione Variabile",
-      "variableFeeTooltip": "Commissione percentuale calcolata sull'importo della transazione",
-      "totalFee": "Commissione Totale",
-      "percentOfTradeValue": "{{rate}}% del valore della transazione",
-      "feeDeduction": "Detrazione Commissioni",
-      "feeDeductionDesc": "Le commissioni vengono detratte automaticamente dall'importo che ricevi. L'importo visualizzato in \"Riceverai\" tiene già conto di tutte le commissioni."
-    },
-    "swapButton": {
-      "connecting": "Connessione...",
-      "buyChannel": "Acquista {{asset}} nel Canale",
-      "gettingQuote": "Ottenimento Ultima Quotazione...",
-      "preparingSwap": "Preparazione Swap...",
-      "noChannels": "Nessun Canale Disponibile",
-      "noTradablePairs": "Nessuna Coppia Scambiabile",
-      "exceedsMax": "Supera il Massimo Ricevibile",
-      "channelAwaiting": "Canale in Attesa di Conferma",
-      "invalidAmount": "Importo Non Valido",
-      "enterAmount": "Inserisci Importo",
-      "swapInProgress": "Swap in Corso...",
-      "waitingQuote": "In Attesa di Quotazione...",
-      "swapNow": "Scambia Ora"
-    },
-    "swapInput": {
-      "available": "Disponibile:",
-      "refreshAmounts": "Aggiorna importi",
-      "estimating": "Stima in corso...",
-      "loading": "Caricamento...",
-      "placeholder": "0.00",
-      "selectAsset": "Seleziona asset",
-      "searchAsset": "Cerca per ticker o ID asset...",
-      "selectAssetTitle": "Seleziona Asset",
-      "quickAmount": "Importo Rapido",
-      "percentAvailable": "% di disponibile",
-      "min": "Min",
-      "max": "Max",
-      "maxHtlc": "Max HTLC",
-      "maxHtlcTooltip": "Importo massimo che può essere inviato attraverso questo canale di pagamento"
-    },
-    "exchangeRate": {
-      "justNow": "proprio ora",
-      "secondsAgo": "{{seconds}}s fa",
-      "oneMinuteAgo": "1m fa",
-      "minutesAgo": "{{minutes}}m fa",
-      "oneHourAgo": "1h fa",
-      "hoursAgo": "{{hours}}h fa",
-      "updated": "Aggiornato",
-      "never": "Mai",
-      "live": "Live",
-      "stale": "Obsoleto",
-      "loadingRate": "Caricamento tasso di cambio...",
-      "updatingRate": "Aggiornamento tasso..."
-    },
-    "maker": {
-      "selectMaker": "Seleziona Maker",
-      "connected": "Connesso",
-      "reconnect": "Riconnetti",
-      "marketMakers": "Market Maker",
-      "enterUrl": "Inserisci URL maker...",
-      "cancel": "Annulla",
-      "addMaker": "Aggiungi Maker",
-      "addNewMaker": "Aggiungi Nuovo Maker",
-      "notConnected": "Non connesso al maker",
-      "switching": "Cambio maker in corso...",
-      "reconnected": "Riconnesso al maker con successo",
-      "reconnecting": "Riconnessione...",
-      "changeFailed": "Impossibile cambiare maker",
-      "invalidUrl": "Inserisci un URL valido",
-      "reconnectingStatus": "Riconnessione al maker...",
-      "reconnectionInitFailed": "Impossibile avviare la riconnessione",
-      "reconnectionFailed": "Riconnessione fallita"
-    },
-    "nostrP2P": {
-      "title": "Trading P2P Nostr",
-      "description": "Il trading peer-to-peer tramite Nostr è in arrivo! Scambia direttamente con altri utenti senza fare affidamento su maker centralizzati.",
-      "directSwaps": "Scambi Diretti",
-      "directSwapsDesc": "Scambia direttamente con altri utenti senza intermediari",
-      "limitOrders": "Ordini Limite",
-      "limitOrdersDesc": "Imposta il tuo prezzo e attendi le corrispondenze",
-      "notifications": "Notifiche",
-      "notificationsDesc": "Ricevi avvisi quando i tuoi ordini corrispondono",
-      "trustlessSwaps": "Scambi Senza Fiducia",
-      "trustlessSwapsDesc": "Gli atomic swap garantiscono che entrambe le parti ricevano i propri asset o lo scambio non avvenga",
-      "globalMarketplace": "Marketplace Globale",
-      "globalMarketplaceDesc": "Connettiti con trader in tutto il mondo attraverso la rete Nostr",
-      "notifyPrompt": "Vuoi essere avvisato quando verrà lanciato il trading P2P Nostr?",
-      "starGithub": "Metti una stella al nostro repo GitHub"
-    },
-    "tradablePairs": {
-      "title": "Coppie di Trading Disponibili",
-      "noPairs": "Nessuna coppia di trading disponibile",
-      "pairCount": "{{count}} coppie",
-      "clickToCopy": "Clicca per copiare: {{id}}",
-      "active": "Attivo",
-      "inactive": "Inattivo",
-      "morePairs": "+ {{count}} coppie disponibili in più",
-      "openChannelHint": "Apri un canale con uno qualsiasi di questi asset per iniziare a fare trading"
-    },
-    "supportedAssets": {
-      "title": "Asset Supportati",
-      "assetCount": "{{count}} asset",
-      "clickToCopyAssetId": "Clicca per copiare Asset ID: {{id}}",
-      "tradeHint": "Puoi scambiare tra qualsiasi combinazione di questi asset"
-    },
-    "tradeForm": {
-      "available": "Disponibile:",
-      "youSend": "Invii",
-      "canReceive": "Puoi ricevere fino a:",
-      "youReceive": "Riceverai (Stimato)"
-    },
-    "assetModal": {
-      "none": "Nessuno",
-      "selected": "Selezionato",
-      "copyAssetId": "Copia ID asset completo",
-      "title": "Seleziona Asset",
-      "searchPlaceholder": "Cerca per ticker, nome o ID asset...",
-      "close": "Chiudi",
-      "assetsFound": "{{count}} asset trovati",
-      "noAssetsFound": "Nessun asset trovato",
-      "searchHint": "Prova a cercare per ticker (es. \"BTC\"), nome o ID asset",
-      "clearSearch": "Cancella la ricerca e mostra tutti gli asset",
-      "tip": "Suggerimento: Puoi cercare per ticker o incollare l'ID asset completo",
-      "selectedLabel": "Selezionato"
-    }
-  },
   "tradeMarketMaker": {
     "loading": {
       "checkingBalance": "Verifica del saldo del portafoglio e dei requisiti...",
@@ -1927,8 +2032,6 @@
       "pleaseWaitChannelConfirmation": "Attendi la conferma del tuo canale prima di fare trading."
     },
     "swap": {
-      "exchangeRateQuote": "Tasso di Cambio e Quotazione",
-      "refresh": "↻ Aggiorna",
       "errorDetailsClipboard": "Dettagli errore copiati negli appunti",
       "swapFailed": "Swap Fallito: {{error}}"
     },
