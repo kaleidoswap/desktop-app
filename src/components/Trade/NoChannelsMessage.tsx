@@ -532,7 +532,7 @@ export const WebSocketDisconnectedMessage: React.FC<
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
             <h2 className="text-lg font-bold text-white">
-              Market Maker Connection Lost
+              {t('trade.connectionIssues.connectionLost')}
             </h2>
           </div>
         </div>
@@ -544,11 +544,10 @@ export const WebSocketDisconnectedMessage: React.FC<
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
               <Globe className="w-4 h-4" />
-              MARKET MAKER
+              {t('trade.noChannels.marketMaker').toUpperCase()}
             </h3>
             <p className="text-xs text-slate-400">
-              If the current maker is unavailable, switch to another one to
-              continue trading
+              {t('trade.connectionIssues.marketMakerSelector')}
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -570,13 +569,12 @@ export const WebSocketDisconnectedMessage: React.FC<
           </div>
 
           <div className="text-center space-y-3">
-            <h3 className="text-xl font-bold text-white">Connection Issue</h3>
+            <h3 className="text-xl font-bold text-white">{t('trade.connectionIssues.connectionIssue')}</h3>
             <p className="text-slate-300 text-center max-w-md leading-relaxed">
-              Your trading channels are available, but we're having trouble
-              maintaining a real-time connection to the market maker.
+              {t('trade.connectionIssues.connectionLostMessage')}
               <br />
               <span className="text-slate-400 text-sm">
-                This prevents live price updates and trading.
+                {t('trade.connectionIssues.preventsTradingMessage')}
               </span>
             </p>
           </div>
@@ -586,7 +584,7 @@ export const WebSocketDisconnectedMessage: React.FC<
             onClick={handleRefreshConnection}
           >
             <RefreshCcw className="w-5 h-5" />
-            Retry Connection
+            {t('trade.connectionIssues.retryConnection')}
           </button>
 
           {/* Troubleshooting Grid */}
@@ -596,10 +594,10 @@ export const WebSocketDisconnectedMessage: React.FC<
                 <Globe className="w-5 h-5 text-blue-400" />
               </div>
               <h4 className="text-sm font-semibold text-blue-300 mb-1">
-                Network
+                {t('trade.connectionIssues.network')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Check your internet connection
+                {t('trade.connectionIssues.checkInternetMessage')}
               </p>
             </div>
 
@@ -608,10 +606,10 @@ export const WebSocketDisconnectedMessage: React.FC<
                 <RefreshCcw className="w-5 h-5 text-yellow-400" />
               </div>
               <h4 className="text-sm font-semibold text-yellow-300 mb-1">
-                Switch Maker
+                {t('trade.connectionIssues.switchMaker')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Try a different market maker above
+                {t('trade.connectionIssues.tryDifferentMaker')}
               </p>
             </div>
 
@@ -620,10 +618,10 @@ export const WebSocketDisconnectedMessage: React.FC<
                 <Clock className="w-5 h-5 text-green-400" />
               </div>
               <h4 className="text-sm font-semibold text-green-300 mb-1">
-                Wait
+                {t('trade.connectionIssues.wait')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Server may be temporarily busy
+                {t('trade.connectionIssues.serverBusy')}
               </p>
             </div>
           </div>
@@ -632,7 +630,7 @@ export const WebSocketDisconnectedMessage: React.FC<
             <div className="w-full pt-6 border-t border-slate-700/30">
               <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/40">
                 <p className="text-xs text-slate-400 text-center">
-                  Current maker:{' '}
+                  {t('trade.connectionIssues.currentMaker')}{' '}
                   <span className="text-red-400 font-mono break-all">
                     {makerUrl}
                   </span>
@@ -673,13 +671,13 @@ export const ConnectionTimeoutMessage: React.FC<
             <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
             <h2 className="text-lg font-bold text-white">
               {isConnecting
-                ? 'Connecting to Market Maker'
-                : 'Connection Timeout'}
+                ? t('trade.connectionIssues.connectingToMaker')
+                : t('trade.connectionIssues.connectionTimeout')}
             </h2>
           </div>
           {isConnecting && (
             <span className="text-sm text-slate-400">
-              {elapsedSeconds}s elapsed
+              {t('trade.connectionIssues.elapsedTime', { seconds: elapsedSeconds })}
             </span>
           )}
         </div>
@@ -691,12 +689,12 @@ export const ConnectionTimeoutMessage: React.FC<
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
               <Globe className="w-4 h-4" />
-              MARKET MAKER
+              {t('trade.noChannels.marketMaker').toUpperCase()}
             </h3>
             <p className="text-xs text-slate-400">
               {isConnecting
-                ? 'Currently attempting to connect. You can switch to try another maker.'
-                : 'Switch to a different maker if the current one is unavailable'}
+                ? t('trade.connectionIssues.tryingSwitchMessage')
+                : t('trade.connectionIssues.switchIfUnavailable')}
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -729,30 +727,30 @@ export const ConnectionTimeoutMessage: React.FC<
 
           <div className="text-center space-y-3">
             <h3 className="text-xl font-bold text-white">
-              {isConnecting ? 'Establishing Connection' : 'Connection Timeout'}
+              {isConnecting ? t('trade.connectionIssues.establishingConnection') : t('trade.connectionIssues.connectionTimeout')}
             </h3>
             <p className="text-slate-300 text-center max-w-md leading-relaxed">
               {isConnecting ? (
                 <>
-                  Attempting to connect to the market maker...
+                  {t('trade.connectionIssues.connectingMessage')}
                   <br />
                   <span className="text-slate-400 text-sm">
-                    This usually takes just a few seconds.
+                    {t('trade.connectionIssues.usuallyFastMessage')}
                   </span>
                 </>
               ) : (
                 <>
-                  Unable to connect to the market maker within 30 seconds.
+                  {t('trade.connectionIssues.timeoutMessage')}
                   <br />
                   <span className="text-slate-400 text-sm">
-                    The server may be unreachable or experiencing issues.
+                    {t('trade.connectionIssues.serverUnreachableMessage')}
                   </span>
                 </>
               )}
             </p>
             {isConnecting && (
               <p className="text-slate-500 text-sm">
-                Connecting for {elapsedSeconds} seconds...
+                {t('trade.connectionIssues.connectingForSeconds', { seconds: elapsedSeconds })}
               </p>
             )}
           </div>
@@ -763,7 +761,7 @@ export const ConnectionTimeoutMessage: React.FC<
               onClick={onRetry}
             >
               <RefreshCcw className="w-5 h-5" />
-              {isConnecting ? 'Cancel & Retry' : 'Retry Connection'}
+              {isConnecting ? t('trade.connectionIssues.cancelAndRetry') : t('trade.connectionIssues.retryConnection')}
             </button>
           </div>
 
@@ -774,10 +772,10 @@ export const ConnectionTimeoutMessage: React.FC<
                 <Globe className="w-5 h-5 text-blue-400" />
               </div>
               <h4 className="text-sm font-semibold text-blue-300 mb-1">
-                Network
+                {t('trade.connectionIssues.network')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Check your internet connection
+                {t('trade.connectionIssues.checkInternetMessage')}
               </p>
             </div>
 
@@ -786,10 +784,10 @@ export const ConnectionTimeoutMessage: React.FC<
                 <RefreshCcw className="w-5 h-5 text-yellow-400" />
               </div>
               <h4 className="text-sm font-semibold text-yellow-300 mb-1">
-                Switch Maker
+                {t('trade.connectionIssues.switchMaker')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Try a different market maker above
+                {t('trade.connectionIssues.tryDifferentMaker')}
               </p>
             </div>
 
@@ -798,10 +796,10 @@ export const ConnectionTimeoutMessage: React.FC<
                 <Clock className="w-5 h-5 text-green-400" />
               </div>
               <h4 className="text-sm font-semibold text-green-300 mb-1">
-                Wait
+                {t('trade.connectionIssues.wait')}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                {isConnecting ? 'Connection in progress' : 'Server may be busy'}
+                {isConnecting ? t('trade.connectionIssues.connectionInProgress') : t('trade.connectionIssues.serverBusy')}
               </p>
             </div>
           </div>
@@ -810,7 +808,7 @@ export const ConnectionTimeoutMessage: React.FC<
             <div className="w-full pt-6 border-t border-slate-700/30">
               <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/40">
                 <p className="text-xs text-slate-400 text-center">
-                  Current maker:{' '}
+                  {t('trade.connectionIssues.currentMaker')}{' '}
                   <span
                     className={`font-mono break-all ${isConnecting ? 'text-blue-400' : 'text-orange-400'}`}
                   >

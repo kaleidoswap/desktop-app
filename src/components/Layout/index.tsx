@@ -573,7 +573,7 @@ export const Layout = (props: Props) => {
       <ShutdownAnimation isVisible={isShuttingDown} status={shutdownStatus} />
 
       {!shouldHideNavbar ? (
-        <div className="min-h-screen flex">
+        <div className="min-h-screen flex m-0 p-0">
           {/* Sidebar Navigation */}
           <div
             className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/10
@@ -714,7 +714,7 @@ export const Layout = (props: Props) => {
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}
           >
             {/* Top bar with page title and notifications */}
-            <div className="sticky top-0 z-20 bg-blue-darkest/95 backdrop-blur-md border-b border-cyan/10 px-6 py-4 shadow-lg">
+            <div className="sticky top-0 z-30 bg-blue-darkest border-b border-divider/10 px-6 py-3 shadow-lg">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   {(() => {
@@ -857,7 +857,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main content area */}
-            <div className="p-3 min-h-[calc(100vh-56px)] overflow-y-auto">
+            <div className="p-3">
               {props.children}
             </div>
           </main>

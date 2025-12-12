@@ -822,6 +822,11 @@ export const mapTickerToAssetId = (
  * @returns True if it appears to be an asset ID
  */
 export const isAssetId = (assetString: string): boolean => {
+  // Guard against undefined/null
+  if (!assetString) {
+    return false
+  }
+
   // RGB assets start with "rgb:"
   if (assetString.startsWith('rgb:')) {
     return true

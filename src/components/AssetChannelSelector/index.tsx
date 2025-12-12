@@ -1,5 +1,6 @@
 import { Info, Wallet, ArrowDownCircle, BatteryCharging } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
 import { formatNumberWithCommas } from '../../helpers/number'
@@ -34,6 +35,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
   onClientAssetAmountChange,
   capacityPresets,
 }) => {
+  const { t } = useTranslation()
   const maxAssetAmount =
     assetInfo.max_channel_amount / Math.pow(10, assetInfo.precision)
 
@@ -76,7 +78,9 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
               src={assetIconSrc}
             />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500">
-              {assetInfo.ticker} Asset Channel
+              {t('channelConfiguration.assetChannel.title', {
+                ticker: assetInfo.ticker,
+              })}
             </span>
           </h3>
         </div>
@@ -86,7 +90,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
       <div className="mb-6">
         <label className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
           <BatteryCharging className="w-4 h-4 text-emerald-400" />
-          Total Asset Capacity
+          {t('channelConfiguration.assetChannel.totalCapacity')}
         </label>
         <div className="grid grid-cols-4 gap-2">
           {presetAmounts.map((preset, idx) => {
@@ -134,7 +138,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
         <div className="space-y-5">
           <label className="text-sm font-semibold text-gray-300 flex items-center gap-2">
             <Wallet className="w-4 h-4 text-emerald-400" />
-            Asset Distribution
+            {t('channelConfiguration.assetChannel.assetDistribution')}
           </label>
 
           {/* Modern Horizontal Battery Bar */}
@@ -180,7 +184,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                     <Wallet className="w-4 h-4 text-white/90" />
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-white/80">
-                        Your Assets
+                        {t('channelConfiguration.assetChannel.yourAssets')}
                       </span>
                       <span className="text-sm font-bold text-white">
                         {formatAssetAmount(clientAssetAmount)}
@@ -194,7 +198,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                   <div className="flex items-center gap-2 ml-auto">
                     <div className="flex flex-col items-end">
                       <span className="text-xs font-semibold text-white/80">
-                        LSP Reserve
+                        {t('channelConfiguration.assetChannel.lspReserve')}
                       </span>
                       <span className="text-sm font-bold text-white">
                         {formatAssetAmount(lspAssetAmount)}
@@ -212,7 +216,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
               <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-gray-400 font-medium">
-                    Total
+                    {t('channelConfiguration.assetChannel.total')}
                   </span>
                 </div>
                 <span className="text-base font-bold text-white">
@@ -228,7 +232,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                 <div className="flex items-center gap-2 mb-1">
                   <Wallet className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-xs text-emerald-300 font-medium">
-                    Your Assets
+                    {t('channelConfiguration.assetChannel.yourAssets')}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1">
@@ -248,7 +252,7 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                 <div className="flex items-center gap-2 mb-1">
                   <ArrowDownCircle className="w-3.5 h-3.5 text-teal-400" />
                   <span className="text-xs text-teal-300 font-medium">
-                    LSP Reserve
+                    {t('channelConfiguration.assetChannel.lspReserve')}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-1">
@@ -269,14 +273,16 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
               <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               <div className="text-xs text-emerald-200/80 space-y-1">
                 <p>
-                  <strong className="text-emerald-300">Your Assets</strong>{' '}
-                  (green): Assets you'll purchase and own - use these to send or
-                  trade.
+                  <strong className="text-emerald-300">
+                    {t('channelConfiguration.assetChannel.yourAssets')}
+                  </strong>
+                  {t('channelConfiguration.assetChannel.yourAssetsInfo')}
                 </p>
                 <p>
-                  <strong className="text-teal-300">LSP Reserve</strong> (teal):
-                  Assets held by the LSP - determines how much you can receive
-                  later.
+                  <strong className="text-teal-300">
+                    {t('channelConfiguration.assetChannel.lspReserve')}
+                  </strong>
+                  {t('channelConfiguration.assetChannel.lspReserveInfo')}
                 </p>
               </div>
             </div>

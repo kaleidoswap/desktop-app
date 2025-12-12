@@ -1,5 +1,6 @@
 import React from 'react'
 import { Control, Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { AssetInfo } from '../../utils/channelOrderUtils'
 import { AssetChannelSelector } from '../AssetChannelSelector'
@@ -34,6 +35,7 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
   selectLabel = 'Select Asset to Buy (Optional)',
   selectPlaceholder = 'Select an RGB asset',
 }) => {
+  const { t } = useTranslation()
   const hasAssets = Object.keys(assetMap).length > 0
 
   if (!hasAssets) {
@@ -57,13 +59,11 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-yellow-200">
-                No Assets Available
+                {t('channelConfiguration.assetSection.noAssetsTitle')}
               </h3>
               <div className="mt-2 text-sm text-yellow-300">
                 <p>
-                  There are currently no assets available to add to your
-                  channel. Please try again later or proceed without adding an
-                  asset.
+                  {t('channelConfiguration.assetSection.noAssetsMessage')}
                 </p>
               </div>
             </div>
@@ -87,7 +87,7 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
               render={({ field }) => (
                 <AssetSelectWithModal
                   className="w-full"
-                  fieldLabel="Choose an RGB asset for your channel"
+                  fieldLabel={t('channelConfiguration.assetSection.chooseAsset')}
                   onChange={field.onChange}
                   options={Object.entries(assetMap).map(
                     ([assetId, assetInfo]) => ({
@@ -99,8 +99,10 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
                     })
                   )}
                   placeholder={selectPlaceholder}
-                  searchPlaceholder="Search by name, ticker or asset ID..."
-                  title="Select RGB Asset"
+                  searchPlaceholder={t(
+                    'channelConfiguration.assetSection.searchPlaceholder'
+                  )}
+                  title={t('channelConfiguration.assetSection.selectAssetTitle')}
                   value={field.value}
                 />
               )}
@@ -108,7 +110,7 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
           ) : (
             <AssetSelectWithModal
               className="w-full"
-              fieldLabel="Choose an RGB asset for your channel"
+              fieldLabel={t('channelConfiguration.assetSection.chooseAsset')}
               onChange={onAssetChange}
               options={Object.entries(assetMap).map(([assetId, assetInfo]) => ({
                 assetId: assetId,
@@ -118,8 +120,10 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
                 value: assetId,
               }))}
               placeholder={selectPlaceholder}
-              searchPlaceholder="Search by name, ticker or asset ID..."
-              title="Select RGB Asset"
+              searchPlaceholder={t(
+                'channelConfiguration.assetSection.searchPlaceholder'
+              )}
+              title={t('channelConfiguration.assetSection.selectAssetTitle')}
               value={selectedAssetId}
             />
           )}

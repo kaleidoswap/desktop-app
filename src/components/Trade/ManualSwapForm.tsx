@@ -503,15 +503,15 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
   // Get the appropriate balance label based on direction
   const getBalanceLabel = (isFromAsset: boolean) => {
-    return isFromAsset ? 'Available:' : 'Can receive up to:'
+    return isFromAsset ? t('tradeManual.makerForm.balance.available') + ':' : t('tradeManual.makerForm.info.canReceiveUpTo') + ':'
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1 mb-4">
-        <h2 className="text-xl font-semibold text-white">Manual Swap</h2>
+        <h2 className="text-xl font-semibold text-white">{t('tradeManual.makerForm.title')}</h2>
         <p className="text-sm text-slate-400">
-          Create and execute atomic swaps as a maker
+          {t('tradeManual.makerForm.description')}
         </p>
       </div>
 
@@ -522,7 +522,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
               1
             </div>
             <h3 className="text-md font-medium text-white">
-              Initiate Swap (Maker)
+              {t('tradeManual.makerForm.initiateTitle')}
             </h3>
           </div>
           <button
@@ -537,8 +537,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
           </button>
         </div>
         <p className="text-sm text-slate-400 ml-8 mb-4">
-          Define the assets and amounts you want to swap, then initiate the swap
-          to generate a swap string.
+          {t('tradeManual.makerForm.info.initiateDescription')}
         </p>
 
         <form className="space-y-6" onSubmit={handleSubmit(onInitSwap)}>
@@ -548,7 +547,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-sm font-medium text-slate-300">
-                    From Asset
+                    {t('tradeManual.makerForm.labels.fromAsset')}
                   </label>
                   {fromAsset && (
                     <div className="flex items-center gap-1 text-xs text-slate-400 asset-balance">
@@ -572,7 +571,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
                   />
                   {!fromAsset && (
                     <p className="mt-1 text-xs text-red-400">
-                      Please select an asset
+                      {t('tradeManual.makerForm.placeholders.selectAsset')}
                     </p>
                   )}
                 </div>
@@ -580,7 +579,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-slate-300">
-                  Amount to Send
+                  {t('tradeManual.makerForm.labels.amountToSend')}
                 </label>
                 <div className="relative h-[50px]">
                   <input
@@ -608,14 +607,14 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
                 </div>
                 {!fromAmount && fromAsset && (
                   <p className="mt-1 text-xs text-red-400">
-                    Please enter an amount
+                    {t('tradeManual.makerForm.placeholders.enterAmount')}
                   </p>
                 )}
                 {fromAsset &&
                   assetBalances[fromAsset] &&
                   isAmountExceedingBalance(fromAmount, fromAsset) && (
                     <p className="mt-1 text-xs text-red-400">
-                      Amount exceeds available balance
+                      {t('tradeManual.makerForm.errors.amountExceedsBalance')}
                     </p>
                   )}
                 {fromAsset === 'BTC' && maxOutboundHtlc !== null && (
@@ -636,7 +635,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-sm font-medium text-slate-300">
-                    To Asset
+                    {t('tradeManual.makerForm.labels.toAsset')}
                   </label>
                   {toAsset && (
                     <div className="flex items-center gap-1 text-xs text-slate-400 asset-balance">
@@ -663,7 +662,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
                   />
                   {fromAsset && !toAsset && (
                     <p className="mt-1 text-xs text-red-400">
-                      Please select an asset
+                      {t('tradeManual.makerForm.placeholders.selectAsset')}
                     </p>
                   )}
                 </div>
@@ -671,7 +670,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-slate-300">
-                  Amount to Receive
+                  {t('tradeManual.makerForm.labels.amountToReceive')}
                 </label>
                 <div className="relative h-[50px]">
                   <input
@@ -699,7 +698,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
                 </div>
                 {!toAmount && toAsset && (
                   <p className="mt-1 text-xs text-red-400">
-                    Please enter an amount
+                    {t('tradeManual.makerForm.placeholders.enterAmount')}
                   </p>
                 )}
               </div>
@@ -708,7 +707,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-slate-300">
-              Timeout (seconds)
+              {t('tradeManual.makerForm.labels.timeout')}
             </label>
             <input
               className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 input-animate"
@@ -722,16 +721,16 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             />
             <div className="flex justify-between">
               <p className="text-xs text-slate-500">
-                How long the swap will be valid before it expires
+                {t('tradeManual.makerForm.info.timeoutDescription')}
               </p>
               {timeoutSec && parseInt(timeoutSec) < 10 && (
                 <p className="text-xs text-red-400">
-                  Minimum timeout is 10 seconds
+                  {t('tradeManual.makerForm.info.minTimeout')}
                 </p>
               )}
               {timeoutSec && parseInt(timeoutSec) > 86400 && (
                 <p className="text-xs text-red-400">
-                  Maximum timeout is 86400 seconds (24 hours)
+                  {t('tradeManual.makerForm.info.maxTimeout')}
                 </p>
               )}
             </div>
@@ -740,8 +739,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
           <div className="flex items-center gap-2 text-xs text-slate-400 p-3 bg-slate-800/30 rounded-xl border border-slate-700">
             <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />
             <p>
-              Make sure you have sufficient balance in the selected asset. The
-              swap will fail if you don't have enough funds.
+              {t('tradeManual.makerForm.info.sufficientBalanceWarning')}
             </p>
           </div>
 
@@ -764,10 +762,10 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             {isInitiating ? (
               <div className="flex items-center justify-center gap-2">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Initiating Swap...</span>
+                <span>{t('tradeManual.makerForm.buttons.initiating')}</span>
               </div>
             ) : (
-              'Initiate Swap'
+              t('tradeManual.makerForm.buttons.initiateSwap')
             )}
           </button>
         </form>
@@ -779,11 +777,10 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white step-indicator">
               2
             </div>
-            <h3 className="text-md font-medium text-white">Share with Taker</h3>
+            <h3 className="text-md font-medium text-white">{t('tradeManual.makerForm.buttons.shareWithTaker')}</h3>
           </div>
           <p className="text-sm text-slate-400 ml-8 mb-4">
-            Share this swap string with your counterparty (the taker). They will
-            need to whitelist this swap string before you can execute the swap.
+            {t('tradeManual.makerForm.info.swapInitiated')}
           </p>
 
           <div className="bg-slate-900 p-4 rounded-lg mb-4 relative swap-string-container">
@@ -800,7 +797,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             </button>
             {copied && (
               <div className="absolute top-2 right-10 bg-slate-700 text-white text-xs py-1 px-2 rounded copied-indicator">
-                Copied!
+                {t('tradeManual.makerForm.info.copiedToClipboard')}
               </div>
             )}
           </div>
@@ -809,26 +806,25 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white step-indicator">
               3
             </div>
-            <h3 className="text-md font-medium text-white">Execute Swap</h3>
+            <h3 className="text-md font-medium text-white">{t('tradeManual.makerForm.buttons.executeSwap')}</h3>
           </div>
           <p className="text-sm text-slate-400 ml-8 mb-4">
-            Once the taker has whitelisted the swap string, enter their pubkey
-            and execute the swap to complete the transaction.
+            {t('tradeManual.makerForm.info.executeInfo')}
           </p>
 
           <div className="flex flex-col gap-1.5 mb-4">
             <label className="text-sm font-medium text-slate-300">
-              Taker's Public Key
+              {t('tradeManual.makerForm.labels.takerPubkey')}
             </label>
             <input
               className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 input-animate"
-              placeholder="Enter the taker's public key"
+              placeholder={t('tradeManual.makerForm.placeholders.takerPubkey')}
               type="text"
               {...register('takerPubkey', { required: true })}
             />
             {!takerPubkey && (
               <p className="mt-1 text-xs text-red-400">
-                Please enter the taker's public key
+                {t('tradeManual.makerForm.errors.enterTakerPubkey')}
               </p>
             )}
           </div>
@@ -842,10 +838,10 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
             {isExecuting ? (
               <div className="flex items-center justify-center gap-2">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Executing Swap...</span>
+                <span>{t('tradeManual.makerForm.buttons.executing')}</span>
               </div>
             ) : (
-              'Execute Swap'
+              t('tradeManual.makerForm.buttons.executeSwap')
             )}
           </button>
         </div>

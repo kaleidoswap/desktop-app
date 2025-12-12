@@ -8,10 +8,12 @@ import {
   Zap,
   ArrowLeft,
   HelpCircle,
+  Languages,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 
 import {
   WALLET_INIT_PATH,
@@ -30,14 +32,26 @@ import {
   RemoteNodeInfo,
   IconWrapper,
 } from '../../components/wallet-setup'
+import { LANGUAGES } from '../../i18n/config'
+import { setLanguage } from '../../slices/settings/settings.slice'
+import type { RootState } from '../../store'
 
 export const Component = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const currentLanguage = useSelector(
+    (state: RootState) => state.settings.language
+  )
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [isLocalNodeSupported, setIsLocalNodeSupported] = useState(true)
+
+  const handleLanguageChange = (languageCode: string) => {
+    dispatch(setLanguage(languageCode))
+    i18n.changeLanguage(languageCode)
+  }
 
   // Check if local node is supported on this platform
   useEffect(() => {
@@ -124,6 +138,41 @@ export const Component = () => {
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-cyan/5 via-transparent to-blue-500/5 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none" />
+
+          {/* Language Selector */}
+          <div className="absolute top-4 right-4 z-20">
+            <div className="relative group">
+              <div className="flex items-center space-x-2 px-4 py-2 bg-blue-dark/60 backdrop-blur-xl border border-cyan/20 rounded-lg hover:border-cyan/40 transition-all duration-300 shadow-lg shadow-cyan/5 hover:shadow-cyan/10">
+                <Languages className="w-4 h-4 text-cyan" />
+                <select
+                  className="bg-transparent text-white text-sm font-medium cursor-pointer focus:outline-none appearance-none pr-6"
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  value={currentLanguage || 'en'}
+                >
+                  {Object.entries(LANGUAGES).map(([code, { name, flag }]) => (
+                    <option key={code} value={code}>
+                      {flag} {name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M19 9l-7 7-7-7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="min-h-screen py-8 md:py-16 flex items-center justify-center p-4 relative z-10">
             <Card

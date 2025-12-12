@@ -7,6 +7,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import React, { useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import bitcoinIcon from '../../assets/bitcoin-logo.svg'
 import { formatNumberWithCommas } from '../../helpers/number'
@@ -36,6 +37,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
   minClientBalance = 0,
   maxClientBalance = Number.MAX_SAFE_INTEGER,
 }) => {
+  const { t } = useTranslation()
   const [showFeeInfo, setShowFeeInfo] = useState(false)
 
   const lspBalance = totalCapacity - clientBalance
@@ -69,7 +71,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
             <img alt="Bitcoin" className="w-6 h-6" src={bitcoinIcon} />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-orange-400 via-yellow-400 to-orange-500">
-              Bitcoin Channel
+              {t('channelConfiguration.bitcoinChannel.title')}
             </span>
           </h3>
         </div>
@@ -79,7 +81,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
       <div className="mb-6">
         <label className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-400" />
-          Channel Capacity
+          {t('channelConfiguration.bitcoinChannel.channelCapacity')}
         </label>
         <div className="grid grid-cols-4 gap-2">
           {capacityPresets.map((preset) => {
@@ -114,7 +116,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
               >
                 <div className="flex flex-col items-center gap-1">
                   <span>{formatCapacity(preset)}</span>
-                  <span className="text-xs opacity-70">sats</span>
+                  <span className="text-xs opacity-70">
+                    {t('channelConfiguration.bitcoinChannel.sats')}
+                  </span>
                 </div>
               </button>
             )
@@ -126,7 +130,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
       <div className="space-y-5">
         <label className="text-sm font-semibold text-gray-300 flex items-center gap-2">
           <Send className="w-4 h-4 text-blue-400" />
-          Liquidity Distribution
+          {t('channelConfiguration.bitcoinChannel.liquidityDistribution')}
         </label>
 
         {/* Modern Horizontal Bar */}
@@ -174,7 +178,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                   <Send className="w-4 h-4 text-white/90" />
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-white/80">
-                      Spending
+                      {t('channelConfiguration.bitcoinChannel.spending')}
                     </span>
                     <span className="text-sm font-bold text-white">
                       {formatCapacity(clientBalance)}
@@ -188,7 +192,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 <div className="flex items-center gap-2 ml-auto">
                   <div className="flex flex-col items-end">
                     <span className="text-xs font-semibold text-white/80">
-                      Receiving
+                      {t('channelConfiguration.bitcoinChannel.receiving')}
                     </span>
                     <span className="text-sm font-bold text-white">
                       {formatCapacity(lspBalance)}
@@ -206,12 +210,16 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="text-xs text-gray-400 font-medium">Total</span>
+                <span className="text-xs text-gray-400 font-medium">
+                  {t('channelConfiguration.bitcoinChannel.total')}
+                </span>
               </div>
               <span className="text-base font-bold text-white">
                 {formatNumberWithCommas(totalCapacity.toString())}
               </span>
-              <span className="text-xs text-gray-500 ml-1">sats</span>
+              <span className="text-xs text-gray-500 ml-1">
+                {t('channelConfiguration.bitcoinChannel.sats')}
+              </span>
             </div>
 
             {/* Spending Balance */}
@@ -219,7 +227,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <Send className="w-3.5 h-3.5 text-blue-400" />
                 <span className="text-xs text-blue-300 font-medium">
-                  Spending
+                  {t('channelConfiguration.bitcoinChannel.spending')}
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
@@ -237,7 +245,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <ArrowDownCircle className="w-3.5 h-3.5 text-purple-400" />
                 <span className="text-xs text-purple-300 font-medium">
-                  Receiving
+                  {t('channelConfiguration.bitcoinChannel.receiving')}
                 </span>
               </div>
               <div className="flex items-baseline gap-1">
@@ -281,10 +289,10 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
           <div className="flex justify-between text-xs text-gray-500 px-1">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50" />
-              <span>0% Spending</span>
+              <span>{t('channelConfiguration.bitcoinChannel.zeroSpending')}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span>100% Spending</span>
+              <span>{t('channelConfiguration.bitcoinChannel.fullSpending')}</span>
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
             </span>
           </div>
@@ -296,14 +304,16 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-xs text-blue-200/80 space-y-1">
               <p>
-                <strong className="text-blue-300">Spending Balance</strong>{' '}
-                (blue): Your outbound liquidity - use this to send payments and
-                buy assets.
+                <strong className="text-blue-300">
+                  {t('channelConfiguration.bitcoinChannel.spendingBalance')}
+                </strong>
+                {t('channelConfiguration.bitcoinChannel.spendingBalanceInfo')}
               </p>
               <p>
-                <strong className="text-purple-300">Receiving Capacity</strong>{' '}
-                (purple): Inbound liquidity from the LSP - determines how much
-                you can receive.
+                <strong className="text-purple-300">
+                  {t('channelConfiguration.bitcoinChannel.receivingCapacity')}
+                </strong>
+                {t('channelConfiguration.bitcoinChannel.receivingCapacityInfo')}
               </p>
             </div>
           </div>
@@ -319,8 +329,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-yellow-400 flex-shrink-0" />
               <span className="text-xs font-semibold text-yellow-300">
-                {formatNumberWithCommas(FEE_RESERVE.toString())} sats reserved
-                for fees on each side
+                {t('channelConfiguration.bitcoinChannel.feeReserve', {
+                  amount: formatNumberWithCommas(FEE_RESERVE.toString()),
+                })}
               </span>
             </div>
             {showFeeInfo ? (
@@ -334,38 +345,43 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             <div className="px-3 pb-3 pt-1 text-xs text-yellow-200/80 space-y-2 border-t border-yellow-700/20">
               <p className="mt-2">
                 <strong className="text-yellow-300">
-                  Why are fees reserved?
+                  {t('channelConfiguration.bitcoinChannel.feeReserveTitle')}
                 </strong>
               </p>
-              <p>
-                Each side of the channel (your spending balance and the LSP's
-                receiving capacity) has{' '}
-                <strong>
-                  {formatNumberWithCommas(FEE_RESERVE.toString())} sats
-                </strong>{' '}
-                reserved to cover future on-chain transaction fees.
-              </p>
+              <p
+                dangerouslySetInnerHTML={{
+                  __html: t(
+                    'channelConfiguration.bitcoinChannel.feeReserveExplanation',
+                    {
+                      amount: formatNumberWithCommas(FEE_RESERVE.toString()),
+                    }
+                  ),
+                }}
+              />
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>
-                  <strong className="text-yellow-300">
-                    Client side (
-                    {formatNumberWithCommas(FEE_RESERVE.toString())} sats):
-                  </strong>{' '}
-                  Reserved from your spending balance to cover potential channel
-                  closing fees
-                </li>
-                <li>
-                  <strong className="text-yellow-300">
-                    LSP side ({formatNumberWithCommas(FEE_RESERVE.toString())}{' '}
-                    sats):
-                  </strong>{' '}
-                  Reserved from the LSP's receiving capacity for channel
-                  management operations
-                </li>
+                <li
+                  dangerouslySetInnerHTML={{
+                    __html: t(
+                      'channelConfiguration.bitcoinChannel.clientFeeReserve',
+                      {
+                        amount: formatNumberWithCommas(FEE_RESERVE.toString()),
+                      }
+                    ),
+                  }}
+                />
+                <li
+                  dangerouslySetInnerHTML={{
+                    __html: t(
+                      'channelConfiguration.bitcoinChannel.lspFeeReserve',
+                      {
+                        amount: formatNumberWithCommas(FEE_RESERVE.toString()),
+                      }
+                    ),
+                  }}
+                />
               </ul>
               <p className="text-yellow-300/90">
-                These reserves ensure both parties can always afford to perform
-                necessary on-chain operations like cooperative channel closes.
+                {t('channelConfiguration.bitcoinChannel.feeReserveConclusion')}
               </p>
             </div>
           )}
