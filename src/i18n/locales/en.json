@@ -1686,9 +1686,29 @@
         "description": "To receive on-chain RGB assets, you need colorable UTXOs.",
         "cta": "Create Colorable UTXOs"
       },
+      "amount": {
+        "optionalLabel": "Amount (optional)",
+        "requiredLabel": "Amount",
+        "precision": "Precision: {{value}} decimals",
+        "example": "e.g. 100 {{ticker}}",
+        "maxLabel": "Max: {{amount}} {{asset}}",
+        "maxPlaceholder": "Max: {{amount}}",
+        "notAvailable": "N/A",
+        "maxButton": "MAX",
+        "exceeds": "Amount exceeds maximum of {{amount}} {{asset}}",
+        "rgbNote": "RGB Lightning invoices require an amount",
+        "noChannels": "No channels available for Lightning deposits"
+      },
       "actions": {
         "copy": "Copy to clipboard",
-        "generateAddress": "Generate new address"
+        "generateAddress": "Generate new address",
+        "generateAddressCta": "Generate Address",
+        "generateInvoice": "Generate Invoice"
+      },
+      "status": {
+        "pending": "Waiting for payment...",
+        "success": "Payment received!",
+        "failed": "Payment {{status}}"
       },
       "labels": {
         "lnInvoice": "LN Invoice",

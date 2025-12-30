@@ -1941,9 +1941,29 @@
         "description": "Per ricevere asset RGB on-chain, hai bisogno di UTXO colorabili.",
         "cta": "Crea UTXO Colorabili"
       },
+      "amount": {
+        "optionalLabel": "Importo (opzionale)",
+        "requiredLabel": "Importo",
+        "precision": "Precisione: {{value}} decimali",
+        "example": "es. 100 {{ticker}}",
+        "maxLabel": "Max: {{amount}} {{asset}}",
+        "maxPlaceholder": "Max: {{amount}}",
+        "notAvailable": "N/D",
+        "maxButton": "MAX",
+        "exceeds": "L'importo supera il massimo di {{amount}} {{asset}}",
+        "rgbNote": "Le fatture RGB Lightning richiedono un importo",
+        "noChannels": "Nessun canale disponibile per depositi Lightning"
+      },
       "actions": {
         "copy": "Copia negli appunti",
-        "generateAddress": "Genera nuovo indirizzo"
+        "generateAddress": "Genera nuovo indirizzo",
+        "generateAddressCta": "Genera Indirizzo",
+        "generateInvoice": "Genera Fattura"
+      },
+      "status": {
+        "pending": "In attesa del pagamento...",
+        "success": "Pagamento ricevuto!",
+        "failed": "Pagamento {{status}}"
       },
       "labels": {
         "lnInvoice": "Fattura LN",

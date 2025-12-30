@@ -1941,9 +1941,29 @@
         "description": "要接收链上 RGB 资产，您需要可着色 UTXO。",
         "cta": "创建可着色 UTXO"
       },
+      "amount": {
+        "optionalLabel": "金额（可选）",
+        "requiredLabel": "金额",
+        "precision": "精度：{{value}} 位小数",
+        "example": "例如：100 {{ticker}}",
+        "maxLabel": "最大：{{amount}} {{asset}}",
+        "maxPlaceholder": "最大：{{amount}}",
+        "notAvailable": "不可用",
+        "maxButton": "最大",
+        "exceeds": "金额超过最大值 {{amount}} {{asset}}",
+        "rgbNote": "RGB Lightning 发票需要金额",
+        "noChannels": "没有可用于 Lightning 存款的通道"
+      },
       "actions": {
         "copy": "复制到剪贴板",
-        "generateAddress": "生成新地址"
+        "generateAddress": "生成新地址",
+        "generateAddressCta": "生成地址",
+        "generateInvoice": "生成发票"
+      },
+      "status": {
+        "pending": "等待付款...",
+        "success": "已收到付款！",
+        "failed": "付款 {{status}}"
       },
       "labels": {
         "lnInvoice": "LN 发票",

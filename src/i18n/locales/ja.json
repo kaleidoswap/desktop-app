@@ -1350,9 +1350,29 @@
         "description": "オンチェーンRGBアセットを受け取るには、Colorable UTXOが必要です。",
         "cta": "Colorable UTXOを作成"
       },
+      "amount": {
+        "optionalLabel": "金額(オプション)",
+        "requiredLabel": "金額",
+        "precision": "精度: {{value}}桁",
+        "example": "例: 100 {{ticker}}",
+        "maxLabel": "最大: {{amount}} {{asset}}",
+        "maxPlaceholder": "最大: {{amount}}",
+        "notAvailable": "N/A",
+        "maxButton": "最大",
+        "exceeds": "金額が最大値 {{amount}} {{asset}} を超えています",
+        "rgbNote": "RGB Lightningインボイスには金額が必要です",
+        "noChannels": "Lightning入金用のチャネルがありません"
+      },
       "actions": {
         "copy": "クリップボードにコピー",
-        "generateAddress": "新しいアドレスを生成"
+        "generateAddress": "新しいアドレスを生成",
+        "generateAddressCta": "アドレスを生成",
+        "generateInvoice": "インボイスを生成"
+      },
+      "status": {
+        "pending": "支払い待ち...",
+        "success": "支払いを受け取りました！",
+        "failed": "支払い {{status}}"
       },
       "labels": {
         "lnInvoice": "LNインボイス",

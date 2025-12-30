@@ -1350,9 +1350,29 @@
         "description": "Pour recevoir des actifs RGB on-chain, vous avez besoin d'UTXO colorables.",
         "cta": "Créer des UTXO colorables"
       },
+      "amount": {
+        "optionalLabel": "Montant (optionnel)",
+        "requiredLabel": "Montant",
+        "precision": "Précision: {{value}} décimales",
+        "example": "ex. 100 {{ticker}}",
+        "maxLabel": "Max: {{amount}} {{asset}}",
+        "maxPlaceholder": "Max: {{amount}}",
+        "notAvailable": "N/D",
+        "maxButton": "MAX",
+        "exceeds": "Le montant dépasse le maximum de {{amount}} {{asset}}",
+        "rgbNote": "Les factures RGB Lightning nécessitent un montant",
+        "noChannels": "Aucun canal disponible pour les dépôts Lightning"
+      },
       "actions": {
         "copy": "Copier dans le presse-papiers",
-        "generateAddress": "Générer une nouvelle adresse"
+        "generateAddress": "Générer une nouvelle adresse",
+        "generateAddressCta": "Générer une adresse",
+        "generateInvoice": "Générer une facture"
+      },
+      "status": {
+        "pending": "En attente du paiement...",
+        "success": "Paiement reçu !",
+        "failed": "Paiement {{status}}"
       },
       "labels": {
         "lnInvoice": "Facture LN",
