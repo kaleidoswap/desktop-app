@@ -2355,8 +2355,103 @@
         "noWithdrawals": "Keine Auszahlungen gefunden."
       },
       "channelOrders": {
+        "title": "Kanalbestellungen",
         "noOrders": "Keine Channel-Bestellungen gefunden.",
-        "noOrdersSearch": "Keine Bestellungen gefunden, die Ihrer Suche entsprechen."
+        "noOrdersSearch": "Keine Bestellungen gefunden, die Ihrer Suche entsprechen.",
+        "loading": "Kanalbestellungen werden geladen...",
+        "searchPlaceholder": "Nach Bestellungs-ID suchen...",
+        "columns": "Spalten",
+        "selectColumns": "Spalten auswählen",
+        "resetToDefaults": "Auf Standard zurücksetzen",
+        "refresh": "Aktualisieren",
+        "detailsModal": {
+          "title": "Kanalbestellungsdetails",
+          "subtitle": "Vollständige Bestellinformationen",
+          "close": "Schließen",
+          "deleteOrder": "Bestellung löschen"
+        },
+        "deleteModal": {
+          "title": "Kanalbestellung löschen",
+          "message": "Sind Sie sicher, dass Sie diese Kanalbestellung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+          "orderId": "Bestellungs-ID:",
+          "cancel": "Abbrechen",
+          "delete": "Bestellung löschen"
+        },
+        "sections": {
+          "orderStatus": "Bestellstatus",
+          "orderId": "Bestellungs-ID",
+          "paymentInformation": "Zahlungsinformationen",
+          "channelConfiguration": "Kanalkonfiguration",
+          "assetInformation": "Asset-Informationen",
+          "timeline": "Zeitachse"
+        },
+        "fields": {
+          "amountPaid": "Bezahlter Betrag",
+          "feesPaid": "Bezahlte Gebühren",
+          "clientBalance": "Client-Guthaben",
+          "lspBalance": "LSP-Guthaben",
+          "channelExpiry": "Kanalablauf",
+          "requiredConfirmations": "Erforderliche Bestätigungen",
+          "fundingConfirmsWithin": "Finanzierung bestätigt innerhalb",
+          "announceChannel": "Kanal ankündigen",
+          "assetId": "Asset-ID",
+          "clientAssetAmount": "Client-Asset-Betrag",
+          "lspAssetAmount": "LSP-Asset-Betrag",
+          "deliveryStatus": "Lieferstatus",
+          "createdAt": "Erstellt am"
+        },
+        "columnHeaders": {
+          "orderId": "Bestellungs-ID",
+          "createdAt": "Erstellt am",
+          "amountPaid": "Bezahlter Betrag",
+          "feesPaid": "Bezahlte Gebühren",
+          "status": "Status",
+          "clientBalance": "Client-Guthaben (sats)",
+          "lspBalance": "LSP-Guthaben (sats)",
+          "channelExpiry": "Kanalablauf (Blöcke)",
+          "requiredConfirmations": "Erforderliche Bestätigungen",
+          "fundingConfirmsWithin": "Finanzierung bestätigt innerhalb",
+          "announceChannel": "Kanal ankündigen",
+          "assetId": "Asset-ID",
+          "lspAssetAmount": "LSP-Asset-Betrag",
+          "clientAssetAmount": "Client-Asset-Betrag",
+          "assetDeliveryStatus": "Asset-Lieferstatus",
+          "actions": "Aktionen"
+        },
+        "status": {
+          "completed": "Abgeschlossen",
+          "failed": "Fehlgeschlagen",
+          "created": "Erstellt",
+          "unknown": "Unbekannt"
+        },
+        "deliveryStatus": {
+          "delivered": "Geliefert",
+          "pending": "Ausstehend",
+          "inProgress": "In Bearbeitung",
+          "failed": "Fehlgeschlagen",
+          "rateChanged": "Kurs geändert"
+        },
+        "actions": {
+          "viewDetails": "Details anzeigen",
+          "deleteOrder": "Bestellung löschen",
+          "retryDelivery": "Asset-Lieferung wiederholen",
+          "retrying": "Wird wiederholt..."
+        },
+        "units": {
+          "sats": "Sats",
+          "blocks": "Blöcke",
+          "na": "N/V"
+        },
+        "messages": {
+          "retryQueued": "Wiederholungsanfrage erfolgreich in die Warteschlange eingereiht",
+          "orderNotFound": "Bestellung nicht gefunden",
+          "noPendingDelivery": "Keine ausstehende Lieferung zum Wiederholen",
+          "retryFailed": "Wiederholung der Lieferung fehlgeschlagen",
+          "deleteSuccess": "Kanalbestellung erfolgreich gelöscht",
+          "deleteFailed": "Löschen der Kanalbestellung fehlgeschlagen",
+          "error": "Fehler: {{error}}",
+          "retry": "Wiederholen"
+        }
       }
     },
     "appVersion": {

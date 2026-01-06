@@ -2355,8 +2355,103 @@
         "noWithdrawals": "未找到提款。"
       },
       "channelOrders": {
+        "title": "通道订单",
         "noOrders": "未找到通道订单。",
-        "noOrdersSearch": "未找到与您的搜索匹配的订单。"
+        "noOrdersSearch": "未找到与您的搜索匹配的订单。",
+        "loading": "正在加载通道订单...",
+        "searchPlaceholder": "按订单ID搜索...",
+        "columns": "列",
+        "selectColumns": "选择列",
+        "resetToDefaults": "重置为默认值",
+        "refresh": "刷新",
+        "detailsModal": {
+          "title": "通道订单详情",
+          "subtitle": "完整的订单信息",
+          "close": "关闭",
+          "deleteOrder": "删除订单"
+        },
+        "deleteModal": {
+          "title": "删除通道订单",
+          "message": "您确定要删除此通道订单吗？此操作无法撤消。",
+          "orderId": "订单ID:",
+          "cancel": "取消",
+          "delete": "删除订单"
+        },
+        "sections": {
+          "orderStatus": "订单状态",
+          "orderId": "订单ID",
+          "paymentInformation": "支付信息",
+          "channelConfiguration": "通道配置",
+          "assetInformation": "资产信息",
+          "timeline": "时间线"
+        },
+        "fields": {
+          "amountPaid": "已支付金额",
+          "feesPaid": "已支付费用",
+          "clientBalance": "客户端余额",
+          "lspBalance": "LSP余额",
+          "channelExpiry": "通道到期",
+          "requiredConfirmations": "所需确认数",
+          "fundingConfirmsWithin": "资金确认期限",
+          "announceChannel": "公告通道",
+          "assetId": "资产ID",
+          "clientAssetAmount": "客户端资产数量",
+          "lspAssetAmount": "LSP资产数量",
+          "deliveryStatus": "交付状态",
+          "createdAt": "创建于"
+        },
+        "columnHeaders": {
+          "orderId": "订单ID",
+          "createdAt": "创建于",
+          "amountPaid": "已支付金额",
+          "feesPaid": "已支付费用",
+          "status": "状态",
+          "clientBalance": "客户端余额 (sats)",
+          "lspBalance": "LSP余额 (sats)",
+          "channelExpiry": "通道到期 (区块)",
+          "requiredConfirmations": "所需确认数",
+          "fundingConfirmsWithin": "资金确认期限",
+          "announceChannel": "公告通道",
+          "assetId": "资产ID",
+          "lspAssetAmount": "LSP资产数量",
+          "clientAssetAmount": "客户端资产数量",
+          "assetDeliveryStatus": "资产交付状态",
+          "actions": "操作"
+        },
+        "status": {
+          "completed": "已完成",
+          "failed": "失败",
+          "created": "已创建",
+          "unknown": "未知"
+        },
+        "deliveryStatus": {
+          "delivered": "已交付",
+          "pending": "待处理",
+          "inProgress": "进行中",
+          "failed": "失败",
+          "rateChanged": "汇率已变更"
+        },
+        "actions": {
+          "viewDetails": "查看详情",
+          "deleteOrder": "删除订单",
+          "retryDelivery": "重试资产交付",
+          "retrying": "正在重试..."
+        },
+        "units": {
+          "sats": "聪",
+          "blocks": "区块",
+          "na": "不适用"
+        },
+        "messages": {
+          "retryQueued": "重试请求已成功加入队列",
+          "orderNotFound": "未找到订单",
+          "noPendingDelivery": "没有待处理的交付可重试",
+          "retryFailed": "重试交付失败",
+          "deleteSuccess": "通道订单删除成功",
+          "deleteFailed": "删除通道订单失败",
+          "error": "错误: {{error}}",
+          "retry": "重试"
+        }
       }
     },
     "appVersion": {

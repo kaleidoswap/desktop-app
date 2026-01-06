@@ -2355,8 +2355,103 @@
         "noWithdrawals": "出金が見つかりませんでした。"
       },
       "channelOrders": {
+        "title": "チャネル注文",
         "noOrders": "チャネル注文が見つかりませんでした。",
-        "noOrdersSearch": "検索に一致する注文が見つかりませんでした。"
+        "noOrdersSearch": "検索に一致する注文が見つかりませんでした。",
+        "loading": "チャネル注文を読み込み中...",
+        "searchPlaceholder": "注文IDで検索...",
+        "columns": "列",
+        "selectColumns": "列を選択",
+        "resetToDefaults": "デフォルトに戻す",
+        "refresh": "更新",
+        "detailsModal": {
+          "title": "チャネル注文の詳細",
+          "subtitle": "完全な注文情報",
+          "close": "閉じる",
+          "deleteOrder": "注文を削除"
+        },
+        "deleteModal": {
+          "title": "チャネル注文を削除",
+          "message": "このチャネル注文を削除してもよろしいですか？この操作は元に戻せません。",
+          "orderId": "注文ID:",
+          "cancel": "キャンセル",
+          "delete": "注文を削除"
+        },
+        "sections": {
+          "orderStatus": "注文ステータス",
+          "orderId": "注文ID",
+          "paymentInformation": "支払い情報",
+          "channelConfiguration": "チャネル設定",
+          "assetInformation": "資産情報",
+          "timeline": "タイムライン"
+        },
+        "fields": {
+          "amountPaid": "支払済み金額",
+          "feesPaid": "支払済み手数料",
+          "clientBalance": "クライアント残高",
+          "lspBalance": "LSP残高",
+          "channelExpiry": "チャネル有効期限",
+          "requiredConfirmations": "必要な承認数",
+          "fundingConfirmsWithin": "資金確認期限",
+          "announceChannel": "チャネル公開",
+          "assetId": "資産ID",
+          "clientAssetAmount": "クライアント資産量",
+          "lspAssetAmount": "LSP資産量",
+          "deliveryStatus": "配送ステータス",
+          "createdAt": "作成日時"
+        },
+        "columnHeaders": {
+          "orderId": "注文ID",
+          "createdAt": "作成日時",
+          "amountPaid": "支払済み金額",
+          "feesPaid": "支払済み手数料",
+          "status": "ステータス",
+          "clientBalance": "クライアント残高 (sats)",
+          "lspBalance": "LSP残高 (sats)",
+          "channelExpiry": "チャネル有効期限 (ブロック)",
+          "requiredConfirmations": "必要な承認数",
+          "fundingConfirmsWithin": "資金確認期限",
+          "announceChannel": "チャネル公開",
+          "assetId": "資産ID",
+          "lspAssetAmount": "LSP資産量",
+          "clientAssetAmount": "クライアント資産量",
+          "assetDeliveryStatus": "資産配送ステータス",
+          "actions": "操作"
+        },
+        "status": {
+          "completed": "完了",
+          "failed": "失敗",
+          "created": "作成済み",
+          "unknown": "不明"
+        },
+        "deliveryStatus": {
+          "delivered": "配送完了",
+          "pending": "保留中",
+          "inProgress": "処理中",
+          "failed": "失敗",
+          "rateChanged": "レート変更"
+        },
+        "actions": {
+          "viewDetails": "詳細を表示",
+          "deleteOrder": "注文を削除",
+          "retryDelivery": "資産配送を再試行",
+          "retrying": "再試行中..."
+        },
+        "units": {
+          "sats": "sats",
+          "blocks": "ブロック",
+          "na": "N/A"
+        },
+        "messages": {
+          "retryQueued": "再試行リクエストがキューに正常に追加されました",
+          "orderNotFound": "注文が見つかりません",
+          "noPendingDelivery": "再試行する保留中の配送がありません",
+          "retryFailed": "配送の再試行に失敗しました",
+          "deleteSuccess": "チャネル注文が正常に削除されました",
+          "deleteFailed": "チャネル注文の削除に失敗しました",
+          "error": "エラー: {{error}}",
+          "retry": "再試行"
+        }
       }
     },
     "appVersion": {

@@ -24,6 +24,10 @@ import {
   TRADE_MANUAL_PATH,
   TRADE_NOSTR_P2P_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
+  WALLET_HISTORY_WITHDRAWALS_PATH,
+  WALLET_HISTORY_TRADES_PATH,
+  WALLET_HISTORY_ASSETS_PATH,
+  WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   WALLET_HISTORY_PATH,
   WALLET_SETUP_PATH,
   WALLET_RESTORE_PATH,
@@ -238,8 +242,28 @@ export const getPageConfig = (t: TFunction) => ({
     icon: <Home className="w-5 h-5" />,
     title: t('navigation.dashboard'),
   },
-  [WALLET_HISTORY_DEPOSITS_PATH]: {
+  [WALLET_HISTORY_PATH]: {
     icon: <Clock className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_DEPOSITS_PATH]: {
+    icon: <ArrowDownLeft className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_WITHDRAWALS_PATH]: {
+    icon: <ArrowUpRight className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_TRADES_PATH]: {
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_ASSETS_PATH]: {
+    icon: <Activity className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_CHANNEL_ORDERS_PATH]: {
+    icon: <ShoppingCart className="w-5 h-5" />,
     title: t('navigation.history'),
   },
 })

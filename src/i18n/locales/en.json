@@ -2278,8 +2278,103 @@
         "noWithdrawals": "No withdrawals found."
       },
       "channelOrders": {
+        "title": "Channel Orders",
         "noOrders": "No channel orders found.",
-        "noOrdersSearch": "No orders found matching your search."
+        "noOrdersSearch": "No orders found matching your search.",
+        "loading": "Loading channel orders...",
+        "searchPlaceholder": "Search by Order ID...",
+        "columns": "Columns",
+        "selectColumns": "Select Columns",
+        "resetToDefaults": "Reset to Defaults",
+        "refresh": "Refresh",
+        "detailsModal": {
+          "title": "Channel Order Details",
+          "subtitle": "Complete order information",
+          "close": "Close",
+          "deleteOrder": "Delete Order"
+        },
+        "deleteModal": {
+          "title": "Delete Channel Order",
+          "message": "Are you sure you want to delete this channel order? This action cannot be undone.",
+          "orderId": "Order ID:",
+          "cancel": "Cancel",
+          "delete": "Delete Order"
+        },
+        "sections": {
+          "orderStatus": "Order Status",
+          "orderId": "Order ID",
+          "paymentInformation": "Payment Information",
+          "channelConfiguration": "Channel Configuration",
+          "assetInformation": "Asset Information",
+          "timeline": "Timeline"
+        },
+        "fields": {
+          "amountPaid": "Amount Paid",
+          "feesPaid": "Fees Paid",
+          "clientBalance": "Client Balance",
+          "lspBalance": "LSP Balance",
+          "channelExpiry": "Channel Expiry",
+          "requiredConfirmations": "Required Confirmations",
+          "fundingConfirmsWithin": "Funding Confirms Within",
+          "announceChannel": "Announce Channel",
+          "assetId": "Asset ID",
+          "clientAssetAmount": "Client Asset Amount",
+          "lspAssetAmount": "LSP Asset Amount",
+          "deliveryStatus": "Delivery Status",
+          "createdAt": "Created At"
+        },
+        "columnHeaders": {
+          "orderId": "Order ID",
+          "createdAt": "Created At",
+          "amountPaid": "Amount Paid",
+          "feesPaid": "Fees Paid",
+          "status": "Status",
+          "clientBalance": "Client Balance (sats)",
+          "lspBalance": "LSP Balance (sats)",
+          "channelExpiry": "Channel Expiry (blocks)",
+          "requiredConfirmations": "Required Confirmations",
+          "fundingConfirmsWithin": "Funding Confirms Within",
+          "announceChannel": "Announce Channel",
+          "assetId": "Asset ID",
+          "lspAssetAmount": "LSP Asset Amount",
+          "clientAssetAmount": "Client Asset Amount",
+          "assetDeliveryStatus": "Asset Delivery Status",
+          "actions": "Actions"
+        },
+        "status": {
+          "completed": "Completed",
+          "failed": "Failed",
+          "created": "Created",
+          "unknown": "Unknown"
+        },
+        "deliveryStatus": {
+          "delivered": "Delivered",
+          "pending": "Pending",
+          "inProgress": "In Progress",
+          "failed": "Failed",
+          "rateChanged": "Rate Changed"
+        },
+        "actions": {
+          "viewDetails": "View details",
+          "deleteOrder": "Delete order",
+          "retryDelivery": "Retry asset delivery",
+          "retrying": "Retrying..."
+        },
+        "units": {
+          "sats": "sats",
+          "blocks": "blocks",
+          "na": "N/A"
+        },
+        "messages": {
+          "retryQueued": "Retry request queued successfully",
+          "orderNotFound": "Order not found",
+          "noPendingDelivery": "No pending delivery to retry",
+          "retryFailed": "Failed to retry delivery",
+          "deleteSuccess": "Channel order deleted successfully",
+          "deleteFailed": "Failed to delete channel order",
+          "error": "Error: {{error}}",
+          "retry": "Retry"
+        }
       }
     },
     "appVersion": {

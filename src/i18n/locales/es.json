@@ -2355,8 +2355,103 @@
         "noWithdrawals": "No se encontraron retiros."
       },
       "channelOrders": {
+        "title": "Órdenes de Canal",
         "noOrders": "No se encontraron órdenes de canal.",
-        "noOrdersSearch": "No se encontraron órdenes que coincidan con su búsqueda."
+        "noOrdersSearch": "No se encontraron órdenes que coincidan con su búsqueda.",
+        "loading": "Cargando órdenes de canal...",
+        "searchPlaceholder": "Buscar por ID de orden...",
+        "columns": "Columnas",
+        "selectColumns": "Seleccionar columnas",
+        "resetToDefaults": "Restablecer valores predeterminados",
+        "refresh": "Actualizar",
+        "detailsModal": {
+          "title": "Detalles de la orden de canal",
+          "subtitle": "Información completa de la orden",
+          "close": "Cerrar",
+          "deleteOrder": "Eliminar orden"
+        },
+        "deleteModal": {
+          "title": "Eliminar orden de canal",
+          "message": "¿Está seguro de que desea eliminar esta orden de canal? Esta acción no se puede deshacer.",
+          "orderId": "ID de orden:",
+          "cancel": "Cancelar",
+          "delete": "Eliminar orden"
+        },
+        "sections": {
+          "orderStatus": "Estado de la orden",
+          "orderId": "ID de orden",
+          "paymentInformation": "Información de pago",
+          "channelConfiguration": "Configuración del canal",
+          "assetInformation": "Información del activo",
+          "timeline": "Cronología"
+        },
+        "fields": {
+          "amountPaid": "Monto pagado",
+          "feesPaid": "Comisiones pagadas",
+          "clientBalance": "Saldo del cliente",
+          "lspBalance": "Saldo del LSP",
+          "channelExpiry": "Expiración del canal",
+          "requiredConfirmations": "Confirmaciones requeridas",
+          "fundingConfirmsWithin": "Confirmación de fondos dentro de",
+          "announceChannel": "Anunciar canal",
+          "assetId": "ID del activo",
+          "clientAssetAmount": "Cantidad de activo del cliente",
+          "lspAssetAmount": "Cantidad de activo del LSP",
+          "deliveryStatus": "Estado de entrega",
+          "createdAt": "Creado el"
+        },
+        "columnHeaders": {
+          "orderId": "ID de orden",
+          "createdAt": "Creado el",
+          "amountPaid": "Monto pagado",
+          "feesPaid": "Comisiones pagadas",
+          "status": "Estado",
+          "clientBalance": "Saldo del cliente (sats)",
+          "lspBalance": "Saldo del LSP (sats)",
+          "channelExpiry": "Expiración del canal (bloques)",
+          "requiredConfirmations": "Confirmaciones requeridas",
+          "fundingConfirmsWithin": "Confirmación de fondos dentro de",
+          "announceChannel": "Anunciar canal",
+          "assetId": "ID del activo",
+          "lspAssetAmount": "Cantidad de activo del LSP",
+          "clientAssetAmount": "Cantidad de activo del cliente",
+          "assetDeliveryStatus": "Estado de entrega del activo",
+          "actions": "Acciones"
+        },
+        "status": {
+          "completed": "Completado",
+          "failed": "Fallido",
+          "created": "Creado",
+          "unknown": "Desconocido"
+        },
+        "deliveryStatus": {
+          "delivered": "Entregado",
+          "pending": "Pendiente",
+          "inProgress": "En progreso",
+          "failed": "Fallido",
+          "rateChanged": "Tasa modificada"
+        },
+        "actions": {
+          "viewDetails": "Ver detalles",
+          "deleteOrder": "Eliminar orden",
+          "retryDelivery": "Reintentar entrega del activo",
+          "retrying": "Reintentando..."
+        },
+        "units": {
+          "sats": "sats",
+          "blocks": "bloques",
+          "na": "N/D"
+        },
+        "messages": {
+          "retryQueued": "Solicitud de reintento en cola exitosamente",
+          "orderNotFound": "Orden no encontrada",
+          "noPendingDelivery": "No hay entrega pendiente para reintentar",
+          "retryFailed": "Error al reintentar la entrega",
+          "deleteSuccess": "Orden de canal eliminada exitosamente",
+          "deleteFailed": "Error al eliminar la orden de canal",
+          "error": "Error: {{error}}",
+          "retry": "Reintentar"
+        }
       }
     },
     "appVersion": {

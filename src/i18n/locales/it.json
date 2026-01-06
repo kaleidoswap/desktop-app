@@ -2355,8 +2355,103 @@
         "noWithdrawals": "Nessun prelievo trovato."
       },
       "channelOrders": {
+        "title": "Ordini Canale",
         "noOrders": "Nessun ordine di canale trovato.",
-        "noOrdersSearch": "Nessun ordine trovato corrispondente alla tua ricerca."
+        "noOrdersSearch": "Nessun ordine trovato corrispondente alla tua ricerca.",
+        "loading": "Caricamento ordini canale...",
+        "searchPlaceholder": "Cerca per ID ordine...",
+        "columns": "Colonne",
+        "selectColumns": "Seleziona colonne",
+        "resetToDefaults": "Ripristina predefinite",
+        "refresh": "Aggiorna",
+        "detailsModal": {
+          "title": "Dettagli ordine canale",
+          "subtitle": "Informazioni complete sull'ordine",
+          "close": "Chiudi",
+          "deleteOrder": "Elimina ordine"
+        },
+        "deleteModal": {
+          "title": "Elimina ordine canale",
+          "message": "Sei sicuro di voler eliminare questo ordine canale? Questa azione non può essere annullata.",
+          "orderId": "ID ordine:",
+          "cancel": "Annulla",
+          "delete": "Elimina ordine"
+        },
+        "sections": {
+          "orderStatus": "Stato ordine",
+          "orderId": "ID ordine",
+          "paymentInformation": "Informazioni pagamento",
+          "channelConfiguration": "Configurazione canale",
+          "assetInformation": "Informazioni asset",
+          "timeline": "Cronologia"
+        },
+        "fields": {
+          "amountPaid": "Importo pagato",
+          "feesPaid": "Commissioni pagate",
+          "clientBalance": "Saldo cliente",
+          "lspBalance": "Saldo LSP",
+          "channelExpiry": "Scadenza canale",
+          "requiredConfirmations": "Conferme richieste",
+          "fundingConfirmsWithin": "Conferma finanziamento entro",
+          "announceChannel": "Annuncia canale",
+          "assetId": "ID asset",
+          "clientAssetAmount": "Quantità asset cliente",
+          "lspAssetAmount": "Quantità asset LSP",
+          "deliveryStatus": "Stato consegna",
+          "createdAt": "Creato il"
+        },
+        "columnHeaders": {
+          "orderId": "ID ordine",
+          "createdAt": "Creato il",
+          "amountPaid": "Importo pagato",
+          "feesPaid": "Commissioni pagate",
+          "status": "Stato",
+          "clientBalance": "Saldo cliente (sats)",
+          "lspBalance": "Saldo LSP (sats)",
+          "channelExpiry": "Scadenza canale (blocchi)",
+          "requiredConfirmations": "Conferme richieste",
+          "fundingConfirmsWithin": "Conferma finanziamento entro",
+          "announceChannel": "Annuncia canale",
+          "assetId": "ID asset",
+          "lspAssetAmount": "Quantità asset LSP",
+          "clientAssetAmount": "Quantità asset cliente",
+          "assetDeliveryStatus": "Stato consegna asset",
+          "actions": "Azioni"
+        },
+        "status": {
+          "completed": "Completato",
+          "failed": "Fallito",
+          "created": "Creato",
+          "unknown": "Sconosciuto"
+        },
+        "deliveryStatus": {
+          "delivered": "Consegnato",
+          "pending": "In attesa",
+          "inProgress": "In corso",
+          "failed": "Fallito",
+          "rateChanged": "Tasso modificato"
+        },
+        "actions": {
+          "viewDetails": "Visualizza dettagli",
+          "deleteOrder": "Elimina ordine",
+          "retryDelivery": "Riprova consegna asset",
+          "retrying": "Riprovando..."
+        },
+        "units": {
+          "sats": "sats",
+          "blocks": "blocchi",
+          "na": "N/D"
+        },
+        "messages": {
+          "retryQueued": "Richiesta di ripetizione accodata con successo",
+          "orderNotFound": "Ordine non trovato",
+          "noPendingDelivery": "Nessuna consegna in sospeso da riprovare",
+          "retryFailed": "Impossibile riprovare la consegna",
+          "deleteSuccess": "Ordine canale eliminato con successo",
+          "deleteFailed": "Impossibile eliminare l'ordine canale",
+          "error": "Errore: {{error}}",
+          "retry": "Riprova"
+        }
       }
     },
     "appVersion": {

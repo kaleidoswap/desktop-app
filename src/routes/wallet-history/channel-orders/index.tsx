@@ -43,43 +43,43 @@ interface ChannelOrder {
   payload: string
 }
 
-const AVAILABLE_COLUMNS = [
-  { key: 'order_id', label: 'Order ID', type: 'default' },
-  { key: 'created_at', label: 'Created At', type: 'default' },
-  { key: 'amount_paid', label: 'Amount Paid', type: 'default' },
-  { key: 'fees_paid', label: 'Fees Paid', type: 'default' },
-  { key: 'status', label: 'Status', type: 'default' },
+const getAvailableColumns = (t: any) => [
+  { key: 'order_id', label: t('components.walletHistory.channelOrders.columnHeaders.orderId'), type: 'default' },
+  { key: 'created_at', label: t('components.walletHistory.channelOrders.columnHeaders.createdAt'), type: 'default' },
+  { key: 'amount_paid', label: t('components.walletHistory.channelOrders.columnHeaders.amountPaid'), type: 'default' },
+  { key: 'fees_paid', label: t('components.walletHistory.channelOrders.columnHeaders.feesPaid'), type: 'default' },
+  { key: 'status', label: t('components.walletHistory.channelOrders.columnHeaders.status'), type: 'default' },
   {
     key: 'client_balance_sat',
-    label: 'Client Balance (sats)',
+    label: t('components.walletHistory.channelOrders.columnHeaders.clientBalance'),
     type: 'payload',
   },
-  { key: 'lsp_balance_sat', label: 'LSP Balance (sats)', type: 'payload' },
+  { key: 'lsp_balance_sat', label: t('components.walletHistory.channelOrders.columnHeaders.lspBalance'), type: 'payload' },
   {
     key: 'channel_expiry_blocks',
-    label: 'Channel Expiry (blocks)',
+    label: t('components.walletHistory.channelOrders.columnHeaders.channelExpiry'),
     type: 'payload',
   },
   {
     key: 'required_channel_confirmations',
-    label: 'Required Confirmations',
+    label: t('components.walletHistory.channelOrders.columnHeaders.requiredConfirmations'),
     type: 'payload',
   },
   {
     key: 'funding_confirms_within_blocks',
-    label: 'Funding Confirms Within',
+    label: t('components.walletHistory.channelOrders.columnHeaders.fundingConfirmsWithin'),
     type: 'payload',
   },
-  { key: 'announce_channel', label: 'Announce Channel', type: 'payload' },
-  { key: 'asset_id', label: 'Asset ID', type: 'payload' },
-  { key: 'lsp_asset_amount', label: 'LSP Asset Amount', type: 'payload' },
-  { key: 'client_asset_amount', label: 'Client Asset Amount', type: 'payload' },
+  { key: 'announce_channel', label: t('components.walletHistory.channelOrders.columnHeaders.announceChannel'), type: 'payload' },
+  { key: 'asset_id', label: t('components.walletHistory.channelOrders.columnHeaders.assetId'), type: 'payload' },
+  { key: 'lsp_asset_amount', label: t('components.walletHistory.channelOrders.columnHeaders.lspAssetAmount'), type: 'payload' },
+  { key: 'client_asset_amount', label: t('components.walletHistory.channelOrders.columnHeaders.clientAssetAmount'), type: 'payload' },
   {
     key: 'asset_delivery_status',
-    label: 'Asset Delivery Status',
+    label: t('components.walletHistory.channelOrders.columnHeaders.assetDeliveryStatus'),
     type: 'default',
   },
-  { key: 'actions', label: 'Actions', type: 'default' },
+  { key: 'actions', label: t('components.walletHistory.channelOrders.columnHeaders.actions'), type: 'default' },
 ]
 
 const DEFAULT_COLUMNS = [
@@ -111,6 +111,7 @@ const OrderDetailCard: React.FC<{
   onRetryDelivery,
   isRetrying = false,
 }) => {
+  const { t } = useTranslation()
   if (!isOpen) return null
 
   const getStatusIcon = (status: string) => {
@@ -166,10 +167,10 @@ const OrderDetailCard: React.FC<{
             </div>
             <div>
               <h3 className="text-xl font-semibold text-white">
-                Channel Order Details
+                {t('components.walletHistory.channelOrders.detailsModal.title')}
               </h3>
               <p className="text-sm text-slate-400 mt-0.5">
-                Complete order information
+                {t('components.walletHistory.channelOrders.detailsModal.subtitle')}
               </p>
             </div>
           </div>
@@ -192,7 +193,7 @@ const OrderDetailCard: React.FC<{
               {getStatusIcon(orderStatus)}
               <div>
                 <div className="text-sm font-medium uppercase tracking-wide">
-                  Order Status
+                  {t('components.walletHistory.channelOrders.sections.orderStatus')}
                 </div>
                 <div className="text-lg font-bold mt-0.5">{orderStatus}</div>
               </div>
@@ -204,7 +205,7 @@ const OrderDetailCard: React.FC<{
             <div className="flex items-start gap-3">
               <Hash className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-slate-400 mb-1">Order ID</div>
+                <div className="text-sm text-slate-400 mb-1">{t('components.walletHistory.channelOrders.sections.orderId')}</div>
                 <div className="font-mono text-white text-sm break-all">
                   {order.order_id}
                 </div>
@@ -217,20 +218,20 @@ const OrderDetailCard: React.FC<{
             <div className="flex items-center gap-2 mb-4">
               <Coins className="w-5 h-5 text-blue-400" />
               <h4 className="text-lg font-semibold text-white">
-                Payment Information
+                {t('components.walletHistory.channelOrders.sections.paymentInformation')}
               </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-slate-400 mb-1">Amount Paid</div>
+                <div className="text-sm text-slate-400 mb-1">{t('components.walletHistory.channelOrders.fields.amountPaid')}</div>
                 <div className="text-xl font-bold text-white">
-                  {amountPaid ? `${amountPaid.toLocaleString()} sats` : 'N/A'}
+                  {amountPaid ? `${amountPaid.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}` : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">Fees Paid</div>
+                <div className="text-sm text-slate-400 mb-1">{t('components.walletHistory.channelOrders.fields.feesPaid')}</div>
                 <div className="text-xl font-bold text-slate-300">
-                  {feePaid ? `${feePaid.toLocaleString()} sats` : 'N/A'}
+                  {feePaid ? `${feePaid.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}` : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
             </div>
@@ -241,66 +242,66 @@ const OrderDetailCard: React.FC<{
             <div className="flex items-center gap-2 mb-4">
               <Activity className="w-5 h-5 text-purple-400" />
               <h4 className="text-lg font-semibold text-white">
-                Channel Configuration
+                {t('components.walletHistory.channelOrders.sections.channelConfiguration')}
               </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="text-sm text-slate-400 mb-1">
-                  Client Balance
+                  {t('components.walletHistory.channelOrders.fields.clientBalance')}
                 </div>
                 <div className="text-base font-semibold text-white">
                   {payload.client_balance_sat
-                    ? `${payload.client_balance_sat.toLocaleString()} sats`
-                    : 'N/A'}
+                    ? `${payload.client_balance_sat.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
+                    : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">LSP Balance</div>
+                <div className="text-sm text-slate-400 mb-1">{t('components.walletHistory.channelOrders.fields.lspBalance')}</div>
                 <div className="text-base font-semibold text-white">
                   {payload.lsp_balance_sat
-                    ? `${payload.lsp_balance_sat.toLocaleString()} sats`
-                    : 'N/A'}
+                    ? `${payload.lsp_balance_sat.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
+                    : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400 mb-1">
-                  Channel Expiry
+                  {t('components.walletHistory.channelOrders.fields.channelExpiry')}
                 </div>
                 <div className="text-base font-semibold text-white">
                   {payload.channel_expiry_blocks
-                    ? `${payload.channel_expiry_blocks} blocks`
-                    : 'N/A'}
+                    ? `${payload.channel_expiry_blocks} ${t('components.walletHistory.channelOrders.units.blocks')}`
+                    : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400 mb-1">
-                  Required Confirmations
+                  {t('components.walletHistory.channelOrders.fields.requiredConfirmations')}
                 </div>
                 <div className="text-base font-semibold text-white">
-                  {payload.required_channel_confirmations ?? 'N/A'}
+                  {payload.required_channel_confirmations ?? t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400 mb-1">
-                  Funding Confirms Within
+                  {t('components.walletHistory.channelOrders.fields.fundingConfirmsWithin')}
                 </div>
                 <div className="text-base font-semibold text-white">
                   {payload.funding_confirms_within_blocks
-                    ? `${payload.funding_confirms_within_blocks} blocks`
-                    : 'N/A'}
+                    ? `${payload.funding_confirms_within_blocks} ${t('components.walletHistory.channelOrders.units.blocks')}`
+                    : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-400 mb-1">
-                  Announce Channel
+                  {t('components.walletHistory.channelOrders.fields.announceChannel')}
                 </div>
                 <div className="text-base font-semibold text-white">
                   {payload.announce_channel !== undefined
                     ? payload.announce_channel
-                      ? 'Yes'
-                      : 'No'
-                    : 'N/A'}
+                      ? t('common.yes')
+                      : t('common.no')
+                    : t('components.walletHistory.channelOrders.units.na')}
                 </div>
               </div>
             </div>
@@ -314,13 +315,13 @@ const OrderDetailCard: React.FC<{
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-5 h-5 text-orange-400" />
                 <h4 className="text-lg font-semibold text-white">
-                  Asset Information
+                  {t('components.walletHistory.channelOrders.sections.assetInformation')}
                 </h4>
               </div>
               <div className="space-y-3">
                 {payload.asset_id && (
                   <div>
-                    <div className="text-sm text-slate-400 mb-1">Asset ID</div>
+                    <div className="text-sm text-slate-400 mb-1">{t('components.walletHistory.channelOrders.fields.assetId')}</div>
                     <div className="font-mono text-sm text-white break-all">
                       {payload.asset_id}
                     </div>
@@ -330,7 +331,7 @@ const OrderDetailCard: React.FC<{
                   {payload.client_asset_amount && (
                     <div>
                       <div className="text-sm text-slate-400 mb-1">
-                        Client Asset Amount
+                        {t('components.walletHistory.channelOrders.fields.clientAssetAmount')}
                       </div>
                       <div className="text-base font-semibold text-white">
                         {payload.client_asset_amount.toLocaleString()}
@@ -340,7 +341,7 @@ const OrderDetailCard: React.FC<{
                   {payload.lsp_asset_amount && (
                     <div>
                       <div className="text-sm text-slate-400 mb-1">
-                        LSP Asset Amount
+                        {t('components.walletHistory.channelOrders.fields.lspAssetAmount')}
                       </div>
                       <div className="text-base font-semibold text-white">
                         {payload.lsp_asset_amount.toLocaleString()}
@@ -356,14 +357,14 @@ const OrderDetailCard: React.FC<{
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-sm text-slate-400 mb-1">
-                            Delivery Status
+                            {t('components.walletHistory.channelOrders.fields.deliveryStatus')}
                           </div>
                           <div className="text-base font-semibold text-white">
                             {orderData.asset_delivery_status}
                           </div>
                           {orderData.asset_delivery_error && (
                             <div className="text-xs text-red-400 mt-1">
-                              Error: {orderData.asset_delivery_error}
+                              {t('common.error')}: {orderData.asset_delivery_error}
                             </div>
                           )}
                         </div>
@@ -377,12 +378,12 @@ const OrderDetailCard: React.FC<{
                               {isRetrying ? (
                                 <>
                                   <LoaderIcon className="w-4 h-4 animate-spin" />
-                                  Retrying...
+                                  {t('components.walletHistory.channelOrders.actions.retrying')}
                                 </>
                               ) : (
                                 <>
                                   <RotateCw className="w-4 h-4" />
-                                  Retry Delivery
+                                  {t('components.walletHistory.channelOrders.actions.retryDelivery')}
                                 </>
                               )}
                             </button>
@@ -399,12 +400,12 @@ const OrderDetailCard: React.FC<{
             <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="w-5 h-5 text-green-400" />
-                <h4 className="text-lg font-semibold text-white">Timeline</h4>
+                <h4 className="text-lg font-semibold text-white">{t('components.walletHistory.channelOrders.sections.timeline')}</h4>
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="w-4 h-4 text-slate-400" />
                 <div>
-                  <div className="text-sm text-slate-400">Created At</div>
+                  <div className="text-sm text-slate-400">{t('components.walletHistory.channelOrders.fields.createdAt')}</div>
                   <div className="text-base font-medium text-white">
                     {new Date(orderData.created_at).toLocaleString()}
                   </div>
@@ -420,7 +421,7 @@ const OrderDetailCard: React.FC<{
             className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
             onClick={onClose}
           >
-            Close
+            {t('components.walletHistory.channelOrders.detailsModal.close')}
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
@@ -430,7 +431,7 @@ const OrderDetailCard: React.FC<{
             }}
           >
             <Trash2 className="w-4 h-4" />
-            Delete Order
+            {t('components.walletHistory.channelOrders.detailsModal.deleteOrder')}
           </button>
         </div>
       </div>
@@ -445,6 +446,7 @@ const DeleteConfirmationModal: React.FC<{
   onConfirm: () => void
   orderId: string
 }> = ({ isOpen, onClose, onConfirm, orderId }) => {
+  const { t } = useTranslation()
   if (!isOpen) return null
 
   return (
@@ -457,7 +459,7 @@ const DeleteConfirmationModal: React.FC<{
               <AlertTriangle className="w-5 h-5 text-red-500" />
             </div>
             <h3 className="text-lg font-semibold text-white">
-              Delete Channel Order
+              {t('components.walletHistory.channelOrders.deleteModal.title')}
             </h3>
           </div>
           <button
@@ -472,12 +474,11 @@ const DeleteConfirmationModal: React.FC<{
         {/* Content */}
         <div className="p-4">
           <p className="text-slate-300 mb-4">
-            Are you sure you want to delete this channel order? This action
-            cannot be undone.
+            {t('components.walletHistory.channelOrders.deleteModal.message')}
           </p>
           <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Order ID:</span>
+              <span className="text-sm text-gray-400">{t('components.walletHistory.channelOrders.deleteModal.orderId')}</span>
               <span className="text-sm font-mono text-white break-all">
                 {orderId}
               </span>
@@ -491,14 +492,14 @@ const DeleteConfirmationModal: React.FC<{
             className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
             onClick={onClose}
           >
-            Cancel
+            {t('components.walletHistory.channelOrders.deleteModal.cancel')}
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
             onClick={onConfirm}
           >
             <Trash2 className="w-4 h-4" />
-            Delete Order
+            {t('components.walletHistory.channelOrders.deleteModal.delete')}
           </button>
         </div>
       </div>
@@ -595,14 +596,14 @@ export const Component = () => {
 
     try {
       await invoke('delete_channel_order', { orderId: orderToDelete })
-      toast.success('Channel order deleted successfully')
+      toast.success(t('components.walletHistory.channelOrders.messages.deleteSuccess'))
       await fetchOrders() // Refresh the list
       setShowDeleteModal(false)
       setOrderToDelete(null)
     } catch (err) {
       console.error('Error deleting channel order:', err)
       toast.error(
-        err instanceof Error ? err.message : 'Failed to delete channel order'
+        err instanceof Error ? err.message : t('components.walletHistory.channelOrders.messages.deleteFailed')
       )
       setShowDeleteModal(false)
       setOrderToDelete(null)
@@ -635,32 +636,32 @@ export const Component = () => {
 
         switch (status) {
           case 'processing':
-            toast.success(message || 'Retry request queued successfully')
+            toast.success(message || t('components.walletHistory.channelOrders.messages.retryQueued'))
             // Refresh order status after a short delay
             setTimeout(async () => {
               await fetchOrders()
             }, 2000)
             break
           case 'not_found':
-            toast.error(message || 'Order not found')
+            toast.error(message || t('components.walletHistory.channelOrders.messages.orderNotFound'))
             break
           case 'no_pending_delivery':
-            toast.info(message || 'No pending delivery to retry')
+            toast.info(message || t('components.walletHistory.channelOrders.messages.noPendingDelivery'))
             break
           case 'error':
-            toast.error(message || 'Failed to retry delivery')
+            toast.error(message || t('components.walletHistory.channelOrders.messages.retryFailed'))
             break
           default:
             toast.info(message || 'Unknown response')
         }
       } else if (response.error) {
         console.error('Error retrying delivery:', response.error)
-        toast.error('Failed to retry delivery')
+        toast.error(t('components.walletHistory.channelOrders.messages.retryFailed'))
       }
     } catch (err) {
       console.error('Error retrying delivery:', err)
       toast.error(
-        err instanceof Error ? err.message : 'Failed to retry delivery'
+        err instanceof Error ? err.message : t('components.walletHistory.channelOrders.messages.retryFailed')
       )
     } finally {
       setRetryingOrders((prev) => {
@@ -694,7 +695,7 @@ export const Component = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-400">Loading channel orders...</div>
+        <div className="text-gray-400">{t('components.walletHistory.channelOrders.loading')}</div>
       </div>
     )
   }
@@ -702,12 +703,12 @@ export const Component = () => {
   if (error) {
     return (
       <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-        <div className="text-red-400">Error: {error}</div>
+        <div className="text-red-400">{t('components.walletHistory.channelOrders.messages.error', { error })}</div>
         <button
           className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           onClick={handleRefresh}
         >
-          Retry
+          {t('components.walletHistory.channelOrders.messages.retry')}
         </button>
       </div>
     )
@@ -720,7 +721,7 @@ export const Component = () => {
           <div className="p-2.5 rounded-lg bg-blue-500/10">
             <Zap className="h-6 w-6 text-blue-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Channel Orders</h2>
+          <h2 className="text-xl font-bold text-white">{t('components.walletHistory.channelOrders.title')}</h2>
         </div>
 
         <div className="flex items-center gap-2">
@@ -729,7 +730,7 @@ export const Component = () => {
             onClick={() => setShowColumnSelector(!showColumnSelector)}
           >
             <Settings className="w-4 h-4" />
-            Columns
+            {t('components.walletHistory.channelOrders.columns')}
           </button>
           <IconButton
             aria-label="Refresh"
@@ -751,16 +752,16 @@ export const Component = () => {
       {showColumnSelector && (
         <div className="mb-6 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold text-white">Select Columns</h3>
+            <h3 className="text-lg font-semibold text-white">{t('components.walletHistory.channelOrders.selectColumns')}</h3>
             <button
               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
               onClick={resetToDefaults}
             >
-              Reset to Defaults
+              {t('components.walletHistory.channelOrders.resetToDefaults')}
             </button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {AVAILABLE_COLUMNS.map((column) => (
+            {getAvailableColumns(t).map((column) => (
               <label
                 className="flex items-center space-x-2 cursor-pointer"
                 key={column.key}
@@ -787,7 +788,7 @@ export const Component = () => {
           <input
             className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by Order ID..."
+            placeholder={t('components.walletHistory.channelOrders.searchPlaceholder')}
             type="text"
             value={searchTerm}
           />
@@ -805,7 +806,7 @@ export const Component = () => {
       ) : (
         <Table
           columns={selectedColumns.map((columnKey) => {
-            const column = AVAILABLE_COLUMNS.find(
+            const column = getAvailableColumns(t).find(
               (col) => col.key === columnKey
             )
             return {
@@ -816,13 +817,13 @@ export const Component = () => {
                 const getStatusBadge = (status: string) => {
                   switch (status) {
                     case 'COMPLETED':
-                      return renderStatusBadge('Completed', 'success')
+                      return renderStatusBadge(t('components.walletHistory.channelOrders.status.completed'), 'success')
                     case 'FAILED':
-                      return renderStatusBadge('Failed', 'danger')
+                      return renderStatusBadge(t('components.walletHistory.channelOrders.status.failed'), 'danger')
                     case 'CREATED':
-                      return renderStatusBadge('Created', 'warning')
+                      return renderStatusBadge(t('components.walletHistory.channelOrders.status.created'), 'warning')
                     default:
-                      return renderStatusBadge('Unknown', 'default')
+                      return renderStatusBadge(t('components.walletHistory.channelOrders.status.unknown'), 'default')
                   }
                 }
 
@@ -844,7 +845,7 @@ export const Component = () => {
                     return (
                       <span className="font-semibold text-white">
                         {amount
-                          ? `${amount.toLocaleString()} sats`
+                          ? `${amount.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
                           : renderEmptyField()}
                       </span>
                     )
@@ -859,7 +860,7 @@ export const Component = () => {
                     return (
                       <span className="text-slate-300">
                         {fee
-                          ? `${fee.toLocaleString()} sats`
+                          ? `${fee.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
                           : renderEmptyField()}
                       </span>
                     )
@@ -882,15 +883,15 @@ export const Component = () => {
                     const getDeliveryStatusBadge = (status: string) => {
                       switch (status) {
                         case 'COMPLETED':
-                          return renderStatusBadge('Delivered', 'success')
+                          return renderStatusBadge(t('components.walletHistory.channelOrders.deliveryStatus.delivered'), 'success')
                         case 'PENDING':
-                          return renderStatusBadge('Pending', 'warning')
+                          return renderStatusBadge(t('components.walletHistory.channelOrders.deliveryStatus.pending'), 'warning')
                         case 'IN_PROGRESS':
-                          return renderStatusBadge('In Progress', 'info')
+                          return renderStatusBadge(t('components.walletHistory.channelOrders.deliveryStatus.inProgress'), 'info')
                         case 'FAILED':
-                          return renderStatusBadge('Failed', 'danger')
+                          return renderStatusBadge(t('components.walletHistory.channelOrders.deliveryStatus.failed'), 'danger')
                         case 'RATE_CHANGED':
-                          return renderStatusBadge('Rate Changed', 'warning')
+                          return renderStatusBadge(t('components.walletHistory.channelOrders.deliveryStatus.rateChanged'), 'warning')
                         default:
                           return renderStatusBadge(status, 'default')
                       }
@@ -916,7 +917,7 @@ export const Component = () => {
                               e.stopPropagation()
                               handleRetryDelivery(order.order_id)
                             }}
-                            title="Retry asset delivery"
+                            title={t('components.walletHistory.channelOrders.actions.retryDelivery')}
                           >
                             {isRetrying ? (
                               <LoaderIcon className="w-4 h-4 animate-spin" />
@@ -931,7 +932,7 @@ export const Component = () => {
                             e.stopPropagation()
                             handleViewDetails(order)
                           }}
-                          title="View details"
+                          title={t('components.walletHistory.channelOrders.actions.viewDetails')}
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
@@ -941,7 +942,7 @@ export const Component = () => {
                             e.stopPropagation()
                             handleDelete(order.order_id)
                           }}
-                          title="Delete order"
+                          title={t('components.walletHistory.channelOrders.actions.deleteOrder')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -955,7 +956,7 @@ export const Component = () => {
                       if (value === undefined || value === null)
                         return renderEmptyField()
                       if (typeof value === 'boolean')
-                        return value ? 'Yes' : 'No'
+                        return value ? t('common.yes') : t('common.no')
                       if (typeof value === 'number')
                         return value.toLocaleString()
                       if (typeof value === 'string' && value.length > 30) {
@@ -974,7 +975,7 @@ export const Component = () => {
                   : 'col-span-1',
               header:
                 columnKey === 'actions'
-                  ? 'Actions'
+                  ? t('components.walletHistory.channelOrders.columnHeaders.actions')
                   : column?.label || columnKey,
               headerClassName: columnKey === 'actions' ? 'text-center' : '',
             }

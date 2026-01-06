@@ -2355,8 +2355,103 @@
         "noWithdrawals": "Aucun retrait trouvé."
       },
       "channelOrders": {
+        "title": "Commandes de canaux",
         "noOrders": "Aucune commande de canal trouvée.",
-        "noOrdersSearch": "Aucune commande trouvée correspondant à votre recherche."
+        "noOrdersSearch": "Aucune commande trouvée correspondant à votre recherche.",
+        "loading": "Chargement des commandes de canal...",
+        "searchPlaceholder": "Rechercher par ID de commande...",
+        "columns": "Colonnes",
+        "selectColumns": "Sélectionner les colonnes",
+        "resetToDefaults": "Réinitialiser aux valeurs par défaut",
+        "refresh": "Actualiser",
+        "detailsModal": {
+          "title": "Détails de la commande de canal",
+          "subtitle": "Informations complètes sur la commande",
+          "close": "Fermer",
+          "deleteOrder": "Supprimer la commande"
+        },
+        "deleteModal": {
+          "title": "Supprimer la commande de canal",
+          "message": "Êtes-vous sûr de vouloir supprimer cette commande de canal ? Cette action ne peut pas être annulée.",
+          "orderId": "ID de commande :",
+          "cancel": "Annuler",
+          "delete": "Supprimer la commande"
+        },
+        "sections": {
+          "orderStatus": "Statut de la commande",
+          "orderId": "ID de commande",
+          "paymentInformation": "Informations de paiement",
+          "channelConfiguration": "Configuration du canal",
+          "assetInformation": "Informations sur l'actif",
+          "timeline": "Chronologie"
+        },
+        "fields": {
+          "amountPaid": "Montant payé",
+          "feesPaid": "Frais payés",
+          "clientBalance": "Solde du client",
+          "lspBalance": "Solde du LSP",
+          "channelExpiry": "Expiration du canal",
+          "requiredConfirmations": "Confirmations requises",
+          "fundingConfirmsWithin": "Confirmation du financement dans",
+          "announceChannel": "Annoncer le canal",
+          "assetId": "ID de l'actif",
+          "clientAssetAmount": "Montant de l'actif du client",
+          "lspAssetAmount": "Montant de l'actif du LSP",
+          "deliveryStatus": "Statut de livraison",
+          "createdAt": "Créé le"
+        },
+        "columnHeaders": {
+          "orderId": "ID de commande",
+          "createdAt": "Créé le",
+          "amountPaid": "Montant payé",
+          "feesPaid": "Frais payés",
+          "status": "Statut",
+          "clientBalance": "Solde du client (sats)",
+          "lspBalance": "Solde du LSP (sats)",
+          "channelExpiry": "Expiration du canal (blocs)",
+          "requiredConfirmations": "Confirmations requises",
+          "fundingConfirmsWithin": "Confirmation du financement dans",
+          "announceChannel": "Annoncer le canal",
+          "assetId": "ID de l'actif",
+          "lspAssetAmount": "Montant de l'actif du LSP",
+          "clientAssetAmount": "Montant de l'actif du client",
+          "assetDeliveryStatus": "Statut de livraison de l'actif",
+          "actions": "Actions"
+        },
+        "status": {
+          "completed": "Terminé",
+          "failed": "Échoué",
+          "created": "Créé",
+          "unknown": "Inconnu"
+        },
+        "deliveryStatus": {
+          "delivered": "Livré",
+          "pending": "En attente",
+          "inProgress": "En cours",
+          "failed": "Échoué",
+          "rateChanged": "Taux modifié"
+        },
+        "actions": {
+          "viewDetails": "Voir les détails",
+          "deleteOrder": "Supprimer la commande",
+          "retryDelivery": "Réessayer la livraison de l'actif",
+          "retrying": "Nouvelle tentative..."
+        },
+        "units": {
+          "sats": "sats",
+          "blocks": "blocs",
+          "na": "N/D"
+        },
+        "messages": {
+          "retryQueued": "Demande de nouvelle tentative mise en file d'attente avec succès",
+          "orderNotFound": "Commande introuvable",
+          "noPendingDelivery": "Aucune livraison en attente à réessayer",
+          "retryFailed": "Échec de la nouvelle tentative de livraison",
+          "deleteSuccess": "Commande de canal supprimée avec succès",
+          "deleteFailed": "Échec de la suppression de la commande de canal",
+          "error": "Erreur : {{error}}",
+          "retry": "Réessayer"
+        }
       }
     },
     "appVersion": {
