@@ -1350,14 +1350,34 @@
         "description": "Um RGB-Assets on-chain zu empfangen, benötigst du färbbare UTXOs.",
         "cta": "Färbbare UTXOs erstellen"
       },
+      "amount": {
+        "optionalLabel": "Betrag (optional)",
+        "precision": "Präzision: {{value}} Dezimalstellen",
+        "example": "Betrag eingeben (z. B. 10.23 für {{ticker}})",
+        "requiredLabel": "Betrag",
+        "maxLabel": "Max: {{amount}} {{asset}}",
+        "maxPlaceholder": "Betrag eingeben (max {{amount}})",
+        "notAvailable": "N/A",
+        "maxButton": "Max",
+        "rgbNote": "Hinweis: 3.000 Sats sind für RGB-Asset-Übertragungen erforderlich.",
+        "noChannels": "Warnung: Keine aktiven Lightning-Kanäle gefunden. Lightning-Einzahlungen sind nicht verfügbar.",
+        "exceeds": "Betrag überschreitet das verfügbare Maximum: {{amount}} {{asset}}"
+      },
       "actions": {
         "copy": "In Zwischenablage kopieren",
-        "generateAddress": "Neue Adresse generieren"
+        "generateAddress": "Neue Adresse generieren",
+        "generateAddressCta": "Adresse generieren",
+        "generateInvoice": "Rechnung generieren"
       },
       "labels": {
         "lnInvoice": "Lightning-Rechnung",
         "btcAddress": "BTC-Adresse",
         "rgbInvoice": "RGB-Rechnung"
+      },
+      "status": {
+        "pending": "Zahlung in Bearbeitung...",
+        "success": "Zahlung erhalten!",
+        "failed": "Zahlung fehlgeschlagen ({{status}})"
       },
       "toasts": {
         "generateAddressError": "Adresse konnte nicht erstellt werden",

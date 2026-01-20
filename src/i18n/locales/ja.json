@@ -1350,28 +1350,48 @@
         "description": "オンチェーンRGBアセットを受け取るには、Colorable UTXOが必要です。",
         "cta": "Colorable UTXOを作成"
       },
+      "amount": {
+        "optionalLabel": "金額（オプション）",
+        "precision": "精度：{{value}} 桁",
+        "example": "金額を入力（例：{{ticker}} の場合 10.23）",
+        "requiredLabel": "金額",
+        "maxLabel": "最大：{{amount}} {{asset}}",
+        "maxPlaceholder": "金額を入力（最大 {{amount}}）",
+        "notAvailable": "N/A",
+        "maxButton": "最大",
+        "rgbNote": "注：RGB アセット転送には 3,000 サトシが必要です。",
+        "noChannels": "警告：アクティブな Lightning チャネルが見つかりません。Lightning 入金は利用できません。",
+        "exceeds": "金額が利用可能な上限を超えています：{{amount}} {{asset}}"
+      },
       "actions": {
         "copy": "クリップボードにコピー",
-        "generateAddress": "新しいアドレスを生成"
+        "generateAddress": "新しいアドレスを生成",
+        "generateAddressCta": "アドレスを生成",
+        "generateInvoice": "インボイスを生成"
       },
       "labels": {
-        "lnInvoice": "LNインボイス",
-        "btcAddress": "BTCアドレス",
-        "rgbInvoice": "RGBインボイス"
+        "lnInvoice": "LN インボイス",
+        "btcAddress": "BTC アドレス",
+        "rgbInvoice": "RGB インボイス"
+      },
+      "status": {
+        "pending": "支払い待機中...",
+        "success": "支払いを受け取りました！",
+        "failed": "支払いに失敗しました（{{status}}）"
       },
       "toasts": {
         "generateAddressError": "アドレスの生成に失敗しました",
-        "rgbInvoiceError": "RGBインボイスの生成に失敗しました: {{error}}",
-        "rgbInvoiceInvalid": "RGBインボイスの生成に失敗しました: 無効なレスポンス",
-        "rgbInvoiceUnknown": "RGBインボイスの生成に失敗しました",
+        "rgbInvoiceError": "RGB インボイスの生成に失敗しました：{{error}}",
+        "rgbInvoiceInvalid": "RGB インボイスの生成に失敗しました：無効なレスポンス",
+        "rgbInvoiceUnknown": "RGB インボイスの生成に失敗しました",
         "invalidAmount": "有効な正の数値を入力してください",
-        "lnInvoiceError": "Lightningインボイスの生成に失敗しました",
+        "lnInvoiceError": "Lightning インボイスの生成に失敗しました",
         "addressCopied": "アドレスをクリップボードにコピーしました",
         "addressCopyError": "アドレスのコピーに失敗しました",
-        "recipientCopied": "受取人IDをクリップボードにコピーしました",
-        "recipientCopyError": "受取人IDのコピーに失敗しました",
-        "lightningSuccess": "Lightning入金を正常に受け取りました!",
-        "lightningFailed": "Lightning入金に失敗しました: {{status}}"
+        "recipientCopied": "受取人 ID をクリップボードにコピーしました",
+        "recipientCopyError": "受取人 ID のコピーに失敗しました",
+        "lightningSuccess": "Lightning 入金を正常に受け取りました！",
+        "lightningFailed": "Lightning 入金に失敗しました：{{status}}"
       }
     }
   },

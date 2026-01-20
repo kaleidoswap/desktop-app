@@ -1350,14 +1350,34 @@
         "description": "Pour recevoir des actifs RGB on-chain, vous avez besoin d'UTXO colorables.",
         "cta": "Créer des UTXO colorables"
       },
+      "amount": {
+        "optionalLabel": "Montant (optionnel)",
+        "precision": "Précision : {{value}} décimales",
+        "example": "Saisir le montant (ex : 10,23 pour {{ticker}})",
+        "requiredLabel": "Montant",
+        "maxLabel": "Max : {{amount}} {{asset}}",
+        "maxPlaceholder": "Saisir le montant (max {{amount}})",
+        "notAvailable": "N/D",
+        "maxButton": "Max",
+        "rgbNote": "Note : 3 000 sats sont requis pour les transferts d'actifs RGB.",
+        "noChannels": "Attention : Aucun canal Lightning actif trouvé. Les dépôts Lightning sont indisponibles.",
+        "exceeds": "Le montant dépasse le maximum disponible : {{amount}} {{asset}}"
+      },
       "actions": {
         "copy": "Copier dans le presse-papiers",
-        "generateAddress": "Générer une nouvelle adresse"
+        "generateAddress": "Générer une nouvelle adresse",
+        "generateAddressCta": "Générer une adresse",
+        "generateInvoice": "Générer une facture"
       },
       "labels": {
         "lnInvoice": "Facture LN",
         "btcAddress": "Adresse BTC",
         "rgbInvoice": "Facture RGB"
+      },
+      "status": {
+        "pending": "Paiement en cours...",
+        "success": "Paiement reçu !",
+        "failed": "Paiement échoué ({{status}})"
       },
       "toasts": {
         "generateAddressError": "Échec de la génération de l'adresse",

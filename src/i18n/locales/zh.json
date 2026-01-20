@@ -1941,28 +1941,48 @@
         "description": "要接收链上 RGB 资产，您需要可着色 UTXO。",
         "cta": "创建可着色 UTXO"
       },
+      "amount": {
+        "optionalLabel": "金额（可选）",
+        "precision": "精度：{{value}} 位小数",
+        "example": "输入金额（例如 {{ticker}} 为 10.23）",
+        "requiredLabel": "金额",
+        "maxLabel": "最高：{{amount}} {{asset}}",
+        "maxPlaceholder": "输入金额（最高 {{amount}}）",
+        "notAvailable": "不适用",
+        "maxButton": "最高",
+        "rgbNote": "注意：RGB 资产转账需要 3,000 sats。",
+        "noChannels": "警告：未找到活跃的闪电通道。闪电存款不可用。",
+        "exceeds": "金额超过最大可用限额：{{amount}} {{asset}}"
+      },
       "actions": {
         "copy": "复制到剪贴板",
-        "generateAddress": "生成新地址"
+        "generateAddress": "生成新地址",
+        "generateAddressCta": "生成地址",
+        "generateInvoice": "生成发票"
       },
       "labels": {
-        "lnInvoice": "LN 发票",
+        "lnInvoice": "闪电发票",
         "btcAddress": "BTC 地址",
         "rgbInvoice": "RGB 发票"
+      },
+      "status": {
+        "pending": "付款处理中...",
+        "success": "付款已收到！",
+        "failed": "付款失败 ({{status}})"
       },
       "toasts": {
         "generateAddressError": "生成地址失败",
         "rgbInvoiceError": "生成 RGB 发票失败：{{error}}",
-        "rgbInvoiceInvalid": "生成 RGB 发票失败：无效响应",
+        "rgbInvoiceInvalid": "生成 RGB 发票失败：响应无效",
         "rgbInvoiceUnknown": "生成 RGB 发票失败",
         "invalidAmount": "请输入有效的正数金额",
-        "lnInvoiceError": "生成 Lightning 发票失败",
+        "lnInvoiceError": "生成闪电发票失败",
         "addressCopied": "地址已复制到剪贴板",
         "addressCopyError": "复制地址失败",
-        "recipientCopied": "接收方 ID 已复制到剪贴板",
-        "recipientCopyError": "复制接收方 ID 失败",
-        "lightningSuccess": "Lightning 存款接收成功！",
-        "lightningFailed": "Lightning 存款失败：{{status}}"
+        "recipientCopied": "收款人 ID 已复制到剪贴板",
+        "recipientCopyError": "复制收款人 ID 失败",
+        "lightningSuccess": "闪电存款接收成功！",
+        "lightningFailed": "闪电存款失败：{{status}}"
       }
     }
   },
