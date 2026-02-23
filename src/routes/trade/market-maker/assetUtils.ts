@@ -1,14 +1,28 @@
 import { TFunction } from 'i18next'
 import { toast } from 'react-toastify'
 
-import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
-import { Channel, NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import {
+  TradingPair,
+  normalizePairs,
+} from '../../../slices/makerApi/makerApi.slice'
+import { Asset } from 'kaleidoswap-sdk'
 import { logger } from '../../../utils/logger'
 
 import {
   ASSET_CONFLICT_MESSAGES,
   createAssetConflictMessages,
 } from './errorMessages'
+
+// Type for channel (previously imported from nodeApi)
+// Define minimal compatible Channel interface matching SDK
+interface Channel {
+  ready?: boolean
+  outbound_balance_msat?: number
+  inbound_balance_msat?: number
+  asset_id?: string
+  status?: { status?: string } | string // handle both object and potential simple status
+  [key: string]: any
+}
 
 const MSATS_PER_SAT = 1000
 
@@ -28,9 +42,9 @@ const getMinOrderSizeForAsset = async (
   let minOrderSize: number
 
   if (isBaseAsset) {
-    minOrderSize = selectedPair.min_base_order_size
+    minOrderSize = selectedPair.min_base_order_size ?? 0
   } else {
-    minOrderSize = selectedPair.min_quote_order_size
+    minOrderSize = selectedPair.min_quote_order_size ?? 0
   }
 
   // Convert from millisats to sats for BTC
@@ -310,7 +324,7 @@ export const createSwapAssetsHandler = (
  */
 export const getAvailableAssets = (
   channels: Channel[],
-  _assets: NiaAsset[] // Prefixed with underscore to indicate intentionally unused
+  _assets: Asset[] // Prefixed with underscore to indicate intentionally unused
 ): string[] => {
   if (!channels || channels.length === 0) {
     logger.warn('getAvailableAssets called with no channels')
@@ -322,7 +336,7 @@ export const getAvailableAssets = (
     validChannels
       .filter(
         (c) =>
-          c.ready && (c.outbound_balance_msat > 0 || c.inbound_balance_msat > 0)
+          (c.ready === true) && ((c.outbound_balance_msat ?? 0) > 0 || (c.inbound_balance_msat ?? 0) > 0)
       )
       .map((c) => c.asset_id)
       .filter((assetId): assetId is string => assetId !== null) // Filter out null values
@@ -340,7 +354,7 @@ export const getAvailableAssets = (
  */
 export const getUnconfirmedAssets = (
   channels: Channel[],
-  _assets: NiaAsset[] // Prefixed with underscore to indicate intentionally unused
+  _assets: Asset[] // Prefixed with underscore to indicate intentionally unused
 ): string[] => {
   if (!channels || channels.length === 0) {
     return []
@@ -350,7 +364,7 @@ export const getUnconfirmedAssets = (
   const unconfirmedAssetIds = new Set<string>(
     validChannels
       .filter(
-        (c) => !c.ready && c.asset_id !== null && c.asset_id !== undefined
+        (c) => (c.ready !== true) && c.asset_id !== null && c.asset_id !== undefined
       )
       .map((c) => c.asset_id)
       .filter((assetId): assetId is string => assetId !== null)
@@ -365,16 +379,23 @@ export const getUnconfirmedAssets = (
  */
 export const getAvailableAssetTickers = (
   channels: Channel[],
-  assets: NiaAsset[]
+  assets: Asset[]
 ): string[] => {
   // Get unique assets from channels that are ready and usable
   const channelAssets = new Set<string>(
     channels
       .filter(
         (c) =>
-          c.ready && (c.outbound_balance_msat > 0 || c.inbound_balance_msat > 0)
+          (c.ready === true) && ((c.outbound_balance_msat ?? 0) > 0 || (c.inbound_balance_msat ?? 0) > 0)
       )
-      .map((c) => assets.find((a) => a.asset_id === c.asset_id)?.ticker)
+      .map(
+        (c) =>
+          assets.find(
+            (a) =>
+            (a.protocol_ids?.['RGB'] === c.asset_id ||
+              a.protocol_ids?.['BTC'] === c.asset_id)
+          )?.ticker
+      )
       .filter((ticker): ticker is string => ticker !== undefined) // Type guard to filter out undefined values
   )
 
@@ -408,21 +429,26 @@ export const validateTradingPairs = (
 
   // Build mappings
   pairs.forEach((pair) => {
+    const baseTicker = pair.base_asset ?? pair.base.ticker
+    const quoteTicker = pair.quote_asset ?? pair.quote.ticker
+    const baseAssetId = pair.base_asset_id ?? pair.base.ticker
+    const quoteAssetId = pair.quote_asset_id ?? pair.quote.ticker
+
     // Track base asset
-    if (!tickerToAssetIds.has(pair.base_asset)) {
-      tickerToAssetIds.set(pair.base_asset, new Set())
+    if (!tickerToAssetIds.has(baseTicker)) {
+      tickerToAssetIds.set(baseTicker, new Set())
     }
-    tickerToAssetIds.get(pair.base_asset)!.add(pair.base_asset_id)
+    tickerToAssetIds.get(baseTicker)!.add(baseAssetId)
 
     // Track quote asset
-    if (!tickerToAssetIds.has(pair.quote_asset)) {
-      tickerToAssetIds.set(pair.quote_asset, new Set())
+    if (!tickerToAssetIds.has(quoteTicker)) {
+      tickerToAssetIds.set(quoteTicker, new Set())
     }
-    tickerToAssetIds.get(pair.quote_asset)!.add(pair.quote_asset_id)
+    tickerToAssetIds.get(quoteTicker)!.add(quoteAssetId)
 
     // Track pairs by asset ID
-    const baseKey = `${pair.base_asset}:${pair.base_asset_id}`
-    const quoteKey = `${pair.quote_asset}:${pair.quote_asset_id}`
+    const baseKey = `${baseTicker}:${baseAssetId}`
+    const quoteKey = `${quoteTicker}:${quoteAssetId}`
 
     if (!assetIdToPairs.has(baseKey)) {
       assetIdToPairs.set(baseKey, [])
@@ -447,9 +473,14 @@ export const validateTradingPairs = (
   tickerToAssetIds.forEach((assetIds, ticker) => {
     if (assetIds.size > 1) {
       const conflictingPairs = pairs.filter(
-        (pair) =>
-          (pair.base_asset === ticker && assetIds.has(pair.base_asset_id)) ||
-          (pair.quote_asset === ticker && assetIds.has(pair.quote_asset_id))
+        (pair) => {
+          const baseTicker = pair.base_asset ?? pair.base.ticker
+          const quoteTicker = pair.quote_asset ?? pair.quote.ticker
+          const baseAssetId = pair.base_asset_id ?? pair.base.ticker
+          const quoteAssetId = pair.quote_asset_id ?? pair.quote.ticker
+          return (baseTicker === ticker && assetIds.has(baseAssetId)) ||
+            (quoteTicker === ticker && assetIds.has(quoteAssetId))
+        }
       )
 
       conflicts.push({
@@ -462,22 +493,25 @@ export const validateTradingPairs = (
 
       logger.warn(
         `Ticker conflict detected for "${ticker}": multiple asset IDs found [${Array.from(assetIds).join(', ')}]. ` +
-          `${conflictingPairs.length} pairs affected.`
+        `${conflictingPairs.length} pairs affected.`
       )
     }
   })
 
   // Filter out pairs that involve conflicting tickers
   const validPairs = pairs.filter(
-    (pair) =>
-      !conflictingTickers.has(pair.base_asset) &&
-      !conflictingTickers.has(pair.quote_asset)
+    (pair) => {
+      const baseTicker = pair.base_asset ?? pair.base.ticker
+      const quoteTicker = pair.quote_asset ?? pair.quote.ticker
+      return !conflictingTickers.has(baseTicker) &&
+        !conflictingTickers.has(quoteTicker)
+    }
   )
 
   if (conflicts.length > 0) {
     logger.warn(
       `Found ${conflicts.length} ticker conflicts. Filtered out ${pairs.length - validPairs.length} pairs. ` +
-        `${validPairs.length} valid pairs remaining.`
+      `${validPairs.length} valid pairs remaining.`
     )
   }
 
@@ -554,13 +588,13 @@ export const getAssetConflictsForTicker = (
 }
 
 /**
- * Creates a handler for fetching and setting trading pairs
+ * Creates a handler for fetching and setting trading pairs using the SDK
  */
 export const createFetchAndSetPairsHandler = (
-  getPairs: () => Promise<{ data?: { pairs: TradingPair[] } }>,
+  getClient: () => any, // Returns KaleidoClient  
   dispatch: (action: any) => void,
-  channels: Channel[],
-  assets: NiaAsset[],
+  channels: any[], // TODO: Type this properly
+  assets: Asset[],
   form: any,
   formatAmount: (amount: number, asset: string) => string,
   setTradingPairs: (pairs: TradingPair[]) => void,
@@ -587,18 +621,20 @@ export const createFetchAndSetPairsHandler = (
       setIsPairsLoading(true)
     }
     try {
-      const getPairsResponse = await getPairs()
-      if (
-        !('data' in getPairsResponse) ||
-        !getPairsResponse.data ||
-        !getPairsResponse.data.pairs
-      ) {
+      // Get the SDK client
+      const client = await getClient()
+
+      // Use SDK to fetch pairs
+      const getPairsResponse = await client.maker.listPairs()
+
+      if (!getPairsResponse || !getPairsResponse.pairs) {
         throw new Error(
           'Failed to fetch trading pairs data or data is malformed'
         )
       }
 
-      const allPairs: TradingPair[] = getPairsResponse.data.pairs
+      // Normalize pairs to populate backward-compatible fields from new API structure
+      const allPairs: TradingPair[] = normalizePairs(getPairsResponse.pairs)
 
       // Validate pairs to ensure no ticker conflicts (same ticker with different asset IDs)
       const { validPairs: validatedPairs, conflicts } =
@@ -678,14 +714,14 @@ export const createFetchAndSetPairsHandler = (
       setSelectedPair(selectedPair)
 
       // Set initial assets based on the selected pair
-      const fromAsset = selectedPair.base_asset
-      const toAsset = selectedPair.quote_asset
+      const fromAsset = selectedPair.base_asset ?? selectedPair.base.ticker
+      const toAsset = selectedPair.quote_asset ?? selectedPair.quote.ticker
 
       form.setValue('fromAsset', fromAsset)
       form.setValue('toAsset', toAsset)
 
       // Set initial amount to minimum order size
-      let defaultMinAmount = selectedPair.min_base_order_size
+      let defaultMinAmount = selectedPair.min_base_order_size ?? 0
       // Convert from millisats to sats for BTC
       if (fromAsset === 'BTC') {
         defaultMinAmount = defaultMinAmount / MSATS_PER_SAT
@@ -738,7 +774,7 @@ export const createFetchAndSetPairsHandler = (
  */
 export const mapAssetIdToTicker = (
   assetId: string,
-  assets: NiaAsset[],
+  assets: Asset[],
   tradingPairs?: TradingPair[]
 ): string => {
   // Return BTC as is
@@ -747,7 +783,7 @@ export const mapAssetIdToTicker = (
   }
 
   // Try to find the asset in the assets list first
-  const asset = assets.find((a) => a.asset_id === assetId)
+  const asset = assets.find((a) => (a.protocol_ids?.['RGB'] === assetId || a.protocol_ids?.['BTC'] === assetId || a.ticker === assetId))
   if (asset && asset.ticker) {
     return asset.ticker
   }
@@ -755,14 +791,17 @@ export const mapAssetIdToTicker = (
   // If not found in user assets, check trading pairs
   if (tradingPairs) {
     const pairWithAsset = tradingPairs.find(
-      (p) => p.base_asset_id === assetId || p.quote_asset_id === assetId
+      (p) => (p.base_asset_id ?? p.base.ticker) === assetId ||
+        (p.quote_asset_id ?? p.quote.ticker) === assetId
     )
     if (pairWithAsset) {
-      if (pairWithAsset.base_asset_id === assetId) {
-        return pairWithAsset.base_asset
+      const baseAssetId = pairWithAsset.base_asset_id ?? pairWithAsset.base.ticker
+      const quoteAssetId = pairWithAsset.quote_asset_id ?? pairWithAsset.quote.ticker
+      if (baseAssetId === assetId) {
+        return pairWithAsset.base_asset ?? pairWithAsset.base.ticker
       }
-      if (pairWithAsset.quote_asset_id === assetId) {
-        return pairWithAsset.quote_asset
+      if (quoteAssetId === assetId) {
+        return pairWithAsset.quote_asset ?? pairWithAsset.quote.ticker
       }
     }
   }
@@ -801,10 +840,10 @@ export const mapTickerToAssetId = (
     )
     if (pairWithAsset) {
       if (pairWithAsset.base_asset === ticker) {
-        return pairWithAsset.base_asset_id
+        return pairWithAsset.base_asset_id || ticker
       }
       if (pairWithAsset.quote_asset === ticker) {
-        return pairWithAsset.quote_asset_id
+        return pairWithAsset.quote_asset_id || ticker
       }
     }
   }

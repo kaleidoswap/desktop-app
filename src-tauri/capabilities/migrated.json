@@ -13,7 +13,6 @@
     "fs:allow-copy-file",
     "fs:allow-mkdir",
     "fs:allow-remove",
-    "fs:allow-remove",
     "fs:allow-rename",
     "fs:allow-exists",
     "core:window:allow-close",
@@ -30,7 +29,6 @@
     "dialog:default",
     "shell:default",
     "clipboard-manager:default",
-    "opener:default",
     "opener:default",
     "log:default"
   ]

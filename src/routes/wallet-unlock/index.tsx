@@ -34,7 +34,7 @@ interface Fields {
 export const Component = () => {
   const { t } = useTranslation()
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
-  const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
+  const [unlock] = nodeApi.endpoints.unlock.useMutation()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const navigate = useNavigate()

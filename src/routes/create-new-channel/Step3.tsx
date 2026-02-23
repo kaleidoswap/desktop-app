@@ -55,11 +55,11 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
       takerAssets()
         .unwrap()
         .then((response) => {
-          const asset = response.nia.find(
+          const asset = response.nia?.find(
             (a) => a.asset_id === formData.assetId
           )
           if (asset) {
-            setAssetPrecision(asset.precision)
+            setAssetPrecision(asset.precision || 8)
           }
         })
         .catch((error) => {

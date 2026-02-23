@@ -1,325 +1,253 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+import { getKaleidoClient } from '../../api/client';
+import { RootState } from '../../app/store';
+import {
+  ConfirmSwapRequest,
+  TradingPair as PairResponse,
+  GetQuoteResponse,
+  GetQuoteRequest,
+  GetLspInfoResponse as GetInfoResponseModel,
+  GetLspOrderResponse as OrderResponse,
+  CreateLspOrderRequest as CreateOrderRequest,
+  GetLspOrderRequest as GetOrderRequest,
+  RetryDeliveryResponse,
+  RetryDeliveryRequest,
+  GetSwapStatusResponse as SwapStatusResponse,
+  GetSwapStatusRequest as SwapStatusRequest,
+  EstimateLspFeesResponse as ChannelFees,
+  InitiateSwapRequest,
+  InitiateSwapResponse,
+} from 'kaleidoswap-sdk';
 
-// Data types defined in LSPS0 Common Schemas
-type LSPS0Sat = number
-type LSPS0Datetime = string
-type LSPS0OnchainAddress = string
-type LSPS0OnchainFee = number
+// Types matching new OpenAPI schema
 
-interface InitSwapRequest {
-  rfq_id: string
-  from_asset: string
-  to_asset: string
-  from_amount: number
-  to_amount: number
+export interface TradingLimits {
+  layer: string
+  min_amount: number
+  max_amount: number
+  is_active?: boolean
 }
 
-interface InitSwapResponse {
-  swapstring: string
-  payment_hash: string
+export interface Media {
+  file_path: string
+  digest: string
+  mime: string
 }
 
-interface ExecSwapRequest {
-  swapstring: string
-  taker_pubkey: string
-  payment_hash: string
+export interface SwapRoute {
+  from_layer: string
+  to_layer: string
 }
 
-interface AssetInfo {
-  name: string
+export interface TradableAsset {
   ticker: string
-  asset_id: string
+  name: string
   precision: number
-  min_initial_client_amount: number
-  max_initial_client_amount: number
-  min_initial_lsp_amount: number
-  max_initial_lsp_amount: number
-  min_channel_amount: number
-  max_channel_amount: number
-}
-
-interface Lsps1GetInfoResponse {
-  lsp_connection_url: string
-  options: {
-    min_required_channel_confirmations: number
-    min_funding_confirms_within_blocks: number
-    min_onchain_payment_confirmations: number
-    supports_zero_channel_reserve: boolean
-    min_onchain_payment_size_sat: number
-    max_channel_expiry_blocks: number
-    min_initial_client_balance_sat: number
-    max_initial_client_balance_sat: number
-    min_initial_lsp_balance_sat: number
-    max_initial_lsp_balance_sat: number
-    min_channel_balance_sat: number
-    max_channel_balance_sat: number
-  }
-  assets: Record<string, Record<string, AssetInfo>>
-}
-
-interface Lsps1CreateOrderRequest {
-  client_pubkey: string
-  lsp_balance_sat: LSPS0Sat
-  client_balance_sat: LSPS0Sat
-  required_channel_confirmations: number
-  funding_confirms_within_blocks: number
-  channel_expiry_blocks: number
-  token?: string
-  refund_onchain_address?: LSPS0OnchainAddress
-  announce_channel: boolean
-  asset_id?: string
-  lsp_asset_amount?: LSPS0Sat
-  client_asset_amount?: LSPS0Sat
-  rfq_id?: string
-}
-
-interface QuoteRequest {
-  from_asset: string
-  from_amount?: number
-  to_asset: string
-  to_amount?: number
-}
-
-interface QuoteFee {
-  base_fee: number
-  variable_fee: number
-  fee_rate: number
-  final_fee: number
-  fee_asset: string
-  fee_asset_precision: number
-}
-
-export interface QuoteResponse {
-  rfq_id: string
-  from_asset: string
-  from_amount: number
-  to_asset: string
-  to_amount: number
-  price: number
-  fee: QuoteFee
-  timestamp: number
-  expires_at: number
-}
-
-export interface Lsps1CreateOrderResponse {
-  order_id: string
-  client_pubkey: string
-  lsp_balance_sat: LSPS0Sat
-  client_balance_sat: LSPS0Sat
-  required_channel_confirmations: number
-  funding_confirms_within_blocks: number
-  channel_expiry_blocks: number
-  token: string
-  created_at: LSPS0Datetime
-  announce_channel: boolean
-  order_state: OrderState
-  payment: PaymentDetails
-  channel?: ChannelDetails | null
-  asset_id?: string
-  lsp_asset_amount?: LSPS0Sat
-  client_asset_amount?: LSPS0Sat
-  rfq_id?: string
-  asset_price_sat?: number
-  asset_delivery_status?: AssetDeliveryStatus
-  asset_delivery_payment_hash?: string
-  asset_delivery_completed_at?: string
-  asset_delivery_error?: string
-}
-
-type OrderState = 'CREATED' | 'COMPLETED' | 'FAILED' | 'PENDING_RATE_DECISION'
-type AssetDeliveryStatus =
-  | 'NOT_REQUIRED'
-  | 'PENDING'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'RATE_CHANGED'
-
-interface ChannelDetails {
-  funded_at?: string
-  funding_outpoint?: string
-  expires_at?: string
-}
-
-type PaymentState = 'EXPECT_PAYMENT' | 'HOLD' | 'PAID' | 'REFUNDED'
-
-interface PaymentDetails {
-  bolt11: PaymentBolt11
-  onchain: PaymentOnchain
-}
-
-interface PaymentBolt11 {
-  state: PaymentState
-  expires_at: string
-  fee_total_sat: number
-  order_total_sat: number
-  invoice: string
-}
-
-interface PaymentOnchain {
-  state: PaymentState
-  expires_at: string
-  fee_total_sat: number
-  order_total_sat: number
-  address: string
-  min_fee_for_0conf: LSPS0OnchainFee
-  min_onchain_payment_confirmations: number
-  refund_onchain_address?: string
-}
-
-interface Lsps1GetOrderRequest {
-  order_id: string
-}
-
-type Lsps1GetOrderResponse = Lsps1CreateOrderResponse
-
-type RetryDeliveryStatus =
-  | 'processing'
-  | 'not_found'
-  | 'no_pending_delivery'
-  | 'error'
-
-interface RetryDeliveryRequest {
-  order_id: string
-}
-
-interface RetryDeliveryResponse {
-  status: RetryDeliveryStatus
-  message: string
+  protocol_ids: Record<string, string>  // e.g., { "RGB": "rgb:xxx", "BTC": "BTC" }
+  media?: Media | null
+  issued_supply?: number | null
+  timestamp?: number | null
+  endpoints: TradingLimits[]
 }
 
 export interface TradingPair {
-  id?: string
-  base_asset: string
-  base_asset_id: string
-  base_precision: number
-  quote_asset: string
-  quote_asset_id: string
-  quote_precision: number
+  id: string
+  base: TradableAsset
+  quote: TradableAsset
+  price?: string | null
+  routes: SwapRoute[]
   is_active: boolean
-  min_base_order_size: number
-  max_base_order_size: number
-  min_quote_order_size: number
-  max_quote_order_size: number
+
+  // Backward-compatible computed fields (populated by normalizePair helper)
+  base_asset?: string       // base.ticker
+  quote_asset?: string      // quote.ticker
+  base_asset_id?: string    // getAssetId(base)
+  quote_asset_id?: string   // getAssetId(quote)
+  min_base_order_size?: number   // base.endpoints[0].min_amount
+  min_quote_order_size?: number  // quote.endpoints[0].min_amount
+  max_base_order_size?: number   // base.endpoints[0].max_amount
+  max_quote_order_size?: number  // quote.endpoints[0].max_amount
 }
 
-interface GetPairsResponse {
-  pairs: TradingPair[]
+// Helper functions to get asset IDs from TradableAsset
+export const getAssetId = (asset: TradableAsset, protocol = 'RGB'): string => {
+  if (!asset.protocol_ids) {
+    return asset.ticker
+  }
+  return asset.protocol_ids[protocol] || asset.protocol_ids['BTC'] || asset.ticker
 }
 
-interface StatusRequest {
-  payment_hash: string
+export const getRgbAssetId = (asset: TradableAsset): string | undefined => {
+  return asset.protocol_ids?.['RGB']
 }
 
-type SwapStatus = 'Waiting' | 'Pending' | 'Succeeded' | 'Expired' | 'Failed'
+// Convenience accessors for TradingPair
+export const getBaseAssetId = (pair: TradingPair): string => getAssetId(pair.base)
+export const getQuoteAssetId = (pair: TradingPair): string => getAssetId(pair.quote)
+export const getBaseAsset = (pair: TradingPair): string => pair.base.ticker
+export const getQuoteAsset = (pair: TradingPair): string => pair.quote.ticker
 
-interface Swap {
-  qty_from: number
-  qty_to: number
-  from_asset: number
-  to_asset: number
-  payment_hash: number
-  status: SwapStatus
-  requested_at: number
-  initiated_at: number | undefined
-  expires_at: number | undefined
-  completed_at: number | undefined
+// Backward-compatible access functions (for use in code that used old field names)
+export const pairBaseAsset = (pair: TradingPair): string => pair.base.ticker
+export const pairQuoteAsset = (pair: TradingPair): string => pair.quote.ticker
+export const pairBaseAssetId = (pair: TradingPair): string => getAssetId(pair.base)
+export const pairQuoteAssetId = (pair: TradingPair): string => getAssetId(pair.quote)
+
+// Get min order size from endpoints
+export const getMinBaseOrderSize = (pair: TradingPair): number => {
+  const endpoint = pair.base.endpoints?.[0]
+  return endpoint?.min_amount || 0
 }
 
-interface StatusResponse {
-  swap: Swap
+export const getMinQuoteOrderSize = (pair: TradingPair): number => {
+  const endpoint = pair.quote.endpoints?.[0]
+  return endpoint?.min_amount || 0
 }
 
-export interface ChannelFees {
-  setup_fee: number
-  capacity_fee: number
-  duration_fee: number
-  total_fee: number
-  applied_discount?: number
-  discount_code?: string
+export const getMaxBaseOrderSize = (pair: TradingPair): number => {
+  const endpoint = pair.base.endpoints?.[0]
+  return endpoint?.max_amount || Number.MAX_SAFE_INTEGER
 }
 
-const dynamicBaseQuery = async (args: any, api: any, extraOptions: any) => {
-  const state = api.getState()
-  const baseUrl =
-    state.nodeSettings.data.default_maker_url || 'http://localhost:8000'
-  const rawBaseQuery = fetchBaseQuery({
-    baseUrl,
-    timeout: 15000,
-  })
-  return rawBaseQuery(args, api, extraOptions)
+export const getMaxQuoteOrderSize = (pair: TradingPair): number => {
+  const endpoint = pair.quote.endpoints?.[0]
+  return endpoint?.max_amount || Number.MAX_SAFE_INTEGER
 }
+
+/**
+ * Normalize pair data from API by populating backward-compatible fields.
+ * Call this on pairs returned from the API to ensure old field names work.
+ */
+export const normalizePair = (pair: TradingPair): TradingPair => {
+  return {
+    ...pair,
+    base_asset: pair.base?.ticker,
+    quote_asset: pair.quote?.ticker,
+    base_asset_id: pair.base ? getAssetId(pair.base) : undefined,
+    quote_asset_id: pair.quote ? getAssetId(pair.quote) : undefined,
+    min_base_order_size: pair.base?.endpoints?.[0]?.min_amount || 0,
+    min_quote_order_size: pair.quote?.endpoints?.[0]?.min_amount || 0,
+    max_base_order_size: pair.base?.endpoints?.[0]?.max_amount || Number.MAX_SAFE_INTEGER,
+    max_quote_order_size: pair.quote?.endpoints?.[0]?.max_amount || Number.MAX_SAFE_INTEGER,
+  }
+}
+
+/**
+ * Normalize an array of pairs from API response.
+ */
+export const normalizePairs = (pairs: TradingPair[]): TradingPair[] => {
+  return pairs.map(normalizePair)
+}
+export type Lsps1CreateOrderRequest = CreateOrderRequest;
+export type Lsps1CreateOrderResponse = OrderResponse;
+export type QuoteRequest = GetQuoteRequest;
+export type QuoteResponse = GetQuoteResponse;
+export type Lsps1GetInfoResponse = GetInfoResponseModel;
+export type Lsps1GetOrderResponse = OrderResponse;
+export type Lsps1GetOrderRequest = GetOrderRequest;
+export type InitSwapResponse = InitiateSwapResponse;
+export type InitSwapRequest = InitiateSwapRequest;
+export type ExecSwapRequest = ConfirmSwapRequest;
+export type StatusResponse = SwapStatusResponse;
+export type StatusRequest = SwapStatusRequest;
+export type GetPairsResponse = PairResponse;
+export type { ChannelFees };
 
 export const makerApi = createApi({
-  baseQuery: dynamicBaseQuery,
+  reducerPath: 'makerApi',
+  baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
-    create_order: builder.query<
-      Lsps1CreateOrderResponse,
-      Lsps1CreateOrderRequest
-    >({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/lsps1/create_order',
-      }),
+    create_order: builder.query<Lsps1CreateOrderResponse, Lsps1CreateOrderRequest>({
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.createLspOrder(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     estimate_fees: builder.query<ChannelFees, Lsps1CreateOrderRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/lsps1/estimate_fees',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.estimateLspFees(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     execSwap: builder.query<void, ExecSwapRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        timeout: 180000,
-        url: '/api/v1/swaps/execute',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          await client.maker.executeSwap(args);
+          return { data: undefined };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
-
     getPairs: builder.query<GetPairsResponse, void>({
-      query: () => '/api/v1/market/pairs',
+      queryFn: async (_args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.listPairs();
+          return { data: res as any };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     getQuote: builder.query<QuoteResponse, QuoteRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/market/quote',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.getQuote(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     get_info: builder.query<Lsps1GetInfoResponse, void>({
-      query: () => '/api/v1/lsps1/get_info',
+      queryFn: async (_args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.getLspInfo();
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     get_order: builder.query<Lsps1GetOrderResponse, Lsps1GetOrderRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/lsps1/get_order',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.getLspOrder(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     initSwap: builder.query<InitSwapResponse, InitSwapRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/swaps/init',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          console.log('initSwap', args);
+          const res = await client.maker.initSwap(args);
+          console.log('initSwap res', res);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     retry_delivery: builder.query<RetryDeliveryResponse, RetryDeliveryRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/lsps1/retry_delivery',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.retryAssetDelivery(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
     status: builder.query<StatusResponse, StatusRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/api/v1/swaps/status',
-      }),
+      queryFn: async (args, api) => {
+        try {
+          const client = await getKaleidoClient(api.getState() as RootState);
+          const res = await client.maker.getAtomicSwapStatus(args);
+          return { data: res };
+        } catch (e) { return { error: { status: 500, data: { error: String(e) } } }; }
+      },
     }),
   }),
-  reducerPath: 'makerApi',
-})
+});

@@ -46,7 +46,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
 
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
-  const [executeTaker] = nodeApi.endpoints.taker.useLazyQuery()
+  const [executeTaker] = nodeApi.useTakerMutation()
   const { data: nodeInfoData } = nodeApi.endpoints.nodeInfo.useQuery()
 
   // Manual decode function for swap strings
@@ -200,7 +200,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
   // Get asset ticker for display
   const getAssetTicker = (assetId: string) => {
     if (assetId === 'BTC') return bitcoinUnit === 'SAT' ? 'SAT' : 'BTC'
-    const asset = assetsData?.nia.find((a) => a.asset_id === assetId)
+    const asset = assetsData?.nia?.find((a) => a.asset_id === assetId)
     return asset ? asset.ticker || asset.name : assetId
   }
 
@@ -366,8 +366,8 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
 
             {assetBalances[swapDetails.from_asset] &&
               assetBalances[swapDetails.from_asset].offChain /
-                Math.pow(10, propsGetAssetPrecision(swapDetails.from_asset)) <
-                swapDetails.qty_from && (
+              Math.pow(10, propsGetAssetPrecision(swapDetails.from_asset)) <
+              swapDetails.qty_from && (
                 <div className="mt-4 p-3 bg-red-900/30 rounded-lg border border-red-700/50">
                   <div className="flex items-center gap-2 text-xs text-red-400">
                     <Info className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -438,7 +438,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                       <button
                         className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 transition-colors"
                         onClick={() => {
-                          navigator.clipboard.writeText(nodeInfoData.pubkey)
+                          navigator.clipboard.writeText(nodeInfoData.pubkey ?? '')
                           toast.success(t('trade.taker.pubkeyCopied'))
                         }}
                         title="Copy to clipboard"

@@ -20,8 +20,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
 
   const assetInfo = hasAsset
     ? assets.data?.nia.find(
-        (asset: NiaAsset) => asset.asset_id === decodedInvoice.asset_id
-      )
+      (asset: NiaAsset) => asset.asset_id === decodedInvoice.asset_id
+    )
     : null
   const ticker =
     assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
@@ -29,24 +29,24 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
   const formattedAssetAmount =
     hasAsset && decodedInvoice.asset_amount
       ? formatAssetAmountWithPrecision(
-          decodedInvoice.asset_amount,
-          ticker,
-          bitcoinUnit,
-          assets.data?.nia
-        )
+        decodedInvoice.asset_amount,
+        ticker,
+        bitcoinUnit,
+        assets.data?.nia
+      )
       : null
 
   const formattedAssetBalance =
     hasAsset && assetInfo
       ? formatAssetAmountWithPrecision(
-          assetInfo.balance.offchain_outbound || 0,
-          ticker,
-          bitcoinUnit,
-          assets.data?.nia
-        )
+        assetInfo.balance.offchain_outbound || 0,
+        ticker,
+        bitcoinUnit,
+        assets.data?.nia
+      )
       : '0'
 
-  const invoiceAmountSats = decodedInvoice.amt_msat / 1000
+  const invoiceAmountSats = (decodedInvoice.amt_msat ?? 0) / 1000
   const maxCapacitySats = maxLightningCapacity / 1000
 
   const capacityPercentage =
@@ -66,12 +66,12 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
     return 'bg-green-500'
   }
 
-  const isCapacityExceeded = decodedInvoice.amt_msat > maxLightningCapacity
+  const isCapacityExceeded = (decodedInvoice.amt_msat ?? 0) > maxLightningCapacity
 
   const isAssetBalanceExceeded =
     hasAsset && assetInfo
       ? decodedInvoice.asset_amount! >
-        (assetInfo.balance.offchain_outbound || 0)
+      (assetInfo.balance.offchain_outbound || 0)
       : false
 
   return (
@@ -151,8 +151,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
           <span className="text-white truncate max-w-[250px]">
             {decodedInvoice.payment_hash
               ? t('withdrawModal.details.lightning.descriptionPayment', {
-                  hash: decodedInvoice.payment_hash.substring(0, 6),
-                })
+                hash: decodedInvoice.payment_hash.substring(0, 6),
+              })
               : t('withdrawModal.details.lightning.descriptionFallback')}
           </span>
         </div>
@@ -173,8 +173,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
             {t('withdrawModal.details.lightning.payeeLabel')}
           </span>
           <span className="text-white font-mono text-[10px] truncate max-w-[250px]">
-            {decodedInvoice.payee_pubkey.slice(0, 10)}...
-            {decodedInvoice.payee_pubkey.slice(-6)}
+            {(decodedInvoice.payee_pubkey ?? '').slice(0, 10)}...
+            {(decodedInvoice.payee_pubkey ?? '').slice(-6)}
           </span>
         </div>
 

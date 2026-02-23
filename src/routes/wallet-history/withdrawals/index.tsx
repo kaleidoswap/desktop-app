@@ -78,7 +78,7 @@ export const Component: React.FC = () => {
     isLoading: transactionsLoading,
     isError: transactionsError,
     refetch: refetchTransactions,
-  } = nodeApi.endpoints.listTransactions.useQuery({ skip_sync: false })
+  } = nodeApi.endpoints.listTransactions.useQuery()
   const {
     data: paymentsData,
     isLoading: paymentsLoading,
@@ -99,17 +99,17 @@ export const Component: React.FC = () => {
   const uniqueAssets = useMemo(() => {
     const assets = new Set<string>(['BTC'])
 
-    // Add assets from off-chain withdrawals
-    paymentsData?.payments
-      .filter((payment) => !payment.inbound)
-      .forEach((payment) => {
-        if (payment.asset_id) {
-          const ticker = listAssetsData?.nia.find(
-            (a) => a.asset_id === payment.asset_id
-          )?.ticker
-          if (ticker) assets.add(ticker)
-        }
-      })
+      // Add assets from off-chain withdrawals
+      ; (paymentsData?.payments || [])
+        .filter((payment) => !payment.inbound)
+        .forEach((payment) => {
+          if (payment.asset_id) {
+            const ticker = (listAssetsData?.nia || []).find(
+              (a) => a.asset_id === payment.asset_id
+            )?.ticker
+            if (ticker) assets.add(ticker)
+          }
+        })
 
     return Array.from(assets).sort()
   }, [paymentsData, listAssetsData])
@@ -140,34 +140,34 @@ export const Component: React.FC = () => {
     )
   }
 
-  const onChainWithdrawals =
-    transactionsData?.transactions
+  const onChainWithdrawals: Withdrawal[] =
+    (transactionsData?.transactions || [])
       .filter(
         (tx) =>
           tx.transaction_type === 'User' &&
-          new Decimal(tx.sent).minus(tx.received).gt(0)
+          new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).gt(0)
       )
       .map((tx) => ({
-        amount: new Decimal(tx.sent).minus(tx.received).toString(),
+        amount: new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).toString(),
         asset: 'BTC',
         timestamp: tx.confirmation_time?.timestamp,
-        txId: tx.txid,
+        txId: tx.txid ?? '',
         type: 'on-chain' as const,
       })) || []
 
-  const offChainWithdrawals =
-    paymentsData?.payments
+  const offChainWithdrawals: Withdrawal[] =
+    (paymentsData?.payments || [])
       .filter((payment) => !payment.inbound)
       .map((payment) => ({
         amount: payment.asset_id
-          ? payment.asset_amount.toString()
-          : (payment.amt_msat / 1000).toString(),
+          ? (payment.asset_amount ?? 0).toString()
+          : ((payment.amt_msat ?? 0) / 1000).toString(),
         asset:
-          listAssetsData?.nia.find((a) => a.asset_id === payment.asset_id)
+          (listAssetsData?.nia || []).find((a) => a.asset_id === payment.asset_id)
             ?.ticker || 'BTC',
-        txId: payment.payment_hash,
+        txId: payment.payment_hash ?? '',
         type: 'off-chain' as const,
-        // Payments don't have timestamps in the API response, so we'll leave it undefined
+        timestamp: undefined, // Explicitly undefined to match Withdrawal type
       })) || []
 
   // Define a type that includes the optional timestamp property
@@ -179,8 +179,8 @@ export const Component: React.FC = () => {
     timestamp?: number
   }
 
-  const allWithdrawals = [...onChainWithdrawals, ...offChainWithdrawals].sort(
-    (a: Withdrawal, b: Withdrawal) => {
+  const allWithdrawals: Withdrawal[] = [...onChainWithdrawals, ...offChainWithdrawals].sort(
+    (a, b) => {
       // Sort by timestamp if available, otherwise by amount
       if (a.timestamp && b.timestamp) {
         return b.timestamp - a.timestamp

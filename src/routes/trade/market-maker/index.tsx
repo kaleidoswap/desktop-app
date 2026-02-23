@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
+import { getKaleidoClient } from '../../../api/client'
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
@@ -41,10 +42,13 @@ import {
 } from '../../../slices/makerApi/pairs.slice'
 import {
   nodeApi,
-  Channel,
-  NiaAsset,
-  SwapStatus,
 } from '../../../slices/nodeApi/nodeApi.slice'
+import { Asset, NodeComponents } from 'kaleidoswap-sdk'
+
+// Define types from SDK components
+type Channel = NodeComponents['schemas']['Channel']
+// type SwapStatus = NodeComponents['schemas']['SwapStatus']
+type NiaAsset = Asset // Alias for backward compatibility if needed, or replace usages
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { logger } from '../../../utils/logger'
 
@@ -239,6 +243,7 @@ export const Component = () => {
   const setupRunningRef = useRef(false)
 
   // Fetch list of swaps and poll for updates
+  // Fetch list of swaps and poll for updates
   const { data: swapsData } = nodeApi.useListSwapsQuery(undefined, {
     pollingInterval: 5000, // Poll every 5 seconds
     refetchOnMountOrArgChange: true,
@@ -248,13 +253,11 @@ export const Component = () => {
   const isSwapInProgress = useMemo(() => {
     if (!swapsData) return false
     const { maker, taker } = swapsData
-    const pendingOrWaitingMaker = maker.some(
-      (swap) =>
-        swap.status === SwapStatus.Pending || swap.status === SwapStatus.Waiting
+    const pendingOrWaitingMaker = (maker || []).some(
+      (swap: any) => swap.status === 'Pending' || swap.status === 'Waiting'
     )
-    const pendingOrWaitingTaker = taker.some(
-      (swap) =>
-        swap.status === SwapStatus.Pending || swap.status === SwapStatus.Waiting
+    const pendingOrWaitingTaker = (taker || []).some(
+      (swap: any) => swap.status === 'Pending' || swap.status === 'Waiting'
     )
     return pendingOrWaitingMaker || pendingOrWaitingTaker
   }, [swapsData])
@@ -304,13 +307,17 @@ export const Component = () => {
         // Check if swap status changed to succeeded
         if (
           prevSwap &&
-          prevSwap.status !== SwapStatus.Succeeded &&
-          currentSwap.status === SwapStatus.Succeeded
+          prevSwap.status !== 'Succeeded' &&
+          currentSwap.status === 'Succeeded'
         ) {
           // Create a more detailed success message
           const getAssetTicker = (assetId: string | null) => {
             if (!assetId || assetId === 'BTC') return 'BTC'
-            const asset = assets.find((a) => a.asset_id === assetId)
+            const asset = assets.find(
+              (a) =>
+                a.protocol_ids?.['RGB'] === assetId ||
+                a.protocol_ids?.['BTC'] === assetId
+            )
             return asset?.ticker || assetId.slice(0, 8) + '...'
           }
 
@@ -372,8 +379,16 @@ export const Component = () => {
     }
 
     // Check both maker and taker swaps
-    checkForSuccessfulSwaps(prevSwaps.maker, currentSwaps.maker, 'maker')
-    checkForSuccessfulSwaps(prevSwaps.taker, currentSwaps.taker, 'taker')
+    checkForSuccessfulSwaps(
+      prevSwaps.maker || [],
+      currentSwaps.maker || [],
+      'maker'
+    )
+    checkForSuccessfulSwaps(
+      prevSwaps.taker || [],
+      currentSwaps.taker || [],
+      'taker'
+    )
 
     // Update the ref with current data
     previousSwapsRef.current = swapsData
@@ -443,13 +458,9 @@ export const Component = () => {
       return null
     }
 
-    // Map the from/toAsset to asset IDs for lookup
-    // Pass tradablePairs to support assets the user doesn't own yet
-    const fromAssetId = mapTickerToAssetId(fromAsset, tradablePairs)
-    const toAssetId = mapTickerToAssetId(toAsset, tradablePairs)
-
-    // Only look for exact match - no fallback to other quotes
-    const key = `${fromAssetId}/${toAssetId}/${fromAmount}`
+    // Use tickers for lookup to match how quotes are stored in pairs.slice.ts
+    // The updateQuote action uses: `${quote.from_asset.ticker}/${quote.to_asset.ticker}/${quote.from_asset.amount}`
+    const key = `${fromAsset}/${toAsset}/${fromAmount}`
     return state.pairs.quotes[key] || null
   })
 
@@ -518,7 +529,7 @@ export const Component = () => {
     // Check if this is a new quote that's different from the last one
     const isNewQuote =
       !lastQuoteResponseRef.current ||
-      quoteResponse.to_amount !== lastQuoteResponseRef.current.to_amount ||
+      quoteResponse.to_asset.amount !== lastQuoteResponseRef.current.to_asset.amount ||
       quoteResponse.timestamp !== lastQuoteResponseRef.current.timestamp
 
     if (isNewQuote) {
@@ -573,12 +584,13 @@ export const Component = () => {
             quoteResponse.fee.fee_asset_precision !== undefined &&
             quoteResponse.to_asset
           ) {
+            // Store precision by ticker for display
             setQuoteAssetPrecision((prev) => ({
               ...prev,
-              [quoteResponse.to_asset]: quoteResponse.fee.fee_asset_precision,
+              [quoteResponse.to_asset.ticker]: quoteResponse.fee.fee_asset_precision,
             }))
             logger.debug(
-              `Stored precision ${quoteResponse.fee.fee_asset_precision} for asset ${quoteResponse.to_asset}`
+              `Stored precision ${quoteResponse.fee.fee_asset_precision} for asset ${quoteResponse.to_asset.ticker}`
             )
           }
         }
@@ -588,15 +600,11 @@ export const Component = () => {
         setQuoteExpiresAt(quoteResponse.expires_at || null)
 
         // Format and update the 'to' field with the received amount
-        const toTickerForUI = mapAssetIdToTicker(
-          quoteResponse.to_asset,
-          assets,
-          tradablePairs
-        )
+        const toTickerForUI = quoteResponse.to_asset.ticker
 
         // If to_asset is BTC, convert from millisats to sats
-        let displayToAmount = quoteResponse.to_amount
-        if (quoteResponse.to_asset === 'BTC' || toTickerForUI === 'BTC') {
+        let displayToAmount = quoteResponse.to_asset.amount
+        if (quoteResponse.to_asset.ticker === 'BTC' || toTickerForUI === 'BTC') {
           displayToAmount = Math.round(displayToAmount / MSATS_PER_SAT)
         }
 
@@ -605,7 +613,7 @@ export const Component = () => {
         let formattedToAmount: string
         if (
           quoteResponse.fee?.fee_asset_precision !== undefined &&
-          quoteResponse.to_asset !== 'BTC' &&
+          quoteResponse.to_asset.ticker !== 'BTC' &&
           toTickerForUI !== 'BTC'
         ) {
           // Use precision directly from quote for non-BTC assets
@@ -627,9 +635,17 @@ export const Component = () => {
 
         form.setValue('to', formattedToAmount)
 
-        // Important: Save the RFQ ID from the quote to use when executing the swap
+        // Important: Save the RFQ ID and asset IDs from the quote to use when executing the swap
         if (quoteResponse.rfq_id) {
           form.setValue('rfq_id', quoteResponse.rfq_id)
+        }
+        
+        // Store the asset_id (protocol IDs) for validation
+        if (quoteResponse.from_asset?.asset_id) {
+          form.setValue('fromAssetId', quoteResponse.from_asset.asset_id)
+        }
+        if (quoteResponse.to_asset?.asset_id) {
+          form.setValue('toAssetId', quoteResponse.to_asset.asset_id)
         }
 
         // Clear any validation errors if we got a valid quote, but not unconfirmed channel errors
@@ -667,12 +683,18 @@ export const Component = () => {
 
   const [listChannels] = nodeApi.endpoints.listChannels.useLazyQuery()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
-  const [taker] = nodeApi.endpoints.taker.useLazyQuery()
+  const [whitelistTrade] = nodeApi.useWhitelistTradeMutation()
+  // const [getPairs] = makerApi.useLazyGetPairsQuery()
   const [initSwap] = makerApi.endpoints.initSwap.useLazyQuery()
   const [execSwap] = makerApi.endpoints.execSwap.useLazyQuery()
-  const [getPairs] = makerApi.endpoints.getPairs.useLazyQuery()
   const [btcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
   const [getInfo] = makerApi.endpoints.get_info.useLazyQuery()
+
+  // Function to get SDK client for maker API calls
+  const state = useAppSelector((state) => state)
+  const getClient = useCallback(async () => {
+    return await getKaleidoClient(state)
+  }, [state])
 
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
@@ -687,7 +709,7 @@ export const Component = () => {
   useEffect(() => {
     if (assetsData && assetsData.nia) {
       // Set assets immediately and mark as loaded
-      setAssets(assetsData.nia)
+      setAssets(assetsData.nia.map(a => ({ ...a, is_active: true, ticker: a.ticker ?? '', name: a.name ?? '', precision: a.precision ?? 8, media: a.media ? { file_path: a.media.file_path ?? '', digest: '', mime: a.media.mime ?? '' } as any : undefined })))
       setIsAssetsLoaded(true)
     } else if (assetsData === undefined) {
       // Reset loading state if assets data becomes unavailable
@@ -804,7 +826,7 @@ export const Component = () => {
       })
 
       // Clear the error from the store after handling it
-      dispatch(clearQuoteError())
+      dispatch(clearQuoteError(undefined))
     }
   }, [quoteError, form, dispatch, formatAmount, displayAsset])
 
@@ -842,11 +864,11 @@ export const Component = () => {
         logger.error('Assets data not available')
         return 0
       }
-      const assetsList = assetsData.nia
+      const assetsList = assetsData.nia ?? []
 
       if (asset === 'BTC') {
         const tradableChannels = channels.filter(
-          (c) => c.ready && c.next_outbound_htlc_minimum_msat > 0
+          (c) => c.ready && (c.next_outbound_htlc_minimum_msat ?? 0) > 0
         )
 
         if (tradableChannels.length === 0) {
@@ -876,9 +898,9 @@ export const Component = () => {
 
               let maxOrderSize: number
               if (!isPairInverted(fromAsset, toAsset)) {
-                maxOrderSize = selectedPair.max_base_order_size
+                maxOrderSize = selectedPair.max_base_order_size ?? 0
               } else {
-                maxOrderSize = selectedPair.max_quote_order_size
+                maxOrderSize = selectedPair.max_quote_order_size ?? 0
               }
 
               // Convert from millisats to sats for BTC
@@ -936,9 +958,9 @@ export const Component = () => {
               // Respect max order size from trading pair
               let maxOrderSize: number
               if (!isPairInverted(fromAsset, toAsset)) {
-                maxOrderSize = selectedPair.max_base_order_size
+                maxOrderSize = selectedPair.max_base_order_size ?? 0
               } else {
-                maxOrderSize = selectedPair.max_quote_order_size
+                maxOrderSize = selectedPair.max_quote_order_size ?? 0
               }
 
               // Convert from millisats to sats for BTC
@@ -960,7 +982,7 @@ export const Component = () => {
         // Use normal lightning flow
         setIsUsingOnchainBalance(false)
         const channelHtlcLimits = tradableChannels.map(
-          (c) => c.next_outbound_htlc_limit_msat / MSATS_PER_SAT
+          (c) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
         )
 
         // If no channels have limits, return 0
@@ -999,9 +1021,9 @@ export const Component = () => {
 
             let maxOrderSize: number
             if (!isPairInverted(fromAsset, toAsset)) {
-              maxOrderSize = selectedPair.max_quote_order_size
+              maxOrderSize = selectedPair.max_quote_order_size ?? 0
             } else {
-              maxOrderSize = selectedPair.max_base_order_size
+              maxOrderSize = selectedPair.max_base_order_size ?? 0
             }
 
             // For receiving assets, return the max order size from the pair
@@ -1018,13 +1040,13 @@ export const Component = () => {
         let maxAssetAmount = 0
         if (isFrom) {
           const localAmounts = assetChannels.map(
-            (c: Channel) => c.asset_local_amount
+            (c: Channel) => c.asset_local_amount ?? 0
           )
           maxAssetAmount =
             localAmounts.length > 0 ? Math.max(...localAmounts) : 0
         } else {
           const remoteAmounts = assetChannels.map(
-            (c: Channel) => c.asset_remote_amount
+            (c: Channel) => c.asset_remote_amount ?? 0
           )
           maxAssetAmount =
             remoteAmounts.length > 0 ? Math.max(...remoteAmounts) : 0
@@ -1051,13 +1073,13 @@ export const Component = () => {
 
       let minOrderSize: number
       if (!isPairInverted(fromAsset, toAsset)) {
-        minOrderSize = selectedPair.min_base_order_size
+        minOrderSize = selectedPair.min_base_order_size ?? 0
         if (fromAsset === 'BTC') {
           // For BTC, convert from millisats to sats
           minOrderSize = minOrderSize / MSATS_PER_SAT
         }
       } else {
-        minOrderSize = selectedPair.min_quote_order_size
+        minOrderSize = selectedPair.min_quote_order_size ?? 0
         if (fromAsset === 'BTC') {
           // For BTC, convert from millisats to sats
           minOrderSize = minOrderSize / MSATS_PER_SAT
@@ -1365,7 +1387,7 @@ export const Component = () => {
     // Return enhanced handler that also saves preferences
     return (field: 'fromAsset' | 'toAsset', value: string) => {
       // Clear any existing quote error when user changes assets
-      dispatch(clearQuoteError())
+      dispatch(clearQuoteError(undefined))
 
       // Call the original handler
       originalHandler(field, value)
@@ -1424,7 +1446,7 @@ export const Component = () => {
       // First refresh channel data to get updated balances
       const channelsResponse = await listChannels()
       if ('data' in channelsResponse && channelsResponse.data) {
-        setChannels(channelsResponse.data.channels)
+        setChannels(channelsResponse.data.channels ?? [])
       }
       // Then call the existing refreshAmounts
       await refreshAmounts()
@@ -1494,11 +1516,11 @@ export const Component = () => {
   const fetchAndSetPairs = useMemo(
     () =>
       createFetchAndSetPairsHandler(
-        getPairs,
+        getClient,
         dispatch,
         channels,
         // Use RTK Query data directly to ensure we have the latest assets
-        assetsData?.nia || [],
+        (assetsData?.nia || []).map(a => ({ ...a, is_active: true, ticker: a.ticker ?? '', name: a.name ?? '', precision: a.precision ?? 8, media: a.media ? { file_path: a.media.file_path ?? '', digest: '', mime: a.media.mime ?? '' } as any : undefined })),
         form,
         formatAmount,
         setTradingPairs,
@@ -1508,7 +1530,7 @@ export const Component = () => {
         t
       ),
     [
-      getPairs,
+      getClient,
       dispatch,
       channels,
       assetsData?.nia,
@@ -1525,20 +1547,20 @@ export const Component = () => {
   const fetchAndSetPairsWithData = useCallback(
     (freshChannels: Channel[], freshAssets: NiaAsset[]) =>
       createFetchAndSetPairsHandler(
-        getPairs,
+        getClient,
         dispatch,
         freshChannels,
         freshAssets,
         form,
         formatAmount,
-        setTradingPairs,
-        setTradablePairs,
-        setSelectedPair,
+        (p: TradingPair[]) => dispatch(setTradingPairs(p) as any),
+        (p: TradingPair[]) => setTradablePairs(p),
+        (p: TradingPair | null) => setSelectedPair(p),
         setIsPairsLoading,
         t
       )(),
     [
-      getPairs,
+
       dispatch,
       form,
       formatAmount,
@@ -1844,7 +1866,7 @@ export const Component = () => {
         logger.info('💰 Fetching BTC balance and LSP info...')
         setLoadingPhase('validating-balance')
 
-        const balanceResponse = await btcBalance({ skip_sync: false })
+        const balanceResponse = await btcBalance()
 
         if (!('data' in balanceResponse) || !balanceResponse.data) {
           logger.error('❌ Failed to get balance data')
@@ -1886,7 +1908,7 @@ export const Component = () => {
           logger.error('❌ Failed to get node info')
           throw new Error('Failed to get node information')
         }
-        setPubKey(nodeInfoResponse.data.pubkey)
+        setPubKey(nodeInfoResponse.data.pubkey ?? '')
         logger.debug('✅ Node info retrieved, pubkey set')
 
         // Validate channels response
@@ -1898,7 +1920,7 @@ export const Component = () => {
         const channelsList = channelsResponse.data.channels
 
         const { vanilla, colored } = balanceResponse.data
-        const totalOnchainBalance = vanilla.spendable + colored.spendable
+        const totalOnchainBalance = (vanilla?.spendable ?? 0) + (colored?.spendable ?? 0)
         setOnchainBtcBalance(totalOnchainBalance)
         logger.info(`💰 Onchain BTC balance: ${totalOnchainBalance} sats`)
 
@@ -1923,7 +1945,7 @@ export const Component = () => {
           logger.info('ℹ️ No LSP channel limits available - will use defaults')
         }
 
-        if (channelsList.length === 0) {
+        if ((channelsList ?? []).length === 0) {
           logger.warn(
             '⚠️ No channels found - checking if we can trade with onchain balance'
           )
@@ -1963,13 +1985,13 @@ export const Component = () => {
         logger.info('🔄 Updating channels and assets state...')
 
         // Update state with fresh data
-        setChannels(channelsList)
+        setChannels(channelsList ?? [])
         setIsChannelsLoaded(true)
-        setAssets(assetsData.nia)
+        setAssets(assetsData.nia.map(a => ({ ...a, is_active: true, ticker: a.ticker ?? '', name: a.name ?? '', precision: a.precision ?? 8, media: a.media ? { file_path: a.media.file_path ?? '', digest: '', mime: a.media.mime ?? '' } as any : undefined })))
         setIsAssetsLoaded(true)
 
         // Check if we have channels but none are ready - if so, set ready phase to show channels not ready message
-        const readyChannels = channelsList.filter((c) => c.ready)
+        const readyChannels = (channelsList ?? []).filter((c) => c.ready)
         if (readyChannels.length === 0) {
           logger.warn(
             '❌ Channels exist but none are ready - setting ready phase to show channels not ready message'
@@ -1989,16 +2011,16 @@ export const Component = () => {
 
         // Fetch pairs using fresh data instead of waiting for state to update
         const pairsFound = await fetchAndSetPairsWithData(
-          channelsList,
-          assetsData.nia
+          channelsList ?? [],
+          assetsData.nia.map(a => ({ ...a, is_active: true, ticker: a.ticker ?? '', name: a.name ?? '', precision: a.precision ?? 8, media: a.media ? { file_path: a.media.file_path ?? '', digest: '', mime: a.media.mime ?? '' } as any : undefined }))
         )
 
         logger.info(
           `📈 Trading pairs result: found=${pairsFound}, count=${tradablePairs.length}`,
           {
             assetsAvailable: assetsData.nia.length,
-            channelsAvailable: channelsList.length,
-            channelsReady: channelsList.filter((c) => c.ready).length,
+            channelsAvailable: (channelsList ?? []).length,
+            channelsReady: (channelsList ?? []).filter((c) => c.ready).length,
           }
         )
 
@@ -2079,6 +2101,7 @@ export const Component = () => {
         if (!currentToAsset || currentToAsset === 'BTC') {
           const availableAssets = tradablePairs
             .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+            .filter((asset): asset is string => !!asset)
             .filter(
               (asset, index, self) =>
                 asset !== 'BTC' && self.indexOf(asset) === index
@@ -2097,6 +2120,7 @@ export const Component = () => {
       if (currentToAsset === 'BTC') {
         const availableAssets = tradablePairs
           .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+          .filter((asset): asset is string => !!asset)
           .filter(
             (asset, index, self) =>
               asset !== 'BTC' && self.indexOf(asset) === index
@@ -2332,7 +2356,7 @@ export const Component = () => {
         formatAmount,
         tradablePairs,
         initSwap,
-        taker,
+        whitelistTrade,
         execSwap,
         setSwapRecapDetails,
         setShowRecap,
@@ -2348,7 +2372,7 @@ export const Component = () => {
       formatAmount,
       tradablePairs,
       initSwap,
-      taker,
+      whitelistTrade,
       execSwap,
       setSwapRecapDetails,
       setShowRecap,
@@ -2376,6 +2400,7 @@ export const Component = () => {
       // Get all unique assets from tradable pairs
       let allPairAssets = tradablePairs
         .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+        .filter((asset): asset is string => !!asset)
         .filter((asset, index, self) => self.indexOf(asset) === index)
 
       // When using onchain balance (no channels), restrict asset selection
@@ -2836,9 +2861,9 @@ export const Component = () => {
 
   // Render the swap form UI with enhanced modern design
   const renderSwapForm = () => (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-6xl mx-auto">
       {/* Premium Trading Interface - Optimized for space */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-[450px]">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2 min-h-[400px]">
         {/* Main Trading Panel - Compact Ultra Modern */}
         <div className="xl:col-span-8 order-1">
           <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-700/50 shadow-2xl h-full flex flex-col">
@@ -2847,7 +2872,7 @@ export const Component = () => {
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent pointer-events-none"></div>
 
             {/* Ultra Compact Modern Header Design */}
-            <div className="relative border-b border-slate-700/40 px-4 py-2 flex-shrink-0 bg-gradient-to-r from-slate-800/70 via-slate-700/50 to-slate-800/70">
+            <div className="relative border-b border-slate-700/40 px-3 py-1.5 flex-shrink-0 bg-gradient-to-r from-slate-800/70 via-slate-700/50 to-slate-800/70">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -2862,22 +2887,20 @@ export const Component = () => {
                     <span className="text-slate-400">{t('tradeMarketMaker.header.via')}</span>
                     <div className="flex items-center space-x-1.5">
                       <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          wsConnected
-                            ? hasTradablePairs
-                              ? 'bg-emerald-400'
-                              : 'bg-amber-400'
-                            : 'bg-red-400 animate-pulse'
-                        }`}
+                        className={`w-1.5 h-1.5 rounded-full ${wsConnected
+                          ? hasTradablePairs
+                            ? 'bg-emerald-400'
+                            : 'bg-amber-400'
+                          : 'bg-red-400 animate-pulse'
+                          }`}
                       ></div>
                       <span
-                        className={`font-medium ${
-                          wsConnected
-                            ? hasTradablePairs
-                              ? 'text-emerald-300'
-                              : 'text-amber-300'
-                            : 'text-red-300'
-                        }`}
+                        className={`font-medium ${wsConnected
+                          ? hasTradablePairs
+                            ? 'text-emerald-300'
+                            : 'text-amber-300'
+                          : 'text-red-300'
+                          }`}
                       >
                         {makerConnectionUrl
                           ? new URL(makerConnectionUrl).hostname
@@ -2885,11 +2908,10 @@ export const Component = () => {
                       </span>
                       {wsConnected && (
                         <span
-                          className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                            hasTradablePairs
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-amber-500/20 text-amber-300'
-                          }`}
+                          className={`px-1.5 py-0.5 rounded text-xs font-medium ${hasTradablePairs
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-amber-500/20 text-amber-300'
+                            }`}
                         >
                           {hasTradablePairs ? t('tradeMarketMaker.header.ready') : t('tradeMarketMaker.header.noPairs')}
                         </span>
@@ -2916,14 +2938,14 @@ export const Component = () => {
             </div>
 
             {/* Trading Form - Compact Premium Layout */}
-            <div className="relative flex-1 p-4 flex flex-col">
+            <div className="relative flex-1 p-3 flex flex-col">
               <form
                 className="flex-1 flex flex-col justify-between"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
                 {/* Show info banner when using onchain balance */}
                 {isUsingOnchainBalance && !hasTradableChannels(channels) && (
-                  <div className="mb-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                  <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
                     <div className="flex items-start gap-2">
                       <div className="flex-shrink-0 mt-0.5">
                         <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -2966,7 +2988,7 @@ export const Component = () => {
                         : 'the channel is'
 
                     return (
-                      <div className="mb-3 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm">
+                      <div className="mb-2 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm">
                         <div className="flex items-start gap-2">
                           <div className="flex-shrink-0 mt-0.5">
                             <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center">
@@ -2977,22 +2999,22 @@ export const Component = () => {
                             <p className="text-yellow-300 text-sm font-medium">
                               {unconfirmedAssets.length > 1
                                 ? t('tradeMarketMaker.banners.channelsNotReady', {
-                                    assets: assetText,
-                                  })
+                                  assets: assetText,
+                                })
                                 : t('tradeMarketMaker.banners.channelNotReady', {
-                                    asset: assetText,
-                                  })}
+                                  asset: assetText,
+                                })}
                             </p>
                             <p className="text-yellow-200/80 text-xs mt-1">
                               {unconfirmedAssets.length > 1
                                 ? t('tradeMarketMaker.banners.channelsAwaiting', {
-                                    assets: assetText,
-                                    channelText,
-                                    confirmText,
-                                  })
+                                  assets: assetText,
+                                  channelText,
+                                  confirmText,
+                                })
                                 : t('tradeMarketMaker.banners.channelAwaiting', {
-                                    asset: assetText,
-                                  })}
+                                  asset: assetText,
+                                })}
                             </p>
                           </div>
                         </div>
@@ -3021,13 +3043,9 @@ export const Component = () => {
                       )
 
                     if (unconfirmedTickers.length > 0) {
-                      const assetText =
-                        unconfirmedTickers.length > 1
-                          ? `${unconfirmedTickers.length} channels (${unconfirmedTickers.slice(0, 3).join(', ')}${unconfirmedTickers.length > 3 ? ', ...' : ''})`
-                          : unconfirmedTickers[0]
 
                       return (
-                        <div className="mb-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                        <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
                           <div className="flex items-start gap-2">
                             <div className="flex-shrink-0 mt-0.5">
                               <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -3062,11 +3080,11 @@ export const Component = () => {
                 })()}
 
                 {/* Trading Inputs with Compact Premium Styling */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* From Asset Section - Compact Premium Card */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-purple-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-1 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-cyan-500/10">
+                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-0.5 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-cyan-500/10">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-2xl pointer-events-none"></div>
                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/1 to-transparent rounded-2xl pointer-events-none"></div>
                       <SwapInputField
@@ -3120,15 +3138,14 @@ export const Component = () => {
                   </div>
 
                   {/* Compact Ultra Modern Swap Direction Button */}
-                  <div className="flex justify-center py-1">
+                  <div className="flex justify-center py-0.5">
                     <div className="relative group">
                       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                       <button
-                        className={`relative p-3 rounded-2xl bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 backdrop-blur-xl border-2 transition-all transform hover:scale-110 hover:rotate-180 duration-800 shadow-xl ${
-                          hasChannels && hasTradablePairs && !isSwapInProgress
-                            ? 'border-cyan-500/60 hover:border-cyan-400/80 hover:shadow-cyan-500/40 cursor-pointer'
-                            : 'border-slate-600/50 opacity-50 cursor-not-allowed'
-                        }`}
+                        className={`relative p-3 rounded-2xl bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 backdrop-blur-xl border-2 transition-all transform hover:scale-110 hover:rotate-180 duration-800 shadow-xl ${hasChannels && hasTradablePairs && !isSwapInProgress
+                          ? 'border-cyan-500/60 hover:border-cyan-400/80 hover:shadow-cyan-500/40 cursor-pointer'
+                          : 'border-slate-600/50 opacity-50 cursor-not-allowed'
+                          }`}
                         onClick={() =>
                           hasChannels &&
                           hasTradablePairs &&
@@ -3147,7 +3164,7 @@ export const Component = () => {
                   {/* To Asset Section - Compact Premium Card */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-500/15 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-1 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-purple-500/10">
+                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-0.5 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-purple-500/10">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-purple-400/3 to-transparent rounded-2xl pointer-events-none"></div>
                       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/1 to-transparent rounded-2xl pointer-events-none"></div>
                       <SwapInputField
@@ -3212,12 +3229,12 @@ export const Component = () => {
                             <p className="text-blue-200/90 text-sm leading-relaxed">
                               {missingChannelAsset.isFromAsset
                                 ? t('tradeMarketMaker.channelWarning.sendMessage', {
-                                    asset: missingChannelAsset.asset,
-                                  })
+                                  asset: missingChannelAsset.asset,
+                                })
                                 : t(
-                                    'tradeMarketMaker.channelWarning.receiveMessage',
-                                    { asset: missingChannelAsset.asset }
-                                  )}
+                                  'tradeMarketMaker.channelWarning.receiveMessage',
+                                  { asset: missingChannelAsset.asset }
+                                )}
                             </p>
                           </div>
                         </div>
@@ -3261,7 +3278,7 @@ export const Component = () => {
                 </div>
 
                 {/* Compact Premium Submit Button */}
-                <div className="mt-4 flex-shrink-0">
+                <div className="mt-3 flex-shrink-0">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                     <SwapButton
@@ -3284,16 +3301,16 @@ export const Component = () => {
         </div>
 
         {/* Compact Ultra Modern Information Panels */}
-        <div className="xl:col-span-4 order-2 flex flex-col space-y-3">
+        <div className="xl:col-span-4 order-2 flex flex-col space-y-2">
           {/* Exchange Rate & Quote Status - Compact Premium Design */}
           {selectedPair && (
             <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-600/50 shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-blue-500/6 to-purple-600/8"></div>
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent"></div>
 
-              <div className="relative p-4">
+              <div className="relative p-3">
                 {/* Compact Ultra Modern Header */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-bold text-white flex items-center">
                     <div
                       className={`w-2 h-2 rounded-full mr-2 shadow-lg bg-gradient-to-r ${hasValidQuote ? 'from-emerald-400 to-green-500' : 'from-amber-400 to-orange-500'}`}
@@ -3310,7 +3327,7 @@ export const Component = () => {
                 </div>
 
                 {/* Compact Ultra Modern Content Area */}
-                <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-3 border border-slate-600/40 shadow-inner">
+                <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-2 border border-slate-600/40 shadow-inner">
                   <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-xl pointer-events-none"></div>
                   {/* Exchange Rate Display */}
                   <ExchangeRateSection
@@ -3334,8 +3351,8 @@ export const Component = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/8 via-pink-500/6 to-purple-600/8"></div>
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent"></div>
 
-            <div className="relative p-4">
-              <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-3 border border-slate-600/40 shadow-inner">
+            <div className="relative p-3">
+              <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-2 border border-slate-600/40 shadow-inner">
                 <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-xl pointer-events-none"></div>
                 <FeeSection
                   assets={assets}
@@ -3556,96 +3573,96 @@ export const Component = () => {
           </div>
         </div>
       ) : /* Handle no channels with action buttons */
-      shouldShowNoChannels ? (
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-            <div className="flex flex-col items-center space-y-6">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
-                <Link className="w-8 h-8 text-blue-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">
-                {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
-              </h2>
-              <p className="text-slate-400 text-center text-base max-w-md">
-                {t('tradeMarketMaker.noChannels.noChannelsMessage')}
-              </p>
+        shouldShowNoChannels ? (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+              <div className="flex flex-col items-center space-y-6">
+                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                  <Link className="w-8 h-8 text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
+                </h2>
+                <p className="text-slate-400 text-center text-base max-w-md">
+                  {t('tradeMarketMaker.noChannels.noChannelsMessage')}
+                </p>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl
+                <div className="flex gap-4 pt-4">
+                  <button
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl
                            font-medium transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                  onClick={handleCreateChannelAction}
-                >
-                  <Plus className="w-5 h-5" />
-                  {t('tradeMarketMaker.noChannels.createChannel')}
-                </button>
-                <button
-                  className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
+                    onClick={handleCreateChannelAction}
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t('tradeMarketMaker.noChannels.createChannel')}
+                  </button>
+                  <button
+                    className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
                            hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                  onClick={handleBuyChannelAction}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {t('tradeMarketMaker.noChannels.buyFromLSP')}
-                </button>
+                    onClick={handleBuyChannelAction}
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    {t('tradeMarketMaker.noChannels.buyFromLSP')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
-      shouldShowNoChannelsMessage ? (
-        <NoTradingChannelsMessage
-          {...createTradingChannelsMessageProps(
-            assets,
-            tradablePairs,
-            hasEnoughBalance,
-            navigate,
-            refreshAmounts
+        ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
+          shouldShowNoChannelsMessage ? (
+            <NoTradingChannelsMessage
+              {...createTradingChannelsMessageProps(
+                assets,
+                tradablePairs,
+                hasEnoughBalance,
+                navigate,
+                refreshAmounts
+              )}
+            />
+          ) : (
+            <div className="w-full min-h-full relative flex items-center justify-center">
+              <div className="w-full max-w-screen-xl mx-auto px-4 py-6">
+                {isStillLoading ? (
+                  <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
+                      <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
+                        <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
+                      </div>
+                    </div>
+                    <div className="text-center space-y-4 max-w-lg">
+                      <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
+                        {loadingPhase === 'connecting-maker'
+                          ? t('tradeMarketMaker.loading.connectingToMaker')
+                          : t('tradeMarketMaker.loading.initializingInterface')}
+                      </p>
+                      <p className="text-slate-300 text-base leading-relaxed">
+                        {getLoadingMessage()}
+                      </p>
+                      <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : shouldShowWSDisconnectedMessage ? (
+                  <div className="flex justify-center items-center min-h-[60vh]">
+                    <WebSocketDisconnectedMessage
+                      makerUrl={makerConnectionUrl}
+                      onMakerChange={refreshAmounts}
+                      onRetryConnection={handleReconnectToMaker}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex justify-center items-start min-h-[60vh]">
+                    {renderSwapForm()}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-        />
-      ) : (
-        <div className="w-full min-h-full relative flex items-center justify-center">
-          <div className="w-full max-w-screen-xl mx-auto px-4 py-6">
-            {isStillLoading ? (
-              <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
-                    <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
-                  </div>
-                </div>
-                <div className="text-center space-y-4 max-w-lg">
-                  <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
-                    {loadingPhase === 'connecting-maker'
-                      ? t('tradeMarketMaker.loading.connectingToMaker')
-                      : t('tradeMarketMaker.loading.initializingInterface')}
-                  </p>
-                  <p className="text-slate-300 text-base leading-relaxed">
-                    {getLoadingMessage()}
-                  </p>
-                  <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
-                  </div>
-                </div>
-              </div>
-            ) : shouldShowWSDisconnectedMessage ? (
-              <div className="flex justify-center items-center min-h-[60vh]">
-                <WebSocketDisconnectedMessage
-                  makerUrl={makerConnectionUrl}
-                  onMakerChange={refreshAmounts}
-                  onRetryConnection={handleReconnectToMaker}
-                />
-              </div>
-            ) : (
-              <div className="flex justify-center items-start min-h-[60vh]">
-                {renderSwapForm()}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       <SwapConfirmation
         bitcoinUnit={bitcoinUnit}

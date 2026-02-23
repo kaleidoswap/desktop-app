@@ -20,7 +20,7 @@ import {
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
 } from '../../app/router/paths'
-import logo from '../../assets/logo.svg'
+import logoFull from '../../assets/logo-full.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
@@ -34,7 +34,7 @@ import {
 } from '../../components/wallet-setup'
 import { LANGUAGES } from '../../i18n/config'
 import { setLanguage } from '../../slices/settings/settings.slice'
-import type { RootState } from '../../store'
+import type { RootState } from '../../app/store'
 
 export const Component = () => {
   const { t, i18n } = useTranslation()
@@ -103,8 +103,8 @@ export const Component = () => {
             <img
               alt="KaleidoSwap"
               className="h-8 cursor-pointer"
-              onClick={() => {}}
-              src={logo}
+              onClick={() => { }}
+              src={logoFull}
             />
           </div>
 

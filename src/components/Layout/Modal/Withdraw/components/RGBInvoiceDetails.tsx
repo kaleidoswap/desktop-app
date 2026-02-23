@@ -2,7 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { formatAssetAmountWithPrecision } from '../../../../../helpers/number'
-import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
+
 import { RGBInvoiceDetailsProps } from '../types'
 
 // RGBInvoiceDetails component for displaying decoded RGB invoice information
@@ -15,8 +15,8 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
 
   if (!decodedRgbInvoice) return null
 
-  const assetInfo = assets.data?.nia.find(
-    (asset: NiaAsset) => asset.asset_id === decodedRgbInvoice.asset_id
+  const assetInfo = (assets.data?.nia || []).find(
+    (asset: any) => asset.asset_id === decodedRgbInvoice.asset_id
   )
   const ticker =
     assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
@@ -24,11 +24,11 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
   // Format the asset balance with proper precision
   const formattedBalance = assetInfo
     ? formatAssetAmountWithPrecision(
-        assetInfo.balance.spendable,
-        ticker,
-        bitcoinUnit,
-        assets.data?.nia
-      )
+      assetInfo?.balance?.spendable || 0,
+      ticker,
+      bitcoinUnit,
+      assets.data?.nia
+    )
     : '0'
 
   // Get amount from assignment and format for display
@@ -41,11 +41,11 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
 
   const formattedAmount = assignmentAmount
     ? formatAssetAmountWithPrecision(
-        assignmentAmount,
-        ticker,
-        bitcoinUnit,
-        assets.data?.nia
-      )
+      assignmentAmount,
+      ticker,
+      bitcoinUnit,
+      assets.data?.nia
+    )
     : null
 
   return (
@@ -96,8 +96,8 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
             {t('withdrawModal.details.rgb.recipientLabel')}
           </span>
           <span className="text-white font-mono text-[10px] truncate max-w-[250px]">
-            {decodedRgbInvoice.recipient_id.slice(0, 10)}...
-            {decodedRgbInvoice.recipient_id.slice(-6)}
+            {(decodedRgbInvoice.recipient_id || '').slice(0, 10)}...
+            {(decodedRgbInvoice.recipient_id || '').slice(-6)}
           </span>
         </div>
 
@@ -107,7 +107,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
           </span>
           <span className="text-white">
             {new Date(
-              decodedRgbInvoice.expiration_timestamp * 1000
+              (decodedRgbInvoice.expiration_timestamp || 0) * 1000
             ).toLocaleString()}
           </span>
         </div>

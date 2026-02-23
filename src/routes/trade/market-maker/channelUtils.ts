@@ -1,4 +1,4 @@
-import { Channel } from '../../../slices/nodeApi/nodeApi.slice'
+import { Channel } from './types'
 import { logger } from '../../../utils/logger'
 
 /**

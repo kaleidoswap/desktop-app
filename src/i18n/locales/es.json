@@ -35,7 +35,9 @@
     "manualSwaps": "Intercambios Manuales",
     "nostrP2P": "Nostr P2P",
     "helpSupport": "Ayuda y Soporte",
-    "getHelpSupport": "Obtener Ayuda y Soporte"
+    "getHelpSupport": "Obtener Ayuda y Soporte",
+    "menu": "Menu",
+    "expandSidebar": "Expand sidebar"
   },
   "channels": {
     "pageTitle": "Panel de Billetera Lightning",
@@ -1942,17 +1944,17 @@
         "cta": "Crear UTXOs Coloreables"
       },
       "amount": {
-        "optionalLabel": "Monto (opcional)",
-        "requiredLabel": "Monto",
+        "optionalLabel": "Cantidad (opcional)",
         "precision": "Precisión: {{value}} decimales",
-        "example": "ej. 100 {{ticker}}",
+        "example": "Introduce cantidad (ej. 10.23 para {{ticker}})",
+        "requiredLabel": "Cantidad",
         "maxLabel": "Máx: {{amount}} {{asset}}",
-        "maxPlaceholder": "Máx: {{amount}}",
+        "maxPlaceholder": "Introduce cantidad (máx {{amount}})",
         "notAvailable": "N/D",
-        "maxButton": "MÁX",
-        "exceeds": "El monto excede el máximo de {{amount}} {{asset}}",
-        "rgbNote": "Las facturas RGB Lightning requieren un monto",
-        "noChannels": "No hay canales disponibles para depósitos Lightning"
+        "maxButton": "Máx",
+        "rgbNote": "Nota: Se requieren 3,000 sats para transferencias de activos RGB.",
+        "noChannels": "Advertencia: No se encontraron canales Lightning activos. Los depósitos Lightning no están disponibles.",
+        "exceeds": "La cantidad excede el máximo disponible: {{amount}} {{asset}}"
       },
       "actions": {
         "copy": "Copiar al portapapeles",
@@ -1960,15 +1962,15 @@
         "generateAddressCta": "Generar Dirección",
         "generateInvoice": "Generar Factura"
       },
-      "status": {
-        "pending": "Esperando pago...",
-        "success": "¡Pago recibido!",
-        "failed": "Pago {{status}}"
-      },
       "labels": {
         "lnInvoice": "Factura LN",
         "btcAddress": "Dirección BTC",
         "rgbInvoice": "Factura RGB"
+      },
+      "status": {
+        "pending": "Pago pendiente...",
+        "success": "¡Pago recibido!",
+        "failed": "Pago fallido ({{status}})"
       },
       "toasts": {
         "generateAddressError": "Error al generar la dirección",

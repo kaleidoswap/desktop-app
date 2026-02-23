@@ -177,7 +177,7 @@ export const getAssetPrecision = (
   // If assets array is provided, look for the asset's precision
   if (assets && assets.length > 0) {
     const assetInfo = assets.find(
-      (a) => a.ticker.toUpperCase() === normalizedAsset
+      (a) => a.ticker?.toUpperCase() === normalizedAsset
     )
     if (assetInfo && typeof assetInfo.precision === 'number') {
       return assetInfo.precision
@@ -189,6 +189,7 @@ export const getAssetPrecision = (
 }
 
 export const getBitcoinPrecision = (bitcoinUnit: string): number => {
+  if (!bitcoinUnit) return 8 // Default to BTC precision
   switch (bitcoinUnit.toUpperCase()) {
     case 'SAT':
       return 0

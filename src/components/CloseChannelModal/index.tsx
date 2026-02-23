@@ -21,7 +21,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
   peerPubkey,
 }) => {
   const { t } = useTranslation()
-  const [closeChannel] = nodeApi.endpoints.closeChannel.useLazyQuery()
+  const [closeChannel] = nodeApi.useCloseChannelMutation()
   const [forceClose, setForceClose] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -253,15 +253,13 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
             {t('closeChannelModal.cancel')}
           </button>
           <button
-            className={`px-4 py-2 rounded-lg flex items-center justify-center ${
-              isClosing ? 'opacity-70 cursor-not-allowed' : ''
-            } ${
-              suggestForceClose
+            className={`px-4 py-2 rounded-lg flex items-center justify-center ${isClosing ? 'opacity-70 cursor-not-allowed' : ''
+              } ${suggestForceClose
                 ? 'bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-medium shadow-md'
                 : forceClose
                   ? 'bg-red-600 hover:bg-red-700 text-white shadow-md border border-red-700/30'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
-            } active:bg-blue-800 transition-colors shadow-sm`}
+              } active:bg-blue-800 transition-colors shadow-sm`}
             disabled={isClosing}
             onClick={(e) => {
               e.stopPropagation()

@@ -1,8 +1,7 @@
 import {
-  DecodeInvoiceResponse,
+  DecodeLNInvoiceResponse as DecodeInvoiceResponse,
   DecodeRgbInvoiceResponse,
-  NiaAsset,
-} from '../../../../slices/nodeApi/nodeApi.slice'
+} from 'kaleidoswap-sdk'
 
 // Use the same enum values as in nodeApi.slice.ts
 export enum HTLCStatus {
@@ -14,7 +13,7 @@ export enum HTLCStatus {
 // Form field interface
 export interface Fields {
   address: string
-  amount: number | string
+  amount: number | string | null // Allow null for zero-amount invoices
   fee_rate: string
   asset_id: string
   network: 'on-chain' | 'lightning'
@@ -49,7 +48,7 @@ export interface AssetOption {
 }
 
 export interface ValidationMessage {
-  type: 'error' | 'warning'
+  type: 'error' | 'warning' | 'info'
   message: string
 }
 
@@ -63,11 +62,7 @@ export interface FeeRateOption {
 // LightningInvoiceDetails component props
 export interface LightningInvoiceDetailsProps {
   decodedInvoice: DecodeInvoiceResponse
-  assets: {
-    data?: {
-      nia: NiaAsset[]
-    }
-  }
+  assets: any
   bitcoinUnit: string
   maxLightningCapacity: number
   fetchAssetBalance: (assetId: string) => Promise<void>
@@ -76,11 +71,7 @@ export interface LightningInvoiceDetailsProps {
 // RGBInvoiceDetails component props
 export interface RGBInvoiceDetailsProps {
   decodedRgbInvoice: DecodeRgbInvoiceResponse
-  assets: {
-    data?: {
-      nia: NiaAsset[]
-    }
-  }
+  assets: any
   bitcoinUnit: string
 }
 
@@ -96,11 +87,7 @@ export interface BalanceDisplayProps {
   assetId: string
   assetBalance: number
   bitcoinUnit: string
-  assets: {
-    data?: {
-      nia: NiaAsset[]
-    }
-  }
+  assets: any
 }
 
 // ConfirmationModal component props
@@ -141,11 +128,7 @@ export interface WithdrawFormProps {
   customFee: number
   paymentStatus: PaymentStatus
   isPollingStatus: boolean
-  assets: {
-    data?: {
-      nia: NiaAsset[]
-    }
-  }
+  assets: any
   handleInvoiceChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handlePasteFromClipboard: () => void
   setShowAssetDropdown: (show: boolean) => void

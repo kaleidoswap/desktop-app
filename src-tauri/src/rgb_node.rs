@@ -4,32 +4,47 @@ use std::io::{BufRead, BufReader};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 use tauri::Manager;
 use tauri::{AppHandle, Emitter, WebviewWindow};
 use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
 const SHUTDOWN_TIMEOUT_SECS: u64 = 5;
+const MAX_LOGS_IN_MEMORY: usize = 1000;
+const HEALTH_CHECK_INTERVAL_SECS: u64 = 30;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "status", content = "message")]
+pub enum NodeState {
+    Stopped,
+    Starting,
+    Running,
+    Stopping,
+    Failed(String),
+}
 
 #[derive(Debug)]
 enum ControlMessage {
     Stop,
 }
 
+
+
 pub struct NodeProcess {
     child_process: Arc<Mutex<Option<Child>>>,
     control_sender: Sender<ControlMessage>,
     control_receiver: Arc<Mutex<Receiver<ControlMessage>>>,
-    is_running: Arc<AtomicBool>,
+    state: Arc<RwLock<NodeState>>,
     logs: Arc<Mutex<Vec<String>>>,
     window: Arc<Mutex<Option<WebviewWindow>>>,
     shutdown_timeout: Duration,
     current_account: Arc<Mutex<Option<String>>>,
     app_handle: Arc<Mutex<Option<AppHandle>>>,
+    daemon_port: Arc<Mutex<Option<u16>>>,
 }
 
 impl NodeProcess {
@@ -39,12 +54,13 @@ impl NodeProcess {
             child_process: Arc::new(Mutex::new(None)),
             control_sender: tx,
             control_receiver: Arc::new(Mutex::new(rx)),
-            is_running: Arc::new(AtomicBool::new(false)),
+            state: Arc::new(RwLock::new(NodeState::Stopped)),
             logs: Arc::new(Mutex::new(Vec::new())),
             window: Arc::new(Mutex::new(None)),
             shutdown_timeout: Duration::from_secs(SHUTDOWN_TIMEOUT_SECS),
             current_account: Arc::new(Mutex::new(None)),
             app_handle: Arc::new(Mutex::new(None)),
+            daemon_port: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -89,16 +105,42 @@ impl NodeProcess {
     /// Get the current running node's ports
     pub fn get_running_node_ports(&self) -> HashMap<String, String> {
         let mut ports = HashMap::new();
-        if let Some(_) = self.child_process.lock().unwrap().as_ref() {
-            if let Some(account) = self.current_account.lock().unwrap().as_ref() {
-                if let Ok(Some(account_info)) = crate::db::get_account_by_name(account) {
-                    ports.insert(account_info.daemon_listening_port, account.clone());
-                    ports.insert(account_info.ldk_peer_listening_port, account.clone());
+        if let Ok(guard) = self.child_process.lock() {
+            if guard.as_ref().is_some() {
+                if let Ok(account_guard) = self.current_account.lock() {
+                    if let Some(account) = account_guard.as_ref() {
+                        if let Ok(Some(account_info)) = crate::db::get_account_by_name(account) {
+                            ports.insert(account_info.daemon_listening_port, account.clone());
+                            ports.insert(account_info.ldk_peer_listening_port, account.clone());
+                        }
+                    }
                 }
             }
         }
         ports
     }
+    
+
+    /// Get current node state
+    pub fn get_state(&self) -> NodeState {
+        match self.state.read() {
+            Ok(state) => state.clone(),
+            Err(e) => {
+                println!("Failed to read state: {}", e);
+                NodeState::Failed("State lock poisoned".to_string())
+            }
+        }
+    }
+    
+    /// Set node state
+    fn set_state(&self, new_state: NodeState) {
+        if let Ok(mut state) = self.state.write() {
+            println!("Node state transition: {:?} -> {:?}", *state, new_state);
+            *state = new_state;
+        }
+    }
+    
+
 
     /// Stop a specific node by account name
     pub fn stop_by_account(&self, account_name: &str) -> Result<(), String> {
@@ -112,6 +154,43 @@ impl NodeProcess {
         } else {
             Err("No node is currently running".to_string())
         }
+    }
+    
+    /// Kill process tree on Unix systems
+    #[cfg(unix)]
+    fn kill_process_tree(pid: u32) -> Result<(), String> {
+        use std::process::Command;
+        
+        println!("Attempting to kill process tree for PID: {}", pid);
+        
+        // First try graceful termination using process group
+        let _ = Command::new("kill")
+            .args(&["-TERM", &format!("-{}", pid)])
+            .output();
+        
+        thread::sleep(Duration::from_secs(2));
+        
+        // Check if process is still running and force kill if needed
+        let check = Command::new("ps")
+            .args(&["-p", &pid.to_string()])
+            .output();
+            
+        if let Ok(output) = check {
+            if output.status.success() && !output.stdout.is_empty() {
+                println!("Process still running, sending SIGKILL");
+                let _ = Command::new("kill")
+                    .args(&["-KILL", &format!("-{}", pid)])
+                    .output();
+            }
+        }
+        
+        Ok(())
+    }
+    
+    #[cfg(not(unix))]
+    fn kill_process_tree(_pid: u32) -> Result<(), String> {
+        // Windows process tree cleanup handled differently
+        Ok(())
     }
 
     /// Starts a new RGB Lightning Node process (if none is running).
@@ -130,27 +209,56 @@ impl NodeProcess {
         if cfg!(target_os = "windows") {
             let err = "RGB Lightning Node is not supported on Windows. Please use a remote node connection instead.".to_string();
             println!("{}", err);
-            if let Some(window) = &*self.window.lock().unwrap() {
-                let _ = window.emit("node-error", err.clone());
+            self.set_state(NodeState::Failed(err.clone()));
+            if let Ok(window_guard) = self.window.lock() {
+                if let Some(window) = window_guard.as_ref() {
+                    let _ = window.emit("node-error", err.clone());
+                }
             }
             return Err(err);
         }
 
         println!("Starting node for account: {}", account_name);
 
+        // Check current state
+        let current_state = self.get_state();
+        match current_state {
+            NodeState::Starting => {
+                return Err("Node is already starting. Please wait.".to_string());
+            }
+            NodeState::Stopping => {
+                return Err("Node is currently stopping. Please wait for it to finish.".to_string());
+            }
+            _ => {}
+        }
+
+        // Set state to Starting
+        self.set_state(NodeState::Starting);
+
         // Check if ports are available before proceeding
         let daemon_port = daemon_listening_port
             .parse::<u16>()
-            .map_err(|e| format!("Invalid daemon port number: {}", e))?;
+            .map_err(|e| {
+                let err = format!("Invalid daemon port number: {}", e);
+                self.set_state(NodeState::Failed(err.clone()));
+                err
+            })?;
         let ldk_port = ldk_peer_listening_port
             .parse::<u16>()
-            .map_err(|e| format!("Invalid LDK peer port number: {}", e))?;
+            .map_err(|e| {
+                let err = format!("Invalid LDK peer port number: {}", e);
+                self.set_state(NodeState::Failed(err.clone()));
+                err
+            })?;
 
         if !Self::is_port_available(daemon_port) {
             let err = format!("Port {} is already in use. Please make sure no other node is running or try a different port.", daemon_port);
             println!("{}", err);
-            if let Some(window) = &*self.window.lock().unwrap() {
-                let _ = window.emit("node-error", err.clone());
+            self.set_state(NodeState::Failed(err.clone()));
+            if let Ok(window_guard) = self.window.lock() {
+                if let Some(window) = window_guard.as_ref() {
+                    let _ = window.emit("node-error", err.clone());
+                }
             }
             return Err(err);
         }
@@ -158,14 +266,22 @@ impl NodeProcess {
         if !Self::is_port_available(ldk_port) {
             let err = format!("Port {} is already in use. Please make sure no other node is running or try a different port.", ldk_port);
             println!("{}", err);
-            if let Some(window) = &*self.window.lock().unwrap() {
-                let _ = window.emit("node-error", err.clone());
+            self.set_state(NodeState::Failed(err.clone()));
+            if let Ok(window_guard) = self.window.lock() {
+                if let Some(window) = window_guard.as_ref() {
+                    let _ = window.emit("node-error", err.clone());
+                }
             }
             return Err(err);
         }
 
-        // Store the account name before starting the node
-        *self.current_account.lock().unwrap() = Some(account_name.clone());
+        // Store the account name and port before starting the node
+        if let Ok(mut account_guard) = self.current_account.lock() {
+            *account_guard = Some(account_name.clone());
+        }
+        if let Ok(mut port_guard) = self.daemon_port.lock() {
+            *port_guard = Some(daemon_port);
+        }
 
         // 1) If already running, attempt to stop & wait for complete shutdown
         if self.is_running() {
@@ -173,9 +289,9 @@ impl NodeProcess {
                 "Node is already running for account: {}. Stopping existing process...",
                 self.current_account
                     .lock()
-                    .unwrap()
-                    .as_ref()
-                    .unwrap_or(&"unknown".to_string())
+                    .ok()
+                    .and_then(|g| g.as_ref().cloned())
+                    .unwrap_or_else(|| "unknown".to_string())
             );
 
             // First try graceful shutdown
@@ -195,8 +311,11 @@ impl NodeProcess {
                     if self.is_running() {
                         let err = "Failed to stop existing node process. Please try restarting the application.".to_string();
                         println!("{}", err);
-                        if let Some(window) = &*self.window.lock().unwrap() {
-                            let _ = window.emit("node-error", err.clone());
+                        self.set_state(NodeState::Failed(err.clone()));
+                        if let Ok(window_guard) = self.window.lock() {
+                            if let Some(window) = window_guard.as_ref() {
+                                let _ = window.emit("node-error", err.clone());
+                            }
                         }
                         return Err(err);
                     }
@@ -262,8 +381,11 @@ impl NodeProcess {
             Err(e) => {
                 let err = format!("Failed to start RGB Lightning Node: {}", e);
                 println!("{}", err);
-                if let Some(window) = &*self.window.lock().unwrap() {
-                    let _ = window.emit("node-error", err.clone());
+                self.set_state(NodeState::Failed(err.clone()));
+                if let Ok(window_guard) = self.window.lock() {
+                    if let Some(window) = window_guard.as_ref() {
+                        let _ = window.emit("node-error", err.clone());
+                    }
                 }
                 return Err(err);
             }
@@ -271,103 +393,174 @@ impl NodeProcess {
 
         // 4) Store the child process and mark as running
         {
-            let mut proc_guard = self.child_process.lock().unwrap();
+            let mut proc_guard = self.child_process.lock()
+                .map_err(|e| {
+                    let err = format!("Failed to acquire process lock: {}", e);
+                    self.set_state(NodeState::Failed(err.clone()));
+                    err
+                })?;
             *proc_guard = Some(child);
         }
-        self.is_running.store(true, Ordering::SeqCst);
+        self.set_state(NodeState::Running);
 
         println!("Node started successfully for account: {}", account_name);
 
         // Emit an event so your UI knows a node started
-        if let Some(window) = &*self.window.lock().unwrap() {
-            let _ = window.emit("node-started", account_name.clone());
+        if let Ok(window_guard) = self.window.lock() {
+            if let Some(window) = window_guard.as_ref() {
+                let _ = window.emit("node-started", account_name.clone());
+            }
         }
 
         // 5) Spawn a thread to watch the child process output and handle shutdown
         let rx = Arc::clone(&self.control_receiver);
         let cp_for_thread = Arc::clone(&self.child_process);
-        let is_running_for_thread = Arc::clone(&self.is_running);
+        let state_for_thread = Arc::clone(&self.state);
         let logs_for_thread = Arc::clone(&self.logs);
         let window_for_thread = Arc::clone(&self.window);
+        let daemon_port_for_thread = Arc::clone(&self.daemon_port);
         let shutdown_timeout = self.shutdown_timeout;
 
         std::thread::spawn(move || {
-            let mut child_option = cp_for_thread.lock().unwrap();
-            if let Some(ref mut child) = *child_option {
-                // Capture stdout
-                if let Some(stdout) = child.stdout.take() {
-                    let logs_clone = Arc::clone(&logs_for_thread);
-                    let window_clone = Arc::clone(&window_for_thread);
-                    std::thread::spawn(move || {
-                        let reader = BufReader::new(stdout);
-                        for line in reader.lines() {
-                            if let Ok(line) = line {
-                                println!("Node stdout: {}", line);
-                                logs_clone.lock().unwrap().push(line.clone());
-                                if let Some(win) = &*window_clone.lock().unwrap() {
-                                    let _ = win.emit("node-log", line);
+            // Capture stdout and stderr
+            if let Ok(mut child_option) = cp_for_thread.lock() {
+                if let Some(ref mut child) = *child_option {
+                    // Capture stdout
+                    if let Some(stdout) = child.stdout.take() {
+                        let logs_clone = Arc::clone(&logs_for_thread);
+                        let window_clone = Arc::clone(&window_for_thread);
+                        std::thread::spawn(move || {
+                            let reader = BufReader::new(stdout);
+                            for line in reader.lines() {
+                                if let Ok(line) = line {
+                                    println!("Node stdout: {}", line);
+                                    // Use add_log method with rotation
+                                    if let Ok(mut logs) = logs_clone.lock() {
+                                        logs.push(line.clone());
+                                        if logs.len() > MAX_LOGS_IN_MEMORY {
+                                            let drain_count = logs.len() - MAX_LOGS_IN_MEMORY;
+                                            logs.drain(0..drain_count);
+                                        }
+                                    }
+                                    if let Ok(window_guard) = window_clone.lock() {
+                                        if let Some(win) = window_guard.as_ref() {
+                                            let _ = win.emit("node-log", line);
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    });
-                }
-                // Capture stderr
-                if let Some(stderr) = child.stderr.take() {
-                    let logs_clone = Arc::clone(&logs_for_thread);
-                    let window_clone = Arc::clone(&window_for_thread);
-                    std::thread::spawn(move || {
-                        let reader = BufReader::new(stderr);
-                        for line in reader.lines() {
-                            if let Ok(line) = line {
-                                println!("Node stderr: {}", line);
-                                logs_clone.lock().unwrap().push(format!("Error: {}", line));
-                                if let Some(win) = &*window_clone.lock().unwrap() {
-                                    let _ = win.emit("node-error", line);
+                        });
+                    }
+                    // Capture stderr
+                    if let Some(stderr) = child.stderr.take() {
+                        let logs_clone = Arc::clone(&logs_for_thread);
+                        let window_clone = Arc::clone(&window_for_thread);
+                        std::thread::spawn(move || {
+                            let reader = BufReader::new(stderr);
+                            for line in reader.lines() {
+                                if let Ok(line) = line {
+                                    println!("Node stderr: {}", line);
+                                    // Use add_log method with rotation
+                                    if let Ok(mut logs) = logs_clone.lock() {
+                                        logs.push(format!("Error: {}", line));
+                                        if logs.len() > MAX_LOGS_IN_MEMORY {
+                                            let drain_count = logs.len() - MAX_LOGS_IN_MEMORY;
+                                            logs.drain(0..drain_count);
+                                        }
+                                    }
+                                    if let Ok(window_guard) = window_clone.lock() {
+                                        if let Some(win) = window_guard.as_ref() {
+                                            let _ = win.emit("node-error", line);
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
-            drop(child_option); // Release the lock
 
-            // Monitoring loop
+            // Monitoring loop with health checks
+            let mut health_check_counter = 0;
             loop {
                 // Check if we got a Stop message
-                match rx.lock().unwrap().try_recv() {
-                    Ok(ControlMessage::Stop) => {
-                        println!("Received Stop signal, breaking monitoring loop.");
-                        break;
-                    }
-                    Err(_) => {
-                        // Check if the child has exited
-                        if let Some(ref mut child) = *cp_for_thread.lock().unwrap() {
-                            match child.try_wait() {
-                                Ok(Some(status)) => {
-                                    println!("Node process exited with status: {:?}", status);
-                                    break;
-                                }
-                                Ok(None) => {
-                                    thread::sleep(Duration::from_secs(1));
-                                }
-                                Err(e) => {
-                                    println!("Error waiting for child process: {:?}", e);
-                                    break;
-                                }
-                            }
-                        } else {
-                            // No child process reference? Possibly already cleaned up
+                if let Ok(rx_guard) = rx.lock() {
+                    match rx_guard.try_recv() {
+                        Ok(ControlMessage::Stop) => {
+                            println!("Received Stop signal, breaking monitoring loop.");
                             break;
                         }
+                        Err(_) => {
+                            // No message, continue monitoring
+                        }
+                    }
+                }
+
+                // Check if the child has exited
+                if let Ok(mut proc_guard) = cp_for_thread.lock() {
+                    if let Some(ref mut child) = *proc_guard {
+                        match child.try_wait() {
+                            Ok(Some(status)) => {
+                                if status.success() {
+                                    println!("Node process exited cleanly with status: {:?}", status);
+                                } else {
+                                    println!("Node process crashed with status: {:?}", status);
+                                    if let Ok(mut state_guard) = state_for_thread.write() {
+                                        *state_guard = NodeState::Failed(format!("Process exited with status: {:?}", status));
+                                    }
+                                    if let Ok(window_guard) = window_for_thread.lock() {
+                                        if let Some(win) = window_guard.as_ref() {
+                                            let _ = win.emit("node-crashed", format!("Exit status: {:?}", status));
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                            Ok(None) => {
+                                // Process still running
+                                thread::sleep(Duration::from_secs(1));
+                                
+                                // Periodic health check every 30 seconds
+                                health_check_counter += 1;
+                                if health_check_counter >= HEALTH_CHECK_INTERVAL_SECS {
+                                    health_check_counter = 0;
+                                    if let Ok(port_guard) = daemon_port_for_thread.lock() {
+                                        if let Some(port) = *port_guard {
+                                            let is_healthy = TcpListener::bind(("127.0.0.1", port)).is_err();
+                                            if !is_healthy {
+                                                println!("Periodic health check failed");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("Error waiting for child process: {:?}", e);
+                                if let Ok(mut state_guard) = state_for_thread.write() {
+                                    *state_guard = NodeState::Failed(format!("Process monitoring error: {:?}", e));
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        // No child process reference? Possibly already cleaned up
+                        break;
                     }
                 }
             }
 
             // Graceful shutdown attempt
-            {
-                let mut proc_guard = cp_for_thread.lock().unwrap();
+            if let Ok(mut proc_guard) = cp_for_thread.lock() {
                 if let Some(mut child) = proc_guard.take() {
                     println!("Attempting graceful shutdown (kill)...");
+                    
+                    // Try to kill process tree on Unix
+                    #[cfg(unix)]
+                    {
+                        let pid = child.id();
+                        let _ = Self::kill_process_tree(pid);
+                    }
+                    
                     let _ = child.kill();
 
                     // Wait up to shutdown_timeout
@@ -395,9 +588,15 @@ impl NodeProcess {
                 }
             }
 
-            is_running_for_thread.store(false, Ordering::SeqCst);
-            if let Some(win) = &*window_for_thread.lock().unwrap() {
-                let _ = win.emit("node-stopped", ());
+            // Update state to Stopped
+            if let Ok(mut state_guard) = state_for_thread.write() {
+                *state_guard = NodeState::Stopped;
+            }
+            
+            if let Ok(window_guard) = window_for_thread.lock() {
+                if let Some(win) = window_guard.as_ref() {
+                    let _ = win.emit("node-stopped", ());
+                }
             }
         });
 
@@ -406,41 +605,69 @@ impl NodeProcess {
 
     /// Requests the process to stop. (Non-blocking)
     pub fn stop(&self) {
-        if self.is_running() {
-            println!("Sending Stop signal to node thread...");
-            let _ = self.control_sender.send(ControlMessage::Stop);
-            *self.current_account.lock().unwrap() = None; // Clear the current account
-        } else {
-            println!("Node is not running.");
+        let state = self.get_state();
+        match state {
+            NodeState::Running | NodeState::Starting => {
+                println!("Sending Stop signal to node thread...");
+                self.set_state(NodeState::Stopping);
+                let _ = self.control_sender.send(ControlMessage::Stop);
+                if let Ok(mut account_guard) = self.current_account.lock() {
+                    *account_guard = None;
+                }
+                if let Ok(mut port_guard) = self.daemon_port.lock() {
+                    *port_guard = None;
+                }
+            }
+            _ => {
+                println!("Node is not running. Current state: {:?}", state);
+            }
         }
     }
 
     /// Gracefully shuts down the node and waits up to `shutdown_timeout`.
     /// Falls back to a force kill if still alive afterward.
     pub fn shutdown(&self) {
-        if self.is_running() {
-            println!("Shutting down node gracefully via Stop signal...");
-            self.stop(); // reuse the same signal
+        let state = self.get_state();
+        match state {
+            NodeState::Running | NodeState::Starting => {
+                println!("Shutting down node gracefully via Stop signal...");
+                self.stop(); // reuse the same signal
 
-            let start = std::time::Instant::now();
-            while self.is_running() {
-                if start.elapsed() > self.shutdown_timeout {
-                    println!("Timed out waiting for shutdown. Force killing...");
-                    self.force_kill();
-                    break;
+                let start = std::time::Instant::now();
+                while self.is_running() {
+                    if start.elapsed() > self.shutdown_timeout {
+                        println!("Timed out waiting for shutdown. Force killing...");
+                        self.force_kill();
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(100));
                 }
-                thread::sleep(Duration::from_millis(100));
-            }
 
-            // Add additional delay to ensure ports are released
-            println!("Waiting for ports to be released...");
-            thread::sleep(Duration::from_secs(1));
+                // Add additional delay to ensure ports are released
+                println!("Waiting for ports to be released...");
+                thread::sleep(Duration::from_secs(1));
+            }
+            NodeState::Stopping => {
+                println!("Node is already stopping, waiting for completion...");
+                let start = std::time::Instant::now();
+                while matches!(self.get_state(), NodeState::Stopping) {
+                    if start.elapsed() > self.shutdown_timeout {
+                        println!("Timed out waiting for shutdown. Force killing...");
+                        self.force_kill();
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(100));
+                }
+            }
+            _ => {
+                println!("Node is not running. Current state: {:?}", state);
+            }
         }
     }
 
     /// Check if a process is currently marked as running.
     pub fn is_running(&self) -> bool {
-        self.is_running.load(Ordering::SeqCst)
+        matches!(self.get_state(), NodeState::Running | NodeState::Starting)
     }
 
     /// Check if a process is running for a specific account.
@@ -449,16 +676,19 @@ impl NodeProcess {
             return false;
         }
 
-        if let Some(current_account) = self.current_account.lock().unwrap().as_ref() {
-            current_account == account_name
-        } else {
-            false
+        if let Ok(account_guard) = self.current_account.lock() {
+            if let Some(current_account) = account_guard.as_ref() {
+                return current_account == account_name;
+            }
         }
+        false
     }
 
     /// Get the name of the account currently running, if any
     pub fn get_current_account(&self) -> Option<String> {
-        self.current_account.lock().unwrap().clone()
+        self.current_account.lock()
+            .ok()
+            .and_then(|guard| guard.clone())
     }
 
     /// Returns the path to the log file
@@ -494,7 +724,9 @@ impl NodeProcess {
         let mut logs = Vec::new();
 
         // First get any in-memory logs
-        logs.extend(self.logs.lock().unwrap().clone());
+        if let Ok(logs_guard) = self.logs.lock() {
+            logs.extend(logs_guard.clone());
+        }
 
         // Then try to read from the log file
         if let Ok(log_path) = self.get_log_file_path() {
@@ -521,25 +753,33 @@ impl NodeProcess {
     /// Force kill the process immediately, without waiting for graceful exit.
     pub fn force_kill(&self) {
         println!("Force killing node process...");
-        let mut proc_guard = self.child_process.lock().unwrap();
-        if let Some(mut child) = proc_guard.take() {
-            // Kill the main process
-            let _ = child.kill();
-            let _ = child.wait();
-
-            // On Unix-like systems, try to ensure child processes are killed
-            #[cfg(unix)]
-            {
-                use std::process::Command;
-                let pid = child.id(); // This returns u32, not Option<u32>
-                println!("Killing child processes of PID: {}", pid);
-                let _ = Command::new("pkill")
-                    .args(&["-P", &pid.to_string()])
-                    .output();
+        self.set_state(NodeState::Stopping);
+        
+        if let Ok(mut proc_guard) = self.child_process.lock() {
+            if let Some(mut child) = proc_guard.take() {
+                let pid = child.id();
+                
+                // On Unix-like systems, try to kill entire process tree
+                #[cfg(unix)]
+                {
+                    println!("Killing process tree for PID: {}", pid);
+                    let _ = Self::kill_process_tree(pid);
+                }
+                
+                // Kill the main process
+                let _ = child.kill();
+                let _ = child.wait();
             }
         }
-        self.is_running.store(false, Ordering::SeqCst);
-        *self.current_account.lock().unwrap() = None; // Clear the current account
+        
+        self.set_state(NodeState::Stopped);
+        
+        if let Ok(mut account_guard) = self.current_account.lock() {
+            *account_guard = None;
+        }
+        if let Ok(mut port_guard) = self.daemon_port.lock() {
+            *port_guard = None;
+        }
 
         // Add additional delay to ensure ports are released
         println!("Waiting for ports to be released after force kill...");
@@ -675,10 +915,10 @@ impl NodeProcess {
 
         let child = Command::new(&executable_path)
             .arg(datapath)
-            .args(&["--daemon-listening-port", daemon_listening_port])
-            .args(&["--ldk-peer-listening-port", ldk_peer_listening_port])
-            .args(&["--network", network])
-            .args(&["--disable-authentication"])
+            .args(["--daemon-listening-port", daemon_listening_port])
+            .args(["--ldk-peer-listening-port", ldk_peer_listening_port])
+            .args(["--network", network])
+            .args(["--disable-authentication"])
             .stdout(Stdio::from(stdout_log))
             .stderr(Stdio::from(stderr_log))
             .spawn();

@@ -35,7 +35,9 @@
     "manualSwaps": "Swaps manuels",
     "nostrP2P": "Nostr P2P",
     "helpSupport": "Aide et support",
-    "getHelpSupport": "Obtenir de l'aide et du support"
+    "getHelpSupport": "Obtenir de l'aide et du support",
+    "menu": "Menu",
+    "expandSidebar": "Expand sidebar"
   },
   "channels": {
     "buyChannel": "Acheter un canal",
@@ -1352,16 +1354,16 @@
       },
       "amount": {
         "optionalLabel": "Montant (optionnel)",
+        "precision": "Précision : {{value}} décimales",
+        "example": "Saisir le montant (ex : 10,23 pour {{ticker}})",
         "requiredLabel": "Montant",
-        "precision": "Précision: {{value}} décimales",
-        "example": "ex. 100 {{ticker}}",
-        "maxLabel": "Max: {{amount}} {{asset}}",
-        "maxPlaceholder": "Max: {{amount}}",
+        "maxLabel": "Max : {{amount}} {{asset}}",
+        "maxPlaceholder": "Saisir le montant (max {{amount}})",
         "notAvailable": "N/D",
-        "maxButton": "MAX",
-        "exceeds": "Le montant dépasse le maximum de {{amount}} {{asset}}",
-        "rgbNote": "Les factures RGB Lightning nécessitent un montant",
-        "noChannels": "Aucun canal disponible pour les dépôts Lightning"
+        "maxButton": "Max",
+        "rgbNote": "Note : 3 000 sats sont requis pour les transferts d'actifs RGB.",
+        "noChannels": "Attention : Aucun canal Lightning actif trouvé. Les dépôts Lightning sont indisponibles.",
+        "exceeds": "Le montant dépasse le maximum disponible : {{amount}} {{asset}}"
       },
       "actions": {
         "copy": "Copier dans le presse-papiers",
@@ -1369,15 +1371,15 @@
         "generateAddressCta": "Générer une adresse",
         "generateInvoice": "Générer une facture"
       },
-      "status": {
-        "pending": "En attente du paiement...",
-        "success": "Paiement reçu !",
-        "failed": "Paiement {{status}}"
-      },
       "labels": {
         "lnInvoice": "Facture LN",
         "btcAddress": "Adresse BTC",
         "rgbInvoice": "Facture RGB"
+      },
+      "status": {
+        "pending": "Paiement en cours...",
+        "success": "Paiement reçu !",
+        "failed": "Paiement échoué ({{status}})"
       },
       "toasts": {
         "generateAddressError": "Échec de la génération de l'adresse",

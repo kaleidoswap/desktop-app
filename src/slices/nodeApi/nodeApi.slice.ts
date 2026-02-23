@@ -1,1015 +1,372 @@
-import {
-  BaseQueryFn,
-  createApi,
-  FetchArgs,
-  fetchBaseQuery,
-  FetchBaseQueryError,
-} from '@reduxjs/toolkit/query/react'
-
-import { RootState } from '../../app/store'
-
-interface InitRequest {
-  password: string
-}
-
-interface InitResponse {
-  mnemonic: string
-}
-interface RestoreRequest {
-  backup_path: string
-  password: string
-}
-
-interface BackupRequest {
-  backup_path: string
-  password: string
-}
-
-interface OpenChannelRequest {
-  peer_pubkey_and_opt_addr: string
-  capacity_sat: number
-  push_msat?: number
-  asset_amount?: number
-  asset_id?: string
-  with_anchors?: boolean
-  fee_rate_msat?: number
-  fee_proportional_millionths?: number
-  temporary_channel_id?: string
-  public?: boolean
-}
-
-interface OpenChannelResponse {
-  temporary_channel_id: string
-}
-
-interface Balance {
-  settled: number
-  future: number
-  spendable: number
-  offchain_outbound?: number
-  offchain_inbound?: number
-}
-
-export interface NiaAsset {
-  asset_id: string
-  asset_iface: string
-  ticker: string
-  name: string
-  details: string | null
-  precision: number
-  issued_supply: number
-  timestamp: number
-  added_at: number
-  balance: Balance
-  media: string | null
-}
-
-interface ListAssetsResponse {
-  nia: NiaAsset[]
-}
-
-interface CloseChannelRequest {
-  channel_id: string
-  peer_pubkey: string
-  force?: boolean
-}
-
-export interface Channel {
-  channel_id: string
-  funding_txid: string
-  peer_pubkey: string
-  peer_alias: string
-  short_channel_id: number
-  status: ChannelStatus
-  ready: boolean
-  capacity_sat: number
-  local_balance_sat: number
-  outbound_balance_msat: number
-  inbound_balance_msat: number
-  next_outbound_htlc_limit_msat: number
-  next_outbound_htlc_minimum_msat: number
-  is_usable: boolean
-  public: boolean
-  asset_id: string
-  asset_local_amount: number
-  asset_remote_amount: number
-}
-interface ListChannelsResponse {
-  channels: Channel[]
-}
-
-interface NodeInfoResponse {
-  pubkey: string
-  num_channels: number
-  num_usable_channels: number
-  local_balance_sat: number
-  pending_outbound_payments_sat: number
-  num_peers: number
-  onchain_pubkey: string
-  max_media_upload_size_mb: number
-  rgb_htlc_min_msat: number
-  rgb_channel_capacity_min_sat: number
-  channel_capacity_min_sat: number
-  channel_capacity_max_sat: number
-  channel_asset_min_amount: number
-  channel_asset_max_amount: number
-  network_nodes: number
-  network_channels: number
-}
-
-interface ConnectPeerRequest {
-  peer_pubkey_and_addr: string
-}
-
-interface DisconnectPeerRequest {
-  peer_pubkey: string
-}
-interface ListPeersResponse {
-  peers: Array<{
-    pubkey: string
-  }>
-}
-
-interface BtcBalanceRequest {
-  skip_sync: boolean
-}
-
-interface CreateUTXOsRequest {
-  num: number
-  size: number
-  fee_rate: number
-  skip_sync: boolean
-}
-
-interface AddressResponse {
-  address: string
-}
-
-interface IssueNiaAssetRequest {
-  amounts: number[]
-  ticker: string
-  name: string
-  precision: number
-}
-
-interface IssueNiaAssetResponse {
-  asset_id: string
-}
-
-interface BTCBalanceResponse {
-  vanilla: {
-    settled: number
-    future: number
-    spendable: number
-  }
-  colored: {
-    settled: number
-    future: number
-    spendable: number
-  }
-}
-
-export interface ApiError {
-  data: {
-    error: string
-  }
-  status: number
-}
-
-interface AssetBalanceRequest {
-  asset_id: string
-}
-
-interface AssetBalanceResponse {
-  settled: number
-  future: number
-  spendable: number
-  offchain_outbound: number
-  offchain_inbound: number
-}
-
-enum ChannelStatus {
-  Opening = 'Opening',
-  Opened = 'Opened',
-  Closing = 'Closing',
-}
-
-interface RGBInvoiceRequest {
-  asset_id?: string
-  witness?: boolean
-  assignment?: Assignment
-}
-
-interface RGBInvoiceResponse {
-  recipient_id: string
-  invoice: string
-  expiration_timestamp: number
-}
-
-interface LNInvoiceRequest {
-  amt_msat?: number
-  asset_id?: string
-  asset_amount?: number
-}
-
-interface LNINvoiceResponse {
-  invoice: string
-}
-
-interface SendBTCRequest {
-  amount: number
-  address: string
-  fee_rate: number
-}
-
-interface SendBTCResponse {
-  txid: string
-}
-
-export interface AssignmentFungible {
-  type: 'Fungible'
-  value: number
-}
-
-export interface AssignmentNonFungible {
-  type: 'NonFungible'
-}
-
-export interface AssignmentInflationRight {
-  type: 'InflationRight'
-  value: number
-}
-
-export interface AssignmentReplaceRight {
-  type: 'ReplaceRight'
-}
-
-export interface AssignmentAny {
-  type: 'Any'
-}
-
-export type Assignment =
-  | AssignmentFungible
-  | AssignmentNonFungible
-  | AssignmentInflationRight
-  | AssignmentReplaceRight
-  | AssignmentAny
-
-interface WitnessData {
-  amount_sat: number
-  blinding?: number
-}
-
-interface SendAssetRequest {
-  asset_id: string
-  assignment: Assignment
-  donation?: boolean
-  recipient_id: string
-  witness_data?: WitnessData
-  fee_rate: number
-  transport_endpoints: string[]
-}
-
-interface SendAssetResponse {
-  txid: string
-}
-
-interface SendPaymentRequest {
-  invoice: string
-}
-
-enum HTLCStatus {
-  Pending = 'Pending',
-  Succeeded = 'Succeeded',
-  Failed = 'Failed',
-}
-
-export interface SendPaymentResponse {
-  payment_hash: string
-  payment_secret: string
-  status: HTLCStatus
-}
-
-interface ListTransactionsRequest {
-  skip_sync: boolean
-}
-
-interface ListTransactionsResponse {
-  transactions: {
-    transaction_type: string
-    txid: string
-    received: number
-    sent: number
-    fee: number
-    confirmation_time: {
-      height: number
-      timestamp: number
-    }
-  }[]
-}
-
-interface ListPaymentsResponse {
-  payments: {
-    amt_msat: number
-    asset_amount: number
-    asset_id: string | null
-    payment_hash: string
-    inbound: boolean
-    status: HTLCStatus
-    created_at: number
-    updated_at: number
-    payee_pubkey: string
-  }[]
-}
-
-interface ListTransfersRequest {
-  asset_id: string
-}
-
-export interface Transfer {
-  idx: number
-  created_at: number
-  updated_at: number
-  status: 'WaitingCounterparty' | 'WaitingConfirmations' | 'Settled' | 'Failed'
-  requested_assignment: AssignmentFungible
-  assignments: AssignmentFungible[]
-  kind: 'Issuance' | 'ReceiveBlind' | 'ReceiveWitness' | 'Send'
-  txid: string
-  recipient_id?: string
-  receive_utxo?: string
-  change_utxo?: string
-  expiration?: number
-  transport_endpoints?: Array<{
-    endpoint: string
-    transport_type: string
-    used: boolean
-  }>
-}
-
-interface ListTransfersResponse {
-  transfers: Transfer[]
-}
-
-interface TakerRequest {
-  swapstring: string
-}
-
-interface MakerInitRequest {
-  qty_from: number
-  qty_to: number
-  from_asset?: string
-  to_asset?: string
-  timeout_sec: number
-}
-
-interface MakerInitResponse {
-  payment_hash: string
-  payment_secret: string
-  swapstring: string
-}
-
-interface MakerExecuteRequest {
-  swapstring: string
-  payment_secret: string
-  taker_pubkey: string
-}
-
-export interface RgbAllocation {
-  asset_id: string
-  assignment: AssignmentFungible
-  settled: boolean
-}
-
-export interface Unspent {
-  utxo: {
-    outpoint: string
-    btc_amount: number
-    colorable: boolean
-  }
-  rgb_allocations: RgbAllocation[]
-}
-
-interface ListUnspentsResponse {
-  unspents: Unspent[]
-}
-
-interface ListUnspentsRequest {
-  skip_sync: boolean
-}
-
-interface RefreshTransfersRequest {
-  skip_sync: boolean
-}
-
-export enum SwapStatus {
-  Expired = 'Expired',
-  Failed = 'Failed',
-  Pending = 'Pending',
-  Succeeded = 'Succeeded',
-  Waiting = 'Waiting',
-}
-
-export interface SwapDetails {
-  payment_hash: string
-  qty_from: number
-  qty_to: number
-  from_asset: string | null
-  to_asset: string | null
-  status: SwapStatus
-  requested_at: number | null
-  initiated_at: number | null
-  completed_at: number | null
-  type?: 'maker' | 'taker'
-}
-
-interface ListSwapsResponse {
-  maker: SwapDetails[]
-  taker: SwapDetails[]
-}
-
-export enum Network {
-  Mainnet = 'Mainnet',
-  Testnet = 'Testnet',
-  Regtest = 'Regtest',
-  Signet = 'Signet',
-}
-
-interface NetworkInfoResponse {
-  network: Network
-  height: number
-}
-
-interface DecodeInvoiceRequest {
-  invoice: string
-}
-
-export interface DecodeInvoiceResponse {
-  amt_msat: number
-  expiry_sec: number
-  timestamp: number
-  asset_id: string | null
-  asset_amount: number | null
-  payment_hash: string
-  payment_secret: string
-  payee_pubkey: string
-  network: string
-}
-
-export interface DecodeRgbInvoiceResponse {
-  recipient_id: string
-  recipient_type: 'Witness' | 'Blind'
-  asset_schema: string | null
-  asset_id: string | null
-  assignment: Assignment | null
-  network: string
-  expiration_timestamp: number
-  transport_endpoints: string[]
-}
-
-export interface DecodeRgbInvoiceRequest {
-  invoice: string
-}
-
-export interface UnlockRequest {
-  password: string
-  bitcoind_rpc_username: string
-  bitcoind_rpc_password: string
-  bitcoind_rpc_host: string
-  bitcoind_rpc_port: number
-  indexer_url: string
-  proxy_endpoint: string
-  bearer_token?: string
-}
-
-interface InvoiceStatusRequest {
-  invoice: string
-}
-
-interface InvoiceStatusResponse {
-  status: 'Pending' | 'Succeeded' | 'Failed' | 'Expired'
-}
-
-interface EstimateFeeResponse {
-  fee_rate: number
-}
-
-interface EstimateFeeRequest {
-  blocks: number
-}
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { getNodeApiWrapper, MinimalState } from '../../api/client';
+import type { NodeApiWrapper } from '../../api/node-api-wrapper';
+import type { ApiResult } from '../../api/node-api-wrapper';
+import type {
+  AddressResponse,
+  AssetBalanceResponse,
+  AssetBalanceRequest,
+  BackupRequest,
+  BtcBalanceResponse,
+  CloseChannelRequest,
+  ConnectPeerRequest,
+  ConnectPeerResponse,
+  CreateUtxosRequest,
+  DecodeLNInvoiceResponse,
+  DecodeLNInvoiceRequest,
+  DecodeRgbInvoiceResponse as DecodeRGBInvoiceResponse,
+  DecodeRgbInvoiceRequest as DecodeRGBInvoiceRequest,
+  DisconnectPeerRequest,
+  EstimateFeeResponse,
+  EstimateFeeRequest,
+  InitRequest,
+  InitResponse,
+  GetInvoiceStatusResponse as InvoiceStatusResponse,
+  GetInvoiceStatusRequest as InvoiceStatusRequest,
+  IssueAssetNIAResponse,
+  IssueAssetNIARequest,
+  ListAssetsResponse,
+  ListChannelsResponse,
+  ListPaymentsResponse,
+  ListTransactionsResponse,
+  ListTransfersResponse,
+  ListUnspentsResponse,
+  CreateLNInvoiceResponse as LNInvoiceResponse,
+  CreateLNInvoiceRequest as LNInvoiceRequest,
+  MakerExecuteRequest,
+  MakerExecuteResponse,
+  MakerInitRequest,
+  MakerInitResponse,
+  NetworkInfoResponse,
+  NodeInfoResponse,
+  OpenChannelResponse,
+  OpenChannelRequest,
+  RefreshTransfersRequest as RefreshRequest,
+  RestoreRequest,
+  CreateRgbInvoiceResponse as RgbInvoiceResponse,
+  CreateRgbInvoiceRequest as RgbInvoiceRequest,
+  SendRgbResponse,
+  SendRgbRequest,
+  SendBtcRequest,
+  SendPaymentResponse,
+  SendPaymentRequest,
+  SignMessageResponse,
+  SignMessageRequest,
+  UnlockRequest,
+  KeysendResponse,
+  KeysendRequest,
+  ListPeersResponse,
+  ListSwapsResponse,
+  WhitelistTradeRequest,
+} from 'kaleidoswap-sdk';
+
+export type {
+  Assignment,
+  AssignmentFungible,
+  Channel,
+  NiaAsset,
+  SwapDetails,
+  Transfer,
+} from './types';
+
+export { SwapStatus } from './types';
+
+export type {
+  MakerExecuteRequest,
+  MakerInitRequest,
+  MakerInitResponse,
+} from 'kaleidoswap-sdk';
+
+// TakerRequest kept as local type for backward compatibility
+export type { TakerRequest } from './types';
+
+export const Network = {
+  Mainnet: 'mainnet',
+  Testnet: 'testnet',
+  Regtest: 'regtest',
+  Signet: 'signet',
+} as const;
+export type Network = typeof Network[keyof typeof Network];
+
+// Re-export types for backwards compatibility
+export type { SendPaymentResponse, InitResponse };
 
 export interface NodeApiError {
-  status: number
+  status: number;
   data: {
-    error: string
-  }
+    error: string;
+  };
 }
 
-const dynamicBaseQuery: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  NodeApiError
-> = async (args, api, extraOptions) => {
-  const state = api.getState() as RootState
-  const node_url = state.nodeSettings.data.node_url
-  const bearer_token = state.nodeSettings.data?.bearer_token
+type ApiState = { getState: () => unknown };
 
-  if (!node_url) {
-    return {
-      error: {
-        data: {
-          error: 'Node URL not set',
-        },
-        status: 400,
-      },
+/**
+ * Unified query function factory.
+ * Works for both endpoints with arguments and void endpoints.
+ * All error handling is delegated to NodeApiWrapper.execute().
+ */
+function queryFn<TArgs, TResult>(
+  call: (wrapper: NodeApiWrapper, args: TArgs) => Promise<ApiResult<TResult>>
+) {
+  return async (args: TArgs, api: ApiState): Promise<{ data: TResult } | { error: FetchBaseQueryError }> => {
+    try {
+      const wrapper = await getNodeApiWrapper(api.getState() as MinimalState);
+      const result = await call(wrapper, args);
+      if ('error' in result && result.error) return { error: result.error };
+      return { data: result.data as TResult };
+    } catch (error) {
+      return { error: { status: 500, data: { error: String(error) } } };
     }
-  }
-
-  const urlEnd = typeof args === 'string' ? args : args.url
-  const adjustedUrl = `${node_url}${urlEnd}`
-
-  // Handle headers including authentication
-  let headers: Record<string, string> = {}
-  if (bearer_token) {
-    headers['Authorization'] = `Bearer ${bearer_token}`
-  }
-
-  // If args is an object and has headers, merge them with our headers
-  if (typeof args !== 'string' && args.headers) {
-    headers = { ...headers, ...(args.headers as Record<string, string>) }
-  }
-
-  const adjustedArgs =
-    typeof args === 'string'
-      ? adjustedUrl
-      : {
-          ...args,
-          headers,
-          url: adjustedUrl,
-        }
-
-  const baseQuery = fetchBaseQuery({
-    baseUrl: '',
-    timeout: 300000,
-    validateStatus: (response, _) => {
-      return response.status >= 200 && response.status < 300
-    },
-  })
-
-  try {
-    const result = await baseQuery(adjustedArgs, api, extraOptions)
-
-    if (result.error) {
-      const err = result.error as FetchBaseQueryError
-
-      // Handle specific error types with better messages
-      let errorMessage = 'Unknown error'
-      let errorStatus = err.status as number
-
-      if (err.status === 'FETCH_ERROR') {
-        errorMessage =
-          'Connection failed: Unable to connect to the node. Please check if the node is running and accessible.'
-        errorStatus = 0
-      } else if (err.status === 'TIMEOUT_ERROR') {
-        errorMessage =
-          'Request timeout: The node took too long to respond. Please try again.'
-        errorStatus = 408
-      } else if (err.status === 'PARSING_ERROR') {
-        errorMessage =
-          'Response parsing error: Received invalid response from the node.'
-        errorStatus = 502
-      } else if (err.status === 'CUSTOM_ERROR') {
-        errorMessage = 'Network error: Unable to communicate with the node.'
-        errorStatus = 500
-      } else if (typeof err.data === 'string') {
-        errorMessage = err.data
-      } else if (err.data && typeof err.data === 'object') {
-        if ((err.data as any)?.error) {
-          errorMessage = (err.data as any).error
-        } else if ((err.data as any)?.message) {
-          errorMessage = (err.data as any).message
-        }
-      }
-
-      // Handle specific HTTP status codes with meaningful messages
-      if (typeof err.status === 'number') {
-        if (err.status === 0) {
-          errorMessage =
-            'Network error: Cannot connect to the node. This may be due to CORS policy, network connectivity issues, or the node being offline.'
-        } else if (err.status === 302) {
-          errorMessage =
-            'Authentication required: The node is redirecting to a login page. Please check your node authentication settings.'
-        } else if (err.status === 403) {
-          errorMessage =
-            (err.data as any)?.error ||
-            'Access denied: Your request was forbidden by the node.'
-        } else if (err.status === 404) {
-          errorMessage =
-            'Endpoint not found: The requested API endpoint does not exist on the node.'
-        } else if (err.status === 500) {
-          errorMessage =
-            'Internal server error: The node encountered an error while processing your request.'
-        } else if (err.status >= 500) {
-          errorMessage =
-            'Server error: The node is experiencing technical difficulties.'
-        }
-      }
-
-      return {
-        error: {
-          data: {
-            error: errorMessage,
-          },
-          status: errorStatus,
-        },
-      }
-    }
-
-    return result
-  } catch (error) {
-    let errorMessage = 'Unknown error occurred'
-
-    if (error instanceof Error) {
-      // Handle common error patterns
-      if (error.message.includes('CORS')) {
-        errorMessage =
-          'CORS error: Cross-origin request blocked. The frontend cannot access the node due to security restrictions. Please check your node configuration.'
-      } else if (
-        error.message.includes('NetworkError') ||
-        error.message.includes('Failed to fetch')
-      ) {
-        errorMessage =
-          'Network error: Cannot connect to the node. Please verify the node is running and accessible.'
-      } else if (error.message.includes('timeout')) {
-        errorMessage = 'Request timeout: The node took too long to respond.'
-      } else if (error.message.includes('ERR_CONNECTION_REFUSED')) {
-        errorMessage =
-          'Connection refused: The node is not accepting connections. Please check if the node is running.'
-      } else if (error.message.includes('ERR_NETWORK_CHANGED')) {
-        errorMessage =
-          'Network changed: Your network connection changed during the request. Please try again.'
-      } else {
-        errorMessage = `Connection error: ${error.message}`
-      }
-    }
-
-    return {
-      error: {
-        data: {
-          error: errorMessage,
-        },
-        status: 500,
-      },
-    }
-  }
+  };
 }
+
+import { TakerRequest } from './types';
 
 export const nodeApi = createApi({
-  baseQuery: dynamicBaseQuery,
+  reducerPath: 'nodeApi',
+  baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
-    address: builder.query<AddressResponse, void>({
-      query: () => ({
-        body: {},
-        method: 'POST',
-        url: '/address',
-      }),
-    }),
-    assetBalance: builder.query<AssetBalanceResponse, AssetBalanceRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/assetbalance',
-      }),
-    }),
-    backup: builder.query<void, BackupRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/backup',
-      }),
-    }),
-    btcBalance: builder.query<BTCBalanceResponse, BtcBalanceRequest>({
-      query: () => ({
-        body: {
-          skip_sync: false,
-        },
-        method: 'POST',
-        url: '/btcbalance',
-      }),
-    }),
-    closeChannel: builder.query<void, CloseChannelRequest>({
-      query: (body) => ({
-        body: {
-          channel_id: body.channel_id,
-          force: body.force === true,
-          peer_pubkey: body.peer_pubkey,
-        },
-        method: 'POST',
-        url: '/closechannel',
-      }),
-    }),
-    connectPeer: builder.mutation<void, ConnectPeerRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/connectpeer',
-      }),
-    }),
-    createUTXOs: builder.query<AddressResponse, CreateUTXOsRequest>({
-      query: (body) => ({
-        body: {
-          fee_rate: body.fee_rate,
-          num: body.num,
-          size: body.size,
-          skip_sync: false,
-          up_to: false,
-        },
-        method: 'POST',
-        url: '/createutxos',
-      }),
-    }),
-    decodeInvoice: builder.query<DecodeInvoiceResponse, DecodeInvoiceRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/decodelninvoice',
-      }),
-    }),
-    decodeRgbInvoice: builder.query<
-      DecodeRgbInvoiceResponse,
-      DecodeRgbInvoiceRequest
-    >({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/decodergbinvoice',
-      }),
-    }),
-    disconnectPeer: builder.mutation<void, DisconnectPeerRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/disconnectpeer',
-      }),
-    }),
-    estimateFee: builder.query<EstimateFeeResponse, EstimateFeeRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/estimatefee',
-      }),
-      transformResponse: (response: EstimateFeeResponse) => ({
-        fee_rate: Math.round(response.fee_rate),
-      }),
-    }),
-    init: builder.query<InitResponse, InitRequest>({
-      query: (body) => ({
-        body: {
-          password: body.password,
-        },
-        method: 'POST',
-        url: '/init',
-      }),
-    }),
-    invoiceStatus: builder.query<InvoiceStatusResponse, InvoiceStatusRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/invoicestatus',
-      }),
-    }),
-    issueNiaAsset: builder.query<IssueNiaAssetResponse, IssueNiaAssetRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/issueassetnia',
-      }),
-    }),
-    listAssets: builder.query<ListAssetsResponse, void>({
-      query: () => ({
-        body: {
-          filter_asset_schemas: ['Nia'],
-        },
-        method: 'POST',
-        url: '/listassets',
-      }),
-    }),
-    listChannels: builder.query<ListChannelsResponse, void>({
-      query: () => '/listchannels',
-    }),
-    listPayments: builder.query<ListPaymentsResponse, void>({
-      query: () => '/listpayments',
-    }),
-    listPeers: builder.query<ListPeersResponse, void>({
-      query: () => '/listpeers',
-    }),
-    listSwaps: builder.query<ListSwapsResponse, void>({
-      query: () => ({
-        method: 'GET',
-        url: '/listswaps',
-      }),
-      transformResponse: (response: ListSwapsResponse) => {
-        const transformSwaps = (swaps: SwapDetails[]) =>
-          swaps.map((swap) => ({
-            ...swap,
-            status:
-              swap.status in SwapStatus ? swap.status : SwapStatus.Pending,
-          }))
 
-        return {
-          maker: transformSwaps(response.maker || []),
-          taker: transformSwaps(response.taker || []),
-        }
-      },
-    }),
-    listTransactions: builder.query<
-      ListTransactionsResponse,
-      ListTransactionsRequest
-    >({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/listtransactions',
-      }),
-    }),
-    listTransfers: builder.query<ListTransfersResponse, ListTransfersRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/listtransfers',
-      }),
-    }),
-    listUnspents: builder.query<ListUnspentsResponse, ListUnspentsRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/listunspents',
-      }),
-    }),
-    lnInvoice: builder.query<LNINvoiceResponse, LNInvoiceRequest>({
-      query: (body) => ({
-        body: {
-          ...(body.asset_id
-            ? {
-                amt_msat: 3000000,
-                asset_amount: body.asset_amount,
-                asset_id: body.asset_id,
-              }
-            : {
-                amt_msat: body.amt_msat || 3000000,
-              }),
-          expiry_sec: 3600,
-        },
-        method: 'POST',
-        url: '/lninvoice',
-      }),
-    }),
-    lock: builder.query<void, void>({
-      query: () => ({
-        method: 'POST',
-        url: '/lock',
-      }),
-    }),
-    makerExecute: builder.mutation<void, MakerExecuteRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/makerexecute',
-      }),
-    }),
-    makerInit: builder.mutation<MakerInitResponse, MakerInitRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/makerinit',
-      }),
-    }),
-    networkInfo: builder.query<NetworkInfoResponse, void>({
-      query: () => '/networkinfo',
-    }),
+    // ============================================================================
+    // Wallet Management
+    // ============================================================================
+
     nodeInfo: builder.query<NodeInfoResponse, void>({
-      query: () => '/nodeinfo',
+      queryFn: queryFn((w, _: void) => w.getNodeInfo()),
     }),
-    openChannel: builder.query<OpenChannelResponse, OpenChannelRequest>({
-      query: (body) => {
-        const requestBody: any = {
-          capacity_sat: body.capacity_sat,
-          fee_rate_msat: body.fee_rate_msat,
-          peer_pubkey_and_opt_addr: body.peer_pubkey_and_opt_addr,
-          public: body.public !== undefined ? body.public : true,
-          push_msat: 3100000,
-          with_anchors: true,
-        }
-        if (body.asset_amount && body.asset_amount > 0) {
-          requestBody.asset_amount = body.asset_amount
-          requestBody.asset_id = body.asset_id
-        }
-        return {
-          body: requestBody,
-          method: 'POST',
-          url: '/openchannel',
-        }
-      },
+
+    networkInfo: builder.query<NetworkInfoResponse, void>({
+      queryFn: queryFn((w, _: void) => w.getNetworkInfo()),
     }),
-    refreshRgbTransfers: builder.query<void, RefreshTransfersRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/refreshtransfers',
-      }),
+
+    // init/unlock/lock/shutdown are state-changing operations — mutations, not queries
+    init: builder.mutation<InitResponse, InitRequest>({
+      queryFn: queryFn((w, args) => w.initWallet(args)),
     }),
-    restore: builder.query<void, RestoreRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/restore',
-      }),
+
+    unlock: builder.mutation<void, UnlockRequest>({
+      queryFn: queryFn((w, args) => w.unlockWallet(args)),
     }),
-    rgbInvoice: builder.query<RGBInvoiceResponse, RGBInvoiceRequest>({
-      query: (body) => ({
-        body: {
-          ...(body.asset_id ? { asset_id: body.asset_id } : {}),
-          ...(body.witness !== undefined ? { witness: body.witness } : {}),
-          ...(body.assignment ? { assignment: body.assignment } : {}),
-          min_confirmations: 1,
-        },
-        method: 'POST',
-        url: '/rgbinvoice',
-      }),
+
+    lock: builder.mutation<void, void>({
+      queryFn: queryFn((w, _: void) => w.lockWallet()),
     }),
-    sendAsset: builder.query<SendAssetResponse, SendAssetRequest>({
-      query: (body) => ({
-        body: {
-          asset_id: body.asset_id,
-          assignment: body.assignment,
-          donation: body.donation || false,
-          fee_rate: body.fee_rate,
-          min_confirmations: 1,
-          recipient_id: body.recipient_id,
-          ...(body.witness_data ? { witness_data: body.witness_data } : {}),
-          skip_sync: false,
-          transport_endpoints: body.transport_endpoints,
-        },
-        method: 'POST',
-        url: '/sendasset',
-      }),
+
+    shutdown: builder.mutation<void, void>({
+      queryFn: queryFn((w, _: void) => w.shutdown()),
     }),
-    sendBtc: builder.query<SendBTCResponse, SendBTCRequest>({
-      query: (body) => ({
-        body: {
-          address: body.address,
-          amount: body.amount,
-          fee_rate: body.fee_rate,
-          skip_sync: false,
-        },
-        method: 'POST',
-        url: '/sendbtc',
-      }),
+
+    backup: builder.mutation<void, BackupRequest>({
+      queryFn: queryFn((w, args) => w.backup(args)),
     }),
-    sendPayment: builder.query<SendPaymentResponse, SendPaymentRequest>({
-      query: (body) => ({
-        body: {
-          invoice: body.invoice,
-        },
-        method: 'POST',
-        url: '/sendpayment',
-      }),
+
+    restore: builder.mutation<void, RestoreRequest>({
+      queryFn: queryFn((w, args) => w.restore(args)),
     }),
-    shutdown: builder.query<void, void>({
-      query: () => ({
-        method: 'POST',
-        url: '/shutdown',
-      }),
+
+    // ============================================================================
+    // BTC Operations
+    // ============================================================================
+
+    address: builder.query<AddressResponse, void>({
+      queryFn: queryFn((w, _: void) => w.getAddress()),
     }),
-    sync: builder.query<void, void>({
-      query: () => ({
-        method: 'POST',
-        url: '/sync',
-      }),
+
+    btcBalance: builder.query<BtcBalanceResponse, void>({
+      queryFn: queryFn((w, _: void) => w.getBtcBalance()),
     }),
-    taker: builder.query<void, TakerRequest>({
-      query: (body) => ({
-        body,
-        method: 'POST',
-        url: '/taker',
-      }),
+
+    sendBtc: builder.mutation<void, SendBtcRequest>({
+      queryFn: queryFn((w, args) => w.sendBtc(args)),
     }),
-    unlock: builder.query<void, UnlockRequest>({
-      query: (body) => ({
-        body: {
-          announce_addresses: [],
-          announce_alias: '',
-          bitcoind_rpc_host: body.bitcoind_rpc_host,
-          bitcoind_rpc_password: body.bitcoind_rpc_password,
-          bitcoind_rpc_port: body.bitcoind_rpc_port,
-          bitcoind_rpc_username: body.bitcoind_rpc_username,
-          indexer_url: body.indexer_url,
-          password: body.password,
-          proxy_endpoint: body.proxy_endpoint,
-        },
-        method: 'POST',
-        url: '/unlock',
-      }),
+
+    listTransactions: builder.query<ListTransactionsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listTransactions()),
+    }),
+
+    listUnspents: builder.query<ListUnspentsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listUnspents()),
+    }),
+
+    createUtxos: builder.mutation<void, CreateUtxosRequest>({
+      queryFn: queryFn((w, args) => w.createUtxos(args)),
+    }),
+
+    estimateFee: builder.query<EstimateFeeResponse, EstimateFeeRequest>({
+      queryFn: queryFn((w, args) => w.estimateFee(args)),
+    }),
+
+    // ============================================================================
+    // RGB Asset Operations
+    // ============================================================================
+
+    listAssets: builder.query<ListAssetsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listAssets()),
+    }),
+
+    assetBalance: builder.query<AssetBalanceResponse, AssetBalanceRequest>({
+      queryFn: queryFn((w, args) => w.getAssetBalance(args)),
+    }),
+
+    issueNiaAsset: builder.mutation<IssueAssetNIAResponse, IssueAssetNIARequest>({
+      queryFn: queryFn((w, args) => w.issueAssetNIA(args)),
+    }),
+
+    sendRgb: builder.mutation<SendRgbResponse, SendRgbRequest>({
+      queryFn: queryFn((w, args) => w.sendRgb(args)),
+    }),
+
+    listTransfers: builder.query<ListTransfersResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listTransfers()),
+    }),
+
+    refresh: builder.mutation<void, RefreshRequest | void>({
+      queryFn: queryFn((w, args) => w.refreshTransfers(args || {})),
+    }),
+
+    // ============================================================================
+    // Lightning Network - Channels
+    // ============================================================================
+
+    listChannels: builder.query<ListChannelsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listChannels()),
+    }),
+
+    openChannel: builder.mutation<OpenChannelResponse, OpenChannelRequest>({
+      queryFn: queryFn((w, args) => w.openChannel(args)),
+    }),
+
+    closeChannel: builder.mutation<void, CloseChannelRequest>({
+      queryFn: queryFn((w, args) => w.closeChannel(args)),
+    }),
+
+    // ============================================================================
+    // Lightning Network - Peers
+    // ============================================================================
+
+    listPeers: builder.query<ListPeersResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listPeers()),
+    }),
+
+    connectPeer: builder.mutation<ConnectPeerResponse, ConnectPeerRequest>({
+      queryFn: queryFn((w, args) => w.connectPeer(args)),
+    }),
+
+    disconnectPeer: builder.mutation<void, DisconnectPeerRequest>({
+      queryFn: queryFn((w, args) => w.disconnectPeer(args)),
+    }),
+
+    // ============================================================================
+    // Lightning Network - Invoices & Payments
+    // ============================================================================
+
+    lnInvoice: builder.mutation<LNInvoiceResponse, LNInvoiceRequest>({
+      queryFn: queryFn((w, args) => w.createLNInvoice(args)),
+    }),
+
+    rgbInvoice: builder.mutation<RgbInvoiceResponse, RgbInvoiceRequest>({
+      queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
+    }),
+
+    decodeInvoice: builder.query<DecodeLNInvoiceResponse, DecodeLNInvoiceRequest>({
+      queryFn: queryFn((w, args) => w.decodeLNInvoice(args)),
+    }),
+
+    decodeRgbInvoice: builder.query<DecodeRGBInvoiceResponse, DecodeRGBInvoiceRequest>({
+      queryFn: queryFn((w, args) => w.decodeRgbInvoice(args)),
+    }),
+
+    invoiceStatus: builder.query<InvoiceStatusResponse, InvoiceStatusRequest>({
+      queryFn: queryFn((w, args) => w.getInvoiceStatus(args)),
+    }),
+
+    sendPayment: builder.mutation<SendPaymentResponse, SendPaymentRequest>({
+      queryFn: queryFn((w, args) => w.sendPayment(args)),
+    }),
+
+    keysend: builder.mutation<KeysendResponse, KeysendRequest>({
+      queryFn: queryFn((w, args) => w.keysend(args)),
+    }),
+
+    listPayments: builder.query<ListPaymentsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listPayments()),
+    }),
+
+    // ============================================================================
+    // Swaps
+    // ============================================================================
+
+    listSwaps: builder.query<ListSwapsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listSwaps()),
+    }),
+
+    whitelistTrade: builder.mutation<void, WhitelistTradeRequest>({
+      queryFn: queryFn((w, args) => w.whitelistTrade(args)),
+    }),
+
+    makerInit: builder.mutation<MakerInitResponse, MakerInitRequest>({
+      queryFn: queryFn((w, args) => w.makerInit(args)),
+    }),
+
+    makerExecute: builder.mutation<MakerExecuteResponse, MakerExecuteRequest>({
+      queryFn: queryFn((w, args) => w.makerExecute(args)),
+    }),
+
+    taker: builder.mutation<void, TakerRequest>({
+      queryFn: queryFn((w, args) => w.taker(args)),
+    }),
+
+    // ============================================================================
+    // Utility Methods
+    // ============================================================================
+
+    signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
+      queryFn: queryFn((w, args) => w.signMessage(args)),
     }),
   }),
-  reducerPath: 'nodeApi',
-})
+});
+
+export const {
+  useAddressQuery,
+  useAssetBalanceQuery,
+  useBackupMutation,
+  useBtcBalanceQuery,
+  useCloseChannelMutation,
+  useConnectPeerMutation,
+  useCreateUtxosMutation,
+  useDecodeInvoiceQuery,
+  useDecodeRgbInvoiceQuery,
+  useDisconnectPeerMutation,
+  useEstimateFeeQuery,
+  useInitMutation,
+  useInvoiceStatusQuery,
+  useIssueNiaAssetMutation,
+  useListAssetsQuery,
+  useListChannelsQuery,
+  useListPaymentsQuery,
+  useListTransactionsQuery,
+  useListTransfersQuery,
+  useListUnspentsQuery,
+  useLnInvoiceMutation,
+  useMakerInitMutation,
+  useMakerExecuteMutation,
+  useTakerMutation,
+  useNodeInfoQuery,
+  useNetworkInfoQuery,
+  useOpenChannelMutation,
+  useRefreshMutation,
+  useRestoreMutation,
+  useRgbInvoiceMutation,
+  useSendRgbMutation,
+  useSendBtcMutation,
+  useSendPaymentMutation,
+  useSignMessageMutation,
+  useUnlockMutation,
+  useKeysendMutation,
+  useListPeersQuery,
+  useListSwapsQuery,
+  useWhitelistTradeMutation,
+  useShutdownMutation,
+  useLockMutation,
+} = nodeApi;

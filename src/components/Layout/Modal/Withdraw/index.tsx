@@ -15,13 +15,12 @@ import {
 } from '../../../../helpers/number'
 import {
   nodeApi,
-  ApiError,
-  DecodeInvoiceResponse,
-  DecodeRgbInvoiceResponse,
-  NiaAsset,
-  Assignment,
-  AssignmentFungible,
+  NodeApiError as ApiError,
 } from '../../../../slices/nodeApi/nodeApi.slice'
+import {
+  DecodeLNInvoiceResponse as DecodeInvoiceResponse,
+  DecodeRgbInvoiceResponse,
+} from 'kaleidoswap-sdk'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 import { WithdrawForm, ConfirmationModal } from './components'
@@ -34,31 +33,16 @@ import {
   HTLCStatus,
   ValidationMessage,
 } from './types'
+import { getAssignmentAmount } from '../../../../utils/rgbUtils'
+
 
 const isLightningAddress = (input: string): boolean => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(input)
 }
 
-// Helper function to extract amount from assignment
-const getAssignmentAmount = (assignment: Assignment | null): number | null => {
-  if (!assignment) return null
-
-  switch (assignment.type) {
-    case 'Fungible':
-      return assignment.value
-    case 'InflationRight':
-      return assignment.value
-    case 'Any':
-    case 'NonFungible':
-    case 'ReplaceRight':
-    default:
-      return null
-  }
-}
-
 // Helper function to create fungible assignment from amount
-const createFungibleAssignment = (amount: number): AssignmentFungible => {
+const createFungibleAssignment = (amount: number): any => {
   return {
     type: 'Fungible',
     value: amount,
@@ -99,9 +83,9 @@ export const WithdrawModalContent: React.FC = () => {
   const [paymentHash, setPaymentHash] = useState<string | null>(null)
   const [isPollingStatus, setIsPollingStatus] = useState(false)
 
-  const [sendBtc] = nodeApi.useLazySendBtcQuery()
-  const [sendAsset] = nodeApi.useLazySendAssetQuery()
-  const [sendPayment] = nodeApi.useLazySendPaymentQuery()
+  const [sendBtc] = nodeApi.useSendBtcMutation()
+  const [sendRgb] = nodeApi.useSendRgbMutation()
+  const [sendPayment] = nodeApi.useSendPaymentMutation()
   const [listPayments] = nodeApi.useLazyListPaymentsQuery()
   const [estimateFee] = nodeApi.useLazyEstimateFeeQuery()
   const [decodeInvoice] = nodeApi.useLazyDecodeInvoiceQuery()
@@ -133,7 +117,7 @@ export const WithdrawModalContent: React.FC = () => {
   const availableAssets = useMemo(
     () => [
       { label: bitcoinUnit, value: BTC_ASSET_ID },
-      ...(assets.data?.nia.map((asset: NiaAsset) => ({
+      ...((assets.data?.nia || []).map((asset: any) => ({
         label: asset.ticker,
         value: asset.asset_id,
       })) ?? []),
@@ -168,10 +152,10 @@ export const WithdrawModalContent: React.FC = () => {
   const fetchBtcBalance = useCallback(async () => {
     try {
       const balance = await dispatch(
-        nodeApi.endpoints.btcBalance.initiate({ skip_sync: false })
+        nodeApi.endpoints.btcBalance.initiate()
       ).unwrap()
 
-      const spendableBalance = balance.vanilla.spendable
+      const spendableBalance = balance?.vanilla?.spendable || 0
       if (bitcoinUnit === 'SAT') {
         setAssetBalance(spendableBalance)
       } else {
@@ -205,12 +189,12 @@ export const WithdrawModalContent: React.FC = () => {
         const balance = await dispatch(
           nodeApi.endpoints.assetBalance.initiate({ asset_id: assetId })
         ).unwrap()
-        setAssetBalance(balance.spendable)
+        setAssetBalance(balance.spendable || 0)
 
         // Check if balance is zero
-        if (balance.spendable === 0) {
-          const assetInfo = assets.data?.nia.find(
-            (a: NiaAsset) => a.asset_id === assetId
+        if (balance?.spendable === 0) {
+          const assetInfo = (assets.data?.nia || []).find(
+            (a: any) => a.asset_id === assetId
           )
           const ticker =
             assetInfo?.ticker || t('withdrawModal.main.labels.assetFallback')
@@ -225,8 +209,8 @@ export const WithdrawModalContent: React.FC = () => {
         console.error(`Error fetching asset balance for ${assetId}:`, error)
         setAssetBalance(0)
         // Check if asset exists in the list
-        const assetExists = assets.data?.nia.some(
-          (asset: NiaAsset) => asset.asset_id === assetId
+        const assetExists = (assets.data?.nia || []).some(
+          (asset: any) => asset.asset_id === assetId
         )
         if (!assetExists) {
           setValidationMessage({
@@ -255,7 +239,7 @@ export const WithdrawModalContent: React.FC = () => {
         // Max BTC HTLC capacity across all ready channels
         const maxOutboundCapacity = Math.max(
           ...readyChannels.map(
-            (channel) => channel.next_outbound_htlc_limit_msat
+            (channel) => channel.next_outbound_htlc_limit_msat || 0
           )
         )
         setMaxLightningCapacity(maxOutboundCapacity)
@@ -263,12 +247,12 @@ export const WithdrawModalContent: React.FC = () => {
         // Max local_asset_amount per asset across all ready channels
         const assetCapacities: Record<string, number> = {}
         readyChannels.forEach((channel) => {
-          if (channel.asset_id && channel.asset_local_amount > 0) {
+          if (channel.asset_id && (channel.asset_local_amount || 0) > 0) {
             if (
               !assetCapacities[channel.asset_id] ||
-              channel.asset_local_amount > assetCapacities[channel.asset_id]
+              (channel.asset_local_amount || 0) > assetCapacities[channel.asset_id]
             ) {
-              assetCapacities[channel.asset_id] = channel.asset_local_amount
+              assetCapacities[channel.asset_id] = channel.asset_local_amount || 0
             }
           }
         })
@@ -310,7 +294,7 @@ export const WithdrawModalContent: React.FC = () => {
         const paymentsResponse = await listPayments().unwrap()
 
         // Find the payment with the matching hash from the decoded invoice
-        const payment = paymentsResponse.payments.find(
+        const payment = (paymentsResponse?.payments || []).find(
           (p) => p.payment_hash === paymentHash
         )
 
@@ -425,7 +409,7 @@ export const WithdrawModalContent: React.FC = () => {
           console.log('Decoded Lightning invoice:', decoded)
 
           setDecodedInvoice(decoded)
-          setPaymentHash(decoded.payment_hash) // Store payment hash
+          setPaymentHash(decoded.payment_hash || null) // Store payment hash
           setAddressType('lightning')
           setValue('network', 'lightning')
 
@@ -450,9 +434,10 @@ export const WithdrawModalContent: React.FC = () => {
             }
 
             // Also validate BTC amount if present (for the 3000 sat RGB fee)
-            if (decoded.amt_msat > 0) {
-              if (decoded.amt_msat > maxLightningCapacity) {
-                const invoiceAmountSats = decoded.amt_msat / 1000
+            const amtMsat = decoded.amt_msat || 0
+            if (amtMsat > 0) {
+              if (amtMsat > maxLightningCapacity) {
+                const invoiceAmountSats = amtMsat / 1000
                 const maxCapacitySats = maxLightningCapacity / 1000
                 setValidationMessage({
                   message: t('withdrawModal.main.errors.invoiceBtcCapacity', {
@@ -465,9 +450,9 @@ export const WithdrawModalContent: React.FC = () => {
             }
           }
           // If this is a regular BTC invoice with an amount
-          else if (decoded.amt_msat > 0) {
+          else if ((decoded.amt_msat || 0) > 0) {
             // Get the amount in satoshis for display and validation
-            const invoiceAmountSats = decoded.amt_msat / 1000
+            const invoiceAmountSats = (decoded.amt_msat || 0) / 1000
             const maxCapacitySats = maxLightningCapacity / 1000
 
             // Check if we have enough balance for this payment (assuming BTC)
@@ -488,7 +473,7 @@ export const WithdrawModalContent: React.FC = () => {
               })
             }
             // Check channel capacity after balance check - upgraded to Error from Warning
-            else if (decoded.amt_msat > maxLightningCapacity) {
+            else if ((decoded.amt_msat || 0) > maxLightningCapacity) {
               setValidationMessage({
                 message: t('withdrawModal.main.errors.invoiceExceedsCapacity', {
                   amount: invoiceAmountSats.toLocaleString(),
@@ -497,6 +482,17 @@ export const WithdrawModalContent: React.FC = () => {
                 type: 'error',
               })
             }
+          }
+          // Zero-amount invoice
+          else {
+            // Fetch BTC balance for validation when user enters amount
+            await fetchBtcBalance()
+
+            // Show info message that user needs to enter amount
+            setValidationMessage({
+              message: t('withdrawModal.main.info.zeroAmountInvoice'),
+              type: 'info',
+            })
           }
         } else if (input.startsWith('rgb')) {
           // RGB invoice
@@ -521,8 +517,8 @@ export const WithdrawModalContent: React.FC = () => {
 
             if (decodedRgb.asset_id) {
               setValue('asset_id', decodedRgb.asset_id)
-              const assetExists = assets.data?.nia.some(
-                (asset: NiaAsset) => asset.asset_id === decodedRgb.asset_id
+              const assetExists = (assets.data?.nia || []).some(
+                (asset: any) => asset.asset_id === decodedRgb.asset_id
               )
               if (!assetExists && decodedRgb.asset_id !== BTC_ASSET_ID) {
                 setValidationMessage({
@@ -534,10 +530,10 @@ export const WithdrawModalContent: React.FC = () => {
               } else {
                 // Fetch balance and then validate amount if present
                 await fetchAssetBalance(decodedRgb.asset_id)
-                const assetInfo = assets.data?.nia.find(
-                  (a: NiaAsset) => a.asset_id === decodedRgb.asset_id
+                const assetInfo = (assets.data?.nia || []).find(
+                  (a: any) => a.asset_id === decodedRgb.asset_id
                 )
-                const rgbBalance = assetInfo?.balance.spendable || 0
+                const rgbBalance = assetInfo?.balance?.spendable || 0
 
                 // Check if balance is zero
                 if (rgbBalance === 0) {
@@ -553,9 +549,9 @@ export const WithdrawModalContent: React.FC = () => {
                   return
                 }
 
-                const assignmentAmount = getAssignmentAmount(
-                  decodedRgb.assignment
-                )
+                const assignmentAmount = decodedRgb.assignment
+                  ? getAssignmentAmount(decodedRgb.assignment)
+                  : undefined
                 if (assignmentAmount) {
                   const ticker =
                     assetInfo?.ticker ||
@@ -711,8 +707,8 @@ export const WithdrawModalContent: React.FC = () => {
         : t('withdrawModal.form.amount.minBitcoinBtc')
     }
 
-    const assetInfo = assets.data?.nia.find(
-      (a: NiaAsset) => a.asset_id === assetId
+    const assetInfo = (assets.data?.nia || []).find(
+      (a: any) => a.asset_id === assetId
     )
     const ticker =
       assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
@@ -747,8 +743,8 @@ export const WithdrawModalContent: React.FC = () => {
       }
 
       if (data.asset_id !== BTC_ASSET_ID) {
-        const assetExists = assets.data?.nia.some(
-          (asset: NiaAsset) => asset.asset_id === data.asset_id
+        const assetExists = (assets.data?.nia || []).some(
+          (asset: any) => asset.asset_id === data.asset_id
         )
         if (!assetExists) {
           toast.error(t('withdrawModal.main.errors.assetMissing'), {
@@ -762,9 +758,9 @@ export const WithdrawModalContent: React.FC = () => {
         const assetInfo =
           data.asset_id === BTC_ASSET_ID
             ? null
-            : assets.data?.nia.find(
-                (a: NiaAsset) => a.asset_id === data.asset_id
-              )
+            : (assets.data?.nia || []).find(
+              (a: any) => a.asset_id === data.asset_id
+            )
         const ticker =
           assetInfo?.ticker ||
           (data.asset_id === BTC_ASSET_ID
@@ -798,12 +794,13 @@ export const WithdrawModalContent: React.FC = () => {
       // For Lightning payments, verify capacity one more time before proceeding to confirmation
       if (data.network === 'lightning' && decodedInvoice) {
         // Only check capacity for BTC invoices with an amount
-        if (decodedInvoice.amt_msat > 0 && !decodedInvoice.asset_id) {
-          const invoiceAmountSats = decodedInvoice.amt_msat / 1000
+        const amtMsat = decodedInvoice?.amt_msat || 0
+        if (amtMsat > 0 && !decodedInvoice.asset_id) {
+          const invoiceAmountSats = amtMsat / 1000
           const maxCapacitySats = maxLightningCapacity / 1000
 
           // Final capacity check
-          if (decodedInvoice.amt_msat > maxLightningCapacity) {
+          if (amtMsat > maxLightningCapacity) {
             toast.error(
               t('withdrawModal.main.errors.capacityToast', {
                 amount: invoiceAmountSats.toLocaleString(),
@@ -828,9 +825,9 @@ export const WithdrawModalContent: React.FC = () => {
           // RGB Lightning Invoice with asset
           formattedData.asset_id = decodedInvoice.asset_id
           formattedData.amount = decodedInvoice.asset_amount
-        } else if (decodedInvoice.amt_msat > 0) {
+        } else if ((decodedInvoice?.amt_msat || 0) > 0) {
           // Standard BTC Lightning invoice - convert using helpers
-          const amountSats = msatToSat(decodedInvoice.amt_msat)
+          const amountSats = msatToSat(decodedInvoice.amt_msat || 0)
           formattedData.asset_id = BTC_ASSET_ID // Ensure asset_id is set to BTC
 
           // Convert to the appropriate unit based on user's setting
@@ -839,6 +836,18 @@ export const WithdrawModalContent: React.FC = () => {
           } else {
             // Convert satoshis to BTC
             formattedData.amount = amountSats / 100000000
+          }
+        } else {
+          // Zero-amount invoice - use user-entered amount from form
+          formattedData.asset_id = BTC_ASSET_ID
+          // formattedData.amount is already set from form input
+          // Validate that amount was provided
+          const amountValue = Number(formattedData.amount)
+          if (!formattedData.amount || amountValue <= 0) {
+            toast.error(t('withdrawModal.main.errors.zeroAmountRequired'), {
+              autoClose: 5000,
+            })
+            return
           }
         }
       }
@@ -869,14 +878,15 @@ export const WithdrawModalContent: React.FC = () => {
     // Final check for Lightning payments before sending
     if (pendingData.network === 'lightning' && pendingData.decodedInvoice) {
       // Check channel capacity for BTC invoices
+      const pendingAmtMsat = pendingData.decodedInvoice.amt_msat || 0
       if (
-        pendingData.decodedInvoice.amt_msat > 0 &&
+        pendingAmtMsat > 0 &&
         !pendingData.decodedInvoice.asset_id
       ) {
-        const invoiceAmountSats = pendingData.decodedInvoice.amt_msat / 1000
+        const invoiceAmountSats = pendingAmtMsat / 1000
         const maxCapacitySats = maxLightningCapacity / 1000
 
-        if (pendingData.decodedInvoice.amt_msat > maxLightningCapacity) {
+        if (pendingAmtMsat > maxLightningCapacity) {
           setValidationMessage({
             message: t('withdrawModal.main.errors.lightningCapacityNeeded', {
               amount: invoiceAmountSats.toLocaleString(),
@@ -904,9 +914,24 @@ export const WithdrawModalContent: React.FC = () => {
         console.log('Processing Lightning payment...')
 
         try {
-          const res = await sendPayment({
+          // Check if this is a zero-amount invoice and prepare amount parameter
+          let paymentParams: any = {
             invoice: pendingData.address,
-          }).unwrap()
+          }
+
+          // If zero-amount invoice, add the amount from user input
+          if (pendingData.decodedInvoice && (!pendingData.decodedInvoice.amt_msat || pendingData.decodedInvoice.amt_msat === 0)) {
+            // Convert user-entered amount to msat
+            const userAmount = Number(pendingData.amount)
+            if (bitcoinUnit === 'SAT') {
+              paymentParams.amt_msat = userAmount * 1000
+            } else {
+              // BTC to msat
+              paymentParams.amt_msat = userAmount * 100000000 * 1000
+            }
+          }
+
+          const res = await sendPayment(paymentParams).unwrap()
 
           // Ensure payment hash is set for tracking
           if (
@@ -917,7 +942,7 @@ export const WithdrawModalContent: React.FC = () => {
           }
 
           // Use the status directly from the response
-          setPaymentStatus(res.status)
+          setPaymentStatus((res.status as PaymentStatus) || null)
 
           if (res.status === HTLCStatus.Pending) {
             console.log('Payment initiated - polling for status updates')
@@ -999,34 +1024,29 @@ export const WithdrawModalContent: React.FC = () => {
               ? Math.round(Number(pendingData.amount))
               : BTCtoSatoshi(Number(pendingData.amount))
 
-          const res = await sendBtc({
-            address: pendingData.address,
+          await sendBtc({
+            address: pendingData.address ?? '',
             amount: amountInSats,
             fee_rate:
               pendingData.fee_rate !== 'custom'
                 ? feeEstimations[
-                    pendingData.fee_rate as keyof typeof feeEstimations
-                  ]
+                pendingData.fee_rate as keyof typeof feeEstimations
+                ]
                 : customFee,
           }).unwrap()
 
-          if ('error' in res) {
-            throw new Error(
-              (res.error as ApiError)?.data?.error ||
-                t('withdrawModal.main.errors.paymentFailedGeneric')
-            )
-          }
+          // if ('error' in res) check removed as unwrap throws
           toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
             progressStyle: { background: '#3B82F6' },
           })
         } else {
-          const assetInfo = assets.data?.nia.find(
-            (a: NiaAsset) => a.asset_id === pendingData.asset_id
+          const assetInfo = (assets.data?.nia || []).find(
+            (a: any) => a.asset_id === pendingData.asset_id
           )
           const ticker =
             assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
           const rawAmount = parseAssetAmountWithPrecision(
-            pendingData.amount.toString(),
+            (pendingData.amount || 0).toString(),
             ticker,
             bitcoinUnit,
             assets.data?.nia
@@ -1084,19 +1104,25 @@ export const WithdrawModalContent: React.FC = () => {
               }
             }
 
-            res = await sendAsset({
-              asset_id: decodedRgbInvoice.asset_id || pendingData.asset_id,
-              assignment,
+            const targetAssetId = decodedRgbInvoice.asset_id || pendingData.asset_id;
+            res = await sendRgb({
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
-                      pendingData.fee_rate as keyof typeof feeEstimations
-                    ]
+                  pendingData.fee_rate as keyof typeof feeEstimations
+                  ]
                   : customFee,
-              recipient_id: decodedRgbInvoice.recipient_id,
-              transport_endpoints: decodedRgbInvoice.transport_endpoints,
-              witness_data: witnessData,
+              recipient_map: {
+                [targetAssetId]: [
+                  {
+                    recipient_id: decodedRgbInvoice.recipient_id,
+                    assignment,
+                    transport_endpoints: decodedRgbInvoice.transport_endpoints,
+                    ...(witnessData ? { witness_data: witnessData } : {}),
+                  },
+                ],
+              },
             }).unwrap()
           } else {
             if (!transportEndpoint) {
@@ -1104,25 +1130,30 @@ export const WithdrawModalContent: React.FC = () => {
                 t('withdrawModal.main.errors.proxyEndpointMissing')
               )
             }
-            res = await sendAsset({
-              asset_id: pendingData.asset_id,
-              assignment: createFungibleAssignment(rawAmount),
+            res = await sendRgb({
               donation: pendingData.donation || false,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
-                      pendingData.fee_rate as keyof typeof feeEstimations
-                    ]
+                  pendingData.fee_rate as keyof typeof feeEstimations
+                  ]
                   : customFee,
-              recipient_id: pendingData.address,
-              transport_endpoints: [transportEndpoint],
+              recipient_map: {
+                [pendingData.asset_id]: [
+                  {
+                    recipient_id: pendingData.address,
+                    assignment: createFungibleAssignment(rawAmount),
+                    transport_endpoints: [transportEndpoint],
+                  },
+                ],
+              },
             }).unwrap()
           }
 
           if ('error' in res) {
             throw new Error(
               (res.error as ApiError)?.data?.error ||
-                t('withdrawModal.main.errors.rgbPaymentFailed')
+              t('withdrawModal.main.errors.rgbPaymentFailed')
             )
           }
           toast.success(t('withdrawModal.main.toasts.rgbSuccess'), {
@@ -1194,7 +1225,7 @@ export const WithdrawModalContent: React.FC = () => {
     customFee,
     assets.data?.nia,
     decodedRgbInvoice,
-    sendAsset,
+    sendRgb,
     transportEndpoint,
     dispatch,
     t,
@@ -1212,9 +1243,9 @@ export const WithdrawModalContent: React.FC = () => {
           estimateFee({ blocks: 1 }).unwrap(),
         ])
         setFeeEstimations({
-          fast: fast.fee_rate,
-          normal: normal.fee_rate,
-          slow: slow.fee_rate,
+          fast: fast?.fee_rate || 0,
+          normal: normal?.fee_rate || 0,
+          slow: slow?.fee_rate || 0,
         })
       } catch (error) {
         console.error('Failed to fetch fee estimates:', error)

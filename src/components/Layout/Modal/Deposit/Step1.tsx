@@ -33,7 +33,7 @@ export const Step1 = ({ onNext }: Props) => {
   // Combine BTC with other assets
   const allAssets: Asset[] = [
     { asset_id: BTC_ASSET_ID, name: 'Bitcoin', ticker: 'BTC' },
-    ...(assets.data?.nia || []),
+    ...(assets.data?.nia || []).map(a => ({ asset_id: a.asset_id ?? '', ticker: a.ticker ?? '', name: a.name, icon: undefined })),
   ]
 
   const filteredAssets = allAssets.filter(
@@ -68,42 +68,42 @@ export const Step1 = ({ onNext }: Props) => {
   }, [assetId, onNext, isNewAsset])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
-      <div className="flex flex-col items-center mb-6">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-4">
+      <div className="flex flex-col items-center mb-3">
         {selectedAsset?.asset_id === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-10 h-10 mb-3" src={btcLogo} />
+          <img alt="Bitcoin" className="w-8 h-8 mb-2" src={btcLogo} />
         ) : (
-          <img alt="RGB Asset" className="w-10 h-10 mb-3" src={rgbLogo} />
+          <img alt="RGB Asset" className="w-8 h-8 mb-2" src={rgbLogo} />
         )}
-        <h3 className="text-2xl font-bold text-white mb-2">
+        <h3 className="text-xl font-bold text-white mb-1">
           {t('depositModal.step1.title')}
         </h3>
-        <p className="text-slate-400 text-center max-w-md text-sm">
+        <p className="text-slate-400 text-center max-w-md text-xs">
           {t('depositModal.step1.subtitle')}
         </p>
       </div>
 
-      <div className="space-y-4 max-w-xl mx-auto">
+      <div className="space-y-3 max-w-xl mx-auto">
         {/* Asset Selector */}
         <div className="relative">
           <button
-            className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700 
+            className="w-full p-2.5 bg-slate-800/50 rounded-xl border border-slate-700 
                      hover:border-blue-500/50 transition-all duration-200
                      flex items-center justify-between text-left"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {selectedAsset && !isNewAsset ? (
                 <>
-                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center">
                     {selectedAsset.asset_id === BTC_ASSET_ID ? (
-                      <img alt="Bitcoin" className="w-5 h-5" src={btcLogo} />
+                      <img alt="Bitcoin" className="w-4 h-4" src={btcLogo} />
                     ) : (
-                      <img alt="RGB Asset" className="w-5 h-5" src={rgbLogo} />
+                      <img alt="RGB Asset" className="w-4 h-4" src={rgbLogo} />
                     )}
                   </div>
                   <div>
-                    <div className="font-medium text-white">
+                    <div className="font-medium text-white text-sm">
                       {selectedAsset.ticker}
                     </div>
                     <div className="text-xs text-slate-400">
@@ -112,7 +112,7 @@ export const Step1 = ({ onNext }: Props) => {
                   </div>
                 </>
               ) : (
-                <span className="text-slate-400">
+                <span className="text-slate-400 text-sm">
                   {isNewAsset
                     ? t('depositModal.step1.newAssetLabel')
                     : t('depositModal.step1.selectorPlaceholder')}
@@ -120,7 +120,7 @@ export const Step1 = ({ onNext }: Props) => {
               )}
             </div>
             <ChevronDown
-              className={`w-5 h-5 text-slate-400 transition-transform duration-200 
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 
               ${isDropdownOpen ? 'transform rotate-180' : ''}`}
             />
           </button>
@@ -212,8 +212,8 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* New Asset Input */}
         {isNewAsset && (
-          <div className="space-y-3 animate-fadeIn">
-            <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+          <div className="space-y-2 animate-fadeIn">
+            <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
               <p className="text-blue-400 text-xs">
                 {t('depositModal.step1.newAssetInfo')}
               </p>
@@ -236,9 +236,9 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* Continue Button */}
         <button
-          className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white 
+          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white 
                    rounded-xl font-medium transition-colors flex items-center 
-                   justify-center gap-2 sticky bottom-0"
+                   justify-center gap-2 text-sm"
           onClick={handleSubmit}
         >
           {t('depositModal.common.continue')}

@@ -39,6 +39,7 @@ import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
+import { waitForNodeReady } from '../../utils/nodeState'
 
 const ModalType = {
   ERROR: 'error',
@@ -201,7 +202,7 @@ export const Component = () => {
     type: ModalType.NONE,
   })
 
-  const [restore] = nodeApi.endpoints.restore.useLazyQuery()
+  const [restore] = nodeApi.useRestoreMutation()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const navigate = useNavigate()
@@ -332,7 +333,7 @@ export const Component = () => {
             rpc_connection_url: data.rpc_connection_url,
           })
         )
-        try {
+        try {          
           await invoke('start_node', {
             accountName: data.name,
             daemonListeningPort: data.daemon_listening_port,
@@ -340,21 +341,27 @@ export const Component = () => {
             ldkPeerListeningPort: data.ldk_peer_listening_port,
             network: data.network,
           })
+          
+          // Wait for node to be ready with improved detection
+          await waitForNodeReady({
+            timeoutMs: 60000,
+            onProgress: (message) => {
+              console.log('Node startup:', message)
+            },
+          })
+          
           toast.success(t('walletRestore.nodeStartedSuccess'))
         } catch (error) {
           toast.error(t('walletRestore.couldNotStartNode', { error }))
           throw new Error(`Could not start node: ${error}`)
         }
 
-        // Wait for node to be ready
-        await new Promise((resolve) => setTimeout(resolve, 5000))
-
         const restoreResponse = await restore({
           backup_path: data.backup_path,
           password: data.password,
         })
 
-        if (restoreResponse.isSuccess) {
+        if (!restoreResponse.error) {
           await invoke('insert_account', {
             daemonListeningPort: data.daemon_listening_port,
             datapath: datapath,
@@ -381,8 +388,8 @@ export const Component = () => {
             t('walletRestore.errorTitle'),
             restoreResponse.error
               ? t('walletRestore.errorRestoringWallet', {
-                  error: JSON.stringify(restoreResponse.error),
-                })
+                error: JSON.stringify(restoreResponse.error),
+              })
               : t('walletRestore.failedToRestore')
           )
           await invoke('stop_node')

@@ -140,7 +140,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
                 <button
                   className="ml-4 px-3 py-1.5 text-red-400 hover:text-red-300 bg-red-500/10
                            rounded-lg transition-colors flex items-center gap-2 opacity-60 group-hover:opacity-100"
-                  onClick={() => handleDisconnect(peer.pubkey)}
+                  onClick={() => handleDisconnect(peer.pubkey ?? '')}
                   title={t('peerManagement.disconnectTooltip')}
                 >
                   <Unlink className="w-4 h-4" />

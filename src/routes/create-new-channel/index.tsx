@@ -45,7 +45,7 @@ export const Component = () => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
-  const [openChannel] = nodeApi.endpoints.openChannel.useLazyQuery()
+  const [openChannel] = nodeApi.endpoints.openChannel.useMutation()
   const [getBtcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
   const [estimateFee] = nodeApi.endpoints.estimateFee.useLazyQuery()
   const [getNetworkInfo] = nodeApi.endpoints.networkInfo.useLazyQuery()
@@ -85,9 +85,9 @@ export const Component = () => {
           estimateFee({ blocks: 1 }).unwrap(),
         ])
         setFeeRates({
-          fast: fastFee.fee_rate,
-          medium: mediumFee.fee_rate,
-          slow: slowFee.fee_rate,
+          fast: fastFee.fee_rate ?? DEFAULT_FEE_RATES.fast,
+          medium: mediumFee.fee_rate ?? DEFAULT_FEE_RATES.medium,
+          slow: slowFee.fee_rate ?? DEFAULT_FEE_RATES.slow,
         })
       } catch (e) {
         setFormError(t('createChannel.errorFetchFeeRates'))
@@ -101,10 +101,10 @@ export const Component = () => {
     const checkInitialBalance = async () => {
       setIsLoading(true)
       try {
-        const response = await getBtcBalance({ skip_sync: false })
+        const response = await getBtcBalance()
         if (response.data) {
           const totalSpendable =
-            response.data.vanilla.spendable + response.data.colored.spendable
+            (response.data.vanilla?.spendable ?? 0) + (response.data.colored?.spendable ?? 0)
 
           setInsufficientBalance(totalSpendable < MIN_CHANNEL_CAPACITY)
         } else {
@@ -146,14 +146,18 @@ export const Component = () => {
   }
 
   const openChannelOperation = async () => {
-    return await openChannel({
-      asset_amount: formData.assetAmount,
-      asset_id: formData.assetId,
+    const payload: any = {
       capacity_sat: formData.capacitySat,
-      fee_rate_msat: feeRates[formData.fee],
       peer_pubkey_and_opt_addr: formData.pubKeyAndAddress,
       public: formData.public,
-    }).unwrap()
+    }
+
+    if (formData.assetId && formData.assetAmount > 0) {
+      payload.asset_amount = formData.assetAmount
+      payload.asset_id = formData.assetId
+    }
+
+    return await openChannel(payload).unwrap()
   }
 
   const onSubmit = useCallback(async () => {
@@ -189,7 +193,7 @@ export const Component = () => {
       if (!wasHandled) {
         setChannelOpeningError(
           error?.data?.error ||
-            (error instanceof Error ? error.message : 'Failed to open channel')
+          (error instanceof Error ? error.message : 'Failed to open channel')
         )
         setStep(4)
       }

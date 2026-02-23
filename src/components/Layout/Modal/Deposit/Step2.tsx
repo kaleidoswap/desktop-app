@@ -51,7 +51,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [amount, setAmount] = useState<string>('')
   const [noColorableUtxos, setNoColorableUtxos] = useState<boolean>(false)
   const [maxDepositAmount, setMaxDepositAmount] = useState<number>(0)
-  const [usePrivacy, setUsePrivacy] = useState<boolean>(false)
+  const [usePrivacy, setUsePrivacy] = useState<boolean>(true)
   const prevAmountRef = useRef<string>('')
 
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
@@ -59,9 +59,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const { t } = useTranslation()
 
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
-  const [addressQuery] = nodeApi.endpoints.address.useLazyQuery()
-  const [lnInvoice] = nodeApi.endpoints.lnInvoice.useLazyQuery()
-  const [rgbInvoice] = nodeApi.endpoints.rgbInvoice.useLazyQuery()
+  const [addressQuery] = nodeApi.useLazyAddressQuery()
+  const [lnInvoice] = nodeApi.useLnInvoiceMutation()
+  const [rgbInvoice] = nodeApi.useRgbInvoiceMutation()
 
   // Auto-generate BTC address when component mounts
   useEffect(() => {
@@ -157,7 +157,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     setAddress(undefined)
     setAmount('')
     setNoColorableUtxos(false)
-    setUsePrivacy(false)
+    setUsePrivacy(true)
   }, [network])
 
   // Reset address when switching privacy mode
@@ -175,8 +175,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     if (assetList?.nia && assetId !== BTC_ASSET_ID && assetId) {
       const asset = assetList.nia.find((a) => a.asset_id === assetId)
       if (asset) {
-        setAssetTicker(asset.ticker)
-        setAssetName(asset.name)
+        setAssetTicker(asset.ticker ?? '')
+        setAssetName(asset.name ?? '')
       }
     } else if (assetId === BTC_ASSET_ID) {
       setAssetTicker('BTC')
@@ -218,7 +218,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [recipientId, setRecipientId] = useState<string>()
 
   // Add network info query
-  const { data: networkInfo } = nodeApi.endpoints.networkInfo.useQuery()
+  const { data: networkInfoData } = nodeApi.useNodeInfoQuery()
+  const networkInfo = networkInfoData as any
 
   // Format amount helper
   const formatAmount = useCallback(
@@ -293,8 +294,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     const formattedValue =
       value.split('.').length === 2
         ? value.split('.')[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
-          '.' +
-          value.split('.')[1]
+        '.' +
+        value.split('.')[1]
         : value.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
     setAmount(formattedValue)
@@ -342,9 +343,10 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
       // Check for errors in RTK Query response
       if ('error' in res && res.error) {
+        const err = res.error as any
         const errorMessage =
-          'data' in res.error && res.error.data
-            ? (res.error.data as any)?.error || 'Unknown error'
+          err.data && err.data.error
+            ? err.data.error
             : 'Unknown error'
 
         // Check if this is a UTXO-related error
@@ -385,29 +387,39 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     setLoading(true)
     try {
       if (network === 'lightning') {
-        if (!amount || parseFloat(amount.replace(/,/g, '')) <= 0) {
-          toast.error(t('depositModal.step2.toasts.invalidAmount'))
-          setLoading(false)
-          return
-        }
+        // Check if amount is provided and valid
+        const hasAmount = amount && parseFloat(amount.replace(/,/g, '')) > 0
 
-        // Parse the amount properly, removing commas
-        const cleanAmount = amount.replace(/,/g, '')
-        const numericAmount = parseFloat(cleanAmount)
+        let res
+        if (hasAmount) {
+          // Parse the amount properly, removing commas
+          const cleanAmount = amount.replace(/,/g, '')
+          const numericAmount = parseFloat(cleanAmount)
 
-        const res = await lnInvoice(
-          assetId === BTC_ASSET_ID
-            ? {
+          res = await lnInvoice(
+            assetId === BTC_ASSET_ID
+              ? {
                 amt_msat:
                   bitcoinUnit === 'SAT'
                     ? numericAmount * 1000
                     : numericAmount * Math.pow(10, 8) * 1000,
               }
-            : {
+              : {
                 asset_amount: parseAmount(cleanAmount, assetTicker),
                 asset_id: assetId,
               }
-        )
+          )
+        } else {
+          // Generate zero-amount invoice
+          res = await lnInvoice(
+            assetId === BTC_ASSET_ID
+              ? {}
+              : {
+                asset_id: assetId,
+              }
+          )
+        }
+
         if ('error' in res) {
           toast.error(t('depositModal.step2.toasts.lnInvoiceError'))
         } else {
@@ -458,22 +470,21 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     return (
       <button
         className={`
-          flex-1 py-4 px-6 flex flex-col items-center justify-center gap-2
+          flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5
           rounded-xl transition-all duration-200 border-2
           ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
-          ${
-            network === type
-              ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-              : 'border-slate-700 hover:border-blue-500/50 text-slate-400 hover:text-blue-500/80'
+          ${network === type
+            ? 'bg-blue-500/10 border-blue-500 text-blue-500'
+            : 'border-slate-700 hover:border-blue-500/50 text-slate-400 hover:text-blue-500/80'
           }
         `}
         disabled={isDisabled}
         onClick={() => !isDisabled && setNetwork(type)}
       >
         <Icon
-          className={`w-6 h-6 ${network === type ? 'animate-pulse' : ''}`}
+          className={`w-5 h-5 ${network === type ? 'animate-pulse' : ''}`}
         />
-        <span className="font-medium">{label}</span>
+        <span className="font-medium text-sm">{label}</span>
         {isDisabled && (
           <span className="text-xs text-slate-500">
             {t('depositModal.step2.network.requiresAsset')}
@@ -521,36 +532,32 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   }, [invoiceStatus, onNext])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
-      <div className="flex flex-col items-center mb-4">
+    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-4">
+      <div className="flex flex-col items-center mb-2">
         {/* Display selected asset icon */}
         {assetId === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-10 h-10 mb-3" src={btcLogo} />
+          <img alt="Bitcoin" className="w-8 h-8 mb-2" src={btcLogo} />
         ) : (
-          <img alt="RGB Asset" className="w-10 h-10 mb-3" src={rgbLogo} />
+          <img alt="RGB Asset" className="w-8 h-8 mb-2" src={rgbLogo} />
         )}
 
         {/* Show the asset name and ticker prominently */}
-        <h3 className="text-2xl font-bold text-white mb-1">{titleText}</h3>
+        <h3 className="text-xl font-bold text-white mb-1">{titleText}</h3>
 
         {assetName && (
-          <div className="text-slate-400 mb-1 text-sm">{assetName}</div>
+          <div className="text-slate-400 mb-1 text-xs">{assetName}</div>
         )}
 
         {assetId && assetId !== BTC_ASSET_ID && (
-          <div className="text-xs text-slate-500 mt-1 bg-slate-800 px-2 py-0.5 rounded-full">
+          <div className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
             {assetId.slice(0, 8)}...{assetId.slice(-8)}
           </div>
         )}
-
-        <p className="text-slate-400 text-center max-w-md mt-2 text-xs">
-          {t('depositModal.step2.intro')}
-        </p>
       </div>
 
-      <div className="space-y-4">
-        {/* Network Selection - Made more compact and sticky */}
-        <div className="flex gap-3 mb-3 top-[60px] z-20 pb-2 pt-1 bg-slate-900/95 backdrop-blur-sm">
+      <div className="space-y-3">
+        {/* Network Selection - Made more compact */}
+        <div className="flex gap-2">
           <NetworkOption
             icon={ChainIcon}
             label={t('depositModal.step2.network.onchain')}
@@ -565,13 +572,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
         {network === 'on-chain' && assetId !== BTC_ASSET_ID && (
-          <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 space-y-3 animate-fadeIn">
+          <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 animate-fadeIn">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-white mb-1">
+                <h4 className="text-sm font-medium text-white">
                   {t('depositModal.step2.privacy.title')}
                 </h4>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 mt-0.5">
                   {usePrivacy
                     ? t('depositModal.step2.privacy.modePrivacy')
                     : t('depositModal.step2.privacy.modeWitness')}
@@ -591,28 +598,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   `}
                 />
               </button>
-            </div>
-            <div className="text-xs text-slate-400 bg-slate-900/50 p-2 rounded-lg">
-              {usePrivacy ? (
-                <>
-                  <span className="font-medium text-slate-300">
-                    {t('depositModal.step2.privacy.privacyLabel')}
-                  </span>{' '}
-                  {t('depositModal.step2.privacy.privacyDescription')}
-                </>
-              ) : (
-                <>
-                  <span className="font-medium text-slate-300">
-                    {t('depositModal.step2.privacy.witnessLabel')}
-                  </span>{' '}
-                  {t('depositModal.step2.privacy.witnessDescription')}
-                  <br />
-                  <span className="text-yellow-400 font-medium">
-                    {t('depositModal.step2.privacy.witnessNote')}
-                  </span>
-                  <br />
-                </>
-              )}
             </div>
           </div>
         )}
@@ -670,22 +655,22 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {/* No Colorable UTXOs Warning - Made more compact */}
         {noColorableUtxos && (
-          <div className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
+          <div className="p-2 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
             <div className="flex items-start">
               <AlertTriangle className="text-yellow-500 w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="text-yellow-400 font-medium text-sm mb-1">
+                <h4 className="text-yellow-400 font-medium text-xs mb-1">
                   {t('depositModal.step2.noColorable.title')}
                 </h4>
-                <p className="text-yellow-300/80 text-xs mb-2">
+                <p className="text-yellow-300/80 text-xs mb-1.5">
                   {t('depositModal.step2.noColorable.description')}
                 </p>
                 <button
-                  className="px-3 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 
-                          rounded-lg transition-colors text-xs flex items-center gap-2"
+                  className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 
+                          rounded-lg transition-colors text-xs flex items-center gap-1.5"
                   onClick={() => setShowUtxoModal(true)}
                 >
-                  <Wallet className="w-3.5 h-3.5" />
+                  <Wallet className="w-3 h-3" />
                   {t('depositModal.step2.noColorable.cta')}
                 </button>
               </div>
@@ -739,7 +724,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <div className="space-y-1 animate-fadeIn">
             <div className="flex justify-between items-center">
               <label className="text-xs font-medium text-slate-400">
-                {t('depositModal.step2.amount.requiredLabel')}
+                {t('depositModal.step2.amount.optionalLabel')}
               </label>
               {maxDepositAmount > 0 && (
                 <div className="text-xs text-slate-400">
@@ -769,9 +754,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     amount:
                       maxDepositAmount > 0
                         ? formatAmount(
-                            maxDepositAmount,
-                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                          )
+                          maxDepositAmount,
+                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                        )
                         : t('depositModal.step2.amount.notAvailable'),
                   })}
                   type="text"
@@ -805,21 +790,21 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     amount,
                     assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
                   ) > maxDepositAmount && (
-                    <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                      <p className="text-xs text-red-400">
-                        {t('depositModal.step2.amount.exceeds', {
-                          amount: formatAmount(
-                            maxDepositAmount,
-                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                          ),
-                          asset: getDisplayAsset(
-                            assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
-                            bitcoinUnit
-                          ),
-                        })}
-                      </p>
-                    </div>
-                  )}
+                      <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <p className="text-xs text-red-400">
+                          {t('depositModal.step2.amount.exceeds', {
+                            amount: formatAmount(
+                              maxDepositAmount,
+                              assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                            ),
+                            asset: getDisplayAsset(
+                              assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
+                              bitcoinUnit
+                            ),
+                          })}
+                        </p>
+                      </div>
+                    )}
                 </div>
               )}
 
@@ -838,6 +823,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 </p>
               </div>
             )}
+
+            {/* Info about zero-amount invoices */}
+            <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <p className="text-xs text-blue-400">
+                {t('depositModal.step2.amount.zeroAmountInfo')}
+              </p>
+            </div>
           </div>
         )}
 
@@ -848,8 +840,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                      flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             disabled={
               loading ||
-              (network === 'lightning' &&
-                (!amount || parseFloat(amount.replace(/,/g, '')) <= 0)) ||
               (network === 'lightning' &&
                 maxDepositAmount > 0 &&
                 amount &&
@@ -904,13 +894,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
             )}
 
-            {/* QR Code - Made more responsive */}
-            <div className="flex justify-center py-2">
-              <div className="p-3 bg-white rounded-xl shadow-xl">
+            {/* QR Code - Made more compact */}
+            <div className="flex justify-center py-1">
+              <div className="p-2 bg-white rounded-xl shadow-xl">
                 <QRCodeCanvas
                   includeMargin={true}
                   level="H"
-                  size={window.innerWidth < 500 ? 140 : 160}
+                  size={window.innerWidth < 500 ? 130 : 150}
                   value={address}
                 />
               </div>
@@ -926,11 +916,10 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 <span
                   className={`
                   px-1.5 py-0.5 rounded-md text-xs font-medium
-                  ${
-                    assetId === BTC_ASSET_ID
+                  ${assetId === BTC_ASSET_ID
                       ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20'
                       : 'bg-purple-500/20 text-purple-400 border border-purple-500/20'
-                  }
+                    }
                 `}
                 >
                   {addressLabel}
@@ -989,8 +978,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </div>
         )}
 
-        {/* Navigation - Sticky to the bottom */}
-        <div className="sticky bottom-0 pt-4 pb-1 flex justify-between bg-slate-900/95 backdrop-blur-sm z-10">
+        {/* Navigation - More compact */}
+        <div className="flex justify-between pt-3">
           <button
             className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
                      flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"
@@ -1001,7 +990,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </button>
 
           <button
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
                      transition-colors flex items-center gap-1.5 text-sm"
             onClick={onNext}
           >

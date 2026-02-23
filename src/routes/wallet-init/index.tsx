@@ -53,6 +53,7 @@ import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
+import { waitForNodeReady } from '../../utils/nodeState'
 
 const checkPortAvailability = async (
   ports: string[]
@@ -126,8 +127,8 @@ export const Component = () => {
   const [isInitializing, setIsInitializing] = useState(false)
   const [showSkipMnemonicWarning, setShowSkipMnemonicWarning] = useState(false)
 
-  const [init] = nodeApi.endpoints.init.useLazyQuery()
-  const [unlock] = nodeApi.endpoints.unlock.useLazyQuery()
+  const [init] = nodeApi.endpoints.init.useMutation()
+  const [unlock] = nodeApi.endpoints.unlock.useMutation()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const dispatch = useAppDispatch()
@@ -375,54 +376,18 @@ export const Component = () => {
           if (!recheckPorts.available) {
             throw new Error(
               `Ports ${recheckPorts.conflictingPorts.join(', ')} are still in use by other processes. ` +
-                'Please choose different ports or stop the conflicting processes.'
+              'Please choose different ports or stop the conflicting processes.'
             )
           }
         } else {
           // Ports are in use by external processes
           throw new Error(
             `Ports ${portCheck.conflictingPorts.join(', ')} are in use by other applications. ` +
-              'Please choose different ports or stop the conflicting applications.'
+            'Please choose different ports or stop the conflicting applications.'
           )
         }
       }
 
-      // Now proceed with starting the node
-      const nodeStartedPromise = new Promise<void>((resolve, reject) => {
-        let unlistenFn: (() => void) | null = null
-        const startTimeout = 30000 // 30 seconds timeout
-
-        const timeoutId = setTimeout(async () => {
-          if (unlistenFn) unlistenFn()
-
-          try {
-            const isRunning = await invoke<boolean>('is_node_running')
-            if (isRunning) {
-              resolve()
-              return
-            }
-          } catch (error) {
-            console.error('Error checking node status:', error)
-          }
-
-          reject(new Error('Timeout waiting for node to start'))
-        }, startTimeout)
-
-        listen('node-log', (event: { payload: string }) => {
-          if (event.payload.includes('Listening on')) {
-            if (unlistenFn) unlistenFn()
-            clearTimeout(timeoutId)
-            resolve()
-          }
-        })
-          .then((unlisten) => {
-            unlistenFn = unlisten
-          })
-          .catch((error) => {
-            clearTimeout(timeoutId)
-            reject(new Error(`Failed to set up node event listener: ${error}`))
-          })
-      })
 
       // Start the node
       await invoke('start_node', {
@@ -433,7 +398,13 @@ export const Component = () => {
         network,
       })
 
-      await nodeStartedPromise
+      // Wait for node to be ready with improved detection
+      await waitForNodeReady({
+        timeoutMs: 60000, // 60 seconds timeout
+        onProgress: (message) => {
+          console.log('Node startup progress:', message)
+        },
+      })
     } catch (error) {
       // If we fail to start, try to find alternative ports
       const suggestedPorts = await invoke<{ daemon: string; ldk: string }>(
@@ -442,9 +413,9 @@ export const Component = () => {
 
       throw new Error(
         `Failed to start node: ${error}\n` +
-          `Suggested alternative ports:\n` +
-          `- Daemon port: ${suggestedPorts.daemon}\n` +
-          `- LDK peer port: ${suggestedPorts.ldk}`
+        `Suggested alternative ports:\n` +
+        `- Daemon port: ${suggestedPorts.daemon}\n` +
+        `- LDK peer port: ${suggestedPorts.ldk}`
       )
     }
   }
@@ -452,45 +423,39 @@ export const Component = () => {
   const initializeNode = async (password: string): Promise<string[]> => {
     const initResult = await init({ password })
 
-    if (!initResult.isSuccess) {
+    if ('error' in initResult) {
+      const error = initResult.error
       // Handle 403 status case
-      if (
-        initResult.error &&
-        typeof initResult.error === 'object' &&
-        'status' in initResult.error &&
-        initResult.error.status === 403
-      ) {
+      if (typeof error === 'object' && error !== null && 'status' in error && error.status === 403) {
         throw new Error('NODE_ALREADY_INITIALIZED')
       }
-
-      // Handle error with data property
+      // Extract message from error data if available
       if (
-        initResult.error &&
-        typeof initResult.error === 'object' &&
-        'data' in initResult.error &&
-        initResult.error.data &&
-        typeof initResult.error.data === 'object' &&
-        'error' in initResult.error.data &&
-        typeof initResult.error.data.error === 'string'
+        typeof error === 'object' &&
+        error !== null &&
+        'data' in error &&
+        error.data &&
+        typeof error.data === 'object' &&
+        'error' in error.data &&
+        typeof (error.data as Record<string, unknown>).error === 'string'
       ) {
-        throw new Error(initResult.error.data.error)
+        throw new Error((error.data as Record<string, string>).error)
       }
-
-      // Default error case
       throw new Error('Node initialization failed')
     }
 
-    if (!initResult.data || !initResult.data.mnemonic) {
+    const { mnemonic } = initResult.data
+    if (!mnemonic) {
       throw new Error('Invalid response: missing mnemonic')
     }
 
-    return initResult.data.mnemonic.split(' ')
+    return mnemonic.split(' ')
   }
 
   const unlockExistingNode = async (password: string): Promise<void> => {
     const rpcConfig = parseRpcUrl(nodeSetupForm.getValues('rpc_connection_url'))
 
-    const unlockResult = await unlock({
+    await unlock({
       bitcoind_rpc_host: rpcConfig.host,
       bitcoind_rpc_password: rpcConfig.password,
       bitcoind_rpc_port: rpcConfig.port,
@@ -499,10 +464,6 @@ export const Component = () => {
       password,
       proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
     }).unwrap()
-
-    if (unlockResult === undefined) {
-      throw new Error('Failed to unlock the node')
-    }
 
     const nodeInfoResult = await nodeInfo()
     if (!nodeInfoResult.isSuccess) {
@@ -689,7 +650,7 @@ export const Component = () => {
         nodeSetupForm.getValues('rpc_connection_url')
       )
 
-      const unlockResult = await unlock({
+      await unlock({
         bitcoind_rpc_host: rpcConfig.host,
         bitcoind_rpc_password: rpcConfig.password,
         bitcoind_rpc_port: rpcConfig.port,
@@ -698,10 +659,6 @@ export const Component = () => {
         password: nodePassword,
         proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
       }).unwrap()
-
-      if (unlockResult === undefined) {
-        throw new Error(t('walletInit.unlockStep.failedToUnlock'))
-      }
 
       // Verify node status after unlock
       const nodeInfoResult = await nodeInfo()

@@ -97,7 +97,11 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
                       fromAsset,
                       toAsset,
                       exchangeRate,
-                      selectedPair,
+                      selectedPair ? {
+                        ...selectedPair,
+                        base_asset: selectedPair.base_asset || '',
+                        quote_asset: selectedPair.quote_asset || '',
+                      } : null,
                       bitcoinUnit,
                       getAssetPrecision
                     )}

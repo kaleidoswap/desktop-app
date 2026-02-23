@@ -95,31 +95,33 @@ export const Component = () => {
       try {
         const [listChannelsResponse, balanceResponse] = await Promise.all([
           listChannels(),
-          btcBalance({ skip_sync: false }),
+          btcBalance(),
         ])
 
         if ('data' in listChannelsResponse && listChannelsResponse.data) {
           const channelsList = listChannelsResponse.data.channels
 
           // Check if there's at least one channel with an asset that is ready and usable
-          const hasValidChannels = channelsList.some(
+          const hasValidChannels = channelsList?.some(
             (channel: Channel) =>
               channel.asset_id !== null &&
               channel.ready &&
-              (channel.outbound_balance_msat > 0 ||
-                channel.inbound_balance_msat > 0)
+              ((channel.outbound_balance_msat ?? 0) > 0 ||
+                (channel.inbound_balance_msat ?? 0) > 0)
           )
-          setHasValidChannelsForTrading(hasValidChannels)
+          setHasValidChannelsForTrading(hasValidChannels ?? false)
         }
 
         // Check if there's enough balance to open a channel
         if ('data' in balanceResponse && balanceResponse.data) {
-          const { vanilla } = balanceResponse.data
+          const vanilla = balanceResponse.data?.vanilla
           // Assuming minimum balance needed is 20000 sats (adjust as needed)
-          setHasEnoughBalance(vanilla.spendable >= 20000)
+          if (vanilla) {
+            setHasEnoughBalance((vanilla?.spendable ?? 0) >= 20000)
+          }
         }
 
-        if (assetsData) {
+        if (assetsData && assetsData.nia) {
           setAssets(assetsData.nia)
         }
 
@@ -145,17 +147,17 @@ export const Component = () => {
         const channelsList = listChannelsResponse.data.channels
 
         // Check if there's at least one channel with an asset that is ready and usable
-        const hasValidChannels = channelsList.some(
+        const hasValidChannels = channelsList?.some(
           (channel) =>
             channel.asset_id !== null &&
             channel.ready &&
-            (channel.outbound_balance_msat > 0 ||
-              channel.inbound_balance_msat > 0)
+            ((channel.outbound_balance_msat ?? 0) > 0 ||
+              (channel.inbound_balance_msat ?? 0) > 0)
         )
-        setHasValidChannelsForTrading(hasValidChannels)
+        setHasValidChannelsForTrading(hasValidChannels ?? false)
       }
 
-      if (assetsData) {
+      if (assetsData && assetsData.nia) {
         setAssets(assetsData.nia)
       }
 

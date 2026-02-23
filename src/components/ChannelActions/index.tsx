@@ -223,7 +223,7 @@ export const ChannelStatusBadge: React.FC<ChannelStatusBadgeProps> = ({
     >
       {getStatusIcon()}
       <span className="status-badge">
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : ''}
       </span>
     </span>
   )

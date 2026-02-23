@@ -20,7 +20,9 @@ import {
   satoshiToBTC,
   BTCtoSatoshi,
 } from '../../../../../helpers/number'
-import { NiaAsset } from '../../../../../slices/nodeApi/nodeApi.slice'
+import {
+  NiaAsset
+} from '../../../../../slices/nodeApi/nodeApi.slice'
 import { WithdrawFormProps, AssetOption } from '../types'
 
 import { BalanceDisplay } from './BalanceDisplay'
@@ -158,9 +160,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
       </div>
       <div className="relative">
         <input
-          className={`w-full px-3 py-2 bg-slate-800/50 border ${
-            error ? 'border-red-500' : 'border-slate-700'
-          } rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white text-sm`}
+          className={`w-full px-3 py-2 bg-slate-800/50 border ${error ? 'border-red-500' : 'border-slate-700'
+            } rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white text-sm`}
           onBlur={handleBlur}
           onChange={handleChange}
           onFocus={handleFocus}
@@ -334,13 +335,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 {...field}
                 className={`w-full px-3 py-2 bg-slate-800/50 rounded-xl border
                           text-white placeholder:text-slate-600 text-sm
-                          ${
-                            errors.address ||
-                            hasValidationMessage ||
-                            addressType === 'invalid'
-                              ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                              : 'border-slate-700 focus:border-blue-500 focus:ring-blue-500'
-                          }`}
+                          ${errors.address ||
+                    hasValidationMessage ||
+                    addressType === 'invalid'
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : 'border-slate-700 focus:border-blue-500 focus:ring-blue-500'
+                  }`}
                 onChange={(e) => {
                   field.onChange(e)
                   handleInvoiceChange(e)
@@ -373,32 +373,28 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         {/* Validation error message */}
         {validationMessage && (
           <div
-            className={`mt-1 p-2 rounded-lg border flex items-start gap-2 ${
-              isValidationError
-                ? 'bg-red-500/10 border-red-500/20'
-                : 'bg-yellow-500/10 border-yellow-500/20'
-            }`}
+            className={`mt-1 p-2 rounded-lg border flex items-start gap-2 ${isValidationError
+              ? 'bg-red-500/10 border-red-500/20'
+              : 'bg-yellow-500/10 border-yellow-500/20'
+              }`}
           >
             <AlertTriangle
-              className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                isValidationError ? 'text-red-400' : 'text-yellow-400'
-              }`}
+              className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isValidationError ? 'text-red-400' : 'text-yellow-400'
+                }`}
             />
             <div className="flex-1">
               <p
-                className={`text-xs ${
-                  isValidationError ? 'text-red-400' : 'text-yellow-400'
-                }`}
+                className={`text-xs ${isValidationError ? 'text-red-400' : 'text-yellow-400'
+                  }`}
               >
                 {validationText}
               </p>
             </div>
             <button
-              className={`text-xs underline flex-shrink-0 ${
-                isValidationError
-                  ? 'text-red-400 hover:text-red-300'
-                  : 'text-yellow-400 hover:text-yellow-300'
-              }`}
+              className={`text-xs underline flex-shrink-0 ${isValidationError
+                ? 'text-red-400 hover:text-red-300'
+                : 'text-yellow-400 hover:text-yellow-300'
+                }`}
               onClick={() => {
                 clearValidationError()
                 // Only clear the amount field, keep the address
@@ -433,14 +429,13 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               <span className="text-xs text-slate-400">
                 {t('withdrawModal.form.detected.label')}{' '}
                 <span
-                  className={`font-medium ${
-                    addressType === 'lightning' ||
+                  className={`font-medium ${addressType === 'lightning' ||
                     addressType === 'lightning-address'
-                      ? 'text-blue-400'
-                      : addressType === 'bitcoin'
-                        ? 'text-orange-400'
-                        : 'text-green-400'
-                  }`}
+                    ? 'text-blue-400'
+                    : addressType === 'bitcoin'
+                      ? 'text-orange-400'
+                      : 'text-green-400'
+                    }`}
                 >
                   {addressType === 'lightning'
                     ? t('withdrawModal.form.detected.types.lightningInvoice')
@@ -579,524 +574,527 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       {/* Conditional rendering based on address type */}
       {(addressType === 'bitcoin' ||
         addressType === 'rgb' ||
-        addressType === 'lightning-address') && (
-        <>
-          {/* Asset Selector - Only for rgb invoices without asset_id specified or lightning-address */}
-          {((addressType === 'rgb' && !decodedRgbInvoice?.asset_id) ||
-            addressType === 'lightning-address') && (
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">
-                {t('withdrawModal.form.assetSelector.label')}
-              </label>
-              <div className="relative">
-                <button
-                  className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700 
+        addressType === 'lightning-address' ||
+        (addressType === 'lightning' &&
+          decodedInvoice &&
+          (!decodedInvoice.amt_msat || decodedInvoice.amt_msat === 0))) && (
+          <>
+            {/* Asset Selector - Only for rgb invoices without asset_id specified or lightning-address */}
+            {((addressType === 'rgb' && !decodedRgbInvoice?.asset_id) ||
+              addressType === 'lightning-address') && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-400">
+                    {t('withdrawModal.form.assetSelector.label')}
+                  </label>
+                  <div className="relative">
+                    <button
+                      className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700 
                           hover:border-blue-500/50 transition-all duration-200
                           flex items-center justify-between text-left text-sm"
-                  onClick={() => setShowAssetDropdown(!showAssetDropdown)}
-                  type="button"
-                >
-                  <span>
-                    {filteredAvailableAssets.find(
-                      (a: AssetOption) => a.value === assetId
-                    )?.label ||
-                      t('withdrawModal.form.assetSelector.placeholder')}
-                  </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-200 
-                    ${showAssetDropdown ? 'transform rotate-180' : ''}`}
-                  />
-                </button>
-                {showAssetDropdown && (
-                  <div
-                    className="absolute z-10 mt-1 w-full bg-slate-800 rounded-xl border border-slate-700 
-                              shadow-xl max-h-[200px] overflow-y-auto"
-                  >
-                    {filteredAvailableAssets.map((asset) => (
-                      <button
-                        className="w-full px-3 py-2 text-left hover:bg-blue-500/10 text-sm
-                                text-white transition-colors duration-200"
-                        key={asset.value}
-                        onClick={() => {
-                          setValue('asset_id', asset.value)
-                          setShowAssetDropdown(false)
-                          // Fetch balance for the selected asset
-                          if (asset.value === BTC_ASSET_ID) {
-                            fetchBtcBalance()
-                          } else {
-                            fetchAssetBalance(asset.value)
-                          }
-                        }}
-                        type="button"
-                      >
-                        {asset.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {errors.asset_id && (
-                <p className="text-red-400 text-xs mt-1">
-                  {errors.asset_id.message}
-                </p>
-              )}
-              {assetId && (
-                <div className="mt-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">
-                      {t('withdrawModal.balance.available')}
-                    </span>
-                    <span className="text-xs text-white font-medium">
-                      {assetId === BTC_ASSET_ID
-                        ? bitcoinUnit === 'SAT'
-                          ? assetBalance.toLocaleString()
-                          : (assetBalance / 100000000).toFixed(8)
-                        : (() => {
-                            const assetInfo = assets.data?.nia.find(
-                              (a: NiaAsset) => a.asset_id === assetId
-                            )
-                            const precision = assetInfo?.precision || 8
-                            const displayBalance =
-                              assetBalance / Math.pow(10, precision)
-                            return displayBalance.toLocaleString('en-US', {
-                              maximumFractionDigits: precision,
-                              minimumFractionDigits: 0,
-                              useGrouping: true,
-                            })
-                          })()}{' '}
-                      {
-                        filteredAvailableAssets.find(
+                      onClick={() => setShowAssetDropdown(!showAssetDropdown)}
+                      type="button"
+                    >
+                      <span>
+                        {filteredAvailableAssets.find(
                           (a: AssetOption) => a.value === assetId
-                        )?.label
-                      }
-                    </span>
+                        )?.label ||
+                          t('withdrawModal.form.assetSelector.placeholder')}
+                      </span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-slate-400 transition-transform duration-200 
+                    ${showAssetDropdown ? 'transform rotate-180' : ''}`}
+                      />
+                    </button>
+                    {showAssetDropdown && (
+                      <div
+                        className="absolute z-10 mt-1 w-full bg-slate-800 rounded-xl border border-slate-700 
+                              shadow-xl max-h-[200px] overflow-y-auto"
+                      >
+                        {filteredAvailableAssets.map((asset) => (
+                          <button
+                            className="w-full px-3 py-2 text-left hover:bg-blue-500/10 text-sm
+                                text-white transition-colors duration-200"
+                            key={asset.value}
+                            onClick={() => {
+                              setValue('asset_id', asset.value)
+                              setShowAssetDropdown(false)
+                              // Fetch balance for the selected asset
+                              if (asset.value === BTC_ASSET_ID) {
+                                fetchBtcBalance()
+                              } else {
+                                fetchAssetBalance(asset.value)
+                              }
+                            }}
+                            type="button"
+                          >
+                            {asset.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {/* Add max withdrawable info */}
-                  {(() => {
-                    const currentAssetInfo = assets.data?.nia.find(
-                      (a: NiaAsset) => a.asset_id === assetId
-                    )
-                    const ticker =
-                      currentAssetInfo?.ticker ||
-                      (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
-                    const maxAmount = calculateMaxWithdrawAmount(assetId)
-                    const precision = getAssetPrecision(
-                      ticker,
-                      bitcoinUnit,
-                      assets.data?.nia
-                    )
+                  {errors.asset_id && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {errors.asset_id.message}
+                    </p>
+                  )}
+                  {assetId && (
+                    <div className="mt-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-400">
+                          {t('withdrawModal.balance.available')}
+                        </span>
+                        <span className="text-xs text-white font-medium">
+                          {assetId === BTC_ASSET_ID
+                            ? bitcoinUnit === 'SAT'
+                              ? assetBalance.toLocaleString()
+                              : (assetBalance / 100000000).toFixed(8)
+                            : (() => {
+                              const assetInfo = assets.data?.nia.find(
+                                (a: NiaAsset) => a.asset_id === assetId
+                              )
+                              const precision = assetInfo?.precision || 8
+                              const displayBalance =
+                                assetBalance / Math.pow(10, precision)
+                              return displayBalance.toLocaleString('en-US', {
+                                maximumFractionDigits: precision,
+                                minimumFractionDigits: 0,
+                                useGrouping: true,
+                              })
+                            })()}{' '}
+                          {
+                            filteredAvailableAssets.find(
+                              (a: AssetOption) => a.value === assetId
+                            )?.label
+                          }
+                        </span>
+                      </div>
+                      {/* Add max withdrawable info */}
+                      {(() => {
+                        const currentAssetInfo = assets.data?.nia.find(
+                          (a: NiaAsset) => a.asset_id === assetId
+                        )
+                        const ticker =
+                          currentAssetInfo?.ticker ||
+                          (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
+                        const maxAmount = calculateMaxWithdrawAmount(assetId)
+                        const precision = getAssetPrecision(
+                          ticker,
+                          bitcoinUnit,
+                          assets.data?.nia
+                        )
 
-                    // Only show max if it's different from balance (e.g., Lightning limits)
-                    const isLimited =
-                      ['lightning', 'lightning-address'].includes(
-                        addressType
-                      ) &&
-                      assetId === BTC_ASSET_ID &&
-                      maxAmount <
-                        (bitcoinUnit === 'SAT'
-                          ? assetBalance
-                          : assetBalance / 100000000)
+                        // Only show max if it's different from balance (e.g., Lightning limits)
+                        const isLimited =
+                          ['lightning', 'lightning-address'].includes(
+                            addressType
+                          ) &&
+                          assetId === BTC_ASSET_ID &&
+                          maxAmount <
+                          (bitcoinUnit === 'SAT'
+                            ? assetBalance
+                            : assetBalance / 100000000)
 
-                    if (isLimited) {
-                      return (
-                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-slate-700/30">
-                          <span className="text-xs text-blue-400">
-                            Max Withdrawable:
-                          </span>
-                          <span className="text-xs text-blue-400 font-medium">
-                            {precision === 0
-                              ? maxAmount.toLocaleString()
-                              : maxAmount.toLocaleString('en-US', {
-                                  maximumFractionDigits: precision,
-                                  minimumFractionDigits: 0,
-                                  useGrouping: true,
-                                })}{' '}
-                            {
-                              filteredAvailableAssets.find(
-                                (a: AssetOption) => a.value === assetId
-                              )?.label
-                            }
-                          </span>
-                        </div>
-                      )
-                    }
-                    return null
-                  })()}
+                        if (isLimited) {
+                          return (
+                            <div className="flex justify-between items-center mt-1 pt-1 border-t border-slate-700/30">
+                              <span className="text-xs text-blue-400">
+                                Max Withdrawable:
+                              </span>
+                              <span className="text-xs text-blue-400 font-medium">
+                                {precision === 0
+                                  ? maxAmount.toLocaleString()
+                                  : maxAmount.toLocaleString('en-US', {
+                                    maximumFractionDigits: precision,
+                                    minimumFractionDigits: 0,
+                                    useGrouping: true,
+                                  })}{' '}
+                                {
+                                  filteredAvailableAssets.find(
+                                    (a: AssetOption) => a.value === assetId
+                                  )?.label
+                                }
+                              </span>
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Amount Input - Only needed when not specified in invoice */}
-          {(addressType === 'bitcoin' ||
-            addressType === 'lightning-address' ||
-            addressType === 'rgb') && (
-            <div className="space-y-1">
-              <Controller
-                control={control}
-                name="amount"
-                render={({ field }) => {
-                  // Get asset info for precision
-                  const currentAssetInfo = assets.data?.nia.find(
-                    (a: NiaAsset) => a.asset_id === assetId
-                  )
-                  const ticker =
-                    currentAssetInfo?.ticker ||
-                    (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
-                  const precision = getAssetPrecision(
-                    ticker,
-                    bitcoinUnit,
-                    assets.data?.nia
-                  )
-
-                  const maxWithdrawable = calculateMaxWithdrawAmount(assetId)
-                  const minAmount = getMinAmount()
-
-                  // Format display unit
-                  const displayUnit =
-                    filteredAvailableAssets.find(
-                      (a: AssetOption) => a.value === assetId
-                    )?.label ||
-                    getDisplayAsset(
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetId,
-                      bitcoinUnit
-                    )
-
-                  // Calculate secondary value for BTC conversion
-                  const getSecondaryValue = () => {
-                    if (assetId !== BTC_ASSET_ID || !field.value) {
-                      return {
-                        secondaryUnit: undefined,
-                        secondaryValue: undefined,
-                      }
-                    }
-
-                    const cleanValue = parseNumberWithCommas(field.value)
-                    const numericValue = parseFloat(cleanValue || '0')
-
-                    if (isNaN(numericValue) || numericValue === 0) {
-                      return {
-                        secondaryUnit: undefined,
-                        secondaryValue: undefined,
-                      }
-                    }
-
-                    if (bitcoinUnit === 'SAT') {
-                      // User entered sats, show BTC equivalent
-                      const btcValue = satoshiToBTC(numericValue)
-                      return {
-                        secondaryUnit: 'BTC',
-                        secondaryValue: parseFloat(btcValue)
-                          .toFixed(8)
-                          .replace(/\.?0+$/, ''),
-                      }
-                    } else {
-                      // User entered BTC, show sats equivalent
-                      const satsValue = BTCtoSatoshi(numericValue)
-                      return {
-                        secondaryUnit: t('withdrawModal.form.units.sats'),
-                        secondaryValue: satsValue.toLocaleString(),
-                      }
-                    }
-                  }
-
-                  const { secondaryValue, secondaryUnit } = getSecondaryValue()
-
-                  return (
-                    <div className="relative">
-                      <NumberInput
-                        className="group transition-all duration-300 hover:translate-x-1"
-                        displayUnit={displayUnit}
-                        error={errors.amount?.message}
-                        label={t('withdrawModal.form.amount.label')}
-                        max={maxWithdrawable}
-                        min={minAmount}
-                        onChange={(value) => {
-                          field.onChange(value)
-                          // Clear any existing validation errors when user starts typing
-                          if (errors.amount) {
-                            form.clearErrors('amount')
-                          }
-                          // Also clear general validation errors when user starts editing
-                          if (validationMessage) {
-                            clearValidationError()
-                          }
-                        }}
-                        onSliderChange={(e) => {
-                          field.onChange(e.target.value)
-                          // Clear any existing validation errors when user uses slider
-                          if (errors.amount) {
-                            form.clearErrors('amount')
-                          }
-                        }}
-                        placeholder={t(
-                          'withdrawModal.form.amount.maxPlaceholder',
-                          {
-                            amount:
-                              maxWithdrawable > 0
-                                ? maxWithdrawable.toLocaleString()
-                                : t('withdrawModal.form.amount.notAvailable'),
-                          }
-                        )}
-                        precision={precision}
-                        secondaryUnit={secondaryUnit}
-                        secondaryValue={secondaryValue}
-                        showSlider
-                        sliderStep={
-                          precision === 0 ? 1 : 1 / Math.pow(10, precision)
-                        }
-                        sliderValue={
-                          field.value
-                            ? parseFloat(
-                                parseNumberWithCommas(field.value) || '0'
-                              )
-                            : minAmount
-                        }
-                        value={field.value || ''}
-                      />
-
-                      {/* Max button */}
-                      <button
-                        className="absolute right-2 top-8 px-2 py-1 text-blue-500 text-xs font-medium hover:text-blue-400 
-                                   hover:bg-blue-500/10 rounded-md transition-all duration-200
-                                   border border-blue-500/30 hover:border-blue-400/50 z-10"
-                        onClick={() => {
-                          // Format the max amount for display
-                          let formattedMaxAmount
-                          if (precision === 0) {
-                            formattedMaxAmount =
-                              Math.round(maxWithdrawable).toString()
-                          } else {
-                            formattedMaxAmount = maxWithdrawable.toString()
-                          }
-                          field.onChange(formattedMaxAmount)
-                        }}
-                        type="button"
-                      >
-                        {t('withdrawModal.form.amount.maxButton')}
-                      </button>
-                    </div>
-                  )
-                }}
-                rules={{
-                  required: 'Amount is required',
-                  validate: {
-                    isNumber: (value) => {
-                      if (value === '' || value === undefined) {
-                        return 'Amount is required'
-                      }
-
-                      const cleanValue = String(value).replace(/,/g, '')
-                      if (cleanValue === '' || isNaN(parseFloat(cleanValue))) {
-                        return 'Please enter a valid number'
-                      }
-
-                      return true
-                    },
-                    maxValue: (value) => {
+            {/* Amount Input - Only needed when not specified in invoice */}
+            {(addressType === 'bitcoin' ||
+              addressType === 'lightning-address' ||
+              addressType === 'rgb' ||
+              (addressType === 'lightning' &&
+                decodedInvoice &&
+                (!decodedInvoice.amt_msat || decodedInvoice.amt_msat === 0))) && (
+                <div className="space-y-1">
+                  <Controller
+                    control={control}
+                    name="amount"
+                    render={({ field }) => {
+                      // Get asset info for precision
                       const currentAssetInfo = assets.data?.nia.find(
                         (a: NiaAsset) => a.asset_id === assetId
                       )
                       const ticker =
                         currentAssetInfo?.ticker ||
                         (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
+                      const precision = getAssetPrecision(
+                        ticker,
+                        bitcoinUnit,
+                        assets.data?.nia
+                      )
 
-                      const cleanValue = String(value).replace(/,/g, '')
-                      const inputValue = parseFloat(cleanValue)
+                      const maxWithdrawable = calculateMaxWithdrawAmount(assetId)
+                      const minAmount = getMinAmount()
 
-                      if (isNaN(inputValue)) {
-                        return true // Let isNumber validation handle this
-                      }
+                      // Format display unit
+                      const displayUnit =
+                        filteredAvailableAssets.find(
+                          (a: AssetOption) => a.value === assetId
+                        )?.label ||
+                        getDisplayAsset(
+                          assetId === BTC_ASSET_ID ? 'BTC' : assetId,
+                          bitcoinUnit
+                        )
 
-                      // Convert input to raw units for comparison with assetBalance
-                      let inputRawUnits: number
+                      // Calculate secondary value for BTC conversion
+                      const getSecondaryValue = () => {
+                        if (assetId !== BTC_ASSET_ID || !field.value) {
+                          return {
+                            secondaryUnit: undefined,
+                            secondaryValue: undefined,
+                          }
+                        }
 
-                      if (assetId === BTC_ASSET_ID) {
+                        const cleanValue = parseNumberWithCommas(field.value)
+                        const numericValue = parseFloat(cleanValue || '0')
+
+                        if (isNaN(numericValue) || numericValue === 0) {
+                          return {
+                            secondaryUnit: undefined,
+                            secondaryValue: undefined,
+                          }
+                        }
+
                         if (bitcoinUnit === 'SAT') {
-                          // Input is already in satoshis
-                          inputRawUnits = inputValue
+                          // User entered sats, show BTC equivalent
+                          const btcValue = satoshiToBTC(numericValue)
+                          return {
+                            secondaryUnit: 'BTC',
+                            secondaryValue: parseFloat(btcValue)
+                              .toFixed(8)
+                              .replace(/\.?0+$/, ''),
+                          }
                         } else {
-                          // Input is in BTC, convert to satoshis
-                          inputRawUnits = inputValue * 100000000
-                        }
-                      } else {
-                        // RGB assets: convert display amount to raw units
-                        const assetInfo = assets.data?.nia.find(
-                          (a: NiaAsset) => a.asset_id === assetId
-                        )
-                        const precision = assetInfo?.precision || 8
-                        inputRawUnits = Math.round(
-                          inputValue * Math.pow(10, precision)
-                        )
-                      }
-
-                      if (
-                        addressType === 'lightning-address' &&
-                        assetId === BTC_ASSET_ID
-                      ) {
-                        // For lightning, compare against HTLC limits
-                        const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
-                        const maxWithdrawableRaw = Math.max(
-                          0,
-                          Math.min(maxHtlcSat - RGB_HTLC_MIN_SAT, assetBalance)
-                        )
-
-                        if (inputRawUnits > maxWithdrawableRaw) {
-                          const maxWithdrawableDisplay =
-                            calculateMaxWithdrawAmount(assetId)
-                          const precision = getAssetPrecision(
-                            ticker,
-                            bitcoinUnit,
-                            assets.data?.nia
-                          )
-                          const formattedMax =
-                            precision === 0
-                              ? maxWithdrawableDisplay.toLocaleString()
-                              : maxWithdrawableDisplay.toFixed(precision)
-                          return `Maximum withdrawable: ${formattedMax} ${getDisplayAsset(ticker, bitcoinUnit)}. Click "Max" to use the maximum amount.`
-                        }
-                      } else {
-                        // For on-chain, compare against balance
-                        if (inputRawUnits > assetBalance) {
-                          return t('withdrawModal.form.amount.exceedsAvailable')
+                          // User entered BTC, show sats equivalent
+                          const satsValue = BTCtoSatoshi(numericValue)
+                          return {
+                            secondaryUnit: t('withdrawModal.form.units.sats'),
+                            secondaryValue: satsValue.toLocaleString(),
+                          }
                         }
                       }
 
-                      return true
-                    },
-                    minValue: (value) => {
-                      const cleanValue = String(value).replace(/,/g, '')
-                      const inputValue = parseFloat(cleanValue)
-
-                      if (isNaN(inputValue)) {
-                        return true // Let isNumber validation handle this
-                      }
-
-                      const minDisplayAmount = getMinAmount()
+                      const { secondaryValue, secondaryUnit } = getSecondaryValue()
 
                       return (
-                        inputValue >= minDisplayAmount ||
-                        `Minimum amount: ${getMinAmountMessage()}`
-                      )
-                    },
-                  },
-                }}
-              />
+                        <div className="relative">
+                          <NumberInput
+                            className="group transition-all duration-300 hover:translate-x-1"
+                            displayUnit={displayUnit}
+                            error={errors.amount?.message}
+                            label={t('withdrawModal.form.amount.label')}
+                            max={maxWithdrawable}
+                            min={minAmount}
+                            onChange={(value) => {
+                              field.onChange(value)
+                              // Clear any existing validation errors when user starts typing
+                              if (errors.amount) {
+                                form.clearErrors('amount')
+                              }
+                              // Also clear general validation errors when user starts editing
+                              if (validationMessage) {
+                                clearValidationError()
+                              }
+                            }}
+                            onSliderChange={(e) => {
+                              field.onChange(e.target.value)
+                              // Clear any existing validation errors when user uses slider
+                              if (errors.amount) {
+                                form.clearErrors('amount')
+                              }
+                            }}
+                            placeholder={t(
+                              'withdrawModal.form.amount.maxPlaceholder',
+                              {
+                                amount:
+                                  maxWithdrawable > 0
+                                    ? maxWithdrawable.toLocaleString()
+                                    : t('withdrawModal.form.amount.notAvailable'),
+                              }
+                            )}
+                            precision={precision}
+                            secondaryUnit={secondaryUnit}
+                            secondaryValue={secondaryValue}
+                            showSlider
+                            sliderStep={
+                              precision === 0 ? 1 : 1 / Math.pow(10, precision)
+                            }
+                            sliderValue={
+                              field.value
+                                ? parseFloat(
+                                  parseNumberWithCommas(field.value) || '0'
+                                )
+                                : minAmount
+                            }
+                            value={field.value || ''}
+                          />
 
-              {/* Show HTLC limit warning for Lightning withdrawals */}
-              {addressType === 'lightning-address' &&
-                assetId === BTC_ASSET_ID &&
-                maxLightningCapacity > 0 && (
-                  <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <p className="text-xs text-blue-400">
-                      <span className="font-medium">
-                        {t('withdrawModal.form.amount.lightningLimit.title')}
-                      </span>{' '}
-                      {t(
-                        'withdrawModal.form.amount.lightningLimit.description'
-                      )}
+                          {/* Max button */}
+                          <button
+                            className="absolute right-2 top-8 px-2 py-1 text-blue-500 text-xs font-medium hover:text-blue-400 
+                                   hover:bg-blue-500/10 rounded-md transition-all duration-200
+                                   border border-blue-500/30 hover:border-blue-400/50 z-10"
+                            onClick={() => {
+                              // Format the max amount for display
+                              let formattedMaxAmount
+                              if (precision === 0) {
+                                formattedMaxAmount =
+                                  Math.round(maxWithdrawable).toString()
+                              } else {
+                                formattedMaxAmount = maxWithdrawable.toString()
+                              }
+                              field.onChange(formattedMaxAmount)
+                            }}
+                            type="button"
+                          >
+                            {t('withdrawModal.form.amount.maxButton')}
+                          </button>
+                        </div>
+                      )
+                    }}
+                    rules={{
+                      required: 'Amount is required',
+                      validate: {
+                        isNumber: (value) => {
+                          if (value === '' || value === undefined) {
+                            return 'Amount is required'
+                          }
+
+                          const cleanValue = String(value).replace(/,/g, '')
+                          if (cleanValue === '' || isNaN(parseFloat(cleanValue))) {
+                            return 'Please enter a valid number'
+                          }
+
+                          return true
+                        },
+                        maxValue: (value) => {
+                          const currentAssetInfo = assets.data?.nia.find(
+                            (a: NiaAsset) => a.asset_id === assetId
+                          )
+                          const ticker =
+                            currentAssetInfo?.ticker ||
+                            (assetId === BTC_ASSET_ID ? 'BTC' : 'Unknown')
+
+                          const cleanValue = String(value).replace(/,/g, '')
+                          const inputValue = parseFloat(cleanValue)
+
+                          if (isNaN(inputValue)) {
+                            return true // Let isNumber validation handle this
+                          }
+
+                          // Convert input to raw units for comparison with assetBalance
+                          let inputRawUnits: number
+
+                          if (assetId === BTC_ASSET_ID) {
+                            if (bitcoinUnit === 'SAT') {
+                              // Input is already in satoshis
+                              inputRawUnits = inputValue
+                            } else {
+                              // Input is in BTC, convert to satoshis
+                              inputRawUnits = inputValue * 100000000
+                            }
+                          } else {
+                            // RGB assets: convert display amount to raw units
+                            const assetInfo = assets.data?.nia.find(
+                              (a: NiaAsset) => a.asset_id === assetId
+                            )
+                            const precision = assetInfo?.precision || 8
+                            inputRawUnits = Math.round(
+                              inputValue * Math.pow(10, precision)
+                            )
+                          }
+
+                          if (
+                            addressType === 'lightning-address' &&
+                            assetId === BTC_ASSET_ID
+                          ) {
+                            // For lightning, compare against HTLC limits
+                            const maxHtlcSat = maxLightningCapacity / MSATS_PER_SAT
+                            const maxWithdrawableRaw = Math.max(
+                              0,
+                              Math.min(maxHtlcSat - RGB_HTLC_MIN_SAT, assetBalance)
+                            )
+
+                            if (inputRawUnits > maxWithdrawableRaw) {
+                              const maxWithdrawableDisplay =
+                                calculateMaxWithdrawAmount(assetId)
+                              const precision = getAssetPrecision(
+                                ticker,
+                                bitcoinUnit,
+                                assets.data?.nia
+                              )
+                              const formattedMax =
+                                precision === 0
+                                  ? maxWithdrawableDisplay.toLocaleString()
+                                  : maxWithdrawableDisplay.toFixed(precision)
+                              return `Maximum withdrawable: ${formattedMax} ${getDisplayAsset(ticker, bitcoinUnit)}. Click "Max" to use the maximum amount.`
+                            }
+                          } else {
+                            // For on-chain, compare against balance
+                            if (inputRawUnits > assetBalance) {
+                              return t('withdrawModal.form.amount.exceedsAvailable')
+                            }
+                          }
+
+                          return true
+                        },
+                        minValue: (value) => {
+                          const cleanValue = String(value).replace(/,/g, '')
+                          const inputValue = parseFloat(cleanValue)
+
+                          if (isNaN(inputValue)) {
+                            return true // Let isNumber validation handle this
+                          }
+
+                          const minDisplayAmount = getMinAmount()
+
+                          return (
+                            inputValue >= minDisplayAmount ||
+                            `Minimum amount: ${getMinAmountMessage()}`
+                          )
+                        },
+                      },
+                    }}
+                  />
+
+                  {/* Show HTLC limit warning for Lightning withdrawals */}
+                  {addressType === 'lightning-address' &&
+                    assetId === BTC_ASSET_ID &&
+                    maxLightningCapacity > 0 && (
+                      <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <p className="text-xs text-blue-400">
+                          <span className="font-medium">
+                            {t('withdrawModal.form.amount.lightningLimit.title')}
+                          </span>{' '}
+                          {t(
+                            'withdrawModal.form.amount.lightningLimit.description'
+                          )}
+                        </p>
+                      </div>
+                    )}
+                </div>
+              )}
+
+            {/* Fee Selection for BTC or RGB on-chain */}
+            {(assetId === BTC_ASSET_ID || addressType === 'rgb') &&
+              (addressType === 'bitcoin' || addressType === 'rgb') && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-400">
+                    {t('withdrawModal.form.fees.label')}
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {feeRates.map((fee) => (
+                      <Controller
+                        control={control}
+                        key={fee.value}
+                        name="fee_rate"
+                        render={({ field }) => (
+                          <button
+                            className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5
+                                  rounded-lg transition-all duration-200 border text-xs
+                                  ${field.value === fee.value
+                                ? 'bg-blue-500/10 border-blue-500 text-blue-500'
+                                : 'border-slate-700 hover:border-blue-500/50 text-slate-400'
+                              }`}
+                            onClick={() => field.onChange(fee.value)}
+                            type="button"
+                          >
+                            {getFeeIcon(fee.value)}
+                            <span className="text-[10px]">{fee.label}</span>
+                            <span className="text-[9px]">{fee.rate} sat/vB</span>
+                          </button>
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Custom Fee Input */}
+            {feeRate === 'custom' &&
+              (assetId === BTC_ASSET_ID || addressType === 'rgb') &&
+              (addressType === 'bitcoin' || addressType === 'rgb') && (
+                <div className="space-y-1 animate-fadeIn">
+                  <label className="text-xs font-medium text-slate-400">
+                    {t('withdrawModal.form.fees.customLabel')}
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
+                        focus:border-blue-500 focus:ring-blue-500 text-white text-sm"
+                    min={0.1}
+                    onChange={(e) => setCustomFee(parseFloat(e.target.value))}
+                    step={0.1}
+                    type="number"
+                    value={customFee}
+                  />
+                </div>
+              )}
+
+            {/* Donation Toggle for RGB Invoices */}
+            {addressType === 'rgb' && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-medium text-slate-400">
+                      {t('withdrawModal.form.donation.label')}
+                    </label>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      {t('withdrawModal.form.donation.description')}
                     </p>
                   </div>
-                )}
-            </div>
-          )}
-
-          {/* Fee Selection for BTC or RGB on-chain */}
-          {(assetId === BTC_ASSET_ID || addressType === 'rgb') &&
-            (addressType === 'bitcoin' || addressType === 'rgb') && (
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-400">
-                  {t('withdrawModal.form.fees.label')}
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {feeRates.map((fee) => (
-                    <Controller
-                      control={control}
-                      key={fee.value}
-                      name="fee_rate"
-                      render={({ field }) => (
-                        <button
-                          className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5
-                                  rounded-lg transition-all duration-200 border text-xs
-                                  ${
-                                    field.value === fee.value
-                                      ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                                      : 'border-slate-700 hover:border-blue-500/50 text-slate-400'
-                                  }`}
-                          onClick={() => field.onChange(fee.value)}
-                          type="button"
-                        >
-                          {getFeeIcon(fee.value)}
-                          <span className="text-[10px]">{fee.label}</span>
-                          <span className="text-[9px]">{fee.rate} sat/vB</span>
-                        </button>
-                      )}
-                    />
-                  ))}
+                  <Controller
+                    control={control}
+                    name="donation"
+                    render={({ field }) => (
+                      <button
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                                ${field.value ? 'bg-blue-500' : 'bg-slate-700'
+                          }`}
+                        onClick={() => field.onChange(!field.value)}
+                        type="button"
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                  ${field.value
+                              ? 'translate-x-6'
+                              : 'translate-x-1'
+                            }`}
+                        />
+                      </button>
+                    )}
+                  />
                 </div>
               </div>
             )}
-
-          {/* Custom Fee Input */}
-          {feeRate === 'custom' &&
-            (assetId === BTC_ASSET_ID || addressType === 'rgb') &&
-            (addressType === 'bitcoin' || addressType === 'rgb') && (
-              <div className="space-y-1 animate-fadeIn">
-                <label className="text-xs font-medium text-slate-400">
-                  {t('withdrawModal.form.fees.customLabel')}
-                </label>
-                <input
-                  className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
-                        focus:border-blue-500 focus:ring-blue-500 text-white text-sm"
-                  min={0.1}
-                  onChange={(e) => setCustomFee(parseFloat(e.target.value))}
-                  step={0.1}
-                  type="number"
-                  value={customFee}
-                />
-              </div>
-            )}
-
-          {/* Donation Toggle for RGB Invoices */}
-          {addressType === 'rgb' && (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-medium text-slate-400">
-                    {t('withdrawModal.form.donation.label')}
-                  </label>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
-                    {t('withdrawModal.form.donation.description')}
-                  </p>
-                </div>
-                <Controller
-                  control={control}
-                  name="donation"
-                  render={({ field }) => (
-                    <button
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                                ${
-                                  field.value ? 'bg-blue-500' : 'bg-slate-700'
-                                }`}
-                      onClick={() => field.onChange(!field.value)}
-                      type="button"
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                                  ${
-                                    field.value
-                                      ? 'translate-x-6'
-                                      : 'translate-x-1'
-                                  }`}
-                      />
-                    </button>
-                  )}
-                />
-              </div>
-            </div>
-          )}
-        </>
-      )}
+          </>
+        )}
 
       {/* Submit Button */}
       <button
@@ -1117,14 +1115,14 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           <>
             <span>
               {addressType === 'lightning' ||
-              addressType === 'lightning-address'
+                addressType === 'lightning-address'
                 ? t('withdrawModal.form.submit.lightning')
                 : addressType === 'rgb'
                   ? t('withdrawModal.form.submit.rgb')
                   : t('withdrawModal.form.submit.onchain')}
             </span>
             {addressType === 'lightning' ||
-            addressType === 'lightning-address' ? (
+              addressType === 'lightning-address' ? (
               <Zap className="w-4 h-4" />
             ) : (
               <ArrowRight className="w-4 h-4" />

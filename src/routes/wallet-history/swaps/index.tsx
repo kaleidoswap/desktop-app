@@ -117,9 +117,11 @@ export const Component: React.FC = () => {
     const info: Record<string, AssetInfo> = {}
     if (assetsData?.nia) {
       assetsData.nia.forEach((asset) => {
-        info[asset.asset_id] = {
-          precision: asset.precision,
-          ticker: asset.ticker,
+        if ((asset as any).asset_id) {
+          info[(asset as any).asset_id] = {
+            precision: asset.precision ?? 8,
+            ticker: asset.ticker || 'UNKNOWN',
+          }
         }
       })
     }
@@ -130,12 +132,12 @@ export const Component: React.FC = () => {
   const allSwaps = useMemo(() => {
     if (!swapsData) return []
 
-    const makerSwaps = swapsData.maker.map((swap) => ({
+    const makerSwaps = (swapsData?.maker || []).map((swap) => ({
       ...swap,
       type: 'maker' as const,
     }))
 
-    const takerSwaps = swapsData.taker.map((swap) => ({
+    const takerSwaps = (swapsData?.taker || []).map((swap) => ({
       ...swap,
       type: 'taker' as const,
     }))
@@ -197,9 +199,9 @@ export const Component: React.FC = () => {
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase()
         return (
-          swap.payment_hash.toLowerCase().includes(searchLower) ||
-          swap.status.toLowerCase().includes(searchLower) ||
-          swap.type.toLowerCase().includes(searchLower)
+          (swap.payment_hash || '').toLowerCase().includes(searchLower) ||
+          (swap.status || '').toLowerCase().includes(searchLower) ||
+          (swap.type || '').toLowerCase().includes(searchLower)
         )
       }
 
@@ -375,9 +377,9 @@ export const Component: React.FC = () => {
       {filteredSwaps.length === 0 ? (
         <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
           {searchTerm ||
-          statusFilter !== 'all' ||
-          typeFilter !== 'all' ||
-          assetFilter !== 'all' ? (
+            statusFilter !== 'all' ||
+            typeFilter !== 'all' ||
+            assetFilter !== 'all' ? (
             <>
               <p>{t('swaps.noSwapsFiltered')}</p>
               <Button
@@ -435,14 +437,14 @@ export const Component: React.FC = () => {
                   : assetInfo[swap.to_asset || '']?.precision || 8
 
                 const fromAmount = formatAmount(
-                  swap.qty_from,
+                  swap.qty_from ?? 0,
                   fromPrecision,
                   fromAssetIsBtc,
                   bitcoinUnit
                 )
 
                 const toAmount = formatAmount(
-                  swap.qty_to,
+                  swap.qty_to ?? 0,
                   toPrecision,
                   toAssetIsBtc,
                   bitcoinUnit
@@ -481,15 +483,20 @@ export const Component: React.FC = () => {
             },
             {
               accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
-                renderCopyableField(swap.payment_hash, true, 4, 'Payment hash'),
+                renderCopyableField(
+                  swap.payment_hash || '',
+                  true,
+                  4,
+                  'Payment hash'
+                ),
               className: 'col-span-1',
               header: 'Payment Hash',
             },
             {
               accessor: (swap: SwapDetails & { type: 'maker' | 'taker' }) =>
                 renderStatusBadge(
-                  swap.status,
-                  getStatusBadgeVariant(swap.status)
+                  swap.status || '',
+                  getStatusBadgeVariant((swap.status || 'Pending') as SwapStatus)
                 ),
               className: 'col-span-1',
               header: 'Status',
@@ -499,9 +506,9 @@ export const Component: React.FC = () => {
           emptyState={
             <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
               {searchTerm ||
-              statusFilter !== 'all' ||
-              typeFilter !== 'all' ||
-              assetFilter !== 'all' ? (
+                statusFilter !== 'all' ||
+                typeFilter !== 'all' ||
+                assetFilter !== 'all' ? (
                 <>
                   <p>{t('components.walletHistory.swaps.noSwapsFiltered')}</p>
                   <Button
@@ -526,7 +533,9 @@ export const Component: React.FC = () => {
           gridClassName="grid-cols-5"
           onRowClick={(swap: SwapDetails & { type: 'maker' | 'taker' }) =>
             setExpandedSwap(
-              expandedSwap === swap.payment_hash ? null : swap.payment_hash
+              expandedSwap === swap.payment_hash
+                ? null
+                : swap.payment_hash || null
             )
           }
           rowClassName={(swap: SwapDetails & { type: 'maker' | 'taker' }) =>

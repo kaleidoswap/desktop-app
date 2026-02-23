@@ -64,7 +64,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   })
 
   // For createutxos API
-  const [createUtxos] = nodeApi.useLazyCreateUTXOsQuery()
+  const [createUtxos] = nodeApi.useCreateUtxosMutation()
   // For 6-block fee estimation
   const [estimateFee] = nodeApi.useLazyEstimateFeeQuery()
   // For getting BTC balance
@@ -75,7 +75,11 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
     const fetchFeeRate = async () => {
       try {
         const response = await estimateFee({ blocks: 6 }).unwrap()
-        setFeeRate(response.fee_rate)
+        const feeRate = response?.fee_rate
+        if (!feeRate) {
+          throw Error("Unable to calculate fee-rate")
+        }
+        setFeeRate(feeRate)
       } catch (error) {
         console.error('Failed to fetch fee rate:', error)
         // Default to a reasonable fee rate if we can't fetch it
@@ -85,7 +89,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
     if (isOpen) {
       fetchFeeRate()
-      getBtcBalance({ skip_sync: false })
+      getBtcBalance()
     }
   }, [isOpen, estimateFee, getBtcBalance])
 
@@ -146,7 +150,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   }
 
   // Calculate the maximum possible size based on available balance
-  const maxPossibleSize = btcBalanceData
+  const maxPossibleSize = btcBalanceData?.vanilla?.spendable
     ? Math.floor(btcBalanceData.vanilla.spendable / numUtxos)
     : utxoSize
 
@@ -365,7 +369,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-400">Available balance:</span>
                       <span className="text-slate-200 font-medium">
-                        {btcBalanceData
+                        {btcBalanceData?.vanilla?.spendable
                           ? btcBalanceData.vanilla.spendable.toLocaleString()
                           : '...'}{' '}
                         sats
@@ -383,10 +387,10 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                         style={{
                           backgroundColor:
                             numUtxos * utxoSize >
-                            (btcBalanceData?.vanilla.spendable || 0)
+                              (btcBalanceData?.vanilla?.spendable || 0)
                               ? 'rgb(239, 68, 68)'
                               : undefined,
-                          width: btcBalanceData
+                          width: btcBalanceData?.vanilla?.spendable
                             ? `${Math.min(100, ((numUtxos * utxoSize) / btcBalanceData.vanilla.spendable) * 100)}%`
                             : '0%',
                         }}
@@ -413,7 +417,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
               className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium flex items-center justify-center min-w-[120px] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={
                 isLoading ||
-                (btcBalanceData &&
+                (btcBalanceData?.vanilla?.spendable !== undefined &&
                   numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
               }
               onClick={handleCreateUTXOs}

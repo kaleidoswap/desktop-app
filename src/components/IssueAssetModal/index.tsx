@@ -26,7 +26,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
     useUtxoErrorHandler()
 
-  const [issueAsset] = nodeApi.endpoints.issueNiaAsset.useLazyQuery()
+  const [issueAsset] = nodeApi.endpoints.issueNiaAsset.useMutation()
 
   // Calculate the actual amount that will be issued with decimal places
   const actualAmount = useMemo(() => {
@@ -64,7 +64,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
       amounts: [Number(actualAmount)],
       name,
       precision: Number(precision),
-      ticker: ticker.toUpperCase(),
+      ticker: (ticker || '').toUpperCase(),
     }).unwrap()
   }
 
@@ -90,9 +90,9 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
       if (!wasHandled) {
         toast.error(
           error?.data?.error ||
-            (error instanceof Error
-              ? error.message
-              : t('issueAssetModal.failure'))
+          (error instanceof Error
+            ? error.message
+            : t('issueAssetModal.failure'))
         )
       }
     } finally {

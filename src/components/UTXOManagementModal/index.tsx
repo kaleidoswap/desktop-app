@@ -5,22 +5,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { CREATEUTXOS_PATH } from '../../app/router/paths'
 import { formatBitcoinAmount } from '../../helpers/number'
-import { nodeApi, Assignment } from '../../slices/nodeApi/nodeApi.slice'
-
-// Helper function to extract amount from assignment
-const getAssignmentAmount = (assignment: Assignment): number => {
-  switch (assignment.type) {
-    case 'Fungible':
-      return assignment.value
-    case 'InflationRight':
-      return assignment.value
-    case 'Any':
-    case 'NonFungible':
-    case 'ReplaceRight':
-    default:
-      return 0
-  }
-}
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { getAssignmentAmount } from '../../utils/rgbUtils'
 
 interface UTXOManagementModalProps {
   onClose: () => void
@@ -46,9 +32,9 @@ export const UTXOManagementModal = ({
     nodeApi.useLazyListUnspentsQuery()
 
   useEffect(() => {
-    listUnspents({ skip_sync: false })
+    listUnspents()
     const intervalId = setInterval(
-      () => listUnspents({ skip_sync: false }),
+      () => listUnspents(),
       10000
     )
     return () => clearInterval(intervalId)
@@ -78,24 +64,24 @@ export const UTXOManagementModal = ({
 
     const colored = unspentsData.unspents.filter(
       (u) =>
-        u.utxo.colorable &&
+        u.utxo?.colorable &&
         Array.isArray(u.rgb_allocations) &&
         u.rgb_allocations.length > 0
     )
     const colorable = unspentsData.unspents.filter(
       (u) =>
-        u.utxo.colorable &&
+        u.utxo?.colorable &&
         (!Array.isArray(u.rgb_allocations) || u.rgb_allocations.length <= 0)
     )
-    const normal = unspentsData.unspents.filter((u) => !u.utxo.colorable)
+    const normal = unspentsData.unspents.filter((u) => !u.utxo?.colorable)
 
     const summary: UTXOSummary = {
       colorableCount: colorable.length,
       coloredCount: colored.length,
       normalCount: normal.length,
-      totalColorable: colorable.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
-      totalColored: colored.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
-      totalNormal: normal.reduce((sum, u) => sum + u.utxo.btc_amount, 0),
+      totalColorable: colorable.reduce((sum, u) => sum + (u.utxo?.btc_amount || 0), 0),
+      totalColored: colored.reduce((sum, u) => sum + (u.utxo?.btc_amount || 0), 0),
+      totalNormal: normal.reduce((sum, u) => sum + (u.utxo?.btc_amount || 0), 0),
     }
 
     return {
@@ -112,7 +98,7 @@ export const UTXOManagementModal = ({
   }
 
   const getUtxoStatusLabel = (unspent: any) => {
-    if (!unspent.utxo.colorable) {
+    if (!unspent.utxo?.colorable) {
       return t('utxoManagement.status.normal')
     }
     if (unspent.rgb_allocations && unspent.rgb_allocations.length > 0) {
@@ -122,7 +108,7 @@ export const UTXOManagementModal = ({
   }
 
   const getUtxoStatusStyle = (unspent: any) => {
-    if (!unspent.utxo.colorable) {
+    if (!unspent.utxo?.colorable) {
       return 'bg-blue-500/20 text-blue-400'
     }
     if (unspent.rgb_allocations && unspent.rgb_allocations.length > 0) {
@@ -138,7 +124,7 @@ export const UTXOManagementModal = ({
     >
       <div className="flex justify-between items-start mb-2">
         <div className="text-sm font-medium text-slate-300">
-          {unspent.utxo.outpoint.split(':')[0]}
+          {unspent.utxo?.outpoint?.split(':')[0]}
         </div>
         <div
           className={`px-2 py-1 rounded-lg text-xs font-medium ${getUtxoStatusStyle(unspent)}`}
@@ -147,7 +133,7 @@ export const UTXOManagementModal = ({
         </div>
       </div>
       <div className="text-lg font-medium text-white">
-        {formatBitcoinAmount(parseInt(unspent.utxo.btc_amount), bitcoinUnit)}{' '}
+        {formatBitcoinAmount(parseInt(unspent.utxo?.btc_amount || '0'), bitcoinUnit)}{' '}
         {bitcoinUnit}
       </div>
       {unspent.rgb_allocations && unspent.rgb_allocations.length > 0 && (
@@ -287,7 +273,7 @@ export const UTXOManagementModal = ({
                   {colorableUtxos.map((unspent, index) => (
                     <UTXOCard
                       index={index}
-                      key={unspent.utxo.outpoint}
+                      key={unspent.utxo?.outpoint || index}
                       unspent={unspent}
                     />
                   ))}
@@ -306,7 +292,7 @@ export const UTXOManagementModal = ({
                   {coloredUtxos.map((unspent, index) => (
                     <UTXOCard
                       index={index}
-                      key={unspent.utxo.outpoint}
+                      key={unspent.utxo?.outpoint || index}
                       unspent={unspent}
                     />
                   ))}
@@ -325,7 +311,7 @@ export const UTXOManagementModal = ({
                   {normalUtxos.map((unspent, index) => (
                     <UTXOCard
                       index={index}
-                      key={unspent.utxo.outpoint}
+                      key={unspent.utxo?.outpoint || index}
                       unspent={unspent}
                     />
                   ))}

@@ -93,7 +93,7 @@ export const Component: React.FC = () => {
     isLoading: transactionsLoading,
     isError: transactionsError,
     refetch: refetchTransactions,
-  } = nodeApi.endpoints.listTransactions.useQuery({ skip_sync: false })
+  } = nodeApi.endpoints.listTransactions.useQuery()
   const {
     data: paymentsData,
     isLoading: paymentsLoading,
@@ -114,17 +114,17 @@ export const Component: React.FC = () => {
   const uniqueAssets = useMemo(() => {
     const assets = new Set<string>(['BTC'])
 
-    // Add assets from off-chain deposits
-    paymentsData?.payments
-      .filter((payment) => payment.inbound)
-      .forEach((payment) => {
-        if (payment.asset_id) {
-          const ticker = listAssetsData?.nia.find(
-            (a) => a.asset_id === payment.asset_id
-          )?.ticker
-          if (ticker) assets.add(ticker)
-        }
-      })
+      // Add assets from off-chain deposits
+      ; (paymentsData?.payments || [])
+        .filter((payment) => payment.inbound)
+        .forEach((payment) => {
+          if (payment.asset_id) {
+            const ticker = (listAssetsData?.nia || []).find(
+              (a) => a.asset_id === payment.asset_id
+            )?.ticker
+            if (ticker) assets.add(ticker)
+          }
+        })
 
     return Array.from(assets).sort()
   }, [paymentsData, listAssetsData])
@@ -155,34 +155,34 @@ export const Component: React.FC = () => {
     )
   }
 
-  const onChainDeposits =
-    transactionsData?.transactions
+  const onChainDeposits: DepositWithTimestamp[] =
+    (transactionsData?.transactions || [])
       .filter(
         (tx) =>
           tx.transaction_type === 'User' &&
-          new Decimal(tx.received).minus(tx.sent).gt(0)
+          new Decimal(tx.received ?? 0).minus(tx.sent ?? 0).gt(0)
       )
       .map((tx) => ({
-        amount: new Decimal(tx.received).minus(tx.sent).toString(),
+        amount: new Decimal(tx.received ?? 0).minus(tx.sent ?? 0).toString(),
         asset: 'BTC',
         timestamp: tx.confirmation_time?.timestamp,
-        txId: tx.txid,
+        txId: tx.txid ?? '',
         type: 'on-chain' as const,
       })) || []
 
-  const offChainDeposits =
-    paymentsData?.payments
+  const offChainDeposits: DepositWithTimestamp[] =
+    (paymentsData?.payments || [])
       .filter((payment) => payment.inbound)
       .map((payment) => ({
         amount: payment.asset_id
-          ? payment.asset_amount.toString()
-          : (payment.amt_msat / 1000).toString(),
+          ? (payment.asset_amount ?? 0).toString()
+          : ((payment.amt_msat ?? 0) / 1000).toString(),
         asset:
-          listAssetsData?.nia.find((a) => a.asset_id === payment.asset_id)
+          (listAssetsData?.nia || []).find((a) => a.asset_id === payment.asset_id)
             ?.ticker || 'BTC',
-        txId: payment.payment_hash,
+        txId: payment.payment_hash ?? '',
         type: 'off-chain' as const,
-        // Payments don't have timestamps in the API response, so we'll leave it undefined
+        timestamp: undefined as number | undefined,
       })) || []
 
   // Define a type that includes the optional timestamp property

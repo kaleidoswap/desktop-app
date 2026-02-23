@@ -41,7 +41,7 @@ export const Component = () => {
 
   const [btcBalance, btcBalanceResponse] =
     nodeApi.endpoints.btcBalance.useLazyQuery()
-  const [createutxos] = nodeApi.useLazyCreateUTXOsQuery()
+  const [createutxos] = nodeApi.useCreateUtxosMutation()
   const [estimateFee] = nodeApi.useLazyEstimateFeeQuery()
 
   const onSubmit = (data: FormFields) => {
@@ -51,7 +51,7 @@ export const Component = () => {
         data.fee_rate !== 'custom' ? parseFloat(data.fee_rate) : customFee,
       num: data.num,
       size: data.size,
-      skip_sync: false,
+      up_to: false,
     }).then((res: any) => {
       setIsLoading(false)
       if (res.error) {
@@ -64,7 +64,7 @@ export const Component = () => {
   }
 
   const refreshData = useCallback(() => {
-    btcBalance({ skip_sync: false })
+    btcBalance()
   }, [btcBalance])
 
   useEffect(() => {
@@ -80,9 +80,9 @@ export const Component = () => {
           fastFeePromise,
         ])
         setFeeRates({
-          fast: fastFee.fee_rate,
-          normal: normalFee.fee_rate,
-          slow: slowFee.fee_rate,
+          fast: fastFee.fee_rate ?? 3,
+          normal: normalFee.fee_rate ?? 2,
+          slow: slowFee.fee_rate ?? 1,
         })
       } catch (e) {
         console.error(e)
@@ -154,8 +154,8 @@ export const Component = () => {
                   max={
                     btcBalanceResponse.data
                       ? Math.floor(
-                          btcBalanceResponse.data?.vanilla.spendable / num
-                        )
+                        (btcBalanceResponse.data?.vanilla?.spendable ?? 0) / num
+                      )
                       : 0
                   }
                   min={0}
@@ -171,8 +171,8 @@ export const Component = () => {
                 max={
                   btcBalanceResponse.data
                     ? Math.floor(
-                        btcBalanceResponse.data?.vanilla.spendable / num
-                      )
+                      (btcBalanceResponse.data?.vanilla?.spendable ?? 0) / num
+                    )
                     : 0
                 }
                 min={0}
@@ -231,7 +231,7 @@ export const Component = () => {
               <span>
                 {t('createUtxos.availableBalance', {
                   amount: btcBalanceResponse.data
-                    ? btcBalanceResponse.data?.vanilla.spendable.toLocaleString()
+                    ? (btcBalanceResponse.data?.vanilla?.spendable ?? 0).toLocaleString()
                     : '0',
                 })}
               </span>

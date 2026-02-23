@@ -131,10 +131,10 @@ export const Step2 = ({
   useEffect(() => {
     const fetchBtcBalance = async () => {
       try {
-        const balance = await btcBalance({ skip_sync: false })
+        const balance = await btcBalance()
         const totalSpendable =
-          (balance.data?.vanilla.spendable || 0) +
-          (balance.data?.colored.spendable || 0)
+          (balance.data?.vanilla?.spendable || 0) +
+          (balance.data?.colored?.spendable || 0)
         const newMaxCapacity = Math.min(MAX_CHANNEL_CAPACITY, totalSpendable)
         setMaxCapacity(newMaxCapacity)
       } catch (error) {
@@ -148,11 +148,11 @@ export const Step2 = ({
   useEffect(() => {
     if (
       takerAssetsResponse.isSuccess &&
-      takerAssetsResponse.data?.nia.length > 0
+      (takerAssetsResponse.data?.nia?.length ?? 0) > 0
     ) {
-      const filteredAssets = takerAssetsResponse.data.nia.filter(
-        (asset) => asset.balance.spendable > 0
-      )
+      const filteredAssets = takerAssetsResponse.data?.nia?.filter(
+        (asset: any) => (asset.balance?.spendable ?? 0) > 0
+      ) || []
 
       setHasAvailableAssets(filteredAssets.length > 0)
       if (filteredAssets.length > 0) {
@@ -223,17 +223,17 @@ export const Step2 = ({
   }
 
   const handleAssetSelect = (assetId: string) => {
-    const asset = takerAssetsResponse.data?.nia.find(
+    const asset = takerAssetsResponse.data?.nia?.find(
       (a) => a.asset_id === assetId
     )
     if (asset) {
       setSelectedAsset(asset)
-      setValue('assetId', asset.asset_id)
-      setValue('assetTicker', asset.ticker)
+      setValue('assetId', asset?.asset_id || '')
+      setValue('assetTicker', asset?.ticker || '')
       onFormUpdate({
         assetAmount: 0,
-        assetId: asset.asset_id,
-        assetTicker: asset.ticker, // Reset amount when changing asset
+        assetId: asset?.asset_id || '',
+        assetTicker: asset?.ticker || '', // Reset amount when changing asset
       })
     }
   }
@@ -329,8 +329,8 @@ export const Step2 = ({
   }
 
   const availableAssets =
-    takerAssetsResponse.data?.nia.filter(
-      (asset) => asset.balance.spendable > 0
+    takerAssetsResponse.data?.nia?.filter(
+      (asset: any) => (asset.balance?.spendable ?? 0) > 0
     ) || []
 
   return (
@@ -422,10 +422,9 @@ export const Step2 = ({
               </div>
               <button
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
-                  ${
-                    addAsset
-                      ? 'bg-purple-600/20 border border-purple-500 text-white'
-                      : 'bg-gray-900/50 border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                  ${addAsset
+                    ? 'bg-purple-600/20 border border-purple-500 text-white'
+                    : 'bg-gray-900/50 border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
                   }`}
                 onClick={() => handleAddAssetToggle(!addAsset)}
                 type="button"
@@ -539,11 +538,11 @@ export const Step2 = ({
                                   <span className="text-sm font-medium text-green-400">
                                     {selectedAsset.balance
                                       ? formatAssetAmountWithPrecision(
-                                          selectedAsset.balance.spendable,
-                                          selectedAsset.ticker,
-                                          bitcoinUnit,
-                                          [selectedAsset]
-                                        )
+                                        selectedAsset.balance.spendable,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
                                       : '0'}{' '}
                                     {selectedAsset.ticker}
                                   </span>
@@ -555,7 +554,7 @@ export const Step2 = ({
                                   <span className="text-sm text-blue-400 font-medium">
                                     {formatAssetAmountWithPrecision(
                                       maxAssetAmountMap[
-                                        selectedAsset.asset_id
+                                      selectedAsset.asset_id
                                       ] || 0,
                                       selectedAsset.ticker,
                                       bitcoinUnit,
@@ -600,7 +599,7 @@ export const Step2 = ({
                                     // Validate against max available balance
                                     const maxAmount =
                                       maxAssetAmountMap[
-                                        selectedAsset.asset_id
+                                      selectedAsset.asset_id
                                       ] || 0
                                     if (rawAmount > maxAmount) {
                                       // Set to max amount and show notification
@@ -656,8 +655,8 @@ export const Step2 = ({
                                 const decimalRegex =
                                   selectedAsset.precision > 0
                                     ? new RegExp(
-                                        `^\\d*\\.?\\d{0,${selectedAsset.precision}}$`
-                                      )
+                                      `^\\d*\\.?\\d{0,${selectedAsset.precision}}$`
+                                    )
                                     : /^\d*$/
 
                                 if (decimalRegex.test(value)) {
@@ -830,7 +829,7 @@ export const Step2 = ({
                                       )
                                     const maxAmount =
                                       maxAssetAmountMap[
-                                        selectedAsset.asset_id
+                                      selectedAsset.asset_id
                                       ] || 0
                                     const maxDisplayAmount =
                                       formatAssetAmountWithPrecision(
@@ -922,10 +921,9 @@ export const Step2 = ({
             {['slow', 'medium', 'fast'].map((speed) => (
               <button
                 className={`flex-1 py-3 px-4 rounded-lg text-center transition-all
-                  ${
-                    selectedFee === speed
-                      ? 'bg-purple-600/20 border border-purple-500 text-white shadow-lg'
-                      : 'bg-gray-900/50 border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                  ${selectedFee === speed
+                    ? 'bg-purple-600/20 border border-purple-500 text-white shadow-lg'
+                    : 'bg-gray-900/50 border border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300'
                   }`}
                 key={speed}
                 onClick={() =>
@@ -966,9 +964,8 @@ export const Step2 = ({
               <button
                 aria-checked={isPublic}
                 aria-label="Toggle channel privacy"
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-                  isPublic ? 'bg-purple-600' : 'bg-gray-600'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${isPublic ? 'bg-purple-600' : 'bg-gray-600'
+                  }`}
                 onClick={() => {
                   const newValue = !isPublic
                   setValue('public', newValue)
@@ -978,9 +975,8 @@ export const Step2 = ({
                 type="button"
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPublic ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
             </div>

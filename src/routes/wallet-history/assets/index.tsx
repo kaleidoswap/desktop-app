@@ -15,27 +15,8 @@ import { formatDate } from '../../../helpers/date'
 import {
   nodeApi,
   Transfer,
-  Assignment,
 } from '../../../slices/nodeApi/nodeApi.slice'
-
-// Helper function to extract amount from assignment
-const getAssignmentAmount = (
-  assignment: Assignment | null | undefined
-): number => {
-  if (!assignment) return 0
-
-  switch (assignment.type) {
-    case 'Fungible':
-      return assignment.value
-    case 'InflationRight':
-      return assignment.value
-    case 'Any':
-    case 'NonFungible':
-    case 'ReplaceRight':
-    default:
-      return 0
-  }
-}
+import { getAssignmentAmount } from '../../../utils/rgbUtils'
 
 export const Component = () => {
   const { t } = useTranslation()
@@ -69,19 +50,19 @@ export const Component = () => {
   }, [assets])
 
   useEffect(() => {
-    if (assetsResponse.data?.nia.length) {
+    if ((assetsResponse?.data?.nia || []).length) {
       if (urlAssetId) {
         // Check if the URL asset ID exists in the assets list
-        const assetExists = assetsResponse.data.nia.some(
+        const assetExists = (assetsResponse?.data?.nia || []).some(
           (asset) => asset.asset_id === urlAssetId
         )
         if (assetExists) {
           setSelectedAssetId(urlAssetId)
-        } else if (!selectedAssetId) {
-          setSelectedAssetId(assetsResponse.data.nia[0].asset_id)
+        } else if (!selectedAssetId && (assetsResponse?.data?.nia || [])[0]) {
+          setSelectedAssetId((assetsResponse.data?.nia || [])[0].asset_id || null)
         }
-      } else if (!selectedAssetId) {
-        setSelectedAssetId(assetsResponse.data.nia[0].asset_id)
+      } else if (!selectedAssetId && (assetsResponse?.data?.nia || [])[0]) {
+        setSelectedAssetId((assetsResponse.data?.nia || [])[0].asset_id || null)
       }
     }
   }, [assetsResponse.data, selectedAssetId, urlAssetId])
@@ -91,7 +72,7 @@ export const Component = () => {
       if (selectedAssetId) {
         setIsLoading(true)
         try {
-          await getTransfers({ asset_id: selectedAssetId })
+          await getTransfers()
         } finally {
           setIsLoading(false)
         }
@@ -106,14 +87,14 @@ export const Component = () => {
     try {
       await assets()
       if (selectedAssetId) {
-        await getTransfers({ asset_id: selectedAssetId })
+        await getTransfers()
       }
     } finally {
       setIsRefreshing(false)
     }
   }
 
-  const getStatusBadgeVariant = (status: Transfer['status']) => {
+  const getStatusBadgeVariant = (status: Transfer['status'] | undefined) => {
     switch (status) {
       case 'Settled':
         return 'success'
@@ -127,7 +108,7 @@ export const Component = () => {
     }
   }
 
-  const getKindLabel = (kind: Transfer['kind']) => {
+  const getKindLabel = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
       case 'Send':
         return 'Sent'
@@ -136,12 +117,14 @@ export const Component = () => {
         return 'Received'
       case 'Issuance':
         return 'Issuance'
+      case 'Inflation':
+        return 'Inflation'
       default:
-        return kind
+        return kind || 'Unknown'
     }
   }
 
-  const getKindColor = (kind: Transfer['kind']) => {
+  const getKindColor = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
       case 'Send':
         return 'text-red-500'
@@ -150,12 +133,14 @@ export const Component = () => {
         return 'text-green-500'
       case 'Issuance':
         return 'text-blue-500'
+      case 'Inflation':
+        return 'text-purple-500'
       default:
         return 'text-slate-400'
     }
   }
 
-  const getKindBadgeVariant = (kind: Transfer['kind']) => {
+  const getKindBadgeVariant = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
       case 'Send':
         return 'danger'
@@ -164,6 +149,8 @@ export const Component = () => {
         return 'success'
       case 'Issuance':
         return 'info'
+      case 'Inflation':
+        return 'warning'
       default:
         return 'default'
     }
@@ -181,15 +168,15 @@ export const Component = () => {
   }
 
   const filteredTransfers =
-    transfersResponse.data?.transfers.filter((transfer) => {
+    (transfersResponse.data?.transfers || []).filter((transfer: Transfer) => {
       // Apply search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase()
-        const matchesTxid = transfer.txid.toLowerCase().includes(searchLower)
-        const matchesType = getKindLabel(transfer.kind)
+        const matchesTxid = (transfer.txid || '').toLowerCase().includes(searchLower)
+        const matchesType = (getKindLabel(transfer.kind) || '')
           .toLowerCase()
           .includes(searchLower)
-        const matchesStatus = transfer.status
+        const matchesStatus = (transfer.status || '')
           .toLowerCase()
           .includes(searchLower)
 
@@ -221,7 +208,7 @@ export const Component = () => {
     }) || []
 
   const getSelectedAsset = () => {
-    return assetsResponse.data?.nia.find(
+    return (assetsResponse.data?.nia || []).find(
       (asset) => asset.asset_id === selectedAssetId
     )
   }
@@ -230,7 +217,7 @@ export const Component = () => {
     const selectedAsset = getSelectedAsset()
     if (!selectedAsset) return amount.toString()
 
-    const formattedAmount = amount / Math.pow(10, selectedAsset.precision)
+    const formattedAmount = amount / Math.pow(10, selectedAsset.precision ?? 8)
     return formattedAmount.toLocaleString('en-US', {
       maximumFractionDigits: selectedAsset.precision,
       minimumFractionDigits: 0,
@@ -240,7 +227,7 @@ export const Component = () => {
 
   // Get unique statuses for filter dropdown
   const uniqueStatuses = Array.from(
-    new Set(transfersResponse.data?.transfers.map((t) => t.status) || [])
+    new Set((transfersResponse.data?.transfers || []).map((t: any) => t.status) || [])
   )
 
   return (
@@ -373,11 +360,11 @@ export const Component = () => {
           <div className="mb-4 relative">
             <select
               className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              disabled={isLoading || !assetsResponse.data?.nia.length}
+              disabled={isLoading || !(assetsResponse.data?.nia || []).length}
               onChange={(e) => setSelectedAssetId(e.target.value)}
               value={selectedAssetId || ''}
             >
-              {assetsResponse.data?.nia.map((asset) => (
+              {(assetsResponse.data?.nia || []).map((asset) => (
                 <option key={asset.asset_id} value={asset.asset_id}>
                   {asset.name} ({asset.ticker})
                 </option>
@@ -430,7 +417,7 @@ export const Component = () => {
                     >
                       {transfer.kind === 'Send' ? '-' : '+'}
                       {formatAmount(
-                        getAssignmentAmount(transfer.requested_assignment)
+                        transfer.requested_assignment ? getAssignmentAmount(transfer.requested_assignment) : 0
                       )}
                     </span>
                   ),
@@ -439,14 +426,14 @@ export const Component = () => {
                 },
                 {
                   accessor: (transfer: Transfer) =>
-                    renderDateField(transfer.created_at * 1000),
+                    renderDateField((transfer.created_at || 0) * 1000),
                   className: 'col-span-1',
                   header: t('assets.date'),
                 },
                 {
                   accessor: (transfer: Transfer) =>
                     renderCopyableField(
-                      transfer.txid,
+                      transfer.txid || '',
                       true,
                       4,
                       t('assets.transactionId')
@@ -457,7 +444,7 @@ export const Component = () => {
                 {
                   accessor: (transfer: Transfer) =>
                     renderStatusBadge(
-                      transfer.status,
+                      transfer.status || 'Unknown',
                       getStatusBadgeVariant(transfer.status)
                     ),
                   className: 'col-span-1',
@@ -473,19 +460,19 @@ export const Component = () => {
                   {(searchTerm ||
                     statusFilter !== 'all' ||
                     typeFilter !== 'all') && (
-                    <Button
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchTerm('')
-                        setStatusFilter('all')
-                        setTypeFilter('all')
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {t('assets.clearFilters')}
-                    </Button>
-                  )}
+                      <Button
+                        className="mt-4"
+                        onClick={() => {
+                          setSearchTerm('')
+                          setStatusFilter('all')
+                          setTypeFilter('all')
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        {t('assets.clearFilters')}
+                      </Button>
+                    )}
                 </div>
               }
               gridClassName="grid-cols-5"
@@ -510,19 +497,19 @@ export const Component = () => {
               {(searchTerm ||
                 statusFilter !== 'all' ||
                 typeFilter !== 'all') && (
-                <Button
-                  className="mt-4"
-                  onClick={() => {
-                    setSearchTerm('')
-                    setStatusFilter('all')
-                    setTypeFilter('all')
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  {t('assets.clearFilters')}
-                </Button>
-              )}
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchTerm('')
+                      setStatusFilter('all')
+                      setTypeFilter('all')
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {t('assets.clearFilters')}
+                  </Button>
+                )}
             </div>
           )}
 
@@ -552,7 +539,7 @@ export const Component = () => {
                             onClick={(e) => {
                               e.stopPropagation()
                               copyToClipboard(
-                                transfer.txid,
+                                transfer.txid || '',
                                 'assets.transactionIdCopied'
                               )
                             }}
@@ -572,7 +559,7 @@ export const Component = () => {
                       >
                         {transfer.kind === 'Send' ? '-' : '+'}
                         {formatAmount(
-                          getAssignmentAmount(transfer.requested_assignment)
+                          transfer.requested_assignment ? getAssignmentAmount(transfer.requested_assignment) : 0
                         )}{' '}
                         {getSelectedAsset()?.ticker}
                       </span>
@@ -601,7 +588,7 @@ export const Component = () => {
                         {t('assets.dateLabel')}
                       </span>
                       <span className="text-xs text-gray-300">
-                        {formatDate(transfer.created_at * 1000)}
+                        {formatDate((transfer.created_at || 0) * 1000)}
                       </span>
                     </div>
 

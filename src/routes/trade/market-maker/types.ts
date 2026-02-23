@@ -1,12 +1,19 @@
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
-import { Channel, NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import { Asset as NiaAssetSource } from 'kaleidoswap-sdk'
+export type NiaAsset = NiaAssetSource
+// Define locally if not exported
+export interface Channel {
+  [key: string]: any
+}
 
 export interface Fields {
   rfq_id: string
   from: string
-  fromAsset: string
+  fromAsset: string  // ticker
+  fromAssetId?: string  // asset_id (protocol ID for RGB assets)
   to: string
-  toAsset: string
+  toAsset: string  // ticker
+  toAssetId?: string  // asset_id (protocol ID for RGB assets)
 }
 
 export interface SwapExecutionParams {

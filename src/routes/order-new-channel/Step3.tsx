@@ -77,8 +77,8 @@ export const Step3: React.FC<StepProps> = ({
     nodeApi.endpoints.btcBalance.useLazyQuery()
   const [listChannels, listChannelsResponse] =
     nodeApi.endpoints.listChannels.useLazyQuery()
-  const [sendPayment] = nodeApi.endpoints.sendPayment.useLazyQuery()
-  const [sendBtc] = nodeApi.endpoints.sendBtc.useLazyQuery()
+  const [sendPayment] = nodeApi.endpoints.sendPayment.useMutation()
+  const [sendBtc] = nodeApi.endpoints.sendBtc.useMutation()
   const [getAssetInfo] = nodeApi.endpoints.listAssets.useLazyQuery()
   const [assetInfo, setAssetInfo] = useState<NiaAsset | null>(null)
   const [selectedFee, setSelectedFee] = useState('normal')
@@ -95,7 +95,7 @@ export const Step3: React.FC<StepProps> = ({
     }
 
     try {
-      await Promise.all([btcBalance({ skip_sync: false }), listChannels()])
+      await Promise.all([btcBalance(), listChannels()])
     } finally {
       setIsLoadingData(false)
     }
@@ -128,7 +128,7 @@ export const Step3: React.FC<StepProps> = ({
       if (assetId) {
         const result = await getAssetInfo()
         if (result.data) {
-          const asset = result.data.nia.find((a) => a.asset_id === assetId)
+          const asset = result.data?.nia?.find((a) => a.asset_id === assetId)
           if (asset) {
             setAssetInfo(asset)
           }
@@ -140,15 +140,15 @@ export const Step3: React.FC<StepProps> = ({
 
   // Calculate available liquidity
   const channels =
-    listChannelsResponse?.data?.channels.filter((channel) => channel.ready) ||
+    listChannelsResponse?.data?.channels?.filter((channel) => channel.ready) ||
     []
   const outboundLiquidity = Math.max(
     ...(channels.map(
-      (channel) => channel.next_outbound_htlc_limit_msat / 1000
+      (channel) => (channel.next_outbound_htlc_limit_msat || 0) / 1000
     ) || [0])
   )
-  const vanillaChainBalance = btcBalanceResponse.data?.vanilla.spendable || 0
-  const coloredChainBalance = btcBalanceResponse.data?.colored.spendable || 0
+  const vanillaChainBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
+  const coloredChainBalance = btcBalanceResponse.data?.colored?.spendable || 0
   const onChainBalance = vanillaChainBalance + coloredChainBalance
 
   // Check if the order is expired
@@ -485,46 +485,46 @@ export const Step3: React.FC<StepProps> = ({
                   {/* Countdown Timer - Always visible */}
                   {(order?.payment?.bolt11?.expires_at ||
                     order?.payment?.onchain?.expires_at) && (
-                    <div className="mb-6">
-                      <CountdownTimer
-                        expiresAt={
-                          order?.payment?.bolt11?.expires_at ||
-                          order?.payment?.onchain?.expires_at ||
-                          ''
-                        }
-                        onExpiry={handleCountdownExpiry}
-                      />
-                    </div>
-                  )}
+                      <div className="mb-6">
+                        <CountdownTimer
+                          expiresAt={
+                            order?.payment?.bolt11?.expires_at ||
+                            order?.payment?.onchain?.expires_at ||
+                            ''
+                          }
+                          onExpiry={handleCountdownExpiry}
+                        />
+                      </div>
+                    )}
 
                   {/* QR Code Payment */}
                   {(!useWalletFunds ||
                     (paymentMethod === 'lightning' &&
                       outboundLiquidity <= 0)) && (
-                    <div className="text-center">
-                      {localPaymentState === 'waiting' ? (
-                        <PaymentWaiting
-                          bitcoinUnit={bitcoinUnit}
-                          currentPayment={currentPayment}
-                          handleCopy={handleCopy}
-                          order={order}
-                          paymentMethod={paymentMethod}
-                          paymentURI={paymentURI}
-                        />
-                      ) : (
-                        order && (
-                          <QRCodePayment
+                      <div className="text-center">
+                        {localPaymentState === 'waiting' ? (
+                          <PaymentWaiting
                             bitcoinUnit={bitcoinUnit}
                             currentPayment={currentPayment}
-                            onCopy={handleCopy}
+                            handleCopy={handleCopy}
                             order={order}
                             paymentMethod={paymentMethod}
                             paymentURI={paymentURI}
                           />
-                        )
-                      )}
-                    </div>
-                  )}
+                        ) : (
+                          order && (
+                            <QRCodePayment
+                              bitcoinUnit={bitcoinUnit}
+                              currentPayment={currentPayment}
+                              onCopy={handleCopy}
+                              order={order}
+                              paymentMethod={paymentMethod}
+                              paymentURI={paymentURI}
+                            />
+                          )
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             </div>

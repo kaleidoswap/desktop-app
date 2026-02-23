@@ -1,6 +1,7 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import { TradingPair } from '../makerApi/makerApi.slice'
+import { ApiComponents } from 'kaleidoswap-sdk'
 
 interface PriceData {
   price: number
@@ -17,14 +18,14 @@ export interface FeeDetails {
   fee_asset_precision: number
 }
 
+// Use SwapLeg from SDK for proper typing
+export type SwapLeg = ApiComponents['schemas']['SwapLeg']
+
 interface QuoteResponse {
   rfq_id: string
-  from_asset: string
-  from_amount: number
-  to_asset: string
-  to_amount: number
+  from_asset: SwapLeg  // Changed from string to SwapLeg
+  to_asset: SwapLeg    // Changed from string to SwapLeg
   price: number
-  price_precision: number
   timestamp: number
   expires_at: number
   fee: FeeDetails
@@ -77,7 +78,12 @@ export const pairsSlice = createSlice({
     setTradingPairs: (state, action: PayloadAction<TradingPair[]>) => {
       state.values = action.payload
       state.assets = [
-        ...new Set(action.payload.map((p) => p.base_asset).sort()),
+        ...new Set(
+          action.payload
+            .map((p) => p.base_asset)
+            .filter((a): a is string => !!a)
+            .sort()
+        ),
       ]
     },
     setWsConnected: (state, action: PayloadAction<boolean>) => {
@@ -89,7 +95,8 @@ export const pairsSlice = createSlice({
     },
     updateQuote: (state, action: PayloadAction<QuoteResponse>) => {
       const quote = action.payload
-      const key = `${quote.from_asset}/${quote.to_asset}/${quote.from_amount}`
+      // Use ticker for the key to match how quotes are requested
+      const key = `${quote.from_asset.ticker}/${quote.to_asset.ticker}/${quote.from_asset.amount}`
       state.quotes[key] = quote
       // Clear any previous quote error when we get a successful quote
       state.quoteError = null

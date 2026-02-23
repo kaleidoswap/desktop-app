@@ -82,8 +82,9 @@ export const RootRoute = () => {
 
               <p className="text-gray-400 mb-6">
                 {nodeInfoResponse.error &&
-                'status' in nodeInfoResponse.error &&
-                nodeInfoResponse.error.status === 400
+                  typeof nodeInfoResponse.error === 'object' &&
+                  'status' in nodeInfoResponse.error &&
+                  (nodeInfoResponse.error as any).status === 400
                   ? t('rootRoute.noWalletFound')
                   : t('rootRoute.nodeNotRunning')}
               </p>
@@ -95,12 +96,13 @@ export const RootRoute = () => {
                 {t('rootRoute.returnToSetup')}
               </button>
 
-              {nodeInfoResponse.error &&
+              {!!nodeInfoResponse.error &&
+                typeof nodeInfoResponse.error === 'object' &&
                 'message' in nodeInfoResponse.error && (
                   <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg w-full">
                     <p className="text-sm text-red-400 break-all">
                       {t('rootRoute.errorMessage', {
-                        message: nodeInfoResponse.error.message,
+                        message: (nodeInfoResponse.error as any).message,
                       })}
                     </p>
                   </div>

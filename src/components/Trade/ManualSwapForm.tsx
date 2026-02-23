@@ -116,9 +116,9 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       if (fromAsset === 'BTC' || toAsset === 'BTC') {
         const channels = await listChannels()
         const maxHtlc = Math.max(
-          ...(channels.data?.channels.map(
-            (c) => c.next_outbound_htlc_limit_msat
-          ) || [0])
+          ...(channels.data?.channels ?? []).map(
+            (c) => c.next_outbound_htlc_limit_msat || 0
+          ) || [0]
         )
         setMaxOutboundHtlc(maxHtlc || 0)
 
@@ -127,7 +127,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
           newBalances['BTC'] = {
             // For BTC, inbound is the sum of inbound_balance_msat across all channels
             inbound:
-              channels.data?.channels.reduce(
+              (channels.data?.channels ?? []).reduce(
                 (sum, c) => sum + (c.inbound_balance_msat || 0),
                 0
               ) || 0,
@@ -380,8 +380,8 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
       const response = await makerInit(requestPayload).unwrap()
 
-      setSwapString(response.swapstring)
-      setPaymentSecret(response.payment_secret)
+      setSwapString(response.swapstring ?? '')
+      setPaymentSecret(response.payment_secret ?? '')
       setSwapInitiated(true)
       toast.success(t('trade.manual.swapInitiated'))
     } catch (error) {

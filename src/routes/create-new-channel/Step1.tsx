@@ -74,7 +74,15 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       setLoadingPeers(true)
       try {
         const peers = await listPeers().unwrap()
-        setConnectedPeers(peers.peers || [])
+        if (peers.peers) {
+          setConnectedPeers(
+            peers.peers
+              .filter((p) => p.pubkey)
+              .map((p) => ({ pubkey: p.pubkey ?? '' }))
+          )
+        } else {
+          setConnectedPeers([])
+        }
       } catch (error) {
         console.error('Failed to load connected peers:', error)
       } finally {
@@ -197,7 +205,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       const peers = await listPeers().unwrap()
       // Handle both pubkey-only and pubkey@host:port formats
       const pubkey = peerInfo.includes('@') ? peerInfo.split('@')[0] : peerInfo
-      return peers.peers.some((peer) => peer.pubkey === pubkey)
+      return (peers.peers ?? []).some((peer) => peer.pubkey === pubkey)
     } catch (error) {
       return false
     }
@@ -260,11 +268,10 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {connectedPeers.map((peer) => (
               <div
-                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                  selectedFromConnected === peer.pubkey
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-gray-600 bg-gray-700/50 hover:border-blue-400 hover:bg-blue-500/5'
-                }`}
+                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${selectedFromConnected === peer.pubkey
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-gray-600 bg-gray-700/50 hover:border-blue-400 hover:bg-blue-500/5'
+                  }`}
                 key={peer.pubkey}
                 onClick={() => handleSelectConnectedPeer(peer.pubkey)}
               >
@@ -306,10 +313,9 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
             <div className="space-y-2">
               <textarea
                 className={`w-full px-4 py-3 bg-gray-700 text-white rounded-lg border 
-                  ${
-                    fieldState.error || localError
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-gray-600 focus:border-blue-500'
+                  ${fieldState.error || localError
+                    ? 'border-red-500 focus:border-red-500'
+                    : 'border-gray-600 focus:border-blue-500'
                   }
                   focus:ring-1 focus:ring-blue-500 font-mono text-sm min-h-[6rem] resize-none`}
                 placeholder={t('createChannel.step1.placeholder')}

@@ -19,6 +19,7 @@ import { ToastContainer } from 'react-toastify'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logo from '../../assets/logo.svg'
+import logoFull from '../../assets/logo-full.svg'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -123,48 +124,51 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative group" title={isCollapsed ? item.label : undefined}>
       <NavLink
         className={({ isActive }) => `
-          flex items-center py-3 px-4 rounded-lg transition-all duration-200
-          ${
-            isActive
-              ? 'bg-cyan/10 text-cyan font-medium'
-              : 'text-gray-400 hover:text-white hover:bg-blue-darker'
+          flex items-center py-3.5 px-4 rounded-xl transition-all duration-300
+          ${isActive
+            ? 'bg-cyan/10 text-white font-semibold border-l-2 border-cyan'
+            : 'text-gray-400 hover:text-white hover:bg-blue-darker/80 hover:shadow-md'
           }
-          ${isCollapsed ? 'justify-center' : hasSubMenu ? 'justify-between' : 'justify-start space-x-3'}
+          ${isCollapsed ? 'justify-center' : hasSubMenu ? 'justify-between' : 'justify-start space-x-4'}
+          transform hover:translate-x-1 active:scale-[0.98]
         `}
         onClick={handleClick}
         to={item.to}
       >
-        <div className={`flex items-center ${!isCollapsed && 'space-x-3'}`}>
-          <div>{item.icon}</div>
-          {!isCollapsed && <span>{item.label}</span>}
+        <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
+          <div className="transition-transform duration-300 group-hover:scale-110">
+            {item.icon}
+          </div>
+          {!isCollapsed && <span className="font-semibold text-base">{item.label}</span>}
         </div>
         {hasSubMenu && !isCollapsed && (
           <ChevronRight
-            className={`w-4 h-4 transition-transform duration-200 ${isSubMenuOpen ? 'rotate-90' : ''}`}
+            className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-cyan' : ''}`}
           />
         )}
       </NavLink>
 
       {hasSubMenu && isSubMenuOpen && !isCollapsed && (
-        <div className="pl-4 mt-1 space-y-1">
+        <div className="pl-4 mt-2 space-y-1.5 animate-fadeInUp">
           {item.subMenu &&
             item.subMenu.map((subItem, index) => (
               <div
                 className={`
-                flex items-center space-x-3 px-4 py-2 rounded-lg text-sm cursor-pointer
-                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-darker hover:text-white'}
-                ${location.pathname === subItem.to ? 'bg-cyan/10 text-cyan font-medium' : 'text-gray-400'}
+                flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm cursor-pointer
+                transition-all duration-200
+                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-darker/80 hover:text-white hover:translate-x-1'}
+                ${location.pathname === subItem.to ? 'bg-gradient-to-r from-cyan/15 to-transparent text-cyan font-semibold border-l-2 border-cyan/50' : 'text-gray-400'}
               `}
                 key={index}
                 onClick={() => handleSubMenuClick(subItem)}
               >
-                <div>{subItem.icon}</div>
-                <span>{subItem.label}</span>
+                <div className="transition-transform duration-200 hover:scale-110">{subItem.icon}</div>
+                <span className="font-medium">{subItem.label}</span>
                 {subItem.disabled && (
-                  <span className="text-[0.6rem] bg-blue-500/20 text-blue-300 px-0.5 py-px rounded ml-0.5">
+                  <span className="text-[0.6rem] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full ml-auto font-semibold">
                     {t('labels.soon')}
                   </span>
                 )}
@@ -217,30 +221,33 @@ const DropdownMenu = ({
     <div className="relative" ref={menuRef}>
       <div
         className="px-3 py-2 rounded-lg cursor-pointer flex items-center space-x-2 
-                  text-gray-300 hover:text-white hover:bg-blue-dark/50 transition-colors duration-200"
+                  text-gray-300 hover:text-white hover:bg-blue-dark/50 transition-all duration-300
+                  transform hover:scale-[1.02] active:scale-[0.98]"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="text-cyan">{icon}</div>
+        <div className="text-cyan transition-transform duration-300 hover:scale-110">{icon}</div>
         <span className="font-medium">{title}</span>
         <ChevronRight
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+          className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-cyan' : ''}`}
         />
       </div>
 
       {isOpen && (
         <div
-          className="absolute top-full right-0 mt-1 bg-blue-dark border border-divider/20 
-                       rounded-lg shadow-lg shadow-black/30 overflow-hidden z-50 w-56"
+          className="absolute top-full right-0 mt-2 bg-blue-dark/95 backdrop-blur-xl border border-divider/30 
+                       rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
         >
           <div className="py-1">
             {items.map((item, index) => (
               <div
-                className="px-4 py-3 flex items-center space-x-3 cursor-pointer hover:bg-blue-darker transition-colors"
+                className="px-4 py-3 flex items-center space-x-3 cursor-pointer 
+                          hover:bg-gradient-to-r hover:from-cyan/10 hover:to-transparent 
+                          transition-all duration-200 group"
                 key={item.label || index}
                 onClick={() => handleItemClick(item)}
               >
-                <div className="text-cyan">{item.icon}</div>
-                <span className="text-sm font-medium">{item.label}</span>
+                <div className="text-cyan transition-transform duration-200 group-hover:scale-110">{item.icon}</div>
+                <span className="text-sm font-medium group-hover:text-white">{item.label}</span>
               </div>
             ))}
           </div>
@@ -281,35 +288,40 @@ const UserProfile = ({
   return (
     <div className="relative" ref={menuRef}>
       <div
-        className={`flex items-center p-3 cursor-pointer rounded-lg hover:bg-blue-darker
-          ${isCollapsed ? 'justify-center' : 'justify-between space-x-2'}`}
+        className={`flex items-center p-3 cursor-pointer rounded-xl hover:bg-gradient-to-r hover:from-blue-darker hover:to-blue-darker/50
+          transition-all duration-300 group
+          ${isCollapsed ? 'justify-center' : 'justify-between space-x-2'}
+          transform hover:scale-[1.02] active:scale-[0.98]`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className={`flex items-center ${!isCollapsed && 'space-x-2'}`}>
           <div className="relative flex-shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple to-cyan/50 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple via-purple/80 to-cyan/50 rounded-full flex items-center justify-center
+                          shadow-lg shadow-purple/20 ring-2 ring-purple/10 transition-all duration-300
+                          group-hover:shadow-xl group-hover:shadow-purple/30 group-hover:ring-purple/20">
               <User className="w-4 h-4 text-white" />
             </div>
             <div
-              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-blue-darker
-              ${nodeInfo.isSuccess ? 'bg-green' : 'bg-red'}`}
+              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-blue-darkest
+              transition-all duration-300
+              ${nodeInfo.isSuccess ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
             ></div>
           </div>
 
           {!isCollapsed && (
             <>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-white">
+                <span className="text-sm font-medium text-white group-hover:text-cyan transition-colors duration-300">
                   {accountName || t('userProfile.myWallet')}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
                   {nodeInfo.isSuccess
                     ? t('userProfile.connected')
                     : t('userProfile.disconnected')}
                 </span>
               </div>
               <ChevronRight
-                className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+                className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-cyan' : 'text-gray-400 group-hover:text-cyan'}`}
               />
             </>
           )}
@@ -318,12 +330,13 @@ const UserProfile = ({
 
       {isOpen && (
         <div
-          className="absolute bottom-full left-0 mb-1 bg-blue-dark border border-divider/20 
-                      rounded-lg shadow-lg shadow-black/30 overflow-hidden z-50 w-56"
+          className="absolute bottom-full left-0 mb-2 bg-blue-dark/95 backdrop-blur-xl border border-divider/30 
+                      rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
         >
-          <div className="p-3 border-b border-divider/20">
+          <div className="p-3 border-b border-divider/20 bg-gradient-to-br from-blue-darker/50 to-transparent">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple to-cyan/50 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple via-purple/80 to-cyan/50 rounded-full flex items-center justify-center
+                            shadow-lg shadow-purple/30 ring-2 ring-purple/20">
                 <User className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -332,7 +345,7 @@ const UserProfile = ({
                 </div>
                 <div className="text-xs text-gray-400 flex items-center space-x-1">
                   <div
-                    className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green' : 'bg-red'}`}
+                    className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
                   <span>
                     {nodeInfo.isSuccess
@@ -347,12 +360,14 @@ const UserProfile = ({
           <div className="py-1">
             {USER_MENU_ITEMS.map((item) => (
               <div
-                className="px-4 py-3 flex items-center space-x-3 cursor-pointer hover:bg-blue-darker transition-colors"
+                className="px-4 py-3 flex items-center space-x-3 cursor-pointer 
+                          hover:bg-gradient-to-r hover:from-cyan/10 hover:to-transparent
+                          transition-all duration-200 group"
                 key={item.label}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <div className="text-cyan">{item.icon}</div>
-                <span className="text-sm font-medium">{item.label}</span>
+                <div className="text-cyan transition-transform duration-200 group-hover:scale-110">{item.icon}</div>
+                <span className="text-sm font-medium group-hover:text-white">{item.label}</span>
               </div>
             ))}
 
@@ -370,7 +385,9 @@ export const Layout = (props: Props) => {
   const { t } = useTranslation()
   const [lastDeposit, setLastDeposit] = useState<number | undefined>(undefined)
   const [isRetrying, setIsRetrying] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => localStorage.getItem('sidebarCollapsed') === 'true'
+  )
   const [isShuttingDown, setIsShuttingDown] = useState(false)
   const [shutdownStatus, setShutdownStatus] = useState<string>('')
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
@@ -394,7 +411,7 @@ export const Layout = (props: Props) => {
   const SUPPORT_RESOURCES = getSupportResources(t)
   const PAGE_CONFIG = getPageConfig(t)
 
-  const [lock] = nodeApi.endpoints.lock.useLazyQuery()
+  const [lock] = nodeApi.endpoints.lock.useMutation()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -410,7 +427,7 @@ export const Layout = (props: Props) => {
   const shouldPoll = nodeInfo.isSuccess
 
   const { data, isFetching, error } = nodeApi.useListTransactionsQuery(
-    { skip_sync: false },
+    undefined,
     {
       pollingInterval: 30_000,
       skip: isRetrying || !shouldPoll,
@@ -460,7 +477,7 @@ export const Layout = (props: Props) => {
       if (!shouldPoll) return
       if (isFetching) return
 
-      if (error && 'status' in error && error.status === 403) {
+      if (error && (error as any).status === 403) {
         setIsRetrying(true)
         await sleep(3000)
         setIsRetrying(false)
@@ -468,33 +485,33 @@ export const Layout = (props: Props) => {
       }
 
       const filteredTransactions =
-        data?.transactions
+        (data?.transactions || [])
           .filter(
             (tx) =>
               tx.transaction_type === 'User' &&
-              new Decimal(tx.received).minus(tx.sent).gt(0)
+              new Decimal(tx.received ?? 0).minus(tx.sent ?? 0).gt(0)
           )
           .map((tx) => ({
-            amount: new Decimal(tx.received).minus(tx.sent).toString(),
+            amount: new Decimal(tx.received ?? 0).minus(tx.sent ?? 0).toString(),
             asset: 'BTC',
             confirmation_time: tx.confirmation_time,
-            txId: tx.txid,
+            txId: tx.txid ?? '',
             type: 'on-chain' as const,
           })) || []
 
       const highestBlockDeposit =
         filteredTransactions && filteredTransactions.length > 0
           ? filteredTransactions?.reduce((prev, current) =>
-              prev?.confirmation_time?.height >
-              current?.confirmation_time?.height
-                ? prev
-                : current
-            )
+            (prev?.confirmation_time?.height ?? 0) >
+              (current?.confirmation_time?.height ?? 0)
+              ? prev
+              : current
+          )
           : undefined
 
       if (lastDeposit === undefined) {
         if (highestBlockDeposit) {
-          setLastDeposit(highestBlockDeposit?.confirmation_time?.height)
+          setLastDeposit(highestBlockDeposit?.confirmation_time?.height ?? 0)
         } else {
           setLastDeposit(0)
         }
@@ -504,7 +521,7 @@ export const Layout = (props: Props) => {
       if (
         lastDeposit !== undefined &&
         highestBlockDeposit &&
-        highestBlockDeposit?.confirmation_time?.height > lastDeposit
+        (highestBlockDeposit?.confirmation_time?.height ?? 0) > lastDeposit
       ) {
         addNotification({
           autoClose: 5000,
@@ -512,7 +529,7 @@ export const Layout = (props: Props) => {
           title: t('notifications.depositReceived'),
           type: 'success',
         })
-        setLastDeposit(highestBlockDeposit?.confirmation_time?.height)
+        setLastDeposit(highestBlockDeposit?.confirmation_time?.height ?? 0)
       }
     }
 
@@ -576,28 +593,32 @@ export const Layout = (props: Props) => {
         <div className="min-h-screen flex m-0 p-0">
           {/* Sidebar Navigation */}
           <div
-            className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/10
-                        transition-all duration-300 ease-in-out z-30
-                        ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}
+            className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/30
+                        transition-all duration-300 ease-in-out z-30 shadow-2xl shadow-black/30
+                        ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}
           >
             {/* Logo and collapse button */}
-            <div className="flex items-center justify-between py-3 px-4 border-b border-divider/10">
+            <div className="flex items-center justify-between py-5 px-4 border-b border-divider/20 bg-blue-darkest">
               <img
                 alt="KaleidoSwap"
-                className={`cursor-pointer transition-all duration-300 ${isSidebarCollapsed ? 'w-10 h-10' : 'h-8'}`}
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95
+                          ${isSidebarCollapsed ? 'w-10 h-10' : 'h-10 w-auto'}`}
                 onClick={() => {
-                  // Only navigate to wallet setup when sidebar is not collapsed
-                  if (!isSidebarCollapsed) {
-                    navigate(WALLET_SETUP_PATH)
-                  }
+                  navigate(WALLET_SETUP_PATH)
                 }}
-                src={logo}
+                src={isSidebarCollapsed ? logo : logoFull}
               />
 
               <button
-                className="p-2 rounded-lg text-gray-400 hover:text-white 
-                           hover:bg-blue-darker transition-colors duration-200"
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-2 rounded-lg text-gray-400 hover:text-cyan
+                           hover:bg-blue-darker/50 transition-all duration-300
+                           transform hover:scale-110 active:scale-95
+                           ring-1 ring-transparent hover:ring-cyan/20 flex-shrink-0"
+                onClick={() => {
+                  const next = !isSidebarCollapsed
+                  setIsSidebarCollapsed(next)
+                  localStorage.setItem('sidebarCollapsed', String(next))
+                }}
               >
                 {isSidebarCollapsed ? (
                   <ChevronRight size={18} />
@@ -608,8 +629,8 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main navigation */}
-            <div className="flex-1 overflow-y-auto pt-4 px-3">
-              <div className={`space-y-1 ${isSidebarCollapsed ? '' : 'mb-8'}`}>
+            <div className="flex-1 overflow-y-auto pt-6 px-4">
+              <div className={`space-y-2 ${isSidebarCollapsed ? '' : 'mb-8'}`}>
                 {MAIN_NAV_ITEMS.map((item) => {
                   const isActive = location.pathname.startsWith(item.to)
                   return (
@@ -626,34 +647,42 @@ export const Layout = (props: Props) => {
               {/* Quick action buttons */}
               {!isSidebarCollapsed && (
                 <>
-                  <div className="mb-6">
-                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="mb-8">
+                    <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
                       {t('actions.quickActions')}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
-                                   text-white rounded-lg py-2.5 px-3 transition-all duration-200
-                                   border border-cyan/10 hover:border-cyan/30 group"
+                        className="flex items-center justify-center space-x-2
+                                   bg-gradient-to-br from-blue-darker to-blue-darker/80 hover:from-cyan/20 hover:to-cyan/5
+                                   text-white rounded-xl py-3 px-3 transition-all duration-300
+                                   border border-cyan/20 hover:border-cyan/40 group
+                                   shadow-lg shadow-cyan/5 hover:shadow-xl hover:shadow-cyan/10
+                                   transform hover:scale-[1.02] active:scale-[0.98]"
                         onClick={() => handleTransactionAction('deposit')}
                       >
-                        <div className="p-1 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20 transition-colors">
+                        <div className="p-1.5 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20
+                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-cyan/20">
                           <ArrowDownLeft className="w-4 h-4" />
                         </div>
-                        <span className="font-medium text-sm">
+                        <span className="font-semibold text-sm group-hover:text-cyan transition-colors duration-300">
                           {t('actions.deposit')}
                         </span>
                       </button>
                       <button
-                        className="flex items-center justify-center space-x-2 bg-blue-darker hover:bg-blue-dark
-                                   text-white rounded-lg py-2.5 px-3 transition-all duration-200
-                                   border border-purple/10 hover:border-purple/30 group"
+                        className="flex items-center justify-center space-x-2
+                                   bg-gradient-to-br from-blue-darker to-blue-darker/80 hover:from-purple/20 hover:to-purple/5
+                                   text-white rounded-xl py-3 px-3 transition-all duration-300
+                                   border border-purple/20 hover:border-purple/40 group
+                                   shadow-lg shadow-purple/5 hover:shadow-xl hover:shadow-purple/10
+                                   transform hover:scale-[1.02] active:scale-[0.98]"
                         onClick={() => handleTransactionAction('withdraw')}
                       >
-                        <div className="p-1 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20 transition-colors">
+                        <div className="p-1.5 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20
+                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-purple/20">
                           <ArrowUpRight className="w-4 h-4" />
                         </div>
-                        <span className="font-medium text-sm">
+                        <span className="font-semibold text-sm group-hover:text-purple transition-colors duration-300">
                           {t('actions.withdraw')}
                         </span>
                       </button>
@@ -662,26 +691,25 @@ export const Layout = (props: Props) => {
 
                   {/* Channel management section */}
                   <div className="mb-6">
-                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
                       {t('navigation.channels')}
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {CHANNEL_MENU_ITEMS.map((item) => (
                         <NavLink
                           className={({ isActive }) => `
-                              flex items-center space-x-3 px-4 py-2 rounded-lg text-sm
-                              ${
-                                isActive
-                                  ? 'bg-cyan/10 text-cyan font-medium'
-                                  : 'text-gray-400 hover:text-white hover:bg-blue-darker'
-                              }
-                              transition-colors duration-200
+                              flex items-center space-x-4 px-4 py-3 rounded-xl text-sm group
+                              ${isActive
+                              ? 'bg-gradient-to-r from-cyan/15 to-transparent text-cyan font-semibold border-l-2 border-cyan shadow-lg shadow-cyan/5'
+                              : 'text-gray-400 hover:text-white hover:bg-blue-darker/80 hover:translate-x-1'
+                            }
+                              transition-all duration-300 transform active:scale-[0.98]
                             `}
                           key={item.to}
                           to={item.to}
                         >
-                          <div>{item.icon}</div>
-                          <span>{item.label}</span>
+                          <div className="transition-transform duration-300 group-hover:scale-110">{item.icon}</div>
+                          <span className="font-medium">{item.label}</span>
                         </NavLink>
                       ))}
                     </div>
@@ -691,7 +719,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* User profile section */}
-            <div className="p-3 border-t border-divider/10">
+            <div className="p-4 border-t border-divider/20 bg-blue-darkest">
               <UserProfile
                 isCollapsed={isSidebarCollapsed}
                 onLogout={() => setShowLogoutModal(true)}
@@ -700,9 +728,9 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* App version info */}
-            <div className="px-3 pb-3 relative">
+            <div className="px-4 pb-4 relative bg-blue-darkest">
               <AppVersion
-                className="border-t border-divider/10 pt-2"
+                className="border-t border-divider/10 pt-3"
                 isCollapsed={isSidebarCollapsed}
               />
             </div>
@@ -711,12 +739,13 @@ export const Layout = (props: Props) => {
           {/* Main content */}
           <main
             className={`flex-1 min-h-screen bg-background transition-all duration-300
-                        ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}
+                        ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}
           >
             {/* Top bar with page title and notifications */}
-            <div className="sticky top-0 z-30 bg-blue-darkest border-b border-divider/10 px-6 py-3 shadow-lg">
+            <div className="sticky top-0 z-30 bg-blue-darkest backdrop-blur-xl border-b border-divider/20 px-6 py-4
+                          shadow-lg shadow-black/20">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4 animate-fadeInUp">
                   {(() => {
                     // Get the current page icon and title
                     const mainNavItem = MAIN_NAV_ITEMS.find((item) =>
@@ -730,10 +759,11 @@ export const Layout = (props: Props) => {
 
                     return (
                       <>
-                        <div className="p-2 bg-cyan/10 rounded-lg text-cyan">
+                        <div className="p-3 bg-gradient-to-br from-cyan/20 to-cyan/5 rounded-xl text-cyan
+                                      shadow-lg shadow-cyan/10 ring-1 ring-cyan/20">
                           {icon}
                         </div>
-                        <h1 className="text-2xl font-bold text-white">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">
                           {title}
                         </h1>
                       </>
@@ -741,11 +771,13 @@ export const Layout = (props: Props) => {
                   })()}
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
                   {/* Support button in header */}
                   <button
                     aria-label="Support"
-                    className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
+                    className="p-3 text-gray-400 hover:text-cyan rounded-xl hover:bg-blue-darker/50
+                             transition-all duration-300 transform hover:scale-110 active:scale-95
+                             ring-1 ring-divider/10 hover:ring-cyan/30"
                     onClick={() => setShowSupportModal(true)}
                   >
                     <HelpCircle className="w-5 h-5" />
@@ -784,7 +816,9 @@ export const Layout = (props: Props) => {
                   {/* Notifications bell */}
                   <button
                     aria-label="Toggle notifications"
-                    className="relative p-2 text-gray-400 hover:text-white rounded-lg hover:bg-blue-darker transition-colors"
+                    className="relative p-3 text-gray-400 hover:text-cyan rounded-xl hover:bg-blue-darker/50
+                             transition-all duration-300 transform hover:scale-110 active:scale-95
+                             ring-1 ring-divider/10 hover:ring-cyan/30"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -793,7 +827,9 @@ export const Layout = (props: Props) => {
                   >
                     <Bell className="w-5 h-5" />
                     {notifications.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan text-white text-xs flex items-center justify-center rounded-full">
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80
+                                   text-white text-xs font-bold flex items-center justify-center rounded-full
+                                   shadow-lg shadow-cyan/30 animate-pulse ring-2 ring-blue-darkest">
                         {notifications.length}
                       </span>
                     )}
@@ -806,7 +842,7 @@ export const Layout = (props: Props) => {
                       isOpen={isChannelMenuOpen}
                       items={CHANNEL_MENU_ITEMS}
                       menuRef={channelMenuRef}
-                      onItemClick={() => {}} // Add empty function to satisfy the type
+                      onItemClick={() => { }} // Add empty function to satisfy the type
                       setIsOpen={setIsChannelMenuOpen}
                       title={t('navigation.channels')}
                     />
@@ -857,7 +893,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main content area */}
-            <div className="p-3">
+            <div className="p-6">
               {props.children}
             </div>
           </main>

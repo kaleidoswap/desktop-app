@@ -38,7 +38,8 @@ import {
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { BitcoinNetwork } from '../../constants'
 import { formatBitcoinAmount } from '../../helpers/number'
-import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
+import { Asset as NiaAsset } from 'kaleidoswap-sdk'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
 export const Component = () => {
@@ -51,15 +52,14 @@ export const Component = () => {
   const [listChannels, listChannelsResponse] =
     nodeApi.endpoints.listChannels.useLazyQuery()
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
-  const [refreshTransfers] =
-    nodeApi.endpoints.refreshRgbTransfers.useLazyQuery()
+  const [refreshTransfers] = nodeApi.endpoints.refresh.useMutation()
   const [assetBalances, setAssetBalances] = useState<
     Record<string, { offChain: number; onChain: number }>
   >({})
   const [assetsMap, setAssetsMap] = useState<Record<string, NiaAsset>>({})
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [sync] = nodeApi.endpoints.sync.useLazyQuery()
+  // const [sync] = nodeApi.endpoints.sync.useLazyQuery()
   const [getNodeInfo, nodeInfoResponse] =
     nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [getNetworkInfo, networkInfoResponse] =
@@ -74,9 +74,9 @@ export const Component = () => {
       await Promise.all([
         assets(),
         listChannels(),
-        btcBalance({ skip_sync: false }),
-        refreshTransfers({ skip_sync: false }),
-        sync(),
+        btcBalance(),
+        refreshTransfers({}),
+        // sync(),
         getNodeInfo(),
         getNetworkInfo(),
       ])
@@ -88,7 +88,7 @@ export const Component = () => {
     btcBalance,
     listChannels,
     refreshTransfers,
-    sync,
+    // sync,
     getNodeInfo,
     getNetworkInfo,
   ])
@@ -97,7 +97,9 @@ export const Component = () => {
     if (assetsResponse.data?.nia) {
       const newAssetsMap: Record<string, NiaAsset> = {}
       assetsResponse.data.nia.forEach((asset) => {
-        newAssetsMap[asset.asset_id] = asset
+        if (asset.asset_id) {
+          newAssetsMap[asset.asset_id] = asset as NiaAsset
+        }
       })
       setAssetsMap(newAssetsMap)
     }
@@ -114,10 +116,12 @@ export const Component = () => {
       const newBalances: Record<string, { offChain: number; onChain: number }> =
         {}
       for (const asset of assetsResponse.data?.nia || []) {
-        const balance = await assetBalance({ asset_id: asset.asset_id })
-        newBalances[asset.asset_id] = {
-          offChain: balance.data?.offchain_outbound || 0,
-          onChain: balance.data?.future || 0,
+        if (asset.asset_id) {
+          const balance = await assetBalance({ asset_id: asset.asset_id })
+          newBalances[asset.asset_id] = {
+            offChain: balance.data?.offchain_outbound || 0,
+            onChain: balance.data?.future || 0,
+          }
         }
       }
       setAssetBalances(newBalances)
@@ -133,36 +137,36 @@ export const Component = () => {
     assetBalance,
   ])
 
-  const onChainBalance = btcBalanceResponse.data?.vanilla.spendable || 0
-  const onChainFutureBalance = btcBalanceResponse.data?.vanilla.future || 0
+  const onChainBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
+  const onChainFutureBalance = btcBalanceResponse.data?.vanilla?.future || 0
   const onChainSpendableBalance =
-    btcBalanceResponse.data?.vanilla.spendable || 0
+    btcBalanceResponse.data?.vanilla?.spendable || 0
 
-  const onChainColoredBalance = btcBalanceResponse.data?.colored.spendable || 0
+  const onChainColoredBalance = btcBalanceResponse.data?.colored?.spendable || 0
   const onChainColoredFutureBalance =
-    btcBalanceResponse.data?.colored.future || 0
+    btcBalanceResponse.data?.colored?.future || 0
   const onChainColoredSpendableBalance =
-    btcBalanceResponse.data?.colored.spendable || 0
+    btcBalanceResponse.data?.colored?.spendable || 0
 
   const channels = listChannelsResponse?.data?.channels || []
   const offChainBalance = channels.reduce(
-    (sum, channel) => sum + channel.local_balance_sat,
+    (sum, channel) => sum + (channel.local_balance_sat || 0),
     0
   )
   const totalBalance =
     offChainBalance + onChainSpendableBalance + onChainColoredSpendableBalance
   const totalInboundLiquidity = channels.reduce(
-    (sum, channel) => sum + channel.inbound_balance_msat / 1000,
+    (sum, channel) => sum + (channel.inbound_balance_msat || 0) / 1000,
     0
   )
   const totalOutboundLiquidity = channels.reduce(
-    (sum, channel) => sum + channel.outbound_balance_msat / 1000,
+    (sum, channel) => sum + (channel.outbound_balance_msat || 0) / 1000,
     0
   )
 
   // Calculate total channel capacity for liquidity percentage
   const totalChannelCapacity = channels.reduce(
-    (sum, channel) => sum + channel.capacity_sat,
+    (sum, channel) => sum + (channel.capacity_sat || 0),
     0
   )
 
@@ -173,18 +177,18 @@ export const Component = () => {
     <div className="w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-6">
       {(networkInfoResponse.data?.network as unknown as BitcoinNetwork) !==
         'Mainnet' && (
-        <div className="mb-6">
-          <NetworkWarningAlert
-            faucetUrl={
-              (networkInfoResponse.data
-                ?.network as unknown as BitcoinNetwork) === 'Signet'
-                ? 'https://faucet.mutinynet.com/'
-                : undefined
-            }
-            network={networkInfoResponse.data?.network || 'Testnet'}
-          />
-        </div>
-      )}
+          <div className="mb-6">
+            <NetworkWarningAlert
+              faucetUrl={
+                (networkInfoResponse.data
+                  ?.network as unknown as BitcoinNetwork) === 'Signet'
+                  ? 'https://faucet.mutinynet.com/'
+                  : undefined
+              }
+              network={networkInfoResponse.data?.network || 'Testnet'}
+            />
+          </div>
+        )}
 
       {onChainBalance === 0 && offChainBalance === 0 && !isLoading && (
         <div className="mb-6">
@@ -202,7 +206,7 @@ export const Component = () => {
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
-                      assetId: assetsResponse.data?.nia[0]?.asset_id,
+                      assetId: (assetsResponse.data?.nia || [])[0]?.asset_id,
                       type: 'deposit',
                     })
                   )
@@ -337,7 +341,7 @@ export const Component = () => {
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
-                      assetId: assetsResponse.data?.nia[0]?.asset_id,
+                      assetId: (assetsResponse.data?.nia || [])[0]?.asset_id,
                       type: 'deposit',
                     })
                   )
@@ -352,7 +356,7 @@ export const Component = () => {
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
-                      assetId: assetsResponse.data?.nia[0]?.asset_id,
+                      assetId: (assetsResponse.data?.nia || [])[0]?.asset_id,
                       type: 'withdraw',
                     })
                   )
@@ -463,20 +467,12 @@ export const Component = () => {
             <div className="py-2 px-4">{t('dashboard.actions')}</div>
           </div>
 
-          {assetsResponse.data?.nia.map((asset) => (
+          {(assetsResponse.data?.nia || []).map((asset) => (
             <AssetRow
-              asset={{
-                ...asset,
-                balance: {
-                  future: assetBalances[asset.asset_id]?.onChain || 0,
-                  settled: assetBalances[asset.asset_id]?.onChain || 0,
-                  spendable: assetBalances[asset.asset_id]?.onChain || 0,
-                },
-              }}
-              isLoading={!assetBalances[asset.asset_id]}
+              asset={asset as NiaAsset}
               key={asset.asset_id}
-              offChainBalance={assetBalances[asset.asset_id]?.offChain || 0}
-              onChainBalance={assetBalances[asset.asset_id]?.onChain || 0}
+              offChainBalance={(assetBalances[asset.asset_id || ''] || {}).offChain || 0}
+              onChainBalance={(assetBalances[asset.asset_id || ''] || {}).onChain || 0}
             />
           ))}
         </div>
@@ -486,7 +482,7 @@ export const Component = () => {
         {channels.length > 0 ? (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {channels.map((channel) => {
-              const asset = assetsMap[channel.asset_id]
+              const asset = assetsMap[channel.asset_id || '']
               return (
                 <ChannelCard
                   asset={asset}

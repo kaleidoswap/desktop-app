@@ -85,7 +85,11 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
     fromAsset,
     toAsset,
     price,
-    selectedPair,
+    selectedPair ? {
+      ...selectedPair,
+      base_asset: selectedPair.base_asset || '',
+      quote_asset: selectedPair.quote_asset || '',
+    } : null,
     bitcoinUnit,
     getAssetPrecision
   )
@@ -105,9 +109,8 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span
-              className={`text-white font-bold transition-all duration-300 ${
-                priceUpdated ? 'text-green-400 scale-105' : ''
-              }`}
+              className={`text-white font-bold transition-all duration-300 ${priceUpdated ? 'text-green-400 scale-105' : ''
+                }`}
             >
               {formattedRate}
             </span>
@@ -132,16 +135,14 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
 
         <div className="flex items-center gap-1.5">
           <div
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
-              isPriceFresh
+            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${isPriceFresh
                 ? 'bg-green-500/10 text-green-400 border-green-500/30'
                 : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-            }`}
+              }`}
           >
             <div
-              className={`w-1 h-1 rounded-full ${
-                isPriceFresh ? 'bg-green-500' : 'bg-amber-500'
-              }`}
+              className={`w-1 h-1 rounded-full ${isPriceFresh ? 'bg-green-500' : 'bg-amber-500'
+                }`}
             ></div>
             <span className="text-xs font-semibold">
               {isPriceFresh

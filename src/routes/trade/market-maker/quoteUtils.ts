@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
-import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import { NiaAsset } from './types'
 import { logger } from '../../../utils/logger'
 
 import { mapAssetIdToTicker, mapTickerToAssetId } from './assetUtils'

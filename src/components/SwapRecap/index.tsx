@@ -100,7 +100,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
       pollingInterval: 3000,
     })
 
-  const currentSwap = swapsData?.taker.find(
+  const currentSwap = (swapsData?.taker || []).find(
     (swap) => swap.payment_hash === payment_hash
   )
 
@@ -111,7 +111,11 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
     fromAsset,
     toAsset,
     price,
-    selectedPair,
+    selectedPair ? {
+      ...selectedPair,
+      base_asset: selectedPair.base_asset || '',
+      quote_asset: selectedPair.quote_asset || '',
+    } : null,
     bitcoinUnit,
     getAssetPrecision
   )
@@ -291,12 +295,11 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
           <button
             className={`w-full py-3.5 px-4 rounded-xl font-medium transition-all duration-200 
               flex items-center justify-center gap-2.5 text-base
-              ${
-                isExpired
-                  ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/20'
-                  : isInProgress
-                    ? 'bg-slate-700/50 text-slate-300 cursor-not-allowed opacity-75'
-                    : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/20'
+              ${isExpired
+                ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/20'
+                : isInProgress
+                  ? 'bg-slate-700/50 text-slate-300 cursor-not-allowed opacity-75'
+                  : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/20'
               } ${!isInProgress ? 'active:scale-[0.98]' : ''}`}
             disabled={isInProgress}
             onClick={isInProgress ? undefined : handleClose}

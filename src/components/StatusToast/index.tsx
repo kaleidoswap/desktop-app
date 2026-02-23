@@ -6,7 +6,6 @@ import { toast } from 'react-toastify'
 import { useAppSelector } from '../../app/store/hooks'
 import { useAssetIcon } from '../../helpers/utils'
 import {
-  NiaAsset,
   nodeApi,
   SwapDetails,
 } from '../../slices/nodeApi/nodeApi.slice'
@@ -44,7 +43,7 @@ const AssetDisplay: React.FC<{
 
 const SwapStatusContent: React.FC<{
   swap: SwapDetails
-  assets: NiaAsset[]
+  assets: any[]
   timestamp?: Date
 }> = ({ swap, assets, timestamp }) => {
   const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
@@ -53,7 +52,7 @@ const SwapStatusContent: React.FC<{
     assets.find((asset) => asset.asset_id === swap.from_asset)?.ticker ||
     bitcoinUnit
   let fromAssetQty =
-    swap.qty_from /
+    (swap.qty_from ?? 0) /
     Math.pow(
       10,
       assets.find((asset) => asset.asset_id === swap.from_asset)?.precision || 8
@@ -68,7 +67,7 @@ const SwapStatusContent: React.FC<{
     assets.find((asset) => asset.asset_id === swap.to_asset)?.ticker ||
     bitcoinUnit
   let toAssetQty =
-    swap.qty_to /
+    (swap.qty_to ?? 0) /
     Math.pow(
       10,
       assets.find((asset) => asset.asset_id === swap.to_asset)?.precision || 8
@@ -142,7 +141,7 @@ interface SwapNotificationState {
 }
 
 export const StatusToast: React.FC<{
-  assets: NiaAsset[]
+  assets: any[]
 }> = ({ assets }) => {
   const { t } = useTranslation()
   const { addNotification, removeNotification } = useNotification()
@@ -167,7 +166,10 @@ export const StatusToast: React.FC<{
 
     // Process new and existing swaps
     data.taker.forEach((swap) => {
-      const currentState = swapStates.current[swap.payment_hash]
+      const paymentHash = swap.payment_hash || ''
+      if (!paymentHash) return
+
+      const currentState = swapStates.current[paymentHash]
 
       // Skip if the swap was dismissed and has a final status
       if (
@@ -188,8 +190,8 @@ export const StatusToast: React.FC<{
           />
         ),
         onClose: () => {
-          if (swapStates.current[swap.payment_hash]) {
-            swapStates.current[swap.payment_hash].dismissed = true
+          if (paymentHash && swapStates.current[paymentHash]) {
+            swapStates.current[paymentHash].dismissed = true
           }
         },
         showProgress: swap.status === 'Pending',
@@ -201,35 +203,35 @@ export const StatusToast: React.FC<{
       if (currentState) {
         if (currentState.status !== swap.status) {
           // Clear any existing auto-remove timeout for this swap
-          if (autoRemoveTimeoutsRef.current[swap.payment_hash]) {
-            clearTimeout(autoRemoveTimeoutsRef.current[swap.payment_hash])
-            delete autoRemoveTimeoutsRef.current[swap.payment_hash]
+          if (autoRemoveTimeoutsRef.current[paymentHash]) {
+            clearTimeout(autoRemoveTimeoutsRef.current[paymentHash])
+            delete autoRemoveTimeoutsRef.current[paymentHash]
           }
 
           removeNotification(currentState.id)
           const newId = addNotification({
             ...notificationConfig,
-            autoClose: ['Succeeded', 'Failed', 'Expired'].includes(swap.status)
+            autoClose: ['Succeeded', 'Failed', 'Expired'].includes(swap.status ?? '')
               ? 5000
               : undefined,
-            type: getNotificationType(swap.status),
+            type: getNotificationType(swap.status ?? 'Pending'),
           })
-          swapStates.current[swap.payment_hash] = {
+          swapStates.current[paymentHash] = {
             dismissed: false,
             id: newId,
-            status: swap.status,
+            status: swap.status ?? 'Pending',
             timestamp,
           }
 
           // Auto-remove successful or expired swaps
-          if (['Succeeded', 'Expired'].includes(swap.status)) {
-            console.log('auto-removing swap', swap.payment_hash)
-            autoRemoveTimeoutsRef.current[swap.payment_hash] = setTimeout(
+          if (['Succeeded', 'Expired'].includes(swap.status ?? '')) {
+            console.log('auto-removing swap', paymentHash)
+            autoRemoveTimeoutsRef.current[paymentHash] = setTimeout(
               () => {
-                if (swapStates.current[swap.payment_hash]) {
-                  removeNotification(swapStates.current[swap.payment_hash].id)
-                  delete swapStates.current[swap.payment_hash]
-                  delete autoRemoveTimeoutsRef.current[swap.payment_hash]
+                if (swapStates.current[paymentHash]) {
+                  removeNotification(swapStates.current[paymentHash].id)
+                  delete swapStates.current[paymentHash]
+                  delete autoRemoveTimeoutsRef.current[paymentHash]
                 }
               },
               5000
@@ -248,7 +250,7 @@ export const StatusToast: React.FC<{
           ...notificationConfig,
           type: 'loading',
         })
-        swapStates.current[swap.payment_hash] = {
+        swapStates.current[paymentHash] = {
           dismissed: false,
           id,
           status: swap.status,
@@ -259,7 +261,7 @@ export const StatusToast: React.FC<{
 
     // Clean up completed swaps that are no longer in the data
     Object.entries(swapStates.current).forEach(([hash, state]) => {
-      const swapExists = data.taker.some((swap) => swap.payment_hash === hash)
+      const swapExists = (data?.taker || []).some((swap) => swap.payment_hash === hash)
       const isFinalStatus = ['Succeeded', 'Failed', 'Expired'].includes(
         state.status
       )

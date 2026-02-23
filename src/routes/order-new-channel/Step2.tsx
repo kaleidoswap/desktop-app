@@ -83,33 +83,43 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         const infoResponse = await getInfoRequest()
 
         if (infoResponse.data) {
-          if (infoResponse.data.options) {
-            setLspOptions(infoResponse.data.options)
-
-            const lspMinCapacity =
-              infoResponse.data.options.min_channel_balance_sat || 0
-            const lspMaxCapacity =
-              infoResponse.data.options.max_channel_balance_sat ||
-              Number.MAX_SAFE_INTEGER
-
-            const newMinCapacity = Math.max(
-              MIN_CHANNEL_CAPACITY,
-              lspMinCapacity
-            )
-            setEffectiveMinCapacity(newMinCapacity)
-
-            const newMaxCapacity = Math.min(
-              MAX_CHANNEL_CAPACITY,
-              lspMaxCapacity
-            )
-            setEffectiveMaxCapacity(newMaxCapacity)
+          // Sanitize options
+          const sanitizedOptions: LspOptions = {
+            ...(infoResponse.data.options as any),
+            min_onchain_payment_confirmations:
+              infoResponse.data.options.min_onchain_payment_confirmations ??
+              undefined,
+            min_onchain_payment_size_sat:
+              infoResponse.data.options.min_onchain_payment_size_sat || 0,
           }
+          setLspOptions(sanitizedOptions)
+
+          const lspMinCapacity =
+            infoResponse.data.options.min_channel_balance_sat || 0
+          const lspMaxCapacity =
+            infoResponse.data.options.max_channel_balance_sat ||
+            Number.MAX_SAFE_INTEGER
+
+          const newMinCapacity = Math.max(
+            MIN_CHANNEL_CAPACITY,
+            lspMinCapacity
+          )
+          setEffectiveMinCapacity(newMinCapacity)
+
+          const newMaxCapacity = Math.min(
+            MAX_CHANNEL_CAPACITY,
+            lspMaxCapacity
+          )
+          setEffectiveMaxCapacity(newMaxCapacity)
+
 
           if (infoResponse.data.assets) {
             const tmpMap: Record<string, AssetInfo> = {}
             if (Array.isArray(infoResponse.data.assets)) {
-              infoResponse.data.assets.forEach((asset: AssetInfo) => {
-                tmpMap[asset.asset_id] = asset
+              infoResponse.data.assets.forEach((asset: any) => {
+                if (asset.asset_id) {
+                  tmpMap[asset.asset_id] = asset as AssetInfo
+                }
               })
             }
             setAssetMap(tmpMap)
@@ -563,13 +573,13 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             <div className="space-y-4">
               {/* Bitcoin Channel Configuration */}
               <BitcoinChannelSection
-                capacityPresets={[50000, 100000, 500000, 1000000]}
+                capacityPresets={[50000, 100000, 500000, 1000000, 10000000]}
                 clientBalance={
                   watch('clientBalanceSat')
                     ? parseInt(
-                        parseNumberWithCommas(watch('clientBalanceSat')) || '0',
-                        10
-                      )
+                      parseNumberWithCommas(watch('clientBalanceSat')) || '0',
+                      10
+                    )
                     : 0
                 }
                 containerClassName="bg-gray-800 p-4 rounded-lg"
@@ -580,7 +590,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                     10
                   ),
                   lspOptions?.max_initial_client_balance_sat ||
-                    Number.MAX_SAFE_INTEGER
+                  Number.MAX_SAFE_INTEGER
                 )}
                 minCapacity={effectiveMinCapacity}
                 minClientBalance={
@@ -606,9 +616,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 totalCapacity={
                   watch('capacitySat')
                     ? parseInt(
-                        parseNumberWithCommas(watch('capacitySat')) || '0',
-                        10
-                      )
+                      parseNumberWithCommas(watch('capacitySat')) || '0',
+                      10
+                    )
                     : 0
                 }
               />
@@ -684,11 +694,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               {t('orderChannel.step2.backButton')}
             </button>
             <button
-              className={`px-6 py-3 rounded-lg text-lg font-bold ${
-                isLoading
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 transition-colors'
-              }`}
+              className={`px-6 py-3 rounded-lg text-lg font-bold ${isLoading
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 transition-colors'
+                }`}
               disabled={isLoading}
               type="submit"
             >

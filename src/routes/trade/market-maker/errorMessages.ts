@@ -1,6 +1,6 @@
 import { TFunction } from 'i18next'
 
-import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import { NiaAsset } from './types'
 
 import { mapAssetIdToTicker, isAssetId } from './assetUtils'
 

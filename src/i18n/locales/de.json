@@ -35,7 +35,9 @@
     "manualSwaps": "Manuelle Swaps",
     "nostrP2P": "Nostr-P2P",
     "helpSupport": "Hilfe & Support",
-    "getHelpSupport": "Hilfe & Support erhalten"
+    "getHelpSupport": "Hilfe & Support erhalten",
+    "menu": "Menu",
+    "expandSidebar": "Expand sidebar"
   },
   "channels": {
     "buyChannel": "Kanal kaufen",
@@ -1352,16 +1354,16 @@
       },
       "amount": {
         "optionalLabel": "Betrag (optional)",
-        "requiredLabel": "Betrag",
         "precision": "Präzision: {{value}} Dezimalstellen",
-        "example": "z.B. 100 {{ticker}}",
+        "example": "Betrag eingeben (z. B. 10.23 für {{ticker}})",
+        "requiredLabel": "Betrag",
         "maxLabel": "Max: {{amount}} {{asset}}",
-        "maxPlaceholder": "Max: {{amount}}",
-        "notAvailable": "N/V",
-        "maxButton": "MAX",
-        "exceeds": "Betrag überschreitet Maximum von {{amount}} {{asset}}",
-        "rgbNote": "RGB-Lightning-Rechnungen erfordern einen Betrag",
-        "noChannels": "Keine Kanäle für Lightning-Einzahlungen verfügbar"
+        "maxPlaceholder": "Betrag eingeben (max {{amount}})",
+        "notAvailable": "N/A",
+        "maxButton": "Max",
+        "rgbNote": "Hinweis: 3.000 Sats sind für RGB-Asset-Übertragungen erforderlich.",
+        "noChannels": "Warnung: Keine aktiven Lightning-Kanäle gefunden. Lightning-Einzahlungen sind nicht verfügbar.",
+        "exceeds": "Betrag überschreitet das verfügbare Maximum: {{amount}} {{asset}}"
       },
       "actions": {
         "copy": "In Zwischenablage kopieren",
@@ -1369,15 +1371,15 @@
         "generateAddressCta": "Adresse generieren",
         "generateInvoice": "Rechnung generieren"
       },
-      "status": {
-        "pending": "Warte auf Zahlung...",
-        "success": "Zahlung erhalten!",
-        "failed": "Zahlung {{status}}"
-      },
       "labels": {
         "lnInvoice": "Lightning-Rechnung",
         "btcAddress": "BTC-Adresse",
         "rgbInvoice": "RGB-Rechnung"
+      },
+      "status": {
+        "pending": "Zahlung in Bearbeitung...",
+        "success": "Zahlung erhalten!",
+        "failed": "Zahlung fehlgeschlagen ({{status}})"
       },
       "toasts": {
         "generateAddressError": "Adresse konnte nicht erstellt werden",

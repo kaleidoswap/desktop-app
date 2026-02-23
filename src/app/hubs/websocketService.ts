@@ -784,15 +784,37 @@ class WebSocketService {
             )
 
             // Make sure we have the necessary fields
+            // Handle both old format (from_amount/to_amount as top-level fields)
+            // and new format (amount inside from_asset/to_asset objects)
+            const hasOldFormat = data.data.from_amount !== undefined && data.data.to_amount !== undefined;
+            const hasNewFormat = data.data.from_asset?.amount !== undefined && data.data.to_asset?.amount !== undefined;
+            
             if (
               data.data.from_asset &&
               data.data.to_asset &&
-              data.data.to_amount !== undefined
+              (hasOldFormat || hasNewFormat)
             ) {
+              // Keep the full SwapLeg objects for proper typing
+              const quote = data.data;
+              
+              // Extract asset identifiers for logging
+              const fromAssetDisplay = typeof quote.from_asset === 'string' 
+                ? quote.from_asset 
+                : quote.from_asset.asset_id;
+              const toAssetDisplay = typeof quote.to_asset === 'string' 
+                ? quote.to_asset 
+                : quote.to_asset.asset_id;
+              const fromAmount = typeof quote.from_asset === 'string'
+                ? quote.from_amount
+                : quote.from_asset.amount;
+              const toAmount = typeof quote.to_asset === 'string'
+                ? quote.to_amount
+                : quote.to_asset.amount;
+              
               logger.info(
-                `WebSocketService: Received valid quote: with ID: ${data.data.rfq_id} - ${data.data.from_amount} ${data.data.from_asset} -> ${data.data.to_amount} ${data.data.to_asset}`
+                `WebSocketService: Received valid quote: with ID: ${quote.rfq_id} - ${fromAmount} ${fromAssetDisplay} -> ${toAmount} ${toAssetDisplay}`
               )
-              this.dispatch(updateQuote(data.data))
+              this.dispatch(updateQuote(quote))
             } else {
               logger.error(
                 'WebSocketService: Malformed quote response - missing required fields:',

@@ -64,9 +64,10 @@ export const QuoteDisplay: React.FC<QuoteDisplayProps> = ({
           <span className="text-gray-300">Asset Amount</span>
           <span className="text-white font-medium">
             {formatNumberWithCommas(
-              (quote.to_amount / Math.pow(10, assetInfo.precision)).toFixed(
-                assetInfo.precision
-              )
+              (
+                ((quote as any).to_asset?.amount || (quote as any).to_amount || 0) /
+                Math.pow(10, assetInfo.precision)
+              ).toFixed(assetInfo.precision)
             )}{' '}
             {assetInfo.ticker}
           </span>
@@ -74,7 +75,14 @@ export const QuoteDisplay: React.FC<QuoteDisplayProps> = ({
         <div className="flex justify-between text-sm">
           <span className="text-gray-300">Price</span>
           <span className="text-white font-medium">
-            {formatNumberWithCommas((quote.from_amount / 1000).toString())} sats
+            {formatNumberWithCommas(
+              (
+                ((quote as any).from_asset?.amount ||
+                  (quote as any).from_amount ||
+                  0) / 1000
+              ).toString()
+            )}{' '}
+            sats
           </span>
         </div>
         {quote.expires_at && (

@@ -234,11 +234,11 @@ export const NoTradingChannelsMessage: React.FC<
                 </div>
               </div>
 
-              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4">
+              <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent leading-tight mb-4 px-4 max-w-4xl mx-auto break-words">
                 {t('trade.noChannels.noTradingChannels')}
               </h1>
 
-              <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-8">
+              <p className="text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-8 px-4">
                 {getRecommendationMessage()}
               </p>
 
@@ -292,7 +292,7 @@ export const NoTradingChannelsMessage: React.FC<
               </div>
 
               {/* Information Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto mt-12 px-4">
                 {tradingPairs.length > 0 ? (
                   <>
                     <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-600/50 p-6 shadow-2xl">
@@ -388,7 +388,7 @@ export const NoTradingChannelsMessage: React.FC<
 }
 
 export const createTradingChannelsMessageProps = (
-  assets: { ticker: string; asset_id: string }[],
+  assets: any[],
   tradablePairs: TradingPair[],
   hasEnoughBalance: boolean,
   onNavigate: (path: string) => void,
@@ -396,9 +396,15 @@ export const createTradingChannelsMessageProps = (
 ): NoTradingChannelsMessageProps => {
   const supportedAssets = tradablePairs
     .flatMap((pair) => [pair.base_asset, pair.quote_asset])
+    .filter((v): v is string => !!v)
     .filter((v, i, a) => a.indexOf(v) === i)
 
-  const ownedAssets = assets.map((asset) => asset.asset_id)
+  // Improve asset ID extraction: check protocol_ids or fallback to asset_id (if exists on ancient caching) or ticker
+  const ownedAssets = assets
+    .map((asset) => {
+      return asset.protocol_ids?.['RGB'] || asset.asset_id || asset.ticker
+    })
+    .filter((id): id is string => !!id)
 
   const hasCompatibleAssets = ownedAssets.some((asset) =>
     supportedAssets.includes(asset)
@@ -516,6 +522,7 @@ interface WebSocketDisconnectedMessageProps {
 export const WebSocketDisconnectedMessage: React.FC<
   WebSocketDisconnectedMessageProps
 > = ({ onMakerChange, onRetryConnection, makerUrl }) => {
+  const { t } = useTranslation()
   const handleRefreshConnection = async () => {
     try {
       await onRetryConnection()
@@ -544,7 +551,7 @@ export const WebSocketDisconnectedMessage: React.FC<
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
               <Globe className="w-4 h-4" />
-              {t('trade.noChannels.marketMaker').toUpperCase()}
+              {(t('trade.noChannels.marketMaker') || '').toUpperCase()}
             </h3>
             <p className="text-xs text-slate-400">
               {t('trade.connectionIssues.marketMakerSelector')}
@@ -662,164 +669,165 @@ export const ConnectionTimeoutMessage: React.FC<
   elapsedSeconds,
   isConnecting = false,
 }) => {
-  return (
-    <div className="max-w-3xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 overflow-hidden shadow-xl">
-      {/* Header */}
-      <div className="border-b border-slate-700/50 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-            <h2 className="text-lg font-bold text-white">
-              {isConnecting
-                ? t('trade.connectionIssues.connectingToMaker')
-                : t('trade.connectionIssues.connectionTimeout')}
-            </h2>
-          </div>
-          {isConnecting && (
-            <span className="text-sm text-slate-400">
-              {t('trade.connectionIssues.elapsedTime', { seconds: elapsedSeconds })}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Market Maker Selector Section */}
-      <div className="bg-slate-800/40 border-b border-slate-700/50 px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              {t('trade.noChannels.marketMaker').toUpperCase()}
-            </h3>
-            <p className="text-xs text-slate-400">
-              {isConnecting
-                ? t('trade.connectionIssues.tryingSwitchMessage')
-                : t('trade.connectionIssues.switchIfUnavailable')}
-            </p>
-          </div>
-          <div className="flex-shrink-0">
-            <MakerSelector onMakerChange={onMakerChange} />
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="p-6">
-        <div className="flex flex-col items-center space-y-6">
-          <div
-            className={`w-16 h-16 ${isConnecting ? 'bg-blue-500/10 border-blue-500/20' : 'bg-orange-500/10 border-orange-500/20'} rounded-full flex items-center justify-center border`}
-          >
-            <div className="relative">
-              <div
-                className={`w-8 h-8 ${isConnecting ? 'bg-blue-500/20' : 'bg-orange-500/20'} rounded-full flex items-center justify-center`}
-              >
-                {isConnecting ? (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                ) : (
-                  <Clock className="w-4 h-4 text-orange-500" />
-                )}
-              </div>
-              {isConnecting && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500/30 rounded-full animate-ping"></div>
-              )}
+    const { t } = useTranslation()
+    return (
+      <div className="max-w-3xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 overflow-hidden shadow-xl">
+        {/* Header */}
+        <div className="border-b border-slate-700/50 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+              <h2 className="text-lg font-bold text-white">
+                {isConnecting
+                  ? t('trade.connectionIssues.connectingToMaker')
+                  : t('trade.connectionIssues.connectionTimeout')}
+              </h2>
             </div>
-          </div>
-
-          <div className="text-center space-y-3">
-            <h3 className="text-xl font-bold text-white">
-              {isConnecting ? t('trade.connectionIssues.establishingConnection') : t('trade.connectionIssues.connectionTimeout')}
-            </h3>
-            <p className="text-slate-300 text-center max-w-md leading-relaxed">
-              {isConnecting ? (
-                <>
-                  {t('trade.connectionIssues.connectingMessage')}
-                  <br />
-                  <span className="text-slate-400 text-sm">
-                    {t('trade.connectionIssues.usuallyFastMessage')}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {t('trade.connectionIssues.timeoutMessage')}
-                  <br />
-                  <span className="text-slate-400 text-sm">
-                    {t('trade.connectionIssues.serverUnreachableMessage')}
-                  </span>
-                </>
-              )}
-            </p>
             {isConnecting && (
-              <p className="text-slate-500 text-sm">
-                {t('trade.connectionIssues.connectingForSeconds', { seconds: elapsedSeconds })}
-              </p>
+              <span className="text-sm text-slate-400">
+                {t('trade.connectionIssues.elapsedTime', { seconds: elapsedSeconds })}
+              </span>
             )}
           </div>
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              className={`px-6 py-3 ${isConnecting ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'} text-white rounded-lg transition-colors font-medium flex items-center gap-2`}
-              onClick={onRetry}
+        {/* Market Maker Selector Section */}
+        <div className="bg-slate-800/40 border-b border-slate-700/50 px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-yellow-400 mb-1 flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                {(t('trade.noChannels.marketMaker') || '').toUpperCase()}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isConnecting
+                  ? t('trade.connectionIssues.tryingSwitchMessage')
+                  : t('trade.connectionIssues.switchIfUnavailable')}
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <MakerSelector onMakerChange={onMakerChange} />
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="p-6">
+          <div className="flex flex-col items-center space-y-6">
+            <div
+              className={`w-16 h-16 ${isConnecting ? 'bg-blue-500/10 border-blue-500/20' : 'bg-orange-500/10 border-orange-500/20'} rounded-full flex items-center justify-center border`}
             >
-              <RefreshCcw className="w-5 h-5" />
-              {isConnecting ? t('trade.connectionIssues.cancelAndRetry') : t('trade.connectionIssues.retryConnection')}
-            </button>
-          </div>
-
-          {/* Troubleshooting Grid */}
-          <div className="grid grid-cols-3 gap-4 w-full max-w-lg mt-8">
-            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
-              <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/20">
-                <Globe className="w-5 h-5 text-blue-400" />
+              <div className="relative">
+                <div
+                  className={`w-8 h-8 ${isConnecting ? 'bg-blue-500/20' : 'bg-orange-500/20'} rounded-full flex items-center justify-center`}
+                >
+                  {isConnecting ? (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  ) : (
+                    <Clock className="w-4 h-4 text-orange-500" />
+                  )}
+                </div>
+                {isConnecting && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500/30 rounded-full animate-ping"></div>
+                )}
               </div>
-              <h4 className="text-sm font-semibold text-blue-300 mb-1">
-                {t('trade.connectionIssues.network')}
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {t('trade.connectionIssues.checkInternetMessage')}
-              </p>
             </div>
 
-            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
-              <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-500/20">
-                <RefreshCcw className="w-5 h-5 text-yellow-400" />
-              </div>
-              <h4 className="text-sm font-semibold text-yellow-300 mb-1">
-                {t('trade.connectionIssues.switchMaker')}
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {t('trade.connectionIssues.tryDifferentMaker')}
+            <div className="text-center space-y-3">
+              <h3 className="text-xl font-bold text-white">
+                {isConnecting ? t('trade.connectionIssues.establishingConnection') : t('trade.connectionIssues.connectionTimeout')}
+              </h3>
+              <p className="text-slate-300 text-center max-w-md leading-relaxed">
+                {isConnecting ? (
+                  <>
+                    {t('trade.connectionIssues.connectingMessage')}
+                    <br />
+                    <span className="text-slate-400 text-sm">
+                      {t('trade.connectionIssues.usuallyFastMessage')}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {t('trade.connectionIssues.timeoutMessage')}
+                    <br />
+                    <span className="text-slate-400 text-sm">
+                      {t('trade.connectionIssues.serverUnreachableMessage')}
+                    </span>
+                  </>
+                )}
               </p>
+              {isConnecting && (
+                <p className="text-slate-500 text-sm">
+                  {t('trade.connectionIssues.connectingForSeconds', { seconds: elapsedSeconds })}
+                </p>
+              )}
             </div>
 
-            <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
-              <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-green-500/20">
-                <Clock className="w-5 h-5 text-green-400" />
-              </div>
-              <h4 className="text-sm font-semibold text-green-300 mb-1">
-                {t('trade.connectionIssues.wait')}
-              </h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                {isConnecting ? t('trade.connectionIssues.connectionInProgress') : t('trade.connectionIssues.serverBusy')}
-              </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                className={`px-6 py-3 ${isConnecting ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'} text-white rounded-lg transition-colors font-medium flex items-center gap-2`}
+                onClick={onRetry}
+              >
+                <RefreshCcw className="w-5 h-5" />
+                {isConnecting ? t('trade.connectionIssues.cancelAndRetry') : t('trade.connectionIssues.retryConnection')}
+              </button>
             </div>
-          </div>
 
-          {makerUrl && (
-            <div className="w-full pt-6 border-t border-slate-700/30">
-              <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/40">
-                <p className="text-xs text-slate-400 text-center">
-                  {t('trade.connectionIssues.currentMaker')}{' '}
-                  <span
-                    className={`font-mono break-all ${isConnecting ? 'text-blue-400' : 'text-orange-400'}`}
-                  >
-                    {makerUrl}
-                  </span>
+            {/* Troubleshooting Grid */}
+            <div className="grid grid-cols-3 gap-4 w-full max-w-lg mt-8">
+              <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+                <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-500/20">
+                  <Globe className="w-5 h-5 text-blue-400" />
+                </div>
+                <h4 className="text-sm font-semibold text-blue-300 mb-1">
+                  {t('trade.connectionIssues.network')}
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t('trade.connectionIssues.checkInternetMessage')}
+                </p>
+              </div>
+
+              <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+                <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-yellow-500/20">
+                  <RefreshCcw className="w-5 h-5 text-yellow-400" />
+                </div>
+                <h4 className="text-sm font-semibold text-yellow-300 mb-1">
+                  {t('trade.connectionIssues.switchMaker')}
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t('trade.connectionIssues.tryDifferentMaker')}
+                </p>
+              </div>
+
+              <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-4 text-center hover:bg-slate-800/60 transition-colors">
+                <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-green-500/20">
+                  <Clock className="w-5 h-5 text-green-400" />
+                </div>
+                <h4 className="text-sm font-semibold text-green-300 mb-1">
+                  {t('trade.connectionIssues.wait')}
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {isConnecting ? t('trade.connectionIssues.connectionInProgress') : t('trade.connectionIssues.serverBusy')}
                 </p>
               </div>
             </div>
-          )}
+
+            {makerUrl && (
+              <div className="w-full pt-6 border-t border-slate-700/30">
+                <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/40">
+                  <p className="text-xs text-slate-400 text-center">
+                    {t('trade.connectionIssues.currentMaker')}{' '}
+                    <span
+                      className={`font-mono break-all ${isConnecting ? 'text-blue-400' : 'text-orange-400'}`}
+                    >
+                      {makerUrl}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
