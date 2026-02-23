@@ -39,92 +39,89 @@ fn main() {
             let node_process = Arc::clone(&node_process);
             move |window, event| {
                 if window.label() == "main" {
-                    match event {
-                        tauri::WindowEvent::CloseRequested { api, .. } => {
-                            println!("Window close requested, initiating shutdown sequence...");
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        println!("Window close requested, initiating shutdown sequence...");
 
-                            // Check if node is running before preventing close
-                            let is_node_running = {
+                        // Check if node is running before preventing close
+                        let is_node_running = {
+                            let node_process = node_process.lock().unwrap();
+                            node_process.is_running()
+                        };
+
+                        if is_node_running {
+                            // Only prevent close and show shutdown animation if node is running
+                            let window = window.clone();
+                            api.prevent_close();
+
+                            // Trigger initial shutdown animation
+                            window
+                                .emit("trigger-shutdown", "Preparing to shut down...")
+                                .unwrap();
+
+                            // Clone Arc before moving into the new thread
+                            let node_process = Arc::clone(&node_process);
+
+                            // Create a new thread to handle the shutdown sequence
+                            std::thread::spawn(move || {
                                 let node_process = node_process.lock().unwrap();
-                                node_process.is_running()
-                            };
 
-                            if is_node_running {
-                                // Only prevent close and show shutdown animation if node is running
-                                let window = window.clone();
-                                api.prevent_close();
-
-                                // Trigger initial shutdown animation
+                                // Update status
                                 window
-                                    .emit("trigger-shutdown", "Preparing to shut down...")
+                                    .emit(
+                                        "update-shutdown-status",
+                                        "Shutting down local node...",
+                                    )
                                     .unwrap();
+                                println!("Shutting down node...");
+                                node_process.shutdown();
 
-                                // Clone Arc before moving into the new thread
-                                let node_process = Arc::clone(&node_process);
+                                // Wait for node to shut down gracefully with status updates
+                                let mut attempts = 0;
+                                while node_process.is_running() && attempts < 30 {
+                                    std::thread::sleep(std::time::Duration::from_millis(100));
+                                    attempts += 1;
 
-                                // Create a new thread to handle the shutdown sequence
-                                std::thread::spawn(move || {
-                                    let node_process = node_process.lock().unwrap();
-
-                                    // Update status
-                                    window
-                                        .emit(
-                                            "update-shutdown-status",
-                                            "Shutting down local node...",
-                                        )
-                                        .unwrap();
-                                    println!("Shutting down node...");
-                                    node_process.shutdown();
-
-                                    // Wait for node to shut down gracefully with status updates
-                                    let mut attempts = 0;
-                                    while node_process.is_running() && attempts < 30 {
-                                        std::thread::sleep(std::time::Duration::from_millis(100));
-                                        attempts += 1;
-
-                                        // Update status every second
-                                        if attempts % 10 == 0 {
-                                            window
-                                                .emit(
-                                                    "update-shutdown-status",
-                                                    format!(
-                                                    "Waiting for node to shut down ({} seconds)...",
-                                                    attempts / 10
-                                                ),
-                                                )
-                                                .unwrap();
-                                        }
-                                    }
-
-                                    // Force kill if still running
-                                    if node_process.is_running() {
+                                    // Update status every second
+                                    if attempts % 10 == 0 {
                                         window
                                             .emit(
                                                 "update-shutdown-status",
-                                                "Force stopping node...",
+                                                format!(
+                                                "Waiting for node to shut down ({} seconds)...",
+                                                attempts / 10
+                                            ),
                                             )
                                             .unwrap();
-                                        println!(
-                                            "Node still running after shutdown, forcing kill..."
-                                        );
-                                        node_process.force_kill();
-                                        std::thread::sleep(std::time::Duration::from_millis(500));
                                     }
+                                }
 
-                                    // Final status update
+                                // Force kill if still running
+                                if node_process.is_running() {
                                     window
-                                        .emit("update-shutdown-status", "Closing application...")
+                                        .emit(
+                                            "update-shutdown-status",
+                                            "Force stopping node...",
+                                        )
                                         .unwrap();
+                                    println!(
+                                        "Node still running after shutdown, forcing kill..."
+                                    );
+                                    node_process.force_kill();
                                     std::thread::sleep(std::time::Duration::from_millis(500));
+                                }
 
-                                    // Close the window
-                                    window.close().unwrap();
-                                });
-                            }
-                            // If no node is running, allow the window to close normally
-                            // by not calling api.prevent_close()
+                                // Final status update
+                                window
+                                    .emit("update-shutdown-status", "Closing application...")
+                                    .unwrap();
+                                std::thread::sleep(std::time::Duration::from_millis(500));
+
+                                // Close the window
+                                window.close().unwrap();
+                            });
                         }
-                        _ => {}
+                        // If no node is running, allow the window to close normally
+                        // by not calling api.prevent_close()
                     }
                 }
             }
@@ -255,6 +252,7 @@ fn get_accounts() -> Result<Vec<db::Account>, String> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 fn insert_account(
     name: String,
     network: String,
@@ -293,6 +291,7 @@ fn insert_account(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 fn update_account(
     name: String,
     network: String,

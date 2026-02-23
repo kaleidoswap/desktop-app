@@ -30,20 +30,9 @@ pub enum NodeState {
 #[derive(Debug)]
 enum ControlMessage {
     Stop,
-    HealthCheck,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct NodeLogEvent {
-    #[serde(default)]
-    level: String,
-    #[serde(default)]
-    message: String,
-    #[serde(default)]
-    ready: bool,
-    #[serde(default)]
-    timestamp: String,
-}
+
 
 pub struct NodeProcess {
     child_process: Arc<Mutex<Option<Child>>>,
@@ -131,17 +120,7 @@ impl NodeProcess {
         ports
     }
     
-    /// Add a log entry with automatic rotation
-    fn add_log(&self, log: String) {
-        if let Ok(mut logs) = self.logs.lock() {
-            logs.push(log);
-            if logs.len() > MAX_LOGS_IN_MEMORY {
-                let drain_count = logs.len() - MAX_LOGS_IN_MEMORY;
-                logs.drain(0..drain_count);
-            }
-        }
-    }
-    
+
     /// Get current node state
     pub fn get_state(&self) -> NodeState {
         match self.state.read() {
@@ -161,27 +140,7 @@ impl NodeProcess {
         }
     }
     
-    /// Check node health by making HTTP request to daemon
-    fn check_node_health(&self, port: u16) -> bool {
-        // Simple TCP connection check - in production, make actual HTTP health check
-        TcpListener::bind(("127.0.0.1", port)).is_err()
-    }
-    
-    /// Parse a log line to check for structured JSON logs
-    fn parse_log_line(line: &str) -> Option<NodeLogEvent> {
-        // Try to parse as JSON
-        if let Ok(event) = serde_json::from_str::<NodeLogEvent>(line) {
-            Some(event)
-        } else {
-            // Not structured JSON, return as plain message
-            Some(NodeLogEvent {
-                level: "info".to_string(),
-                message: line.to_string(),
-                ready: line.contains("Listening on") || line.contains("Node is ready"),
-                timestamp: String::new(),
-            })
-        }
-    }
+
 
     /// Stop a specific node by account name
     pub fn stop_by_account(&self, account_name: &str) -> Result<(), String> {
@@ -530,23 +489,6 @@ impl NodeProcess {
                         Ok(ControlMessage::Stop) => {
                             println!("Received Stop signal, breaking monitoring loop.");
                             break;
-                        }
-                        Ok(ControlMessage::HealthCheck) => {
-                            // Perform health check
-                            if let Ok(port_guard) = daemon_port_for_thread.lock() {
-                                if let Some(port) = *port_guard {
-                                    // Simple TCP check - port should NOT be available if node is running
-                                    let is_healthy = TcpListener::bind(("127.0.0.1", port)).is_err();
-                                    if !is_healthy {
-                                        println!("Health check failed: daemon port {} is not bound", port);
-                                        if let Ok(window_guard) = window_for_thread.lock() {
-                                            if let Some(win) = window_guard.as_ref() {
-                                                let _ = win.emit("node-error", "Node health check failed");
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
                         Err(_) => {
                             // No message, continue monitoring
@@ -973,10 +915,10 @@ impl NodeProcess {
 
         let child = Command::new(&executable_path)
             .arg(datapath)
-            .args(&["--daemon-listening-port", daemon_listening_port])
-            .args(&["--ldk-peer-listening-port", ldk_peer_listening_port])
-            .args(&["--network", network])
-            .args(&["--disable-authentication"])
+            .args(["--daemon-listening-port", daemon_listening_port])
+            .args(["--ldk-peer-listening-port", ldk_peer_listening_port])
+            .args(["--network", network])
+            .args(["--disable-authentication"])
             .stdout(Stdio::from(stdout_log))
             .stderr(Stdio::from(stderr_log))
             .spawn();
