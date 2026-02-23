@@ -51,7 +51,7 @@ export const Component = () => {
         data.fee_rate !== 'custom' ? parseFloat(data.fee_rate) : customFee,
       num: data.num,
       size: data.size,
-
+      up_to: false,
     }).then((res: any) => {
       setIsLoading(false)
       if (res.error) {

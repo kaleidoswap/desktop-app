@@ -146,13 +146,18 @@ export const Component = () => {
   }
 
   const openChannelOperation = async () => {
-    return await openChannel({
-      asset_amount: formData.assetAmount,
-      asset_id: formData.assetId,
+    const payload: any = {
       capacity_sat: formData.capacitySat,
       peer_pubkey_and_opt_addr: formData.pubKeyAndAddress,
       public: formData.public,
-    }).unwrap()
+    }
+
+    if (formData.assetId && formData.assetAmount > 0) {
+      payload.asset_amount = formData.assetAmount
+      payload.asset_id = formData.assetId
+    }
+
+    return await openChannel(payload).unwrap()
   }
 
   const onSubmit = useCallback(async () => {
