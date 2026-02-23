@@ -54,6 +54,24 @@ build-app:
 build-app-windows:
 	npm run tauri:build:windows
 
+check-pr: check_dependencies
+	@echo "Running local PR checks..."
+	@echo "Checking frontend formatting..."
+	npm run format
+	@echo "Linting frontend..."
+	npm run lint:fix || echo "Please fix ESLint errors manually."
+	@echo "Type-checking frontend..."
+	npx tsc --noEmit
+	@echo "Checking backend formatting..."
+	cargo fmt --manifest-path src-tauri/Cargo.toml -- --check || echo "Please run 'cargo fmt' to format Rust code."
+	@echo "Running clippy..."
+	cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+	@echo "Building frontend..."
+	npm run build
+	@echo "Running Rust tests..."
+	cargo test --manifest-path src-tauri/Cargo.toml
+	@echo "All PR checks passed successfully locally!"
+
 run: release
 	$(BIN_TARGET)
 
@@ -150,4 +168,4 @@ help:
 	@echo "  make test        - Update repo and run the tests"
 	@echo "  make help        - Show this help message"
 
-.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build sign-binary
+.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build sign-binary check-pr
