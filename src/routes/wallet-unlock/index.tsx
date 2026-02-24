@@ -105,6 +105,8 @@ export const Component = () => {
           indexer_url: nodeSettings.indexer_url,
           password: data.password,
           proxy_endpoint: nodeSettings.proxy_endpoint,
+          announce_addresses: [],
+          announce_alias: 'kaleidoswap-desktop',
         }).unwrap()
 
         const nodeInfoRes = await nodeInfo()
@@ -249,18 +251,16 @@ export const Component = () => {
             <span className="font-medium">Connection Details</span>
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-all duration-300 text-slate-400 group-hover:text-blue-400 ${
-              isConnectionDetailsOpen ? 'rotate-180' : ''
-            }`}
+            className={`w-5 h-5 transition-all duration-300 text-slate-400 group-hover:text-blue-400 ${isConnectionDetailsOpen ? 'rotate-180' : ''
+              }`}
           />
         </button>
 
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            isConnectionDetailsOpen
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${isConnectionDetailsOpen
               ? 'max-h-96 opacity-100 mt-3'
               : 'max-h-0 opacity-0'
-          }`}
+            }`}
         >
           <div className="p-5 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm border border-slate-600/30 rounded-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
