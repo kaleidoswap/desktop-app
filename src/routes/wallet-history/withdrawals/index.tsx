@@ -35,19 +35,13 @@ const formatBitcoinAmount = (
 
 const formatAssetAmount = (
   amount: string | number,
-  asset: string,
+  isBtc: boolean,
   bitcoinUnit: string,
-  assetsList?: any[]
+  precision: number
 ): string => {
-  if (asset === 'BTC') {
+  if (isBtc) {
     return formatBitcoinAmount(amount, bitcoinUnit)
   }
-
-  // Find asset info to get precision
-  const assetInfo = assetsList?.find((a) => a.ticker === asset)
-  const precision = assetInfo?.precision ?? 8
-
-  // Convert to decimal and format with proper precision
   const amountDecimal = new Decimal(amount)
   return amountDecimal
     .div(Math.pow(10, precision))
@@ -59,12 +53,60 @@ const formatAssetAmount = (
     })
 }
 
+type AssetInfo = {
+  label: string
+  precision: number
+  fullId: string
+}
+
+const resolveAssetInfo = (
+  assetId: string | undefined,
+  listAssetsData: any
+): AssetInfo | null => {
+  if (!assetId) return null
+
+  const nia = listAssetsData?.nia ?? []
+  const uda = listAssetsData?.uda ?? []
+  const cfa = listAssetsData?.cfa ?? []
+
+  const niaMatch = nia.find((a: any) => a.asset_id === assetId)
+  if (niaMatch)
+    return {
+      label: niaMatch.ticker ?? niaMatch.name ?? assetId,
+      precision: niaMatch.precision ?? 0,
+      fullId: assetId,
+    }
+
+  const udaMatch = uda.find((a: any) => a.asset_id === assetId)
+  if (udaMatch)
+    return {
+      label: udaMatch.ticker ?? udaMatch.name ?? assetId,
+      precision: udaMatch.precision ?? 0,
+      fullId: assetId,
+    }
+
+  const cfaMatch = cfa.find((a: any) => a.asset_id === assetId)
+  if (cfaMatch)
+    return {
+      label: cfaMatch.name ?? assetId,
+      precision: cfaMatch.precision ?? 0,
+      fullId: assetId,
+    }
+
+  return {
+    label: assetId,
+    precision: 0,
+    fullId: assetId,
+  }
+}
+
 export const Component: React.FC = () => {
   const { t } = useTranslation()
   const [typeFilter, setTypeFilter] = useState<
     'all' | 'on-chain' | 'off-chain'
   >('all')
   const [assetFilter, setAssetFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -86,8 +128,10 @@ export const Component: React.FC = () => {
     refetch: refetchPayments,
   } = nodeApi.endpoints.listPayments.useQuery()
 
-  const isLoading = transactionsLoading || paymentsLoading
-  const isError = transactionsError || paymentsError
+  const isLoading = transactionsLoading && paymentsLoading
+  const isTxError = transactionsError && !transactionsLoading
+  const isPaymentsError = paymentsError && !paymentsLoading
+  const isError = isTxError && isPaymentsError
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -95,22 +139,14 @@ export const Component: React.FC = () => {
     setIsRefreshing(false)
   }
 
-  // Get unique assets from withdrawals
   const uniqueAssets = useMemo(() => {
     const assets = new Set<string>(['BTC'])
-
-    // Add assets from off-chain withdrawals
     ;(paymentsData?.payments || [])
-      .filter((payment) => !payment.inbound)
-      .forEach((payment) => {
-        if (payment.asset_id) {
-          const ticker = (listAssetsData?.nia || []).find(
-            (a) => a.asset_id === payment.asset_id
-          )?.ticker
-          if (ticker) assets.add(ticker)
-        }
+      .filter((p) => !p.inbound && p.asset_id)
+      .forEach((p) => {
+        const info = resolveAssetInfo(p.asset_id, listAssetsData)
+        if (info) assets.add(info.label)
       })
-
     return Array.from(assets).sort()
   }, [paymentsData, listAssetsData])
 
@@ -140,6 +176,22 @@ export const Component: React.FC = () => {
     )
   }
 
+  const showTxWarning = isTxError && !isError
+  const showPaymentsWarning = isPaymentsError && !isError
+
+  type Withdrawal = {
+    satAmount: string
+    rgbAmount?: string
+    rgbAssetLabel?: string
+    rgbAssetId?: string
+    rgbAssetPrecision?: number
+    txId: string
+    type: 'on-chain' | 'off-chain'
+    timestamp?: number
+    status?: string
+    payeePublicKey?: string
+  }
+
   const onChainWithdrawals: Withdrawal[] =
     (transactionsData?.transactions || [])
       .filter(
@@ -148,8 +200,7 @@ export const Component: React.FC = () => {
           new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).gt(0)
       )
       .map((tx) => ({
-        amount: new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).toString(),
-        asset: 'BTC',
+        satAmount: new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).toString(),
         timestamp: tx.confirmation_time?.timestamp,
         txId: tx.txid ?? '',
         type: 'on-chain' as const,
@@ -158,65 +209,54 @@ export const Component: React.FC = () => {
   const offChainWithdrawals: Withdrawal[] =
     (paymentsData?.payments || [])
       .filter((payment) => !payment.inbound)
-      .map((payment) => ({
-        amount: payment.asset_id
-          ? (payment.asset_amount ?? 0).toString()
-          : ((payment.amt_msat ?? 0) / 1000).toString(),
-        asset:
-          (listAssetsData?.nia || []).find(
-            (a) => a.asset_id === payment.asset_id
-          )?.ticker || 'BTC',
-        txId: payment.payment_hash ?? '',
-        type: 'off-chain' as const,
-        timestamp: undefined, // Explicitly undefined to match Withdrawal type
-      })) || []
-
-  // Define a type that includes the optional timestamp property
-  type Withdrawal = {
-    amount: string
-    asset: string
-    txId: string
-    type: 'on-chain' | 'off-chain'
-    timestamp?: number
-  }
+      .map((payment) => {
+        const assetInfo = resolveAssetInfo(payment.asset_id, listAssetsData)
+        return {
+          satAmount: ((payment.amt_msat ?? 0) / 1000).toString(),
+          rgbAmount: assetInfo
+            ? (payment.asset_amount ?? 0).toString()
+            : undefined,
+          rgbAssetLabel: assetInfo?.label,
+          rgbAssetId: assetInfo?.fullId,
+          rgbAssetPrecision: assetInfo?.precision,
+          txId: payment.payment_hash ?? '',
+          type: 'off-chain' as const,
+          timestamp: payment.created_at,
+          status: payment.status,
+          payeePublicKey: payment.payee_pubkey,
+        }
+      }) || []
 
   const allWithdrawals: Withdrawal[] = [
     ...onChainWithdrawals,
     ...offChainWithdrawals,
   ].sort((a, b) => {
-    // Sort by timestamp if available, otherwise by amount
-    if (a.timestamp && b.timestamp) {
-      return b.timestamp - a.timestamp
-    } else if (a.timestamp) {
-      return -1
-    } else if (b.timestamp) {
-      return 1
-    }
-    return new Decimal(b.amount).comparedTo(new Decimal(a.amount))
+    if (a.timestamp && b.timestamp) return b.timestamp - a.timestamp
+    if (a.timestamp) return -1
+    if (b.timestamp) return 1
+    return new Decimal(b.satAmount).comparedTo(new Decimal(a.satAmount))
   })
 
-  // Apply filters
+  const assetLabel = (w: Withdrawal) => w.rgbAssetLabel ?? 'BTC'
+
   const filteredWithdrawals = allWithdrawals.filter((withdrawal) => {
-    // Type filter
-    if (typeFilter !== 'all' && withdrawal.type !== typeFilter) {
+    if (typeFilter !== 'all' && withdrawal.type !== typeFilter) return false
+    if (assetFilter !== 'all' && assetLabel(withdrawal) !== assetFilter)
       return false
+    if (statusFilter !== 'all') {
+      const wStatus = withdrawal.status ?? 'Completed'
+      if (wStatus.toLowerCase() !== statusFilter.toLowerCase()) return false
     }
-
-    // Asset filter
-    if (assetFilter !== 'all' && withdrawal.asset !== assetFilter) {
-      return false
-    }
-
-    // Search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       return (
         withdrawal.txId.toLowerCase().includes(searchLower) ||
-        withdrawal.asset.toLowerCase().includes(searchLower) ||
-        withdrawal.type.toLowerCase().includes(searchLower)
+        assetLabel(withdrawal).toLowerCase().includes(searchLower) ||
+        withdrawal.type.toLowerCase().includes(searchLower) ||
+        (withdrawal.rgbAssetId ?? '').toLowerCase().includes(searchLower) ||
+        (withdrawal.payeePublicKey ?? '').toLowerCase().includes(searchLower)
       )
     }
-
     return true
   })
 
@@ -247,7 +287,7 @@ export const Component: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
@@ -280,7 +320,6 @@ export const Component: React.FC = () => {
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 d="M19 9l-7 7-7-7"
@@ -314,7 +353,35 @@ export const Component: React.FC = () => {
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 9l-7 7-7-7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <div className="relative">
+          <select
+            className="appearance-none w-full pl-3 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            onChange={(e) => setStatusFilter(e.target.value)}
+            value={statusFilter}
+          >
+            <option value="all">{t('withdrawals.allStatuses')}</option>
+            <option value="Completed">{t('withdrawals.completed')}</option>
+            <option value="Succeeded">{t('withdrawals.succeeded')}</option>
+            <option value="Pending">{t('withdrawals.pending')}</option>
+            <option value="Failed">{t('withdrawals.failed')}</option>
+          </select>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <svg
+              className="h-4 w-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
               <path
                 d="M19 9l-7 7-7-7"
@@ -327,9 +394,31 @@ export const Component: React.FC = () => {
         </div>
       </div>
 
+      {showTxWarning && (
+        <Alert
+          className="mb-4"
+          title={t('withdrawals.onChainUnavailable')}
+          variant="warning"
+        >
+          <p>{t('withdrawals.onChainUnavailableMessage')}</p>
+        </Alert>
+      )}
+      {showPaymentsWarning && (
+        <Alert
+          className="mb-4"
+          title={t('withdrawals.offChainUnavailable')}
+          variant="warning"
+        >
+          <p>{t('withdrawals.offChainUnavailableMessage')}</p>
+        </Alert>
+      )}
+
       {filteredWithdrawals.length === 0 ? (
         <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
-          {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
+          {searchTerm ||
+          typeFilter !== 'all' ||
+          assetFilter !== 'all' ||
+          statusFilter !== 'all' ? (
             <>
               <p>{t('withdrawals.noWithdrawalsFiltered')}</p>
               <Button
@@ -338,6 +427,7 @@ export const Component: React.FC = () => {
                   setSearchTerm('')
                   setTypeFilter('all')
                   setAssetFilter('all')
+                  setStatusFilter('all')
                 }}
                 size="sm"
                 variant="outline"
@@ -376,23 +466,62 @@ export const Component: React.FC = () => {
             },
             {
               accessor: (withdrawal: Withdrawal) => (
-                <span className="font-medium">
-                  {withdrawal.asset === 'BTC' ? bitcoinUnit : withdrawal.asset}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  {withdrawal.rgbAssetLabel ? (
+                    <>
+                      <span className="font-medium">
+                        {withdrawal.rgbAssetLabel}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {bitcoinUnit}
+                      </span>
+                      {withdrawal.rgbAssetId && (
+                        <div className="flex items-center">
+                          {renderCopyableField(
+                            withdrawal.rgbAssetId,
+                            true,
+                            6,
+                            t('withdrawals.assetId')
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-medium">{bitcoinUnit}</span>
+                  )}
+                </div>
               ),
               className: 'col-span-1',
               header: t('withdrawals.asset'),
             },
             {
               accessor: (withdrawal: Withdrawal) => (
-                <span className="font-semibold text-white">
-                  {formatAssetAmount(
-                    withdrawal.amount,
-                    withdrawal.asset,
-                    bitcoinUnit,
-                    listAssetsData?.nia
+                <div className="flex flex-col gap-0.5">
+                  {withdrawal.rgbAmount !== undefined &&
+                  withdrawal.rgbAssetLabel ? (
+                    <>
+                      <span className="font-semibold text-white">
+                        {formatAssetAmount(
+                          withdrawal.rgbAmount,
+                          false,
+                          bitcoinUnit,
+                          withdrawal.rgbAssetPrecision ?? 0
+                        )}{' '}
+                        <span className="text-slate-300 font-normal">
+                          {withdrawal.rgbAssetLabel}
+                        </span>
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {formatBitcoinAmount(withdrawal.satAmount, bitcoinUnit)}{' '}
+                        {bitcoinUnit}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-semibold text-white">
+                      {formatBitcoinAmount(withdrawal.satAmount, bitcoinUnit)}
+                    </span>
                   )}
-                </span>
+                </div>
               ),
               className: 'col-span-1',
               header: t('withdrawals.amount'),
@@ -406,19 +535,60 @@ export const Component: React.FC = () => {
               header: t('withdrawals.date'),
             },
             {
-              accessor: (withdrawal: Withdrawal) =>
-                renderCopyableField(
-                  withdrawal.txId,
-                  true,
-                  4,
-                  t('withdrawals.transactionId')
-                ),
+              accessor: (withdrawal: Withdrawal) => (
+                <div className="flex flex-col gap-1">
+                  {renderCopyableField(
+                    withdrawal.txId,
+                    true,
+                    4,
+                    t('withdrawals.transactionId')
+                  )}
+                  {withdrawal.payeePublicKey && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-500">
+                        {t('withdrawals.payee')}:
+                      </span>
+                      {renderCopyableField(
+                        withdrawal.payeePublicKey,
+                        true,
+                        4,
+                        t('withdrawals.payeePubkey')
+                      )}
+                    </div>
+                  )}
+                </div>
+              ),
               className: 'col-span-1',
               header: t('withdrawals.transactionId'),
             },
             {
-              accessor: () =>
-                renderStatusBadge(t('withdrawals.completed'), 'danger'),
+              accessor: (withdrawal: Withdrawal) => {
+                if (withdrawal.type === 'on-chain') {
+                  return renderStatusBadge(
+                    t('withdrawals.completed'),
+                    'success'
+                  )
+                }
+                switch (withdrawal.status) {
+                  case 'Succeeded':
+                    return renderStatusBadge(
+                      t('withdrawals.succeeded'),
+                      'success'
+                    )
+                  case 'Pending':
+                    return renderStatusBadge(
+                      t('withdrawals.pending'),
+                      'warning'
+                    )
+                  case 'Failed':
+                    return renderStatusBadge(t('withdrawals.failed'), 'danger')
+                  default:
+                    return renderStatusBadge(
+                      withdrawal.status ?? t('withdrawals.completed'),
+                      'default'
+                    )
+                }
+              },
               className: 'col-span-1',
               header: t('withdrawals.status'),
             },
@@ -426,19 +596,19 @@ export const Component: React.FC = () => {
           data={filteredWithdrawals}
           emptyState={
             <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
-              {searchTerm || typeFilter !== 'all' || assetFilter !== 'all' ? (
+              {searchTerm ||
+              typeFilter !== 'all' ||
+              assetFilter !== 'all' ||
+              statusFilter !== 'all' ? (
                 <>
-                  <p>
-                    {t(
-                      'components.walletHistory.withdrawals.noWithdrawalsFiltered'
-                    )}
-                  </p>
+                  <p>{t('withdrawals.noWithdrawalsFiltered')}</p>
                   <Button
                     className="mt-4"
                     onClick={() => {
                       setSearchTerm('')
                       setTypeFilter('all')
                       setAssetFilter('all')
+                      setStatusFilter('all')
                     }}
                     size="sm"
                     variant="outline"
@@ -447,7 +617,7 @@ export const Component: React.FC = () => {
                   </Button>
                 </>
               ) : (
-                <p>{t('components.walletHistory.withdrawals.noWithdrawals')}</p>
+                <p>{t('withdrawals.noWithdrawals')}</p>
               )}
             </div>
           }
