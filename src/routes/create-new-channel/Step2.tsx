@@ -376,29 +376,49 @@ export const Step2 = ({
             </span>
           </div>
           {capacitySat && parseFloat(capacitySat) > 0 && (
-            <>
-              <input
-                className="w-full mt-2"
-                max={maxCapacity}
-                min={MIN_CHANNEL_CAPACITY}
-                onChange={(e) => handleCapacityChange(e.target.value)}
-                step={1000}
-                type="range"
-                value={parseFloat(capacitySat)}
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>
+            <div className="mt-4 px-1">
+              <div className="relative">
+                {/* Filled track */}
+                <div className="relative h-2 rounded-full bg-gray-700/60 overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-cyan/70 to-cyan transition-all duration-200"
+                    style={{
+                      width: `${Math.max(0, Math.min(100, ((parseFloat(capacitySat) - MIN_CHANNEL_CAPACITY) / (maxCapacity - MIN_CHANNEL_CAPACITY)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                <input
+                  className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+                  max={maxCapacity}
+                  min={MIN_CHANNEL_CAPACITY}
+                  onChange={(e) => handleCapacityChange(e.target.value)}
+                  step={1000}
+                  type="range"
+                  value={parseFloat(capacitySat)}
+                />
+                {/* Thumb */}
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-cyan shadow-lg shadow-cyan/30 pointer-events-none transition-all duration-200"
+                  style={{
+                    left: `calc(${Math.max(0, Math.min(100, ((parseFloat(capacitySat) - MIN_CHANNEL_CAPACITY) / (maxCapacity - MIN_CHANNEL_CAPACITY)) * 100))}% - 8px)`,
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-3">
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
                   {t('createChannel.step2.minLabel', {
                     amount: formatNumber(MIN_CHANNEL_CAPACITY),
                   })}
                 </span>
-                <span>
+                <span className="flex items-center gap-1">
                   {t('createChannel.step2.maxLabel', {
                     amount: formatNumber(maxCapacity),
                   })}
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan/60" />
                 </span>
               </div>
-            </>
+            </div>
           )}
           {formState.errors.capacitySat && (
             <p className="text-red-500 text-sm mt-1">
