@@ -71,7 +71,7 @@ export const Component = () => {
       if (selectedAssetId) {
         setIsLoading(true)
         try {
-          await getTransfers()
+          await getTransfers(selectedAssetId)
         } finally {
           setIsLoading(false)
         }
@@ -86,7 +86,7 @@ export const Component = () => {
     try {
       await assets()
       if (selectedAssetId) {
-        await getTransfers()
+        await getTransfers(selectedAssetId)
       }
     } finally {
       setIsRefreshing(false)

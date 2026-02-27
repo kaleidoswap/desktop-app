@@ -117,7 +117,7 @@ function queryFn<TArgs, TResult>(
       const wrapper = await getNodeApiWrapper(api.getState() as MinimalState)
       const result = await call(wrapper, args)
       if ('error' in result && result.error) return { error: result.error }
-      return { data: result.data as TResult }
+      return { data: (result.data ?? null) as TResult }
     } catch (error) {
       return { error: { status: 500, data: { error: String(error) } } }
     }
@@ -222,8 +222,8 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.sendRgb(args)),
     }),
 
-    listTransfers: builder.query<ListTransfersResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listTransfers()),
+    listTransfers: builder.query<ListTransfersResponse, string>({
+      queryFn: queryFn((w, assetId: string) => w.listTransfers(assetId)),
     }),
 
     refresh: builder.mutation<void, RefreshRequest | void>({

@@ -1126,6 +1126,7 @@ export const WithdrawModalContent: React.FC = () => {
                   },
                 ],
               },
+              min_confirmations: 1,
             }).unwrap()
           } else {
             if (!transportEndpoint) {
@@ -1150,6 +1151,7 @@ export const WithdrawModalContent: React.FC = () => {
                   },
                 ],
               },
+              min_confirmations: 1,
             }).unwrap()
           }
 

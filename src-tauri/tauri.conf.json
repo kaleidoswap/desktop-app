@@ -75,7 +75,8 @@
         "titleBarStyle": "Visible",
         "visible": false,
         "width": 1200,
-        "useHttpsScheme": true
+        "useHttpsScheme": true,
+        "backgroundColor": "#1E1F28"
       },
       {
         "alwaysOnTop": false,

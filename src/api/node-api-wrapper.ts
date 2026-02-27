@@ -176,11 +176,9 @@ export class NodeApiWrapper {
   }
 
   async listTransfers(
-    assetId?: string
+    assetId: string
   ): Promise<ApiResult<ListTransfersResponse>> {
-    return this.execute(() =>
-      this.client.listTransfers(assetId ? { asset_id: assetId } : {})
-    )
+    return this.execute(() => this.client.listTransfers({ asset_id: assetId }))
   }
 
   async refreshTransfers(request?: RefreshRequest): Promise<ApiResult<void>> {

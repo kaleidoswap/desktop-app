@@ -774,7 +774,7 @@ export const Layout = (props: Props) => {
           >
             {/* Top bar with page title and notifications */}
             <div
-              className="sticky top-0 z-30 bg-blue-darkest backdrop-blur-xl border-b border-divider/20 px-6 py-4
+              className="sticky top-0 z-30 bg-blue-darkest border-b border-divider/20 px-6 py-4
                           shadow-lg shadow-black/20"
             >
               <div className="flex justify-between items-center">
