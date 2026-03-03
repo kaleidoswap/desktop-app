@@ -84,19 +84,19 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
         {hasAsset && (
           <>
             <div className="flex justify-between">
-              <span className="text-slate-400">
+              <span className="text-content-secondary">
                 {t('withdrawModal.details.lightning.assetLabel')}
               </span>
               <div className="flex items-center">
                 <span className="text-white font-medium">{ticker}</span>
-                <span className="text-slate-500 ml-1">
+                <span className="text-content-tertiary ml-1">
                   ({decodedInvoice.asset_id!.slice(0, 8)}...
                   {decodedInvoice.asset_id!.slice(-4)})
                 </span>
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">
+              <span className="text-content-secondary">
                 {t('withdrawModal.details.lightning.assetAmountLabel')}
               </span>
               <span className="text-white font-bold">
@@ -105,7 +105,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
             </div>
             {assetInfo && (
               <div className="flex justify-between">
-                <span className="text-slate-400">
+                <span className="text-content-secondary">
                   {t('withdrawModal.details.lightning.lightningBalanceLabel')}
                 </span>
                 <span
@@ -118,7 +118,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
 
             <div className="border-t border-blue-500/20 pt-2 mt-1">
               <div className="flex justify-between">
-                <span className="text-slate-400">
+                <span className="text-content-secondary">
                   {t('withdrawModal.details.lightning.btcAmountLabel')}
                 </span>
                 <span className="text-white font-bold">
@@ -134,7 +134,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
         {/* Show BTC amount for regular Lightning invoices */}
         {!hasAsset && (
           <div className="flex justify-between">
-            <span className="text-slate-400">
+            <span className="text-content-secondary">
               {t('withdrawModal.details.lightning.amountLabel')}
             </span>
             <span className="text-white font-bold">
@@ -146,7 +146,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
         )}
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.lightning.descriptionLabel')}
           </span>
           <span className="text-white truncate max-w-[250px]">
@@ -159,7 +159,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
         </div>
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.lightning.expiresLabel')}
           </span>
           <span className="text-white">
@@ -170,7 +170,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
         </div>
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.lightning.payeeLabel')}
           </span>
           <span className="text-white font-mono text-[10px] truncate max-w-[250px]">
@@ -181,7 +181,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
 
         <div className="mt-2 pt-2 border-t border-blue-500/20">
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">
+            <span className="text-content-secondary">
               {t('withdrawModal.details.lightning.maxOutboundLabel')}
             </span>
             <span
@@ -193,7 +193,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
             </span>
           </div>
 
-          <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bg-surface-high rounded-full overflow-hidden">
             <div
               className={`h-full ${getProgressBarColor(capacityPercentage)}`}
               style={{ width: `${capacityPercentage}%` }}
@@ -201,7 +201,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
           </div>
 
           <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-content-tertiary">
               {t('withdrawModal.details.lightning.capacityMin')}
             </span>
             <span
@@ -211,7 +211,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
                 percentage: capacityPercentage,
               })}
             </span>
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-content-tertiary">
               {t('withdrawModal.details.lightning.satValue', {
                 value: maxCapacitySats.toLocaleString(),
               })}

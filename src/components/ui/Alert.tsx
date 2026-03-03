@@ -60,7 +60,7 @@ export const Alert: React.FC<AlertProps> = ({
 
       {dismissible && (
         <button
-          className="p-1 hover:bg-slate-700/30 rounded-lg transition-colors"
+          className="p-1 hover:bg-surface-high/30 rounded-lg transition-colors"
           onClick={onDismiss}
         >
           <X className="w-4 h-4" />

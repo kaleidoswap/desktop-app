@@ -70,7 +70,7 @@ export const RootRoute = () => {
         <Outlet />
       ) : nodeInfoResponse.isError ? (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-          <div className="w-full max-w-md bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+          <div className="w-full max-w-md bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                 <AlertCircle className="w-8 h-8 text-red-500" />
@@ -80,7 +80,7 @@ export const RootRoute = () => {
                 {t('rootRoute.connectionErrorTitle')}
               </h2>
 
-              <p className="text-gray-400 mb-6">
+              <p className="text-content-secondary mb-6">
                 {nodeInfoResponse.error &&
                 typeof nodeInfoResponse.error === 'object' &&
                 'status' in nodeInfoResponse.error &&
@@ -90,7 +90,7 @@ export const RootRoute = () => {
               </p>
 
               <button
-                className="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors"
+                className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground font-semibold rounded-xl transition-colors"
                 onClick={() => navigate(WALLET_SETUP_PATH)}
               >
                 {t('rootRoute.returnToSetup')}
@@ -116,7 +116,7 @@ export const RootRoute = () => {
           <h2 className="text-xl font-semibold text-white mb-2">
             {t('rootRoute.connectingTitle')}
           </h2>
-          <p className="text-gray-400">
+          <p className="text-content-secondary">
             {t('rootRoute.connectingDescription')}
           </p>
         </div>

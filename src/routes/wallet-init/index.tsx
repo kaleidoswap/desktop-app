@@ -784,7 +784,7 @@ export const Component = () => {
           'Please read and accept our terms and privacy policy to continue',
           <FileText className="w-8 h-8 text-blue-400" />,
           <div className="flex flex-col items-center justify-center space-y-6 p-8">
-            <p className="text-gray-300 text-center max-w-lg">
+            <p className="text-content-secondary text-center max-w-lg">
               Before you begin using KaleidoSwap, please review and accept our
               Terms of Service and Privacy Policy.
             </p>
@@ -824,7 +824,7 @@ export const Component = () => {
             {isInitializing && (
               <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <Alert
-                  className="border-cyan/20 bg-cyan/5 backdrop-blur-sm"
+                  className="border-primary/20 bg-primary/5 backdrop-blur-sm"
                   icon={
                     <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
                   }
@@ -832,10 +832,10 @@ export const Component = () => {
                   variant="info"
                 >
                   <div className="space-y-2">
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-content-secondary">
                       {t('walletInit.passwordStep.initializingMessage')}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-content-secondary">
                       <div className="flex gap-1">
                         <div
                           className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
@@ -999,11 +999,11 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
 
   return (
     <div className="w-full">
-      <p className="text-slate-400 mb-6 leading-relaxed">
+      <p className="text-content-secondary mb-6 leading-relaxed">
         {t('walletInit.setupStep.description')}
       </p>
 
-      <Card className="p-6 bg-blue-dark/40 border border-white/5">
+      <Card className="p-6 bg-surface-elevated/40 border border-border-subtle/20">
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           {errors.length > 0 && (
             <Alert

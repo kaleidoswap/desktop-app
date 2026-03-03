@@ -105,6 +105,9 @@
     "bitcoinUnit": "Bitcoin-Einheit",
     "bitcoinUnitSat": "Satoshi (SAT)",
     "bitcoinUnitBtc": "Bitcoin (BTC)",
+    "theme": "Erscheinungsbild",
+    "themeDark": "Dunkel",
+    "themeLight": "Hell",
     "lspUrl": "LSP-URL",
     "lspUrlPlaceholder": "z. B. http://localhost:8000",
     "makerSettings": "Maker-Einstellungen",
@@ -1190,11 +1193,15 @@
     "labels": {
       "capacity": "Kapazität",
       "bitcoinLiquidity": "Bitcoin-Liquidität",
-      "assetLiquidity": "{{ticker}}-Liquidität"
+      "assetLiquidity": "{{ticker}}-Liquidität",
+      "outbound": "Ausgehend",
+      "inbound": "Eingehend",
+      "total": "Gesamt"
     },
     "buttons": {
       "details": "Details",
-      "close": "Schließen"
+      "close": "Schließen",
+      "manage": "Verwalten"
     },
     "tooltips": {
       "info": "Kanalinformationen"
@@ -1769,7 +1776,12 @@
     "liquidityInfo": "Die Kanal-Liquidität ändert sich beim Senden und Empfangen. Halte deine Kanäle ausgeglichen für optimale Leistung.",
     "noFunds": "Keine Bitcoin-Guthaben",
     "noFundsMessage": "Du hast keine Bitcoin in deinem Wallet. Zahle Guthaben ein, um die App zu verwenden.",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "nodeInfo": "Node Info",
+    "manage": "Verwalten",
+    "history": "Verlauf",
+    "testnetWarning": "Testnetzwerk",
+    "testnetWarningDesc": "Sie befinden sich in einem Testnetzwerk. Gelder sind nicht echt und haben keinen monetären Wert."
   },
   "peerManagement": {
     "title": "Peers",
@@ -1791,12 +1803,38 @@
     }
   },
   "history": {
+    "bitcoin": "Bitcoin",
     "description": "Sieh dir deinen Verlauf mit Einzahlungen, Zahlungen, Auszahlungen und Swaps an.",
     "deposits": "Einzahlungen",
     "paymentsWithdrawals": "Zahlungen & Auszahlungen",
     "swaps": "Swaps",
     "assets": "Vermögenswerte",
     "channelOrders": "Kanalbestellungen"
+  },
+  "btcHistory": {
+    "title": "Bitcoin-Transaktionen",
+    "loading": "Transaktionen werden geladen...",
+    "errorLoading": "Fehler beim Laden der Transaktionen",
+    "errorMessage": "Bitcoin-Transaktionsverlauf konnte nicht geladen werden.",
+    "tryAgain": "Erneut versuchen",
+    "refresh": "Aktualisieren",
+    "direction": "Richtung",
+    "amount": "Betrag",
+    "fee": "Gebühr",
+    "date": "Datum",
+    "txId": "Transaktions-ID",
+    "status": "Status",
+    "received": "Empfangen",
+    "sent": "Gesendet",
+    "confirmed": "Bestätigt",
+    "pending": "Ausstehend",
+    "allDirections": "Alle Richtungen",
+    "allStatuses": "Alle Status",
+    "searchPlaceholder": "Nach TXID suchen...",
+    "noTransactions": "Keine Bitcoin-Transaktionen gefunden.",
+    "noTxFiltered": "Keine Transaktionen entsprechen den Filtern.",
+    "clearFilters": "Filter zurücksetzen",
+    "viewExplorer": "Im Explorer ansehen"
   },
   "walletSetup": {
     "getHelpSupport": "Hilfe & Support erhalten",

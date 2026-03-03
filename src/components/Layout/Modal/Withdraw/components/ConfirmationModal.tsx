@@ -99,8 +99,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     if (paymentStatus === HTLCStatus.Failed) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-slate-800 border border-red-500/20 rounded-2xl p-6 max-w-sm mx-auto text-center shadow-xl animate-scaleIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-base/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-surface-overlay border border-red-500/20 rounded-2xl p-6 max-w-sm mx-auto text-center shadow-xl animate-scaleIn">
             <div className="w-16 h-16 mx-auto bg-red-500/10 rounded-full flex items-center justify-center mb-4">
               <svg
                 className="h-10 w-10 text-red-400"
@@ -118,10 +118,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <h2 className="text-2xl font-bold text-white mb-2">
               {t('withdrawModal.confirmation.overlay.title')}
             </h2>
-            <p className="text-slate-300 mb-6">
+            <p className="text-content-secondary mb-6">
               {t('withdrawModal.confirmation.overlay.body')}
             </p>
-            <div className="text-sm text-slate-400 animate-pulse">
+            <div className="text-sm text-content-secondary animate-pulse">
               {t('withdrawModal.confirmation.overlay.closing')}
             </div>
           </div>
@@ -199,11 +199,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       {renderOverlay()}
 
       <div className="space-y-4">
-        <div className="p-3 bg-slate-800/50 rounded-xl">
+        <div className="p-3 bg-surface-overlay/50 rounded-xl">
           <div className="space-y-2 divide-y divide-slate-700/50">
             {/* Type */}
             <div className="flex justify-between py-2">
-              <span className="text-slate-400 text-sm">
+              <span className="text-content-secondary text-sm">
                 {t('withdrawModal.confirmation.labels.type')}
               </span>
               <span className="text-white text-sm">
@@ -215,7 +215,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
             {/* Asset */}
             <div className="flex justify-between py-2">
-              <span className="text-slate-400 text-sm">
+              <span className="text-content-secondary text-sm">
                 {t('withdrawModal.confirmation.labels.asset')}
               </span>
               <span className="text-white text-sm">
@@ -228,7 +228,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {/* Amount - Only show for on-chain or for regular BTC Lightning payments */}
             {!isRgbLightningPayment && (
               <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.amount')}
                 </span>
                 <span className="text-white text-sm font-medium">
@@ -244,7 +244,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {/* BTC Amount (only if Lightning payment with asset_id and asset_amount) */}
             {isRgbLightningPayment && decodedInvoice?.amt_msat && (
               <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.btcAmount')}
                 </span>
                 <span className="text-white text-sm font-medium">
@@ -256,7 +256,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {/* Donation Status (only for RGB transfers) */}
             {pendingData?.network === 'on-chain' && pendingData?.donation && (
               <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.transferType')}
                 </span>
                 <span className="text-blue-400 text-sm font-medium flex items-center gap-1">
@@ -282,7 +282,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {/* Payment Hash (if Lightning) */}
             {isLightningPayment && decodedInvoice?.payment_hash && (
               <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.paymentHash')}
                 </span>
                 <span className="text-white text-sm font-mono break-all max-w-[70%] text-right">
@@ -295,7 +295,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {/* Asset ID (if RGB Lightning) */}
             {isLightningPayment && decodedInvoice?.asset_id && (
               <div className="flex justify-between py-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.assetId')}
                 </span>
                 <span className="text-white text-sm font-mono break-all max-w-[70%] text-right">
@@ -310,7 +310,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               decodedInvoice?.asset_amount &&
               decodedInvoice?.asset_id && (
                 <div className="flex justify-between py-2">
-                  <span className="text-slate-400 text-sm">
+                  <span className="text-content-secondary text-sm">
                     {t('withdrawModal.confirmation.labels.assetAmount')}
                   </span>
                   <span className="text-white text-sm font-medium">
@@ -329,7 +329,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {pendingData?.asset_id === BTC_ASSET_ID &&
               pendingData?.network === 'on-chain' && (
                 <div className="flex justify-between py-2">
-                  <span className="text-slate-400 text-sm">
+                  <span className="text-content-secondary text-sm">
                     {t('withdrawModal.confirmation.labels.feeRate')}
                   </span>
                   <span className="text-white text-sm">{feeRateDisplay}</span>
@@ -338,7 +338,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
             {/* Destination */}
             <div className="flex justify-between py-2">
-              <span className="text-slate-400 text-sm">
+              <span className="text-content-secondary text-sm">
                 {isLightningPayment
                   ? t('withdrawModal.confirmation.labels.invoice')
                   : t('withdrawModal.confirmation.labels.address')}
@@ -388,8 +388,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
         <div className="flex items-center justify-between gap-3 mt-4">
           <button
-            className="flex-1 px-4 py-2.5 border border-slate-700 hover:bg-slate-800/50
-                     text-slate-300 rounded-lg transition-colors text-sm"
+            className="flex-1 px-4 py-2.5 border border-border-default hover:bg-surface-overlay/50
+                     text-content-secondary rounded-lg transition-colors text-sm"
             disabled={isConfirming || showOverlay}
             onClick={onCancel}
             type="button"
@@ -397,7 +397,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {t('withdrawModal.confirmation.buttons.back')}
           </button>
           <button
-            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
+            className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis disabled:opacity-60
                      text-white rounded-lg transition-colors flex items-center justify-center
                      gap-2 disabled:cursor-not-allowed text-sm"
             disabled={

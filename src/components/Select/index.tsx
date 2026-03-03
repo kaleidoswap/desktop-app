@@ -15,7 +15,7 @@ export const Select = ({
   active,
   options,
   onSelect,
-  theme = 'dark',
+  theme: _theme = 'dark',
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
@@ -28,7 +28,7 @@ export const Select = ({
       <div
         className={twJoin(
           'flex items-center justify-between px-4 py-3 rounded cursor-pointer w-32',
-          theme === 'dark' ? 'bg-blue-dark' : 'bg-section-lighter'
+          'bg-surface-elevated'
         )}
         onClick={() => setIsOpen((state) => !state)}
       >
@@ -39,7 +39,7 @@ export const Select = ({
 
       <ul
         className={twJoin(
-          'absolute top-full bg-section-lighter divide-y divide-divider rounded',
+          'absolute top-full bg-surface-high divide-y divide-divider rounded',
           !isOpen ? 'hidden' : undefined
         )}
       >

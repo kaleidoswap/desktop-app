@@ -96,7 +96,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
   )
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
+    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 border border-border-default/50 shadow-2xl">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -111,7 +111,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
 
       {/* Capacity Presets */}
       <div className="mb-6">
-        <label className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+        <label className="text-sm font-semibold text-content-secondary mb-3 flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-400" />
           {t('channelConfiguration.bitcoinChannel.channelCapacity')}
         </label>
@@ -124,7 +124,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-gradient-to-r from-orange-500 to-yellow-600 text-white shadow-md shadow-orange-500/30'
-                    : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700/70 hover:text-gray-200 border border-gray-700/50'
+                    : 'bg-surface-overlay/60 text-content-secondary hover:bg-surface-high/70 hover:text-content-primary border border-border-default/50'
                 }`}
                 key={preset}
                 onClick={() => {
@@ -160,7 +160,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
               customInput !== ''
                 ? 'bg-gradient-to-r from-orange-500 to-yellow-600 text-white shadow-md shadow-orange-500/30'
-                : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700/70 hover:text-gray-200 border border-gray-700/50 border-dashed'
+                : 'bg-surface-overlay/60 text-content-secondary hover:bg-surface-high/70 hover:text-content-primary border border-border-default/50 border-dashed'
             }`}
             onClick={() => setShowCustomModal(true)}
             type="button"
@@ -180,7 +180,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCustomModal(false) }}
         >
-          <div className="bg-gray-900 border border-gray-700/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
+          <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-orange-500/10">
@@ -189,7 +189,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 <h3 className="text-base font-bold text-white">Custom Capacity</h3>
               </div>
               <button
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
                 onClick={() => setShowCustomModal(false)}
                 type="button"
               >
@@ -197,13 +197,13 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 mb-4">
+            <p className="text-xs text-content-secondary mb-4">
               Enter a specific channel capacity in satoshis.
             </p>
 
             <div className="relative mb-2">
               <input
-                className="w-full bg-gray-800/80 border border-gray-600/50 focus:border-orange-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-14 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full bg-surface-overlay/80 border border-border-default/50 focus:border-orange-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-14 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 min={0}
                 onChange={(e) => setModalDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') applyCustomAmount() }}
@@ -212,7 +212,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 type="number"
                 value={modalDraft}
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium pointer-events-none">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-content-tertiary font-medium pointer-events-none">
                 sats
               </span>
             </div>
@@ -225,7 +225,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
 
             <div className="flex gap-3 mt-5">
               <button
-                className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-sm font-semibold transition-all"
+                className="flex-1 py-2.5 rounded-xl border border-border-default text-content-secondary hover:text-white hover:border-border-default text-sm font-semibold transition-all"
                 onClick={() => setShowCustomModal(false)}
                 type="button"
               >
@@ -248,7 +248,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
       {/* Liquidity Distribution */}
       <div className="space-y-5">
         <div>
-          <label className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+          <label className="text-sm font-semibold text-content-secondary flex items-center gap-2">
             <Send className="w-4 h-4 text-blue-400" />
             {t('channelConfiguration.bitcoinChannel.liquidityDistribution')}
           </label>
@@ -261,7 +261,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
         {/* Modern Horizontal Bar */}
         <div className="relative">
           {/* Background bar */}
-          <div className="h-20 bg-gray-900/50 rounded-2xl overflow-hidden border-2 border-gray-700/50 shadow-inner relative">
+          <div className="h-20 bg-surface-base/50 rounded-2xl overflow-hidden border-2 border-border-default/50 shadow-inner relative">
             {/* Client Balance (Blue) */}
             <div
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 via-blue-600 to-blue-500 transition-all duration-500 ease-out relative overflow-hidden"
@@ -332,17 +332,17 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
           {/* Stats cards below bar */}
           <div className="grid grid-cols-3 gap-3 mt-4">
             {/* Total Capacity */}
-            <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
+            <div className="bg-surface-overlay/50 rounded-xl p-3 border border-border-default/50">
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="text-xs text-gray-400 font-medium">
+                <span className="text-xs text-content-secondary font-medium">
                   {t('channelConfiguration.bitcoinChannel.total')}
                 </span>
               </div>
               <span className="text-base font-bold text-white">
                 {formatNumberWithCommas(totalCapacity.toString())}
               </span>
-              <span className="text-xs text-gray-500 ml-1">
+              <span className="text-xs text-content-tertiary ml-1">
                 {t('channelConfiguration.bitcoinChannel.sats')}
               </span>
             </div>
@@ -389,7 +389,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
         <div className="space-y-3">
           <div className="relative px-1">
             <input
-              className="w-full h-2 bg-gray-700/50 rounded-full appearance-none cursor-pointer
+              className="w-full h-2 bg-surface-high/50 rounded-full appearance-none cursor-pointer
                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
                        [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-blue-400 [&::-webkit-slider-thumb]:to-blue-600
                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-grab
@@ -411,7 +411,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             />
           </div>
 
-          <div className="flex justify-between text-xs text-gray-500 px-1">
+          <div className="flex justify-between text-xs text-content-tertiary px-1">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50" />
               <span>

@@ -26,11 +26,11 @@ export const ConnectionDetails = ({
   return (
     <div className="mb-6 transition-all duration-300">
       <Button
-        className={`w-full flex items-center justify-between px-4 py-3 border-gray-700 ${
+        className={`w-full flex items-center justify-between px-4 py-3 border-border-default ${
           isExpanded
-            ? 'rounded-b-none border-b-0 bg-gray-800'
-            : 'bg-gray-800/50'
-        } text-gray-300 hover:text-white hover:bg-gray-800 transition-all duration-200`}
+            ? 'rounded-b-none border-b-0 bg-surface-overlay'
+            : 'bg-surface-overlay/50'
+        } text-content-secondary hover:text-white hover:bg-surface-overlay transition-all duration-200`}
         onClick={toggleExpanded}
         type="button"
         variant="outline"
@@ -41,7 +41,7 @@ export const ConnectionDetails = ({
         </span>
         <ChevronDown
           className={`w-4 h-4 transform transition-transform duration-300 ${
-            isExpanded ? 'rotate-180 text-blue-400' : 'text-gray-500'
+            isExpanded ? 'rotate-180 text-blue-400' : 'text-content-tertiary'
           }`}
         />
       </Button>
@@ -51,7 +51,7 @@ export const ConnectionDetails = ({
           isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <Card className="rounded-t-none border-t-0 p-0 border-gray-700 bg-gray-800/60">
+        <Card className="rounded-t-none border-t-0 p-0 border-border-default bg-surface-overlay/60">
           <div className="divide-y divide-gray-700/50">
             <ConnectionItem
               icon={<Database className="w-4 h-4 text-blue-400" />}
@@ -102,8 +102,8 @@ const ConnectionItem = ({
     <div className="flex items-start">
       <div className="mt-0.5 mr-3">{icon}</div>
       <div>
-        <span className="text-xs text-gray-400 block mb-1">{label}</span>
-        <span className="text-gray-100 font-medium break-all text-sm">
+        <span className="text-xs text-content-secondary block mb-1">{label}</span>
+        <span className="text-content-primary font-medium break-all text-sm">
           {value}
         </span>
       </div>

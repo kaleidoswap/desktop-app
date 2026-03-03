@@ -52,12 +52,12 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
           <h3 className="text-2xl font-bold text-white mb-4">
             {t('orderChannel.step3.paymentSuccessful')}
           </h3>
-          <p className="text-gray-400 mb-6">
+          <p className="text-content-secondary mb-6">
             {t('orderChannel.step3.channelOpening')}
           </p>
-          <div className="bg-gray-800/50 rounded-xl p-4 inline-block mb-6">
+          <div className="bg-surface-overlay/50 rounded-xl p-4 inline-block mb-6">
             <div className="flex items-center gap-4 text-sm">
-              <span className="text-gray-400">
+              <span className="text-content-secondary">
                 {t('orderChannel.step3.amount')}:
               </span>
               <span className="text-white font-medium">
@@ -67,8 +67,8 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
                 )}{' '}
                 {bitcoinUnit}
               </span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-400">
+              <span className="text-content-secondary">•</span>
+              <span className="text-content-secondary">
                 {t('orderChannel.step3.method')}:
               </span>
               <span className="text-white font-medium flex items-center gap-1">
@@ -90,7 +90,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
                   {t('orderChannel.step3.rgbAssetChannel')}
                 </span>
               </div>
-              <div className="text-center text-sm text-gray-400 mb-2">
+              <div className="text-center text-sm text-content-secondary mb-2">
                 {assetInfo ? (
                   <>
                     {assetInfo.name} ({assetInfo.ticker})
@@ -113,7 +113,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
                   {(order?.lsp_asset_amount ||
                     orderPayload?.lsp_asset_amount) && (
                     <div className="flex justify-center gap-2">
-                      <span className="text-gray-500">
+                      <span className="text-content-tertiary">
                         {t('orderChannel.step3.lspAmount')}:
                       </span>
                       <span className="text-purple-300">
@@ -128,7 +128,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
                   {(order?.client_asset_amount ||
                     orderPayload?.client_asset_amount) && (
                     <div className="flex justify-center gap-2">
-                      <span className="text-gray-500">
+                      <span className="text-content-tertiary">
                         {t('orderChannel.step3.yourAmount')}:
                       </span>
                       <span className="text-blue-300">
@@ -159,7 +159,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
           <h3 className="text-2xl font-bold text-white mb-4">
             {t('orderChannel.step4.expiredTitle')}
           </h3>
-          <p className="text-gray-400 mb-6">
+          <p className="text-content-secondary mb-6">
             {t('orderChannel.step3.expiredMessage')}
           </p>
 
@@ -175,7 +175,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
             )}
             {onBack && (
               <button
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 onClick={onBack}
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -210,7 +210,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
           <h3 className="text-2xl font-bold text-white mb-4">
             {t('orderChannel.step4.errorTitle')}
           </h3>
-          <p className="text-gray-400 mb-6">
+          <p className="text-content-secondary mb-6">
             {t('orderChannel.step3.errorMessage')}
           </p>
 
@@ -226,7 +226,7 @@ export const PaymentStatusDisplay: React.FC<PaymentStatusDisplayProps> = ({
             )}
             {onBack && (
               <button
-                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 onClick={onBack}
               >
                 <ArrowLeft className="w-4 h-4" />

@@ -3,15 +3,85 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Design tokens: dark (default) ── */
+  :root,
+  .dark {
+    /* Body is notably darker than cards — creates clear depth without full-black */
+    --color-surface-base: 18 19 28;        /* #12131C — deepest bg, sidebar */
+    --color-surface-raised: 24 25 36;      /* #181924 — page body bg */
+    --color-surface-overlay: 36 38 56;     /* #242638 — card bg (~14 lighter than body) */
+    --color-surface-elevated: 50 52 72;    /* #323448 — sections inside cards */
+    --color-surface-high: 66 68 90;        /* #42445A — hover/active highlights */
+    --color-primary: 21 233 154;           /* #15E99A */
+    --color-primary-emphasis: 18 201 126;  /* #12C97E */
+    --color-primary-foreground: 18 19 28;
+    --color-secondary: 139 92 246;         /* #8B5CF6 */
+    --color-secondary-emphasis: 124 58 237;
+    --color-secondary-foreground: 255 255 255;
+    --color-content-primary: 232 233 242;  /* #E8E9F2 — slightly cool white */
+    --color-content-secondary: 142 146 172; /* #8E92AC */
+    --color-content-tertiary: 88 92 116;   /* #585C74 */
+    --color-content-inverse: 18 19 28;
+    --color-border-subtle: 40 42 60;       /* #282A3C */
+    --color-border-default: 54 56 76;      /* #36384C */
+    --color-border-strong: 21 233 154;
+    --color-status-success: 34 197 94;
+    --color-status-danger: 248 113 113;
+    --color-status-warning: 245 158 11;
+    --color-status-info: 56 189 248;
+  }
+
+  /* ── Design tokens: light ── */
+  .light {
+    /* Cards = white on a cool-gray page for clear depth */
+    --color-surface-base: 218 220 234;     /* #DADCEA — sidebar/deep backgrounds */
+    --color-surface-raised: 234 236 248;   /* #EAECF8 — page body bg */
+    --color-surface-overlay: 255 255 255;  /* #FFFFFF — card bg (white) */
+    --color-surface-elevated: 246 247 253; /* #F6F7FD — sections inside cards */
+    --color-surface-high: 228 230 246;     /* #E4E6F6 — hover/active highlights */
+    --color-primary: 23 181 129;           /* #17B581 */
+    --color-primary-emphasis: 19 138 100;  /* #138A64 */
+    --color-primary-foreground: 255 255 255;
+    --color-secondary: 111 50 255;         /* #6F32FF */
+    --color-secondary-emphasis: 90 31 229; /* #5A1FE5 */
+    --color-secondary-foreground: 255 255 255;
+    --color-content-primary: 18 19 30;     /* #12131E */
+    --color-content-secondary: 70 74 105;  /* #464A69 */
+    --color-content-tertiary: 118 122 152; /* #767A98 */
+    --color-content-inverse: 255 255 255;
+    --color-border-subtle: 218 220 238;    /* #DADCEE */
+    --color-border-default: 200 203 224;   /* #C8CBE0 */
+    --color-border-strong: 23 181 129;
+    --color-status-success: 22 163 74;
+    --color-status-danger: 220 38 38;
+    --color-status-warning: 217 119 6;
+    --color-status-info: 2 132 199;
+  }
+
+  /* ── Light mode: override explicit text-white to use dark content color ── */
+  /* This handles legacy text-white classes that haven't been migrated yet.  */
+  /* Elements using text-primary-foreground / text-secondary-foreground are  */
+  /* unaffected since those tokens are already correct for each theme.       */
+  .light .text-white {
+    color: rgb(var(--color-content-primary));
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  .light {
+    color-scheme: light;
+  }
+
   html {
-    @apply antialiased bg-blue-darkest;
+    @apply antialiased;
   }
 
   body {
-    @apply bg-background text-white font-sans;
-    /* Apply custom scrollbar to the entire app */
+    @apply bg-surface-raised text-content-primary font-sans;
     scrollbar-width: thin;
-    scrollbar-color: rgba(30, 31, 40, 0.8) rgba(30, 31, 40, 0.3);
+    scrollbar-color: rgb(var(--color-surface-base) / 0.8) rgb(var(--color-surface-base) / 0.3);
   }
 
   /* Global scrollbar styling */
@@ -21,18 +91,18 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: rgba(30, 31, 40, 0.3);
+    background: rgb(var(--color-surface-base) / 0.3);
     border-radius: 8px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(30, 31, 40, 0.8);
+    background: rgb(var(--color-surface-base) / 0.8);
     border-radius: 8px;
-    border: 1px solid rgba(143, 213, 234, 0.1);
+    border: 1px solid rgb(var(--color-primary) / 0.1);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(143, 213, 234, 0.2);
+    background: rgb(var(--color-primary) / 0.2);
   }
 
   /* Ensure app fits on smaller screens */
@@ -70,22 +140,22 @@
 
 @layer components {
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 
-           hover:text-white hover:bg-blue-darker transition-all duration-200;
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-content-secondary
+           hover:text-content-primary hover:bg-surface-overlay transition-all duration-200;
   }
 
   .sidebar-link.active {
-    @apply text-cyan bg-blue-darker;
+    @apply text-primary bg-surface-overlay;
   }
 
   .btn-primary {
-    @apply px-4 py-2 bg-cyan text-blue-darkest font-semibold rounded-lg
-           hover:bg-cyan-600 transition-all duration-200;
+    @apply px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg
+           hover:bg-primary-emphasis transition-all duration-200;
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-blue-darker text-white font-semibold rounded-lg
-           hover:bg-blue-dark transition-all duration-200;
+    @apply px-4 py-2 bg-surface-overlay text-content-primary font-semibold rounded-lg
+           hover:bg-surface-elevated transition-all duration-200;
   }
 
   /* Responsive layout classes */
@@ -108,7 +178,7 @@
   /* Custom scrollbar class for specific elements */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(30, 31, 40, 0.8) rgba(30, 31, 40, 0.3);
+    scrollbar-color: rgb(var(--color-surface-base) / 0.8) rgb(var(--color-surface-base) / 0.3);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -116,18 +186,18 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(30, 31, 40, 0.3);
+    background: rgb(var(--color-surface-base) / 0.3);
     border-radius: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(30, 31, 40, 0.8);
+    background: rgb(var(--color-surface-base) / 0.8);
     border-radius: 8px;
-    border: 1px solid rgba(143, 213, 234, 0.1);
+    border: 1px solid rgb(var(--color-primary) / 0.1);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(143, 213, 234, 0.2);
+    background: rgb(var(--color-primary) / 0.2);
   }
 }
 
@@ -158,28 +228,6 @@
   }
   to {
     transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Add these keyframe animations to your global CSS file */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
     opacity: 1;
   }
 }

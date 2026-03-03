@@ -105,6 +105,9 @@
     "bitcoinUnit": "Unité Bitcoin",
     "bitcoinUnitSat": "Satoshi (SAT)",
     "bitcoinUnitBtc": "Bitcoin (BTC)",
+    "theme": "Thème",
+    "themeDark": "Sombre",
+    "themeLight": "Clair",
     "lspUrl": "URL du LSP",
     "lspUrlPlaceholder": "ex. http://localhost:8000",
     "makerSettings": "Paramètres du market maker",
@@ -1190,11 +1193,15 @@
     "labels": {
       "capacity": "Capacité",
       "bitcoinLiquidity": "Liquidité Bitcoin",
-      "assetLiquidity": "Liquidité {{ticker}}"
+      "assetLiquidity": "Liquidité {{ticker}}",
+      "outbound": "Sortant",
+      "inbound": "Entrant",
+      "total": "total"
     },
     "buttons": {
       "details": "Détails",
-      "close": "Fermer"
+      "close": "Fermer",
+      "manage": "Gérer"
     },
     "tooltips": {
       "info": "Informations du canal"
@@ -1775,7 +1782,12 @@
     "liquidityInfo": "La liquidité d'un canal évolue lorsque vous envoyez et recevez des paiements. Gardez vos canaux équilibrés pour de meilleures performances.",
     "noFunds": "Aucun fonds Bitcoin",
     "noFundsMessage": "Vous n'avez aucun Bitcoin dans votre portefeuille. Déposez des fonds pour commencer à utiliser l'application.",
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "nodeInfo": "Info du Nœud",
+    "manage": "Gérer",
+    "history": "Historique",
+    "testnetWarning": "Réseau de test",
+    "testnetWarningDesc": "Vous êtes sur un réseau de test. Les fonds ne sont pas réels et les transactions n'ont aucune valeur monétaire."
   },
   "peerManagement": {
     "title": "Pairs",
@@ -1797,12 +1809,38 @@
     }
   },
   "history": {
+    "bitcoin": "Bitcoin",
     "description": "Consultez l'historique de vos transactions : dépôts, paiements, retraits et swaps.",
     "deposits": "Dépôts",
     "paymentsWithdrawals": "Paiements et retraits",
     "swaps": "Swaps",
     "assets": "Actifs",
     "channelOrders": "Commandes de canaux"
+  },
+  "btcHistory": {
+    "title": "Transactions Bitcoin",
+    "loading": "Chargement des transactions...",
+    "errorLoading": "Erreur de chargement",
+    "errorMessage": "Impossible de charger l'historique des transactions.",
+    "tryAgain": "Réessayer",
+    "refresh": "Actualiser",
+    "direction": "Direction",
+    "amount": "Montant",
+    "fee": "Frais",
+    "date": "Date",
+    "txId": "ID de transaction",
+    "status": "Statut",
+    "received": "Reçu",
+    "sent": "Envoyé",
+    "confirmed": "Confirmé",
+    "pending": "En attente",
+    "allDirections": "Toutes les directions",
+    "allStatuses": "Tous les statuts",
+    "searchPlaceholder": "Rechercher par txid...",
+    "noTransactions": "Aucune transaction Bitcoin trouvée.",
+    "noTxFiltered": "Aucune transaction ne correspond aux filtres.",
+    "clearFilters": "Effacer les filtres",
+    "viewExplorer": "Voir dans l'explorateur"
   },
   "walletSetup": {
     "getHelpSupport": "Obtenir de l'aide et du support",

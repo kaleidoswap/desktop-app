@@ -39,28 +39,28 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={onCancel}
     >
       <div
-        className="bg-blue-dark p-8 rounded-xl shadow-xl max-w-md w-full mx-4 border border-divider/20 animate-scaleIn"
+        className="bg-surface-elevated p-8 rounded-xl shadow-xl max-w-md w-full mx-4 border border-divider/20 animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
           <button
             aria-label="Close modal"
-            className="absolute top-0 right-0 p-2 rounded-full hover:bg-blue-darker text-gray-400 hover:text-white transition-colors"
+            className="absolute top-0 right-0 p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
             onClick={onCancel}
           >
             <X size={20} />
           </button>
           <h3 className="text-xl font-bold mb-4 text-white">{title}</h3>
-          <p className="mb-6 text-gray-300">{message}</p>
+          <p className="mb-6 text-content-secondary">{message}</p>
           <div className="flex justify-end space-x-4">
             <button
-              className="px-4 py-2 rounded-lg border border-divider/20 hover:bg-blue-darker transition-colors"
+              className="px-4 py-2 rounded-lg border border-divider/20 hover:bg-surface-overlay transition-colors"
               onClick={onCancel}
             >
               Cancel
             </button>
             <button
-              className="px-4 py-2 rounded-lg bg-cyan text-blue-darkest hover:bg-cyan/90 transition-colors"
+              className="px-4 py-2 rounded-lg bg-cyan text-blue-darkest hover:bg-primary/90 transition-colors"
               onClick={onConfirm}
             >
               Confirm

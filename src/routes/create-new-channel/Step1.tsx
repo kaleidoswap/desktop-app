@@ -245,11 +245,11 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         <h3 className="text-3xl font-bold text-white mb-4">
           {t('createChannel.step1.title')}
         </h3>
-        <p className="text-gray-400">{t('createChannel.step1.subtitle')}</p>
+        <p className="text-content-secondary">{t('createChannel.step1.subtitle')}</p>
       </div>
 
       {/* Connected Peers Section */}
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 mb-6">
+      <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-blue-500" />
           <h4 className="text-lg font-semibold text-white">
@@ -260,7 +260,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         {loadingPeers ? (
           <div className="flex items-center justify-center py-4">
             <Spinner color="#3B82F6" size={24} />
-            <span className="ml-2 text-gray-400">
+            <span className="ml-2 text-content-secondary">
               {t('createChannel.step1.loadingPeers')}
             </span>
           </div>
@@ -271,14 +271,14 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                 className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                   selectedFromConnected === peer.pubkey
                     ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-gray-600 bg-gray-700/50 hover:border-blue-400 hover:bg-blue-500/5'
+                    : 'border-border-default bg-surface-high/50 hover:border-blue-400 hover:bg-blue-500/5'
                 }`}
                 key={peer.pubkey}
                 onClick={() => handleSelectConnectedPeer(peer.pubkey)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-mono text-gray-300 truncate">
+                    <div className="text-sm font-mono text-content-secondary truncate">
                       {peer.pubkey}
                     </div>
                   </div>
@@ -290,19 +290,19 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-6 text-gray-400">
+          <div className="text-center py-6 text-content-secondary">
             {t('createChannel.step1.noPeers')}
           </div>
         )}
       </div>
 
       {/* Separator */}
-      <div className="text-center py-4 font-medium text-gray-400">
+      <div className="text-center py-4 font-medium text-content-secondary">
         {t('createChannel.step1.or')}
       </div>
 
       {/* Manual Peer Connection Section */}
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 p-8">
+      <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
         <h4 className="text-lg font-semibold text-white mb-4">
           {t('createChannel.step1.connectNewPeer')}
         </h4>
@@ -313,11 +313,11 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
           render={({ field, fieldState }) => (
             <div className="space-y-2">
               <textarea
-                className={`w-full px-4 py-3 bg-gray-700 text-white rounded-lg border 
+                className={`w-full px-4 py-3 bg-surface-high text-white rounded-lg border 
                   ${
                     fieldState.error || localError
                       ? 'border-red-500 focus:border-red-500'
-                      : 'border-gray-600 focus:border-blue-500'
+                      : 'border-border-default focus:border-blue-500'
                   }
                   focus:ring-1 focus:ring-blue-500 font-mono text-sm min-h-[6rem] resize-none`}
                 placeholder={t('createChannel.step1.placeholder')}
@@ -345,14 +345,14 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
                   {localError || fieldState.error?.message}
                 </p>
               )}
-              <p className="text-gray-400 text-xs">
+              <p className="text-content-secondary text-xs">
                 {t('createChannel.step1.helpText')}
               </p>
             </div>
           )}
         />
 
-        <div className="text-center py-6 font-medium text-gray-400">
+        <div className="text-center py-6 font-medium text-content-secondary">
           {t('createChannel.step1.or')}
         </div>
 
@@ -362,7 +362,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
 
         <div className="flex justify-center space-x-6">
           <button
-            className="flex items-center space-x-2 p-4 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors"
+            className="flex items-center space-x-2 p-4 rounded-lg border border-border-default hover:border-blue-500 transition-colors"
             disabled={isLoading}
             onClick={fetchLspInfo}
             type="button"
@@ -374,7 +374,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         {isLoading && (
           <div className="flex justify-center items-center mt-4">
             <Spinner color="#3B82F6" size={24} />
-            <span className="ml-2 text-gray-400">
+            <span className="ml-2 text-content-secondary">
               {t('createChannel.step1.loadingLsp')}
             </span>
           </div>
@@ -397,18 +397,18 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       {/* Connection Dialog */}
       {showConnectionDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-8 rounded-xl border border-gray-700 max-w-md w-full mx-4">
+          <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4">
             <h3 className="text-2xl font-bold text-white mb-4">
               {t('createChannel.step1.connectDialog.title')}
             </h3>
-            <p className="text-gray-400 mb-6">
+            <p className="text-content-secondary mb-6">
               {t('createChannel.step1.connectDialog.message')}
             </p>
 
             {isConnecting && (
               <div className="flex items-center justify-center mb-4">
                 <Spinner color="#3B82F6" size={24} />
-                <span className="ml-2 text-gray-400">
+                <span className="ml-2 text-content-secondary">
                   {t('createChannel.step1.connectDialog.connecting')}
                 </span>
               </div>

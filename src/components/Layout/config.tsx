@@ -10,7 +10,6 @@ import {
   Settings,
   Store,
   Zap,
-  Users,
   Home,
   Clock,
   ArrowDownLeft,
@@ -22,7 +21,6 @@ import {
   TRADE_PATH,
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
-  TRADE_NOSTR_P2P_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
   WALLET_HISTORY_TRADES_PATH,
@@ -70,25 +68,7 @@ export const getMainNavItems = (t: TFunction) => [
     icon: <Zap className="w-5 h-5" />,
     label: t('navigation.trade'),
     matchPath: TRADE_PATH,
-    subMenu: [
-      {
-        icon: <Store className="w-4 h-4" />,
-        label: t('navigation.marketMaker'),
-        to: TRADE_MARKET_MAKER_PATH,
-      },
-      {
-        icon: <Zap className="w-4 h-4" />,
-        label: t('navigation.manualSwaps'),
-        to: TRADE_MANUAL_PATH,
-      },
-      {
-        disabled: true,
-        icon: <Users className="w-4 h-4" />,
-        label: t('navigation.nostrP2P'),
-        to: TRADE_NOSTR_P2P_PATH,
-      },
-    ],
-    to: TRADE_PATH,
+    to: TRADE_MARKET_MAKER_PATH,
   },
   {
     icon: <Clock className="w-5 h-5" />,
@@ -137,7 +117,7 @@ export const getTransactionMenuItems = (t: TFunction) => [
   {
     action: 'deposit',
     icon: (
-      <div className="p-1 rounded-full bg-cyan/10 text-cyan">
+      <div className="p-1 rounded-full bg-primary/10 text-primary">
         <ArrowDownLeft className="w-4 h-4" />
       </div>
     ),

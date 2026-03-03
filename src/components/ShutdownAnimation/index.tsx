@@ -22,11 +22,11 @@ export const ShutdownAnimation: React.FC<ShutdownAnimationProps> = ({
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-darkest/95 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-base/95 backdrop-blur-sm animate-fadeIn">
       <div className="relative p-8 max-w-sm w-full mx-auto">
-        <div className="absolute inset-0 rounded-2xl bg-blue-darker/50" />
+        <div className="absolute inset-0 rounded-2xl bg-surface-overlay/50" />
         <div className="relative text-center">
-          <div className="absolute -inset-4 rounded-full bg-cyan/5 animate-pulse" />
+          <div className="absolute -inset-4 rounded-full bg-primary/5 animate-pulse" />
           <img
             alt="KaleidoSwap"
             className="h-16 w-auto mx-auto mb-6 relative animate-fadeInUp"

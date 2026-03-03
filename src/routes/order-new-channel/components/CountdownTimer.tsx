@@ -47,20 +47,20 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   }
 
   return (
-    <div className="bg-gray-800/70 p-4 rounded-xl border border-gray-700">
+    <div className="bg-surface-overlay/70 p-4 rounded-xl border border-border-default">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm text-gray-400">
+        <h4 className="text-sm text-content-secondary">
           {t('orderChannel.step3.paymentExpiresIn')}
         </h4>
         <div className="flex items-center">
           <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-          <span className="text-white font-mono bg-gray-700/70 px-3 py-1 rounded-lg text-lg">
+          <span className="text-white font-mono bg-surface-high/70 px-3 py-1 rounded-lg text-lg">
             {formatCountdown(countdown)}
           </span>
         </div>
       </div>
 
-      <div className="w-full bg-gray-700/50 rounded-full h-2">
+      <div className="w-full bg-surface-high/50 rounded-full h-2">
         <div
           className="h-2 rounded-full transition-all duration-1000 ease-linear"
           style={{
@@ -80,7 +80,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
           <div className="text-yellow-400 mr-2 mt-0.5">
             <Info size={16} />
           </div>
-          <p className="text-gray-400 text-xs">
+          <p className="text-content-secondary text-xs">
             {countdown < 60
               ? t('orderChannel.step3.expiresVerySoon')
               : t('orderChannel.step3.expiresSoon')}

@@ -5,11 +5,14 @@ import {
   Lock,
   Unlock,
   Info,
+  Copy,
+  CheckCheck,
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useAppSelector } from '../../app/store/hooks'
+import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
+import { useSettings } from '../../hooks/useSettings'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
@@ -22,6 +25,32 @@ interface InfoModalProps {
   channel: any
   asset: any
   bitcoinUnit: string
+}
+
+const CopyableValue: React.FC<{ value: string }> = ({ value }) => {
+  const { copied, copy } = useCopyToClipboard()
+
+  const handleCopy = () => copy(value)
+
+  return (
+    <div className="flex items-start gap-2">
+      <span className="font-mono text-white/90 break-all text-xs leading-relaxed flex-1">
+        {value}
+      </span>
+      <button
+        className="flex-shrink-0 text-content-tertiary hover:text-white transition-colors mt-0.5"
+        onClick={handleCopy}
+        title={copied ? 'Copied!' : 'Copy'}
+        type="button"
+      >
+        {copied ? (
+          <CheckCheck className="h-3.5 w-3.5 text-emerald-400" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  )
 }
 
 const InfoModal: React.FC<InfoModalProps> = ({
@@ -41,115 +70,164 @@ const InfoModal: React.FC<InfoModalProps> = ({
     }
   }
 
-  const infoRows = [
+  const assetPrecision = asset?.precision ?? 8
+  const formatAssetAmount = (amount: number) => {
+    const factor = Math.pow(10, assetPrecision)
+    return (amount / factor).toLocaleString(undefined, {
+      maximumFractionDigits: assetPrecision,
+      minimumFractionDigits: assetPrecision > 0 ? 1 : 0,
+    })
+  }
+
+  // Group info rows into sections
+  type InfoRow =
+    | { label: string; value: string; mono?: boolean; copyable?: boolean }
+    | { separator: string }
+
+  const infoRows: InfoRow[] = [
+    { label: 'Status', value: channel.status, mono: false },
     {
-      label: t('channelCard.infoModal.fields.channelId'),
-      value: channel.channel_id,
-    },
-    {
-      label: t('channelCard.infoModal.fields.fundingTx'),
-      value: channel.funding_txid,
-    },
-    {
-      label: t('channelCard.infoModal.fields.peerPubkey'),
-      value: channel.peer_pubkey,
-    },
-    {
-      label: t('channelCard.infoModal.fields.shortChannelId'),
-      value:
-        channel.short_channel_id?.toString() || t('channelCard.infoModal.na'),
-    },
-    {
-      label: t('channelCard.infoModal.fields.status'),
-      value: channel.status,
-    },
-    {
-      label: t('channelCard.infoModal.fields.capacity'),
+      label: 'Capacity',
       value: `${formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: t('channelCard.infoModal.fields.localBalance'),
+      label: 'Local Balance',
       value: `${formatBitcoinAmount(channel.local_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: t('channelCard.infoModal.fields.nextHtlcLimit'),
+      label: 'Outbound Limit',
       value: `${formatBitcoinAmount(channel.next_outbound_htlc_limit_msat / 1000, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: t('channelCard.infoModal.fields.nextHtlcMinimum'),
+      label: 'Min HTLC',
       value: `${formatBitcoinAmount(channel.next_outbound_htlc_minimum_msat / 1000, bitcoinUnit)} ${bitcoinUnit}`,
     },
     {
-      label: t('channelCard.infoModal.fields.publicChannel'),
+      label: 'Public',
       value: channel.public ? t('common.yes') : t('common.no'),
     },
     {
-      label: t('channelCard.infoModal.fields.usable'),
+      label: 'Usable',
       value: channel.is_usable ? t('common.yes') : t('common.no'),
+    },
+    { separator: 'Identifiers' },
+    {
+      label: 'Channel ID',
+      value: channel.channel_id,
+      mono: true,
+      copyable: true,
+    },
+    {
+      label: 'Funding TX',
+      value: channel.funding_txid,
+      mono: true,
+      copyable: true,
+    },
+    {
+      label: 'Short Channel ID',
+      value: channel.short_channel_id?.toString() || t('channelCard.infoModal.na'),
+    },
+    {
+      label: 'Peer Pubkey',
+      value: channel.peer_pubkey,
+      mono: true,
+      copyable: true,
     },
   ]
 
   if (channel.asset_id) {
-    const assetPrecision = asset?.precision ?? 8
-    const formatAssetAmount = (amount: number) => {
-      const factor = Math.pow(10, assetPrecision)
-      return (amount / factor).toLocaleString(undefined, {
-        maximumFractionDigits: assetPrecision,
-        minimumFractionDigits: assetPrecision > 0 ? 1 : 0,
-      })
-    }
-
     infoRows.push(
+      { separator: 'RGB Asset' },
       {
-        label: t('channelCard.infoModal.fields.assetId'),
+        label: 'Asset ID',
         value: channel.asset_id,
+        mono: true,
+        copyable: true,
       },
       {
-        label: t('channelCard.infoModal.fields.assetLocalAmount'),
-        value: `${formatAssetAmount(channel.asset_local_amount)} ${asset?.ticker}`,
+        label: 'Asset Local',
+        value: `${formatAssetAmount(channel.asset_local_amount)} ${asset?.ticker ?? ''}`,
       },
       {
-        label: t('channelCard.infoModal.fields.assetRemoteAmount'),
-        value: `${formatAssetAmount(channel.asset_remote_amount)} ${asset?.ticker}`,
+        label: 'Asset Remote',
+        value: `${formatAssetAmount(channel.asset_remote_amount)} ${asset?.ticker ?? ''}`,
       }
     )
   }
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-xl border border-gray-700/50">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold">
-            {t('channelCard.infoModal.title')}
-          </h3>
+      <div className="bg-surface-overlay rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-border-default/40 overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center px-5 py-4 border-b border-border-default/30">
+          <div>
+            <h3 className="text-base font-semibold text-white">
+              {t('channelCard.infoModal.title')}
+            </h3>
+            <p className="text-xs text-content-tertiary mt-0.5 font-mono">
+              {channel.peer_alias || channel.peer_pubkey.slice(0, 16) + '…'}
+            </p>
+          </div>
           <button
-            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50"
+            className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               onClose()
             }}
             type="button"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
-        <div className="grid gap-4">
-          {infoRows.map((row, index) => (
-            <div
-              className="border-b border-gray-700 pb-3 last:border-0"
-              key={index}
-            >
-              <div className="text-sm text-gray-400">{row.label}</div>
-              <div className="font-medium break-all">{row.value}</div>
-            </div>
-          ))}
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-1">
+          {infoRows.map((row, index) => {
+            if ('separator' in row) {
+              return (
+                <div
+                  className="flex items-center gap-2 pt-4 pb-2 first:pt-0"
+                  key={`sep-${index}`}
+                >
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-content-tertiary/70">
+                    {row.separator}
+                  </span>
+                  <div className="flex-1 h-px bg-border-default/30" />
+                </div>
+              )
+            }
+
+            return (
+              <div
+                className="flex items-start justify-between gap-4 py-2.5 border-b border-border-default/20 last:border-0"
+                key={index}
+              >
+                <span className="text-xs text-content-secondary flex-shrink-0 w-28 mt-0.5">
+                  {row.label}
+                </span>
+                <div className="text-right min-w-0 flex-1">
+                  {row.copyable ? (
+                    <CopyableValue value={row.value} />
+                  ) : (
+                    <span
+                      className={`text-xs font-medium text-white/90 ${row.mono ? 'font-mono' : ''}`}
+                    >
+                      {row.value}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <div className="mt-6 flex justify-end">
+
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-border-default/30">
           <button
-            className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 active:bg-gray-500 transition-colors"
+            className="w-full py-2 rounded-lg bg-surface-high hover:bg-surface-elevated text-sm text-white transition-colors"
             onClick={(e) => {
               e.stopPropagation()
               onClose()
@@ -172,7 +250,7 @@ interface ChannelCardProps {
 
 const AssetIcon: React.FC<{ ticker: string; className?: string }> = ({
   ticker,
-  className = 'h-6 w-6 mr-2',
+  className = 'h-5 w-5',
 }) => {
   const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
 
@@ -193,7 +271,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 }) => {
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false)
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
   const { t } = useTranslation()
 
   const assetPrecision = asset?.precision ?? 8
@@ -207,181 +285,172 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   }
 
   const isRgbChannel = !!channel.asset_id
-
   const isReady = channel.ready
   const isPublic = channel.public
+  const isUsable = channel.is_usable
 
   return (
-    <div className="bg-slate-900/70 hover:bg-slate-800/80 text-white rounded-lg shadow-md p-4 border border-slate-700/30 transition-all duration-200 relative">
-      {/* Status indicator */}
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-slate-600/40 to-transparent"></div>
+    <div className="group bg-surface-base/80 hover:bg-surface-overlay/70 text-white rounded-xl shadow-md border border-border-default/30 hover:border-border-default/50 transition-all duration-200 relative overflow-hidden flex flex-col">
+      {/* Status bar */}
+      <div
+        className={`absolute top-0 left-0 w-full h-[2px] ${isUsable
+          ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
+          : 'bg-gradient-to-r from-transparent via-red-500/50 to-transparent'
+          }`}
+      />
 
-      {/* Usability dot indicator */}
-      <div className="absolute top-2 right-2 flex items-center">
-        <div
-          className={`w-2 h-2 rounded-full ${channel.is_usable ? 'bg-emerald-400' : 'bg-red-400'}`}
-        />
-      </div>
-
-      {/* Unusable overlay */}
-      {!channel.is_usable && (
-        <div className="absolute inset-0 bg-red-900/10 rounded-lg pointer-events-none" />
-      )}
-
-      {/* Channel header */}
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center">
-          <span className="font-medium text-base truncate max-w-[120px] text-white">
-            {channel.peer_alias || channel.peer_pubkey.slice(0, 8)}
-          </span>
-          <button
-            className="ml-1 p-1 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-full transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsInfoModalOpen(true)
-            }}
-            title={t('channelCard.tooltips.info')}
-            type="button"
-          >
-            <Info size={14} />
-          </button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded-md ${
-              isReady
-                ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-800/20'
-                : 'bg-amber-900/30 text-amber-300 border border-amber-800/20'
-            }`}
-          >
-            {isReady
-              ? t('channelCard.status.open')
-              : t('channelCard.status.pending')}
-          </span>
-          {isPublic ? (
-            <Unlock className="text-slate-400" size={12} />
-          ) : (
-            <Lock className="text-slate-400" size={12} />
-          )}
-        </div>
-      </div>
-
-      {/* Capacity section */}
-      <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-700/30">
-        <div className="text-xs text-slate-400">
-          {t('channelCard.labels.capacity')}
-        </div>
-        <div className="font-medium flex items-center text-sm">
-          {formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)}{' '}
-          <span className="text-xs text-slate-400 ml-1">{bitcoinUnit}</span>
-          {asset && (
-            <div className="ml-2 flex items-center bg-slate-800/60 rounded-full px-1.5 py-0.5 text-xs">
-              <AssetIcon className="h-3 w-3 mr-1" ticker={asset.ticker} />
-              <span className="text-slate-300">{asset.ticker}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bitcoin liquidity section */}
-      <div className="mb-3 rounded-md bg-slate-800/50 p-3 hover:bg-slate-800/60 transition-all duration-200">
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-xs text-slate-300 flex items-center">
-            <AssetIcon className="h-3 w-3 mr-1 text-amber-400" ticker="BTC" />
-            <span className="font-medium">
-              {t('channelCard.labels.bitcoinLiquidity')}
+      {/* Card header */}
+      <div className="flex items-start justify-between px-4 pt-5 pb-3 gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            {/* Peer name */}
+            <span className="font-semibold text-sm text-white truncate max-w-[150px]">
+              {channel.peer_alias || channel.peer_pubkey.slice(0, 10) + '…'}
             </span>
           </div>
-          <div className="flex text-xs space-x-3 text-slate-300">
-            <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
-              <ArrowUpRight className="mr-1 text-amber-400" size={10} />
-              <span className="font-medium">
-                {formatBitcoinAmount(
-                  channel.outbound_balance_msat / 1000,
-                  bitcoinUnit
-                )}
+          {/* Badges row */}
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            {/* Status badge */}
+            <span
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${isReady
+                ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-800/30'
+                : 'bg-amber-900/30 text-amber-300 border border-amber-800/30'
+                }`}
+            >
+              {isReady ? t('channelCard.status.open') : t('channelCard.status.pending')}
+            </span>
+
+            {/* Usable badge */}
+            {!isUsable && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-800/30">
+                Offline
               </span>
-            </div>
-            <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
-              <ArrowDownRight className="mr-1 text-blue-400" size={10} />
-              <span className="font-medium">
-                {formatBitcoinAmount(
-                  channel.inbound_balance_msat / 1000,
-                  bitcoinUnit
-                )}
+            )}
+
+            {/* Public/Private */}
+            <span className="flex items-center gap-0.5 text-[10px] text-content-tertiary">
+              {isPublic ? (
+                <Unlock className="h-2.5 w-2.5" />
+              ) : (
+                <Lock className="h-2.5 w-2.5" />
+              )}
+              <span>{isPublic ? 'Public' : 'Private'}</span>
+            </span>
+
+            {/* RGB badge */}
+            {isRgbChannel && asset && (
+              <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-800/30">
+                <AssetIcon className="h-2.5 w-2.5" ticker={asset.ticker} />
+                {asset.ticker}
               </span>
-            </div>
+            )}
           </div>
         </div>
-        <LiquidityBar
-          localAmount={channel.outbound_balance_msat / 1000}
-          remoteAmount={channel.inbound_balance_msat / 1000}
-          type="bitcoin"
-        />
+
+        {/* Capacity */}
+        <div className="text-right flex-shrink-0">
+          <div className="text-[10px] text-content-tertiary mb-0.5">
+            {t('channelCard.labels.capacity')}
+          </div>
+          <div className="font-mono text-sm font-semibold text-white/90">
+            {formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)}
+          </div>
+          <div className="text-[10px] text-content-tertiary">{bitcoinUnit}</div>
+        </div>
       </div>
 
-      {/* RGB Asset liquidity section - only show if it's an RGB channel */}
-      {isRgbChannel && asset && (
-        <div className="mb-3 rounded-md bg-slate-800/50 p-3 hover:bg-slate-800/60 transition-all duration-200">
-          <div className="flex justify-between items-center mb-2">
-            <div className="text-xs text-slate-300 flex items-center">
-              <AssetIcon className="h-3 w-3 mr-1" ticker={asset.ticker} />
-              <span className="font-medium">
-                {t('channelCard.labels.assetLiquidity', {
-                  ticker: asset.ticker,
-                })}
-              </span>
+      {/* Liquidity sections */}
+      <div className="px-4 pb-3 flex flex-col gap-2 flex-1">
+        {/* Bitcoin liquidity */}
+        <div className="rounded-lg bg-surface-overlay/40 p-2.5">
+          <div className="flex justify-between items-center mb-1.5">
+            <div className="flex items-center gap-1 text-[10px] text-amber-400/90">
+              <AssetIcon className="h-3 w-3" ticker="BTC" />
+              <span className="font-medium">BTC</span>
             </div>
-            <div className="flex text-xs space-x-3 text-slate-300">
-              <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
-                <ArrowUpRight className="mr-1 text-indigo-400" size={10} />
-                <span className="font-medium">
-                  {formatAssetAmount(channel.asset_local_amount)}
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <span className="flex items-center gap-0.5 text-amber-300/80">
+                <ArrowUpRight className="h-3 w-3" />
+                <span className="font-mono">
+                  {formatBitcoinAmount(channel.outbound_balance_msat / 1000, bitcoinUnit)}
                 </span>
-              </div>
-              <div className="flex items-center bg-slate-900/70 px-1.5 py-0.5 rounded">
-                <ArrowDownRight className="mr-1 text-fuchsia-400" size={10} />
-                <span className="font-medium">
-                  {formatAssetAmount(channel.asset_remote_amount)}
+              </span>
+              <span className="text-content-tertiary/40">/</span>
+              <span className="flex items-center gap-0.5 text-blue-300/80">
+                <ArrowDownRight className="h-3 w-3" />
+                <span className="font-mono">
+                  {formatBitcoinAmount(channel.inbound_balance_msat / 1000, bitcoinUnit)}
                 </span>
-              </div>
+              </span>
             </div>
           </div>
           <LiquidityBar
-            localAmount={channel.asset_local_amount}
-            remoteAmount={channel.asset_remote_amount}
-            type="asset"
+            localAmount={channel.outbound_balance_msat / 1000}
+            remoteAmount={channel.inbound_balance_msat / 1000}
+            type="bitcoin"
           />
+          <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
+            <span>{t('channelCard.labels.outbound')}</span>
+            <span>{t('channelCard.labels.inbound')}</span>
+          </div>
         </div>
-      )}
 
-      {/* Action buttons */}
-      <div className="flex space-x-2 mt-3">
+        {/* RGB Asset liquidity */}
+        {isRgbChannel && asset && (
+          <div className="rounded-lg bg-surface-overlay/40 p-2.5">
+            <div className="flex justify-between items-center mb-1.5">
+              <div className="flex items-center gap-1 text-[10px] text-purple-400/90">
+                <AssetIcon className="h-3 w-3" ticker={asset.ticker} />
+                <span className="font-medium">{asset.ticker}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px]">
+                <span className="flex items-center gap-0.5 text-indigo-300/80">
+                  <ArrowUpRight className="h-3 w-3" />
+                  <span className="font-mono">{formatAssetAmount(channel.asset_local_amount)}</span>
+                </span>
+                <span className="text-content-tertiary/40">/</span>
+                <span className="flex items-center gap-0.5 text-fuchsia-300/80">
+                  <ArrowDownRight className="h-3 w-3" />
+                  <span className="font-mono">{formatAssetAmount(channel.asset_remote_amount)}</span>
+                </span>
+              </div>
+            </div>
+            <LiquidityBar
+              localAmount={channel.asset_local_amount}
+              remoteAmount={channel.asset_remote_amount}
+              type="asset"
+            />
+            <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
+              <span>{t('channelCard.labels.outbound')}</span>
+              <span>{t('channelCard.labels.inbound')}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer actions */}
+      <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-border-default/20">
         <button
-          className="flex-1 py-1.5 px-3 bg-slate-800/70 hover:bg-slate-700/80 transition-colors rounded-md text-xs text-slate-300 border border-slate-700/30"
+          className="flex-1 min-w-0 py-1.5 rounded-lg bg-surface-overlay/60 hover:bg-surface-high/70 transition-colors text-xs text-content-secondary hover:text-content-primary border border-border-default/20 hover:border-border-default/40 flex items-center justify-center gap-1"
           onClick={(e) => {
             e.stopPropagation()
             setIsInfoModalOpen(true)
           }}
           type="button"
         >
-          <div className="flex items-center justify-center">
-            <Info className="w-3 h-3 mr-1" />
-            {t('channelCard.buttons.details')}
-          </div>
+          <Info className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">{t('channelCard.buttons.details')}</span>
         </button>
         <button
-          className="flex-1 py-1.5 px-3 bg-red-900/20 hover:bg-red-900/30 transition-colors rounded-md text-xs text-red-300 border border-red-900/20"
+          className="flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
           onClick={(e) => {
             e.stopPropagation()
             setIsCloseModalOpen(true)
           }}
           type="button"
         >
-          <div className="flex items-center justify-center">
-            <X className="w-3 h-3 mr-1" />
-            {t('channelCard.buttons.close')}
-          </div>
+          <X className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">{t('channelCard.buttons.close')}</span>
         </button>
       </div>
 

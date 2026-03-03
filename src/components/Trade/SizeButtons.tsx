@@ -22,7 +22,7 @@ export const SizeButtons: React.FC<SizeButtonsProps> = ({
           ${
             selectedSize === size
               ? 'border-blue-500/60 bg-blue-600/20 text-blue-400 shadow-md shadow-blue-500/20'
-              : 'border-slate-600/40 bg-slate-800/60 text-slate-400 hover:border-slate-500/60 hover:bg-slate-700/60 hover:text-slate-300'
+              : 'border-border-default/40 bg-surface-overlay/60 text-content-secondary hover:border-border-subtle/60 hover:bg-surface-high/60 hover:text-content-secondary'
           } ${
             disabled
               ? 'opacity-50 cursor-not-allowed'

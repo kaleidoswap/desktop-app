@@ -38,7 +38,7 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
   ]
   return (
     <div>
-      <label className="text-sm font-medium text-gray-400 mb-3 block">
+      <label className="text-sm font-medium text-content-secondary mb-3 block">
         {t('orderChannel.step3.feeRateLabel')}
       </label>
       <div className="grid grid-cols-2 gap-3">
@@ -46,8 +46,8 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
           <button
             className={`p-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between text-sm ${
               selectedFee === rate.value
-                ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                : 'border-gray-700 text-gray-400 hover:border-blue-500/50'
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border-default text-content-secondary hover:border-primary/50'
             }`}
             key={rate.value}
             onClick={() => onFeeChange(rate.value)}
@@ -67,7 +67,7 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
       </div>
       {selectedFee === 'custom' && (
         <input
-          className="mt-3 w-full px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white"
+          className="mt-3 w-full px-4 py-3 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary focus:ring-1 focus:ring-primary text-white"
           onChange={(e) => onCustomFeeChange(parseFloat(e.target.value))}
           placeholder={t('orderChannel.step3.customFeePlaceholder')}
           step="0.1"

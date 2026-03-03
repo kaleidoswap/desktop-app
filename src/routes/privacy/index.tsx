@@ -55,7 +55,7 @@ export const Component = () => {
 
               <div className="flex justify-center mt-8">
                 <button
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="px-6 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-medium transition-colors"
                   onClick={() => navigate(-1)}
                 >
                   {t('common.ok')}

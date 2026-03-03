@@ -99,9 +99,9 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden">
+      <div className="bg-surface-base border border-border-default rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-gray-700 px-6 py-4">
+        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-border-default px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600/20 rounded-lg">
@@ -113,7 +113,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                     ? t('mnemonicViewer.unlockTitle')
                     : t('mnemonicViewer.displayTitle')}
                 </h2>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-content-secondary">
                   {step === 'password'
                     ? t('mnemonicViewer.unlockSubtitle')
                     : t('mnemonicViewer.displaySubtitle')}
@@ -121,7 +121,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               </div>
             </div>
             <button
-              className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white"
+              className="p-2 hover:bg-surface-overlay rounded-lg transition-colors text-content-secondary hover:text-white"
               onClick={handleClose}
             >
               <X className="w-5 h-5" />
@@ -149,14 +149,14 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-content-secondary mb-2">
                   {t('walletUnlock.walletPassword')}
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-content-tertiary" />
                   <input
                     autoFocus
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-12 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="w-full bg-surface-overlay border border-border-default rounded-lg pl-10 pr-12 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     disabled={isLoading}
                     onChange={(e) => {
                       setPassword(e.target.value)
@@ -167,7 +167,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                     value={password}
                   />
                   <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary hover:text-content-secondary transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     type="button"
                   >
@@ -190,7 +190,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
               <div className="flex gap-3 pt-4">
                 <Button
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3"
+                  className="flex-1 bg-surface-high hover:bg-surface-elevated text-white py-3"
                   disabled={isLoading}
                   onClick={handleClose}
                   type="button"
@@ -198,7 +198,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                   {t('common.cancel')}
                 </Button>
                 <Button
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-primary hover:bg-primary-emphasis text-primary-foreground py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoading || !password}
                   type="submit"
                 >
@@ -238,17 +238,17 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               </div>
 
               {/* Mnemonic Grid */}
-              <div className="bg-gray-800/50 border-2 border-gray-700 rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wide">
+              <div className="bg-surface-overlay/50 border-2 border-border-default rounded-xl p-6">
+                <h3 className="text-sm font-semibold text-content-secondary mb-4 uppercase tracking-wide">
                   {t('mnemonicViewer.recoveryPhraseHeading')}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {mnemonicWords.map((word, index) => (
                     <div
-                      className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 flex items-center gap-3 hover:border-blue-500/50 transition-colors"
+                      className="bg-surface-base border border-border-default rounded-lg px-4 py-3 flex items-center gap-3 hover:border-blue-500/50 transition-colors"
                       key={index}
                     >
-                      <span className="text-xs text-gray-500 font-mono font-bold min-w-[24px]">
+                      <span className="text-xs text-content-tertiary font-mono font-bold min-w-[24px]">
                         {index + 1}.
                       </span>
                       <span className="text-base text-white font-mono font-medium flex-1">
@@ -262,7 +262,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <Button
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3"
+                  className="flex-1 bg-surface-high hover:bg-surface-elevated text-white py-3"
                   onClick={handleCopy}
                 >
                   {copied ? (

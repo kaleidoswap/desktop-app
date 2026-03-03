@@ -65,9 +65,9 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
 
         <div className={`${centered ? 'text-center' : ''} mb-6`}>
           {icon && (
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-cyan/20 to-cyan/5 border border-cyan/20 mb-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-3">
               {React.cloneElement(icon as React.ReactElement, {
-                className: 'w-6 h-6 text-cyan',
+                className: 'w-6 h-6 text-primary',
               })}
             </div>
           )}
@@ -75,7 +75,7 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
             {title}
           </h1>
           {subtitle && (
-            <p className="text-gray-400 text-xs md:text-sm">{subtitle}</p>
+            <p className="text-content-secondary text-xs md:text-sm">{subtitle}</p>
           )}
         </div>
 
@@ -100,12 +100,12 @@ export const SetupSection: React.FC<{
 }> = ({ children, title, className = '', icon }) => {
   return (
     <Card
-      className={`p-3 md:p-4 border border-slate-700/50 bg-blue-darker/40 ${className}`}
+      className={`p-3 md:p-4 border border-border-default/50 bg-surface-overlay/40 ${className}`}
     >
       {(title || icon) && (
         <div className="flex items-center gap-2 mb-3">
           {icon && (
-            <div className="p-1.5 rounded-xl bg-cyan/10 border border-cyan/20 text-cyan">
+            <div className="p-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary">
               {icon}
             </div>
           )}
@@ -137,7 +137,7 @@ export const FormField: React.FC<{
       </label>
       <div className="relative">{children}</div>
       {description && (
-        <p className="mt-1 text-xs text-slate-500">{description}</p>
+        <p className="mt-1 text-xs text-content-tertiary">{description}</p>
       )}
       {error && (
         <p className="mt-1 text-sm text-red-500 flex items-center gap-1">

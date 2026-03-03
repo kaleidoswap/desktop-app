@@ -27,14 +27,14 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             <div className="flex flex-col items-center">
               <div
                 className={`
-                  flex items-center justify-center w-8 h-8 rounded-full 
+                  flex items-center justify-center w-8 h-8 rounded-full
                   transition-all duration-200 border-2
                   ${
                     isActive
-                      ? 'bg-cyan/20 border-cyan text-cyan'
+                      ? 'bg-primary/20 border-cyan text-primary'
                       : isCompleted
-                        ? 'bg-cyan border-cyan text-blue-darkest'
-                        : 'bg-slate-800/50 border-slate-700/50 text-slate-500'
+                        ? 'bg-cyan border-cyan text-surface-base'
+                        : 'bg-surface-overlay/50 border-border-default/50 text-content-tertiary'
                   }
                 `}
               >
@@ -49,10 +49,10 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                   mt-2 text-xs font-medium
                   ${
                     isActive
-                      ? 'text-cyan'
+                      ? 'text-primary'
                       : isCompleted
                         ? 'text-white'
-                        : 'text-slate-500'
+                        : 'text-content-tertiary'
                   }
                 `}
               >
@@ -64,7 +64,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
               <div
                 className={`
                   flex-1 h-0.5 mx-2
-                  ${index < currentStep ? 'bg-cyan' : 'bg-slate-700/50'}
+                  ${index < currentStep ? 'bg-cyan' : 'bg-border-default/50'}
                 `}
               />
             )}
@@ -95,14 +95,14 @@ export const VerticalStepIndicator: React.FC<StepIndicatorProps> = ({
             <div className="flex flex-col items-center mr-4">
               <div
                 className={`
-                  flex items-center justify-center w-8 h-8 rounded-full 
+                  flex items-center justify-center w-8 h-8 rounded-full
                   transition-all duration-200 border-2
                   ${
                     isActive
-                      ? 'bg-cyan/20 border-cyan text-cyan'
+                      ? 'bg-primary/20 border-cyan text-primary'
                       : isCompleted
-                        ? 'bg-cyan border-cyan text-blue-darkest'
-                        : 'bg-slate-800/50 border-slate-700/50 text-slate-500'
+                        ? 'bg-cyan border-cyan text-surface-base'
+                        : 'bg-surface-overlay/50 border-border-default/50 text-content-tertiary'
                   }
                 `}
               >
@@ -117,7 +117,7 @@ export const VerticalStepIndicator: React.FC<StepIndicatorProps> = ({
                 <div
                   className={`
                     w-0.5 h-full my-1
-                    ${index < currentStep ? 'bg-cyan' : 'bg-slate-700/50'}
+                    ${index < currentStep ? 'bg-cyan' : 'bg-border-default/50'}
                   `}
                 />
               )}
@@ -129,10 +129,10 @@ export const VerticalStepIndicator: React.FC<StepIndicatorProps> = ({
                   font-medium mb-1
                   ${
                     isActive
-                      ? 'text-cyan'
+                      ? 'text-primary'
                       : isCompleted
                         ? 'text-white'
-                        : 'text-slate-500'
+                        : 'text-content-tertiary'
                   }
                 `}
               >

@@ -45,7 +45,7 @@ export const WalletConfirmationModal: React.FC<
         onClick={() => !isProcessing && onClose()}
       />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 max-w-md w-full">
+        <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-md w-full">
           {isProcessing ? (
             <div className="flex flex-col items-center py-6">
               <div className="w-16 h-16 mb-4">
@@ -57,7 +57,7 @@ export const WalletConfirmationModal: React.FC<
               <h3 className="text-xl font-bold text-white mb-2">
                 {t('orderChannel.step3.processingPayment')}
               </h3>
-              <p className="text-slate-400 text-center">
+              <p className="text-content-secondary text-center">
                 {t('orderChannel.step3.processingWait')}
               </p>
             </div>
@@ -71,9 +71,9 @@ export const WalletConfirmationModal: React.FC<
               </div>
               <div className="space-y-4">
                 {/* Payment Details Section */}
-                <div className="bg-slate-800/50 rounded-xl p-4 space-y-2">
+                <div className="bg-surface-overlay/50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">
+                    <span className="text-content-secondary">
                       {t('orderChannel.step3.paymentType')}:
                     </span>
                     <span className="text-white font-medium flex items-center gap-2">
@@ -93,9 +93,9 @@ export const WalletConfirmationModal: React.FC<
                 </div>
 
                 {/* Balance Section */}
-                <div className="bg-slate-800/50 rounded-xl p-4 space-y-2">
+                <div className="bg-surface-overlay/50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">
+                    <span className="text-content-secondary">
                       {paymentMethod === 'lightning'
                         ? t('orderChannel.step3.maxSendable')
                         : t('orderChannel.step3.availableBalance')}
@@ -109,7 +109,7 @@ export const WalletConfirmationModal: React.FC<
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">
+                    <span className="text-content-secondary">
                       {t('orderChannel.step3.amountToPay')}:
                     </span>
                     <span className="text-white font-medium">
@@ -121,7 +121,7 @@ export const WalletConfirmationModal: React.FC<
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">
+                    <span className="text-content-secondary">
                       {t('orderChannel.step3.remainingBalance')}:
                     </span>
                     <span className="text-white font-medium">
@@ -140,9 +140,9 @@ export const WalletConfirmationModal: React.FC<
 
                 {/* Fee Section - Only for on-chain */}
                 {paymentMethod === 'onchain' && (
-                  <div className="bg-slate-800/50 rounded-xl p-4">
+                  <div className="bg-surface-overlay/50 rounded-xl p-4">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">
+                      <span className="text-content-secondary">
                         {t('orderChannel.step3.feeRate')}:
                       </span>
                       <span className="text-white font-medium">
@@ -154,22 +154,22 @@ export const WalletConfirmationModal: React.FC<
                   </div>
                 )}
 
-                <div className="border-t border-slate-800 my-4" />
+                <div className="border-t border-border-subtle my-4" />
                 <p className="text-yellow-500/80 text-sm">
                   {t('orderChannel.step3.verifyDetails')}
                 </p>
                 <div className="flex gap-3 mt-6">
                   <button
-                    className="flex-1 py-3 px-4 rounded-xl border border-slate-700
-                             text-slate-300 hover:bg-slate-800 transition-colors"
+                    className="flex-1 py-3 px-4 rounded-xl border border-border-default
+                             text-content-secondary hover:bg-surface-overlay transition-colors"
                     onClick={onClose}
                     type="button"
                   >
                     {t('orderChannel.step3.cancel')}
                   </button>
                   <button
-                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700
-                             text-white rounded-xl font-medium transition-colors"
+                    className="flex-1 py-3 px-4 bg-primary hover:bg-primary-emphasis
+                             text-primary-foreground rounded-xl font-medium transition-colors"
                     onClick={onConfirm}
                     type="button"
                   >

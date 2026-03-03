@@ -9,10 +9,8 @@ import { AssetSelectWithModal } from './AssetSelectWithModal'
 
 import { AssetSelect } from './index'
 
-// Enhanced animation classes
 const inputAnimationClass = 'transition-all duration-300 ease-out'
 const amountAnimationClass = 'transition-all duration-300 ease-out'
-const containerAnimationClass = 'transition-all duration-500 ease-out'
 
 interface SwapInputFieldProps {
   label: string
@@ -89,295 +87,151 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!onAmountChange) return
-
-    // Remove any non-numeric characters except decimal point and prevent negative values
     const numericValue = e.target.value.replace(/[^\d.]/g, '')
     const parsedValue = parseFloat(numericValue)
-
-    // Prevent negative values explicitly
     if (parsedValue < 0 || numericValue.startsWith('-')) {
       e.target.value = ''
       onAmountChange(e)
       return
     }
-
-    // If maxAmount is defined and the input value is greater than maxAmount,
-    // format maxAmount and use that instead
-    if (
-      maxAmount !== undefined &&
-      !isNaN(parsedValue) &&
-      parsedValue > maxAmount
-    ) {
-      const formattedMaxAmount = formatAmount(maxAmount, asset)
-      e.target.value = formattedMaxAmount
+    if (maxAmount !== undefined && !isNaN(parsedValue) && parsedValue > maxAmount) {
+      e.target.value = formatAmount(maxAmount, asset)
     }
-
     onAmountChange(e)
   }
 
   return (
-    <div className={`group ${containerAnimationClass}`}>
-      {/* Main Container - Modern Glassmorphic Design */}
-      <div
-        className={`
-          bg-gradient-to-br from-slate-800/40 via-slate-900/50 to-slate-900/60 
-          backdrop-blur-2xl rounded-2xl 
-          border border-slate-700/30
-          shadow-lg hover:shadow-2xl
-          hover:border-slate-600/50 
-          ${containerAnimationClass}
-          group-hover:scale-[1.01]
-          group-hover:from-slate-800/50
-          group-hover:to-slate-900/70
-        `}
-      >
-        {/* Enhanced Header Section */}
-        <div className="px-5 py-3 border-b border-slate-700/20">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 group-hover:scale-110 transition-transform duration-300"></div>
-              <h3 className="text-sm font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
-                {label}
-              </h3>
+    <div className="bg-surface-overlay/70 rounded-xl border border-border-default/40 hover:border-border-default/60 transition-all duration-300">
+      {/* Header row: label | available amount + refresh | size chips */}
+      <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between gap-2">
+        {/* Label */}
+        <span className="text-xs font-semibold text-content-tertiary uppercase tracking-wider shrink-0">
+          {label}
+        </span>
+
+        {/* Right side: available + refresh + size chips */}
+        <div className="flex items-center gap-2 min-w-0">
+          {availableAmount && (
+            <div className={`flex items-center gap-1 text-xs ${amountAnimationClass} shrink-0`}>
+              <span className="text-content-tertiary">
+                {availableAmountLabel || t('trade.swapInput.available')}:
+              </span>
+              <span className="text-content-primary font-medium">{availableAmount}</span>
+              {onRefresh && (
+                <button
+                  className="p-0.5 rounded hover:bg-surface-high/60 active:scale-95 transition-all duration-200 group/refresh"
+                  disabled={disabled}
+                  onClick={onRefresh}
+                  title={t('trade.swapInput.refreshAmounts')}
+                  type="button"
+                >
+                  <RefreshCw
+                    className={`w-3 h-3 text-content-tertiary group-hover/refresh:text-primary transition-colors ${isLoadingState ? 'animate-spin text-primary' : ''}`}
+                  />
+                </button>
+              )}
             </div>
-            {availableAmount && (
-              <div
-                className={`flex items-center gap-2 text-xs ${amountAnimationClass}`}
-              >
-                <span className="font-medium text-slate-400">
-                  {availableAmountLabel || t('trade.swapInput.available')}{' '}
-                  <span className="text-slate-200 font-semibold group-hover:text-white transition-colors">
-                    {availableAmount}
-                  </span>
-                </span>
-                {onRefresh && (
-                  <button
-                    className="p-1.5 rounded-lg hover:bg-slate-700/60 active:scale-95 transition-all duration-200 group/refresh"
-                    disabled={disabled}
-                    onClick={onRefresh}
-                    title={t('trade.swapInput.refreshAmounts')}
-                    type="button"
-                  >
-                    <RefreshCw
-                      className={`w-4 h-4 text-slate-400 group-hover/refresh:text-blue-400 transition-all duration-200 
-                        ${isLoadingState ? 'animate-spin text-blue-400' : ''}`}
-                    />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          )}
+
+          {/* Inline size chips */}
+          {showSizeButtons && onSizeClick && (
+            <div className="flex items-center gap-1">
+              {[25, 50, 75, 100].map((pct) => (
+                <button
+                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-all duration-150 active:scale-95 ${selectedSize === pct
+                      ? 'bg-primary/25 border-primary/50 text-primary'
+                      : 'bg-surface-high/40 border-border-default/30 text-content-tertiary hover:text-white hover:border-border-default/60'
+                    } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                  disabled={disabled}
+                  key={pct}
+                  onClick={() => onSizeClick(pct)}
+                  type="button"
+                >
+                  {pct}%
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Input row */}
+      <div className="px-4 py-3 flex items-center gap-3">
+        {/* Amount */}
+        <div className="flex-1 min-w-0">
+          {isLoadingState && (!readOnly || !value) ? (
+            <div
+              className={`px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 h-14 flex items-center gap-2 ${amountAnimationClass}`}
+            >
+              <div className="w-4 h-4 border-2 border-primary/60 border-t-transparent rounded-full animate-spin shrink-0"></div>
+              <span className="text-content-secondary text-sm">
+                {isLoadingLabel || t('trade.swapInput.estimating')}
+              </span>
+            </div>
+          ) : (
+            <input
+              className={`w-full px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
+              disabled={disabled}
+              onChange={handleAmountChange}
+              placeholder={t('trade.swapInput.placeholder')}
+              readOnly={readOnly}
+              type="text"
+              value={value}
+            />
+          )}
         </div>
 
-        {/* Enhanced Input Section */}
-        <div className="p-4">
-          <div className="flex flex-row gap-3">
-            {/* Amount Input with Loading State */}
-            <div className="flex-1 min-w-0">
-              {isLoadingState && (!readOnly || !value) ? (
-                <div
-                  className={`
-                    px-4 py-3 
-                    bg-slate-900/50 
-                    rounded-xl
-                    border border-slate-600/40 
-                    text-slate-400 
-                    h-12
-                    flex items-center justify-center 
-                    text-sm font-medium
-                    backdrop-blur-sm 
-                    ${amountAnimationClass}
-                  `}
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <div className="w-4 h-4 border-2 border-blue-500/80 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="hidden sm:inline bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
-                      {isLoadingLabel || t('trade.swapInput.estimating')}
-                    </span>
-                    <span className="sm:hidden">
-                      {t('trade.swapInput.loading')}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <input
-                  className={`
-                    w-full px-4 py-3 
-                    bg-slate-900/50 
-                    rounded-xl
-                    border border-slate-600/40 
-                    text-white text-lg font-semibold 
-                    focus:border-blue-500/60 
-                    focus:ring-2 focus:ring-blue-500/20
-                    placeholder:text-slate-500 
-                    h-12 
-                    backdrop-blur-sm 
-                    hover:border-slate-500/60 
-                    focus:outline-none
-                    ${readOnly ? 'bg-slate-800/40 text-slate-300 cursor-default' : ''} 
-                    ${inputAnimationClass}
-                    group-hover:bg-slate-900/60
-                  `}
-                  disabled={disabled}
-                  onChange={handleAmountChange}
-                  placeholder={t('trade.swapInput.placeholder')}
-                  readOnly={readOnly}
-                  type="text"
-                  value={value}
-                />
-              )}
-            </div>
+        {/* Asset selector */}
+        <div className="shrink-0 w-36">
+          {useEnhancedSelector ? (
+            <AssetSelectWithModal
+              className="w-full h-14"
+              disabled={disabled}
+              fieldLabel={label}
+              onChange={onAssetChange}
+              options={enhancedAssetOptions}
+              placeholder={t('trade.swapInput.selectAsset')}
+              searchPlaceholder={t('trade.swapInput.searchAsset')}
+              title={t('trade.swapInput.selectAssetTitle')}
+              value={asset}
+            />
+          ) : (
+            <AssetSelect
+              disabled={disabled}
+              onChange={onAssetChange}
+              options={assetOptions}
+              value={asset}
+            />
+          )}
+        </div>
+      </div>
 
-            {/* Enhanced Asset Selector */}
-            <div className="flex-shrink-0 w-32 sm:w-36 md:w-40 lg:w-44">
-              {useEnhancedSelector ? (
-                <AssetSelectWithModal
-                  className="w-full h-12"
-                  disabled={disabled}
-                  fieldLabel={label}
-                  onChange={onAssetChange}
-                  options={enhancedAssetOptions}
-                  placeholder={t('trade.swapInput.selectAsset')}
-                  searchPlaceholder={t('trade.swapInput.searchAsset')}
-                  title={t('trade.swapInput.selectAssetTitle')}
-                  value={asset}
-                />
-              ) : (
-                <AssetSelect
-                  disabled={disabled}
-                  onChange={onAssetChange}
-                  options={assetOptions}
-                  value={asset}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Enhanced Size Buttons */}
-          {showSizeButtons && onSizeClick && (
-            <div className="mt-4 pt-4 border-t border-slate-700/20">
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs font-medium text-slate-300">
-                  {t('trade.swapInput.quickAmount')}
-                </span>
-                <span className="text-xs text-slate-500 hidden sm:block">
-                  {t('trade.swapInput.percentAvailable')}
-                </span>
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {[25, 50, 75, 100].map((percentage) => (
-                  <button
-                    className={`
-                      px-2 py-2 
-                      rounded-xl 
-                      font-medium 
-                      text-xs 
-                      transition-all 
-                      duration-200 
-                      border
-                      backdrop-blur-sm
-                      active:scale-95
-                      ${
-                        selectedSize === percentage
-                          ? 'bg-blue-600/20 border-blue-500/60 text-blue-400 shadow-lg shadow-blue-500/20'
-                          : 'bg-slate-800/60 border-slate-600/40 text-slate-400 hover:bg-slate-700/60 hover:border-slate-500/60 hover:text-slate-300'
-                      }
-                      ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02]'}
-                    `}
-                    disabled={disabled}
-                    key={percentage}
-                    onClick={() => onSizeClick(percentage)}
-                    type="button"
-                  >
-                    {percentage}%
-                  </button>
-                ))}
+      {/* Footer: min/max/htlc info — only when needed */}
+      {(showMinAmount || showMaxAmount || showMaxHtlc) && (
+        <div className="px-4 pb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-content-tertiary">
+          {showMinAmount && minAmount && (
+            <span>
+              Min: <span className="text-content-secondary font-medium">{formatAmount(minAmount, asset)} {getDisplayAsset(asset)}</span>
+            </span>
+          )}
+          {showMaxAmount && maxAmount && (
+            <span>
+              Max: <span className="text-content-secondary font-medium">{formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}</span>
+            </span>
+          )}
+          {showMaxHtlc && maxHtlcAmount && asset === 'BTC' && (
+            <div className="relative group/tooltip">
+              <span className="cursor-help border-b border-dotted border-border-subtle hover:text-content-secondary transition-colors">
+                Max HTLC: <span className="font-medium">{formatAmount(maxHtlcAmount, 'BTC')} {getDisplayAsset('BTC')}</span>
+              </span>
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-overlay text-xs text-content-primary rounded-xl w-64 hidden group-hover/tooltip:block shadow-2xl border border-border-default/50 z-30">
+                {t('trade.swapInput.maxHtlcTooltip')}
+                <div className="absolute -bottom-2 left-4 w-2 h-2 bg-surface-overlay border-r border-b border-border-default/50 rotate-45"></div>
               </div>
             </div>
           )}
         </div>
-
-        {/* Enhanced Footer Section */}
-        {(showMinAmount || showMaxAmount || showMaxHtlc) && (
-          <div className="px-4 pb-4">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-              {showMinAmount && minAmount && (
-                <div className={`text-slate-400 ${amountAnimationClass}`}>
-                  <span className="text-slate-500">
-                    {t('trade.swapInput.min')}:
-                  </span>{' '}
-                  <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
-                    {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
-                  </span>
-                </div>
-              )}
-              {showMaxAmount && maxAmount && (
-                <div className={`text-slate-400 ${amountAnimationClass}`}>
-                  <span className="text-slate-500">
-                    {t('trade.swapInput.max')}:
-                  </span>{' '}
-                  <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
-                    {formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}
-                  </span>
-                </div>
-              )}
-              {showMaxHtlc && maxHtlcAmount && asset === 'BTC' && (
-                <div className="relative group/tooltip">
-                  <span
-                    className={`
-                      text-slate-400 
-                      cursor-help 
-                      border-b 
-                      border-dotted 
-                      border-slate-500 
-                      hover:text-slate-200 
-                      transition-colors 
-                      ${amountAnimationClass}
-                    `}
-                  >
-                    <span className="text-slate-500">
-                      {t('trade.swapInput.maxHtlc')}:
-                    </span>{' '}
-                    <span className="font-medium group-hover:text-white">
-                      {formatAmount(maxHtlcAmount, 'BTC')}{' '}
-                      {getDisplayAsset('BTC')}
-                    </span>
-                  </span>
-                  <div
-                    className="
-                      absolute 
-                      bottom-full 
-                      left-1/2 
-                      transform 
-                      -translate-x-1/2 
-                      mb-2 
-                      px-4 
-                      py-2.5
-                      bg-slate-800/95 
-                      backdrop-blur-sm 
-                      text-xs 
-                      text-slate-200 
-                      rounded-xl 
-                      w-64 
-                      hidden 
-                      group-hover/tooltip:block
-                      shadow-2xl 
-                      border 
-                      border-slate-600/50 
-                      z-30
-                    "
-                  >
-                    <div className="relative">
-                      {t('trade.swapInput.maxHtlcTooltip')}
-                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-800/95 border-r border-b border-slate-600/50 rotate-45"></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   )
 }

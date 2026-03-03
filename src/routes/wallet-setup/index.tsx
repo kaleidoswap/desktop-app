@@ -98,7 +98,7 @@ export const Component = () => {
     <Layout>
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar with Toolbar */}
-        <div className="w-72 h-full bg-blue-darkest border-r border-divider/10 flex flex-col">
+        <div className="w-72 h-full bg-surface-base border-r border-divider/10 flex flex-col">
           <div className="flex items-center p-4 border-b border-divider/10">
             <img
               alt="KaleidoSwap"
@@ -118,8 +118,8 @@ export const Component = () => {
             <button
               className="w-full flex items-center justify-center space-x-2 px-4 py-3 
                 bg-gradient-to-r from-cyan/10 to-blue-500/10 hover:from-cyan/20 hover:to-blue-500/20 
-                text-cyan rounded-xl border border-cyan/20 hover:border-cyan/30
-                transition-all duration-300 shadow-lg shadow-cyan/5 hover:shadow-cyan/10
+                text-primary rounded-xl border border-primary/20 hover:border-primary/30
+                transition-all duration-300 shadow-lg shadow-primary/5 hover:shadow-primary/10
                 group relative overflow-hidden"
               onClick={() => setShowSupportModal(true)}
             >
@@ -142,8 +142,8 @@ export const Component = () => {
           {/* Language Selector */}
           <div className="absolute top-4 right-4 z-20">
             <div className="relative group">
-              <div className="flex items-center space-x-2 px-4 py-2 bg-blue-dark/60 backdrop-blur-xl border border-cyan/20 rounded-lg hover:border-cyan/40 transition-all duration-300 shadow-lg shadow-cyan/5 hover:shadow-cyan/10">
-                <Languages className="w-4 h-4 text-cyan" />
+              <div className="flex items-center space-x-2 px-4 py-2 bg-surface-elevated/60 backdrop-blur-xl border border-primary/20 rounded-lg hover:border-primary/40 transition-all duration-300 shadow-lg shadow-primary/5 hover:shadow-primary/10">
+                <Languages className="w-4 h-4 text-primary" />
                 <select
                   className="bg-transparent text-white text-sm font-medium cursor-pointer focus:outline-none appearance-none pr-6"
                   onChange={(e) => handleLanguageChange(e.target.value)}
@@ -157,7 +157,7 @@ export const Component = () => {
                 </select>
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                   <svg
-                    className="w-4 h-4 text-gray-400"
+                    className="w-4 h-4 text-content-secondary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -177,8 +177,8 @@ export const Component = () => {
           <div className="min-h-screen py-8 md:py-16 flex items-center justify-center p-4 relative z-10">
             <Card
               className="p-6 md:p-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-blue-dark/40 via-blue-dark/30 to-blue-dark/40 
-              border-2 border-cyan/20 shadow-2xl shadow-cyan/10 
-              hover:shadow-cyan/20 transition-all duration-500 
+              border-2 border-primary/20 shadow-2xl shadow-primary/10 
+              hover:shadow-primary/20 transition-all duration-500 
               ring-1 ring-cyan/10 hover:ring-cyan/20"
             >
               <div
@@ -190,25 +190,25 @@ export const Component = () => {
                     <div className="text-center mb-12 slide-in">
                       <div className="relative inline-flex mb-6 group">
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/30 via-cyan/20 to-blue-500/20 border-2 border-cyan/40 
-                          rounded-2xl shadow-2xl shadow-cyan/20 
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/30`}
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/30 via-cyan/20 to-blue-500/20 border-2 border-primary/40 
+                          rounded-2xl shadow-2xl shadow-primary/20 
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30`}
                         >
-                          <Zap className="w-8 h-8 text-cyan drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                          <Zap className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
                         </div>
                         {/* Glow effect */}
-                        <div className="absolute inset-0 bg-cyan/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         {t('walletSetup.connectTitle')}
                       </h1>
-                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                      <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         {t('walletSetup.connectSubtitle')}
                       </p>
                       <div className="mt-4 flex items-center justify-center space-x-2">
-                        <div className="h-1 w-1 rounded-full bg-cyan/60 animate-pulse" />
+                        <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse" />
                         <div className="h-1 w-8 rounded-full bg-gradient-to-r from-cyan/60 to-transparent" />
-                        <div className="h-1 w-1 rounded-full bg-cyan/60 animate-pulse delay-75" />
+                        <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse delay-75" />
                       </div>
                     </div>
                     <div
@@ -232,9 +232,9 @@ export const Component = () => {
                     </div>
                     {!isLocalNodeSupported && (
                       <div className="mt-8 text-center fade-in">
-                        <div className="inline-flex items-center space-x-2 px-4 py-3 bg-blue-dark/40 border border-cyan/20 rounded-xl">
-                          <div className="w-2 h-2 rounded-full bg-cyan/60 animate-pulse" />
-                          <p className="text-gray-400 text-sm">
+                        <div className="inline-flex items-center space-x-2 px-4 py-3 bg-surface-elevated/40 border border-primary/20 rounded-xl">
+                          <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" />
+                          <p className="text-content-secondary text-sm">
                             {t('walletSetup.localNodeNotSupported')}
                           </p>
                         </div>
@@ -245,7 +245,7 @@ export const Component = () => {
                   <>
                     <div className="mb-8 slide-in">
                       <Button
-                        className="hover:bg-blue-dark/60 hover:border-cyan/40 transition-all duration-300"
+                        className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
                         onClick={() => handleNodeTypeChange(null)}
                         size="sm"
@@ -258,18 +258,18 @@ export const Component = () => {
                     <div className="text-center mb-10 slide-in">
                       <div className="relative inline-flex mb-6 group">
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30
-                          rounded-2xl shadow-2xl shadow-cyan/15
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-primary/30
+                          rounded-2xl shadow-2xl shadow-primary/15
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/25`}
                         >
-                          <Server className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                          <Server className="w-7 h-7 text-primary drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
                         </div>
-                        <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-primary/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         {t('walletSetup.setupLocalTitle')}
                       </h1>
-                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                      <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         {t('walletSetup.setupLocalSubtitle')}
                       </p>
                     </div>
@@ -296,7 +296,7 @@ export const Component = () => {
                   <>
                     <div className="mb-8 slide-in">
                       <Button
-                        className="hover:bg-blue-dark/60 hover:border-cyan/40 transition-all duration-300"
+                        className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
                         onClick={() => handleNodeTypeChange(null)}
                         size="sm"
@@ -309,18 +309,18 @@ export const Component = () => {
                     <div className="text-center mb-10 slide-in">
                       <div className="relative inline-flex mb-6 group">
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-cyan/30
-                          rounded-2xl shadow-2xl shadow-cyan/15
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-cyan/25`}
+                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-primary/30
+                          rounded-2xl shadow-2xl shadow-primary/15
+                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/25`}
                         >
-                          <Cloud className="w-7 h-7 text-cyan drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                          <Cloud className="w-7 h-7 text-primary drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
                         </div>
-                        <div className="absolute inset-0 bg-cyan/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-primary/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
                       <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
                         {t('walletSetup.connectRemoteTitle')}
                       </h1>
-                      <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                      <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
                         {t('walletSetup.connectRemoteSubtitle')}
                       </p>
                     </div>
@@ -329,7 +329,7 @@ export const Component = () => {
 
                     <div className="flex justify-center mt-8 fade-in">
                       <Button
-                        className="group relative overflow-hidden shadow-xl shadow-cyan/20 hover:shadow-cyan/30 transition-all duration-300"
+                        className="group relative overflow-hidden shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all duration-300"
                         icon={
                           <ArrowRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
                         }

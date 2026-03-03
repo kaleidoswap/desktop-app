@@ -20,13 +20,13 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
       actions: (
         <div className="flex gap-3">
           <button
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors"
             onClick={onClose}
           >
             Close
           </button>
           <button
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
             Try Again
@@ -55,13 +55,13 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
       actions: (
         <div className="flex gap-3">
           <button
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors"
             onClick={onClose}
           >
             Close
           </button>
           <button
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
             Create New Order
@@ -128,15 +128,15 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
 
       <div className="text-center space-y-2">
         <h3 className="text-2xl font-bold text-white">{current.title}</h3>
-        <p className="text-gray-300 max-w-md">{current.message}</p>
+        <p className="text-content-secondary max-w-md">{current.message}</p>
       </div>
 
       {current.details}
 
       {orderId && (
-        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
-          <p className="text-xs text-gray-400 text-center">
-            Order ID: <span className="text-gray-300 font-mono">{orderId}</span>
+        <div className="bg-surface-overlay/30 rounded-lg p-3 border border-border-default/30">
+          <p className="text-xs text-content-secondary text-center">
+            Order ID: <span className="text-content-secondary font-mono">{orderId}</span>
           </p>
         </div>
       )}

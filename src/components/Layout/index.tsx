@@ -133,8 +133,8 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
           flex items-center py-3.5 px-4 rounded-xl transition-all duration-300
           ${
             isActive
-              ? 'bg-cyan/10 text-white font-semibold border-l-2 border-cyan'
-              : 'text-gray-400 hover:text-white hover:bg-blue-darker/80 hover:shadow-md'
+              ? 'bg-primary/10 text-white font-semibold border-l-2 border-cyan'
+              : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:shadow-md'
           }
           ${isCollapsed ? 'justify-center' : hasSubMenu ? 'justify-between' : 'justify-start space-x-4'}
           transform hover:translate-x-1 active:scale-[0.98]
@@ -152,7 +152,7 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
         </div>
         {hasSubMenu && !isCollapsed && (
           <ChevronRight
-            className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-cyan' : ''}`}
+            className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-primary' : ''}`}
           />
         )}
       </NavLink>
@@ -165,8 +165,8 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
                 className={`
                 flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm cursor-pointer
                 transition-all duration-200
-                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-darker/80 hover:text-white hover:translate-x-1'}
-                ${location.pathname === subItem.to ? 'bg-gradient-to-r from-cyan/15 to-transparent text-cyan font-semibold border-l-2 border-cyan/50' : 'text-gray-400'}
+                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/80 hover:text-white hover:translate-x-1'}
+                ${location.pathname === subItem.to ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-primary/50' : 'text-content-secondary'}
               `}
                 key={index}
                 onClick={() => handleSubMenuClick(subItem)}
@@ -228,35 +228,35 @@ const DropdownMenu = ({
   return (
     <div className="relative" ref={menuRef}>
       <div
-        className="px-3 py-2 rounded-lg cursor-pointer flex items-center space-x-2 
-                  text-gray-300 hover:text-white hover:bg-blue-dark/50 transition-all duration-300
+        className="px-3 py-2 rounded-lg cursor-pointer flex items-center space-x-2
+                  text-content-secondary hover:text-white hover:bg-surface-elevated/50 transition-all duration-300
                   transform hover:scale-[1.02] active:scale-[0.98]"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="text-cyan transition-transform duration-300 hover:scale-110">
+        <div className="text-primary transition-transform duration-300 hover:scale-110">
           {icon}
         </div>
         <span className="font-medium">{title}</span>
         <ChevronRight
-          className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-cyan' : ''}`}
+          className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-primary' : ''}`}
         />
       </div>
 
       {isOpen && (
         <div
-          className="absolute top-full right-0 mt-2 bg-blue-dark/95 backdrop-blur-xl border border-divider/30 
+          className="absolute top-full right-0 mt-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
                        rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
         >
           <div className="py-1">
             {items.map((item, index) => (
               <div
-                className="px-4 py-3 flex items-center space-x-3 cursor-pointer 
-                          hover:bg-gradient-to-r hover:from-cyan/10 hover:to-transparent 
+                className="px-4 py-3 flex items-center space-x-3 cursor-pointer
+                          hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent
                           transition-all duration-200 group"
                 key={item.label || index}
                 onClick={() => handleItemClick(item)}
               >
-                <div className="text-cyan transition-transform duration-200 group-hover:scale-110">
+                <div className="text-primary transition-transform duration-200 group-hover:scale-110">
                   {item.icon}
                 </div>
                 <span className="text-sm font-medium group-hover:text-white">
@@ -302,7 +302,7 @@ const UserProfile = ({
   return (
     <div className="relative" ref={menuRef}>
       <div
-        className={`flex items-center p-3 cursor-pointer rounded-xl hover:bg-gradient-to-r hover:from-blue-darker hover:to-blue-darker/50
+        className={`flex items-center p-3 cursor-pointer rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
           transition-all duration-300 group
           ${isCollapsed ? 'justify-center' : 'justify-between space-x-2'}
           transform hover:scale-[1.02] active:scale-[0.98]`}
@@ -318,7 +318,7 @@ const UserProfile = ({
               <User className="w-4 h-4 text-white" />
             </div>
             <div
-              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-blue-darkest
+              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-base
               transition-all duration-300
               ${nodeInfo.isSuccess ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
             ></div>
@@ -327,17 +327,17 @@ const UserProfile = ({
           {!isCollapsed && (
             <>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-white group-hover:text-cyan transition-colors duration-300">
+                <span className="text-sm font-medium text-white group-hover:text-primary transition-colors duration-300">
                   {accountName || t('userProfile.myWallet')}
                 </span>
-                <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
+                <span className="text-xs text-content-secondary group-hover:text-content-secondary transition-colors duration-300">
                   {nodeInfo.isSuccess
                     ? t('userProfile.connected')
                     : t('userProfile.disconnected')}
                 </span>
               </div>
               <ChevronRight
-                className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-cyan' : 'text-gray-400 group-hover:text-cyan'}`}
+                className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-primary' : 'text-content-secondary group-hover:text-primary'}`}
               />
             </>
           )}
@@ -346,10 +346,10 @@ const UserProfile = ({
 
       {isOpen && (
         <div
-          className="absolute bottom-full left-0 mb-2 bg-blue-dark/95 backdrop-blur-xl border border-divider/30 
+          className="absolute bottom-full left-0 mb-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
                       rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
         >
-          <div className="p-3 border-b border-divider/20 bg-gradient-to-br from-blue-darker/50 to-transparent">
+          <div className="p-3 border-b border-divider/20 bg-gradient-to-br from-surface-overlay/50 to-transparent">
             <div className="flex items-center space-x-2">
               <div
                 className="w-10 h-10 bg-gradient-to-br from-purple via-purple/80 to-cyan/50 rounded-full flex items-center justify-center
@@ -361,7 +361,7 @@ const UserProfile = ({
                 <div className="text-sm font-medium text-white">
                   {accountName || t('userProfile.myWallet')}
                 </div>
-                <div className="text-xs text-gray-400 flex items-center space-x-1">
+                <div className="text-xs text-content-secondary flex items-center space-x-1">
                   <div
                     className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
@@ -378,13 +378,13 @@ const UserProfile = ({
           <div className="py-1">
             {USER_MENU_ITEMS.map((item) => (
               <div
-                className="px-4 py-3 flex items-center space-x-3 cursor-pointer 
-                          hover:bg-gradient-to-r hover:from-cyan/10 hover:to-transparent
+                className="px-4 py-3 flex items-center space-x-3 cursor-pointer
+                          hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent
                           transition-all duration-200 group"
                 key={item.label}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <div className="text-cyan transition-transform duration-200 group-hover:scale-110">
+                <div className="text-primary transition-transform duration-200 group-hover:scale-110">
                   {item.icon}
                 </div>
                 <span className="text-sm font-medium group-hover:text-white">
@@ -617,12 +617,12 @@ export const Layout = (props: Props) => {
         <div className="min-h-screen flex m-0 p-0">
           {/* Sidebar Navigation */}
           <div
-            className={`flex flex-col fixed left-0 top-0 h-screen bg-blue-darkest border-r border-divider/30
+            className={`flex flex-col fixed left-0 top-0 h-screen bg-surface-base border-r border-divider/30
                         transition-all duration-300 ease-in-out z-30 shadow-2xl shadow-black/30
                         ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}
           >
             {/* Logo and collapse button */}
-            <div className="flex items-center justify-between py-5 px-4 border-b border-divider/20 bg-blue-darkest">
+            <div className="flex items-center justify-between py-5 px-4 border-b border-divider/20 bg-surface-base">
               <img
                 alt="KaleidoSwap"
                 className={`cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95
@@ -634,10 +634,10 @@ export const Layout = (props: Props) => {
               />
 
               <button
-                className="p-2 rounded-lg text-gray-400 hover:text-cyan
-                           hover:bg-blue-darker/50 transition-all duration-300
+                className="p-2 rounded-lg text-content-secondary hover:text-primary
+                           hover:bg-surface-overlay/50 transition-all duration-300
                            transform hover:scale-110 active:scale-95
-                           ring-1 ring-transparent hover:ring-cyan/20 flex-shrink-0"
+                           ring-1 ring-transparent hover:ring-primary/20 flex-shrink-0"
                 onClick={() => {
                   const next = !isSidebarCollapsed
                   setIsSidebarCollapsed(next)
@@ -672,32 +672,32 @@ export const Layout = (props: Props) => {
               {!isSidebarCollapsed && (
                 <>
                   <div className="mb-8">
-                    <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
+                    <h3 className="px-4 text-xs font-bold text-content-tertiary uppercase tracking-wider mb-4">
                       {t('actions.quickActions')}
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         className="flex items-center justify-center space-x-2
-                                   bg-gradient-to-br from-blue-darker to-blue-darker/80 hover:from-cyan/20 hover:to-cyan/5
+                                   bg-gradient-to-br from-surface-overlay to-surface-overlay/80 hover:from-cyan/20 hover:to-cyan/5
                                    text-white rounded-xl py-3 px-3 transition-all duration-300
-                                   border border-cyan/20 hover:border-cyan/40 group
-                                   shadow-lg shadow-cyan/5 hover:shadow-xl hover:shadow-cyan/10
+                                   border border-primary/20 hover:border-primary/40 group
+                                   shadow-lg shadow-primary/5 hover:shadow-xl hover:shadow-primary/10
                                    transform hover:scale-[1.02] active:scale-[0.98]"
                         onClick={() => handleTransactionAction('deposit')}
                       >
                         <div
-                          className="p-1.5 rounded-full bg-cyan/10 text-cyan group-hover:bg-cyan/20
-                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-cyan/20"
+                          className="p-1.5 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20
+                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-primary/20"
                         >
                           <ArrowDownLeft className="w-4 h-4" />
                         </div>
-                        <span className="font-semibold text-sm group-hover:text-cyan transition-colors duration-300">
+                        <span className="font-semibold text-sm group-hover:text-primary transition-colors duration-300">
                           {t('actions.deposit')}
                         </span>
                       </button>
                       <button
                         className="flex items-center justify-center space-x-2
-                                   bg-gradient-to-br from-blue-darker to-blue-darker/80 hover:from-purple/20 hover:to-purple/5
+                                   bg-gradient-to-br from-surface-overlay to-surface-overlay/80 hover:from-purple/20 hover:to-purple/5
                                    text-white rounded-xl py-3 px-3 transition-all duration-300
                                    border border-purple/20 hover:border-purple/40 group
                                    shadow-lg shadow-purple/5 hover:shadow-xl hover:shadow-purple/10
@@ -719,7 +719,7 @@ export const Layout = (props: Props) => {
 
                   {/* Channel management section */}
                   <div className="mb-6">
-                    <h3 className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
+                    <h3 className="px-4 text-xs font-bold text-content-tertiary uppercase tracking-wider mb-4">
                       {t('navigation.channels')}
                     </h3>
                     <div className="space-y-1.5">
@@ -729,8 +729,8 @@ export const Layout = (props: Props) => {
                               flex items-center space-x-4 px-4 py-3 rounded-xl text-sm group
                               ${
                                 isActive
-                                  ? 'bg-gradient-to-r from-cyan/15 to-transparent text-cyan font-semibold border-l-2 border-cyan shadow-lg shadow-cyan/5'
-                                  : 'text-gray-400 hover:text-white hover:bg-blue-darker/80 hover:translate-x-1'
+                                  ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
+                                  : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:translate-x-1'
                               }
                               transition-all duration-300 transform active:scale-[0.98]
                             `}
@@ -750,7 +750,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* User profile section */}
-            <div className="p-4 border-t border-divider/20 bg-blue-darkest">
+            <div className="p-4 border-t border-divider/20 bg-surface-base">
               <UserProfile
                 isCollapsed={isSidebarCollapsed}
                 onLogout={() => setShowLogoutModal(true)}
@@ -759,7 +759,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* App version info */}
-            <div className="px-4 pb-4 relative bg-blue-darkest">
+            <div className="px-4 pb-4 relative bg-surface-base">
               <AppVersion
                 className="border-t border-divider/10 pt-3"
                 isCollapsed={isSidebarCollapsed}
@@ -769,12 +769,12 @@ export const Layout = (props: Props) => {
 
           {/* Main content */}
           <main
-            className={`flex-1 min-h-screen bg-background transition-all duration-300
+            className={`flex-1 flex flex-col min-h-screen bg-surface-raised transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}
           >
             {/* Top bar with page title and notifications */}
             <div
-              className="sticky top-0 z-30 bg-blue-darkest border-b border-divider/20 px-6 py-4
+              className="sticky top-0 z-30 bg-surface-base border-b border-divider/20 px-6 py-4
                           shadow-lg shadow-black/20"
             >
               <div className="flex justify-between items-center">
@@ -793,8 +793,8 @@ export const Layout = (props: Props) => {
                     return (
                       <>
                         <div
-                          className="p-3 bg-gradient-to-br from-cyan/20 to-cyan/5 rounded-xl text-cyan
-                                      shadow-lg shadow-cyan/10 ring-1 ring-cyan/20"
+                          className="p-3 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl text-primary
+                                      shadow-lg shadow-primary/10 ring-1 ring-primary/20"
                         >
                           {icon}
                         </div>
@@ -810,9 +810,9 @@ export const Layout = (props: Props) => {
                   {/* Support button in header */}
                   <button
                     aria-label="Support"
-                    className="p-3 text-gray-400 hover:text-cyan rounded-xl hover:bg-blue-darker/50
+                    className="p-3 text-content-secondary hover:text-primary rounded-xl hover:bg-surface-overlay/50
                              transition-all duration-300 transform hover:scale-110 active:scale-95
-                             ring-1 ring-divider/10 hover:ring-cyan/30"
+                             ring-1 ring-divider/10 hover:ring-primary/30"
                     onClick={() => setShowSupportModal(true)}
                   >
                     <HelpCircle className="w-5 h-5" />
@@ -821,10 +821,10 @@ export const Layout = (props: Props) => {
                   {/* Manual update check button */}
                   {/* <button
                     aria-label="Check for updates"
-                    className={`relative p-2 rounded-lg hover:bg-blue-darker transition-colors ${
+                    className={`relative p-2 rounded-lg hover:bg-surface-overlay transition-colors ${
                       hasUpdateNotification
                         ? 'text-amber-400 hover:text-amber-300'
-                        : 'text-gray-400 hover:text-white'
+                        : 'text-content-secondary hover:text-white'
                     }`}
                     onClick={(e) => {
                       e.preventDefault()
@@ -851,9 +851,9 @@ export const Layout = (props: Props) => {
                   {/* Notifications bell */}
                   <button
                     aria-label="Toggle notifications"
-                    className="relative p-3 text-gray-400 hover:text-cyan rounded-xl hover:bg-blue-darker/50
+                    className="relative p-3 text-content-secondary hover:text-primary rounded-xl hover:bg-surface-overlay/50
                              transition-all duration-300 transform hover:scale-110 active:scale-95
-                             ring-1 ring-divider/10 hover:ring-cyan/30"
+                             ring-1 ring-divider/10 hover:ring-primary/30"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -865,7 +865,7 @@ export const Layout = (props: Props) => {
                       <span
                         className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80
                                    text-white text-xs font-bold flex items-center justify-center rounded-full
-                                   shadow-lg shadow-cyan/30 animate-pulse ring-2 ring-blue-darkest"
+                                   shadow-lg shadow-primary/30 animate-pulse ring-2 ring-surface-base"
                       >
                         {notifications.length}
                       </span>
@@ -930,7 +930,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main content area */}
-            <div className="p-6">{props.children}</div>
+            <div className="flex-1 overflow-hidden p-6">{props.children}</div>
           </main>
         </div>
       ) : (

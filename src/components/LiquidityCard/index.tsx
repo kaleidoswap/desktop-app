@@ -42,16 +42,16 @@ export const LiquidityCard = ({
 
   return (
     <OverlayTooltip content={tooltipDescription} title={title}>
-      <HoverCard className="border border-slate-700/30 hover:border-slate-700/50 transition-all duration-200 p-2.5">
+      <HoverCard className="border border-border-default/30 hover:border-border-default/50 transition-all duration-200 p-2.5">
         <div className="flex justify-between items-center mb-1.5">
-          <h2 className="text-xs font-medium text-slate-300">{title}</h2>
+          <h2 className="text-xs font-medium text-content-secondary">{title}</h2>
           <div className={iconColor}>{icon}</div>
         </div>
         <div className="text-base font-bold text-white mb-1.5">
           {isLoading ? (
             <LoadingPlaceholder width="w-20" />
           ) : amount === 0 ? (
-            <span className="text-slate-500">No liquidity</span>
+            <span className="text-content-tertiary">No liquidity</span>
           ) : (
             `${formatBitcoinAmount(amount, bitcoinUnit)} ${bitcoinUnit}`
           )}
@@ -60,7 +60,7 @@ export const LiquidityCard = ({
         {!isLoading && (
           <div className="mt-1">
             <div className="flex justify-between items-center mb-0.5">
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-content-secondary">
                 {totalCapacity && totalCapacity > 0
                   ? `${percentage}% of capacity`
                   : 'No channels open'}
@@ -69,7 +69,7 @@ export const LiquidityCard = ({
                 <span className="text-xs text-red-300">Low</span>
               )}
             </div>
-            <div className="w-full bg-slate-800/80 rounded-full h-1 overflow-hidden shadow-inner">
+            <div className="w-full bg-surface-overlay/80 rounded-full h-1 overflow-hidden shadow-inner">
               <div
                 className={`${statusColor} h-full rounded-full transition-all duration-300`}
                 style={{

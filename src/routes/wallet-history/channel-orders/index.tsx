@@ -183,7 +183,7 @@ const OrderDetailCard: React.FC<{
       case 'CREATED':
         return <Clock className="w-5 h-5 text-yellow-500" />
       default:
-        return <AlertCircle className="w-5 h-5 text-gray-500" />
+        return <AlertCircle className="w-5 h-5 text-content-tertiary" />
     }
   }
 
@@ -196,7 +196,7 @@ const OrderDetailCard: React.FC<{
       case 'CREATED':
         return 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
       default:
-        return 'bg-gray-500/10 border-gray-500/30 text-gray-400'
+        return 'bg-surface-high/10 border-border-default/30 text-content-secondary'
     }
   }
 
@@ -218,9 +218,9 @@ const OrderDetailCard: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-slate-900 rounded-xl border border-slate-700/70 shadow-2xl max-w-3xl w-full my-8">
+      <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-2xl max-w-3xl w-full my-8">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/70">
+        <div className="flex items-center justify-between p-6 border-b border-border-default/70">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-500/10">
               <Info className="w-6 h-6 text-blue-500" />
@@ -229,7 +229,7 @@ const OrderDetailCard: React.FC<{
               <h3 className="text-xl font-semibold text-white">
                 {t('components.walletHistory.channelOrders.detailsModal.title')}
               </h3>
-              <p className="text-sm text-slate-400 mt-0.5">
+              <p className="text-sm text-content-secondary mt-0.5">
                 {t(
                   'components.walletHistory.channelOrders.detailsModal.subtitle'
                 )}
@@ -238,7 +238,7 @@ const OrderDetailCard: React.FC<{
           </div>
           <button
             aria-label="Close modal"
-            className="p-2 rounded-full hover:bg-slate-800 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
             onClick={onClose}
           >
             <X className="w-5 h-5" />
@@ -265,11 +265,11 @@ const OrderDetailCard: React.FC<{
           </div>
 
           {/* Order ID Section */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default">
             <div className="flex items-start gap-3">
-              <Hash className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+              <Hash className="w-5 h-5 text-content-secondary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t('components.walletHistory.channelOrders.sections.orderId')}
                 </div>
                 <div className="font-mono text-white text-sm break-all">
@@ -280,7 +280,7 @@ const OrderDetailCard: React.FC<{
           </div>
 
           {/* Payment Information */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default">
             <div className="flex items-center gap-2 mb-4">
               <Coins className="w-5 h-5 text-blue-400" />
               <h4 className="text-lg font-semibold text-white">
@@ -291,7 +291,7 @@ const OrderDetailCard: React.FC<{
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.amountPaid'
                   )}
@@ -303,10 +303,10 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t('components.walletHistory.channelOrders.fields.feesPaid')}
                 </div>
-                <div className="text-xl font-bold text-slate-300">
+                <div className="text-xl font-bold text-content-secondary">
                   {feePaid
                     ? `${feePaid.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
                     : t('components.walletHistory.channelOrders.units.na')}
@@ -316,7 +316,7 @@ const OrderDetailCard: React.FC<{
           </div>
 
           {/* Channel Configuration */}
-          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="w-5 h-5 text-purple-400" />
               <h4 className="text-lg font-semibold text-white">
@@ -327,7 +327,7 @@ const OrderDetailCard: React.FC<{
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.clientBalance'
                   )}
@@ -339,7 +339,7 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.lspBalance'
                   )}
@@ -351,7 +351,7 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.channelExpiry'
                   )}
@@ -363,7 +363,7 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.requiredConfirmations'
                   )}
@@ -374,7 +374,7 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.fundingConfirmsWithin'
                   )}
@@ -386,7 +386,7 @@ const OrderDetailCard: React.FC<{
                 </div>
               </div>
               <div>
-                <div className="text-sm text-slate-400 mb-1">
+                <div className="text-sm text-content-secondary mb-1">
                   {t(
                     'components.walletHistory.channelOrders.fields.announceChannel'
                   )}
@@ -406,7 +406,7 @@ const OrderDetailCard: React.FC<{
           {(payload.asset_id ||
             payload.lsp_asset_amount ||
             payload.client_asset_amount) && (
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default">
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="w-5 h-5 text-orange-400" />
                 <h4 className="text-lg font-semibold text-white">
@@ -418,7 +418,7 @@ const OrderDetailCard: React.FC<{
               <div className="space-y-3">
                 {payload.asset_id && (
                   <div>
-                    <div className="text-sm text-slate-400 mb-1">
+                    <div className="text-sm text-content-secondary mb-1">
                       {t(
                         'components.walletHistory.channelOrders.fields.assetId'
                       )}
@@ -431,7 +431,7 @@ const OrderDetailCard: React.FC<{
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {payload.client_asset_amount && (
                     <div>
-                      <div className="text-sm text-slate-400 mb-1">
+                      <div className="text-sm text-content-secondary mb-1">
                         {t(
                           'components.walletHistory.channelOrders.fields.clientAssetAmount'
                         )}
@@ -443,7 +443,7 @@ const OrderDetailCard: React.FC<{
                   )}
                   {payload.lsp_asset_amount && (
                     <div>
-                      <div className="text-sm text-slate-400 mb-1">
+                      <div className="text-sm text-content-secondary mb-1">
                         {t(
                           'components.walletHistory.channelOrders.fields.lspAssetAmount'
                         )}
@@ -458,10 +458,10 @@ const OrderDetailCard: React.FC<{
                 {/* Asset Delivery Status */}
                 {orderData?.asset_delivery_status &&
                   orderData.asset_delivery_status !== 'NOT_REQUIRED' && (
-                    <div className="mt-4 pt-4 border-t border-slate-700">
+                    <div className="mt-4 pt-4 border-t border-border-default">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-sm text-slate-400 mb-1">
+                          <div className="text-sm text-content-secondary mb-1">
                             {t(
                               'components.walletHistory.channelOrders.fields.deliveryStatus'
                             )}
@@ -509,7 +509,7 @@ const OrderDetailCard: React.FC<{
 
           {/* Timeline */}
           {orderData?.created_at && (
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default">
               <div className="flex items-center gap-2 mb-3">
                 <Calendar className="w-5 h-5 text-green-400" />
                 <h4 className="text-lg font-semibold text-white">
@@ -519,9 +519,9 @@ const OrderDetailCard: React.FC<{
                 </h4>
               </div>
               <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4 text-slate-400" />
+                <Clock className="w-4 h-4 text-content-secondary" />
                 <div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-content-secondary">
                     {t(
                       'components.walletHistory.channelOrders.fields.createdAt'
                     )}
@@ -536,9 +536,9 @@ const OrderDetailCard: React.FC<{
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700/70">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-border-default/70">
           <button
-            className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-lg transition-colors"
             onClick={onClose}
           >
             {t('components.walletHistory.channelOrders.detailsModal.close')}
@@ -573,9 +573,9 @@ const DeleteConfirmationModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 rounded-xl border border-slate-700/70 shadow-xl max-w-md w-full">
+      <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-xl max-w-md w-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700/70">
+        <div className="flex items-center justify-between p-4 border-b border-border-default/70">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-red-500/10">
               <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -586,7 +586,7 @@ const DeleteConfirmationModal: React.FC<{
           </div>
           <button
             aria-label="Close modal"
-            className="p-2 rounded-full hover:bg-slate-800 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
             onClick={onClose}
           >
             <X className="w-5 h-5" />
@@ -595,12 +595,12 @@ const DeleteConfirmationModal: React.FC<{
 
         {/* Content */}
         <div className="p-4">
-          <p className="text-slate-300 mb-4">
+          <p className="text-content-secondary mb-4">
             {t('components.walletHistory.channelOrders.deleteModal.message')}
           </p>
-          <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+          <div className="bg-surface-overlay/50 rounded-lg p-3 border border-border-default">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-content-secondary">
                 {t(
                   'components.walletHistory.channelOrders.deleteModal.orderId'
                 )}
@@ -613,9 +613,9 @@ const DeleteConfirmationModal: React.FC<{
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-700/70">
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-border-default/70">
           <button
-            className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-lg transition-colors"
             onClick={onClose}
           >
             {t('components.walletHistory.channelOrders.deleteModal.cancel')}
@@ -845,7 +845,7 @@ export const Component = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-400">
+        <div className="text-content-secondary">
           {t('components.walletHistory.channelOrders.loading')}
         </div>
       </div>
@@ -871,7 +871,7 @@ export const Component = () => {
   }
 
   return (
-    <Card className="bg-gray-800/50 border border-gray-700/50">
+    <Card className="bg-surface-overlay/50 border border-border-default/50">
       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-lg bg-blue-500/10">
@@ -884,7 +884,7 @@ export const Component = () => {
 
         <div className="flex items-center gap-2">
           <button
-            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-colors text-sm"
             onClick={() => setShowColumnSelector(!showColumnSelector)}
           >
             <Settings className="w-4 h-4" />
@@ -908,13 +908,13 @@ export const Component = () => {
 
       {/* Column Selector */}
       {showColumnSelector && (
-        <div className="mb-6 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+        <div className="mb-6 p-4 bg-surface-high/50 rounded-lg border border-border-default">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-white">
               {t('components.walletHistory.channelOrders.selectColumns')}
             </h3>
             <button
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+              className="px-3 py-1 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded text-sm transition-colors"
               onClick={resetToDefaults}
             >
               {t('components.walletHistory.channelOrders.resetToDefaults')}
@@ -928,11 +928,11 @@ export const Component = () => {
               >
                 <input
                   checked={selectedColumns.includes(column.key)}
-                  className="form-checkbox h-4 w-4 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                  className="form-checkbox h-4 w-4 text-blue-500 bg-surface-high border-border-default rounded focus:ring-blue-500 focus:ring-2"
                   onChange={() => handleColumnToggle(column.key)}
                   type="checkbox"
                 />
-                <span className="text-sm text-gray-300">{column.label}</span>
+                <span className="text-sm text-content-secondary">{column.label}</span>
               </label>
             ))}
           </div>
@@ -943,10 +943,10 @@ export const Component = () => {
       <div className="mb-6">
         <div className="relative max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="h-4 w-4 text-content-secondary" />
           </div>
           <input
-            className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t(
               'components.walletHistory.channelOrders.searchPlaceholder'
@@ -958,7 +958,7 @@ export const Component = () => {
       </div>
 
       {filteredOrders.length === 0 ? (
-        <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+        <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
           {orders.length === 0 ? (
             <p>{t('components.walletHistory.channelOrders.noOrders')}</p>
           ) : (
@@ -1040,7 +1040,7 @@ export const Component = () => {
                       ?.onchain?.fee_total_sat
                     const fee = bolt11Fee || onchainFee
                     return (
-                      <span className="text-slate-300">
+                      <span className="text-content-secondary">
                         {fee
                           ? `${fee.toLocaleString()} ${t('components.walletHistory.channelOrders.units.sats')}`
                           : renderEmptyField()}
@@ -1197,7 +1197,7 @@ export const Component = () => {
           })}
           data={filteredOrders}
           emptyState={
-            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+            <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
               {orders.length === 0 ? (
                 <p>{t('components.walletHistory.channelOrders.noOrders')}</p>
               ) : (

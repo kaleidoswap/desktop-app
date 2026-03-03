@@ -56,12 +56,12 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
       <div className="space-y-2 text-xs">
         {decodedRgbInvoice.asset_id && (
           <div className="flex justify-between">
-            <span className="text-slate-400">
+            <span className="text-content-secondary">
               {t('withdrawModal.details.rgb.assetLabel')}
             </span>
             <div className="flex items-center">
               <span className="text-white font-medium">{ticker}</span>
-              <span className="text-slate-500 ml-1">
+              <span className="text-content-tertiary ml-1">
                 ({decodedRgbInvoice.asset_id.slice(0, 8)}...
                 {decodedRgbInvoice.asset_id.slice(-4)})
               </span>
@@ -70,7 +70,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         )}
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.rgb.requestedAmountLabel')}
           </span>
           {assignmentAmount ? (
@@ -92,7 +92,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         )}
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.rgb.recipientLabel')}
           </span>
           <span className="text-white font-mono text-[10px] truncate max-w-[250px]">
@@ -102,7 +102,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         </div>
 
         <div className="flex justify-between">
-          <span className="text-slate-400">
+          <span className="text-content-secondary">
             {t('withdrawModal.details.rgb.expiresLabel')}
           </span>
           <span className="text-white">
@@ -115,7 +115,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         {decodedRgbInvoice.transport_endpoints &&
           decodedRgbInvoice.transport_endpoints.length > 0 && (
             <div className="flex justify-between">
-              <span className="text-slate-400">
+              <span className="text-content-secondary">
                 {t('withdrawModal.details.rgb.transportLabel')}
               </span>
               <span className="text-white truncate max-w-[250px]">
@@ -129,7 +129,7 @@ const RGBInvoiceDetails: React.FC<RGBInvoiceDetailsProps> = ({
         {assetInfo && (
           <div className="mt-2 pt-2 border-t border-green-500/20">
             <div className="flex justify-between items-center">
-              <span className="text-slate-400">
+              <span className="text-content-secondary">
                 {t('withdrawModal.details.rgb.balanceLabel')}
               </span>
               <span className="text-green-400 font-medium">

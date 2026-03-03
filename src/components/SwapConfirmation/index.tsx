@@ -42,23 +42,23 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full mx-4 overflow-hidden">
-        <div className="p-6 border-b border-slate-800">
+      <div className="bg-surface-base border border-border-subtle rounded-2xl max-w-lg w-full mx-4 overflow-hidden">
+        <div className="p-6 border-b border-border-subtle">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
             <button
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-overlay rounded-lg transition-colors"
               onClick={onClose}
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-content-secondary" />
             </button>
           </div>
         </div>
 
         <div className="p-6 space-y-6">
           <div className="space-y-4">
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-2">
-              <div className="text-sm text-slate-400">You Send</div>
+            <div className="bg-surface-overlay/50 rounded-lg p-4 space-y-2">
+              <div className="text-sm text-content-secondary">You Send</div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AssetOption ticker={getDisplayAsset(fromAsset)} />
@@ -69,8 +69,8 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
               </div>
             </div>
 
-            <div className="bg-slate-800/50 rounded-lg p-4 space-y-2">
-              <div className="text-sm text-slate-400">You Receive</div>
+            <div className="bg-surface-overlay/50 rounded-lg p-4 space-y-2">
+              <div className="text-sm text-content-secondary">You Receive</div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AssetOption ticker={getDisplayAsset(toAsset)} />
@@ -82,15 +82,15 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
             </div>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-4 space-y-4">
+          <div className="bg-surface-overlay/50 rounded-lg p-4 space-y-4">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-400">Exchange Rate</span>
+              <span className="text-content-secondary">Exchange Rate</span>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
                   <span className="text-white font-medium">1</span>
                   <AssetOption ticker={getDisplayAsset(fromAsset)} />
                 </div>
-                <span className="text-slate-400">=</span>
+                <span className="text-content-secondary">=</span>
                 <div className="flex items-center gap-1.5">
                   <span className="text-white font-medium">
                     {calculateAndFormatRate(
@@ -115,19 +115,19 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-800">
+        <div className="p-6 border-t border-border-subtle">
           <div className="flex gap-4">
             <button
-              className="flex-1 px-6 py-3 border border-slate-700 text-slate-300 
-                       rounded-xl hover:bg-slate-800 transition-colors"
+              className="flex-1 px-6 py-3 border border-border-default text-content-secondary 
+                       rounded-xl hover:bg-surface-overlay transition-colors"
               onClick={onClose}
               type="button"
             >
               Cancel
             </button>
             <button
-              className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 
-                       disabled:bg-blue-900 text-white rounded-xl font-medium 
+              className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis
+                       disabled:opacity-60 text-primary-foreground rounded-xl font-medium
                        transition-colors disabled:cursor-not-allowed"
               disabled={isLoading}
               onClick={onConfirm}

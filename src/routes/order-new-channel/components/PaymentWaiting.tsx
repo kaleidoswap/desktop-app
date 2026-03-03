@@ -41,9 +41,9 @@ export const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
 
       {/* Payment Status Section */}
       <div className="space-y-4">
-        <div className="bg-gray-800/70 p-5 rounded-xl border border-gray-700">
+        <div className="bg-surface-overlay/70 p-5 rounded-xl border border-border-default">
           <div className="flex items-center gap-3 mb-3">
-            <h4 className="text-sm text-gray-400">
+            <h4 className="text-sm text-content-secondary">
               {t('orderChannel.step3.paymentStatus')}
             </h4>
             <div className="flex items-center ml-auto">
@@ -60,7 +60,7 @@ export const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
             <div className="text-blue-400 mr-3 mt-0.5">
               <Info size={18} />
             </div>
-            <p className="text-gray-400 text-sm">
+            <p className="text-content-secondary text-sm">
               {t('orderChannel.step3.keepWindowOpen')}
               <br />
               {t('orderChannel.step3.autoUpdate')}

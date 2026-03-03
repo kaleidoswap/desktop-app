@@ -112,36 +112,33 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
 
   return (
     <div className="group relative z-10 overflow-visible">
-      <div className="bg-gradient-to-br from-slate-800/40 to-slate-900/60 backdrop-blur-xl rounded-xl border border-slate-700/30 shadow-lg hover:shadow-xl transition-all duration-300 overflow-visible">
+      <div className="bg-surface-overlay/40 rounded-xl border border-border-default/20 transition-all duration-200 overflow-visible">
         {/* Compact Header */}
-        <div className="px-3 py-2.5 border-b border-slate-700/20">
+        <div className="px-3 py-2 border-b border-border-default/15">
           <button
             className="w-full flex items-center justify-between text-left hover:text-white transition-colors"
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500"></div>
-              <h3 className="text-sm font-semibold text-slate-200">
-                {t('trade.feeSection.title')}
-              </h3>
-            </div>
+            <span className="text-xs font-medium text-content-tertiary uppercase tracking-wider">
+              {t('trade.feeSection.title')}
+            </span>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <div className="text-base font-bold text-white">
+                <div className="text-sm font-semibold text-white">
                   {formatFeeAmount(fees.totalFee)} {feeAssetDisplay}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-content-tertiary">
                   {t('trade.feeSection.percentOfTrade', {
                     rate: (fees.feeRate * 100).toFixed(2),
                   })}
                 </div>
               </div>
-              <div className="p-0.5 rounded-md bg-slate-700/50 text-slate-400 group-hover:bg-slate-600/50 transition-colors">
+              <div className="text-content-tertiary">
                 {isExpanded ? (
-                  <ChevronUp className="w-3.5 h-3.5" />
+                  <ChevronUp className="w-3 h-3" />
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
+                  <ChevronDown className="w-3 h-3" />
                 )}
               </div>
             </div>
@@ -155,15 +152,15 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
           <div className="p-3 space-y-3 relative">
             {/* Fee Breakdown */}
             <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-lg">
+              <div className="flex items-center justify-between p-2.5 bg-surface-overlay/40 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                  <span className="text-slate-300 font-medium text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                  <span className="text-content-secondary font-medium text-sm">
                     {t('trade.feeSection.baseFee')}
                   </span>
                   <div className="group/tooltip relative">
-                    <Info className="w-3.5 h-3.5 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-xs text-slate-100 rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-slate-600 z-[100] pointer-events-none whitespace-normal">
+                    <Info className="w-3.5 h-3.5 text-content-tertiary cursor-help hover:text-content-secondary transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-surface-overlay text-xs text-content-primary rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-border-default z-[100] pointer-events-none whitespace-normal">
                       {t('trade.feeSection.baseFeeTooltip')}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
                         <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-600"></div>
@@ -177,15 +174,15 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-2.5 bg-slate-800/40 rounded-lg">
+              <div className="flex items-center justify-between p-2.5 bg-surface-overlay/40 rounded-lg">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                  <span className="text-slate-300 font-medium text-sm">
+                  <span className="text-content-secondary font-medium text-sm">
                     {t('trade.feeSection.variableFee')}
                   </span>
                   <div className="group/tooltip relative">
-                    <Info className="w-3.5 h-3.5 text-slate-500 cursor-help hover:text-slate-300 transition-colors" />
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-xs text-slate-100 rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-slate-600 z-[100] pointer-events-none whitespace-normal">
+                    <Info className="w-3.5 h-3.5 text-content-tertiary cursor-help hover:text-content-secondary transition-colors" />
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-surface-overlay text-xs text-content-primary rounded-lg w-60 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 shadow-xl border border-border-default z-[100] pointer-events-none whitespace-normal">
                       {t('trade.feeSection.variableFeeTooltip')}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
                         <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-slate-600"></div>
@@ -201,16 +198,16 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
             </div>
 
             {/* Total Summary */}
-            <div className="p-3 bg-gradient-to-r from-slate-700/40 to-slate-800/40 rounded-lg border border-slate-600/30">
+            <div className="p-3 bg-surface-high/30 rounded-lg border border-border-default/30">
               <div className="flex items-center justify-between">
-                <span className="text-slate-300 font-semibold text-sm">
+                <span className="text-content-secondary font-semibold text-sm">
                   {t('trade.feeSection.totalFee')}
                 </span>
                 <div className="text-right">
                   <div className="text-lg font-bold text-white">
                     {formatFeeAmount(fees.totalFee)} {feeAssetDisplay}
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-content-secondary">
                     {t('trade.feeSection.percentOfTradeValue', {
                       rate: (fees.feeRate * 100).toFixed(2),
                     })}
@@ -220,14 +217,14 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
             </div>
 
             {/* Compact Important Notice */}
-            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <div className="flex items-start gap-2">
-                <div className="w-1 h-1 rounded-full bg-blue-500 mt-1.5"></div>
+                <div className="w-1 h-1 rounded-full bg-primary mt-1.5"></div>
                 <div className="flex-1">
-                  <p className="text-blue-200 text-xs font-medium mb-1">
+                  <p className="text-content-secondary text-xs font-medium mb-1">
                     {t('trade.feeSection.feeDeduction')}
                   </p>
-                  <p className="text-blue-300/80 text-xs leading-relaxed">
+                  <p className="text-content-tertiary text-xs leading-relaxed">
                     {t('trade.feeSection.feeDeductionDesc')}
                   </p>
                 </div>

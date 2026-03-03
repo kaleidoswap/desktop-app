@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 export const NostrP2P: React.FC = () => {
   const { t } = useTranslation()
   return (
-    <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 shadow-lg">
+    <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 shadow-lg">
       <div className="flex flex-col items-center">
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
@@ -18,66 +18,66 @@ export const NostrP2P: React.FC = () => {
         <h2 className="text-2xl font-bold text-white mb-3">
           {t('trade.nostrP2P.title')}
         </h2>
-        <p className="text-slate-400 text-center mb-8">
+        <p className="text-content-secondary text-center mb-8">
           {t('trade.nostrP2P.description')}
         </p>
 
         <div className="space-y-4 w-full mb-8">
-          <div className="bg-slate-800 rounded-lg p-5 flex items-center border border-slate-700/50 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all">
+          <div className="bg-surface-overlay rounded-lg p-5 flex items-center border border-border-default/50 hover:border-blue-500/30 hover:bg-surface-overlay/80 transition-all">
             <Zap className="w-8 h-8 text-blue-400 mr-4 flex-shrink-0" />
             <div>
               <h3 className="text-white font-medium mb-1">
                 {t('trade.nostrP2P.directSwaps')}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-content-secondary">
                 {t('trade.nostrP2P.directSwapsDesc')}
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-5 flex items-center border border-slate-700/50 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all">
+          <div className="bg-surface-overlay rounded-lg p-5 flex items-center border border-border-default/50 hover:border-blue-500/30 hover:bg-surface-overlay/80 transition-all">
             <Clock className="w-8 h-8 text-blue-400 mr-4 flex-shrink-0" />
             <div>
               <h3 className="text-white font-medium mb-1">
                 {t('trade.nostrP2P.limitOrders')}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-content-secondary">
                 {t('trade.nostrP2P.limitOrdersDesc')}
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-5 flex items-center border border-slate-700/50 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all">
+          <div className="bg-surface-overlay rounded-lg p-5 flex items-center border border-border-default/50 hover:border-blue-500/30 hover:bg-surface-overlay/80 transition-all">
             <Bell className="w-8 h-8 text-blue-400 mr-4 flex-shrink-0" />
             <div>
               <h3 className="text-white font-medium mb-1">
                 {t('trade.nostrP2P.notifications')}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-content-secondary">
                 {t('trade.nostrP2P.notificationsDesc')}
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-5 flex items-center border border-slate-700/50 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all">
+          <div className="bg-surface-overlay rounded-lg p-5 flex items-center border border-border-default/50 hover:border-blue-500/30 hover:bg-surface-overlay/80 transition-all">
             <ArrowRight className="w-8 h-8 text-blue-400 mr-4 flex-shrink-0" />
             <div>
               <h3 className="text-white font-medium mb-1">
                 {t('trade.nostrP2P.trustlessSwaps')}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-content-secondary">
                 {t('trade.nostrP2P.trustlessSwapsDesc')}
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-5 flex items-center border border-slate-700/50 hover:border-blue-500/30 hover:bg-slate-800/80 transition-all">
+          <div className="bg-surface-overlay rounded-lg p-5 flex items-center border border-border-default/50 hover:border-blue-500/30 hover:bg-surface-overlay/80 transition-all">
             <Globe className="w-8 h-8 text-blue-400 mr-4 flex-shrink-0" />
             <div>
               <h3 className="text-white font-medium mb-1">
                 {t('trade.nostrP2P.globalMarketplace')}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-content-secondary">
                 {t('trade.nostrP2P.globalMarketplaceDesc')}
               </p>
             </div>

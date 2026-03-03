@@ -661,11 +661,11 @@ export const Component = () => {
           )}
 
           <div className="w-full">
-            <p className="text-slate-400 mb-6 leading-relaxed">
+            <p className="text-content-secondary mb-6 leading-relaxed">
               {t('walletRemote.configureRemoteNode')}
             </p>
 
-            <Card className="p-6 bg-blue-dark/40 border border-white/5">
+            <Card className="p-6 bg-surface-elevated/40 border border-white/5">
               <form
                 className="space-y-4"
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -724,7 +724,7 @@ export const Component = () => {
                   />
 
                   {selectedNetwork === 'Regtest' && (
-                    <div className="mb-6 p-4 bg-blue-dark/20 border border-blue-500/20 rounded-xl">
+                    <div className="mb-6 p-4 bg-surface-elevated/20 border border-blue-500/20 rounded-xl">
                       <RegtestConnectionSelector
                         onChange={(type) =>
                           form.setValue('regtestConnectionType', type)
@@ -756,16 +756,16 @@ export const Component = () => {
                 <AdvancedSettings>
                   <NetworkSettings form={form} />
 
-                  <div className="p-2.5 bg-blue-dark/40 rounded-lg border border-slate-700/30 mt-4">
+                  <div className="p-2.5 bg-surface-elevated/40 rounded-lg border border-border-default/30 mt-4">
                     <div className="flex items-center mb-2.5">
                       <input
-                        className="w-3.5 h-3.5 text-cyan bg-blue-dark border-gray-600 rounded focus:ring-cyan"
+                        className="w-3.5 h-3.5 text-primary bg-surface-elevated border-border-default rounded focus:ring-cyan"
                         id="useAuth"
                         type="checkbox"
                         {...form.register('useAuth')}
                       />
                       <label
-                        className="ml-2 text-xs font-medium text-gray-300"
+                        className="ml-2 text-xs font-medium text-content-secondary"
                         htmlFor="useAuth"
                       >
                         {t('walletRemote.useAuthToken')}
@@ -795,7 +795,7 @@ export const Component = () => {
                 {/* Progress Indicator */}
                 {isConnecting && (
                   <div className="pt-3 pb-2">
-                    <div className="flex items-center gap-3 p-3 bg-blue-dark/30 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-center gap-3 p-3 bg-surface-elevated/30 border border-blue-500/20 rounded-lg">
                       <Spinner size="sm" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-white">
@@ -809,16 +809,16 @@ export const Component = () => {
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex gap-1">
                             <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
                             />
                             <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-cyan' : connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-cyan' : connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
                             />
                             <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-slate-600'}`}
+                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
                             />
                           </div>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-content-secondary">
                             {connectionStep === 'testing' && '1/3'}
                             {connectionStep === 'creating' && '2/3'}
                             {connectionStep === 'finalizing' && '3/3'}

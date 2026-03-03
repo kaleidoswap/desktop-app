@@ -26,7 +26,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
                     ? 'bg-blue-500 border-blue-500'
                     : isActive
                       ? 'border-blue-500 bg-transparent'
-                      : 'border-slate-600 bg-transparent'
+                      : 'border-border-default bg-transparent'
                 }`}
               >
                 {isCompleted ? (
@@ -34,7 +34,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
                 ) : (
                   <span
                     className={`text-sm font-medium ${
-                      isActive ? 'text-blue-500' : 'text-slate-500'
+                      isActive ? 'text-blue-500' : 'text-content-tertiary'
                     }`}
                   >
                     {index + 1}
@@ -43,7 +43,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
               </div>
               <div
                 className={`absolute top-10 whitespace-nowrap text-xs font-medium ${
-                  isActive || isCompleted ? 'text-blue-500' : 'text-slate-500'
+                  isActive || isCompleted ? 'text-blue-500' : 'text-content-tertiary'
                 }`}
               >
                 {step.label}
@@ -54,7 +54,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
             {index < steps.length - 1 && (
               <div
                 className={`flex-1 h-0.5 mx-2 ${
-                  steps[index].completed ? 'bg-blue-500' : 'bg-slate-600'
+                  steps[index].completed ? 'bg-primary' : 'bg-surface-elevated'
                 }`}
               />
             )}

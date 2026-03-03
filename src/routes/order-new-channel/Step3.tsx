@@ -4,7 +4,7 @@ import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
 import 'react-toastify/dist/ReactToastify.css'
-import { useAppSelector } from '../../app/store/hooks'
+import { useSettings } from '../../hooks/useSettings'
 import { Lsps1CreateOrderResponse } from '../../slices/makerApi/makerApi.slice'
 import {
   nodeApi,
@@ -60,7 +60,7 @@ export const Step3: React.FC<StepProps> = ({
     'lightning'
   )
   const [useWalletFunds, setUseWalletFunds] = useState(true)
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
 
   type PaymentStateType =
     | 'waiting'
@@ -270,9 +270,9 @@ export const Step3: React.FC<StepProps> = ({
       <div className="w-full">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-center items-center h-64">
-            <div className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-xl border border-gray-700/50">
+            <div className="bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-xl border border-border-default/50">
               <ClipLoader color={'#3B82F6'} loading={true} size={50} />
-              <span className="ml-4 text-gray-300">
+              <span className="ml-4 text-content-secondary">
                 {t('orderChannel.step3.loadingOrder')}
               </span>
             </div>
@@ -291,7 +291,7 @@ export const Step3: React.FC<StepProps> = ({
               {t('orderChannel.step3.errorInvalidOrder')}
             </h3>
             <button
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              className="px-6 py-3 bg-surface-elevated text-white rounded-lg hover:bg-surface-high transition-colors font-medium"
               onClick={onBack}
             >
               {t('orderChannel.step3.backButton')}
@@ -326,7 +326,7 @@ export const Step3: React.FC<StepProps> = ({
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             {t('orderChannel.step3.title')}
           </h2>
-          <p className="text-gray-400 mt-2">
+          <p className="text-content-secondary mt-2">
             {t('orderChannel.step3.subtitle')}
           </p>
         </div>
@@ -334,50 +334,50 @@ export const Step3: React.FC<StepProps> = ({
         {/* Step Progress Indicator */}
         <div className="flex justify-between mb-6">
           <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
               ✓
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step1.connectLsp')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.completed')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-gray-700">
-              <div className="h-1 bg-blue-500 w-full"></div>
+            <div className="h-1 bg-surface-high">
+              <div className="h-1 bg-primary w-full"></div>
             </div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
               ✓
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step2.step2Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.completed')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-gray-700">
-              <div className="h-1 bg-blue-500 w-full"></div>
+            <div className="h-1 bg-surface-high">
+              <div className="h-1 bg-primary w-full"></div>
             </div>
           </div>
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
               3
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step3.step3Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.currentStep')}
               </p>
             </div>
@@ -449,7 +449,7 @@ export const Step3: React.FC<StepProps> = ({
           localPaymentState !== 'error' &&
           localPaymentState !== 'expired' &&
           !isProcessingPayment && (
-            <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg">
+            <div className="bg-surface-base text-white p-6 rounded-lg shadow-lg">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Order Summary */}
                 <OrderSummary
@@ -461,7 +461,7 @@ export const Step3: React.FC<StepProps> = ({
                 />
 
                 {/* Payment Interface */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-6">
+                <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-2xl border border-border-default/50 p-6">
                   <PaymentMethodTabs
                     onMethodChange={setPaymentMethod}
                     paymentMethod={paymentMethod}
@@ -537,7 +537,7 @@ export const Step3: React.FC<StepProps> = ({
           !isProcessingPayment && (
             <div className="flex justify-center mt-6">
               <button
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                className="px-6 py-3 bg-surface-elevated text-white rounded-lg hover:bg-surface-high transition-colors font-medium"
                 onClick={onBack}
               >
                 {t('orderChannel.step3.backButton')}

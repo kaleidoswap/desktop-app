@@ -54,12 +54,12 @@ export const TermsAndPrivacyContent: React.FC<TermsAndPrivacyContentProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
       <div className="flex flex-col h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-border-default">
           <h3 className="text-xl font-bold text-white">
             {isTerms ? t('legal.terms.title') : t('legal.privacy.title')}
           </h3>
           <button
-            className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-full hover:bg-surface-high text-content-secondary hover:text-white transition-colors"
             onClick={onClose}
           >
             <X size={20} />
@@ -106,9 +106,9 @@ export const TermsAndPrivacyContent: React.FC<TermsAndPrivacyContentProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-gray-700 bg-gray-900">
+        <div className="flex justify-end p-6 border-t border-border-default bg-surface-base">
           <button
-            className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-colors"
+            className="px-4 py-2 rounded-lg bg-surface-high hover:bg-surface-elevated text-white font-medium transition-colors"
             onClick={onClose}
           >
             {t('common.close')}

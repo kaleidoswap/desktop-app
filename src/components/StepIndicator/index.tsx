@@ -40,10 +40,10 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                           transition-all duration-300
                           ${
                             step.completed
-                              ? 'bg-cyan text-blue-darkest shadow-lg shadow-cyan/20'
+                              ? 'bg-cyan text-blue-darkest shadow-lg shadow-primary/20'
                               : step.active
-                                ? 'bg-cyan/20 border-2 border-cyan text-cyan shadow-lg shadow-cyan/10'
-                                : 'bg-slate-800/50 border-2 border-slate-700/50 text-slate-500'
+                                ? 'bg-primary/20 border-2 border-cyan text-primary shadow-lg shadow-primary/10'
+                                : 'bg-surface-overlay/50 border-2 border-border-default/50 text-content-tertiary'
                           }`}
               >
                 {step.completed ? (
@@ -59,10 +59,10 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                 className={`mt-2 text-xs font-medium transition-all duration-300
                           ${
                             step.active
-                              ? 'text-cyan'
+                              ? 'text-primary'
                               : step.completed
-                                ? 'text-slate-300'
-                                : 'text-slate-500'
+                                ? 'text-content-secondary'
+                                : 'text-content-tertiary'
                           }`}
               >
                 {step.label}
@@ -73,7 +73,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
             {index < steps.length - 1 && (
               <div
                 className={`h-[2px] flex-1 mx-2 md:mx-4 transition-all duration-500
-                          ${step.completed ? 'bg-cyan' : 'bg-slate-700/50'}`}
+                          ${step.completed ? 'bg-cyan' : 'bg-surface-high/50'}`}
               />
             )}
           </React.Fragment>

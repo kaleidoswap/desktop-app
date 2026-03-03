@@ -65,7 +65,7 @@ export const UnlockingProgress = ({
           />
           <div
             className={`absolute inset-1 rounded-full border border-dashed ${
-              errorMessage ? 'border-red-400/30' : 'border-blue-400/30'
+              errorMessage ? 'border-red-400/30' : 'border-primary/30'
             } animate-[spin_8s_linear_infinite]`}
           />
 
@@ -131,7 +131,7 @@ export const UnlockingProgress = ({
                 : 'Preparing Wallet'}
           </h2>
 
-          <p className="text-slate-300 text-base sm:text-lg max-w-lg mx-auto leading-relaxed px-4">
+          <p className="text-content-secondary text-base sm:text-lg max-w-lg mx-auto leading-relaxed px-4">
             {errorMessage
               ? 'We encountered an issue while unlocking your wallet'
               : isUnlocking
@@ -165,14 +165,14 @@ export const UnlockingProgress = ({
       {/* Progress Steps */}
       {isUnlocking && !errorMessage && (
         <div className="w-full space-y-5 animate-[fadeIn_0.5s_ease-out] overflow-hidden">
-          <h3 className="text-xl sm:text-2xl font-semibold text-slate-200 text-center">
+          <h3 className="text-xl sm:text-2xl font-semibold text-content-primary text-center">
             Processing Steps
           </h3>
 
           {/* Step indicators */}
           <div className="relative w-full px-2">
             {/* Connecting line (desktop only) */}
-            <div className="hidden lg:block absolute top-9 left-8 right-8 h-1 bg-slate-700/50 rounded-full"></div>
+            <div className="hidden lg:block absolute top-9 left-8 right-8 h-1 bg-surface-high/50 rounded-full"></div>
             {/* Active progress portion */}
             <div
               className="hidden lg:block absolute top-9 left-8 h-1 bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-500 rounded-full transition-[width] duration-700 ease-out"
@@ -204,7 +204,7 @@ export const UnlockingProgress = ({
                         } border-2 ${
                           isCompleted || isCurrent
                             ? 'border-white/20'
-                            : 'border-slate-500/30'
+                            : 'border-border-subtle/30'
                         }`}
                       >
                         {/* Step number badge */}
@@ -213,8 +213,8 @@ export const UnlockingProgress = ({
                             isCompleted
                               ? 'bg-emerald-600 border-emerald-400'
                               : isCurrent
-                                ? 'bg-blue-600 border-blue-400'
-                                : 'bg-slate-800 border-slate-600'
+                                ? 'bg-primary border-primary/60'
+                                : 'bg-surface-overlay border-border-default'
                           }`}
                         >
                           <span className="text-xs font-bold text-white">
@@ -231,7 +231,7 @@ export const UnlockingProgress = ({
                               isCurrent
                                 ? 'text-white animate-pulse'
                                 : isPending
-                                  ? 'text-slate-400'
+                                  ? 'text-content-secondary'
                                   : 'text-white'
                             }`}
                           />
@@ -252,7 +252,7 @@ export const UnlockingProgress = ({
                             ? 'text-emerald-300'
                             : isCurrent
                               ? 'text-white'
-                              : 'text-slate-400'
+                              : 'text-content-secondary'
                         }`}
                       >
                         {step.title}
@@ -276,14 +276,14 @@ export const UnlockingProgress = ({
                               </span>
                             </div>
                             {/* Progress bar */}
-                            <div className="w-16 sm:w-20 h-1 bg-slate-700/50 rounded-full overflow-hidden">
+                            <div className="w-16 sm:w-20 h-1 bg-surface-high/50 rounded-full overflow-hidden">
                               <div className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite] shadow-sm shadow-blue-400/50"></div>
                             </div>
                           </div>
                         )}
                         {isPending && (
-                          <div className="flex items-center space-x-1 text-slate-500">
-                            <div className="w-1.5 h-1.5 bg-slate-500 rounded-full flex-shrink-0"></div>
+                          <div className="flex items-center space-x-1 text-content-tertiary">
+                            <div className="w-1.5 h-1.5 bg-content-tertiary rounded-full flex-shrink-0"></div>
                             <span className="text-[10px] sm:text-xs font-medium">
                               Pending
                             </span>
@@ -302,7 +302,7 @@ export const UnlockingProgress = ({
             <div className="p-3 rounded-xl bg-gradient-to-br from-blue-900/30 via-slate-800/40 to-purple-900/30 backdrop-blur-sm border border-blue-500/20 animate-[fadeIn_0.5s_ease-out] max-w-3xl mx-auto">
               <div className="flex items-center justify-center space-x-2 text-center">
                 <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                <p className="text-slate-300 text-sm break-words">
+                <p className="text-content-secondary text-sm break-words">
                   Keep the application open during the unlock process.
                   Blockchain sync may take several minutes.
                 </p>
@@ -320,7 +320,7 @@ export const UnlockingProgress = ({
         >
           {onBack && (
             <button
-              className="group px-5 py-2.5 bg-gradient-to-r from-slate-700/80 to-slate-600/80 hover:from-slate-600/80 hover:to-slate-500/80 text-slate-300 hover:text-white border border-slate-500/50 hover:border-slate-400/60 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 backdrop-blur-sm shadow-lg hover:shadow-xl text-sm w-full sm:w-auto"
+              className="group px-5 py-2.5 bg-gradient-to-r from-surface-high/80 to-surface-elevated/80 hover:from-surface-elevated/80 hover:to-surface-elevated/60 text-content-secondary hover:text-white border border-border-subtle/50 hover:border-border-default/60 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 backdrop-blur-sm shadow-lg hover:shadow-xl text-sm w-full sm:w-auto"
               onClick={onBack}
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200 flex-shrink-0" />

@@ -19,7 +19,7 @@ export const LocalNodeWarning: React.FC = () => {
         <p className="leading-relaxed text-sm">
           {t('walletSetup.localNodeWarningMessage')}
           <Button
-            className="ml-2 text-cyan underline"
+            className="ml-2 text-primary underline"
             icon={<Info className="w-3.5 h-3.5" />}
             onClick={() =>
               openUrl(

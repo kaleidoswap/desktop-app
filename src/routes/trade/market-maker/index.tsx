@@ -1,4 +1,4 @@
-import { Copy, Wallet, Link, Plus, ShoppingCart, Clock } from 'lucide-react'
+import { Copy, Wallet, Link, Plus, ShoppingCart, Clock, ArrowDownUp } from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,7 @@ import { getKaleidoClient } from '../../../api/client'
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
+import { useSettings } from '../../../hooks/useSettings'
 import { BuyChannelModal } from '../../../components/BuyChannelModal'
 import { SwapConfirmation } from '../../../components/SwapConfirmation'
 import { SwapRecap } from '../../../components/SwapRecap'
@@ -34,7 +35,6 @@ import {
   getDisplayAsset,
   satToMsat,
 } from '../../../helpers/number'
-import { SwapIcon } from '../../../icons/Swap'
 import { makerApi, TradingPair } from '../../../slices/makerApi/makerApi.slice'
 import {
   setTradingPairs,
@@ -308,46 +308,28 @@ export const Component = () => {
           prevSwap.status !== 'Succeeded' &&
           currentSwap.status === 'Succeeded'
         ) {
-          // Create a more detailed success message
-          const getAssetTicker = (assetId: string | null) => {
-            if (!assetId || assetId === 'BTC') return 'BTC'
-            const asset = assets.find(
-              (a) =>
-                a.protocol_ids?.['RGB'] === assetId ||
-                a.protocol_ids?.['BTC'] === assetId
-            )
-            return asset?.ticker || assetId.slice(0, 8) + '...'
-          }
-
-          const fromTicker = getAssetTicker(currentSwap.from_asset)
-          const toTicker = getAssetTicker(currentSwap.to_asset)
+          // Resolve asset IDs to tickers using the comprehensive mapper
+          const fromTicker = currentSwap.from_asset
+            ? mapAssetIdToTicker(currentSwap.from_asset, assets, tradablePairs)
+            : 'BTC'
+          const toTicker = currentSwap.to_asset
+            ? mapAssetIdToTicker(currentSwap.to_asset, assets, tradablePairs)
+            : 'BTC'
 
           let message = t('tradeMarketMaker.toast.swapCompleted')
 
           // Add asset details if available
           if (currentSwap.qty_from && currentSwap.qty_to) {
-            // Format amounts properly
-            let formattedFromAmount = currentSwap.qty_from
-            let formattedToAmount = currentSwap.qty_to
+            // BTC amounts in the Swap schema are in millisats; convert to sats
+            const fromAmountRaw = (fromTicker === 'BTC')
+              ? Math.round(currentSwap.qty_from / MSATS_PER_SAT)
+              : currentSwap.qty_from
+            const toAmountRaw = (toTicker === 'BTC')
+              ? Math.round(currentSwap.qty_to / MSATS_PER_SAT)
+              : currentSwap.qty_to
 
-            // Handle BTC conversion from millisats to sats if needed
-            if (currentSwap.from_asset === 'BTC' || fromTicker === 'BTC') {
-              formattedFromAmount = Math.round(
-                currentSwap.qty_from / MSATS_PER_SAT
-              )
-            }
-            if (currentSwap.to_asset === 'BTC' || toTicker === 'BTC') {
-              formattedToAmount = Math.round(currentSwap.qty_to / MSATS_PER_SAT)
-            }
-
-            // Use formatAmount to add proper number formatting with commas
-            const displayFromAmount = formatAmount(
-              formattedFromAmount,
-              fromTicker
-            )
-            const displayToAmount = formatAmount(formattedToAmount, toTicker)
-
-            // Get display asset names (handles SAT vs BTC based on user preference)
+            const displayFromAmount = formatAmount(fromAmountRaw, fromTicker)
+            const displayToAmount = formatAmount(toAmountRaw, toTicker)
             const displayFromAsset = displayAsset(fromTicker)
             const displayToAsset = displayAsset(toTicker)
 
@@ -390,13 +372,13 @@ export const Component = () => {
 
     // Update the ref with current data
     previousSwapsRef.current = swapsData
-  }, [swapsData, assets])
+  }, [swapsData, assets, tradablePairs])
 
   // minLoadingDone effect is already declared earlier in the component
 
   const wsConnected = useAppSelector((state) => state.pairs.wsConnected)
   const quoteError = useAppSelector((state) => state.pairs.quoteError)
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
 
   // Define parseAssetAmount early to avoid initialization error in quoteResponse
   const parseAssetAmount = useCallback(
@@ -528,7 +510,7 @@ export const Component = () => {
     const isNewQuote =
       !lastQuoteResponseRef.current ||
       quoteResponse.to_asset.amount !==
-        lastQuoteResponseRef.current.to_asset.amount ||
+      lastQuoteResponseRef.current.to_asset.amount ||
       quoteResponse.timestamp !== lastQuoteResponseRef.current.timestamp
 
     if (isNewQuote) {
@@ -721,10 +703,10 @@ export const Component = () => {
           precision: a.precision ?? 8,
           media: a.media
             ? ({
-                file_path: a.media.file_path ?? '',
-                digest: '',
-                mime: a.media.mime ?? '',
-              } as any)
+              file_path: a.media.file_path ?? '',
+              digest: '',
+              mime: a.media.mime ?? '',
+            } as any)
             : undefined,
         }))
       )
@@ -1546,10 +1528,10 @@ export const Component = () => {
           precision: a.precision ?? 8,
           media: a.media
             ? ({
-                file_path: a.media.file_path ?? '',
-                digest: '',
-                mime: a.media.mime ?? '',
-              } as any)
+              file_path: a.media.file_path ?? '',
+              digest: '',
+              mime: a.media.mime ?? '',
+            } as any)
             : undefined,
         })),
         form,
@@ -2027,10 +2009,10 @@ export const Component = () => {
             precision: a.precision ?? 8,
             media: a.media
               ? ({
-                  file_path: a.media.file_path ?? '',
-                  digest: '',
-                  mime: a.media.mime ?? '',
-                } as any)
+                file_path: a.media.file_path ?? '',
+                digest: '',
+                mime: a.media.mime ?? '',
+              } as any)
               : undefined,
           }))
         )
@@ -2066,10 +2048,10 @@ export const Component = () => {
             precision: a.precision ?? 8,
             media: a.media
               ? ({
-                  file_path: a.media.file_path ?? '',
-                  digest: '',
-                  mime: a.media.mime ?? '',
-                } as any)
+                file_path: a.media.file_path ?? '',
+                digest: '',
+                mime: a.media.mime ?? '',
+              } as any)
               : undefined,
           }))
         )
@@ -2920,537 +2902,435 @@ export const Component = () => {
 
   // Render the swap form UI with enhanced modern design
   const renderSwapForm = () => (
-    <div className="w-full max-w-6xl mx-auto">
-      {/* Premium Trading Interface - Optimized for space */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-2 min-h-[400px]">
-        {/* Main Trading Panel - Compact Ultra Modern */}
-        <div className="xl:col-span-8 order-1">
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-700/50 shadow-2xl h-full flex flex-col">
-            {/* Enhanced ambient glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/8 to-purple-600/10 pointer-events-none"></div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent pointer-events-none"></div>
+    <div className="w-full max-w-3xl mx-auto">
+      <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/50 shadow-xl flex flex-col">
 
-            {/* Ultra Compact Modern Header Design */}
-            <div className="relative border-b border-slate-700/40 px-3 py-1.5 flex-shrink-0 bg-gradient-to-r from-slate-800/70 via-slate-700/50 to-slate-800/70">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"></div>
-                    <h2 className="text-sm font-bold bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
-                      {t('tradeMarketMaker.header.liveTrading')}
-                    </h2>
-                  </div>
-
-                  {/* Integrated Maker Status */}
-                  <div className="flex items-center space-x-2 text-xs">
-                    <span className="text-slate-400">
-                      {t('tradeMarketMaker.header.via')}
-                    </span>
-                    <div className="flex items-center space-x-1.5">
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          wsConnected
-                            ? hasTradablePairs
-                              ? 'bg-emerald-400'
-                              : 'bg-amber-400'
-                            : 'bg-red-400 animate-pulse'
-                        }`}
-                      ></div>
-                      <span
-                        className={`font-medium ${
-                          wsConnected
-                            ? hasTradablePairs
-                              ? 'text-emerald-300'
-                              : 'text-amber-300'
-                            : 'text-red-300'
-                        }`}
-                      >
-                        {makerConnectionUrl
-                          ? new URL(makerConnectionUrl).hostname
-                          : t('tradeMarketMaker.header.noMaker')}
-                      </span>
-                      {wsConnected && (
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                            hasTradablePairs
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-amber-500/20 text-amber-300'
-                          }`}
-                        >
-                          {hasTradablePairs
-                            ? t('tradeMarketMaker.header.ready')
-                            : t('tradeMarketMaker.header.noPairs')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  {/* Compact Maker Selector */}
-                  <MakerSelector onMakerChange={refreshAmounts} />
-
-                  {!wsConnected && (
-                    <button
-                      className="px-2.5 py-1 rounded-md bg-gradient-to-r from-cyan-600/30 to-blue-600/30 text-cyan-400 hover:from-cyan-600/40 hover:to-blue-600/40 transition-all border border-cyan-500/50 hover:border-cyan-400/70 font-medium text-xs shadow-lg hover:shadow-cyan-500/25"
-                      onClick={handleReconnectToMaker}
-                      type="button"
-                    >
-                      {t('tradeMarketMaker.header.reconnect')}
-                    </button>
-                  )}
-                </div>
-              </div>
+        {/* Header */}
+        <div className="relative border-b border-border-default/40 px-4 py-2 flex-shrink-0 bg-surface-high/40">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-1.5 h-1.5 rounded-full ${
+                  wsConnected
+                    ? hasTradablePairs
+                      ? 'bg-emerald-400'
+                      : 'bg-amber-400 animate-pulse'
+                    : 'bg-red-400 animate-pulse'
+                }`}
+              ></div>
+              <h2 className="text-sm font-semibold text-content-primary">
+                {t('tradeMarketMaker.header.liveTrading')}
+              </h2>
             </div>
 
-            {/* Trading Form - Compact Premium Layout */}
-            <div className="relative flex-1 p-3 flex flex-col">
-              <form
-                className="flex-1 flex flex-col justify-between"
-                onSubmit={form.handleSubmit(onSubmit)}
-              >
-                {/* Show info banner when using onchain balance */}
-                {isUsingOnchainBalance && !hasTradableChannels(channels) && (
-                  <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 mt-0.5">
-                        <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
-                          <span className="text-blue-400 text-xs">ℹ️</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-blue-300 text-sm font-medium">
-                          {t('tradeMarketMaker.banners.tradingOnchain')}
-                        </p>
-                        <p className="text-blue-200/80 text-xs mt-1">
-                          {t('tradeMarketMaker.banners.noChannelsYet')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            <div className="flex items-center space-x-2">
+              {/* Compact Maker Selector */}
+              <MakerSelector onMakerChange={refreshAmounts} />
 
-                {/* Show warning banner when selected asset has only unconfirmed channels */}
-                {(() => {
-                  const currentFromAsset = form?.getValues().fromAsset
-                  const currentToAsset = form?.getValues().toAsset
-
-                  // Check if either selected asset has only unconfirmed channels
-                  if (fromAssetUnconfirmed || toAssetUnconfirmed) {
-                    const unconfirmedAssets = []
-                    if (fromAssetUnconfirmed)
-                      unconfirmedAssets.push(currentFromAsset)
-                    if (toAssetUnconfirmed)
-                      unconfirmedAssets.push(currentToAsset)
-
-                    const assetText = unconfirmedAssets.join(' and ')
-                    const channelText =
-                      unconfirmedAssets.length > 1
-                        ? 'channels are'
-                        : 'channel is'
-                    const confirmText =
-                      unconfirmedAssets.length > 1
-                        ? 'both channels are'
-                        : 'the channel is'
-
-                    return (
-                      <div className="mb-2 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-shrink-0 mt-0.5">
-                            <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                              <Clock className="w-3 h-3 text-yellow-400" />
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-yellow-300 text-sm font-medium">
-                              {unconfirmedAssets.length > 1
-                                ? t(
-                                    'tradeMarketMaker.banners.channelsNotReady',
-                                    {
-                                      assets: assetText,
-                                    }
-                                  )
-                                : t(
-                                    'tradeMarketMaker.banners.channelNotReady',
-                                    {
-                                      asset: assetText,
-                                    }
-                                  )}
-                            </p>
-                            <p className="text-yellow-200/80 text-xs mt-1">
-                              {unconfirmedAssets.length > 1
-                                ? t(
-                                    'tradeMarketMaker.banners.channelsAwaiting',
-                                    {
-                                      assets: assetText,
-                                      channelText,
-                                      confirmText,
-                                    }
-                                  )
-                                : t(
-                                    'tradeMarketMaker.banners.channelAwaiting',
-                                    {
-                                      asset: assetText,
-                                    }
-                                  )}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Show general info banner when there are other unconfirmed channels
-                  const unconfirmedAssetIds = getUnconfirmedAssets(
-                    channels,
-                    assets
-                  )
-                  if (
-                    unconfirmedAssetIds.length > 0 &&
-                    hasTradableChannels(channels)
-                  ) {
-                    const unconfirmedTickers = unconfirmedAssetIds
-                      .map((assetId) =>
-                        mapAssetIdToTicker(assetId, assets, tradablePairs)
-                      )
-                      .filter(
-                        (ticker) =>
-                          ticker !== 'BTC' &&
-                          ticker !== currentFromAsset &&
-                          ticker !== currentToAsset
-                      )
-
-                    if (unconfirmedTickers.length > 0) {
-                      return (
-                        <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
-                          <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0 mt-0.5">
-                              <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                <Clock className="w-3 h-3 text-blue-400" />
-                              </div>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-blue-300 text-sm font-medium">
-                                {t(
-                                  'tradeMarketMaker.banners.additionalChannelsPending'
-                                )}
-                              </p>
-                              <p className="text-blue-200/80 text-xs mt-1">
-                                {t(
-                                  'tradeMarketMaker.banners.channelPendingConfirmation',
-                                  {
-                                    count: unconfirmedTickers.length,
-                                    asset: unconfirmedTickers[0],
-                                    assets: unconfirmedTickers
-                                      .slice(0, 3)
-                                      .join(', '),
-                                  }
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    }
-                  }
-                  return null
-                })()}
-
-                {/* Trading Inputs with Compact Premium Styling */}
-                <div className="space-y-2">
-                  {/* From Asset Section - Compact Premium Card */}
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-purple-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-0.5 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-cyan-500/10">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-2xl pointer-events-none"></div>
-                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/1 to-transparent rounded-2xl pointer-events-none"></div>
-                      <SwapInputField
-                        asset={form.getValues().fromAsset}
-                        assetOptions={fromAssetOptions}
-                        availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
-                        availableAmountLabel={
-                          isUsingOnchainBalance
-                            ? t('tradeMarketMaker.form.onchainAvailable')
-                            : t('tradeMarketMaker.form.available')
-                        }
-                        disabled={
-                          !hasChannels ||
-                          !hasTradablePairs ||
-                          isSwapInProgress ||
-                          showConfirmation
-                        }
-                        formatAmount={formatAmount}
-                        getDisplayAsset={displayAsset}
-                        label={t('tradeMarketMaker.form.youSend')}
-                        maxAmount={maxFromAmount}
-                        maxHtlcAmount={max_outbound_htlc_sat}
-                        minAmount={minFromAmount}
-                        onAmountChange={(e) => {
-                          const baseHandler = createFromAmountChangeHandler(
-                            form,
-                            getAssetPrecisionWrapper,
-                            setDebouncedFromAmount,
-                            maxFromAmount
-                          )
-                          const quoteHandler =
-                            createAmountChangeQuoteHandler(requestQuote)
-                          baseHandler(e)
-                          setDebouncedFromAmount(e.target.value || '')
-                          quoteHandler(e)
-                        }}
-                        onAssetChange={(value) =>
-                          handleAssetChange('fromAsset', value)
-                        }
-                        onRefresh={refreshAmounts}
-                        onSizeClick={onSizeClick}
-                        selectedSize={selectedSize}
-                        showMaxAmount={!!missingChannelAsset}
-                        showMaxHtlc={!missingChannelAsset}
-                        showMinAmount
-                        showSizeButtons
-                        useEnhancedSelector={true}
-                        value={form.getValues().from}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Compact Ultra Modern Swap Direction Button */}
-                  <div className="flex justify-center py-0.5">
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                      <button
-                        className={`relative p-3 rounded-2xl bg-gradient-to-br from-slate-800/90 via-slate-700/80 to-slate-800/90 backdrop-blur-xl border-2 transition-all transform hover:scale-110 hover:rotate-180 duration-800 shadow-xl ${
-                          hasChannels && hasTradablePairs && !isSwapInProgress
-                            ? 'border-cyan-500/60 hover:border-cyan-400/80 hover:shadow-cyan-500/40 cursor-pointer'
-                            : 'border-slate-600/50 opacity-50 cursor-not-allowed'
-                        }`}
-                        onClick={() =>
-                          hasChannels &&
-                          hasTradablePairs &&
-                          !isSwapInProgress &&
-                          onSwapAssets()
-                        }
-                        type="button"
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-cyan-400/5 to-transparent rounded-2xl"></div>
-                        <div className="absolute inset-0 bg-gradient-to-tl from-transparent via-white/2 to-transparent rounded-2xl"></div>
-                        <SwapIcon />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* To Asset Section - Compact Premium Card */}
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-500/15 to-cyan-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                    <div className="relative bg-gradient-to-br from-slate-800/80 via-slate-700/60 to-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-600/60 p-0.5 hover:border-slate-500/80 transition-all duration-500 shadow-2xl group-hover:shadow-purple-500/10">
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-purple-400/3 to-transparent rounded-2xl pointer-events-none"></div>
-                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/1 to-transparent rounded-2xl pointer-events-none"></div>
-                      <SwapInputField
-                        asset={form.getValues().toAsset}
-                        assetOptions={toAssetOptions}
-                        availableAmount={
-                          missingChannelAsset
-                            ? t('tradeMarketMaker.form.channelNeeded')
-                            : `${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`
-                        }
-                        availableAmountLabel={
-                          missingChannelAsset
-                            ? t('tradeMarketMaker.form.status')
-                            : t('tradeMarketMaker.form.canReceiveUpTo')
-                        }
-                        disabled={
-                          !hasChannels || !hasTradablePairs || isSwapInProgress
-                        }
-                        formatAmount={formatAmount}
-                        getDisplayAsset={displayAsset}
-                        isLoading={isToAmountLoading}
-                        label={t('tradeMarketMaker.form.youReceive')}
-                        maxAmount={maxToAmount}
-                        onAmountChange={(e) => {
-                          const baseHandler = createToAmountChangeHandler(
-                            form,
-                            getAssetPrecisionWrapper,
-                            maxToAmount
-                          )
-                          const quoteHandler =
-                            createAmountChangeQuoteHandler(requestQuote)
-                          baseHandler(e)
-                          quoteHandler(e)
-                        }}
-                        onAssetChange={(value) =>
-                          handleAssetChange('toAsset', value)
-                        }
-                        onRefresh={refreshAmounts}
-                        readOnly={true}
-                        useEnhancedSelector={true}
-                        value={form.getValues().to || ''}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Channel Needed Warning */}
-                  {missingChannelAsset && (
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 border border-blue-500/40 backdrop-blur-xl shadow-xl">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/8 to-blue-500/10"></div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-                      <div className="relative p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-blue-500/50 flex items-center justify-center mt-0.5">
-                            <Wallet className="w-3.5 h-3.5 text-blue-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-blue-300 font-semibold text-sm mb-1">
-                              {t('tradeMarketMaker.channelWarning.title', {
-                                asset: missingChannelAsset.asset,
-                              })}
-                            </h4>
-                            <p className="text-blue-200/90 text-sm leading-relaxed">
-                              {missingChannelAsset.isFromAsset
-                                ? t(
-                                    'tradeMarketMaker.channelWarning.sendMessage',
-                                    {
-                                      asset: missingChannelAsset.asset,
-                                    }
-                                  )
-                                : t(
-                                    'tradeMarketMaker.channelWarning.receiveMessage',
-                                    { asset: missingChannelAsset.asset }
-                                  )}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Compact Ultra Modern Error Message */}
-                  {errorMessage && (
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/8 to-red-500/10"></div>
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-                      <div className="relative p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-red-500/30 to-orange-500/30 border border-red-500/50 flex items-center justify-center mt-0.5">
-                            <div className="w-2 h-2 rounded-full bg-gradient-to-r from-red-400 to-orange-400"></div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-red-300 font-semibold text-sm mb-1">
-                              {errorMessage.includes(
-                                'You can only receive up to'
-                              )
-                                ? t('tradeMarketMaker.error.maxLimitExceeded')
-                                : t('tradeMarketMaker.error.title')}
-                            </h4>
-                            <p className="text-red-400/90 text-sm leading-relaxed">
-                              {errorMessage}
-                            </p>
-                          </div>
-                          <button
-                            className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
-                            onClick={() => copyToClipboard(errorMessage)}
-                            title={t('tradeMarketMaker.error.copyErrorMessage')}
-                          >
-                            <Copy className="w-4 h-4 text-red-400" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Compact Premium Submit Button */}
-                <div className="mt-3 flex-shrink-0">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                    <SwapButton
-                      errorMessage={errorMessage}
-                      hasChannels={hasChannels}
-                      hasTradablePairs={hasTradablePairs}
-                      hasValidQuote={hasValidQuote}
-                      isPriceLoading={isPriceLoading}
-                      isQuoteLoading={isQuoteLoading}
-                      isSwapInProgress={isSwapInProgress}
-                      isToAmountLoading={isToAmountLoading}
-                      missingChannelAsset={missingChannelAsset}
-                      wsConnected={wsConnected}
-                    />
-                  </div>
-                </div>
-              </form>
+              {!wsConnected && (
+                <button
+                  className="px-2.5 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-all border border-primary/40 hover:border-primary/60 font-medium text-xs"
+                  onClick={handleReconnectToMaker}
+                  type="button"
+                >
+                  {t('tradeMarketMaker.header.reconnect')}
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Compact Ultra Modern Information Panels */}
-        <div className="xl:col-span-4 order-2 flex flex-col space-y-2">
-          {/* Exchange Rate & Quote Status - Compact Premium Design */}
-          {selectedPair && (
-            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-600/50 shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/8 via-blue-500/6 to-purple-600/8"></div>
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent"></div>
-
-              <div className="relative p-3">
-                {/* Compact Ultra Modern Header */}
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-white flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-2 shadow-lg bg-gradient-to-r ${hasValidQuote ? 'from-emerald-400 to-green-500' : 'from-amber-400 to-orange-500'}`}
-                    ></div>
-                    {t('tradeMarketMaker.swap.exchangeRateQuote')}
-                  </h3>
-                  <button
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600/30 via-blue-600/25 to-purple-600/30 text-cyan-400 hover:from-cyan-600/40 hover:to-purple-600/40 transition-all border border-cyan-500/50 hover:border-purple-400/70 text-xs font-medium shadow-lg backdrop-blur-sm"
-                    onClick={() => debouncedQuoteRequest(requestQuote)}
-                    type="button"
-                  >
-                    {t('tradeMarketMaker.swap.refresh')}
-                  </button>
-                </div>
-
-                {/* Compact Ultra Modern Content Area */}
-                <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-2 border border-slate-600/40 shadow-inner">
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-xl pointer-events-none"></div>
-                  {/* Exchange Rate Display */}
-                  <ExchangeRateSection
-                    assets={assets}
-                    bitcoinUnit={bitcoinUnit}
-                    formatAmount={formatAmount}
-                    fromAsset={form.getValues().fromAsset}
-                    getAssetPrecision={getAssetPrecisionWrapper}
-                    isPriceLoading={isPriceLoading}
-                    price={currentPrice}
-                    selectedPair={selectedPair}
-                    toAsset={form.getValues().toAsset}
-                  />
+        {/* Trading Form */}
+        <div className="relative flex-1 p-4 flex flex-col overflow-y-auto">
+          <form
+            className="flex-1 flex flex-col gap-3"
+            onSubmit={form.handleSubmit(onSubmit)}
+          >
+            {/* Show info banner when using onchain balance */}
+            {isUsingOnchainBalance && !hasTradableChannels(channels) && (
+              <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                <div className="flex items-start gap-2">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <span className="text-blue-400 text-xs">ℹ️</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-blue-300 text-sm font-medium">
+                      {t('tradeMarketMaker.banners.tradingOnchain')}
+                    </p>
+                    <p className="text-blue-200/80 text-xs mt-1">
+                      {t('tradeMarketMaker.banners.noChannelsYet')}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Fee Information - Compact Ultra Modern Design */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-2xl rounded-2xl border border-slate-600/50 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/8 via-pink-500/6 to-purple-600/8"></div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/2 to-transparent"></div>
+            {/* Show warning banner when selected asset has only unconfirmed channels */}
+            {(() => {
+              const currentFromAsset = form?.getValues().fromAsset
+              const currentToAsset = form?.getValues().toAsset
 
-            <div className="relative p-3">
-              <div className="bg-gradient-to-br from-slate-800/50 via-slate-700/40 to-slate-800/50 backdrop-blur-xl rounded-xl p-2 border border-slate-600/40 shadow-inner">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-xl pointer-events-none"></div>
-                <FeeSection
-                  assets={assets}
-                  bitcoinUnit={bitcoinUnit}
-                  displayAsset={displayAsset}
-                  fees={fees}
-                  quoteResponse={quoteResponse}
-                  toAsset={form.getValues().toAsset}
-                  tradablePairs={tradablePairs}
+              // Check if either selected asset has only unconfirmed channels
+              if (fromAssetUnconfirmed || toAssetUnconfirmed) {
+                const unconfirmedAssets = []
+                if (fromAssetUnconfirmed)
+                  unconfirmedAssets.push(currentFromAsset)
+                if (toAssetUnconfirmed)
+                  unconfirmedAssets.push(currentToAsset)
+
+                const assetText = unconfirmedAssets.join(' and ')
+                const channelText =
+                  unconfirmedAssets.length > 1
+                    ? 'channels are'
+                    : 'channel is'
+                const confirmText =
+                  unconfirmedAssets.length > 1
+                    ? 'both channels are'
+                    : 'the channel is'
+
+                return (
+                  <div className="mb-2 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                          <Clock className="w-3 h-3 text-yellow-400" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-yellow-300 text-sm font-medium">
+                          {unconfirmedAssets.length > 1
+                            ? t(
+                              'tradeMarketMaker.banners.channelsNotReady',
+                              {
+                                assets: assetText,
+                              }
+                            )
+                            : t(
+                              'tradeMarketMaker.banners.channelNotReady',
+                              {
+                                asset: assetText,
+                              }
+                            )}
+                        </p>
+                        <p className="text-yellow-200/80 text-xs mt-1">
+                          {unconfirmedAssets.length > 1
+                            ? t(
+                              'tradeMarketMaker.banners.channelsAwaiting',
+                              {
+                                assets: assetText,
+                                channelText,
+                                confirmText,
+                              }
+                            )
+                            : t(
+                              'tradeMarketMaker.banners.channelAwaiting',
+                              {
+                                asset: assetText,
+                              }
+                            )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              // Show general info banner when there are other unconfirmed channels
+              const unconfirmedAssetIds = getUnconfirmedAssets(
+                channels,
+                assets
+              )
+              if (
+                unconfirmedAssetIds.length > 0 &&
+                hasTradableChannels(channels)
+              ) {
+                const unconfirmedTickers = unconfirmedAssetIds
+                  .map((assetId) =>
+                    mapAssetIdToTicker(assetId, assets, tradablePairs)
+                  )
+                  .filter(
+                    (ticker) =>
+                      ticker !== 'BTC' &&
+                      ticker !== currentFromAsset &&
+                      ticker !== currentToAsset
+                  )
+
+                if (unconfirmedTickers.length > 0) {
+                  return (
+                    <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <Clock className="w-3 h-3 text-blue-400" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-blue-300 text-sm font-medium">
+                            {t(
+                              'tradeMarketMaker.banners.additionalChannelsPending'
+                            )}
+                          </p>
+                          <p className="text-blue-200/80 text-xs mt-1">
+                            {t(
+                              'tradeMarketMaker.banners.channelPendingConfirmation',
+                              {
+                                count: unconfirmedTickers.length,
+                                asset: unconfirmedTickers[0],
+                                assets: unconfirmedTickers
+                                  .slice(0, 3)
+                                  .join(', '),
+                              }
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+              }
+              return null
+            })()}
+
+            {/* Trading Inputs */}
+            <div className="flex flex-col">
+              {/* From Asset */}
+              <div className="relative z-0">
+                <SwapInputField
+                  asset={form.getValues().fromAsset}
+                  assetOptions={fromAssetOptions}
+                  availableAmount={`${formatAmount(maxFromAmount, form.getValues().fromAsset)} ${displayAsset(form.getValues().fromAsset)}`}
+                  availableAmountLabel={
+                    isUsingOnchainBalance
+                      ? t('tradeMarketMaker.form.onchainAvailable')
+                      : t('tradeMarketMaker.form.available')
+                  }
+                  disabled={
+                    !hasChannels ||
+                    !hasTradablePairs ||
+                    isSwapInProgress ||
+                    showConfirmation
+                  }
+                  formatAmount={formatAmount}
+                  getDisplayAsset={displayAsset}
+                  label={t('tradeMarketMaker.form.youSend')}
+                  maxAmount={maxFromAmount}
+                  maxHtlcAmount={max_outbound_htlc_sat}
+                  minAmount={minFromAmount}
+                  onAmountChange={(e) => {
+                    const baseHandler = createFromAmountChangeHandler(
+                      form,
+                      getAssetPrecisionWrapper,
+                      setDebouncedFromAmount,
+                      maxFromAmount
+                    )
+                    const quoteHandler =
+                      createAmountChangeQuoteHandler(requestQuote)
+                    baseHandler(e)
+                    setDebouncedFromAmount(e.target.value || '')
+                    quoteHandler(e)
+                  }}
+                  onAssetChange={(value) =>
+                    handleAssetChange('fromAsset', value)
+                  }
+                  onRefresh={refreshAmounts}
+                  onSizeClick={onSizeClick}
+                  selectedSize={selectedSize}
+                  showMaxAmount={!!missingChannelAsset}
+                  showMaxHtlc={!missingChannelAsset}
+                  showMinAmount
+                  showSizeButtons
+                  useEnhancedSelector={true}
+                  value={form.getValues().from}
                 />
               </div>
+
+              {/* Swap Direction Button — sits in gap between fields */}
+              <div className="flex justify-center my-2 relative z-10">
+                <button
+                  className={`p-2 rounded-xl border transition-all duration-300 shadow-sm bg-surface-overlay ${hasChannels && hasTradablePairs && !isSwapInProgress
+                    ? 'border-border-default/60 hover:bg-surface-high hover:border-primary/50 hover:scale-110 cursor-pointer'
+                    : 'border-border-default/20 opacity-30 cursor-not-allowed'
+                    }`}
+                  onClick={() =>
+                    hasChannels &&
+                    hasTradablePairs &&
+                    !isSwapInProgress &&
+                    onSwapAssets()
+                  }
+                  type="button"
+                >
+                  <ArrowDownUp className="w-5 h-5 text-content-secondary" />
+                </button>
+              </div>
+
+              {/* To Asset */}
+              <div className="relative z-0">
+                <SwapInputField
+                  asset={form.getValues().toAsset}
+                  assetOptions={toAssetOptions}
+                  availableAmount={
+                    missingChannelAsset
+                      ? t('tradeMarketMaker.form.channelNeeded')
+                      : `${formatAmount(maxToAmount, form.getValues().toAsset)} ${displayAsset(form.getValues().toAsset)}`
+                  }
+                  availableAmountLabel={
+                    missingChannelAsset
+                      ? t('tradeMarketMaker.form.status')
+                      : t('tradeMarketMaker.form.canReceiveUpTo')
+                  }
+                  disabled={
+                    !hasChannels || !hasTradablePairs || isSwapInProgress
+                  }
+                  formatAmount={formatAmount}
+                  getDisplayAsset={displayAsset}
+                  isLoading={isToAmountLoading}
+                  label={t('tradeMarketMaker.form.youReceive')}
+                  maxAmount={maxToAmount}
+                  onAmountChange={(e) => {
+                    const baseHandler = createToAmountChangeHandler(
+                      form,
+                      getAssetPrecisionWrapper,
+                      maxToAmount
+                    )
+                    const quoteHandler =
+                      createAmountChangeQuoteHandler(requestQuote)
+                    baseHandler(e)
+                    quoteHandler(e)
+                  }}
+                  onAssetChange={(value) =>
+                    handleAssetChange('toAsset', value)
+                  }
+                  onRefresh={refreshAmounts}
+                  readOnly={true}
+                  useEnhancedSelector={true}
+                  value={form.getValues().to || ''}
+                />
+              </div>
+
+              {/* Channel Needed Warning */}
+              {missingChannelAsset && (
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 border border-blue-500/40 backdrop-blur-xl shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/8 to-blue-500/10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                  <div className="relative p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-blue-500/50 flex items-center justify-center mt-0.5">
+                        <Wallet className="w-3.5 h-3.5 text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-blue-300 font-semibold text-sm mb-1">
+                          {t('tradeMarketMaker.channelWarning.title', {
+                            asset: missingChannelAsset.asset,
+                          })}
+                        </h4>
+                        <p className="text-blue-200/90 text-sm leading-relaxed">
+                          {missingChannelAsset.isFromAsset
+                            ? t(
+                              'tradeMarketMaker.channelWarning.sendMessage',
+                              {
+                                asset: missingChannelAsset.asset,
+                              }
+                            )
+                            : t(
+                              'tradeMarketMaker.channelWarning.receiveMessage',
+                              { asset: missingChannelAsset.asset }
+                            )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Compact Ultra Modern Error Message */}
+              {errorMessage && (
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/8 to-red-500/10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                  <div className="relative p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-red-500/30 to-orange-500/30 border border-red-500/50 flex items-center justify-center mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-red-400 to-orange-400"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-red-300 font-semibold text-sm mb-1">
+                          {errorMessage.includes(
+                            'You can only receive up to'
+                          )
+                            ? t('tradeMarketMaker.error.maxLimitExceeded')
+                            : t('tradeMarketMaker.error.title')}
+                        </h4>
+                        <p className="text-red-400/90 text-sm leading-relaxed">
+                          {errorMessage}
+                        </p>
+                      </div>
+                      <button
+                        className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
+                        onClick={() => copyToClipboard(errorMessage)}
+                        title={t('tradeMarketMaker.error.copyErrorMessage')}
+                      >
+                        <Copy className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+
+            {/* Exchange Rate — shown inline when a pair is selected */}
+            {selectedPair && (
+              <div className="mt-1 border-t border-border-default/15 pt-3 px-2">
+                <ExchangeRateSection
+                  assets={assets}
+                  bitcoinUnit={bitcoinUnit}
+                  formatAmount={formatAmount}
+                  fromAsset={form.getValues().fromAsset}
+                  getAssetPrecision={getAssetPrecisionWrapper}
+                  isPriceLoading={isPriceLoading}
+                  onRefresh={() => debouncedQuoteRequest(requestQuote)}
+                  price={currentPrice}
+                  selectedPair={selectedPair}
+                  toAsset={form.getValues().toAsset}
+                />
+              </div>
+            )}
+
+            {/* Fees — shown inline when fees are available */}
+            <div className="mt-2">
+              <FeeSection
+                assets={assets}
+                bitcoinUnit={bitcoinUnit}
+                displayAsset={displayAsset}
+                fees={fees}
+                quoteResponse={quoteResponse}
+                toAsset={form.getValues().toAsset}
+                tradablePairs={tradablePairs}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="mt-2 pb-3 flex-shrink-0">
+              <SwapButton
+                errorMessage={errorMessage}
+                hasChannels={hasChannels}
+                hasTradablePairs={hasTradablePairs}
+                hasValidQuote={hasValidQuote}
+                isPriceLoading={isPriceLoading}
+                isQuoteLoading={isQuoteLoading}
+                isSwapInProgress={isSwapInProgress}
+                isToAmountLoading={isToAmountLoading}
+                missingChannelAsset={missingChannelAsset}
+                wsConnected={wsConnected}
+              />
+            </div>
+          </form>
         </div>
       </div>
     </div>
   )
+
 
   // Simplified loading state based on validation phase
   const isStillLoading =
@@ -3641,7 +3521,7 @@ export const Component = () => {
 
               <div className="flex gap-4 pt-4">
                 <button
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl
+                  className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
                            font-medium transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
                   onClick={handleDepositAction}
@@ -3654,96 +3534,97 @@ export const Component = () => {
           </div>
         </div>
       ) : /* Handle no channels with action buttons */
-      shouldShowNoChannels ? (
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-            <div className="flex flex-col items-center space-y-6">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
-                <Link className="w-8 h-8 text-blue-500" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">
-                {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
-              </h2>
-              <p className="text-slate-400 text-center text-base max-w-md">
-                {t('tradeMarketMaker.noChannels.noChannelsMessage')}
-              </p>
+        shouldShowNoChannels ? (
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+              <div className="flex flex-col items-center space-y-6">
+                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                  <Link className="w-8 h-8 text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
+                </h2>
+                <p className="text-slate-400 text-center text-base max-w-md">
+                  {t('tradeMarketMaker.noChannels.noChannelsMessage')}
+                </p>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl
+                <div className="flex gap-4 pt-4">
+                  <button
+                    className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
                            font-medium transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                  onClick={handleCreateChannelAction}
-                >
-                  <Plus className="w-5 h-5" />
-                  {t('tradeMarketMaker.noChannels.createChannel')}
-                </button>
-                <button
-                  className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
+                    onClick={handleCreateChannelAction}
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t('tradeMarketMaker.noChannels.createChannel')}
+                  </button>
+                  <button
+                    className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
                            hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                  onClick={handleBuyChannelAction}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {t('tradeMarketMaker.noChannels.buyFromLSP')}
-                </button>
+                    onClick={handleBuyChannelAction}
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    {t('tradeMarketMaker.noChannels.buyFromLSP')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
-      shouldShowNoChannelsMessage ? (
-        <NoTradingChannelsMessage
-          {...createTradingChannelsMessageProps(
-            assets,
-            tradablePairs,
-            hasEnoughBalance,
-            navigate,
-            refreshAmounts
-          )}
-        />
-      ) : (
-        <div className="w-full min-h-full relative flex items-center justify-center">
-          <div className="w-full max-w-screen-xl mx-auto px-4 py-6">
-            {isStillLoading ? (
-              <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
-                    <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
+        ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
+          shouldShowNoChannelsMessage ? (
+            <NoTradingChannelsMessage
+              {...createTradingChannelsMessageProps(
+                assets,
+                tradablePairs,
+                hasEnoughBalance,
+                navigate,
+                refreshAmounts
+              )}
+            />
+          ) : (
+            <div className="w-full min-h-full relative">
+              <div className="w-full max-w-screen-xl mx-auto px-4 py-2">
+                {isStillLoading ? (
+                  <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
+                      <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
+                        <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
+                      </div>
+                    </div>
+                    <div className="text-center space-y-4 max-w-lg">
+                      <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
+                        {loadingPhase === 'connecting-maker'
+                          ? t('tradeMarketMaker.loading.connectingToMaker')
+                          : t('tradeMarketMaker.loading.initializingInterface')}
+                      </p>
+                      <p className="text-slate-300 text-base leading-relaxed">
+                        {getLoadingMessage()}
+                      </p>
+                      <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center space-y-4 max-w-lg">
-                  <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
-                    {loadingPhase === 'connecting-maker'
-                      ? t('tradeMarketMaker.loading.connectingToMaker')
-                      : t('tradeMarketMaker.loading.initializingInterface')}
-                  </p>
-                  <p className="text-slate-300 text-base leading-relaxed">
-                    {getLoadingMessage()}
-                  </p>
-                  <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
+                ) : shouldShowWSDisconnectedMessage ? (
+                  <div className="flex justify-center items-center min-h-[60vh]">
+                    <WebSocketDisconnectedMessage
+                      makerUrl={makerConnectionUrl}
+                      onMakerChange={refreshAmounts}
+                      onRetryConnection={handleReconnectToMaker}
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="flex justify-center items-start py-4">
+                    {renderSwapForm()}
+                  </div>
+                )}
               </div>
-            ) : shouldShowWSDisconnectedMessage ? (
-              <div className="flex justify-center items-center min-h-[60vh]">
-                <WebSocketDisconnectedMessage
-                  makerUrl={makerConnectionUrl}
-                  onMakerChange={refreshAmounts}
-                  onRetryConnection={handleReconnectToMaker}
-                />
-              </div>
-            ) : (
-              <div className="flex justify-center items-start min-h-[60vh]">
-                {renderSwapForm()}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          )
+      }
 
       <SwapConfirmation
         bitcoinUnit={bitcoinUnit}
@@ -3760,18 +3641,20 @@ export const Component = () => {
         toAsset={form.getValues().toAsset}
       />
 
-      {swapRecapDetails && (
-        <SwapRecap
-          bitcoinUnit={bitcoinUnit}
-          getAssetPrecision={getAssetPrecisionWrapper}
-          isOpen={showRecap}
-          onClose={() => {
-            setShowRecap(false)
-            refreshChannelsAndAmounts()
-          }}
-          swapDetails={swapRecapDetails}
-        />
-      )}
+      {
+        swapRecapDetails && (
+          <SwapRecap
+            bitcoinUnit={bitcoinUnit}
+            getAssetPrecision={getAssetPrecisionWrapper}
+            isOpen={showRecap}
+            onClose={() => {
+              setShowRecap(false)
+              refreshChannelsAndAmounts()
+            }}
+            swapDetails={swapRecapDetails}
+          />
+        )
+      }
 
       <BuyChannelModal
         isOpen={showBuyChannelModal}
@@ -3843,7 +3726,7 @@ export const Component = () => {
           return undefined
         })()}
       />
-    </div>
+    </div >
   )
 }
 

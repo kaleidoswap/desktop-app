@@ -44,7 +44,7 @@ export const renderCopyableField = (
   if (!value || !value.trim()) {
     return (
       <div className="flex items-center justify-center">
-        <Minus className="w-4 h-4 text-slate-500" />
+        <Minus className="w-4 h-4 text-content-tertiary" />
       </div>
     )
   }
@@ -55,13 +55,13 @@ export const renderCopyableField = (
   return (
     <div className="flex items-center min-w-0">
       <span
-        className="truncate mr-2 font-mono text-xs text-slate-400"
+        className="truncate mr-2 font-mono text-xs text-content-secondary"
         title={truncate ? fullValue : undefined}
       >
         {displayValue}
       </span>
       <button
-        className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
+        className="flex-shrink-0 text-content-tertiary hover:text-content-secondary transition-colors"
         onClick={(e) => {
           e.stopPropagation()
           copyToClipboard(fullValue, copyMessage)
@@ -83,7 +83,7 @@ export const renderDateField = (
   if (!timestamp) {
     return (
       <div className="flex items-center justify-center">
-        <Minus className="w-4 h-4 text-slate-500" />
+        <Minus className="w-4 h-4 text-content-tertiary" />
       </div>
     )
   }
@@ -91,7 +91,7 @@ export const renderDateField = (
   const numericTimestamp =
     typeof timestamp === 'string' ? parseInt(timestamp) : timestamp
   return (
-    <span className="text-slate-300">
+    <span className="text-content-secondary">
       {formatDate(numericTimestamp, use24h)}
     </span>
   )
@@ -127,7 +127,7 @@ export const renderAmountField = (
 export const renderEmptyField = (): ReactNode => {
   return (
     <div className="flex items-center justify-center">
-      <Minus className="w-4 h-4 text-slate-500" />
+      <Minus className="w-4 h-4 text-content-tertiary" />
     </div>
   )
 }
@@ -172,7 +172,7 @@ export function Table<T>({
   return (
     <div
       className={twMerge(
-        'overflow-x-auto bg-slate-800/30 rounded-lg border border-slate-700',
+        'overflow-x-auto bg-surface-overlay/30 rounded-lg border border-border-default',
         containerClassName
       )}
     >
@@ -180,7 +180,7 @@ export function Table<T>({
         {showHeader && (
           <div
             className={twMerge(
-              `grid ${gridClass} font-medium text-slate-400 border-b border-slate-700 py-3 text-sm`,
+              `grid ${gridClass} font-medium text-content-secondary border-b border-border-default py-3 text-sm`,
               className,
               headerClassName
             )}
@@ -203,9 +203,9 @@ export function Table<T>({
         {data.map((row, rowIndex) => (
           <div
             className={twMerge(
-              `grid ${gridClass} border-b border-slate-700 items-center text-sm font-medium transition-colors`,
-              rowHover && 'hover:bg-slate-800/30',
-              striped && rowIndex % 2 === 1 && 'bg-slate-800/20',
+              `grid ${gridClass} border-b border-border-default items-center text-sm font-medium transition-colors`,
+              rowHover && 'hover:bg-surface-overlay/30',
+              striped && rowIndex % 2 === 1 && 'bg-surface-overlay/20',
               typeof rowClassName === 'function'
                 ? rowClassName(row, rowIndex)
                 : rowClassName,

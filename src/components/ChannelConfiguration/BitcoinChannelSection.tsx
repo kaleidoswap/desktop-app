@@ -25,7 +25,7 @@ export const BitcoinChannelSection: React.FC<BitcoinChannelSectionProps> = ({
   minClientBalance,
   maxClientBalance,
   capacityPresets = [50000, 100000, 500000, 1000000],
-  containerClassName = 'bg-gray-800/50 p-4 rounded-xl border border-gray-700/50',
+  containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
 }) => {
   return (
     <div className={containerClassName}>

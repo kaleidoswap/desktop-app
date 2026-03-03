@@ -15,7 +15,7 @@ export const Step4 = (props: Props) => {
       <div className="flex flex-col items-center justify-center p-8 max-w-2xl mx-auto">
         <div className="text-red-500 text-7xl mb-8 animate-bounce">❌</div>
 
-        <div className="text-center mt-6 bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-700 transition-all duration-300 ease-in-out">
+        <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default transition-all duration-300 ease-in-out">
           <h3 className="text-3xl font-bold text-white mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-600">
             {t('createChannel.step4.failed')}
           </h3>
@@ -27,7 +27,7 @@ export const Step4 = (props: Props) => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               className="px-8 py-3 rounded-xl text-lg font-bold
-                bg-gray-700 hover:bg-gray-600 text-gray-300
+                bg-surface-high hover:bg-surface-elevated text-content-secondary
                 transform transition-all duration-200 hover:scale-105 active:scale-95
                 focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50
                 shadow-md hover:shadow-lg"
@@ -58,12 +58,12 @@ export const Step4 = (props: Props) => {
         <SuccessCheckmark />
       </div>
 
-      <div className="text-center mt-8 bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-gray-700 transition-all duration-300 ease-in-out">
+      <div className="text-center mt-8 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default transition-all duration-300 ease-in-out">
         <h3 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
           {t('createChannel.step4.success')}
         </h3>
 
-        <p className="text-gray-300 mb-8 py-3 px-4 bg-blue-900/20 rounded-lg border border-blue-800/30">
+        <p className="text-content-secondary mb-8 py-3 px-4 bg-blue-900/20 rounded-lg border border-blue-800/30">
           {t('createChannel.step4.successMessage')}
         </p>
 

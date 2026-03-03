@@ -119,7 +119,7 @@ export const Component = () => {
 
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start gap-3 w-full">
             <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-content-secondary">
               {t('createUtxos.description')}
             </p>
           </div>
@@ -128,12 +128,12 @@ export const Component = () => {
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-300">
+              <label className="block text-sm font-medium text-content-secondary">
                 {t('createUtxos.fields.numberOfUtxos')}
               </label>
               <input
                 {...register('num', { valueAsNumber: true })}
-                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-600 
+                className="w-full bg-surface-overlay/50 text-white px-4 py-3 rounded-lg border border-border-default 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 max={10}
                 min={1}
@@ -143,13 +143,13 @@ export const Component = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-300">
+              <label className="block text-sm font-medium text-content-secondary">
                 {t('createUtxos.fields.sizeLabel')}
               </label>
               <div className="flex items-center gap-4">
                 <input
                   {...register('size', { valueAsNumber: true })}
-                  className="flex-1 bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-600 
+                  className="flex-1 bg-surface-overlay/50 text-white px-4 py-3 rounded-lg border border-border-default 
                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   max={
                     btcBalanceResponse.data
@@ -168,7 +168,7 @@ export const Component = () => {
                 </span>
               </div>
               <input
-                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer mt-4"
+                className="w-full h-2 bg-surface-high rounded-lg appearance-none cursor-pointer mt-4"
                 max={
                   btcBalanceResponse.data
                     ? Math.floor(
@@ -185,11 +185,11 @@ export const Component = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-300">
+              <label className="block text-sm font-medium text-content-secondary">
                 {t('createUtxos.fields.feeRate')}
               </label>
               <select
-                className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-slate-600 
+                className="w-full bg-surface-overlay/50 text-white px-4 py-3 rounded-lg border border-border-default 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 value={feeRate}
                 {...register('fee_rate')}
@@ -215,7 +215,7 @@ export const Component = () => {
               </select>
               {feeRate === 'custom' && (
                 <input
-                  className="w-full bg-slate-800/50 text-white px-4 py-3 mt-4 rounded-lg border border-slate-600 
+                  className="w-full bg-surface-overlay/50 text-white px-4 py-3 mt-4 rounded-lg border border-border-default 
                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   defaultValue={customFee}
                   onChange={(e) => setCustomFee(parseFloat(e.target.value))}
@@ -227,7 +227,7 @@ export const Component = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-center mt-8 gap-4">
-            <div className="flex items-center text-slate-300">
+            <div className="flex items-center text-content-secondary">
               <DollarSign className="text-yellow-500 mr-2" size={20} />
               <span>
                 {t('createUtxos.availableBalance', {

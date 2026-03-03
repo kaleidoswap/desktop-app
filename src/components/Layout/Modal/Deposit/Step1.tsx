@@ -73,7 +73,7 @@ export const Step1 = ({ onNext }: Props) => {
   }, [assetId, onNext, isNewAsset])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-4">
+    <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
       <div className="flex flex-col items-center mb-3">
         {selectedAsset?.asset_id === BTC_ASSET_ID ? (
           <img alt="Bitcoin" className="w-8 h-8 mb-2" src={btcLogo} />
@@ -83,7 +83,7 @@ export const Step1 = ({ onNext }: Props) => {
         <h3 className="text-xl font-bold text-white mb-1">
           {t('depositModal.step1.title')}
         </h3>
-        <p className="text-slate-400 text-center max-w-md text-xs">
+        <p className="text-content-secondary text-center max-w-md text-xs">
           {t('depositModal.step1.subtitle')}
         </p>
       </div>
@@ -92,7 +92,7 @@ export const Step1 = ({ onNext }: Props) => {
         {/* Asset Selector */}
         <div className="relative">
           <button
-            className="w-full p-2.5 bg-slate-800/50 rounded-xl border border-slate-700 
+            className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default 
                      hover:border-blue-500/50 transition-all duration-200
                      flex items-center justify-between text-left"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -111,13 +111,13 @@ export const Step1 = ({ onNext }: Props) => {
                     <div className="font-medium text-white text-sm">
                       {selectedAsset.ticker}
                     </div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-content-secondary">
                       {selectedAsset.name || 'Asset'}
                     </div>
                   </div>
                 </>
               ) : (
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {isNewAsset
                     ? t('depositModal.step1.newAssetLabel')
                     : t('depositModal.step1.selectorPlaceholder')}
@@ -125,7 +125,7 @@ export const Step1 = ({ onNext }: Props) => {
               )}
             </div>
             <ChevronDown
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 
+              className={`w-4 h-4 text-content-secondary transition-transform duration-200 
               ${isDropdownOpen ? 'transform rotate-180' : ''}`}
             />
           </button>
@@ -133,16 +133,16 @@ export const Step1 = ({ onNext }: Props) => {
           {/* Dropdown */}
           {isDropdownOpen && (
             <div
-              className="absolute mt-2 w-full bg-slate-800 rounded-xl border border-slate-700 
+              className="absolute mt-2 w-full bg-surface-overlay rounded-xl border border-border-default 
                           shadow-xl z-50 max-h-[250px] overflow-y-auto custom-scrollbar"
             >
-              <div className="sticky top-0 p-2 border-b border-slate-700 bg-slate-800 z-10">
+              <div className="sticky top-0 p-2 border-b border-border-default bg-surface-overlay z-10">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-secondary" />
                   <input
                     autoFocus
-                    className="w-full pl-10 pr-4 py-1.5 bg-slate-900/50 rounded-lg border border-slate-600 
-                             text-white placeholder:text-slate-500 focus:border-blue-500 
+                    className="w-full pl-10 pr-4 py-1.5 bg-surface-base/50 rounded-lg border border-border-default 
+                             text-white placeholder:text-content-tertiary focus:border-blue-500 
                              focus:ring-1 focus:ring-blue-500 text-sm"
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('depositModal.step1.searchPlaceholder')}
@@ -156,7 +156,7 @@ export const Step1 = ({ onNext }: Props) => {
                 {/* Add New Asset Button - Now at the top */}
                 <button
                   className="w-full px-3 py-2 flex items-center gap-2 hover:bg-blue-500/10 
-                           text-blue-500 transition-colors duration-200 border-b border-slate-700 text-sm sticky top-[52px] z-10 bg-slate-800/95 backdrop-blur-sm"
+                           text-blue-500 transition-colors duration-200 border-b border-border-default text-sm sticky top-[52px] z-10 bg-surface-overlay/95 backdrop-blur-sm"
                   onClick={handleAddNewAsset}
                 >
                   <Plus className="w-4 h-4" />
@@ -165,7 +165,7 @@ export const Step1 = ({ onNext }: Props) => {
 
                 <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                   {filteredAssets.length === 0 ? (
-                    <div className="p-3 text-center text-slate-500 text-sm">
+                    <div className="p-3 text-center text-content-tertiary text-sm">
                       {t('depositModal.step1.noResults', {
                         query: searchQuery,
                       })}
@@ -202,7 +202,7 @@ export const Step1 = ({ onNext }: Props) => {
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-slate-400 truncate">
+                          <div className="text-xs text-content-secondary truncate">
                             {asset.name || t('depositModal.step1.genericAsset')}
                           </div>
                         </div>
@@ -224,13 +224,13 @@ export const Step1 = ({ onNext }: Props) => {
               </p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">
+              <label className="text-xs font-medium text-content-secondary">
                 {t('depositModal.step1.assetIdLabel')}
               </label>
               <input
-                className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
+                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default 
                          focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                         placeholder:text-slate-600 text-sm"
+                         placeholder:text-content-tertiary text-sm"
                 onChange={(e) => setAssetId(e.target.value)}
                 placeholder={t('depositModal.step1.assetIdPlaceholder')}
                 type="text"
@@ -241,7 +241,7 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* Continue Button */}
         <button
-          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white 
+          className="w-full py-2.5 px-4 bg-primary hover:bg-primary-emphasis text-primary-foreground 
                    rounded-xl font-medium transition-colors flex items-center 
                    justify-center gap-2 text-sm"
           onClick={handleSubmit}

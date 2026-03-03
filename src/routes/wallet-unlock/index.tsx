@@ -241,17 +241,17 @@ export const Component = () => {
     return (
       <div className="mb-8">
         <button
-          className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-slate-800/40 to-slate-700/40 backdrop-blur-sm text-slate-200 border border-slate-600/30 rounded-xl hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
+          className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-surface-overlay/40 to-surface-high/40 backdrop-blur-sm text-content-primary border border-border-default/30 rounded-xl hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
           onClick={() => setIsConnectionDetailsOpen(!isConnectionDetailsOpen)}
         >
           <span className="flex items-center">
-            <div className="p-2 bg-blue-500/20 rounded-lg mr-3 group-hover:bg-blue-500/30 transition-colors">
-              <Server className="w-5 h-5 text-blue-400" />
+            <div className="p-2 bg-primary/10 rounded-lg mr-3 group-hover:bg-primary/20 transition-colors">
+              <Server className="w-5 h-5 text-primary" />
             </div>
             <span className="font-medium">Connection Details</span>
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-all duration-300 text-slate-400 group-hover:text-blue-400 ${
+            className={`w-5 h-5 transition-all duration-300 text-content-secondary group-hover:text-primary ${
               isConnectionDetailsOpen ? 'rotate-180' : ''
             }`}
           />
@@ -264,29 +264,29 @@ export const Component = () => {
               : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="p-5 bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-sm border border-slate-600/30 rounded-xl">
+          <div className="p-5 bg-gradient-to-br from-surface-overlay/60 to-surface-base/60 backdrop-blur-sm border border-border-default/30 rounded-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-emerald-500/20 rounded-lg">
                   <Globe className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Node URL</p>
-                  <p className="text-slate-200 font-mono text-sm">
+                  <p className="text-content-secondary text-sm font-medium">Node URL</p>
+                  <p className="text-content-primary font-mono text-sm">
                     {nodeSettings.node_url}
                   </p>
                 </div>
               </div>
-              <div className="w-full h-[1px] bg-slate-700 my-4" />
+              <div className="w-full h-[1px] bg-surface-high my-4" />
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
                   <Zap className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">
+                  <p className="text-content-secondary text-sm font-medium">
                     Bitcoind RPC
                   </p>
-                  <p className="text-slate-200 font-mono text-sm">
+                  <p className="text-content-primary font-mono text-sm">
                     {rpcConfig.host}:{rpcConfig.port}
                   </p>
                 </div>
@@ -298,10 +298,10 @@ export const Component = () => {
                   <Server className="w-4 h-4 text-orange-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-slate-400 text-sm font-medium mb-1">
+                  <p className="text-content-secondary text-sm font-medium mb-1">
                     Indexer URL
                   </p>
-                  <p className="text-slate-200 font-mono text-sm break-all bg-slate-800/50 p-2 rounded-lg">
+                  <p className="text-content-primary font-mono text-sm break-all bg-surface-overlay/50 p-2 rounded-lg">
                     {nodeSettings.indexer_url}
                   </p>
                 </div>
@@ -311,10 +311,10 @@ export const Component = () => {
                   <Globe className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-slate-400 text-sm font-medium mb-1">
+                  <p className="text-content-secondary text-sm font-medium mb-1">
                     RGB Proxy Endpoint
                   </p>
-                  <p className="text-slate-200 font-mono text-sm break-all bg-slate-800/50 p-2 rounded-lg">
+                  <p className="text-content-primary font-mono text-sm break-all bg-surface-overlay/50 p-2 rounded-lg">
                     {nodeSettings.proxy_endpoint}
                   </p>
                 </div>
@@ -331,8 +331,8 @@ export const Component = () => {
       {/* Header Section */}
       <div className="text-center mb-8">
         <div className="relative inline-block mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
-          <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-lg opacity-20 animate-pulse"></div>
+          <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/20">
             <Shield className="w-12 h-12 text-white" />
           </div>
         </div>
@@ -340,11 +340,11 @@ export const Component = () => {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent mb-3">
           {t('walletUnlock.title')}
         </h1>
-        <p className="text-slate-400 text-lg">{t('walletUnlock.subtitle')}</p>
+        <p className="text-content-secondary text-lg">{t('walletUnlock.subtitle')}</p>
       </div>
 
       {/* Main Card */}
-      <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-600/30 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
+      <Card className="bg-gradient-to-br from-surface-overlay/80 to-surface-base/80 backdrop-blur-xl border border-border-default/30 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
         <div className="p-8">
           <form
             className="space-y-6"
@@ -356,20 +356,20 @@ export const Component = () => {
             {/* Password field */}
             <div className="space-y-3">
               <label
-                className="block text-sm font-semibold text-slate-300 mb-2"
+                className="block text-sm font-semibold text-content-secondary mb-2"
                 htmlFor="password"
               >
                 {t('walletUnlock.walletPassword')}
               </label>
 
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative flex items-center">
                   <div className="absolute left-4 z-10">
-                    <Lock className="w-5 h-5 text-slate-400" />
+                    <Lock className="w-5 h-5 text-content-secondary" />
                   </div>
                   <input
-                    className="w-full pl-12 pr-12 py-4 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 text-white placeholder-slate-500 font-medium"
+                    className="w-full pl-12 pr-12 py-4 bg-surface-overlay/50 backdrop-blur-sm border border-border-default/50 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 text-white placeholder-content-tertiary font-medium"
                     id="password"
                     placeholder={t('walletUnlock.passwordPlaceholder')}
                     type={isPasswordVisible ? 'text' : 'password'}
@@ -385,7 +385,7 @@ export const Component = () => {
                   />
 
                   <button
-                    className="absolute right-4 text-slate-400 hover:text-blue-400 transition-colors duration-200 z-10"
+                    className="absolute right-4 text-content-secondary hover:text-primary transition-colors duration-200 z-10"
                     onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                     type="button"
                   >
@@ -423,19 +423,17 @@ export const Component = () => {
             {/* Action buttons */}
             <div className="pt-4 space-y-4">
               <Button
-                className="w-full relative group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 overflow-hidden"
+                className="w-full py-4 rounded-xl font-semibold text-lg shadow-lg shadow-primary/20"
                 disabled={isUnlocking}
+                icon={<Shield className="w-5 h-5" />}
                 type="submit"
+                variant="primary"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                <span className="relative flex items-center justify-center">
-                  <Shield className="w-5 h-5 mr-2" />
-                  {t('walletUnlock.unlockButton')}
-                </span>
+                {t('walletUnlock.unlockButton')}
               </Button>
 
               <button
-                className="w-full flex items-center justify-center text-slate-400 hover:text-white py-3 bg-transparent hover:bg-slate-800/30 rounded-xl transition-all duration-300 group"
+                className="w-full flex items-center justify-center text-content-secondary hover:text-white py-3 bg-transparent hover:bg-surface-overlay/30 rounded-xl transition-all duration-300 group"
                 onClick={handleBack}
                 type="button"
               >
@@ -452,7 +450,7 @@ export const Component = () => {
   const ModernModal = () => (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="w-full max-w-md">
-        <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl border border-slate-600/30 rounded-2xl shadow-2xl overflow-hidden">
+        <Card className="bg-gradient-to-br from-surface-overlay/90 to-surface-base/90 backdrop-blur-xl border border-border-default/30 rounded-2xl shadow-2xl overflow-hidden">
           <div className="p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
@@ -461,25 +459,26 @@ export const Component = () => {
               <h3 className="text-2xl font-bold text-white mb-2">
                 {t('walletUnlock.initializeWalletTitle')}
               </h3>
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-content-secondary leading-relaxed">
                 {t('walletUnlock.initializeWalletMessage')}
               </p>
             </div>
 
             <div className="flex gap-3">
               <Button
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700/50 py-3 rounded-xl transition-all duration-200"
+                className="flex-1 border-border-default text-content-secondary hover:bg-surface-high/50 py-3 rounded-xl transition-all duration-200"
                 onClick={() => setShowInitModal(false)}
                 variant="outline"
               >
                 {t('walletUnlock.cancel')}
               </Button>
               <Button
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="flex-1 py-3 rounded-xl"
                 onClick={() => {
                   setShowInitModal(false)
                   navigate(WALLET_SETUP_PATH)
                 }}
+                variant="primary"
               >
                 {t('walletUnlock.initialize')}
               </Button>
@@ -494,23 +493,23 @@ export const Component = () => {
     <Layout className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {isCheckingStatus ? (
         <div className="flex items-center justify-center min-h-screen px-4 py-12">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
           </div>
           <div className="relative z-10 w-full max-w-lg mx-auto">
             <div className="text-center">
               <div className="relative inline-block mb-6">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
-                <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-lg opacity-20 animate-pulse"></div>
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/20">
                   <Shield className="w-12 h-12 text-white animate-pulse" />
                 </div>
               </div>
               <h2 className="text-2xl font-bold text-white mb-3">
                 {t('walletUnlock.checkingStatus')}
               </h2>
-              <p className="text-slate-400">
+              <p className="text-content-secondary">
                 {t('walletUnlock.checkingMessage')}
               </p>
             </div>
@@ -533,10 +532,10 @@ export const Component = () => {
         </SetupLayout>
       ) : (
         <div className="flex items-center justify-center min-h-screen px-4 py-12">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
           <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
           </div>
           <div className="relative z-10 w-full">{renderUnlockForm()}</div>
         </div>

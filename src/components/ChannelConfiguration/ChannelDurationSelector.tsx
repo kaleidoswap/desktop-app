@@ -22,7 +22,7 @@ export const ChannelDurationSelector: React.FC<
   maxExpiryBlocks,
   control,
   fieldName = 'channelExpireBlocks',
-  containerClassName = 'bg-gray-800/50 p-4 rounded-xl border border-gray-700/50',
+  containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
   theme = 'dark',
 }) => {
   const { t } = useTranslation()
@@ -46,11 +46,11 @@ export const ChannelDurationSelector: React.FC<
 
   return (
     <div className={containerClassName}>
-      <label className="block text-sm font-medium text-gray-300 mb-2">
+      <label className="block text-sm font-medium text-content-secondary mb-2">
         {t('channelConfiguration.duration.label')}
-        <span className="ml-2 text-gray-400 hover:text-gray-300 cursor-help relative group">
+        <span className="ml-2 text-content-secondary hover:text-content-secondary cursor-help relative group">
           ⓘ
-          <span className="invisible group-hover:visible absolute left-0 bg-gray-900 text-white text-sm rounded py-1 px-2 w-80 shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span className="invisible group-hover:visible absolute left-0 bg-surface-base text-white text-sm rounded py-1 px-2 w-80 shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             {t('channelConfiguration.duration.tooltipInfo')}
           </span>
         </span>

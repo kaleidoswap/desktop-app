@@ -33,7 +33,7 @@ const ConnectPopup: React.FC<{
   t: any
 }> = ({ onClose, onConfirm, connectionUrl, isAlreadyConnected, t }) => (
   <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl border border-gray-700/50 max-w-lg w-full mx-4 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl border border-border-default/50 max-w-lg w-full mx-4 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
       <div className="flex items-center gap-4 mb-6">
         {isAlreadyConnected ? (
           <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -71,33 +71,29 @@ const ConnectPopup: React.FC<{
           </div>
         </>
       ) : (
-        <p className="mb-6 text-gray-300 text-lg">
+        <p className="mb-6 text-content-secondary text-lg">
           {t('orderChannel.step1.establishConnection')}
         </p>
       )}
 
-      <div className="mb-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700/50">
-        <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">
+      <div className="mb-6 p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
+        <p className="text-xs text-content-secondary mb-2 font-semibold uppercase tracking-wide">
           {t('orderChannel.step1.lspConnectionLabel')}
         </p>
-        <p className="text-sm text-gray-300 break-all font-mono">
+        <p className="text-sm text-content-secondary break-all font-mono">
           {connectionUrl}
         </p>
       </div>
 
       <div className="flex gap-3">
         <button
-          className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-all duration-200 font-semibold transform active:scale-95"
+          className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-all duration-200 font-semibold transform active:scale-95"
           onClick={onClose}
         >
           {t('orderChannel.step1.cancelButton')}
         </button>
         <button
-          className={`flex-1 px-6 py-3 text-white rounded-lg font-semibold transition-all duration-200 transform active:scale-95 ${
-            isAlreadyConnected
-              ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 shadow-lg shadow-green-900/30'
-              : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 shadow-lg shadow-blue-900/30'
-          }`}
+          className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-semibold transition-all duration-200 transform active:scale-95 shadow-lg shadow-primary/20"
           onClick={onConfirm}
         >
           {isAlreadyConnected
@@ -412,15 +408,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     }
     if (isAlreadyConnected) {
       return {
-        className:
-          'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+        className: 'bg-primary hover:bg-primary-emphasis text-primary-foreground',
         disabled: false,
         text: t('orderChannel.step1.continueWithConnectedLsp'),
       }
     }
     return {
-      className:
-        'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+      className: 'bg-primary hover:bg-primary-emphasis text-primary-foreground',
       disabled: false,
       text: t('orderChannel.step1.connectButton'),
     }
@@ -430,13 +424,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     <div className="w-full relative">
       {/* Initial Loading Overlay */}
       {isInitializing && (
-        <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-2xl">
+        <div className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-2xl">
           <div className="text-center">
             <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
             <p className="text-white text-lg font-semibold">
               {t('orderChannel.step1.checkingConnection')}
             </p>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-content-secondary text-sm mt-2">
               {t('orderChannel.step1.verifyingConnection')}
             </p>
           </div>
@@ -449,7 +443,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-3">
             {t('orderChannel.step1.title')}
           </h2>
-          <p className="text-gray-400 text-lg">
+          <p className="text-content-secondary text-lg">
             {t('orderChannel.step1.subtitle')}
           </p>
         </div>
@@ -470,35 +464,35 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
             </div>
           </div>
           <div className="flex-1 mx-4 mt-2">
-            <div className="h-1.5 bg-gray-700/50 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-surface-high/50 rounded-full overflow-hidden">
               <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-500"></div>
             </div>
           </div>
           <div className="flex items-center opacity-40">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-surface-high rounded-full flex items-center justify-center text-white font-bold">
               2
             </div>
             <div className="ml-3">
               <p className="font-semibold text-white">
                 {t('orderChannel.step2.step2Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.setParameters')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-4 mt-2">
-            <div className="h-1.5 bg-gray-700/50 rounded-full"></div>
+            <div className="h-1.5 bg-surface-high/50 rounded-full"></div>
           </div>
           <div className="flex items-center opacity-40">
-            <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
+            <div className="w-10 h-10 bg-surface-high rounded-full flex items-center justify-center text-white font-bold">
               3
             </div>
             <div className="ml-3">
               <p className="font-semibold text-white">
                 {t('orderChannel.step3.step3Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.completeSetup')}
               </p>
             </div>
@@ -590,7 +584,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* LSP URL Configuration */}
-          <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl">
+          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <label className="text-lg font-semibold text-white flex items-center gap-2">
                 <Globe className="w-5 h-5 text-blue-400" />
@@ -600,7 +594,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
             <div className="space-y-3">
               <div className="relative">
                 <input
-                  className="w-full bg-gray-900/50 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none transition-all"
+                  className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none transition-all"
                   onChange={(e) => handleDefaultLspUrlChange(e)}
                   placeholder={t('orderChannel.step1.lspUrlPlaceholder')}
                   value={tempLspUrl}
@@ -608,7 +602,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               </div>
 
               <button
-                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`w-full bg-primary hover:bg-primary-emphasis text-primary-foreground px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                   isLoading || !tempLspUrl.trim()
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
@@ -629,13 +623,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                 )}
               </button>
 
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-content-secondary">
                 {t('orderChannel.step1.enterLspInstructions')}
               </p>
             </div>
 
             {/* Kaleidoswap LSP Button */}
-            <div className="mt-4 pt-4 border-t border-gray-700/50">
+            <div className="mt-4 pt-4 border-t border-border-default/50">
               <button
                 className={`w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 p-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
@@ -646,7 +640,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               >
                 <div className="flex flex-col items-center gap-2">
                   <KaleidoswapBoxIcon />
-                  <span className="text-sm font-medium text-gray-300">
+                  <span className="text-sm font-medium text-content-secondary">
                     {t('orderChannel.step1.useDefaultKaleidoLsp')}
                   </span>
                 </div>
@@ -655,14 +649,14 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           </div>
 
           {/* LSP Connection String */}
-          <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 shadow-xl">
+          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
             <label className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
               <Link className="w-5 h-5 text-purple-400" />
               {t('orderChannel.step1.connectionStringLabel')}
             </label>
             <div className="relative">
               <textarea
-                className="w-full bg-gray-900/50 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all h-32 resize-none font-mono text-sm"
+                className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all h-32 resize-none font-mono text-sm"
                 placeholder={t(
                   'orderChannel.step1.connectionStringPlaceholder'
                 )}
@@ -683,16 +677,16 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                   text={connectionUrl}
                 >
                   <button
-                    className="absolute right-3 top-3 p-2 bg-gray-700/80 hover:bg-gray-600 rounded-lg transition-colors group"
+                    className="absolute right-3 top-3 p-2 bg-surface-high/80 hover:bg-surface-elevated rounded-lg transition-colors group"
                     title={t('orderChannel.step1.copyToClipboard')}
                     type="button"
                   >
-                    <Copy className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                    <Copy className="w-4 h-4 text-content-secondary group-hover:text-white transition-colors" />
                   </button>
                 </CopyToClipboard>
               )}
             </div>
-            <p className="mt-3 text-sm text-gray-400">
+            <p className="mt-3 text-sm text-content-secondary">
               {t('orderChannel.step1.connectionStringInfo')}
             </p>
           </div>
@@ -702,7 +696,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         <div className="flex justify-center">
           <button
             className={`
-              group px-10 py-4 text-white rounded-xl text-lg font-bold
+              group px-10 py-4 text-primary-foreground rounded-xl text-lg font-bold
               transition-all duration-300 transform
               focus:ring-4 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none 
               flex items-center justify-center gap-3 min-w-[280px]

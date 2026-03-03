@@ -135,7 +135,7 @@ const StatusModal = ({
         return {
           bgColor: 'bg-blue-900/20',
           borderColor: 'border-blue-600/30',
-          buttonColor: 'bg-blue-600 hover:bg-blue-700',
+          buttonColor: 'bg-primary hover:bg-primary-emphasis',
           icon: <CheckCircle className="h-8 w-8 text-blue-400" />,
         }
     }
@@ -152,11 +152,11 @@ const StatusModal = ({
           <div className="flex-shrink-0 mr-4">{config.icon}</div>
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-            <p className="text-gray-300 mb-3">{message}</p>
+            <p className="text-content-secondary mb-3">{message}</p>
 
             {details && (
               <div className="mt-3 mb-4">
-                <div className="bg-black/30 rounded-lg p-3 max-h-48 overflow-y-auto text-sm text-gray-400 font-mono border border-gray-700">
+                <div className="bg-black/30 rounded-lg p-3 max-h-48 overflow-y-auto text-sm text-content-secondary font-mono border border-border-default">
                   <p className="whitespace-pre-wrap break-words">{details}</p>
                 </div>
               </div>
@@ -575,7 +575,7 @@ export const Component = () => {
               <h3 className="text-xl font-medium mb-2">
                 {t('walletRestore.restoringYourWallet')}
               </h3>
-              <p className="text-gray-400">
+              <p className="text-content-secondary">
                 {t('walletRestore.restoringMessage')}
               </p>
             </div>

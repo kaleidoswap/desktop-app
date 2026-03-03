@@ -31,8 +31,8 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variantStyles = {
     danger: 'bg-red/20 text-red',
-    default: 'bg-slate-700 text-slate-300',
-    info: 'bg-cyan/20 text-cyan',
+    default: 'bg-surface-high text-content-secondary',
+    info: 'bg-primary/20 text-primary',
     primary: 'bg-blue-500/20 text-blue-500',
     success: 'bg-green-500/20 text-green-500',
     warning: 'bg-amber-500/20 text-amber-500',
@@ -95,6 +95,6 @@ const getDotColor = (variant: BadgeVariant): string => {
     case 'info':
       return 'bg-cyan'
     default:
-      return 'bg-slate-400'
+      return 'bg-content-secondary'
   }
 }

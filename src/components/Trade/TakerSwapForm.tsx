@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { useAppSelector } from '../../app/store/hooks'
+import { useSettings } from '../../hooks/useSettings'
 import { getAssetPrecision } from '../../helpers/number'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
@@ -43,7 +43,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
   })
 
   const swapString = watch('swapString')
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
 
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
   const [executeTaker] = nodeApi.useTakerMutation()
@@ -210,12 +210,12 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
         <h2 className="text-xl font-semibold text-white">
           {t('tradeManual.takerForm.title')}
         </h2>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-content-secondary">
           {t('tradeManual.takerForm.description')}
         </p>
       </div>
 
-      <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-700/50 swap-card">
+      <div className="bg-surface-overlay/50 rounded-lg p-4 mb-6 border border-border-default/50 swap-card">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white step-indicator">
@@ -226,27 +226,27 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
             </h3>
           </div>
           <button
-            className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+            className="p-2 rounded-lg hover:bg-surface-high transition-colors"
             disabled={isRefreshing || !swapDetails}
             onClick={fetchAssetBalances}
             title="Refresh balances"
           >
             <RefreshCw
-              className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 text-content-secondary ${isRefreshing ? 'animate-spin' : ''}`}
             />
           </button>
         </div>
-        <p className="text-sm text-slate-400 ml-8 mb-4">
+        <p className="text-sm text-content-secondary ml-8 mb-4">
           {t('tradeManual.takerForm.info.pasteDescription')}
         </p>
 
         <div className="space-y-6">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-slate-300">
+            <label className="text-sm font-medium text-content-secondary">
               {t('tradeManual.takerForm.labels.swapString')}
             </label>
             <textarea
-              className={`w-full px-4 py-3 bg-slate-800 border ${decodeError ? 'border-red-500' : 'border-slate-700'} rounded-lg text-white focus:outline-none focus:border-blue-500 input-animate h-24 font-mono text-xs`}
+              className={`w-full px-4 py-3 bg-surface-overlay border ${decodeError ? 'border-red-500' : 'border-border-default'} rounded-lg text-white focus:outline-none focus:border-blue-500 input-animate h-24 font-mono text-xs`}
               placeholder={t(
                 'tradeManual.takerForm.placeholders.pasteSwapString'
               )}
@@ -266,7 +266,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       </div>
 
       {swapDetails && (
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 swap-card swap-initiated">
+        <div className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default/50 swap-card swap-initiated">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white step-indicator">
               2
@@ -275,32 +275,32 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
               {t('tradeManual.takerForm.review.title')}
             </h3>
           </div>
-          <p className="text-sm text-slate-400 ml-8 mb-4">
+          <p className="text-sm text-content-secondary ml-8 mb-4">
             {t('tradeManual.takerForm.info.reviewDescription')}
           </p>
 
-          <div className="bg-slate-900/50 p-4 rounded-lg mb-6">
+          <div className="bg-surface-base/50 p-4 rounded-lg mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-300 mb-1">
+                  <h4 className="text-sm font-medium text-content-secondary mb-1">
                     {t('tradeManual.takerForm.review.youReceive')}
                   </h4>
                   <div className="flex items-center gap-2">
                     <div className="text-lg font-semibold text-white">
                       {formatAmount(swapDetails.qty_to, swapDetails.to_asset)}
                     </div>
-                    <div className="text-md text-slate-400">
+                    <div className="text-md text-content-secondary">
                       {getAssetTicker(swapDetails.to_asset)}
                     </div>
                   </div>
                   {assetBalances[swapDetails.to_asset] && (
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-1 asset-balance">
+                    <div className="flex items-center gap-1 text-xs text-content-secondary mt-1 asset-balance">
                       <Wallet className="w-3 h-3" />
                       <span>
                         {t('tradeManual.takerForm.review.currentBalance')}:{' '}
                       </span>
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium text-content-secondary">
                         {isLoadingBalances
                           ? t('tradeManual.takerForm.info.loading')
                           : `${formatBalanceDisplay(swapDetails.to_asset, assetBalances[swapDetails.to_asset].offChain)} ${getAssetTicker(swapDetails.to_asset)}`}
@@ -312,7 +312,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-slate-300 mb-1">
+                  <h4 className="text-sm font-medium text-content-secondary mb-1">
                     {t('tradeManual.takerForm.review.youSend')}
                   </h4>
                   <div className="flex items-center gap-2">
@@ -322,17 +322,17 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                         swapDetails.from_asset
                       )}
                     </div>
-                    <div className="text-md text-slate-400">
+                    <div className="text-md text-content-secondary">
                       {getAssetTicker(swapDetails.from_asset)}
                     </div>
                   </div>
                   {assetBalances[swapDetails.from_asset] && (
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-1 asset-balance">
+                    <div className="flex items-center gap-1 text-xs text-content-secondary mt-1 asset-balance">
                       <Wallet className="w-3 h-3" />
                       <span>
                         {t('tradeManual.takerForm.review.currentBalance')}:{' '}
                       </span>
-                      <span className="font-medium text-slate-300">
+                      <span className="font-medium text-content-secondary">
                         {isLoadingBalances
                           ? t('tradeManual.takerForm.info.loading')
                           : `${formatBalanceDisplay(swapDetails.from_asset, assetBalances[swapDetails.from_asset].offChain)} ${getAssetTicker(swapDetails.from_asset)}`}
@@ -353,13 +353,13 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
               </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <h4 className="text-sm font-medium text-slate-300 mb-2">
+            <div className="mt-4 pt-4 border-t border-border-default">
+              <h4 className="text-sm font-medium text-content-secondary mb-2">
                 {t('tradeManual.takerForm.review.additionalDetails')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-content-secondary">
                     {t('tradeManual.takerForm.review.timeout')}
                   </span>
                   <span className="text-sm text-white">
@@ -368,7 +368,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-slate-400">Payment Hash</span>
+                  <span className="text-xs text-content-secondary">Payment Hash</span>
                   <span className="text-sm text-white font-mono truncate">
                     {swapDetails.payment_hash}
                   </span>
@@ -395,14 +395,14 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
               )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 p-3 bg-slate-800/30 rounded-xl border border-slate-700 mb-4">
+          <div className="flex items-center gap-2 text-xs text-content-secondary p-3 bg-surface-overlay/30 rounded-xl border border-border-default mb-4">
             <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />
             <p>{t('tradeManual.takerForm.info.whitelistInfo')}</p>
           </div>
 
           <div className="flex gap-3">
             <button
-              className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors button-animate"
+              className="flex-1 px-4 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-colors button-animate"
               disabled={isWhitelisting}
               onClick={resetForm}
               type="button"
@@ -442,17 +442,17 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
               </div>
 
               {nodeInfoData?.pubkey && (
-                <div className="mt-3 p-2 bg-slate-800/50 rounded border border-slate-700/50">
+                <div className="mt-3 p-2 bg-surface-overlay/50 rounded border border-border-default/50">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-content-secondary">
                       {t('tradeManual.takerForm.success.yourNodePubkey')}
                     </span>
                     <div className="flex items-center gap-2">
-                      <code className="text-xs text-emerald-300 font-mono bg-slate-900/50 p-1.5 rounded flex-1 overflow-x-auto">
+                      <code className="text-xs text-emerald-300 font-mono bg-surface-base/50 p-1.5 rounded flex-1 overflow-x-auto">
                         {nodeInfoData.pubkey}
                       </code>
                       <button
-                        className="p-1.5 rounded bg-slate-700 hover:bg-slate-600 transition-colors"
+                        className="p-1.5 rounded bg-surface-high hover:bg-surface-elevated transition-colors"
                         onClick={() => {
                           navigator.clipboard.writeText(
                             nodeInfoData.pubkey ?? ''
@@ -462,7 +462,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                         title="Copy to clipboard"
                       >
                         <svg
-                          className="text-slate-300"
+                          className="text-content-secondary"
                           fill="none"
                           height="14"
                           stroke="currentColor"

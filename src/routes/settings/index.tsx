@@ -3,6 +3,8 @@ import { save } from '@tauri-apps/plugin-dialog'
 import {
   ChevronDown,
   LogOut,
+  Moon,
+  Sun,
   Undo,
   Save,
   Shield,
@@ -44,15 +46,23 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
   setBitcoinUnit,
+  setFiatCurrency,
   setLanguage,
   setNodeConnectionString,
+  setTheme,
 } from '../../slices/settings/settings.slice'
+import {
+  CURRENCY_LABELS,
+  CURRENCY_SYMBOLS,
+  SUPPORTED_CURRENCIES,
+} from '../../slices/priceApi/priceApi.slice'
 import { waitForNodeReady } from '../../utils/nodeState'
 
 import { TerminalLogDisplay } from './TerminalLogDisplay'
 
 interface FormFields {
   bitcoinUnit: string
+  fiatCurrency: string
   language: string
   nodeConnectionString: string
   lspUrl: string
@@ -68,7 +78,7 @@ export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, nodeConnectionString, language } = useSelector(
+  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, theme } = useSelector(
     (state: RootState) => state.settings
   )
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
@@ -117,6 +127,7 @@ export const Component: React.FC = () => {
       defaultValues: {
         bearerToken: nodeSettings.bearer_token || '',
         bitcoinUnit,
+        fiatCurrency,
         defaultMakerUrl: nodeSettings.default_maker_url || '',
         indexerUrl: nodeSettings.indexer_url || '',
         language: language || 'en',
@@ -236,6 +247,7 @@ export const Component: React.FC = () => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
+      fiatCurrency,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
@@ -319,6 +331,7 @@ export const Component: React.FC = () => {
       // Batch state updates to reduce renders
       const updates = async () => {
         dispatch(setBitcoinUnit(data.bitcoinUnit))
+        dispatch(setFiatCurrency(data.fiatCurrency as any))
         dispatch(setLanguage(data.language))
         dispatch(setNodeConnectionString(data.nodeConnectionString))
 
@@ -459,6 +472,7 @@ export const Component: React.FC = () => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
+      fiatCurrency,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
@@ -535,12 +549,12 @@ export const Component: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen py-8 px-4">
         <div className="w-16 h-16 mb-8">
-          <div className="w-full h-full border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
         <h2 className="text-2xl font-bold text-white mb-2">
           {t('settings.loadingSettings')}
         </h2>
-        <p className="text-gray-400">{t('settings.pleaseWait')}</p>
+        <p className="text-content-secondary">{t('settings.pleaseWait')}</p>
       </div>
     )
   }
@@ -549,7 +563,7 @@ export const Component: React.FC = () => {
     <div className="flex flex-col min-h-screen py-8 px-4">
       {/* Page Header */}
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <p className="text-gray-400 text-sm">{t('settings.subtitle')}</p>
+        <p className="text-content-secondary text-sm">{t('settings.subtitle')}</p>
       </div>
 
       {/* Main Content Grid */}
@@ -560,7 +574,7 @@ export const Component: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             <form onSubmit={handleSubmit(handleSave)}>
               {/* Application Settings Card */}
-              <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
                 <div className="flex items-center gap-2 mb-6">
                   <Settings className="w-5 h-5 text-blue-400" />
                   <h3 className="text-xl font-semibold text-white">
@@ -571,7 +585,7 @@ export const Component: React.FC = () => {
                 <div className="space-y-8">
                   {/* General Settings */}
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-400 mb-4">
+                    <h4 className="text-sm font-semibold text-content-secondary mb-4">
                       {t('settings.generalSettings')}
                     </h4>
                     <div className="space-y-6">
@@ -581,13 +595,13 @@ export const Component: React.FC = () => {
                         name="bitcoinUnit"
                         render={({ field }) => (
                           <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            <label className="block text-sm font-semibold text-content-secondary mb-2">
                               {t('settings.bitcoinUnit')}
                             </label>
                             <div className="relative">
                               <select
                                 {...field}
-                                className="block w-full pl-4 pr-10 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                               >
                                 <option value="SAT">
                                   {t('settings.bitcoinUnitSat')}
@@ -596,11 +610,73 @@ export const Component: React.FC = () => {
                                   {t('settings.bitcoinUnitBtc')}
                                 </option>
                               </select>
-                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
                             </div>
                           </div>
                         )}
                       />
+
+                      {/* Fiat Currency Selector */}
+                      <Controller
+                        control={control}
+                        name="fiatCurrency"
+                        render={({ field }) => (
+                          <div className="group transition-all duration-300 hover:translate-x-1">
+                            <label className="block text-sm font-semibold text-content-secondary mb-2">
+                              {t('settings.fiatCurrency')}
+                            </label>
+                            <p className="text-xs text-content-tertiary mb-2">
+                              {t('settings.fiatCurrencyDescription')}
+                            </p>
+                            <div className="relative">
+                              <select
+                                {...field}
+                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                              >
+                                {SUPPORTED_CURRENCIES.map((currency) => (
+                                  <option key={currency} value={currency}>
+                                    {CURRENCY_SYMBOLS[currency]}{CURRENCY_LABELS[currency]}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
+                            </div>
+                          </div>
+                        )}
+                      />
+
+                      {/* Theme Toggle */}
+                      <div className="group transition-all duration-300 hover:translate-x-1">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
+                          {t('settings.theme')}
+                        </label>
+                        <div className="flex rounded-lg overflow-hidden border border-border-default w-fit">
+                          <button
+                            type="button"
+                            onClick={() => dispatch(setTheme('dark'))}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                              theme === 'dark'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
+                            }`}
+                          >
+                            <Moon className="w-4 h-4" />
+                            {t('settings.themeDark')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => dispatch(setTheme('light'))}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                              theme === 'light'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
+                            }`}
+                          >
+                            <Sun className="w-4 h-4" />
+                            {t('settings.themeLight')}
+                          </button>
+                        </div>
+                      </div>
 
                       {/* Language Selector */}
                       <Controller
@@ -608,13 +684,13 @@ export const Component: React.FC = () => {
                         name="language"
                         render={({ field }) => (
                           <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            <label className="block text-sm font-semibold text-content-secondary mb-2">
                               {t('settings.language')}
                             </label>
                             <div className="relative">
                               <select
                                 {...field}
-                                className="block w-full pl-4 pr-10 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                               >
                                 {Object.entries(LANGUAGES).map(
                                   ([code, { name, flag }]) => (
@@ -624,7 +700,7 @@ export const Component: React.FC = () => {
                                   )
                                 )}
                               </select>
-                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-gray-400 pointer-events-none" />
+                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
                             </div>
                           </div>
                         )}
@@ -636,12 +712,12 @@ export const Component: React.FC = () => {
                         name="lspUrl"
                         render={({ field }) => (
                           <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-gray-300 mb-2">
+                            <label className="block text-sm font-semibold text-content-secondary mb-2">
                               {t('settings.lspUrl')}
                             </label>
                             <input
                               {...field}
-                              className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                               placeholder={t('settings.lspUrlPlaceholder')}
                               type="text"
                             />
@@ -652,14 +728,14 @@ export const Component: React.FC = () => {
                   </div>
 
                   {/* Maker Settings */}
-                  <div className="pt-6 border-t border-gray-700">
-                    <h4 className="text-sm font-semibold text-gray-400 mb-4">
+                  <div className="pt-6 border-t border-border-default">
+                    <h4 className="text-sm font-semibold text-content-secondary mb-4">
                       {t('settings.makerSettings')}
                     </h4>
                     <div className="space-y-6">
                       {/* Additional Maker URLs */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-4">
+                        <label className="block text-sm font-semibold text-content-secondary mb-4">
                           {t('settings.makerUrls')}
                         </label>
                         <Controller
@@ -671,7 +747,7 @@ export const Component: React.FC = () => {
                                 <div className="flex gap-2" key={index}>
                                   <div className="flex-1 relative group">
                                     <input
-                                      className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                                      className="w-full px-4 py-3 bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                                       onChange={(e) => {
                                         const newUrls = [...(field.value ?? [])]
                                         newUrls[index] = e.target.value
@@ -695,7 +771,7 @@ export const Component: React.FC = () => {
                                       className={`p-3 rounded-lg transition-colors ${
                                         url === watch('defaultMakerUrl')
                                           ? 'bg-blue-500/20 text-blue-400'
-                                          : 'bg-gray-600/20 text-gray-400 hover:bg-blue-500/20 hover:text-blue-400'
+                                          : 'bg-surface-elevated/20 text-content-secondary hover:bg-blue-500/20 hover:text-blue-400'
                                       }`}
                                       onClick={() => {
                                         setValue('defaultMakerUrl', url)
@@ -762,7 +838,7 @@ export const Component: React.FC = () => {
               </div>
 
               {/* Node Connection Settings Card */}
-              <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+              <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Server className="w-5 h-5 text-blue-400" />
@@ -785,12 +861,12 @@ export const Component: React.FC = () => {
                     name="nodeConnectionString"
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.nodeConnectionString')}
                         </label>
                         <input
                           {...field}
-                          className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                           placeholder="e.g., http://localhost:3001"
                           type="text"
                         />
@@ -804,12 +880,12 @@ export const Component: React.FC = () => {
                     name="rpcConnectionUrl"
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.bitcoindRpc')}
                         </label>
                         <input
                           {...field}
-                          className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                           placeholder="Bitcoin RPC URL"
                           type="text"
                         />
@@ -823,12 +899,12 @@ export const Component: React.FC = () => {
                     name="indexerUrl"
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.indexerUrl')}
                         </label>
                         <input
                           {...field}
-                          className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                           placeholder="Indexer service URL"
                           type="text"
                         />
@@ -842,12 +918,12 @@ export const Component: React.FC = () => {
                     name="proxyEndpoint"
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.rgbProxyEndpoint')}
                         </label>
                         <input
                           {...field}
-                          className="w-full px-4 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                           placeholder={t('settings.rgbProxyPlaceholder')}
                           type="text"
                         />
@@ -860,12 +936,12 @@ export const Component: React.FC = () => {
                     name="bearerToken"
                     render={({ field }) => (
                       <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.bearerToken')}
                         </label>
                         <input
                           {...field}
-                          className="block w-full pl-10 pr-12 py-3 text-white bg-gray-700/50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
+                          className="block w-full pl-10 pr-12 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
                           placeholder={t('settings.bearerTokenPlaceholder')}
                           type="text"
                         />
@@ -877,10 +953,10 @@ export const Component: React.FC = () => {
 
               {/* Form Actions */}
               <div className="sticky bottom-6 mt-6">
-                <div className="bg-gray-800/95 backdrop-blur-sm p-4 rounded-xl border border-gray-700 shadow-lg">
+                <div className="bg-surface-overlay/95 backdrop-blur-sm p-4 rounded-xl border border-border-default shadow-lg">
                   <div className="flex gap-4">
                     <button
-                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-[#2A2D3A] text-white rounded-xl hover:bg-[#363A4B] focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-surface-elevated text-white rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
                       disabled={isSaving}
                       onClick={handleUndo}
                       type="button"
@@ -889,7 +965,7 @@ export const Component: React.FC = () => {
                       {t('settings.resetChanges')}
                     </button>
                     <button
-                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-[#4361EE] text-white rounded-xl hover:bg-[#3651DE] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
                       disabled={isSaving}
                       type="submit"
                     >
@@ -914,7 +990,7 @@ export const Component: React.FC = () => {
           {/* Right Column - Node Status and Actions */}
           <div className="space-y-6">
             {/* Security & Backup Card */}
-            <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+            <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
               <div className="flex items-center gap-2 mb-6">
                 <Shield className="w-5 h-5 text-blue-400" />
                 <h3 className="text-xl font-semibold text-white">
@@ -926,19 +1002,19 @@ export const Component: React.FC = () => {
                 {/* View Recovery Phrase Button - Only for local nodes */}
                 {isLocalNode && (
                   <button
-                    className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl p-4 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="w-full group bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl p-4 transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                     onClick={() => setShowMnemonicModal(true)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+                        <div className="p-2 bg-primary-foreground/10 rounded-lg group-hover:bg-primary-foreground/20 transition-colors">
                           <Lock className="w-5 h-5" />
                         </div>
                         <div className="text-left">
                           <div className="font-semibold">
                             {t('settings.viewRecoveryPhrase')}
                           </div>
-                          <div className="text-sm text-white/70">
+                          <div className="text-sm text-primary-foreground/70">
                             {t('settings.accessSeedPhrase')}
                           </div>
                         </div>
@@ -950,31 +1026,31 @@ export const Component: React.FC = () => {
 
                 {/* Backup Wallet Button */}
                 <button
-                  className="w-full group bg-gray-700/50 hover:bg-gray-700 border border-gray-600 hover:border-gray-500 text-white rounded-xl p-4 transition-all duration-200"
+                  className="w-full group bg-surface-high/50 hover:bg-surface-high border border-border-default hover:border-border-subtle text-white rounded-xl p-4 transition-all duration-200"
                   onClick={() => setShowBackupModal(true)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-600/20 rounded-lg group-hover:bg-blue-600/30 transition-colors">
+                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
                         <Download className="w-5 h-5 text-blue-400" />
                       </div>
                       <div className="text-left">
                         <div className="font-semibold">
                           {t('settings.backupWallet')}
                         </div>
-                        <div className="text-sm text-gray-400">
+                        <div className="text-sm text-content-secondary">
                           {t('settings.exportBackup')}
                         </div>
                       </div>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-5 h-5 text-content-secondary group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>
               </div>
             </div>
 
             {/* Node Status Card */}
-            <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700">
+            <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
               <div className="flex items-center gap-2 mb-6">
                 <Activity className="w-5 h-5 text-blue-400" />
                 <h3 className="text-xl font-semibold text-white">
@@ -1016,8 +1092,8 @@ export const Component: React.FC = () => {
                 </div>
 
                 {/* Connection Type */}
-                <div className="p-4 bg-gray-700/30 rounded-xl border border-gray-700">
-                  <div className="flex items-center gap-2 text-gray-400 mb-1">
+                <div className="p-4 bg-surface-high/30 rounded-xl border border-border-default">
+                  <div className="flex items-center gap-2 text-content-secondary mb-1">
                     <Server className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       {t('settings.connectionType')}
@@ -1035,7 +1111,7 @@ export const Component: React.FC = () => {
               <div className="space-y-3 mt-6">
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    className="flex items-center justify-center px-4 py-3 bg-[#2A2D3A] text-white rounded-xl hover:bg-[#363A4B] focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
+                    className="flex items-center justify-center px-4 py-3 bg-surface-elevated text-white rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
                     onClick={handleLogout}
                   >
                     <LogOut className="w-5 h-5 mr-2" />
@@ -1043,7 +1119,7 @@ export const Component: React.FC = () => {
                   </button>
 
                   <button
-                    className="flex items-center justify-center px-4 py-3 bg-[#2A2D3A] text-red-500 rounded-xl hover:bg-[#363A4B] focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 text-sm"
+                    className="flex items-center justify-center px-4 py-3 bg-surface-elevated text-red-500 rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 text-sm"
                     onClick={handleShutdown}
                   >
                     <Power className="w-5 h-5 mr-2" />
@@ -1054,7 +1130,7 @@ export const Component: React.FC = () => {
             </div>
 
             {/* App Version Info */}
-            <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-gray-700">
+            <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-border-default">
               <AppVersion showDetailed={true} />
             </div>
           </div>
@@ -1062,9 +1138,9 @@ export const Component: React.FC = () => {
 
         {/* Logs Section */}
         {isLocalNode && (
-          <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+          <div className="bg-surface-overlay/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-border-default overflow-hidden">
             {/* Header with controls */}
-            <div className="p-4 border-b border-gray-700/50">
+            <div className="p-4 border-b border-border-default/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-blue-400" />
@@ -1075,8 +1151,8 @@ export const Component: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                   {/* Entry selector */}
-                  <div className="flex items-center gap-2 bg-gray-700/30 px-2 py-1 rounded-lg border border-gray-600">
-                    <span className="text-sm text-gray-400">
+                  <div className="flex items-center gap-2 bg-surface-high/30 px-2 py-1 rounded-lg border border-border-default">
+                    <span className="text-sm text-content-secondary">
                       {t('settings.show')}
                     </span>
                     <select
@@ -1092,7 +1168,7 @@ export const Component: React.FC = () => {
                       <option value="200">200</option>
                       <option value="500">500</option>
                     </select>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-content-secondary">
                       {t('settings.entries')}
                     </span>
                   </div>
@@ -1100,7 +1176,7 @@ export const Component: React.FC = () => {
                   {/* Action buttons */}
                   <div className="flex gap-1.5">
                     <button
-                      className="p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      className="p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
                       disabled={nodeLogs.length === 0 || isLoadingLogs}
                       onClick={handleExportLogs}
                       title={t('settings.exportLogs')}
@@ -1108,7 +1184,7 @@ export const Component: React.FC = () => {
                       <Download className="w-4 h-4" />
                     </button>
                     <button
-                      className={`p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors border border-gray-600 ${
+                      className={`p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors border border-border-default ${
                         isLoadingLogs ? 'animate-spin' : ''
                       }`}
                       disabled={isLoadingLogs}
@@ -1121,7 +1197,7 @@ export const Component: React.FC = () => {
                       <RefreshCw className="w-4 h-4" />
                     </button>
                     <button
-                      className="p-2 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      className="p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
                       disabled={nodeLogs.length === 0 || isLoadingLogs}
                       onClick={() => setNodeLogs([])}
                       title={t('settings.clearLogs')}
@@ -1133,20 +1209,20 @@ export const Component: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-gray-900/95">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700/50 bg-gray-800/50">
-                <span className="text-sm font-medium text-gray-300">
+            <div className="bg-surface-base/95">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-border-default/50 bg-surface-overlay/50">
+                <span className="text-sm font-medium text-content-secondary">
                   {t('settings.liveNodeLogs')}
                 </span>
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-content-tertiary">
                     {t('settings.page')} {currentPage} {t('settings.of')}{' '}
                     {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} (
                     {totalLogs} {t('settings.totalEntries')})
                   </span>
                   <div className="flex gap-2">
                     <button
-                      className="px-2 py-1 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      className="px-2 py-1 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
                       disabled={currentPage === 1 || isLoadingLogs}
                       onClick={() => {
                         setCurrentPage((prev) => Math.max(1, prev - 1))
@@ -1155,7 +1231,7 @@ export const Component: React.FC = () => {
                       {t('settings.previous')}
                     </button>
                     <button
-                      className="px-2 py-1 text-sm bg-gray-700/30 hover:bg-gray-600/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-600"
+                      className="px-2 py-1 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
                       disabled={
                         currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
                         isLoadingLogs
@@ -1172,16 +1248,16 @@ export const Component: React.FC = () => {
 
               <div className="h-[500px] overflow-auto relative">
                 {isLoadingLogs ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+                  <div className="absolute inset-0 flex items-center justify-center bg-surface-base/50 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-content-secondary">
                         {t('settings.loadingLogs')}
                       </span>
                     </div>
                   </div>
                 ) : nodeLogs.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="flex items-center justify-center h-full text-content-tertiary">
                     <span className="flex items-center gap-2">
                       <Activity className="w-4 h-4" />
                       {t('settings.noLogsAvailable')}
@@ -1229,26 +1305,26 @@ export const Component: React.FC = () => {
 
       {showRestartConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm">
+          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-center text-yellow-500 mb-4">
               <AlertTriangle size={48} />
             </div>
             <h2 className="text-2xl font-bold mb-4 text-center text-white">
               {t('settings.restartNode')}
             </h2>
-            <p className="text-gray-300 text-center mb-6">
+            <p className="text-content-secondary text-center mb-6">
               {t('settings.restartNodeMessage')}
             </p>
             <div className="flex justify-between space-x-4">
               <button
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
                 onClick={() => setShowRestartConfirmation(false)}
                 type="button"
               >
                 {t('settings.later')}
               </button>
               <button
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
                 onClick={() => {
                   setShowRestartConfirmation(false)
                   handleRestartNode()
@@ -1264,26 +1340,26 @@ export const Component: React.FC = () => {
 
       {showLogoutConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm">
+          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-center text-yellow-500 mb-4">
               <AlertTriangle size={48} />
             </div>
             <h2 className="text-2xl font-bold mb-4 text-center text-white">
               {t('settings.confirmLogout')}
             </h2>
-            <p className="text-gray-300 text-center mb-6">
+            <p className="text-content-secondary text-center mb-6">
               {t('settings.logoutMessage')}
             </p>
             <div className="flex justify-between space-x-4">
               <button
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
                 onClick={() => setShowLogoutConfirmation(false)}
                 type="button"
               >
                 {t('settings.cancel')}
               </button>
               <button
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
                 onClick={confirmLogout}
                 type="button"
               >
@@ -1296,16 +1372,16 @@ export const Component: React.FC = () => {
 
       {showShutdownConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-sm">
+          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
             {isShuttingDown ? (
               <div className="flex flex-col items-center py-6">
                 <div className="w-16 h-16 mb-4">
-                  <div className="w-full h-full border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+                  <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">
                   {t('settings.shuttingDownTitle')}
                 </h3>
-                <p className="text-gray-400 text-center">
+                <p className="text-content-secondary text-center">
                   {t('settings.shuttingDownMessage')}
                 </p>
               </div>
@@ -1317,19 +1393,19 @@ export const Component: React.FC = () => {
                 <h2 className="text-2xl font-bold mb-4 text-center text-white">
                   {t('settings.confirmShutdown')}
                 </h2>
-                <p className="text-gray-300 text-center mb-6">
+                <p className="text-content-secondary text-center mb-6">
                   {t('settings.confirmShutdownMessage')}
                 </p>
                 <div className="flex justify-between space-x-4">
                   <button
-                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                    className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
                     onClick={() => setShowShutdownConfirmation(false)}
                     type="button"
                   >
                     {t('settings.cancel')}
                   </button>
                   <button
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
                     onClick={confirmShutdown}
                     type="button"
                   >

@@ -16,7 +16,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { useAppSelector } from '../../../../app/store/hooks'
+import { useSettings } from '../../../../hooks/useSettings'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
 import rgbLogo from '../../../../assets/rgb-symbol-color.svg'
 import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
@@ -58,7 +58,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     useUtxoErrorHandler()
   const { t } = useTranslation()
 
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
   const [addressQuery] = nodeApi.useLazyAddressQuery()
   const [lnInvoice] = nodeApi.useLnInvoiceMutation()
   const [rgbInvoice] = nodeApi.useRgbInvoiceMutation()
@@ -474,7 +474,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           ${
             network === type
               ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-              : 'border-slate-700 hover:border-blue-500/50 text-slate-400 hover:text-blue-500/80'
+              : 'border-border-default hover:border-blue-500/50 text-content-secondary hover:text-blue-500/80'
           }
         `}
         disabled={isDisabled}
@@ -485,7 +485,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         />
         <span className="font-medium text-sm">{label}</span>
         {isDisabled && (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-content-tertiary">
             {t('depositModal.step2.network.requiresAsset')}
           </span>
         )}
@@ -494,7 +494,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   }
 
   const getStatusColor = () => {
-    if (!invoiceStatus) return 'text-slate-400'
+    if (!invoiceStatus) return 'text-content-secondary'
     switch (invoiceStatus.status) {
       case 'Pending':
         return 'text-yellow-500'
@@ -531,7 +531,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   }, [invoiceStatus, onNext])
 
   return (
-    <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-4">
+    <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
       <div className="flex flex-col items-center mb-2">
         {/* Display selected asset icon */}
         {assetId === BTC_ASSET_ID ? (
@@ -544,11 +544,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         <h3 className="text-xl font-bold text-white mb-1">{titleText}</h3>
 
         {assetName && (
-          <div className="text-slate-400 mb-1 text-xs">{assetName}</div>
+          <div className="text-content-secondary mb-1 text-xs">{assetName}</div>
         )}
 
         {assetId && assetId !== BTC_ASSET_ID && (
-          <div className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
+          <div className="text-xs text-content-tertiary bg-surface-overlay px-2 py-0.5 rounded-full">
             {assetId.slice(0, 8)}...{assetId.slice(-8)}
           </div>
         )}
@@ -571,13 +571,13 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
         {network === 'on-chain' && assetId !== BTC_ASSET_ID && (
-          <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 animate-fadeIn">
+          <div className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default animate-fadeIn">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-white">
                   {t('depositModal.step2.privacy.title')}
                 </h4>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-content-secondary mt-0.5">
                   {usePrivacy
                     ? t('depositModal.step2.privacy.modePrivacy')
                     : t('depositModal.step2.privacy.modeWitness')}
@@ -586,14 +586,14 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               <button
                 className={`
                   relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                  ${usePrivacy ? 'bg-blue-600' : 'bg-slate-600'}
+                  ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}
                 `}
                 onClick={() => setUsePrivacy(!usePrivacy)}
               >
                 <span
                   className={`
                     inline-block h-4 w-4 transform rounded-full transition-transform
-                    ${usePrivacy ? 'bg-blue-400 translate-x-6' : 'bg-slate-200 translate-x-1'}
+                    ${usePrivacy ? 'bg-primary translate-x-6' : 'bg-surface-high translate-x-1'}
                   `}
                 />
               </button>
@@ -681,11 +681,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {network === 'on-chain' && assetId && assetId !== BTC_ASSET_ID && (
           <div className="space-y-1 animate-fadeIn">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-medium text-slate-400">
+              <label className="text-xs font-medium text-content-secondary">
                 {t('depositModal.step2.amount.optionalLabel')}
               </label>
               {assetTicker && (
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-content-secondary">
                   {t('depositModal.step2.amount.precision', {
                     value: getAssetPrecision(
                       assetTicker,
@@ -699,9 +699,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             <div className="flex items-center gap-2">
               <div className="flex-1 relative">
                 <input
-                  className="w-full px-3 py-2 pr-16 bg-slate-800/50 rounded-xl border border-slate-700 
+                  className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default 
                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                           placeholder:text-slate-600 transition-all duration-200 text-sm"
+                           placeholder:text-content-tertiary transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
                   placeholder={t('depositModal.step2.amount.example', {
@@ -711,7 +711,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   value={amount}
                 />
               </div>
-              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
+              <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
                 {assetTicker}
               </div>
             </div>
@@ -722,11 +722,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {network === 'lightning' && (
           <div className="space-y-1 animate-fadeIn">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-medium text-slate-400">
+              <label className="text-xs font-medium text-content-secondary">
                 {t('depositModal.step2.amount.optionalLabel')}
               </label>
               {maxDepositAmount > 0 && (
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-content-secondary">
                   {t('depositModal.step2.amount.maxLabel', {
                     amount: formatAmount(
                       maxDepositAmount,
@@ -744,9 +744,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               <div className="flex-1 relative">
                 <input
                   autoFocus
-                  className="w-full px-3 py-2 pr-16 bg-slate-800/50 rounded-xl border border-slate-700 
+                  className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default 
                            focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                           placeholder:text-slate-600 transition-all duration-200 text-sm"
+                           placeholder:text-content-tertiary transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
                   placeholder={t('depositModal.step2.amount.maxPlaceholder', {
@@ -773,7 +773,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   </button>
                 )}
               </div>
-              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
+              <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
                 {assetId === BTC_ASSET_ID
                   ? getDisplayAsset('BTC', bitcoinUnit)
                   : assetTicker}
@@ -834,7 +834,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {!address ? (
           <button
-            className="w-full py-2.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
+            className="w-full py-2.5 px-6 bg-primary hover:bg-primary-emphasis disabled:opacity-60
                      text-white rounded-xl font-medium transition-all duration-200 
                      flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             disabled={
@@ -868,7 +868,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {/* Payment Status */}
             {invoiceStatus && (
               <div
-                className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm py-2 bg-slate-800/50 rounded-lg`}
+                className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm py-2 bg-surface-overlay/50 rounded-lg`}
               >
                 {invoiceStatus.status === 'Pending' ? (
                   <>
@@ -907,11 +907,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
             {/* Address Display - More compact */}
             <div
-              className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 
+              className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
                           flex items-center justify-between group hover:border-blue-500/50 
                           transition-all duration-200"
             >
-              <div className="truncate flex-1 text-slate-300 font-mono text-xs flex items-center gap-2">
+              <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                 <span
                   className={`
                   px-1.5 py-0.5 rounded-md text-xs font-medium
@@ -929,7 +929,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               <div className="flex items-center gap-1">
                 <button
                   className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-slate-400 hover:text-blue-500 disabled:opacity-50 
+                           text-content-secondary hover:text-blue-500 disabled:opacity-50 
                            disabled:cursor-not-allowed"
                   disabled={loading}
                   onClick={generateAddress}
@@ -941,7 +941,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 </button>
                 <button
                   className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-slate-400 hover:text-blue-500"
+                           text-content-secondary hover:text-blue-500"
                   onClick={handleCopy}
                   title={t('depositModal.step2.actions.copy')}
                 >
@@ -955,19 +955,19 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               recipientId &&
               network === 'on-chain' && (
                 <div
-                  className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 
+                  className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
                             flex items-center justify-between group hover:border-blue-500/50 
                             transition-all duration-200"
                 >
-                  <div className="truncate flex-1 text-slate-300 font-mono text-xs">
-                    <span className="text-slate-400 mr-2">Recipient ID:</span>
+                  <div className="truncate flex-1 text-content-secondary font-mono text-xs">
+                    <span className="text-content-secondary mr-2">Recipient ID:</span>
                     {recipientId.length > 45
                       ? `${recipientId.slice(0, 42)}...`
                       : recipientId}
                   </div>
                   <button
                     className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-slate-400 hover:text-blue-500"
+                           text-content-secondary hover:text-blue-500"
                     onClick={handleCopyRecipientId}
                     title={t('depositModal.step2.actions.copy')}
                   >
@@ -981,8 +981,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {/* Navigation - More compact */}
         <div className="flex justify-between pt-3">
           <button
-            className="px-3 py-2 text-slate-400 hover:text-white transition-colors 
-                     flex items-center gap-1.5 hover:bg-slate-800/50 rounded-lg text-sm"
+            className="px-3 py-2 text-content-secondary hover:text-white transition-colors 
+                     flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
             onClick={onBack}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -990,7 +990,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </button>
 
           <button
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg 
+            className="px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg 
                      transition-colors flex items-center gap-1.5 text-sm"
             onClick={onNext}
           >

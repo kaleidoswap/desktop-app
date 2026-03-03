@@ -125,11 +125,11 @@ export const UTXOManagementModal = ({
 
   const UTXOCard = ({ unspent }: { unspent: any; index: number }) => (
     <div
-      className="bg-slate-800/50 rounded-xl border border-slate-700 p-4"
+      className="bg-surface-overlay/50 rounded-xl border border-border-default p-4"
       key={unspent.utxo.outpoint}
     >
       <div className="flex justify-between items-start mb-2">
-        <div className="text-sm font-medium text-slate-300">
+        <div className="text-sm font-medium text-content-secondary">
           {unspent.utxo?.outpoint?.split(':')[0]}
         </div>
         <div
@@ -146,13 +146,13 @@ export const UTXOManagementModal = ({
         {bitcoinUnit}
       </div>
       {unspent.rgb_allocations && unspent.rgb_allocations.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-slate-700">
-          <div className="text-sm text-slate-400">
+        <div className="mt-2 pt-2 border-t border-border-default">
+          <div className="text-sm text-content-secondary">
             {t('utxoManagement.card.rgbAllocations')}
           </div>
           {unspent.rgb_allocations.map((allocation: any, i: number) => (
             <div
-              className="text-sm text-slate-300 flex justify-between"
+              className="text-sm text-content-secondary flex justify-between"
               key={i}
             >
               <span className="truncate">{allocation.asset_id}</span>
@@ -211,13 +211,13 @@ export const UTXOManagementModal = ({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20"
       onClick={handleBackdropClick}
     >
-      <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 max-w-2xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+      <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-2xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">
             {t('utxoManagement.title')}
           </h2>
           <button
-            className="text-slate-400 hover:text-white transition-colors"
+            className="text-content-secondary hover:text-white transition-colors"
             onClick={onClose}
           >
             ✕
@@ -228,7 +228,7 @@ export const UTXOManagementModal = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {summaryCards.map((card) => (
             <div
-              className="bg-slate-800/50 rounded-xl border border-slate-700 p-4"
+              className="bg-surface-overlay/50 rounded-xl border border-border-default p-4"
               key={card.key}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -238,7 +238,7 @@ export const UTXOManagementModal = ({
               <div className="flex flex-col gap-1.5">
                 {card.bullets.map((bullet) => (
                   <div
-                    className="flex items-center gap-2 text-sm text-slate-300"
+                    className="flex items-center gap-2 text-sm text-content-secondary"
                     key={bullet}
                   >
                     <div className={`w-2 h-2 rounded-full ${card.dotClass}`} />
@@ -249,7 +249,7 @@ export const UTXOManagementModal = ({
               <div className="text-2xl font-bold text-white mt-3">
                 {formatBitcoinAmount(card.total, bitcoinUnit)} {bitcoinUnit}
               </div>
-              <div className="text-sm text-slate-400 mt-1">
+              <div className="text-sm text-content-secondary mt-1">
                 {t('utxoManagement.summary.countLabel', { count: card.count })}
               </div>
             </div>
@@ -257,7 +257,7 @@ export const UTXOManagementModal = ({
         </div>
 
         <button
-          className="w-full mb-6 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl 
+          className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl 
                    font-medium transition-colors flex items-center justify-center gap-2"
           onClick={handleCreateUTXOs}
         >
@@ -329,7 +329,7 @@ export const UTXOManagementModal = ({
             )}
           </div>
         ) : (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-content-secondary">
             {t('utxoManagement.empty')}
           </div>
         )}

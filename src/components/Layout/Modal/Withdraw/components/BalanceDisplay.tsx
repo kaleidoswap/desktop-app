@@ -19,7 +19,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
     return (
       <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-4">
         <div className="flex justify-between items-center">
-          <span className="text-slate-400 text-sm">
+          <span className="text-content-secondary text-sm">
             {t('withdrawModal.balance.btcLabel')}
           </span>
           <span className="text-white font-medium">
@@ -52,7 +52,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
       return (
         <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-4">
           <div className="flex justify-between items-center">
-            <span className="text-slate-400 text-sm">
+            <span className="text-content-secondary text-sm">
               {t('withdrawModal.balance.assetLabel', { ticker })}
             </span>
             <span className="text-white font-medium">

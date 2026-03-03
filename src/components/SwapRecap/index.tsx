@@ -142,7 +142,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
       onClick={handleClose}
     >
       <div
-        className="bg-slate-900/90 rounded-2xl border border-slate-800/50 w-full max-w-md shadow-xl animate-in slide-in-from-bottom-8 duration-300"
+        className="bg-surface-base/90 rounded-2xl border border-border-subtle/50 w-full max-w-md shadow-xl animate-in slide-in-from-bottom-8 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8 space-y-6">
@@ -151,14 +151,14 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
             <h2 className="text-2xl font-bold text-white tracking-tight">
               Swap Details
               {isInProgress && (
-                <span className="ml-2 text-sm font-normal text-slate-400">
+                <span className="ml-2 text-sm font-normal text-content-secondary">
                   (Please wait...)
                 </span>
               )}
             </h2>
             <button
               aria-label="Close"
-              className="p-2.5 rounded-xl transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800 active:scale-95"
+              className="p-2.5 rounded-xl transition-all duration-200 text-content-secondary hover:text-white hover:bg-surface-overlay active:scale-95"
               onClick={handleClose}
               title="Close"
             >
@@ -194,7 +194,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                       )}
                     </span>
                   )}
-                  <span className="font-semibold text-slate-100">Status</span>
+                  <span className="font-semibold text-content-primary">Status</span>
                 </div>
                 <span
                   className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-300
@@ -215,7 +215,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
 
             {/* Progress Bar for Waiting/Pending States */}
             {isInProgress && (
-              <div className="w-full h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-surface-high/50 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${isWaiting ? 'bg-amber-500' : 'bg-blue-500'} 
                     animate-[progress_2s_ease-in-out_infinite] transition-colors duration-300`}
@@ -249,9 +249,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
 
             {/* Swap Details */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between bg-surface-overlay/50 rounded-xl p-5 backdrop-blur-sm">
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <span className="text-sm text-slate-400">You sent</span>
+                  <span className="text-sm text-content-secondary">You sent</span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-lg font-semibold text-white break-all">
                       {fromAmount}
@@ -259,9 +259,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                     <AssetOption ticker={displayFromAsset} />
                   </div>
                 </div>
-                <ArrowRight className="text-slate-500 mx-3 w-5 h-5 flex-shrink-0" />
+                <ArrowRight className="text-content-tertiary mx-3 w-5 h-5 flex-shrink-0" />
                 <div className="space-y-1.5 min-w-0 flex-1 text-right">
-                  <span className="text-sm text-slate-400">You received</span>
+                  <span className="text-sm text-content-secondary">You received</span>
                   <div className="flex items-center gap-2 justify-end flex-wrap">
                     <span className="text-lg font-semibold text-white break-all">
                       {toAmount}
@@ -271,9 +271,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-3.5 bg-slate-800/50 rounded-xl p-5 backdrop-blur-sm">
+              <div className="space-y-3.5 bg-surface-overlay/50 rounded-xl p-5 backdrop-blur-sm">
                 <div className="flex justify-between items-center text-sm gap-4">
-                  <span className="text-slate-400 flex-shrink-0">
+                  <span className="text-content-secondary flex-shrink-0">
                     Exchange rate
                   </span>
                   <span className="text-white font-medium break-all text-right">
@@ -281,7 +281,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm gap-4">
-                  <span className="text-slate-400 flex-shrink-0">Time</span>
+                  <span className="text-content-secondary flex-shrink-0">Time</span>
                   <span className="text-white text-right">
                     {new Date(timestamp).toLocaleString(undefined, {
                       dateStyle: 'medium',
@@ -301,8 +301,8 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                 isExpired
                   ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white shadow-lg shadow-red-500/20'
                   : isInProgress
-                    ? 'bg-slate-700/50 text-slate-300 cursor-not-allowed opacity-75'
-                    : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-500/20'
+                    ? 'bg-surface-high/50 text-content-secondary cursor-not-allowed opacity-75'
+                    : 'bg-primary hover:bg-primary-emphasis active:bg-primary-emphasis text-primary-foreground shadow-lg shadow-primary/20'
               } ${!isInProgress ? 'active:scale-[0.98]' : ''}`}
             disabled={isInProgress}
             onClick={isInProgress ? undefined : handleClose}

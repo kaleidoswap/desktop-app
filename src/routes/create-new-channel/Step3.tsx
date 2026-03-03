@@ -135,7 +135,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         <h3 className="text-3xl font-bold text-white mb-2">
           {t('createChannel.step3.title')}
         </h3>
-        <p className="text-gray-400">{t('createChannel.step3.subtitle')}</p>
+        <p className="text-content-secondary">{t('createChannel.step3.subtitle')}</p>
       </div>
 
       {error && (
@@ -184,7 +184,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 </div>
                 {isAssetChannel && (
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-cyan text-sm font-medium">
+                    <span className="text-primary text-sm font-medium">
                       {formatAssetAmount} {formData.assetTicker}
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
               hasValidNodeInfo ? (
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center">
-                    <span className="text-xs text-slate-400 mr-2">
+                    <span className="text-xs text-content-secondary mr-2">
                       {t('createChannel.step3.nodeId')}
                     </span>
                     <span className="text-sm text-white font-mono truncate">
@@ -211,7 +211,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                       )}
                     </span>
                     <button
-                      className="ml-2 text-blue-400 hover:text-blue-300 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                      className="ml-2 text-blue-400 hover:text-blue-300 p-1 hover:bg-surface-high/50 rounded transition-colors"
                       onClick={() =>
                         navigator.clipboard.writeText(
                           connectionDetails.pubKey || formData.pubKeyAndAddress
@@ -225,7 +225,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                   </div>
                   {connectionDetails.host && connectionDetails.port ? (
                     <div className="flex items-center">
-                      <span className="text-xs text-slate-400 mr-2">
+                      <span className="text-xs text-content-secondary mr-2">
                         {t('createChannel.step3.host')}
                       </span>
                       <span className="text-sm text-white font-mono">
@@ -234,7 +234,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                     </div>
                   ) : (
                     <div className="flex items-center">
-                      <span className="text-xs text-slate-400 mr-2">
+                      <span className="text-xs text-content-secondary mr-2">
                         {t('createChannel.step3.status')}
                       </span>
                       <span className="text-sm text-green-400">
@@ -259,7 +259,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
             value={
               <div className="flex items-center justify-between">
                 <span className="text-white capitalize">{formData.fee}</span>
-                <span className="text-slate-400 text-sm ml-2">
+                <span className="text-content-secondary text-sm ml-2">
                   {feeRates[formData.fee]} sat/vB
                 </span>
               </div>
@@ -284,7 +284,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                     ? t('createChannel.step3.public')
                     : t('createChannel.step3.private')}
                 </span>
-                <span className="text-slate-400 text-sm ml-2">
+                <span className="text-content-secondary text-sm ml-2">
                   {formData.public
                     ? t('createChannel.step3.visibleOnNetwork')
                     : t('createChannel.step3.onlyKnownToParties')}
@@ -298,14 +298,14 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
       {isAssetChannel && (
         <Card className="mb-6">
           <div className="flex items-start gap-2">
-            <div className="p-2 bg-cyan/10 rounded-lg shrink-0">
-              <TagIcon className="w-4 h-4 text-cyan" />
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+              <TagIcon className="w-4 h-4 text-primary" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-white mb-1">
                 {t('createChannel.step3.rgbAssetChannel')}
               </h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-content-secondary">
                 {t('createChannel.step3.rgbAssetInfo', {
                   amount: formatAssetAmount,
                   ticker: formData.assetTicker,

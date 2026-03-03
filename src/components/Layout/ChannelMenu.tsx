@@ -61,7 +61,7 @@ export const ChannelMenu = () => {
 
       <ul
         className={twJoin(
-          'absolute top-full right-0 bg-section-lighter divide-y divide-divider rounded w-64 z-40',
+          'absolute top-full right-0 bg-surface-high divide-y divide-divider rounded w-64 z-40',
           !isOpen ? 'hidden' : undefined
         )}
       >

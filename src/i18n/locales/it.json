@@ -105,6 +105,9 @@
     "bitcoinUnit": "Unità Bitcoin",
     "bitcoinUnitSat": "Satoshi (SAT)",
     "bitcoinUnitBtc": "Bitcoin (BTC)",
+    "theme": "Tema",
+    "themeDark": "Scuro",
+    "themeLight": "Chiaro",
     "lspUrl": "URL LSP",
     "lspUrlPlaceholder": "es., http://localhost:8000",
     "makerSettings": "Impostazioni Maker",
@@ -269,7 +272,12 @@
     "liquidityInfo": "La liquidità del canale cambia quando invii e ricevi pagamenti. Mantieni i tuoi canali bilanciati per prestazioni ottimali.",
     "noFunds": "Nessun Fondo Bitcoin",
     "noFundsMessage": "Non hai fondi Bitcoin nel tuo portafoglio. Deposita fondi per iniziare a utilizzare l'applicazione.",
-    "unknown": "Sconosciuto"
+    "unknown": "Sconosciuto",
+    "nodeInfo": "Info Nodo",
+    "manage": "Gestisci",
+    "history": "Cronologia",
+    "testnetWarning": "Rete di test",
+    "testnetWarningDesc": "Sei su una rete di test. I fondi non sono reali e le transazioni non hanno valore monetario."
   },
   "peerManagement": {
     "title": "Peer",
@@ -291,12 +299,38 @@
     }
   },
   "history": {
+    "bitcoin": "Bitcoin",
     "description": "Visualizza la cronologia delle transazioni, inclusi depositi, pagamenti, prelievi e scambi.",
     "deposits": "Depositi",
     "paymentsWithdrawals": "Pagamenti e Prelievi",
     "swaps": "Scambi",
     "assets": "Asset",
     "channelOrders": "Ordini Canale"
+  },
+  "btcHistory": {
+    "title": "Transazioni Bitcoin",
+    "loading": "Caricamento transazioni...",
+    "errorLoading": "Errore nel caricamento",
+    "errorMessage": "Impossibile caricare la cronologia delle transazioni.",
+    "tryAgain": "Riprova",
+    "refresh": "Aggiorna",
+    "direction": "Direzione",
+    "amount": "Importo",
+    "fee": "Commissione",
+    "date": "Data",
+    "txId": "ID transazione",
+    "status": "Stato",
+    "received": "Ricevuto",
+    "sent": "Inviato",
+    "confirmed": "Confermato",
+    "pending": "In attesa",
+    "allDirections": "Tutte le direzioni",
+    "allStatuses": "Tutti gli stati",
+    "searchPlaceholder": "Cerca per txid...",
+    "noTransactions": "Nessuna transazione Bitcoin trovata.",
+    "noTxFiltered": "Nessuna transazione corrisponde ai filtri.",
+    "clearFilters": "Cancella filtri",
+    "viewExplorer": "Visualizza nell'explorer"
   },
   "walletSetup": {
     "getHelpSupport": "Ottieni Aiuto e Supporto",
@@ -1802,11 +1836,15 @@
     "labels": {
       "capacity": "Capacità",
       "bitcoinLiquidity": "Liquidità Bitcoin",
-      "assetLiquidity": "Liquidità {{ticker}}"
+      "assetLiquidity": "Liquidità {{ticker}}",
+      "outbound": "In uscita",
+      "inbound": "In entrata",
+      "total": "totale"
     },
     "buttons": {
       "details": "Dettagli",
-      "close": "Chiudi"
+      "close": "Chiudi",
+      "manage": "Gestisci"
     },
     "tooltips": {
       "info": "Informazioni canale"

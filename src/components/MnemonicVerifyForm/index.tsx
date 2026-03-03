@@ -91,9 +91,9 @@ export const MnemonicVerifyForm = ({
       .split(/\s+/)
       .map((word, index) => (
         <span
-          className="inline-block bg-slate-800/50 text-slate-300 px-2.5 py-1 
-                     rounded-md border border-slate-700/50 text-xs font-medium m-0.5
-                     transition-colors hover:border-slate-600"
+          className="inline-block bg-surface-overlay/50 text-content-secondary px-2.5 py-1 
+                     rounded-md border border-border-default/50 text-xs font-medium m-0.5
+                     transition-colors hover:border-border-default"
           key={index}
         >
           {word}
@@ -109,27 +109,27 @@ export const MnemonicVerifyForm = ({
 
   return (
     <div className="w-full">
-      <p className="text-slate-400 mb-6 leading-relaxed">
+      <p className="text-content-secondary mb-6 leading-relaxed">
         For your security, please enter your recovery phrase to confirm you've
         saved it correctly. This step cannot be skipped.
       </p>
 
       {/* Form Section */}
       <form
-        className="bg-blue-dark/40 p-6 rounded-xl border border-white/5"
+        className="bg-surface-elevated/40 p-6 rounded-xl border border-white/5"
         onSubmit={form.handleSubmit(handleSubmit)}
       >
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+            <label className="block text-sm font-medium text-content-secondary mb-1.5">
               Recovery Phrase
             </label>
             <div className="relative">
               <textarea
-                className="w-full min-h-[100px] rounded-lg border-2 border-slate-700/50 
-                          bg-slate-800/30 px-4 py-2.5 text-slate-300 font-mono text-sm
+                className="w-full min-h-[100px] rounded-lg border-2 border-border-default/50 
+                          bg-surface-overlay/30 px-4 py-2.5 text-content-secondary font-mono text-sm
                           focus:border-cyan focus:ring-2 focus:ring-cyan/20 
-                          outline-none transition-all placeholder:text-slate-600"
+                          outline-none transition-all placeholder:text-content-tertiary"
                 placeholder="Enter your recovery phrase..."
                 {...form.register('mnemonic', {
                   required: 'Recovery phrase is required',
@@ -169,13 +169,13 @@ export const MnemonicVerifyForm = ({
               {/* Word Suggestions */}
               {suggestions.length > 0 && (
                 <div
-                  className="absolute left-0 right-0 mt-1 bg-slate-800 
-                               border border-slate-700 rounded-lg overflow-hidden z-10"
+                  className="absolute left-0 right-0 mt-1 bg-surface-overlay 
+                               border border-border-default rounded-lg overflow-hidden z-10"
                 >
                   {suggestions.map((word, index) => (
                     <button
-                      className="w-full px-3 py-1.5 text-left text-slate-300 text-sm
-                                hover:bg-slate-700/50 transition-colors
+                      className="w-full px-3 py-1.5 text-left text-content-secondary text-sm
+                                hover:bg-surface-high/50 transition-colors
                                 flex items-center justify-between"
                       key={word}
                       onClick={(e) => {
@@ -186,7 +186,7 @@ export const MnemonicVerifyForm = ({
                     >
                       <span>{word}</span>
                       {index === 0 && (
-                        <span className="text-xs text-slate-500">Tab ↹</span>
+                        <span className="text-xs text-content-tertiary">Tab ↹</span>
                       )}
                     </button>
                   ))}
@@ -205,7 +205,7 @@ export const MnemonicVerifyForm = ({
               {/* Word Counter */}
               <div
                 className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md 
-                             bg-slate-800/80 text-xs text-slate-400"
+                             bg-surface-overlay/80 text-xs text-content-secondary"
               >
                 {form.watch('mnemonic')?.split(/\s+/).filter(Boolean).length ||
                   0}{' '}

@@ -29,11 +29,11 @@ export const SkipMnemonicWarningModal = ({
             </h2>
           </div>
           <button
-            className="p-1 hover:bg-slate-800 rounded-lg transition-all duration-200 hover:rotate-90"
+            className="p-1 hover:bg-surface-overlay rounded-lg transition-all duration-200 hover:rotate-90"
             onClick={onCancel}
             type="button"
           >
-            <X className="w-5 h-5 text-slate-400" />
+            <X className="w-5 h-5 text-content-secondary" />
           </button>
         </div>
 
@@ -43,7 +43,7 @@ export const SkipMnemonicWarningModal = ({
             <p className="text-red-400 font-semibold mb-2">
               ⚠️ Critical Warning
             </p>
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-content-secondary text-sm leading-relaxed">
               Without your recovery phrase, you will{' '}
               <span className="text-red-400 font-bold">
                 permanently lose access
@@ -52,7 +52,7 @@ export const SkipMnemonicWarningModal = ({
             </p>
           </div>
 
-          <ul className="space-y-2 text-sm text-slate-300">
+          <ul className="space-y-2 text-sm text-content-secondary">
             <li
               className="flex items-start gap-2 animate-in slide-in-from-left duration-300"
               style={{ animationDelay: '100ms' }}
@@ -87,7 +87,7 @@ export const SkipMnemonicWarningModal = ({
             <p className="text-amber-400 text-sm font-medium mb-1">
               💡 Recommendation
             </p>
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-content-secondary text-sm leading-relaxed">
               We <span className="font-semibold">strongly recommend</span>{' '}
               writing down your recovery phrase and storing it in a secure
               location before continuing.
@@ -118,7 +118,7 @@ export const SkipMnemonicWarningModal = ({
         </div>
 
         {/* Footer Warning */}
-        <p className="text-xs text-slate-500 text-center mt-4">
+        <p className="text-xs text-content-tertiary text-center mt-4">
           You can view your recovery phrase later in Settings, but we recommend
           saving it now.
         </p>

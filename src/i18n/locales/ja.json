@@ -105,6 +105,9 @@
     "bitcoinUnit": "ビットコイン単位",
     "bitcoinUnitSat": "サトシ（SAT）",
     "bitcoinUnitBtc": "ビットコイン（BTC）",
+    "theme": "テーマ",
+    "themeDark": "ダーク",
+    "themeLight": "ライト",
     "lspUrl": "LSP URL",
     "lspUrlPlaceholder": "例：http://localhost:8000",
     "makerSettings": "メイカー設定",
@@ -1190,11 +1193,15 @@
     "labels": {
       "capacity": "容量",
       "bitcoinLiquidity": "Bitcoin流動性",
-      "assetLiquidity": "{{ticker}}流動性"
+      "assetLiquidity": "{{ticker}}流動性",
+      "outbound": "送信",
+      "inbound": "受信",
+      "total": "合計"
     },
     "buttons": {
       "details": "詳細",
-      "close": "閉じる"
+      "close": "閉じる",
+      "manage": "管理"
     },
     "tooltips": {
       "info": "チャネル情報"
@@ -1775,7 +1782,12 @@
     "liquidityInfo": "チャネル流動性は送受信に応じて変化します。最適なパフォーマンスのためにチャネルのバランスを保ちましょう。",
     "noFunds": "Bitcoin資金なし",
     "noFundsMessage": "ウォレットにBitcoin資金がありません。アプリケーションの使用を開始するには資金を入金してください。",
-    "unknown": "不明"
+    "unknown": "不明",
+    "nodeInfo": "ノード情報",
+    "manage": "管理",
+    "history": "履歴",
+    "testnetWarning": "テストネットワーク",
+    "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。"
   },
   "peerManagement": {
     "title": "ピア",
@@ -1797,12 +1809,38 @@
     }
   },
   "history": {
+    "bitcoin": "ビットコイン",
     "description": "入金、支払い、出金、スワップを含むトランザクション履歴を表示します。",
     "deposits": "入金",
     "paymentsWithdrawals": "支払いと出金",
     "swaps": "スワップ",
     "assets": "アセット",
     "channelOrders": "チャネル注文"
+  },
+  "btcHistory": {
+    "title": "ビットコイン取引履歴",
+    "loading": "取引を読み込み中...",
+    "errorLoading": "取引の読み込みエラー",
+    "errorMessage": "取引履歴の読み込みに失敗しました。",
+    "tryAgain": "再試行",
+    "refresh": "更新",
+    "direction": "方向",
+    "amount": "金額",
+    "fee": "手数料",
+    "date": "日付",
+    "txId": "取引ID",
+    "status": "ステータス",
+    "received": "受信",
+    "sent": "送信",
+    "confirmed": "確認済み",
+    "pending": "保留中",
+    "allDirections": "すべての方向",
+    "allStatuses": "すべてのステータス",
+    "searchPlaceholder": "txidで検索...",
+    "noTransactions": "ビットコイン取引が見つかりません。",
+    "noTxFiltered": "フィルターに一致する取引がありません。",
+    "clearFilters": "フィルターをクリア",
+    "viewExplorer": "エクスプローラーで表示"
   },
   "walletSetup": {
     "getHelpSupport": "ヘルプ&サポートを利用",

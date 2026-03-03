@@ -379,22 +379,22 @@ export const Component = () => {
         className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setShowBackConfirmation(false)}
       />
-      <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full relative z-10">
+      <div className="bg-surface-overlay rounded-xl p-6 max-w-md w-full relative z-10">
         <h3 className="text-xl font-bold text-white mb-4">
           {t('orderChannel.backConfirmTitle')}
         </h3>
-        <p className="text-gray-300 mb-6">
+        <p className="text-content-secondary mb-6">
           {t('orderChannel.backConfirmMessage')}
         </p>
         <div className="flex gap-4">
           <button
-            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex-1 px-4 py-2 bg-surface-high text-white rounded-lg hover:bg-surface-elevated transition-colors"
             onClick={() => setShowBackConfirmation(false)}
           >
             {t('orderChannel.backConfirmCancel')}
           </button>
           <button
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis transition-colors"
             onClick={handleConfirmBack}
           >
             {t('orderChannel.backConfirmGoBack')}
@@ -405,7 +405,7 @@ export const Component = () => {
   )
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white relative min-h-fit">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white relative min-h-fit">
       {loading && (
         <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader color={'#123abc'} loading={loading} size={50} />
@@ -443,7 +443,7 @@ export const Component = () => {
       </div>
 
       {/* Info Section */}
-      <div className="flex items-center space-x-2 text-sm text-gray-400 mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+      <div className="flex items-center space-x-2 text-sm text-content-secondary mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
         <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
         <p>{t('orderChannel.infoMessage')}</p>
       </div>

@@ -33,9 +33,9 @@ const Select: React.FC<SelectProps> = ({
       <div
         className={twJoin(
           'flex items-center justify-between px-4 py-4 rounded-xl cursor-pointer min-w-[120px] w-auto border transition-all duration-200',
-          'bg-slate-900/70 border-slate-600/50 hover:border-slate-500/70 backdrop-blur-sm',
+          'bg-surface-base/70 border-border-default/50 hover:border-border-subtle/70 backdrop-blur-sm',
           disabled
-            ? 'opacity-50 cursor-not-allowed hover:border-slate-600/50'
+            ? 'opacity-50 cursor-not-allowed hover:border-border-default/50'
             : ''
         )}
         onClick={() => !disabled && setIsOpen((state) => !state)}
@@ -49,13 +49,13 @@ const Select: React.FC<SelectProps> = ({
       {!disabled && (
         <ul
           className={twJoin(
-            'absolute top-full left-0 z-50 min-w-full w-auto mt-2 bg-slate-800/95 backdrop-blur-sm border border-slate-600/50 divide-y divide-slate-700/50 rounded-xl shadow-xl overflow-hidden',
+            'absolute top-full left-0 z-50 min-w-full w-auto mt-2 bg-surface-overlay/95 backdrop-blur-sm border border-border-default/50 divide-y divide-slate-700/50 rounded-xl shadow-xl overflow-hidden',
             !isOpen ? 'hidden' : 'block'
           )}
         >
           {options.map((option) => (
             <li
-              className="px-4 py-3 cursor-pointer hover:bg-slate-700/50 transition-colors duration-150 whitespace-nowrap"
+              className="px-4 py-3 cursor-pointer hover:bg-surface-high/50 transition-colors duration-150 whitespace-nowrap"
               key={option.value}
               onClick={() => {
                 onSelect(option.value)

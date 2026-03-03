@@ -13,7 +13,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { useAppSelector } from '../../../app/store/hooks'
+import { useSettings } from '../../../hooks/useSettings'
 import { Loader } from '../../../components/Loader'
 // import { StatusToast } from '../../../components/StatusToast'
 import { NoChannelsMessage, ManualSwapForm } from '../../../components/Trade'
@@ -51,7 +51,7 @@ export const Component = () => {
     }
   )
 
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
   const { t } = useTranslation()
 
   // Utility functions
@@ -181,7 +181,7 @@ export const Component = () => {
   )
 
   const renderRoleSelector = () => (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 shadow-lg mb-6 role-selector">
+    <div className="bg-surface-base/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-4 shadow-lg mb-6 role-selector">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <User className="w-5 h-5 text-blue-400" />
@@ -190,27 +190,27 @@ export const Component = () => {
           </h3>
         </div>
         <button
-          className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-surface-overlay transition-colors"
           disabled={isRefreshing}
           onClick={refreshData}
           title={t('tradeManual.roleSelector.refresh')}
         >
           <RefreshCw
-            className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`w-4 h-4 text-content-secondary ${isRefreshing ? 'animate-spin' : ''}`}
           />
         </button>
       </div>
 
       <div className="mt-4 flex gap-3">
         <button
-          className={`flex-1 px-4 py-3 ${activeRole === 'maker' ? 'bg-blue-600' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-lg transition-colors button-animate`}
+          className={`flex-1 px-4 py-3 ${activeRole === 'maker' ? 'bg-primary text-primary-foreground' : 'bg-surface-high hover:bg-surface-elevated text-white'} rounded-lg transition-colors button-animate`}
           disabled={activeRole === 'maker'}
           onClick={() => handleRoleChange('maker')}
         >
           {t('tradeManual.roles.maker')}
         </button>
         <button
-          className={`flex-1 px-4 py-3 ${activeRole === 'taker' ? 'bg-emerald-600' : 'bg-slate-700 hover:bg-slate-600'} text-white rounded-lg transition-colors button-animate`}
+          className={`flex-1 px-4 py-3 ${activeRole === 'taker' ? 'bg-emerald-600' : 'bg-surface-high hover:bg-surface-elevated'} text-white rounded-lg transition-colors button-animate`}
           disabled={activeRole === 'taker'}
           onClick={() => handleRoleChange('taker')}
         >
@@ -218,7 +218,7 @@ export const Component = () => {
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-content-secondary">
         <Trans
           components={{
             maker: <span className="font-semibold text-blue-400" />,
@@ -235,7 +235,7 @@ export const Component = () => {
   )
 
   const renderSwapExplanation = () => (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 shadow-lg mb-6 explanation-card">
+    <div className="bg-surface-base/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 shadow-lg mb-6 explanation-card">
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={toggleExplanation}
@@ -243,11 +243,11 @@ export const Component = () => {
         <h2 className="text-xl font-semibold text-white">
           {t('tradeManual.swapExplanation.title')}
         </h2>
-        <button className="p-1 rounded-full hover:bg-slate-800 transition-colors">
+        <button className="p-1 rounded-full hover:bg-surface-overlay transition-colors">
           {isExplanationExpanded ? (
-            <ChevronUp className="w-5 h-5 text-slate-400" />
+            <ChevronUp className="w-5 h-5 text-content-secondary" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
+            <ChevronDown className="w-5 h-5 text-content-secondary" />
           )}
         </button>
       </div>
@@ -332,7 +332,7 @@ export const Component = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   {swapInfoCards.map((card) => (
                     <div
-                      className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 swap-step-card"
+                      className="bg-surface-overlay/50 rounded-lg p-4 border border-border-default/50 swap-step-card"
                       key={card.key}
                     >
                       <div className="flex items-center justify-center mb-4">
@@ -345,27 +345,27 @@ export const Component = () => {
                       <h3 className="text-md font-medium text-white text-center mb-2">
                         {card.title}
                       </h3>
-                      <p className="text-sm text-slate-400 text-center">
+                      <p className="text-sm text-content-secondary text-center">
                         {card.description}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700/50 mb-6">
+                <div className="bg-surface-overlay/50 rounded-lg p-5 border border-border-default/50 mb-6">
                   <h3 className="text-lg font-medium text-white mb-3">
                     {t('tradeManual.swapExplanation.process.title')}
                   </h3>
-                  <ol className="space-y-4 ml-6 relative before:absolute before:left-0 before:top-2 before:h-[calc(100%-16px)] before:w-[2px] before:bg-slate-700">
+                  <ol className="space-y-4 ml-6 relative before:absolute before:left-0 before:top-2 before:h-[calc(100%-16px)] before:w-[2px] before:bg-surface-high">
                     {processSteps.map((step) => (
                       <li
-                        className="pl-8 relative before:absolute before:left-0 before:top-2 before:h-4 before:w-4 before:rounded-full before:border-2 before:border-blue-500 before:bg-slate-900"
+                        className="pl-8 relative before:absolute before:left-0 before:top-2 before:h-4 before:w-4 before:rounded-full before:border-2 before:border-blue-500 before:bg-surface-base"
                         key={step.title}
                       >
                         <h4 className="text-md font-medium text-white">
                           {step.title}
                         </h4>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-content-secondary">
                           {step.description}
                         </p>
                       </li>
@@ -374,19 +374,19 @@ export const Component = () => {
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-1 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 role-card">
+                  <div className="flex-1 bg-surface-overlay/50 rounded-lg p-4 border border-border-default/50 role-card">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
+                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
                         M
                       </div>
                       <h3 className="text-md font-medium text-white">
                         {t('tradeManual.swapExplanation.makerRole.title')}
                       </h3>
                     </div>
-                    <p className="text-sm text-slate-400 ml-8 mb-2">
+                    <p className="text-sm text-content-secondary ml-8 mb-2">
                       {t('tradeManual.swapExplanation.makerRole.intro')}
                     </p>
-                    <ul className="list-disc list-inside text-sm text-slate-400 ml-8 space-y-1">
+                    <ul className="list-disc list-inside text-sm text-content-secondary ml-8 space-y-1">
                       {makerRoleItems.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -394,10 +394,10 @@ export const Component = () => {
                   </div>
 
                   <div className="hidden md:flex items-center justify-center">
-                    <ArrowRight className="w-6 h-6 text-slate-500" />
+                    <ArrowRight className="w-6 h-6 text-content-tertiary" />
                   </div>
 
-                  <div className="flex-1 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 role-card">
+                  <div className="flex-1 bg-surface-overlay/50 rounded-lg p-4 border border-border-default/50 role-card">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">
                         T
@@ -406,10 +406,10 @@ export const Component = () => {
                         {t('tradeManual.swapExplanation.takerRole.title')}
                       </h3>
                     </div>
-                    <p className="text-sm text-slate-400 ml-8 mb-2">
+                    <p className="text-sm text-content-secondary ml-8 mb-2">
                       {t('tradeManual.swapExplanation.takerRole.intro')}
                     </p>
-                    <ul className="list-disc list-inside text-sm text-slate-400 ml-8 space-y-1">
+                    <ul className="list-disc list-inside text-sm text-content-secondary ml-8 space-y-1">
                       {takerRoleItems.map((item) => (
                         <li key={item}>{item}</li>
                       ))}
@@ -417,19 +417,19 @@ export const Component = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                <div className="mt-6 bg-surface-overlay/50 rounded-lg p-4 border border-border-default/50">
                   <h3 className="text-md font-medium text-white mb-2">
                     {t('tradeManual.swapExplanation.liquidity.title')}
                   </h3>
-                  <p className="text-sm text-slate-400 mb-2">
+                  <p className="text-sm text-content-secondary mb-2">
                     {t('tradeManual.swapExplanation.liquidity.intro')}
                   </p>
-                  <ul className="list-disc list-inside text-sm text-slate-400 space-y-1 ml-2">
+                  <ul className="list-disc list-inside text-sm text-content-secondary space-y-1 ml-2">
                     {liquidityItems.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
-                  <p className="text-sm text-slate-400 mt-2">
+                  <p className="text-sm text-content-secondary mt-2">
                     {t('tradeManual.swapExplanation.liquidity.note')}
                   </p>
                 </div>
@@ -440,7 +440,7 @@ export const Component = () => {
       )}
 
       {!isExplanationExpanded && (
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-content-secondary">
           {t('tradeManual.swapExplanation.collapsedHint')}
         </p>
       )}
@@ -451,7 +451,7 @@ export const Component = () => {
     <div className="swap-form-container w-full max-w-4xl">
       {renderRoleSelector()}
       {renderSwapExplanation()}
-      <div className="bg-gradient-to-b from-slate-900/80 to-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 shadow-lg w-full swap-form">
+      <div className="bg-gradient-to-b from-surface-base/80 to-surface-overlay/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 shadow-lg w-full swap-form">
         {activeRole === 'maker' ? (
           <ManualSwapForm
             assets={assets}

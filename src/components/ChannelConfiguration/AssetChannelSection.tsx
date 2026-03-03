@@ -31,7 +31,7 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
   onClientAssetAmountChange,
   control,
   showAssetSelector = true,
-  containerClassName = 'bg-gray-800/50 p-4 rounded-xl border border-gray-700/50',
+  containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
   selectLabel = 'Select Asset to Buy (Optional)',
   selectPlaceholder = 'Select an RGB asset',
 }) => {
@@ -75,7 +75,7 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
     <div className={containerClassName}>
       {showAssetSelector && (
         <>
-          <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-content-secondary mb-2 flex items-center gap-2">
             {selectLabel}
           </label>
           {control ? (

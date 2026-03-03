@@ -29,11 +29,11 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
               <h3 className="text-xl font-bold text-white mb-4">
                 Terms & Privacy Policy Agreement
               </h3>
-              <p className="text-gray-300 mb-4">
+              <p className="text-content-secondary mb-4">
                 Before proceeding, please note that by using KaleidoSwap, you
                 agree to our:
               </p>
-              <ul className="list-disc pl-5 mb-6 space-y-2 text-gray-300">
+              <ul className="list-disc pl-5 mb-6 space-y-2 text-content-secondary">
                 <li>
                   <button
                     className="text-blue-400 hover:text-blue-300 underline"
@@ -54,7 +54,7 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
                   - How we handle your data and privacy
                 </li>
               </ul>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-content-secondary">
                 Click the links above to read the full documents. By clicking "I
                 Accept", you acknowledge that you have read and agree to both
                 documents.
@@ -63,13 +63,13 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
           </div>
           <div className="flex justify-end space-x-4">
             <button
-              className="px-4 py-2 rounded-lg border border-gray-600 hover:bg-gray-700 text-gray-300 transition-colors"
+              className="px-4 py-2 rounded-lg border border-border-default hover:bg-surface-high text-content-secondary transition-colors"
               onClick={onClose}
             >
               Cancel
             </button>
             <button
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+              className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-emphasis text-primary-foreground font-medium transition-colors"
               onClick={onAccept}
             >
               I Accept

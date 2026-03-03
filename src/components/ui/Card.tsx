@@ -24,7 +24,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`bg-slate-800/50 rounded-xl border border-slate-700 ${
+      className={`bg-surface-overlay/50 rounded-xl border border-border-default ${
         noPadding ? '' : 'p-6'
       } ${className}`}
     >
@@ -51,7 +51,7 @@ export const HoverCard: React.FC<CardProps> = (props) => {
   return (
     <Card
       {...props}
-      className={`hover:bg-slate-800/70 hover:border-slate-600 transition-all duration-200 ${props.className || ''}`}
+      className={`hover:bg-surface-overlay/70 hover:border-border-default transition-all duration-200 ${props.className || ''}`}
     />
   )
 }

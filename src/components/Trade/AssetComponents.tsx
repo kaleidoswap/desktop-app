@@ -47,7 +47,7 @@ const Select: React.FC<SelectProps> = ({
   active,
   options,
   onSelect,
-  theme = 'dark',
+  theme: _theme = 'dark',
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -62,7 +62,7 @@ const Select: React.FC<SelectProps> = ({
       <div
         className={twJoin(
           'flex items-center justify-between px-4 py-3 rounded cursor-pointer w-full',
-          theme === 'dark' ? 'bg-blue-dark' : 'bg-section-lighter',
+          'bg-surface-elevated',
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         )}
         onClick={() => !disabled && setIsOpen((state) => !state)}
@@ -74,7 +74,7 @@ const Select: React.FC<SelectProps> = ({
       {!disabled && (
         <ul
           className={twJoin(
-            'absolute top-full left-0 right-0 bg-section-lighter divide-y divide-divider rounded z-50 mt-1 shadow-lg max-h-60 overflow-y-auto',
+            'absolute top-full left-0 right-0 bg-surface-high divide-y divide-divider rounded z-50 mt-1 shadow-lg max-h-60 overflow-y-auto',
             !isOpen ? 'hidden' : 'block'
           )}
         >

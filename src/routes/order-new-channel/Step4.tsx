@@ -8,7 +8,7 @@ import {
   Copy,
   Clock,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
@@ -25,14 +25,10 @@ export const Step4 = ({
 }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [copied, setCopied] = useState(false)
+  const { copied, copy } = useCopyToClipboard()
 
   const copyToClipboard = () => {
-    if (orderId) {
-      navigator.clipboard.writeText(orderId)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
+    if (orderId) copy(orderId)
   }
 
   const statusConfig = {
@@ -83,7 +79,7 @@ export const Step4 = ({
       >
         <div className="flex justify-center">{config.icon}</div>
         <h3 className="text-3xl font-bold mb-4">{config.title}</h3>
-        <p className="text-lg text-gray-300 mb-6">{config.message}</p>
+        <p className="text-lg text-content-secondary mb-6">{config.message}</p>
 
         {paymentStatus === 'success' && (
           <div className="flex items-center justify-center space-x-3 mb-8 p-3 bg-green-500/20 rounded-lg">
@@ -106,11 +102,11 @@ export const Step4 = ({
                   <p className="text-amber-200 font-medium mb-2">
                     {t('orderChannel.step4.refundHeader')}
                   </p>
-                  <p className="text-gray-300 text-sm mb-2">
+                  <p className="text-content-secondary text-sm mb-2">
                     <strong>{t('orderChannel.step4.refundProcess')}</strong>{' '}
                     {t('orderChannel.step4.refundProcessSuffix')}
                   </p>
-                  <p className="text-gray-300 text-sm">
+                  <p className="text-content-secondary text-sm">
                     {t('orderChannel.step4.refundSupport')}
                   </p>
                 </div>
@@ -119,17 +115,17 @@ export const Step4 = ({
 
             {/* Order ID Display - Only shown on failure */}
             {orderId && (
-              <div className="mb-8 p-4 bg-gray-700/50 border border-gray-600 rounded-lg">
+              <div className="mb-8 p-4 bg-surface-high/50 border border-border-default rounded-lg">
                 <div className="flex flex-col items-center">
-                  <p className="text-gray-300 text-sm mb-2">
+                  <p className="text-content-secondary text-sm mb-2">
                     {t('orderChannel.step4.orderIdLabel')}
                   </p>
-                  <div className="flex items-center justify-center w-full bg-gray-800 p-3 rounded-md mb-2">
+                  <div className="flex items-center justify-center w-full bg-surface-overlay p-3 rounded-md mb-2">
                     <code className="text-sm font-mono text-white break-all">
                       {orderId}
                     </code>
                     <button
-                      className="ml-2 p-1 hover:bg-gray-700 rounded transition-colors"
+                      className="ml-2 p-1 hover:bg-surface-high rounded transition-colors"
                       onClick={copyToClipboard}
                       title={t('orderChannel.step4.copyToClipboard')}
                     >
@@ -137,13 +133,13 @@ export const Step4 = ({
                         <CheckCircle className="text-green-400" size={16} />
                       ) : (
                         <Copy
-                          className="text-gray-400 hover:text-white"
+                          className="text-content-secondary hover:text-white"
                           size={16}
                         />
                       )}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-content-secondary">
                     {t('orderChannel.step4.orderIdHelp')}
                   </p>
                 </div>
@@ -163,7 +159,7 @@ export const Step4 = ({
                 <p className="text-yellow-200 font-medium mb-2">
                   {t('orderChannel.step4.expiredSectionTitle')}
                 </p>
-                <p className="text-gray-300 text-sm">
+                <p className="text-content-secondary text-sm">
                   {t('orderChannel.step4.expiredSectionMessage')}
                 </p>
               </div>
@@ -179,7 +175,7 @@ export const Step4 = ({
                 ? 'bg-red-600 hover:bg-red-700'
                 : paymentStatus === 'expired'
                   ? 'bg-yellow-600 hover:bg-yellow-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
+                  : 'bg-primary hover:bg-primary-emphasis'
           } transition-colors w-full flex items-center justify-center shadow-lg`}
           onClick={config.buttonAction}
         >
@@ -193,7 +189,7 @@ export const Step4 = ({
       </div>
 
       <button
-        className="mt-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors py-2 px-4 rounded-lg hover:bg-gray-800/50"
+        className="mt-8 flex items-center gap-2 text-content-secondary hover:text-white transition-colors py-2 px-4 rounded-lg hover:bg-surface-overlay/50"
         onClick={() => navigate(CHANNELS_PATH)}
       >
         <Home size={18} />

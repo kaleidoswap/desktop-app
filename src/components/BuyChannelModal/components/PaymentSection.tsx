@@ -35,12 +35,12 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
     <div className="space-y-4">
       {/* Total Amount */}
       <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/50 rounded-xl p-4 text-center">
-        <p className="text-gray-300 text-sm mb-1">
+        <p className="text-content-secondary text-sm mb-1">
           {t('buyChannel.totalPayment')}
         </p>
         <p className="text-2xl font-bold text-white">
           {formatNumberWithCommas(totalAmount || 0)}{' '}
-          <span className="text-lg text-gray-300">sats</span>
+          <span className="text-lg text-content-secondary">sats</span>
         </p>
         {currentPayment?.expires_at && (
           <div className="flex items-center justify-center gap-2 mt-2 text-yellow-300 text-xs">
@@ -61,8 +61,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
         <button
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             paymentMethod === 'lightning'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-surface-high text-content-secondary hover:bg-surface-elevated'
           }`}
           onClick={() => onTabChange('lightning')}
         >
@@ -71,8 +71,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
         <button
           className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
             paymentMethod === 'onchain'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-surface-high text-content-secondary hover:bg-surface-elevated'
           }`}
           onClick={() => onTabChange('onchain')}
         >
@@ -81,10 +81,10 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       </div>
 
       {/* Payment Instructions */}
-      <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-3">
+      <div className="bg-surface-overlay/30 border border-border-default/30 rounded-lg p-3">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-300">
+          <p className="text-xs text-content-secondary">
             {paymentMethod === 'lightning'
               ? t('buyChannel.lightningInstructions')
               : t('buyChannel.onchainInstructions', {
@@ -96,14 +96,14 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       </div>
 
       {/* QR Code and Copy */}
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+      <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
         <div className="flex justify-center mb-3">
           <div className="bg-white p-3 rounded-lg">
             <QRCode size={180} value={paymentValue || ''} />
           </div>
         </div>
 
-        <div className="bg-gray-900/50 rounded-lg p-2 mb-3 break-all font-mono text-xs text-gray-300">
+        <div className="bg-surface-base/50 rounded-lg p-2 mb-3 break-all font-mono text-xs text-content-secondary">
           {paymentValue}
         </div>
 
@@ -111,7 +111,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
           onCopy={() => toast.success(t('buyChannel.copySuccess'))}
           text={paymentValue || ''}
         >
-          <button className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+          <button className="w-full px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
             <Copy className="w-4 h-4" />
             {paymentMethod === 'lightning'
               ? t('buyChannel.copyInvoice')

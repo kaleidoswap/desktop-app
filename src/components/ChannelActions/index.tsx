@@ -28,7 +28,7 @@ export const ChannelMenu: React.FC<ChannelMenuProps> = ({
   return (
     <div className="relative">
       <button
-        className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
+        className="p-2 hover:bg-surface-high rounded-lg transition-colors text-content-secondary hover:text-white"
         onClick={() => setIsVisible(!isVisible)}
       >
         <svg
@@ -47,10 +47,10 @@ export const ChannelMenu: React.FC<ChannelMenuProps> = ({
       </button>
 
       {isVisible && (
-        <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-xl bg-gray-800 border border-gray-700 overflow-hidden z-10 animate-scaleIn">
+        <div className="absolute right-0 mt-2 w-48 rounded-xl shadow-xl bg-surface-overlay border border-border-default overflow-hidden z-10 animate-scaleIn">
           <div className="py-1">
             <button
-              className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+              className="flex w-full items-center px-4 py-2 text-sm text-content-secondary hover:bg-surface-high hover:text-white transition-colors"
               onClick={() => {
                 onUpdate()
                 setIsVisible(false)
@@ -62,7 +62,7 @@ export const ChannelMenu: React.FC<ChannelMenuProps> = ({
 
             {onRebalance && (
               <button
-                className="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+                className="flex w-full items-center px-4 py-2 text-sm text-content-secondary hover:bg-surface-high hover:text-white transition-colors"
                 onClick={() => {
                   onRebalance()
                   setIsVisible(false)
@@ -73,7 +73,7 @@ export const ChannelMenu: React.FC<ChannelMenuProps> = ({
               </button>
             )}
 
-            <div className="border-t border-gray-700 my-1"></div>
+            <div className="border-t border-border-default my-1"></div>
 
             <button
               className="flex w-full items-center px-4 py-2 text-sm text-red-400 hover:bg-red-600/20 hover:text-red-300 transition-colors"
@@ -143,18 +143,18 @@ export const ChannelTooltip: React.FC<ChannelTooltipProps> = ({
 
       {isVisible && (
         <div
-          className={`absolute ${getPositionClasses()} z-10 px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-lg border border-gray-700 w-max max-w-xs animate-fadeIn`}
+          className={`absolute ${getPositionClasses()} z-10 px-3 py-2 text-sm font-medium text-white bg-surface-base rounded-lg shadow-lg border border-border-default w-max max-w-xs animate-fadeIn`}
         >
           {tooltip}
           <div
-            className={`absolute w-2 h-2 bg-gray-900 transform rotate-45 ${
+            className={`absolute w-2 h-2 bg-surface-base transform rotate-45 ${
               position === 'top'
-                ? 'top-full -translate-x-1/2 -mt-1 left-1/2 border-r border-b border-gray-700'
+                ? 'top-full -translate-x-1/2 -mt-1 left-1/2 border-r border-b border-border-default'
                 : position === 'bottom'
-                  ? 'bottom-full -translate-x-1/2 -mb-1 left-1/2 border-l border-t border-gray-700'
+                  ? 'bottom-full -translate-x-1/2 -mb-1 left-1/2 border-l border-t border-border-default'
                   : position === 'left'
-                    ? 'left-full -translate-y-1/2 -ml-1 top-1/2 border-t border-r border-gray-700'
-                    : 'right-full -translate-y-1/2 -mr-1 top-1/2 border-b border-l border-gray-700'
+                    ? 'left-full -translate-y-1/2 -ml-1 top-1/2 border-t border-r border-border-default'
+                    : 'right-full -translate-y-1/2 -mr-1 top-1/2 border-b border-l border-border-default'
             }`}
           ></div>
         </div>
@@ -182,11 +182,11 @@ export const ChannelStatusBadge: React.FC<ChannelStatusBadgeProps> = ({
       case 'pending':
         return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
       case 'inactive':
-        return 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+        return 'bg-surface-high/20 text-content-secondary border border-border-default/30'
       case 'closing':
         return 'bg-red-500/20 text-red-400 border border-red-500/30'
       default:
-        return 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+        return 'bg-surface-high/20 text-content-secondary border border-border-default/30'
     }
   }
 
@@ -252,15 +252,15 @@ export const ChannelActionButton: React.FC<ChannelActionButtonProps> = ({
   const getVariantClasses = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-blue-600 hover:bg-blue-700 text-white'
+        return 'bg-primary hover:bg-primary-emphasis text-primary-foreground'
       case 'secondary':
-        return 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+        return 'bg-surface-high hover:bg-surface-elevated text-content-primary'
       case 'danger':
         return 'bg-red-600/20 hover:bg-red-600 border border-red-600/30 text-red-400 hover:text-white'
       case 'success':
         return 'bg-green-600/20 hover:bg-green-600 border border-green-600/30 text-green-400 hover:text-white'
       default:
-        return 'bg-blue-600 hover:bg-blue-700 text-white'
+        return 'bg-primary hover:bg-primary-emphasis text-primary-foreground'
     }
   }
 

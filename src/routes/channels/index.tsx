@@ -46,16 +46,16 @@ const StatCard: React.FC<StatCardProps> = ({
   const getTrendColor = () => {
     if (trend === 'up') return 'text-green-400'
     if (trend === 'down') return 'text-red-400'
-    return 'text-gray-400'
+    return 'text-content-secondary'
   }
 
   return (
     <div
-      className={`bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700/50 p-5 ${className}`}
+      className={`bg-surface-overlay/80 backdrop-blur-sm rounded-xl shadow-lg border border-border-default/50 p-5 ${className}`}
     >
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-sm font-medium text-gray-400">{title}</h2>
-        <div className="p-2 rounded-lg bg-gray-700/70">{icon}</div>
+        <h2 className="text-sm font-medium text-content-secondary">{title}</h2>
+        <div className="p-2 rounded-lg bg-surface-high/70">{icon}</div>
       </div>
       <div className="text-2xl font-bold text-white">{value}</div>
       {trend && trendValue && (
@@ -326,11 +326,11 @@ export const Component: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
+    <div className="bg-gradient-to-b from-surface-base to-surface-base py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold">{t('channels.pageTitle')}</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-content-secondary text-sm mt-1">
             {lastUpdated
               ? t('channels.lastUpdated', { time: formatTimeAgo(lastUpdated) })
               : t('channels.loadingData')}
@@ -338,21 +338,21 @@ export const Component: React.FC = () => {
         </div>
         <div className="flex gap-3">
           <button
-            className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center"
+            className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-emphasis transition text-primary-foreground font-medium shadow-lg shadow-primary/20 flex items-center"
             onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             {t('channels.openChannel')}
           </button>
           <button
-            className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center"
+            className="px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-emphasis transition text-primary-foreground font-medium shadow-lg shadow-primary/20 flex items-center"
             onClick={() => navigate(ORDER_CHANNEL_PATH)}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             {t('channels.buyChannel')}
           </button>
           <button
-            className={`px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 transition text-gray-200 font-medium flex items-center ${
+            className={`px-4 py-2.5 rounded-lg border border-border-default bg-surface-overlay hover:bg-surface-high transition text-content-primary font-medium flex items-center ${
               isLoading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
             disabled={isLoading}
@@ -389,18 +389,18 @@ export const Component: React.FC = () => {
         />
       </div>
 
-      <div className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-700/50 shadow-lg py-6 px-6">
+      <div className="bg-gradient-to-b from-surface-overlay/50 to-surface-base/50 backdrop-blur-sm rounded-xl border border-border-default/50 shadow-lg py-6 px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
           <h2 className="text-xl font-bold">{t('channels.yourChannels')}</h2>
 
           <div className="flex items-center space-x-2">
             {/* Channel type tabs */}
-            <div className="bg-gray-900/80 rounded-lg p-1 flex shadow-inner">
+            <div className="bg-surface-base/80 rounded-lg p-1 flex shadow-inner">
               <button
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
                   activeTab === 'all'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-content-secondary hover:bg-surface-overlay'
                 }`}
                 onClick={() => setActiveTab('all')}
               >
@@ -410,8 +410,8 @@ export const Component: React.FC = () => {
               <button
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
                   activeTab === 'bitcoin'
-                    ? 'bg-yellow-500 text-gray-900 shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800'
+                    ? 'bg-yellow-500 text-surface-base shadow-md'
+                    : 'text-content-secondary hover:bg-surface-overlay'
                 }`}
                 onClick={() => setActiveTab('bitcoin')}
               >
@@ -422,7 +422,7 @@ export const Component: React.FC = () => {
                 className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
                   activeTab === 'rgb'
                     ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-gray-300 hover:bg-gray-800'
+                    : 'text-content-secondary hover:bg-surface-overlay'
                 }`}
                 onClick={() => setActiveTab('rgb')}
               >
@@ -441,12 +441,12 @@ export const Component: React.FC = () => {
               <div className="flex flex-wrap gap-2 items-center">
                 {filterOptions.map((filter) => (
                   <div
-                    className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-md flex items-center"
+                    className="bg-surface-overlay text-content-secondary text-xs px-2 py-1 rounded-md flex items-center"
                     key={filter.value}
                   >
                     {filter.label}
                     <button
-                      className="ml-1.5 text-gray-400 hover:text-white"
+                      className="ml-1.5 text-content-secondary hover:text-white"
                       onClick={() => toggleFilter(filter)}
                     >
                       <X size={12} />
@@ -454,7 +454,7 @@ export const Component: React.FC = () => {
                   </div>
                 ))}
                 <button
-                  className="text-xs text-gray-400 hover:text-white underline"
+                  className="text-xs text-content-secondary hover:text-white underline"
                   onClick={clearFilters}
                 >
                   {t('channels.clearAll')}
@@ -467,7 +467,7 @@ export const Component: React.FC = () => {
             {/* Filter dropdown */}
             <div className="relative">
               <button
-                className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 flex items-center"
+                className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-high text-sm text-content-secondary flex items-center"
                 onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
               >
                 <Filter className="mr-1.5" size={14} />
@@ -476,13 +476,13 @@ export const Component: React.FC = () => {
               </button>
 
               {isFilterMenuOpen && (
-                <div className="absolute right-0 mt-1 bg-gray-800 rounded-lg shadow-lg p-2 z-10 w-48">
-                  <div className="text-xs text-gray-400 mb-1 px-2">
+                <div className="absolute right-0 mt-1 bg-surface-overlay rounded-lg shadow-lg p-2 z-10 w-48">
+                  <div className="text-xs text-content-secondary mb-1 px-2">
                     {t('channels.filterBy')}
                   </div>
                   {availableFilters.map((filter) => (
                     <div
-                      className="flex items-center px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer"
+                      className="flex items-center px-2 py-1.5 hover:bg-surface-high rounded cursor-pointer"
                       key={filter.value}
                       onClick={() => toggleFilter(filter)}
                     >
@@ -504,7 +504,7 @@ export const Component: React.FC = () => {
             {/* Sort dropdown */}
             <div className="relative">
               <button
-                className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 flex items-center"
+                className="px-3 py-1.5 rounded-lg bg-surface-overlay hover:bg-surface-high text-sm text-content-secondary flex items-center"
                 onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
               >
                 <SortAsc className="mr-1.5" size={14} />
@@ -513,16 +513,16 @@ export const Component: React.FC = () => {
               </button>
 
               {isSortMenuOpen && (
-                <div className="absolute right-0 mt-1 bg-gray-800 rounded-lg shadow-lg p-2 z-10 w-56">
-                  <div className="text-xs text-gray-400 mb-1 px-2">
+                <div className="absolute right-0 mt-1 bg-surface-overlay rounded-lg shadow-lg p-2 z-10 w-56">
+                  <div className="text-xs text-content-secondary mb-1 px-2">
                     {t('channels.sortBy')}
                   </div>
                   {sortOptions.map((option) => (
                     <div
-                      className={`flex items-center px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer ${
+                      className={`flex items-center px-2 py-1.5 hover:bg-surface-high rounded cursor-pointer ${
                         sortBy.value === option.value &&
                         sortBy.direction === option.direction
-                          ? 'bg-gray-700/50'
+                          ? 'bg-surface-high/50'
                           : ''
                       }`}
                       key={`${option.value}-${option.direction}`}
@@ -557,9 +557,9 @@ export const Component: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="bg-gradient-to-b from-gray-900/70 to-gray-950/70 border border-gray-800/60 rounded-lg p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-gray-800/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <AlertCircle className="h-8 w-8 text-gray-400" />
+          <div className="bg-gradient-to-b from-surface-base/70 to-surface-base/70 border border-border-subtle/60 rounded-lg p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-surface-overlay/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <AlertCircle className="h-8 w-8 text-content-secondary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">
               {t('channels.noChannelsFound', {
@@ -571,7 +571,7 @@ export const Component: React.FC = () => {
                     : '',
               })}
             </h3>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
+            <p className="text-content-secondary mb-6 max-w-md mx-auto">
               {filterOptions.length > 0
                 ? t('channels.noChannelsMatchFilters')
                 : activeTab === 'all'
@@ -582,7 +582,7 @@ export const Component: React.FC = () => {
             </p>
             {filterOptions.length > 0 ? (
               <button
-                className="px-5 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 transition text-white font-medium flex items-center mx-auto"
+                className="px-5 py-2.5 rounded-lg bg-surface-high hover:bg-surface-elevated transition text-white font-medium flex items-center mx-auto"
                 onClick={clearFilters}
               >
                 <X className="mr-2 h-4 w-4" />
@@ -590,7 +590,7 @@ export const Component: React.FC = () => {
               </button>
             ) : (
               <button
-                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center mx-auto"
+                className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-emphasis transition text-primary-foreground font-medium shadow-lg shadow-primary/20 flex items-center mx-auto"
                 onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -608,7 +608,7 @@ export const Component: React.FC = () => {
         )}
       </div>
 
-      <div className="flex items-center space-x-2 text-sm text-gray-400 mt-6 p-4 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+      <div className="flex items-center space-x-2 text-sm text-content-secondary mt-6 p-4 bg-blue-900/20 border border-blue-800/30 rounded-lg">
         <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
         <p>{t('channels.liquidityInfo')}</p>
       </div>

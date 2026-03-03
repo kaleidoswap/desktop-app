@@ -61,7 +61,7 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
     >
       <div
-        className={`bg-blue-darkest rounded-xl border border-divider/20 shadow-xl ${sizeClasses[size]} w-full`}
+        className={`bg-surface-base rounded-xl border border-divider/20 shadow-xl ${sizeClasses[size]} w-full`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
             <h3 className="text-xl font-semibold text-white">{title}</h3>
             <button
               aria-label="Close modal"
-              className="p-2 rounded-full hover:bg-blue-darker text-gray-400 hover:text-white transition-colors"
+              className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
               onClick={onClose}
             >
               <X size={20} />

@@ -26,13 +26,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const baseStyles = `
-      border rounded-lg bg-slate-800/30 px-4 py-3 w-full outline-none 
+      border rounded-lg bg-surface-overlay/30 px-4 py-3 w-full outline-none
       focus:ring-2 transition-shadow
     `
 
     const stateStyles = error
       ? 'border-red/50 focus:ring-red/20 text-white'
-      : 'border-slate-700/50 focus:ring-cyan/20 focus:border-cyan text-white'
+      : 'border-border-default/50 focus:ring-primary/20 focus:border-cyan text-white'
 
     const paddingLeft =
       prefixNode || (icon && iconPosition === 'left') ? 'pl-10' : ''
@@ -42,13 +42,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="relative">
         {prefixNode && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-secondary">
             {prefixNode}
           </div>
         )}
 
         {icon && iconPosition === 'left' && !prefixNode && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-secondary">
             {icon}
           </div>
         )}
@@ -60,13 +60,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         />
 
         {suffixNode && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary">
             {suffixNode}
           </div>
         )}
 
         {icon && iconPosition === 'right' && !suffixNode && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary">
             {icon}
           </div>
         )}
@@ -92,7 +92,7 @@ export const PasswordInput = forwardRef<
       ref={ref}
       suffixNode={
         <button
-          className="p-1 hover:bg-slate-700/50 rounded-md transition-colors"
+          className="p-1 hover:bg-surface-high/50 rounded-md transition-colors"
           onClick={onToggleVisibility}
           type="button"
         >
@@ -148,13 +148,13 @@ export const Textarea = forwardRef<
   }
 >(({ error = false, className = '', ...props }, ref) => {
   const baseStyles = `
-      border rounded-lg bg-slate-800/30 px-4 py-3 w-full outline-none 
+      border rounded-lg bg-surface-overlay/30 px-4 py-3 w-full outline-none
       focus:ring-2 transition-shadow min-h-[100px] resize-y
     `
 
   const stateStyles = error
     ? 'border-red/50 focus:ring-red/20 text-white'
-    : 'border-slate-700/50 focus:ring-cyan/20 focus:border-cyan text-white'
+    : 'border-border-default/50 focus:ring-primary/20 focus:border-cyan text-white'
 
   return (
     <textarea

@@ -73,12 +73,12 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
       role="dialog"
     >
       <div
-        className="bg-gray-800 text-white p-8 rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-auto max-h-[90vh] animate-scaleIn"
+        className="bg-surface-overlay text-white p-8 rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-auto max-h-[90vh] animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           aria-label="Close modal"
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-high text-content-secondary hover:text-white transition-colors"
           onClick={onClose}
         >
           <X size={20} />
@@ -102,7 +102,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
   const nodeType = account.datapath
     ? t('toolbar.nodeCard.local')
     : t('toolbar.nodeCard.remote')
-  const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
+  const nodeColor = account.datapath ? 'text-green-400' : 'text-primary'
 
   // Handle card click based on edit mode
   const handleCardClick = () => {
@@ -115,13 +115,13 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
   return (
     <div
-      className={`group bg-blue-darker/50 rounded-xl transition-all duration-300 
-        hover:bg-blue-darker relative overflow-hidden border
+      className={`group bg-surface-overlay/50 rounded-xl transition-all duration-300 
+        hover:bg-surface-overlay relative overflow-hidden border
         ${isCollapsed ? 'p-2' : 'p-4'}
         ${
           isEditing
-            ? 'cursor-pointer border-cyan/30 hover:border-cyan/70 hover:shadow-[0_0_0_1px_rgba(56,189,248,0.4)] hover:-translate-y-0.5'
-            : 'border-divider/5 hover:border-divider/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-cyan/5'
+            ? 'cursor-pointer border-primary/30 hover:border-primary/70 hover:shadow-[0_0_0_1px_rgba(56,189,248,0.4)] hover:-translate-y-0.5'
+            : 'border-divider/5 hover:border-divider/20 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5'
         }`}
       onClick={handleCardClick}
     >
@@ -139,14 +139,14 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
           {/* Node type indicator for collapsed view */}
           {isCollapsed && (
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-blue-darkest flex items-center justify-center shadow-sm">
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-surface-base flex items-center justify-center shadow-sm">
               <NodeIcon className={`w-3 h-3 ${nodeColor}`} />
             </div>
           )}
 
           {/* Edit mode indicator for collapsed view */}
           {isEditing && isCollapsed && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-cyan/80 flex items-center justify-center shadow-sm">
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary/80 flex items-center justify-center shadow-sm">
               <Edit className="w-2.5 h-2.5 text-blue-darkest" />
             </div>
           )}
@@ -159,7 +159,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
               {account.name}
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-darkest text-gray-400">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-surface-base text-content-secondary">
                 {account.network}
               </span>
               <span className={`flex items-center ${nodeColor} text-sm`}>
@@ -178,7 +178,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
           >
             <button
               aria-label={`Edit node ${account.name}`}
-              className="p-2.5 rounded-lg text-gray-400 hover:text-cyan bg-blue-darkest/40 hover:bg-blue-darkest
+              className="p-2.5 rounded-lg text-content-secondary hover:text-primary bg-surface-base/40 hover:bg-surface-base
                 transition-colors duration-200 hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation()
@@ -189,7 +189,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             </button>
             <button
               aria-label={`Delete node ${account.name}`}
-              className="p-2.5 rounded-lg text-gray-400 hover:text-red-500 bg-blue-darkest/40 hover:bg-blue-darkest
+              className="p-2.5 rounded-lg text-content-secondary hover:text-red-500 bg-surface-base/40 hover:bg-surface-base
                 transition-colors duration-200 hover:shadow-md"
               onClick={(e) => {
                 e.stopPropagation()
@@ -204,13 +204,13 @@ const NodeCard: React.FC<NodeCardProps> = ({
         {/* Edit/Delete buttons for collapsed view */}
         {isEditing && isCollapsed && (
           <div
-            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-blue-darker/80 backdrop-blur-sm transition-opacity duration-200"
+            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-surface-overlay/80 backdrop-blur-sm transition-opacity duration-200"
             onClick={(e) => e.stopPropagation()} // Prevent card click when clicking buttons
           >
             <div className="flex space-x-2">
               <button
                 aria-label={`Edit node ${account.name}`}
-                className="p-1.5 rounded-lg text-cyan bg-blue-darkest/80 hover:bg-blue-darkest
+                className="p-1.5 rounded-lg text-primary bg-surface-base/80 hover:bg-surface-base
                   transition-colors duration-200 hover:scale-110"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -221,7 +221,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
               </button>
               <button
                 aria-label={`Delete node ${account.name}`}
-                className="p-1.5 rounded-lg text-red-400 bg-blue-darkest/80 hover:bg-blue-darkest
+                className="p-1.5 rounded-lg text-red-400 bg-surface-base/80 hover:bg-surface-base
                   transition-colors duration-200 hover:scale-110"
                 onClick={(e) => {
                   e.stopPropagation()
@@ -670,8 +670,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                   ? t('toolbar.main.exitEditMode')
                   : t('toolbar.main.enterEditMode')
               }
-              className={`p-2 rounded-lg text-gray-400 hover:text-white 
-                transition-colors duration-200 ${isEditing ? 'bg-blue-darker text-cyan' : ''}`}
+              className={`p-2 rounded-lg text-content-secondary hover:text-white 
+                transition-colors duration-200 ${isEditing ? 'bg-surface-overlay text-primary' : ''}`}
               onClick={toggleEditMode}
             >
               {isEditing ? (
@@ -695,8 +695,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
         {/* Visual indication of edit mode - only show in expanded view */}
         {isEditing && !isCollapsed && (
-          <div className="px-4 py-2 bg-cyan/10 border-y border-cyan/20 flex-shrink-0">
-            <p className="text-sm text-cyan flex items-center">
+          <div className="px-4 py-2 bg-primary/10 border-y border-primary/20 flex-shrink-0">
+            <p className="text-sm text-primary flex items-center">
               <Edit className="w-4 h-4 mr-2" />
               {t('toolbar.main.editModeInstructions')}
             </p>
@@ -709,11 +709,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
           {accounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               {!isCollapsed && (
-                <div className={`bg-blue-darker/50 rounded-xl p-6 max-w-xs`}>
-                  <p className="text-gray-400 mb-2">
+                <div className={`bg-surface-overlay/50 rounded-xl p-6 max-w-xs`}>
+                  <p className="text-content-secondary mb-2">
                     {t('toolbar.main.noNodesFound')}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-content-tertiary">
                     {t('toolbar.main.createNodeHint')}
                   </p>
                 </div>
@@ -875,18 +875,18 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
   const nodeType = account.datapath
     ? t('toolbar.modal.localNode')
     : t('toolbar.modal.remoteNode')
-  const nodeColor = account.datapath ? 'text-green-400' : 'text-cyan'
+  const nodeColor = account.datapath ? 'text-green-400' : 'text-primary'
   const bgColor = account.datapath
     ? 'from-green-500/5 to-transparent'
     : 'from-cyan/5 to-transparent'
 
   return (
     <div className="max-h-[80vh] overflow-y-auto">
-      <div className="sticky top-0 bg-gray-800 pb-4 z-10">
+      <div className="sticky top-0 bg-surface-overlay pb-4 z-10">
         <h2 className="text-2xl font-bold mb-2">
           {t('toolbar.modal.switchNode')}
         </h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-content-secondary text-sm">
           {t('toolbar.modal.reviewDetails')}
         </p>
       </div>
@@ -907,13 +907,13 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
               </p>
               <div className="mt-2 flex gap-2">
                 <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 1 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 1 ? 'bg-primary' : 'bg-surface-high'}`}
                 />
                 <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 2 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 2 ? 'bg-primary' : 'bg-surface-high'}`}
                 />
                 <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 3 ? 'bg-blue-500' : 'bg-gray-700'}`}
+                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 3 ? 'bg-primary' : 'bg-surface-high'}`}
                 />
               </div>
             </div>
@@ -948,7 +948,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
       )}
 
       <div
-        className={`bg-gradient-to-b ${bgColor} rounded-xl p-4 mb-4 border border-gray-700`}
+        className={`bg-gradient-to-b ${bgColor} rounded-xl p-4 mb-4 border border-border-default`}
       >
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -959,14 +959,14 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
               username={account.name}
               width="56"
             />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-blue-darkest flex items-center justify-center shadow-md">
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface-base flex items-center justify-center shadow-md">
               <NodeIcon className={`w-3.5 h-3.5 ${nodeColor}`} />
             </div>
           </div>
           <div className="flex-grow">
             <h3 className="text-xl font-semibold text-white">{account.name}</h3>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="bg-blue-darkest px-3 py-1 rounded-full text-sm text-gray-300">
+              <span className="bg-surface-base px-3 py-1 rounded-full text-sm text-content-secondary">
                 {account.network}
               </span>
               <span
@@ -982,9 +982,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
 
       <div className="space-y-2">
         {/* Connection Details Section */}
-        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+        <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
           <button
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
             onClick={() => toggleSection('connection')}
           >
             <span className="font-medium text-white">
@@ -994,7 +994,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
               className={`transform transition-transform ${expandedSection === 'connection' ? 'rotate-180' : ''}`}
             >
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5 text-content-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1011,18 +1011,18 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           {expandedSection === 'connection' && (
             <div className="px-4 pb-4 space-y-3">
               <div>
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-content-secondary">
                   {t('toolbar.modal.nodeUrl')}
                 </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
                   {account.node_url}
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-content-secondary">
                   {t('toolbar.modal.rpcConnection')}
                 </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
                   {account.rpc_connection_url}
                 </div>
               </div>
@@ -1031,9 +1031,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         </div>
 
         {/* Service Endpoints Section */}
-        <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+        <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
           <button
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
             onClick={() => toggleSection('services')}
           >
             <span className="font-medium text-white">
@@ -1043,7 +1043,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
               className={`transform transition-transform ${expandedSection === 'services' ? 'rotate-180' : ''}`}
             >
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5 text-content-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1060,18 +1060,18 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           {expandedSection === 'services' && (
             <div className="px-4 pb-4 space-y-3">
               <div>
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-content-secondary">
                   {t('toolbar.modal.indexerUrl')}
                 </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
                   {account.indexer_url}
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400">
+                <label className="text-sm text-content-secondary">
                   {t('toolbar.modal.rgbProxy')}
                 </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
                   {account.proxy_endpoint}
                 </div>
               </div>
@@ -1081,9 +1081,9 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
 
         {/* Port Configuration Section - Only for Local Nodes */}
         {account.datapath && (
-          <div className="bg-blue-darker/30 rounded-lg border border-gray-700 overflow-hidden">
+          <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
             <button
-              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-blue-darker/50 transition-colors"
+              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
               onClick={() => toggleSection('ports')}
             >
               <span className="font-medium text-white">
@@ -1093,7 +1093,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
                 className={`transform transition-transform ${expandedSection === 'ports' ? 'rotate-180' : ''}`}
               >
                 <svg
-                  className="w-5 h-5 text-gray-400"
+                  className="w-5 h-5 text-content-secondary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1110,26 +1110,26 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             {expandedSection === 'ports' && (
               <div className="px-4 pb-4 space-y-3">
                 <div>
-                  <label className="text-sm text-gray-400">
+                  <label className="text-sm text-content-secondary">
                     {t('toolbar.modal.daemonPort')}
                   </label>
-                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                  <div className="mt-1 text-sm text-white font-mono bg-surface-base/30 p-2 rounded">
                     {account.daemon_listening_port}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">
+                  <label className="text-sm text-content-secondary">
                     {t('toolbar.modal.ldkPeerPort')}
                   </label>
-                  <div className="mt-1 text-sm text-white font-mono bg-blue-darkest/30 p-2 rounded">
+                  <div className="mt-1 text-sm text-white font-mono bg-surface-base/30 p-2 rounded">
                     {account.ldk_peer_listening_port}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">
+                  <label className="text-sm text-content-secondary">
                     {t('toolbar.modal.dataPath')}
                   </label>
-                  <div className="mt-1 text-sm text-white break-all font-mono bg-blue-darkest/30 p-2 rounded">
+                  <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
                     {account.datapath}
                   </div>
                 </div>
@@ -1139,10 +1139,10 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-gray-800 pt-4 mt-6 border-t border-gray-700">
+      <div className="sticky bottom-0 bg-surface-overlay pt-4 mt-6 border-t border-border-default">
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <button
-            className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors"
+            className="flex-1 px-4 py-2.5 bg-surface-high hover:bg-surface-elevated text-white font-medium rounded-lg transition-colors"
             disabled={isLoading || loadingState !== null}
             onClick={onCancel}
             type="button"
@@ -1150,12 +1150,12 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             {t('toolbar.modal.cancel')}
           </button>
           <button
-            className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors
+            className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors text-primary-foreground
               ${
                 isLoading || loadingState !== null
-                  ? 'bg-blue/50 cursor-not-allowed'
-                  : 'bg-blue hover:bg-blue/80'
-              } text-white`}
+                  ? 'bg-primary/50 cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary-emphasis'
+              }`}
             disabled={isLoading || loadingState !== null}
             onClick={handleConfirm}
             type="button"
@@ -1205,7 +1205,7 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
       </div>
 
       <div className="space-y-4 mb-8">
-        <p className="text-gray-300">
+        <p className="text-content-secondary">
           {t('toolbar.delete.confirmMessage', { name: account.name })}
         </p>
 
@@ -1239,14 +1239,14 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
 
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
+          className="w-full sm:w-1/2 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white text-lg font-bold rounded shadow-md transition duration-200"
           onClick={onCancel}
           type="button"
         >
           {t('toolbar.delete.cancel')}
         </button>
         <button
-          className="w-full sm:w-1/2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded shadow-md transition duration-200"
+          className="w-full sm:w-1/2 px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground text-lg font-bold rounded shadow-md transition duration-200"
           onClick={handleDelete}
           type="button"
         >
@@ -1381,13 +1381,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-700 mb-6">
+      <div className="flex border-b border-border-default mb-6">
         <button
           className={`px-4 py-2 font-medium text-sm transition-colors relative
             ${
               activeTab === 'basic'
-                ? 'text-cyan'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'text-primary'
+                : 'text-content-secondary hover:text-content-primary'
             }`}
           onClick={() => setActiveTab('basic')}
           type="button"
@@ -1401,8 +1401,8 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           className={`px-4 py-2 font-medium text-sm transition-colors relative
             ${
               activeTab === 'advanced'
-                ? 'text-cyan'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'text-primary'
+                : 'text-content-secondary hover:text-content-primary'
             }`}
           onClick={() => setActiveTab('advanced')}
           type="button"
@@ -1417,19 +1417,19 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       <form className="space-y-5" onSubmit={handleSubmit}>
         {activeTab === 'basic' && (
           <>
-            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-gray-300 mb-4">
+            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-content-secondary mb-4">
                 {t('toolbar.edit.sections.connectionSettings')}
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.nodeName')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       disabled
                       type="text"
                       value={formData.name}
@@ -1438,12 +1438,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.nodeUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('node_url', e.target.value)
                       }
@@ -1455,12 +1455,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.rpcConnectionUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('rpc_connection_url', e.target.value)
                       }
@@ -1477,19 +1477,19 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
         {activeTab === 'advanced' && (
           <>
-            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-gray-300 mb-4">
+            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-content-secondary mb-4">
                 {t('toolbar.edit.sections.serviceEndpoints')}
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.bitcoindRpcUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('rpc_connection_url', e.target.value)
                       }
@@ -1501,12 +1501,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.indexerUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('indexer_url', e.target.value)
                       }
@@ -1518,12 +1518,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.rgbProxyEndpoint')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('proxy_endpoint', e.target.value)
                       }
@@ -1536,18 +1536,18 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
                 {account.datapath && (
                   <div>
-                    <label className="block text-gray-300 text-sm mb-1.5">
+                    <label className="block text-content-secondary text-sm mb-1.5">
                       {t('toolbar.edit.fields.dataPath')}
                     </label>
                     <div className="flex items-center">
                       <input
-                        className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600"
+                        className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default"
                         disabled
                         type="text"
                         value={formData.datapath}
                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-content-secondary mt-1">
                       {t('toolbar.edit.fields.dataPathHint')}
                     </p>
                   </div>
@@ -1555,22 +1555,22 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
               </div>
             </div>
 
-            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-gray-300 mb-4">
+            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-content-secondary mb-4">
                 {t('toolbar.edit.sections.portConfiguration')}
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.daemonListeningPort')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                      className={`w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
                         portErrors.daemon
                           ? 'border-red-500 focus:border-red-400'
-                          : 'border-gray-600 focus:border-cyan/50'
+                          : 'border-border-default focus:border-primary/50'
                       }`}
                       max="65535"
                       min="1024"
@@ -1590,22 +1590,22 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                       {portErrors.daemon}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-content-secondary mt-1">
                       {t('toolbar.edit.fields.daemonListeningPortHint')}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.ldkPeerListeningPort')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
+                      className={`w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border focus:outline-none ${
                         portErrors.ldk
                           ? 'border-red-500 focus:border-red-400'
-                          : 'border-gray-600 focus:border-cyan/50'
+                          : 'border-border-default focus:border-primary/50'
                       }`}
                       max="65535"
                       min="1024"
@@ -1625,7 +1625,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                       {portErrors.ldk}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-content-secondary mt-1">
                       {t('toolbar.edit.fields.ldkPeerListeningPortHint')}
                     </p>
                   )}
@@ -1633,19 +1633,19 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
               </div>
             </div>
 
-            <div className="bg-blue-darker/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-gray-300 mb-4">
+            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
+              <h3 className="text-sm font-medium text-content-secondary mb-4">
                 {t('toolbar.edit.sections.makerSettings')}
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.defaultMakerUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('default_maker_url', e.target.value)
                       }
@@ -1657,12 +1657,12 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1.5">
+                  <label className="block text-content-secondary text-sm mb-1.5">
                     {t('toolbar.edit.fields.defaultLspUrl')}
                   </label>
                   <div className="flex items-center">
                     <input
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2.5 text-white border border-gray-600 focus:border-cyan/50 focus:outline-none"
+                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
                       onChange={(e) =>
                         handleInputChange('default_lsp_url', e.target.value)
                       }
@@ -1677,9 +1677,9 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </>
         )}
 
-        <div className="flex space-x-4 mt-8 pt-4 border-t border-gray-700">
+        <div className="flex space-x-4 mt-8 pt-4 border-t border-border-default">
           <button
-            className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-white font-medium"
+            className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated rounded-lg transition-colors text-white font-medium"
             onClick={onClose}
             type="button"
           >

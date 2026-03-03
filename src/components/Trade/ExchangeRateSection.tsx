@@ -49,6 +49,7 @@ interface ExchangeRateDisplayProps {
   assets?: NiaAsset[]
   lastQuoteTimestamp?: number | null
   isPriceFresh?: boolean
+  onRefresh?: () => void
 }
 
 export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
@@ -62,6 +63,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   assets = [],
   lastQuoteTimestamp,
   isPriceFresh = true,
+  onRefresh,
 }) => {
   const { t } = useTranslation()
   // Get display tickers for assets (especially important for RGB assets)
@@ -97,65 +99,66 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
   )
 
   return (
-    <div className="space-y-3">
-      {/* Main Rate Display */}
-      <div className="flex items-center justify-center">
-        <div className="flex items-center gap-2.5 text-base">
-          <div className="flex items-center gap-1.5">
-            <span className="text-white font-bold">1</span>
-            <AssetOption ticker={fromDisplayAsset} />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-            <span className="text-slate-400 font-medium">=</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`text-white font-bold transition-all duration-300 ${
-                priceUpdated ? 'text-green-400 scale-105' : ''
-              }`}
-            >
-              {formattedRate}
-            </span>
-            <AssetOption ticker={toDisplayAsset} />
-          </div>
-        </div>
-      </div>
-
-      {/* Status Information */}
-      <div className="flex items-center justify-between text-xs bg-slate-800/30 rounded-lg px-3 py-2">
-        <div className="flex items-center gap-1.5">
-          <Clock className="w-3 h-3 text-slate-500" />
-          <span className="text-slate-500">
-            {t('trade.exchangeRate.updated')}:
-          </span>
-          <span className="text-slate-300 font-medium">
+    <div className="flex items-center gap-2 py-1.5">
+      {/* Left: timestamp + live status */}
+      <div className="flex-1 flex items-center gap-2">
+        <div className="flex items-center gap-1 text-xs text-content-tertiary">
+          <Clock className="w-3 h-3" />
+          <span>
             {lastQuoteTimestamp
               ? formatTimeDifference(lastQuoteTimestamp, t)
               : t('trade.exchangeRate.never')}
           </span>
         </div>
-
-        <div className="flex items-center gap-1.5">
+        <div
+          className={`flex items-center gap-1 text-xs font-semibold ${
+            isPriceFresh ? 'text-green-400' : 'text-amber-400'
+          }`}
+        >
           <div
-            className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
-              isPriceFresh
-                ? 'bg-green-500/10 text-green-400 border-green-500/30'
-                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+            className={`w-2 h-2 rounded-full ${
+              isPriceFresh ? 'bg-green-400' : 'bg-amber-400 animate-pulse'
+            }`}
+          ></div>
+          <span>
+            {isPriceFresh
+              ? t('trade.exchangeRate.live')
+              : t('trade.exchangeRate.stale')}
+          </span>
+        </div>
+      </div>
+
+      {/* Center: rate */}
+      <div className="flex items-center gap-1.5 text-base shrink-0">
+        <div className="flex items-center gap-1">
+          <span className="text-white font-semibold">1</span>
+          <AssetOption ticker={fromDisplayAsset} />
+        </div>
+        <TrendingUp className="w-3 h-3 text-green-500 shrink-0" />
+        <div className="flex items-center gap-1">
+          <span
+            className={`text-white font-semibold transition-all duration-300 ${
+              priceUpdated ? 'text-green-400' : ''
             }`}
           >
-            <div
-              className={`w-1 h-1 rounded-full ${
-                isPriceFresh ? 'bg-green-500' : 'bg-amber-500'
-              }`}
-            ></div>
-            <span className="text-xs font-semibold">
-              {isPriceFresh
-                ? t('trade.exchangeRate.live')
-                : t('trade.exchangeRate.stale')}
-            </span>
-          </div>
+            {formattedRate}
+          </span>
+          <AssetOption ticker={toDisplayAsset} />
         </div>
+      </div>
+
+      {/* Right: refresh */}
+      <div className="flex-1 flex items-center justify-end">
+        {onRefresh && (
+          <button
+            className="p-1 rounded-md hover:bg-surface-high/60 text-content-tertiary hover:text-content-secondary transition-all active:scale-95"
+            onClick={onRefresh}
+            title={t('tradeMarketMaker.swap.refresh')}
+            type="button"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -171,6 +174,7 @@ interface ExchangeRateSectionProps {
   formatAmount: (amount: number, asset: string) => string
   getAssetPrecision: (asset: string) => number
   assets?: NiaAsset[]
+  onRefresh?: () => void
 }
 
 export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
@@ -183,6 +187,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   formatAmount,
   getAssetPrecision,
   assets = [],
+  onRefresh,
 }) => {
   const { t } = useTranslation()
   const [showPriceUpdate, setShowPriceUpdate] = useState(false)
@@ -265,11 +270,9 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
   // Don't render if no price data
   if (!selectedPair || price === null) {
     return (
-      <div className="flex items-center justify-center py-8 text-slate-400">
-        <div className="flex items-center gap-2">
-          <RefreshCw className="w-4 h-4 animate-spin" />
-          <span className="text-sm">{t('trade.exchangeRate.loadingRate')}</span>
-        </div>
+      <div className="flex items-center gap-2 py-1 text-content-tertiary">
+        <RefreshCw className="w-3 h-3 animate-spin" />
+        <span className="text-xs">{t('trade.exchangeRate.loadingRate')}</span>
       </div>
     )
   }
@@ -285,6 +288,7 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
         getAssetPrecision={getAssetPrecision}
         isPriceFresh={isPriceFresh}
         lastQuoteTimestamp={lastQuoteTimestamp}
+        onRefresh={onRefresh}
         price={price}
         priceUpdated={showPriceUpdate}
         selectedPair={selectedPair}
@@ -293,8 +297,8 @@ export const ExchangeRateSection: React.FC<ExchangeRateSectionProps> = ({
 
       {/* Loading State Overlay */}
       {isPriceLoading && (
-        <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
-          <div className="flex items-center gap-3 text-slate-300">
+        <div className="absolute inset-0 bg-surface-base/50 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <div className="flex items-center gap-3 text-content-secondary">
             <RefreshCw className="w-5 h-5 animate-spin" />
             <span className="font-medium">
               {t('trade.exchangeRate.updatingRate')}

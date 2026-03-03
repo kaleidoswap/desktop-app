@@ -210,10 +210,10 @@ export const Component = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
         <div className="flex justify-center items-center h-64">
           <Spinner color="#8FD5EA" overlay={false} size={120} />
-          <div className="ml-4 text-gray-400">
+          <div className="ml-4 text-content-secondary">
             {t('createChannel.checkingBalance')}
           </div>
         </div>
@@ -223,7 +223,7 @@ export const Component = () => {
 
   if (error) {
     return (
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
         <div className="text-center">
           <FormError message={error} />
           <button
@@ -239,13 +239,13 @@ export const Component = () => {
 
   return (
     <>
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-gray-800/50 shadow-xl w-full text-white">
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
         {/* Step Progress Indicator */}
         {!insufficientBalance && (
           <div className="flex justify-between mb-4">
             <div className="flex items-center">
               <div
-                className={`w-8 h-8 ${step >= 1 ? 'bg-blue-500' : 'bg-gray-700'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
+                className={`w-8 h-8 ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
               >
                 1
               </div>
@@ -253,7 +253,7 @@ export const Component = () => {
                 <p className="font-medium text-white text-sm">
                   {t('createChannel.stepPeerConnection')}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-content-secondary">
                   {step === 1
                     ? t('createChannel.currentStep')
                     : step > 1
@@ -263,15 +263,15 @@ export const Component = () => {
               </div>
             </div>
             <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-gray-700">
+              <div className="h-1 bg-surface-high">
                 <div
-                  className={`h-1 bg-blue-500 transition-all duration-300 ${step > 1 ? 'w-full' : 'w-0'}`}
+                  className={`h-1 bg-primary transition-all duration-300 ${step > 1 ? 'w-full' : 'w-0'}`}
                 ></div>
               </div>
             </div>
             <div className="flex items-center">
               <div
-                className={`w-8 h-8 ${step >= 2 ? 'bg-blue-500' : 'bg-gray-700'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
+                className={`w-8 h-8 ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
               >
                 2
               </div>
@@ -279,7 +279,7 @@ export const Component = () => {
                 <p className="font-medium text-white text-sm">
                   {t('createChannel.stepChannelSettings')}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-content-secondary">
                   {step === 2
                     ? t('createChannel.currentStep')
                     : step > 2
@@ -289,15 +289,15 @@ export const Component = () => {
               </div>
             </div>
             <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-gray-700">
+              <div className="h-1 bg-surface-high">
                 <div
-                  className={`h-1 bg-blue-500 transition-all duration-300 ${step > 2 ? 'w-full' : 'w-0'}`}
+                  className={`h-1 bg-primary transition-all duration-300 ${step > 2 ? 'w-full' : 'w-0'}`}
                 ></div>
               </div>
             </div>
             <div className="flex items-center">
               <div
-                className={`w-8 h-8 ${step >= 3 ? 'bg-blue-500' : 'bg-gray-700'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
+                className={`w-8 h-8 ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
               >
                 3
               </div>
@@ -305,7 +305,7 @@ export const Component = () => {
                 <p className="font-medium text-white text-sm">
                   {t('createChannel.stepReviewConfirm')}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-content-secondary">
                   {step === 3
                     ? t('createChannel.currentStep')
                     : step > 3
@@ -315,15 +315,15 @@ export const Component = () => {
               </div>
             </div>
             <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-gray-700">
+              <div className="h-1 bg-surface-high">
                 <div
-                  className={`h-1 bg-blue-500 transition-all duration-300 ${step > 3 ? 'w-full' : 'w-0'}`}
+                  className={`h-1 bg-primary transition-all duration-300 ${step > 3 ? 'w-full' : 'w-0'}`}
                 ></div>
               </div>
             </div>
             <div className="flex items-center">
               <div
-                className={`w-8 h-8 ${step >= 4 ? 'bg-green-500' : 'bg-gray-700'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
+                className={`w-8 h-8 ${step >= 4 ? 'bg-green-500' : 'bg-surface-high'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
               >
                 4
               </div>
@@ -331,7 +331,7 @@ export const Component = () => {
                 <p className="font-medium text-white text-sm">
                   {t('createChannel.stepComplete')}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-content-secondary">
                   {step === 4
                     ? t('createChannel.currentStep')
                     : t('createChannel.pending')}
@@ -349,14 +349,14 @@ export const Component = () => {
             <h3 className="text-xl font-semibold text-white mb-3">
               {t('createChannel.insufficientBalance')}
             </h3>
-            <p className="text-gray-300 mb-6 text-center max-w-md">
+            <p className="text-content-secondary mb-6 text-center max-w-md">
               {t('createChannel.insufficientBalanceMessage', {
                 amount: MIN_CHANNEL_CAPACITY,
               })}
             </p>
             <div className="flex gap-4">
               <button
-                className="px-5 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition text-white font-medium shadow-lg shadow-blue-700/20 flex items-center gap-2"
+                className="px-5 py-3 rounded-lg bg-primary hover:bg-primary-emphasis transition text-primary-foreground font-medium shadow-lg shadow-primary/20 flex items-center gap-2"
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -372,7 +372,7 @@ export const Component = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-700/50 shadow-lg py-4 px-4">
+          <div className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl border border-border-default/50 shadow-lg py-4 px-4">
             {formError && <FormError message={formError} />}
 
             {step === 1 && (
@@ -415,7 +415,7 @@ export const Component = () => {
         )}
 
         {/* Info Section */}
-        <div className="flex items-center space-x-2 text-sm text-gray-400 mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+        <div className="flex items-center space-x-2 text-sm text-content-secondary mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
           <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
           <p>{t('createChannel.infoMessage')}</p>
         </div>

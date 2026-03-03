@@ -82,7 +82,7 @@ const AssetOption = React.memo(
             {showAssetId && displayAssetId && (
               <div className="flex items-center gap-1">
                 <span
-                  className={`text-[10px] text-slate-500 ${showFullAssetId ? 'font-mono' : ''}`}
+                  className={`text-[10px] text-content-tertiary ${showFullAssetId ? 'font-mono' : ''}`}
                   title={showFullAssetId ? undefined : assetId}
                 >
                   {displayAssetId}
@@ -92,14 +92,14 @@ const AssetOption = React.memo(
                   assetId !== displayTicker &&
                   onCopyAssetId && (
                     <button
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-slate-600/50 rounded"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-elevated/50 rounded"
                       onClick={handleCopyAssetId}
                       title="Copy full asset ID"
                     >
                       {copiedAssetId === assetId ? (
                         <Check className="w-2.5 h-2.5 text-green-400" />
                       ) : (
-                        <Copy className="w-2.5 h-2.5 text-slate-400" />
+                        <Copy className="w-2.5 h-2.5 text-content-secondary" />
                       )}
                     </button>
                   )}
@@ -269,14 +269,14 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
         <button
           className={twJoin(
             'flex items-center justify-between w-full px-4 py-3 rounded-xl border transition-all duration-200',
-            'bg-slate-900/70 border-slate-600/50 hover:border-slate-500/70 backdrop-blur-sm',
+            'bg-surface-base/70 border-border-default/50 hover:border-border-subtle/70 backdrop-blur-sm',
             'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
             'min-w-[140px] h-[48px] relative',
             disabled
-              ? 'opacity-50 cursor-not-allowed hover:border-slate-600/50'
+              ? 'opacity-50 cursor-not-allowed hover:border-border-default/50'
               : 'cursor-pointer',
             isOpen && !disabled
-              ? 'border-blue-500 ring-2 ring-blue-500/20 bg-slate-800/90'
+              ? 'border-blue-500 ring-2 ring-blue-500/20 bg-surface-overlay/90'
               : ''
           )}
           disabled={disabled}
@@ -295,12 +295,12 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                 ticker={selectedOption.ticker}
               />
             ) : (
-              <span className="text-slate-400 ml-9">{placeholder}</span>
+              <span className="text-content-secondary ml-9">{placeholder}</span>
             )}
           </div>
           <ChevronDown
             className={twJoin(
-              'w-5 h-5 text-slate-400 transition-transform duration-200 ml-2 flex-shrink-0',
+              'w-5 h-5 text-content-secondary transition-transform duration-200 ml-2 flex-shrink-0',
               isOpen ? 'rotate-180' : ''
             )}
           />
@@ -312,7 +312,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
           createPortal(
             <div
               className={twJoin(
-                'fixed z-[9999] bg-slate-800/98 backdrop-blur-md border border-blue-500/50',
+                'fixed z-[9999] bg-surface-overlay/98 backdrop-blur-md border border-blue-500/50',
                 'rounded-xl shadow-2xl shadow-blue-500/20 overflow-hidden',
                 'min-w-[360px] max-w-[500px] w-max',
                 'animate-in fade-in-0 zoom-in-95 duration-200',
@@ -342,7 +342,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                 }}
               />
               {/* Enhanced Search Input */}
-              <div className="p-4 border-b border-slate-700/50 bg-slate-800/50">
+              <div className="p-4 border-b border-border-default/50 bg-surface-overlay/50">
                 {fieldLabel && (
                   <div className="mb-3 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
@@ -352,9 +352,9 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                   </div>
                 )}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-secondary" />
                   <input
-                    className="w-full pl-10 pr-8 py-2.5 bg-slate-900/70 border border-slate-600/50 rounded-lg text-white text-sm placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none min-w-0"
+                    className="w-full pl-10 pr-8 py-2.5 bg-surface-base/70 border border-border-default/50 rounded-lg text-white text-sm placeholder:text-content-tertiary focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none min-w-0"
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder={searchPlaceholder}
                     ref={searchInputRef}
@@ -363,15 +363,15 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                   />
                   {searchTerm && (
                     <button
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-slate-700/50 rounded transition-colors"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded transition-colors"
                       onClick={clearSearch}
                     >
-                      <X className="w-3 h-3 text-slate-400" />
+                      <X className="w-3 h-3 text-content-secondary" />
                     </button>
                   )}
                 </div>
                 {searchTerm && (
-                  <div className="mt-2 text-xs text-slate-400">
+                  <div className="mt-2 text-xs text-content-secondary">
                     {filteredOptions.length} asset
                     {filteredOptions.length !== 1 ? 's' : ''} found
                   </div>
@@ -386,7 +386,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                       <button
                         className={twJoin(
                           'w-full px-4 py-3 text-left transition-all duration-200',
-                          'hover:bg-slate-700/60 focus:bg-slate-700/60 focus:outline-none',
+                          'hover:bg-surface-high/60 focus:bg-surface-high/60 focus:outline-none',
                           'border-l-2 border-transparent group relative',
                           value === option.value
                             ? 'bg-blue-500/20 text-blue-300 border-l-blue-500 shadow-lg shadow-blue-500/10'
@@ -407,9 +407,9 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="px-4 py-8 text-center text-slate-400">
+                  <div className="px-4 py-8 text-center text-content-secondary">
                     <div className="space-y-2">
-                      <Search className="w-8 h-8 mx-auto text-slate-500" />
+                      <Search className="w-8 h-8 mx-auto text-content-tertiary" />
                       <p className="text-sm font-medium">No assets found</p>
                       <p className="text-xs">
                         Try searching by ticker (e.g., "BTC") or asset ID
@@ -429,8 +429,8 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
 
               {/* Footer with helpful info */}
               {!searchTerm && (
-                <div className="px-4 py-2 border-t border-slate-700/50 bg-slate-800/30">
-                  <p className="text-xs text-slate-500 text-center">
+                <div className="px-4 py-2 border-t border-border-default/50 bg-surface-overlay/30">
+                  <p className="text-xs text-content-tertiary text-center">
                     💡 You can search by ticker or paste full asset ID
                   </p>
                 </div>

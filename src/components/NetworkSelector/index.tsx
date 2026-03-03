@@ -43,7 +43,7 @@ export const NetworkSelector = ({
       case 'Signet':
         return 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
       default:
-        return 'bg-cyan/20 text-cyan border border-cyan/30'
+        return 'bg-primary/20 text-primary border border-primary/30'
     }
   }
 
@@ -54,7 +54,7 @@ export const NetworkSelector = ({
 
   return (
     <div className={`${className} relative`} ref={dropdownRef}>
-      <label className="block text-sm font-medium mb-2 text-slate-300">
+      <label className="block text-sm font-medium mb-2 text-content-secondary">
         Network
       </label>
 
@@ -66,8 +66,8 @@ export const NetworkSelector = ({
           border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan/50
           ${
             isOpen
-              ? 'border-cyan bg-blue-dark/60 shadow-[0_0_10px_rgba(0,200,255,0.15)]'
-              : 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 hover:border-slate-600/70'
+              ? 'border-cyan bg-surface-elevated/60 shadow-[0_0_10px_rgba(0,200,255,0.15)]'
+              : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
           }`}
         onClick={() => setIsOpen(!isOpen)}
         type="button"
@@ -80,15 +80,15 @@ export const NetworkSelector = ({
           </span>
         </div>
         <ChevronDown
-          className={`w-5 h-5 text-slate-400 transition-transform duration-300 ease-in-out
-          ${isOpen ? 'rotate-180 text-cyan' : 'group-hover:text-slate-300'}`}
+          className={`w-5 h-5 text-content-secondary transition-transform duration-300 ease-in-out
+          ${isOpen ? 'rotate-180 text-primary' : 'group-hover:text-content-secondary'}`}
         />
       </button>
 
       {/* Dropdown menu with animation */}
       {isOpen && (
         <div
-          className="absolute z-10 w-full mt-2 bg-blue-darker border border-slate-700/50 rounded-lg shadow-lg overflow-hidden
+          className="absolute z-10 w-full mt-2 bg-surface-overlay border border-border-default/50 rounded-lg shadow-lg overflow-hidden
           animate-in fade-in slide-in-from-top-2 duration-200"
           role="listbox"
         >
@@ -97,8 +97,8 @@ export const NetworkSelector = ({
               <button
                 aria-selected={selectedNetwork === network}
                 className={`flex items-center justify-between w-full px-4 py-3 text-left 
-                  hover:bg-blue-dark/60 transition-colors duration-150
-                  ${selectedNetwork === network ? 'bg-blue-dark/40' : ''}`}
+                  hover:bg-surface-elevated/60 transition-colors duration-150
+                  ${selectedNetwork === network ? 'bg-surface-elevated/40' : ''}`}
                 key={network}
                 onClick={() => {
                   onChange(network as BitcoinNetwork)
@@ -115,7 +115,7 @@ export const NetworkSelector = ({
                   </span>
                 </div>
                 {selectedNetwork === network && (
-                  <Check className="w-4 h-4 text-cyan" />
+                  <Check className="w-4 h-4 text-primary" />
                 )}
               </button>
             ))}

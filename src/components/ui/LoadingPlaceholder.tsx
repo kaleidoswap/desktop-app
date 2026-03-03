@@ -17,7 +17,7 @@ export const LoadingPlaceholder: React.FC<LoadingPlaceholderProps> = ({
   rounded = true,
 }) => (
   <div
-    className={`${width} ${height} bg-slate-700/50 animate-pulse ${rounded ? 'rounded' : ''} ${className}`}
+    className={`${width} ${height} bg-surface-high/50 animate-pulse ${rounded ? 'rounded' : ''} ${className}`}
   ></div>
 )
 
@@ -52,7 +52,7 @@ export const TextLoadingPlaceholder: React.FC<
 export const CardLoadingPlaceholder: React.FC<{ withHeader?: boolean }> = ({
   withHeader = true,
 }) => (
-  <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 space-y-6">
+  <div className="bg-surface-overlay/50 rounded-xl border border-border-default p-6 space-y-6">
     {withHeader && (
       <div className="flex justify-between items-center">
         <LoadingPlaceholder width="w-1/3" />

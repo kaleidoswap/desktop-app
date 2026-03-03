@@ -105,6 +105,9 @@
     "bitcoinUnit": "比特币单位",
     "bitcoinUnitSat": "聪 (SAT)",
     "bitcoinUnitBtc": "比特币 (BTC)",
+    "theme": "主题",
+    "themeDark": "深色",
+    "themeLight": "浅色",
     "lspUrl": "LSP 地址",
     "lspUrlPlaceholder": "例如：http://localhost:8000",
     "makerSettings": "做市商设置",
@@ -269,7 +272,12 @@
     "liquidityInfo": "通道流动性会随着您发送和接收付款而变化。保持通道平衡以获得最佳性能。",
     "noFunds": "无比特币资金",
     "noFundsMessage": "您的钱包中没有比特币资金。存入资金以开始使用应用程序。",
-    "unknown": "未知"
+    "unknown": "未知",
+    "nodeInfo": "节点信息",
+    "manage": "管理",
+    "history": "历史",
+    "testnetWarning": "测试网络",
+    "testnetWarningDesc": "您在测试网络上。资金不是真实的，交易没有货币价值。"
   },
   "peerManagement": {
     "title": "对等节点",
@@ -291,12 +299,38 @@
     }
   },
   "history": {
+    "bitcoin": "比特币",
     "description": "查看您的交易历史，包括存款、支付、提款和交换。",
     "deposits": "存款",
     "paymentsWithdrawals": "支付和提款",
     "swaps": "交换",
     "assets": "资产",
     "channelOrders": "通道订单"
+  },
+  "btcHistory": {
+    "title": "比特币交易记录",
+    "loading": "加载交易中...",
+    "errorLoading": "加载交易记录失败",
+    "errorMessage": "无法加载比特币交易历史。",
+    "tryAgain": "重试",
+    "refresh": "刷新",
+    "direction": "方向",
+    "amount": "金额",
+    "fee": "手续费",
+    "date": "日期",
+    "txId": "交易ID",
+    "status": "状态",
+    "received": "已接收",
+    "sent": "已发送",
+    "confirmed": "已确认",
+    "pending": "待处理",
+    "allDirections": "所有方向",
+    "allStatuses": "所有状态",
+    "searchPlaceholder": "按txid搜索...",
+    "noTransactions": "未找到比特币交易。",
+    "noTxFiltered": "没有交易符合筛选条件。",
+    "clearFilters": "清除筛选",
+    "viewExplorer": "在浏览器中查看"
   },
   "walletSetup": {
     "getHelpSupport": "获取帮助与支持",
@@ -1802,11 +1836,15 @@
     "labels": {
       "capacity": "容量",
       "bitcoinLiquidity": "比特币流动性",
-      "assetLiquidity": "{{ticker}} 流动性"
+      "assetLiquidity": "{{ticker}} 流动性",
+      "outbound": "出站",
+      "inbound": "入站",
+      "total": "总计"
     },
     "buttons": {
       "details": "详情",
-      "close": "关闭"
+      "close": "关闭",
+      "manage": "管理"
     },
     "tooltips": {
       "info": "通道信息"

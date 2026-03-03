@@ -38,8 +38,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
           className={`absolute z-50 ${width} ${getPositionClasses(position)} ${className}`}
         >
           <div
-            className="bg-[#0B101B]/95 backdrop-blur-sm rounded-lg
-                     border border-slate-700/50 shadow-lg
+            className="bg-surface-base/95 backdrop-blur-sm rounded-lg
+                     border border-border-default/50 shadow-lg
                      flex flex-col p-4 z-10"
           >
             {title && (
@@ -49,7 +49,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
               </div>
             )}
 
-            <div className="text-sm text-slate-300">{content}</div>
+            <div className="text-sm text-content-secondary">{content}</div>
           </div>
         </div>
       )}
@@ -79,7 +79,7 @@ export const OverlayTooltip: React.FC<TooltipProps> = ({
 
       {showTooltip && (
         <div
-          className={`absolute inset-0 bg-[#0B101B]/95 backdrop-blur-sm rounded-lg
+          className={`absolute inset-0 bg-surface-base/95 backdrop-blur-sm rounded-lg
                      flex flex-col justify-between p-4 cursor-help z-10
                      transition-opacity duration-200 ${className}`}
         >
@@ -87,21 +87,21 @@ export const OverlayTooltip: React.FC<TooltipProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 bg-blue-500/20 rounded-lg">{icon}</div>
-              <h4 className="text-base font-medium text-white bg-[#0B101B]/80 px-2 py-0.5 rounded-md">
+              <h4 className="text-base font-medium text-white bg-surface-base/80 px-2 py-0.5 rounded-md">
                 {title}
               </h4>
             </div>
 
             {/* Description with background for better readability */}
-            <div className="bg-[#0B101B]/80 p-3 rounded-lg">
-              <div className="text-sm leading-relaxed text-slate-300">
+            <div className="bg-surface-base/80 p-3 rounded-lg">
+              <div className="text-sm leading-relaxed text-content-secondary">
                 {content}
               </div>
             </div>
           </div>
 
           {/* Footer with background */}
-          <div className="text-xs text-blue-400 mt-3 bg-[#0B101B]/80 px-2 py-0.5 rounded-md self-start">
+          <div className="text-xs text-blue-400 mt-3 bg-surface-base/80 px-2 py-0.5 rounded-md self-start">
             Hover away to close
           </div>
         </div>

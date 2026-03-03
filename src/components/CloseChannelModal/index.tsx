@@ -120,13 +120,13 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-700/50">
+      <div className="bg-surface-overlay rounded-lg p-6 max-w-md w-full shadow-xl border border-border-default/50">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-white">
             {t('closeChannelModal.title')}
           </h3>
           <button
-            className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700/50"
+            className="text-content-secondary hover:text-white p-1 rounded-full hover:bg-surface-high/50"
             disabled={isClosing}
             onClick={(e) => {
               e.stopPropagation()
@@ -149,10 +149,10 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
                 <p className="text-sm mt-1">{error}</p>
               </div>
             </div>
-            <p className="text-gray-300">
+            <p className="text-content-secondary">
               {t('closeChannelModal.forceCloseQuestion')}
             </p>
-            <ul className="text-sm text-gray-400 space-y-1 list-disc pl-5 mt-2">
+            <ul className="text-sm text-content-secondary space-y-1 list-disc pl-5 mt-2">
               <li>{t('closeChannelModal.forceCloseReason1')}</li>
               <li>{t('closeChannelModal.forceCloseReason2')}</li>
               <li>{t('closeChannelModal.forceCloseReason3')}</li>
@@ -161,19 +161,19 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
         ) : (
           <>
             <div className="mb-4">
-              <p className="text-gray-300">
+              <p className="text-content-secondary">
                 {t('closeChannelModal.confirmMessage')}
               </p>
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-content-secondary text-sm mt-2">
                 {t('closeChannelModal.settleMessage')}
               </p>
             </div>
 
-            <div className="mt-5 p-4 bg-gray-700/30 rounded-lg border border-gray-600/30">
+            <div className="mt-5 p-4 bg-surface-high/30 rounded-lg border border-border-default/30">
               <div className="flex items-start mb-2">
                 <input
                   checked={forceClose}
-                  className="mr-3 mt-1 h-4 w-4 accent-red-500 bg-gray-700 rounded border-gray-600 focus:ring focus:ring-blue-500"
+                  className="mr-3 mt-1 h-4 w-4 accent-red-500 bg-surface-high rounded border-border-default focus:ring focus:ring-blue-500"
                   disabled={isClosing}
                   id="force-close"
                   onChange={(e) => setForceClose(e.target.checked)}
@@ -193,10 +193,10 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
               </div>
 
               <div className="ml-7">
-                <p className="text-sm text-gray-300 mb-3">
+                <p className="text-sm text-content-secondary mb-3">
                   {t('closeChannelModal.forceCloseConditionsTitle')}
                 </p>
-                <ul className="text-xs text-gray-400 space-y-2 list-disc pl-5">
+                <ul className="text-xs text-content-secondary space-y-2 list-disc pl-5">
                   <li>{t('closeChannelModal.forceCloseCondition1')}</li>
                   <li>{t('closeChannelModal.forceCloseCondition2')}</li>
                   <li>{t('closeChannelModal.forceCloseCondition3')}</li>
@@ -242,7 +242,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
 
         <div className="flex justify-end space-x-4 mt-6">
           <button
-            className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 active:bg-gray-500 transition-colors"
+            className="px-4 py-2 rounded-lg bg-surface-high text-white hover:bg-surface-elevated active:bg-surface-elevated transition-colors"
             disabled={isClosing}
             onClick={(e) => {
               e.stopPropagation()
@@ -260,8 +260,8 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
                 ? 'bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-medium shadow-md'
                 : forceClose
                   ? 'bg-red-600 hover:bg-red-700 text-white shadow-md border border-red-700/30'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-            } active:bg-blue-800 transition-colors shadow-sm`}
+                  : 'bg-primary hover:bg-primary-emphasis text-primary-foreground'
+            } active:bg-primary-emphasis transition-colors shadow-sm`}
             disabled={isClosing}
             onClick={(e) => {
               e.stopPropagation()

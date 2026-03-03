@@ -20,8 +20,8 @@ interface Fee {
 }
 
 interface ColorConfig {
-  bg: string
-  border: string
+  accentBorder: string
+  iconBg: string
   icon: string
 }
 
@@ -63,47 +63,45 @@ const FeeItem: React.FC<FeeItemProps> = ({
 }) => {
   return (
     <div
-      className={`border-2 ${color.border} rounded-xl overflow-hidden transition-all duration-300`}
+      className={`border border-border-default ${color.accentBorder} rounded-xl overflow-hidden`}
     >
-      {/* Header - Always visible */}
       <button
-        className={`w-full p-4 bg-gradient-to-r ${color.bg} hover:opacity-90 transition-opacity flex items-center justify-between group`}
+        className="w-full p-4 bg-surface-elevated hover:bg-surface-high transition-colors flex items-center justify-between group"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
-          <div className={`p-2 bg-slate-900/50 rounded-lg ${color.icon}`}>
+          <div className={`p-2 ${color.iconBg} rounded-lg ${color.icon}`}>
             {icon}
           </div>
           <div className="text-left">
-            <h4 className="text-sm font-bold text-white">{title}</h4>
-            <p className="text-xs text-gray-300 mt-0.5">{description}</p>
+            <h4 className="text-sm font-bold text-content-primary">{title}</h4>
+            <p className="text-xs text-content-secondary mt-0.5">{description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-base font-bold text-white">
+          <span className="text-base font-bold text-content-primary">
             {formatNumberWithCommas(amount.toString())} sats
           </span>
           {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+            <ChevronUp className="w-4 h-4 text-content-tertiary group-hover:text-content-secondary transition-colors" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+            <ChevronDown className="w-4 h-4 text-content-tertiary group-hover:text-content-secondary transition-colors" />
           )}
         </div>
       </button>
 
-      {/* Expanded Details */}
       {isExpanded && (
-        <div className="p-4 bg-slate-900/30 border-t border-slate-700/30 animate-in slide-in-from-top-2 duration-200">
-          <p className="text-xs font-semibold text-gray-300 mb-2">
+        <div className="p-4 bg-surface-base/30 border-t border-border-default/30 animate-in slide-in-from-top-2 duration-200">
+          <p className="text-xs font-semibold text-content-secondary mb-2">
             What this fee covers:
           </p>
           <ul className="space-y-1.5">
             {whatItCovers.map((item, index) => (
               <li
-                className="flex items-start gap-2 text-xs text-gray-400"
+                className="flex items-start gap-2 text-xs text-content-secondary"
                 key={index}
               >
-                <span className="text-blue-400 mt-0.5">•</span>
+                <span className={`${color.icon} mt-0.5`}>•</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -128,13 +126,13 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
   const { t } = useTranslation()
   const [expandedFee, setExpandedFee] = useState<string | null>(null)
 
-  const fees: Record<string, Fee & { icon: React.ReactNode; color: any }> = {
+  const fees: Record<string, Fee & { icon: React.ReactNode; color: ColorConfig }> = {
     capacity: {
       amount: capacityFee,
       color: {
-        bg: 'from-blue-900/30 to-indigo-900/30',
-        border: 'border-blue-700/40',
-        icon: 'text-blue-400',
+        accentBorder: 'border-l-2 border-l-primary',
+        icon: 'text-primary',
+        iconBg: 'bg-primary/10',
       },
       description: 'Fee based on channel size',
       icon: <Wallet className="w-4 h-4" />,
@@ -148,9 +146,9 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     duration: {
       amount: durationFee,
       color: {
-        bg: 'from-purple-900/30 to-violet-900/30',
-        border: 'border-purple-700/40',
-        icon: 'text-purple-400',
+        accentBorder: 'border-l-2 border-l-secondary',
+        icon: 'text-secondary',
+        iconBg: 'bg-secondary/10',
       },
       description: 'Time-based channel maintenance fee',
       icon: <Clock className="w-4 h-4" />,
@@ -164,9 +162,9 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
     setup: {
       amount: setupFee,
       color: {
-        bg: 'from-amber-900/30 to-orange-900/30',
-        border: 'border-amber-700/40',
-        icon: 'text-amber-400',
+        accentBorder: 'border-l-2 border-l-status-warning',
+        icon: 'text-status-warning',
+        iconBg: 'bg-status-warning/10',
       },
       description: 'One-time channel creation fee',
       icon: <Zap className="w-4 h-4" />,
@@ -182,27 +180,27 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
   const grandTotal = totalFee + yourLiquidity + (assetPrice || 0)
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 rounded-2xl p-6 border border-slate-700/50 shadow-2xl space-y-5">
+    <div className="bg-surface-overlay rounded-2xl p-6 border border-border-default shadow-xl space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <DollarSign className="w-6 h-6 text-blue-400" />
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <DollarSign className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-content-primary">
               {assetPrice && assetPrice > 0
                 ? 'Total Cost Breakdown'
                 : 'Fee Breakdown'}
             </h3>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-content-secondary mt-1">
               Click each item to see what it covers
             </p>
           </div>
         </div>
         {isLoading && (
-          <span className="text-xs text-yellow-400 flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-status-warning flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-status-warning border-t-transparent rounded-full animate-spin" />
             Calculating...
           </span>
         )}
@@ -237,12 +235,12 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
       </div>
 
       {/* Channel Fees Subtotal */}
-      <div className="pt-4 border-t-2 border-slate-700/50">
-        <div className="flex justify-between items-center py-2 px-4 bg-slate-800/40 rounded-lg">
-          <span className="text-sm font-semibold text-gray-300">
+      <div className="pt-4 border-t border-border-default">
+        <div className="flex justify-between items-center py-2 px-4 bg-surface-elevated rounded-lg">
+          <span className="text-sm font-semibold text-content-secondary">
             Channel Fees Subtotal
           </span>
-          <span className="text-base font-bold text-white">
+          <span className="text-base font-bold text-content-primary">
             {formatNumberWithCommas(totalFee.toString())} sats
           </span>
         </div>
@@ -250,14 +248,12 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
 
       {/* Discount (if applicable) */}
       {discount && discount.percentage > 0 && (
-        <div className="bg-green-900/20 border-2 border-green-700/40 rounded-xl p-4">
+        <div className="bg-status-success/10 border border-status-success/20 rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-green-300">
-                Discount Applied ({discount.code})
-              </span>
-            </div>
-            <span className="text-base font-bold text-green-400">
+            <span className="text-sm font-semibold text-status-success">
+              Discount Applied ({discount.code})
+            </span>
+            <span className="text-base font-bold text-status-success">
               -{Math.round(discount.percentage * 100)}%
             </span>
           </div>
@@ -266,20 +262,20 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
 
       {/* Asset Purchase (if applicable) */}
       {assetPrice && assetPrice > 0 && assetTicker && (
-        <div className="bg-emerald-900/20 border-2 border-emerald-700/40 rounded-xl p-4">
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
           <div className="flex items-start gap-3 mb-2">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
-              <Wallet className="w-4 h-4 text-emerald-400" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Wallet className="w-4 h-4 text-primary" />
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-bold text-emerald-200 mb-1">
+              <h4 className="text-sm font-bold text-content-primary mb-1">
                 Asset Purchase ({assetTicker})
               </h4>
-              <p className="text-xs text-emerald-100/80">
+              <p className="text-xs text-content-secondary">
                 Cost to purchase RGB assets at current market rate
               </p>
             </div>
-            <span className="text-base font-bold text-emerald-300">
+            <span className="text-base font-bold text-primary">
               {formatNumberWithCommas(assetPrice.toString())} sats
             </span>
           </div>
@@ -287,48 +283,48 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
       )}
 
       {/* Your Liquidity */}
-      <div className="bg-orange-900/20 border-2 border-orange-700/40 rounded-xl p-4">
+      <div className="bg-status-warning/10 border border-status-warning/20 rounded-xl p-4">
         <div className="flex items-start gap-3 mb-2">
-          <div className="p-2 bg-orange-500/20 rounded-lg">
-            <Wallet className="w-4 h-4 text-orange-400" />
+          <div className="p-2 bg-status-warning/10 rounded-lg">
+            <Wallet className="w-4 h-4 text-status-warning" />
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-bold text-orange-200 mb-1">
+            <h4 className="text-sm font-bold text-content-primary mb-1">
               Your Liquidity
             </h4>
-            <p className="text-xs text-orange-100/80">
+            <p className="text-xs text-content-secondary">
               Bitcoin you're adding to the channel (your outbound capacity)
             </p>
           </div>
-          <span className="text-base font-bold text-orange-300">
+          <span className="text-base font-bold text-status-warning">
             {formatNumberWithCommas(yourLiquidity.toString())} sats
           </span>
         </div>
       </div>
 
       {/* Grand Total */}
-      <div className="pt-4 border-t-2 border-slate-600/50">
-        <div className="flex justify-between items-center py-4 px-5 bg-gradient-to-r from-blue-900/40 to-purple-900/40 rounded-xl border-2 border-blue-600/40">
+      <div className="pt-4 border-t border-border-default">
+        <div className="flex justify-between items-center py-4 px-5 bg-primary/10 rounded-xl border border-primary/20">
           <div>
-            <span className="text-lg font-bold text-blue-100">
+            <span className="text-lg font-bold text-content-primary">
               Total Payment
             </span>
-            <p className="text-xs text-blue-200/70 mt-1">
+            <p className="text-xs text-content-secondary mt-1">
               Amount you'll pay to create this channel
             </p>
           </div>
-          <span className="text-2xl font-bold text-blue-200">
+          <span className="text-2xl font-bold text-primary">
             {formatNumberWithCommas(grandTotal.toString())} sats
           </span>
         </div>
       </div>
 
       {/* Help Section */}
-      <div className="bg-slate-800/40 border border-slate-700/40 rounded-lg p-4">
+      <div className="bg-surface-elevated border border-border-default/40 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <HelpCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="space-y-2 text-xs text-slate-300">
-            <p className="font-semibold text-blue-300">
+          <HelpCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div className="space-y-2 text-xs text-content-secondary">
+            <p className="font-semibold text-content-secondary">
               Understanding the costs:
             </p>
             <ul className="space-y-1 ml-4 list-disc">
@@ -345,7 +341,7 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
                 channel (you still own this!)
               </li>
             </ul>
-            <p className="pt-2 text-slate-400">
+            <p className="pt-2 text-content-secondary">
               <strong>Note:</strong> Your liquidity is not a fee - it's your
               money in the channel that you can spend. Only the channel fees are
               paid to the LSP.

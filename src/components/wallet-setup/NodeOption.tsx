@@ -25,8 +25,8 @@ export const NodeOption: React.FC<NodeOptionProps> = ({
 }) => (
   <div
     className={`relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
-    hover:shadow-lg hover:shadow-cyan/10 hover:-translate-y-1 w-full text-left cursor-pointer fade-in
-    ${selected ? 'bg-gradient-to-br from-cyan/15 to-transparent border-cyan' : 'bg-blue-dark/40 hover:bg-blue-dark/60 border-divider/20'}`}
+    hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 w-full text-left cursor-pointer fade-in
+    ${selected ? 'bg-gradient-to-br from-cyan/15 to-transparent border-cyan' : 'bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20'}`}
     onClick={onClick}
   >
     {recommended && (
@@ -40,22 +40,22 @@ export const NodeOption: React.FC<NodeOptionProps> = ({
       <div className="flex items-center gap-4 mb-4">
         <div
           className={`${IconWrapper}
-          ${selected ? 'bg-cyan/30 text-cyan scale-110' : 'bg-cyan/5 text-cyan/80'}`}
+          ${selected ? 'bg-primary/30 text-primary scale-110' : 'bg-primary/5 text-primary/80'}`}
         >
           {React.cloneElement(icon as React.ReactElement, { strokeWidth: 2 })}
         </div>
         <h2
-          className={`text-2xl font-bold ${selected ? 'text-cyan' : 'text-white'}`}
+          className={`text-2xl font-bold ${selected ? 'text-primary' : 'text-white'}`}
         >
           {title}
         </h2>
       </div>
-      <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+      <p className="text-content-secondary text-sm leading-relaxed">{description}</p>
     </div>
     {selected && (
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-cyan/5 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-cyan/5 rounded-full blur-3xl"></div>
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
       </div>
     )}
   </div>

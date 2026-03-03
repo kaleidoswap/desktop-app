@@ -40,17 +40,17 @@ const AssetSelectorOption: React.FC<AssetSelectorOptionProps> = ({
 
   return (
     <div
-      className="flex justify-between items-center p-3 hover:bg-gray-700 cursor-pointer"
+      className="flex justify-between items-center p-3 hover:bg-surface-high cursor-pointer"
       onClick={() => onSelect(assetId)}
     >
       <div className="flex items-center">
         <div>
           <div className="font-medium">{`${assetInfo.name} (${assetInfo.ticker})`}</div>
-          <div className="text-sm text-gray-400 break-all">{assetId}</div>
+          <div className="text-sm text-content-secondary break-all">{assetId}</div>
         </div>
       </div>
       <button
-        className="p-1 hover:bg-gray-600 rounded"
+        className="p-1 hover:bg-surface-elevated rounded"
         onClick={copyToClipboard}
       >
         {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
@@ -81,7 +81,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
         return (
           <div className="relative">
             <div
-              className="bg-gray-700 p-3 rounded-md flex justify-between items-center cursor-pointer"
+              className="bg-surface-high p-3 rounded-md flex justify-between items-center cursor-pointer"
               onClick={() => setIsOpen(!isOpen)}
             >
               {field.value && selectedAsset ? (
@@ -94,7 +94,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
               <ChevronDownIcon size={20} />
             </div>
             {isOpen && (
-              <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+              <div className="absolute z-10 w-full mt-1 bg-surface-overlay border border-border-default rounded-md shadow-lg max-h-60 overflow-auto">
                 {Object.entries(assetMap).map(([assetId, assetInfo]) => (
                   <AssetSelectorOption
                     assetId={assetId}
@@ -109,7 +109,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
               </div>
             )}
             {field.value && selectedAsset && (
-              <div className="mt-2 text-sm text-gray-400 break-all">
+              <div className="mt-2 text-sm text-content-secondary break-all">
                 Asset ID: {field.value}
               </div>
             )}

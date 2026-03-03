@@ -61,7 +61,7 @@ export const QuoteDisplay: React.FC<QuoteDisplayProps> = ({
       )}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-300">Asset Amount</span>
+          <span className="text-content-secondary">Asset Amount</span>
           <span className="text-white font-medium">
             {formatNumberWithCommas(
               (
@@ -74,7 +74,7 @@ export const QuoteDisplay: React.FC<QuoteDisplayProps> = ({
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-300">Price</span>
+          <span className="text-content-secondary">Price</span>
           <span className="text-white font-medium">
             {formatNumberWithCommas(
               (

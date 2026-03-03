@@ -148,18 +148,18 @@ const NumberInput: React.FC<NumberInputProps> = ({
   return (
     <div className={className}>
       <div className="flex justify-between items-center mb-2">
-        <label className="block text-xs font-medium text-slate-400">
+        <label className="block text-xs font-medium text-content-secondary">
           {label}
         </label>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-content-secondary">
           {value ? formatSliderValue(parseFloat(value || '0'), precision) : ''}
           {displayUnit && ` ${displayUnit}`}
         </span>
       </div>
       <div className="relative">
         <input
-          className={`w-full px-3 py-2 bg-slate-800/50 border ${
-            error ? 'border-red-500' : 'border-slate-700'
+          className={`w-full px-3 py-2 bg-surface-overlay/50 border ${
+            error ? 'border-red-500' : 'border-border-default'
           } rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white text-sm`}
           onBlur={handleBlur}
           onChange={handleChange}
@@ -179,9 +179,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
       </div>
       {/* Secondary value display */}
       {secondaryValue && secondaryUnit && (
-        <div className="mt-1 px-3 py-1.5 bg-slate-800/30 rounded-lg border border-slate-700/50">
+        <div className="mt-1 px-3 py-1.5 bg-surface-overlay/30 rounded-lg border border-border-default/50">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-content-secondary">
               {t('withdrawModal.form.amount.equivalent', {
                 unit: secondaryUnit,
               })}
@@ -194,7 +194,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       )}
       {showSlider && (
         <input
-          className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer mt-4 accent-blue-500"
+          className="w-full h-2 bg-surface-high rounded-lg appearance-none cursor-pointer mt-4 accent-blue-500"
           max={max}
           min={min}
           onChange={(e) => {
@@ -322,7 +322,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
       {/* Universal Address/Invoice Input */}
       <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-400">
+        <label className="text-xs font-medium text-content-secondary">
           Address or Invoice
         </label>
         <div className="relative">
@@ -332,14 +332,14 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             render={({ field }) => (
               <input
                 {...field}
-                className={`w-full px-3 py-2 bg-slate-800/50 rounded-xl border
-                          text-white placeholder:text-slate-600 text-sm
+                className={`w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border
+                          text-white placeholder:text-content-tertiary text-sm
                           ${
                             errors.address ||
                             hasValidationMessage ||
                             addressType === 'invalid'
                               ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                              : 'border-slate-700 focus:border-blue-500 focus:ring-blue-500'
+                              : 'border-border-default focus:border-blue-500 focus:ring-blue-500'
                           }`}
                 onChange={(e) => {
                   field.onChange(e)
@@ -359,7 +359,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           />
           <button
             className="absolute right-2 top-1/2 transform -translate-y-1/2
-                      text-slate-400 hover:text-blue-500 p-1"
+                      text-content-secondary hover:text-blue-500 p-1"
             onClick={handlePasteFromClipboard}
             type="button"
           >
@@ -430,7 +430,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               {addressType === 'rgb' && (
                 <ChainIcon className="w-3 h-3 text-green-400" />
               )}
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-content-secondary">
                 {t('withdrawModal.form.detected.label')}{' '}
                 <span
                   className={`font-medium ${
@@ -461,7 +461,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">
+                <span className="text-content-secondary text-sm">
                   {t('withdrawModal.form.lightningCapacity.title')}
                 </span>
                 <span className="text-white font-medium">
@@ -470,7 +470,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               </div>
               {assetId === BTC_ASSET_ID && (
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-sm">
+                  <span className="text-content-secondary text-sm">
                     {t('withdrawModal.form.lightningCapacity.withdrawable')}
                   </span>
                   <span className="text-blue-400 font-medium">
@@ -518,7 +518,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       {decodedRgbInvoice?.recipient_type === 'Witness' &&
         addressType === 'rgb' && (
           <div className="space-y-1 animate-fadeIn">
-            <label className="text-xs font-medium text-slate-400">
+            <label className="text-xs font-medium text-content-secondary">
               {t('withdrawModal.form.witness.label')}
             </label>
             <div className="flex items-center gap-2">
@@ -528,9 +528,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   name="witness_amount_sat"
                   render={({ field }) => (
                     <input
-                      className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700
+                      className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default
                              focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
-                             placeholder:text-slate-600 transition-all duration-200 text-sm"
+                             placeholder:text-content-tertiary transition-all duration-200 text-sm"
                       inputMode="numeric"
                       onChange={(e) => {
                         const value = e.target.value.replace(/[^\d]/g, '')
@@ -550,7 +550,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   }}
                 />
               </div>
-              <div className="px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-400 text-sm">
+              <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
                 {t('withdrawModal.form.units.sats')}
               </div>
             </div>
@@ -588,12 +588,12 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {((addressType === 'rgb' && !decodedRgbInvoice?.asset_id) ||
             addressType === 'lightning-address') && (
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-400">
+              <label className="text-xs font-medium text-content-secondary">
                 {t('withdrawModal.form.assetSelector.label')}
               </label>
               <div className="relative">
                 <button
-                  className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700 
+                  className="w-full p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
                           hover:border-blue-500/50 transition-all duration-200
                           flex items-center justify-between text-left text-sm"
                   onClick={() => setShowAssetDropdown(!showAssetDropdown)}
@@ -606,13 +606,13 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       t('withdrawModal.form.assetSelector.placeholder')}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-slate-400 transition-transform duration-200 
+                    className={`w-5 h-5 text-content-secondary transition-transform duration-200 
                     ${showAssetDropdown ? 'transform rotate-180' : ''}`}
                   />
                 </button>
                 {showAssetDropdown && (
                   <div
-                    className="absolute z-10 mt-1 w-full bg-slate-800 rounded-xl border border-slate-700 
+                    className="absolute z-10 mt-1 w-full bg-surface-overlay rounded-xl border border-border-default 
                               shadow-xl max-h-[200px] overflow-y-auto"
                   >
                     {filteredAvailableAssets.map((asset) => (
@@ -644,9 +644,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 </p>
               )}
               {assetId && (
-                <div className="mt-2 p-2 bg-slate-800/30 rounded-lg border border-slate-700/50">
+                <div className="mt-2 p-2 bg-surface-overlay/30 rounded-lg border border-border-default/50">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-content-secondary">
                       {t('withdrawModal.balance.available')}
                     </span>
                     <span className="text-xs text-white font-medium">
@@ -702,7 +702,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
                     if (isLimited) {
                       return (
-                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-slate-700/30">
+                        <div className="flex justify-between items-center mt-1 pt-1 border-t border-border-default/30">
                           <span className="text-xs text-blue-400">
                             Max Withdrawable:
                           </span>
@@ -1011,7 +1011,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           {(assetId === BTC_ASSET_ID || addressType === 'rgb') &&
             (addressType === 'bitcoin' || addressType === 'rgb') && (
               <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-400">
+                <label className="text-xs font-medium text-content-secondary">
                   {t('withdrawModal.form.fees.label')}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -1027,7 +1027,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                                   ${
                                     field.value === fee.value
                                       ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                                      : 'border-slate-700 hover:border-blue-500/50 text-slate-400'
+                                      : 'border-border-default hover:border-blue-500/50 text-content-secondary'
                                   }`}
                           onClick={() => field.onChange(fee.value)}
                           type="button"
@@ -1048,11 +1048,11 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             (assetId === BTC_ASSET_ID || addressType === 'rgb') &&
             (addressType === 'bitcoin' || addressType === 'rgb') && (
               <div className="space-y-1 animate-fadeIn">
-                <label className="text-xs font-medium text-slate-400">
+                <label className="text-xs font-medium text-content-secondary">
                   {t('withdrawModal.form.fees.customLabel')}
                 </label>
                 <input
-                  className="w-full px-3 py-2 bg-slate-800/50 rounded-xl border border-slate-700 
+                  className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default 
                         focus:border-blue-500 focus:ring-blue-500 text-white text-sm"
                   min={0.1}
                   onChange={(e) => setCustomFee(parseFloat(e.target.value))}
@@ -1068,10 +1068,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-xs font-medium text-slate-400">
+                  <label className="text-xs font-medium text-content-secondary">
                     {t('withdrawModal.form.donation.label')}
                   </label>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-content-tertiary mt-0.5">
                     {t('withdrawModal.form.donation.description')}
                   </p>
                 </div>
@@ -1082,7 +1082,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                     <button
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
                                 ${
-                                  field.value ? 'bg-blue-500' : 'bg-slate-700'
+                                  field.value ? 'bg-primary' : 'bg-surface-high'
                                 }`}
                       onClick={() => field.onChange(!field.value)}
                       type="button"
@@ -1106,7 +1106,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
       {/* Submit Button */}
       <button
-        className="w-full py-2.5 px-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900
+        className="w-full py-2.5 px-6 bg-primary hover:bg-primary-emphasis disabled:opacity-60
                  text-white rounded-xl font-medium transition-all duration-200 
                  flex items-center justify-center gap-2 mt-4 disabled:cursor-not-allowed"
         disabled={

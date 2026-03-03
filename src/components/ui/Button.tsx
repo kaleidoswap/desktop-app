@@ -38,17 +38,17 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50'
+    'inline-flex items-center justify-center font-medium transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50'
 
   const variantStyles = {
     danger:
       'bg-red/10 hover:bg-red/20 text-red hover:text-red-light border border-red/20 hover:border-red/30',
-    ghost: 'bg-transparent hover:bg-slate-700/50 text-white',
+    ghost: 'bg-transparent hover:bg-surface-high/50 text-white',
     link: 'bg-transparent text-blue-500 hover:text-blue-400 underline p-0 h-auto',
     outline:
-      'bg-transparent hover:bg-slate-700/50 text-white border border-slate-600',
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    secondary: 'bg-slate-700 hover:bg-slate-600 text-white',
+      'bg-transparent hover:bg-surface-high/50 text-white border border-border-default',
+    primary: 'bg-primary hover:bg-primary-emphasis text-primary-foreground',
+    secondary: 'bg-surface-high hover:bg-surface-elevated text-white',
     success:
       'bg-green-600/10 hover:bg-green-600/20 text-green-500 border border-green-500/20 hover:border-green-500/30',
   }
@@ -104,17 +104,17 @@ export const ActionButton: React.FC<
       text: 'text-blue-500',
     },
     cyan: {
-      bg: 'bg-cyan/10',
-      bgHover: 'bg-cyan/20',
-      border: 'border-cyan/10',
-      borderHover: 'border-cyan/30',
-      text: 'text-cyan',
+      bg: 'bg-primary/10',
+      bgHover: 'bg-primary/20',
+      border: 'border-primary/10',
+      borderHover: 'border-primary/30',
+      text: 'text-primary',
     },
     purple: {
-      bg: 'bg-purple/10',
-      bgHover: 'bg-purple/20',
+      bg: 'bg-secondary/10',
+      bgHover: 'bg-secondary/20',
       border: 'border-purple/10',
-      borderHover: 'border-purple/30',
+      borderHover: 'border-secondary/30',
       text: 'text-purple',
     },
     red: {
@@ -132,7 +132,7 @@ export const ActionButton: React.FC<
     <button
       className={`
         flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium
-        bg-blue-darker hover:bg-blue-dark transition-all duration-200
+        bg-surface-overlay hover:bg-surface-elevated transition-all duration-200
         ${colorStyle.border} hover:${colorStyle.borderHover} border
         ${props.className || ''}
       `}
@@ -157,12 +157,12 @@ export const IconButton: React.FC<
 
   const variantStyles = {
     danger: 'bg-red/10 hover:bg-red/20 text-red',
-    ghost: 'hover:bg-slate-700/50 text-slate-400 hover:text-white',
+    ghost: 'hover:bg-surface-high/50 text-content-secondary hover:text-white',
     link: 'text-blue-500 hover:text-blue-400',
     outline:
-      'bg-transparent hover:bg-slate-700/50 text-white border border-slate-600',
-    primary: 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-500',
-    secondary: 'bg-slate-700 hover:bg-slate-600 text-white',
+      'bg-transparent hover:bg-surface-high/50 text-white border border-border-default',
+    primary: 'bg-primary/10 hover:bg-primary/20 text-primary',
+    secondary: 'bg-surface-high hover:bg-surface-elevated text-white',
     success: 'bg-green-600/10 hover:bg-green-600/20 text-green-500',
   }
 

@@ -20,13 +20,13 @@ export const DepositModalContent = () => {
       <div className="max-w-2xl mx-auto p-4 h-[80vh] flex flex-col">
         {/* Progress bar */}
         <div className="mb-4">
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-surface-overlay rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-600 transition-all duration-300"
+              className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-sm text-slate-400">
+          <div className="flex justify-between mt-2 text-sm text-content-secondary">
             <span className={step === 1 ? 'text-blue-400 font-medium' : ''}>
               {t('depositModal.progress.selectAsset')}
             </span>

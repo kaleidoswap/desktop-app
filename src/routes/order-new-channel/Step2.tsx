@@ -501,55 +501,55 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             {t('orderChannel.step2.title')}
           </h2>
-          <p className="text-gray-400 mt-2">
+          <p className="text-content-secondary mt-2">
             {t('orderChannel.step2.subtitle')}
           </p>
         </div>
 
         <div className="flex justify-between mb-4">
           <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
               1
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step1.connectLsp')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.completed')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-gray-700">
-              <div className="h-1 bg-blue-500 w-1/2"></div>
+            <div className="h-1 bg-surface-high">
+              <div className="h-1 bg-primary w-1/2"></div>
             </div>
           </div>
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
               2
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step2.step2Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.currentStep')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-gray-700"></div>
+            <div className="h-1 bg-surface-high"></div>
           </div>
           <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
               3
             </div>
             <div className="ml-2">
               <p className="font-medium text-white text-sm">
                 {t('orderChannel.step3.step3Label')}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-secondary">
                 {t('orderChannel.step1.nextStep')}
               </p>
             </div>
@@ -557,7 +557,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         </div>
 
         <form
-          className="bg-gray-900 text-white p-4 rounded-lg shadow-lg"
+          className="bg-surface-base text-white p-4 rounded-lg shadow-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
           {isLoading ? (
@@ -575,7 +575,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                       )
                     : 0
                 }
-                containerClassName="bg-gray-800 p-4 rounded-lg"
+                containerClassName="bg-surface-overlay p-4 rounded-lg"
                 maxCapacity={effectiveMaxCapacity}
                 maxClientBalance={Math.min(
                   parseInt(
@@ -617,7 +617,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               />
 
               <ChannelDurationSelector
-                containerClassName="bg-gray-800 p-4 rounded-lg"
+                containerClassName="bg-surface-overlay p-4 rounded-lg"
                 control={control}
                 maxExpiryBlocks={lspOptions?.max_channel_expiry_blocks}
                 onChange={(value) => setValue('channelExpireBlocks', value)}
@@ -626,7 +626,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               />
 
               {/* Asset Configuration Section - Separate from Bitcoin */}
-              <div className="bg-gray-800 p-4 rounded-lg">
+              <div className="bg-surface-overlay p-4 rounded-lg">
                 <label className="flex items-center space-x-3 mb-4">
                   <input
                     checked={addAsset}
@@ -680,7 +680,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
           <div className="flex justify-between space-x-4 mt-6">
             <button
-              className="px-6 py-3 rounded-lg text-lg font-bold bg-gray-600 hover:bg-gray-700 transition-colors"
+              className="px-6 py-3 rounded-lg text-lg font-bold bg-surface-elevated hover:bg-surface-high transition-colors"
               onClick={onBack}
               type="button"
             >
@@ -689,8 +689,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
             <button
               className={`px-6 py-3 rounded-lg text-lg font-bold ${
                 isLoading
-                  ? 'bg-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 transition-colors'
+                  ? 'bg-content-tertiary cursor-not-allowed'
+                  : 'bg-primary hover:bg-primary-emphasis transition-colors'
               }`}
               disabled={isLoading}
               type="submit"

@@ -20,15 +20,15 @@ export const LayoutModal = () => {
   if (modal.type === 'none') return null
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
-        className="w-full max-w-5xl bg-slate-900 rounded-3xl border border-slate-800/50 
+        className="w-full max-w-5xl bg-surface-base rounded-3xl border border-border-subtle/50 
                    shadow-2xl shadow-black/20 overflow-hidden relative"
         ref={modalRef}
       >
         <button
           aria-label="Close modal"
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-800 transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-overlay transition-colors"
           onClick={handleCloseModal}
         >
           <svg

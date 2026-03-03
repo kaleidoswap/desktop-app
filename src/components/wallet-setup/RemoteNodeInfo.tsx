@@ -16,20 +16,20 @@ export const RemoteNodeInfo: React.FC = () => {
 
   return (
     <div className="mb-6 fade-in">
-      <Card className="w-full bg-blue-dark/40 border border-cyan/10">
+      <Card className="w-full bg-surface-elevated/40 border border-primary/10">
         <div className="flex items-start gap-3 p-4">
-          <div className={`${IconWrapper} bg-cyan/10 scale-90 mt-1`}>
-            <ShieldCheck className="w-5 h-5 text-cyan" />
+          <div className={`${IconWrapper} bg-primary/10 scale-90 mt-1`}>
+            <ShieldCheck className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h3 className="text-white font-semibold mb-1 text-sm">
               {t('walletSetup.remoteNodePrerequisitesTitle')}
             </h3>
-            <p className="text-gray-300 text-sm mb-3">
+            <p className="text-content-secondary text-sm mb-3">
               {t('walletSetup.remoteNodePrerequisitesMessage')}
             </p>
             <Button
-              className="border-cyan/30 text-cyan hover:bg-cyan/10"
+              className="border-primary/30 text-primary hover:bg-primary/10"
               icon={<ExternalLink className="w-3.5 h-3.5" />}
               onClick={() =>
                 openUrl('https://docs.kaleidoswap.com/desktop-app/node-hosting')

@@ -180,30 +180,26 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   const selectorButtonClasses = twJoin(
     'relative flex items-center gap-2.5',
     'px-3.5 py-2 rounded-xl',
-    'transition-all duration-300 ease-out',
-    'backdrop-blur-2xl border shadow-lg',
+    'transition-all duration-200 ease-out',
+    'border shadow-sm',
     'group overflow-hidden',
-    'bg-gradient-to-br from-slate-800/90 via-slate-800/80 to-slate-900/90',
-    'border-slate-600/50',
-    'hover:border-slate-500/70',
-    'hover:scale-[1.02]',
-    'active:scale-[0.98]',
-    'hover:shadow-xl hover:shadow-slate-900/20'
+    'bg-surface-overlay',
+    'border-border-default/50',
+    'hover:border-border-default/80',
+    'hover:bg-surface-high',
+    'active:scale-[0.98]'
   )
 
   const refreshButtonClasses = twJoin(
     'relative p-2 rounded-xl',
-    'bg-gradient-to-br',
     !wsConnected
-      ? 'from-red-500/20 via-orange-500/15 to-red-500/20 hover:from-red-500/30 hover:to-orange-500/30 text-red-200 border-red-500/40'
-      : 'from-emerald-500/20 via-emerald-500/15 to-emerald-500/20 hover:from-emerald-500/30 hover:to-emerald-500/30 text-emerald-200 border-emerald-500/40',
-    'transition-all duration-300',
-    'hover:scale-[1.05]',
+      ? 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25'
+      : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
+    'transition-all duration-200',
     'active:scale-[0.95]',
     'border',
     'flex-shrink-0',
-    'backdrop-blur-2xl',
-    'shadow-lg',
+    'shadow-sm',
     'overflow-hidden',
     'group'
   )
@@ -218,13 +214,11 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             onClick={() => setIsOpen(!isOpen)}
             type="button"
           >
-            {/* Background effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-blue-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            {/* Background effects removed */}
 
             <div className="relative flex items-center gap-2.5 min-w-0">
               <Server className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-slate-200 overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px]">
+              <span className="text-sm font-medium text-content-primary overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px]">
                 {currentUrl
                   ? new URL(currentUrl).hostname
                   : t('trade.maker.selectMaker')}
@@ -233,15 +227,13 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                 <RefreshCw className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
               ) : (
                 <ChevronDown
-                  className={`w-4 h-4 flex-shrink-0 text-blue-400 transition-transform duration-500 ${
-                    isOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-4 h-4 flex-shrink-0 text-blue-400 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''
+                    }`}
                 />
               )}
             </div>
           </button>
 
-          {/* Connection Status Button */}
           <button
             className={refreshButtonClasses}
             onClick={handleRefreshConnection}
@@ -252,7 +244,6 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             }
             type="button"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-slate-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <RefreshCw
               className={`relative w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
             />
@@ -265,10 +256,10 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             className="absolute top-full right-0 mt-2 w-72 z-[9999] animate-fade-in"
             style={{ minWidth: 'max-content' }}
           >
-            <div className="bg-gradient-to-br from-slate-800/95 via-slate-800/90 to-slate-900/95 backdrop-blur-2xl rounded-xl border border-slate-600/50 shadow-2xl overflow-hidden">
+            <div className="bg-surface-overlay rounded-xl border border-border-default/50 shadow-2xl overflow-hidden">
               {/* Maker List */}
               <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
-                <div className="px-3 py-2 text-xs font-bold text-white bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent uppercase tracking-wider border-b border-slate-600/40 mb-2">
+                <div className="px-3 py-2 text-xs font-bold text-white bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent uppercase tracking-wider border-b border-border-default/40 mb-2">
                   {t('trade.maker.marketMakers')}
                 </div>
                 {allMakerUrls.map((url) => (
@@ -278,10 +269,10 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                       'flex items-center justify-between gap-2',
                       'transition-all duration-200',
                       'group/item',
-                      'hover:bg-slate-700/50',
+                      'hover:bg-surface-high/50',
                       url === currentUrl
                         ? 'bg-blue-500/20 text-blue-200'
-                        : 'text-slate-300 hover:text-white'
+                        : 'text-content-secondary hover:text-white'
                     )}
                     key={url}
                     onClick={() => handleMakerChange(url)}
@@ -301,11 +292,11 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
               </div>
 
               {/* Add New Maker Section */}
-              <div className="border-t border-slate-600/30 p-2">
+              <div className="border-t border-border-default/30 p-2">
                 {isAddingNew ? (
                   <div className="space-y-2 p-2">
                     <input
-                      className="w-full px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-600/50 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full px-3 py-2 rounded-lg bg-surface-base/50 border border-border-default/50 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20"
                       onChange={(e) => setNewMakerUrl(e.target.value)}
                       placeholder={t('trade.maker.enterUrl')}
                       type="text"
@@ -313,7 +304,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                     />
                     <div className="flex justify-end gap-2">
                       <button
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium text-content-secondary hover:text-white transition-colors"
                         onClick={() => {
                           setIsAddingNew(false)
                           setNewMakerUrl('')
@@ -333,7 +324,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                   </div>
                 ) : (
                   <button
-                    className="w-full px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-all"
+                    className="w-full px-3 py-2 rounded-lg flex items-center gap-2 text-sm font-medium text-content-secondary hover:text-content-primary hover:bg-surface-high/50 transition-all"
                     onClick={() => setIsAddingNew(true)}
                     type="button"
                   >

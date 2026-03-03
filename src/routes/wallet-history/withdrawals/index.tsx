@@ -2,9 +2,8 @@ import Decimal from 'decimal.js'
 import { Link as Chain, Zap, RefreshCw, Loader, Search } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSelector } from 'react-redux'
 
-import { RootState } from '../../../app/store'
+import { useAppSelector } from '../../../app/store/hooks'
 import { Button, Badge, IconButton, Card, Alert } from '../../../components/ui'
 import {
   Table,
@@ -12,93 +11,12 @@ import {
   renderDateField,
   renderStatusBadge,
 } from '../../../components/ui/Table'
+import {
+  formatBitcoinAmount,
+  formatAssetAmount,
+  resolveAssetInfo,
+} from '../../../helpers/walletHistoryUtils'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-
-const formatBitcoinAmount = (
-  amount: string | number,
-  bitcoinUnit: string
-): string => {
-  const amountDecimal = new Decimal(amount)
-  if (bitcoinUnit === 'SAT') {
-    return amountDecimal.toNumber().toLocaleString('en-US', {
-      maximumFractionDigits: 0,
-      useGrouping: true,
-    })
-  } else {
-    return amountDecimal.div(100000000).toNumber().toLocaleString('en-US', {
-      maximumFractionDigits: 8,
-      minimumFractionDigits: 8,
-      useGrouping: true,
-    })
-  }
-}
-
-const formatAssetAmount = (
-  amount: string | number,
-  isBtc: boolean,
-  bitcoinUnit: string,
-  precision: number
-): string => {
-  if (isBtc) {
-    return formatBitcoinAmount(amount, bitcoinUnit)
-  }
-  const amountDecimal = new Decimal(amount)
-  return amountDecimal
-    .div(Math.pow(10, precision))
-    .toNumber()
-    .toLocaleString('en-US', {
-      maximumFractionDigits: precision,
-      minimumFractionDigits: 0,
-      useGrouping: true,
-    })
-}
-
-type AssetInfo = {
-  label: string
-  precision: number
-  fullId: string
-}
-
-const resolveAssetInfo = (
-  assetId: string | undefined,
-  listAssetsData: any
-): AssetInfo | null => {
-  if (!assetId) return null
-
-  const nia = listAssetsData?.nia ?? []
-  const uda = listAssetsData?.uda ?? []
-  const cfa = listAssetsData?.cfa ?? []
-
-  const niaMatch = nia.find((a: any) => a.asset_id === assetId)
-  if (niaMatch)
-    return {
-      label: niaMatch.ticker ?? niaMatch.name ?? assetId,
-      precision: niaMatch.precision ?? 0,
-      fullId: assetId,
-    }
-
-  const udaMatch = uda.find((a: any) => a.asset_id === assetId)
-  if (udaMatch)
-    return {
-      label: udaMatch.ticker ?? udaMatch.name ?? assetId,
-      precision: udaMatch.precision ?? 0,
-      fullId: assetId,
-    }
-
-  const cfaMatch = cfa.find((a: any) => a.asset_id === assetId)
-  if (cfaMatch)
-    return {
-      label: cfaMatch.name ?? assetId,
-      precision: cfaMatch.precision ?? 0,
-      fullId: assetId,
-    }
-
-  return {
-    label: assetId,
-    precision: 0,
-    fullId: assetId,
-  }
-}
 
 export const Component: React.FC = () => {
   const { t } = useTranslation()
@@ -110,9 +28,7 @@ export const Component: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const bitcoinUnit = useSelector(
-    (state: RootState) => state.settings.bitcoinUnit
-  )
+  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
 
   const { data: listAssetsData } = nodeApi.endpoints.listAssets.useQuery()
   const {
@@ -154,7 +70,7 @@ export const Component: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <Loader className="w-12 h-12 animate-spin text-red-500" />
-        <p className="text-slate-400">{t('withdrawals.loading')}</p>
+        <p className="text-content-secondary">{t('withdrawals.loading')}</p>
       </div>
     )
   }
@@ -261,7 +177,7 @@ export const Component: React.FC = () => {
   })
 
   return (
-    <Card className="bg-gray-800/50 border border-gray-700/50">
+    <Card className="bg-surface-overlay/50 border border-border-default/50">
       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-lg bg-red-500/10">
@@ -290,10 +206,10 @@ export const Component: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="h-4 w-4 text-content-secondary" />
           </div>
           <input
-            className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('withdrawals.searchPlaceholder')}
             type="text"
@@ -303,7 +219,7 @@ export const Component: React.FC = () => {
 
         <div className="relative">
           <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
             onChange={(e) => setTypeFilter(e.target.value as any)}
             value={typeFilter}
           >
@@ -312,11 +228,11 @@ export const Component: React.FC = () => {
             <option value="off-chain">{t('withdrawals.offChain')}</option>
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Chain className="h-4 w-4 text-gray-400" />
+            <Chain className="h-4 w-4 text-content-secondary" />
           </div>
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <svg
-              className="h-4 w-4 text-gray-400"
+              className="h-4 w-4 text-content-secondary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -333,7 +249,7 @@ export const Component: React.FC = () => {
 
         <div className="relative">
           <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
             onChange={(e) => setAssetFilter(e.target.value)}
             value={assetFilter}
           >
@@ -345,11 +261,11 @@ export const Component: React.FC = () => {
             ))}
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Zap className="h-4 w-4 text-gray-400" />
+            <Zap className="h-4 w-4 text-content-secondary" />
           </div>
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <svg
-              className="h-4 w-4 text-gray-400"
+              className="h-4 w-4 text-content-secondary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -366,7 +282,7 @@ export const Component: React.FC = () => {
 
         <div className="relative">
           <select
-            className="appearance-none w-full pl-3 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="appearance-none w-full pl-3 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
             onChange={(e) => setStatusFilter(e.target.value)}
             value={statusFilter}
           >
@@ -378,7 +294,7 @@ export const Component: React.FC = () => {
           </select>
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
             <svg
-              className="h-4 w-4 text-gray-400"
+              className="h-4 w-4 text-content-secondary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -414,7 +330,7 @@ export const Component: React.FC = () => {
       )}
 
       {filteredWithdrawals.length === 0 ? (
-        <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+        <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
           {searchTerm ||
           typeFilter !== 'all' ||
           assetFilter !== 'all' ||
@@ -472,7 +388,7 @@ export const Component: React.FC = () => {
                       <span className="font-medium">
                         {withdrawal.rgbAssetLabel}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-content-secondary">
                         {bitcoinUnit}
                       </span>
                       {withdrawal.rgbAssetId && (
@@ -507,11 +423,11 @@ export const Component: React.FC = () => {
                           bitcoinUnit,
                           withdrawal.rgbAssetPrecision ?? 0
                         )}{' '}
-                        <span className="text-slate-300 font-normal">
+                        <span className="text-content-secondary font-normal">
                           {withdrawal.rgbAssetLabel}
                         </span>
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-content-secondary">
                         {formatBitcoinAmount(withdrawal.satAmount, bitcoinUnit)}{' '}
                         {bitcoinUnit}
                       </span>
@@ -545,7 +461,7 @@ export const Component: React.FC = () => {
                   )}
                   {withdrawal.payeePublicKey && (
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-content-tertiary">
                         {t('withdrawals.payee')}:
                       </span>
                       {renderCopyableField(
@@ -595,7 +511,7 @@ export const Component: React.FC = () => {
           ]}
           data={filteredWithdrawals}
           emptyState={
-            <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+            <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
               {searchTerm ||
               typeFilter !== 'all' ||
               assetFilter !== 'all' ||

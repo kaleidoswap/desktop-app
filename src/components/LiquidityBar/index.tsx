@@ -19,13 +19,13 @@ export const LiquidityBar: React.FC<LiquidityBarProps> = ({
   const getColors = () => {
     if (type === 'bitcoin') {
       return {
-        background: 'bg-gray-800',
+        background: 'bg-surface-overlay',
         local: 'bg-yellow-500',
         remote: 'bg-blue-500',
       }
     } else {
       return {
-        background: 'bg-gray-800',
+        background: 'bg-surface-overlay',
         local: 'bg-blue-500',
         remote: 'bg-indigo-500',
       }
@@ -52,7 +52,7 @@ export const LiquidityBar: React.FC<LiquidityBarProps> = ({
         ></div>
 
         {/* Center divider */}
-        <div className="absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-gray-700"></div>
+        <div className="absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-surface-high"></div>
       </div>
     </div>
   )

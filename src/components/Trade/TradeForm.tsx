@@ -116,12 +116,12 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     'bg-gradient-to-br from-slate-900/90 via-slate-900/85 to-slate-800/90',
     'backdrop-blur-2xl',
     'rounded-3xl',
-    'border border-slate-700/40',
+    'border border-border-default/40',
     'p-6',
     'shadow-2xl shadow-slate-900/50',
     'transition-all duration-500 ease-out',
     'hover:shadow-slate-900/60',
-    'hover:border-slate-600/50',
+    'hover:border-border-default/50',
     'group'
   )
 
@@ -138,7 +138,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
           'hover:shadow-lg hover:shadow-blue-500/20',
           'hover:from-slate-800/95 hover:to-slate-900/95'
         )
-      : 'border-slate-700/40 opacity-50 cursor-not-allowed'
+      : 'border-border-default/40 opacity-50 cursor-not-allowed'
   )
 
   return (

@@ -149,9 +149,9 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
   return (
     <div className={twJoin('w-full', className)}>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-slate-300">{label}</label>
+        <label className="text-sm font-medium text-content-secondary">{label}</label>
         {maxBalance && maxBalance > 0 && (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-content-tertiary">
             Max: {maxBalance.toFixed(precision)}
           </span>
         )}
@@ -160,11 +160,11 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
       <div
         className={twJoin(
           'relative group cursor-text',
-          'bg-slate-900/70 border rounded-xl transition-all duration-200',
+          'bg-surface-base/70 border rounded-xl transition-all duration-200',
           'backdrop-blur-sm min-h-[48px]',
           isFocused || hasValue
-            ? 'border-blue-500 ring-2 ring-blue-500/20 bg-slate-800/90'
-            : 'border-slate-600/50 hover:border-slate-500/70',
+            ? 'border-blue-500 ring-2 ring-blue-500/20 bg-surface-overlay/90'
+            : 'border-border-default/50 hover:border-border-subtle/70',
           disabled ? 'opacity-50 cursor-not-allowed' : '',
           error ? 'border-red-500/50 ring-2 ring-red-500/20' : ''
         )}
@@ -173,7 +173,7 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
         <input
           className={twJoin(
             'w-full px-4 py-3 bg-transparent text-white text-lg font-medium',
-            'placeholder:text-slate-500 border-none outline-none',
+            'placeholder:text-content-tertiary border-none outline-none',
             'pr-16' // Make room for clear button
           )}
           disabled={disabled}
@@ -194,8 +194,8 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
             className={twJoin(
               'absolute right-3 top-1/2 -translate-y-1/2',
               'p-1.5 rounded-lg transition-all duration-200',
-              'text-slate-400 hover:text-slate-300',
-              'hover:bg-slate-700/50 opacity-0 group-hover:opacity-100',
+              'text-content-secondary hover:text-content-secondary',
+              'hover:bg-surface-high/50 opacity-0 group-hover:opacity-100',
               isFocused ? 'opacity-100' : ''
             )}
             onClick={handleClear}
@@ -213,8 +213,8 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
           <button
             className={twJoin(
               'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-              'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white',
-              'border border-slate-600/30 hover:border-slate-500/50'
+              'bg-surface-high/50 text-content-secondary hover:bg-surface-elevated/50 hover:text-white',
+              'border border-border-default/30 hover:border-border-subtle/50'
             )}
             onClick={handleClear}
             type="button"
@@ -263,7 +263,7 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
 
       {/* Helper text for precision */}
       {isFocused && precision > 0 && (
-        <div className="mt-2 text-xs text-slate-500">
+        <div className="mt-2 text-xs text-content-tertiary">
           💡 You can enter up to {precision} decimal places. Press Enter to
           confirm or Escape to clear.
         </div>

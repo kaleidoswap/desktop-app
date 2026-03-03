@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { useAppSelector } from '../../app/store/hooks'
+import { useSettings } from '../../hooks/useSettings'
 import { useAssetIcon } from '../../helpers/utils'
 import { nodeApi, SwapDetails } from '../../slices/nodeApi/nodeApi.slice'
 import { useNotification } from '../NotificationSystem'
@@ -30,7 +30,7 @@ const AssetDisplay: React.FC<{
         <img alt={`${asset} icon`} className="w-4 h-4" src={imgSrc} />
       </div>
       <div>
-        <div className="font-medium text-gray-700 dark:text-gray-200">
+        <div className="font-medium text-gray-700 dark:text-content-primary">
           {formatAmount(amount)} {asset}
         </div>
       </div>
@@ -43,7 +43,7 @@ const SwapStatusContent: React.FC<{
   assets: any[]
   timestamp?: Date
 }> = ({ swap, assets, timestamp }) => {
-  const bitcoinUnit = useAppSelector((state) => state.settings.bitcoinUnit)
+  const { bitcoinUnit } = useSettings()
 
   const fromAssetTicker =
     assets.find((asset) => asset.asset_id === swap.from_asset)?.ticker ||
@@ -86,12 +86,12 @@ const SwapStatusContent: React.FC<{
       case 'Pending':
         return 'text-blue-500 dark:text-blue-400'
       default:
-        return 'text-gray-500 dark:text-gray-400'
+        return 'text-content-tertiary dark:text-content-secondary'
     }
   }
 
   return (
-    <div className="space-y-3 bg-gray-50/90 dark:bg-blue-darker p-4 rounded-lg border border-gray-200 dark:border-blue-700">
+    <div className="space-y-3 bg-gray-50/90 dark:bg-surface-overlay p-4 rounded-lg border border-gray-200 dark:border-blue-700">
       {/* Status badge at the top */}
       <div className={`font-medium ${getStatusColor()} flex items-center`}>
         <span className="mr-2">Swap {swap.status}</span>
@@ -102,16 +102,16 @@ const SwapStatusContent: React.FC<{
 
       <div className="flex items-center justify-between gap-4 bg-white dark:bg-blue-900/80 p-3 rounded-lg shadow-md border border-gray-100 dark:border-blue-800">
         <div className="flex-1">
-          <span className="text-sm text-gray-500 dark:text-gray-400">From</span>
+          <span className="text-sm text-content-tertiary dark:text-content-secondary">From</span>
           <AssetDisplay amount={fromAssetQty} asset={fromAssetTicker} />
         </div>
 
         <ArrowRight
-          className={`text-gray-400 w-4 h-4 flex-shrink-0 ${swap.status === 'Pending' ? 'animate-pulse' : ''}`}
+          className={`text-content-secondary w-4 h-4 flex-shrink-0 ${swap.status === 'Pending' ? 'animate-pulse' : ''}`}
         />
 
         <div className="flex-1">
-          <span className="text-sm text-gray-500 dark:text-gray-400">To</span>
+          <span className="text-sm text-content-tertiary dark:text-content-secondary">To</span>
           <AssetDisplay
             align="right"
             amount={toAssetQty}
@@ -120,7 +120,7 @@ const SwapStatusContent: React.FC<{
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="text-xs text-content-tertiary dark:text-content-secondary">
         {(timestamp || new Date()).toLocaleString(undefined, {
           dateStyle: 'medium',
           timeStyle: 'short',

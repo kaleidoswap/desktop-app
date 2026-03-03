@@ -135,7 +135,7 @@ export const Component = () => {
       case 'Inflation':
         return 'text-purple-500'
       default:
-        return 'text-slate-400'
+        return 'text-content-secondary'
     }
   }
 
@@ -236,7 +236,7 @@ export const Component = () => {
   return (
     <div className="space-y-6">
       {selectedAssetId && (
-        <Card className="bg-gray-800/50 border border-gray-700/50">
+        <Card className="bg-surface-overlay/50 border border-border-default/50">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-lg bg-purple-500/10">
@@ -247,11 +247,11 @@ export const Component = () => {
                   {getSelectedAsset()?.name} ({getSelectedAsset()?.ticker})
                 </h3>
                 <div className="flex items-center mt-1">
-                  <p className="text-xs text-gray-400 truncate max-w-[200px] md:max-w-[300px]">
+                  <p className="text-xs text-content-secondary truncate max-w-[200px] md:max-w-[300px]">
                     {selectedAssetId}
                   </p>
                   <button
-                    className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+                    className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
                     onClick={() =>
                       copyToClipboard(selectedAssetId, 'assets.assetIdCopied')
                     }
@@ -282,10 +282,10 @@ export const Component = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+                <Search className="h-4 w-4 text-content-secondary" />
               </div>
               <input
-                className="block w-full pl-9 pr-3 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t('assets.searchPlaceholder')}
                 type="text"
@@ -295,7 +295,7 @@ export const Component = () => {
 
             <div className="relative">
               <select
-                className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 onChange={(e) => setTypeFilter(e.target.value)}
                 value={typeFilter}
               >
@@ -305,11 +305,11 @@ export const Component = () => {
                 <option value="issuance">{t('assets.issuance')}</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <ArrowDownRight className="h-4 w-4 text-gray-400" />
+                <ArrowDownRight className="h-4 w-4 text-content-secondary" />
               </div>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg
-                  className="h-4 w-4 text-gray-400"
+                  className="h-4 w-4 text-content-secondary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -327,7 +327,7 @@ export const Component = () => {
 
             <div className="relative">
               <select
-                className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 onChange={(e) => setStatusFilter(e.target.value)}
                 value={statusFilter}
               >
@@ -339,11 +339,11 @@ export const Component = () => {
                 ))}
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Coins className="h-4 w-4 text-gray-400" />
+                <Coins className="h-4 w-4 text-content-secondary" />
               </div>
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg
-                  className="h-4 w-4 text-gray-400"
+                  className="h-4 w-4 text-content-secondary"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -362,7 +362,7 @@ export const Component = () => {
 
           <div className="mb-4 relative">
             <select
-              className="appearance-none w-full pl-9 pr-8 py-2 border border-gray-700 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               disabled={isLoading || !(assetsResponse.data?.nia || []).length}
               onChange={(e) => setSelectedAssetId(e.target.value)}
               value={selectedAssetId || ''}
@@ -378,7 +378,7 @@ export const Component = () => {
             </div>
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
               <svg
-                className="h-4 w-4 text-gray-400"
+                className="h-4 w-4 text-content-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -458,7 +458,7 @@ export const Component = () => {
               ]}
               data={filteredTransfers}
               emptyState={
-                <div className="text-center py-8 text-slate-400 bg-slate-800/30 rounded-lg border border-slate-700">
+                <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
                   {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                     ? t('assets.noTransfersFiltered')
                     : t('assets.noTransfers')}
@@ -489,12 +489,12 @@ export const Component = () => {
                 )
               }
               rowClassName={(transfer: Transfer) =>
-                `cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-gray-700/30' : ''}`
+                `cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-surface-high/30' : ''}`
               }
             />
           ) : (
             <div className="py-12 text-center">
-              <p className="text-gray-400">
+              <p className="text-content-secondary">
                 {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                   ? t('assets.noTransfersFiltered')
                   : t('assets.noTransfers')}
@@ -523,24 +523,24 @@ export const Component = () => {
             (transfer) =>
               showTxDetails === `${transfer.txid}-${transfer.idx}` && (
                 <div
-                  className="mt-4 bg-gray-800/50 rounded-lg p-4"
+                  className="mt-4 bg-surface-overlay/50 rounded-lg p-4"
                   key={`${transfer.txid}-${transfer.idx}`}
                 >
-                  <div className="bg-gray-900/50 rounded-lg p-4 space-y-3">
+                  <div className="bg-surface-base/50 rounded-lg p-4 space-y-3">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-300 mb-1">
+                      <h4 className="text-sm font-medium text-content-secondary mb-1">
                         {t('assets.transactionDetails')}
                       </h4>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-content-secondary">
                           {t('assets.transactionIdLabel')}
                         </span>
                         <div className="flex items-center">
-                          <span className="text-xs text-gray-300">
+                          <span className="text-xs text-content-secondary">
                             {transfer.txid}
                           </span>
                           <button
-                            className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+                            className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               copyToClipboard(
@@ -556,7 +556,7 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-content-secondary">
                         {t('assets.amountLabel')}
                       </span>
                       <span
@@ -573,7 +573,7 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-content-secondary">
                         {t('assets.typeLabel')}
                       </span>
                       <Badge variant={getKindBadgeVariant(transfer.kind)}>
@@ -582,7 +582,7 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-content-secondary">
                         {t('assets.statusLabel')}
                       </span>
                       <Badge variant={getStatusBadgeVariant(transfer.status)}>
@@ -591,25 +591,25 @@ export const Component = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-content-secondary">
                         {t('assets.dateLabel')}
                       </span>
-                      <span className="text-xs text-gray-300">
+                      <span className="text-xs text-content-secondary">
                         {formatDate((transfer.created_at || 0) * 1000)}
                       </span>
                     </div>
 
                     {transfer.recipient_id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-content-secondary">
                           {t('assets.recipientIdLabel')}
                         </span>
                         <div className="flex items-center">
-                          <span className="text-xs text-gray-300 truncate max-w-[200px]">
+                          <span className="text-xs text-content-secondary truncate max-w-[200px]">
                             {transfer.recipient_id}
                           </span>
                           <button
-                            className="ml-2 text-gray-400 hover:text-gray-200 transition-colors"
+                            className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               copyToClipboard(

@@ -44,8 +44,8 @@ export const QRCodePayment: React.FC<QRCodePaymentProps> = ({
 
       {/* Payment Details */}
       <div className="space-y-4">
-        <div className="bg-gray-900/50 p-4 rounded-xl text-center">
-          <h4 className="text-sm text-gray-400 mb-2">
+        <div className="bg-surface-base/50 p-4 rounded-xl text-center">
+          <h4 className="text-sm text-content-secondary mb-2">
             {t('orderChannel.step3.amountToPay')}
           </h4>
           <p className="text-2xl font-bold text-white">

@@ -36,25 +36,25 @@ export const InfoCard: React.FC<InfoCardProps> = ({
 
   return (
     <div
-      className={`bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 ${className}`}
+      className={`bg-surface-overlay/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-4 ${className}`}
     >
       <div className="flex items-center gap-3">
         <div className="p-2 bg-blue-500/10 rounded-lg">{icon}</div>
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block">
+          <span className="text-xs font-medium text-content-secondary uppercase tracking-wider block">
             {label}
           </span>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm text-slate-300 font-medium truncate">
+            <span className="text-sm text-content-secondary font-medium truncate">
               {value}
             </span>
             {copyable && (
               <button
-                className="shrink-0 p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors"
+                className="shrink-0 p-1.5 hover:bg-surface-high/50 rounded-lg transition-colors"
                 onClick={handleCopy}
                 title={`Copy ${label}`}
               >
-                <Copy className="w-4 h-4 text-slate-400 hover:text-white" />
+                <Copy className="w-4 h-4 text-content-secondary hover:text-white" />
               </button>
             )}
           </div>

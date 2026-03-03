@@ -83,10 +83,10 @@ const getNotificationConfig = (type: NotificationType) => {
       }
     default:
       return {
-        badgeClass: 'bg-gray-500/20 text-gray-600 dark:text-gray-400',
-        containerClass: 'bg-gray-500/10 dark:bg-gray-900/20',
+        badgeClass: 'bg-surface-high/20 text-content-tertiary dark:text-content-secondary',
+        containerClass: 'bg-surface-high/10 dark:bg-surface-base/20',
         icon: Bell,
-        iconClass: 'text-gray-500',
+        iconClass: 'text-content-tertiary',
       }
   }
 }
@@ -157,7 +157,7 @@ const NotificationItem: React.FC<{
               <Icon className={`${iconClass} w-5 h-5`} />
             )}
             <span
-              className={`font-semibold ${isUpdateNotification ? 'text-amber-100' : 'text-gray-700 dark:text-gray-200'}`}
+              className={`font-semibold ${isUpdateNotification ? 'text-amber-100' : 'text-gray-700 dark:text-content-primary'}`}
             >
               {notification.title || 'Notification'}
             </span>
@@ -177,7 +177,7 @@ const NotificationItem: React.FC<{
             )}
             {!inPanel && (
               <button
-                className="p-1 hover:bg-gray-500/10 rounded-full transition-colors"
+                className="p-1 hover:bg-surface-high/10 rounded-full transition-colors"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -185,7 +185,7 @@ const NotificationItem: React.FC<{
                 }}
               >
                 <X
-                  className={`w-4 h-4 ${isUpdateNotification ? 'text-amber-300 hover:text-amber-200' : 'text-gray-400'}`}
+                  className={`w-4 h-4 ${isUpdateNotification ? 'text-amber-300 hover:text-amber-200' : 'text-content-secondary'}`}
                 />
               </button>
             )}
@@ -193,7 +193,7 @@ const NotificationItem: React.FC<{
         </div>
 
         {notification.showProgress && notification.autoClose && !inPanel && (
-          <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
+          <div className="h-1 bg-gray-200 dark:bg-surface-high rounded-full overflow-hidden mb-3">
             <div
               className="h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all duration-100"
               style={{ width: `${progress}%` }}
@@ -202,7 +202,7 @@ const NotificationItem: React.FC<{
         )}
 
         <div
-          className={`text-sm ${isUpdateNotification ? 'text-amber-100/90' : 'text-gray-600 dark:text-gray-300'}`}
+          className={`text-sm ${isUpdateNotification ? 'text-amber-100/90' : 'text-gray-600 dark:text-content-secondary'}`}
         >
           {notification.message}
           {isUpdateNotification && (
@@ -214,7 +214,7 @@ const NotificationItem: React.FC<{
         </div>
 
         {notification.timestamp && inPanel && (
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-content-tertiary mt-2">
             {notification.timestamp.toLocaleString()}
           </div>
         )}
@@ -237,31 +237,31 @@ const NotificationPanel: React.FC<{
   onNotificationClick,
 }) => {
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-blue-darkest border-l border-divider/10 shadow-xl z-50">
+    <div className="fixed inset-y-0 right-0 w-96 bg-surface-base border-l border-divider/10 shadow-xl z-50">
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b border-divider/10">
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-cyan" />
+            <Bell className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-white">Notifications</h2>
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="text-sm text-gray-400 hover:text-white"
+              className="text-sm text-content-secondary hover:text-white"
               onClick={onClearAll}
             >
               Clear all
             </button>
             <button
-              className="p-1 hover:bg-gray-500/10 rounded-full transition-colors"
+              className="p-1 hover:bg-surface-high/10 rounded-full transition-colors"
               onClick={onClose}
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-content-secondary" />
             </button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full text-content-secondary">
               <Bell className="w-12 h-12 mb-2" />
               <p>No notifications</p>
             </div>

@@ -131,7 +131,7 @@ const TerminalLogDisplay = memo(
     if (!logs || logs.length === 0) {
       return (
         <div className={`h-full flex items-center justify-center ${className}`}>
-          <span className="text-gray-500">No logs available</span>
+          <span className="text-content-tertiary">No logs available</span>
         </div>
       )
     }

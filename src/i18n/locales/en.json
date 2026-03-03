@@ -105,6 +105,11 @@
     "bitcoinUnit": "Bitcoin Unit",
     "bitcoinUnitSat": "Satoshi (SAT)",
     "bitcoinUnitBtc": "Bitcoin (BTC)",
+    "fiatCurrency": "Fiat Currency",
+    "fiatCurrencyDescription": "Currency used for fiat value display",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
     "lspUrl": "LSP URL",
     "lspUrlPlaceholder": "e.g., http://localhost:8000",
     "makerSettings": "Maker Settings",
@@ -287,15 +292,48 @@
     "liquidityInfo": "Channel liquidity changes as you send and receive payments. Keep your channels balanced for optimal performance.",
     "noFunds": "No Bitcoin Funds",
     "noFundsMessage": "You don't have any Bitcoin funds in your wallet. Deposit funds to start using the application.",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "btcPrice": "BTC Price",
+    "priceUnavailable": "Price unavailable",
+    "nodeInfo": "Node Info",
+    "manage": "Manage",
+    "history": "History",
+    "testnetWarning": "Test Network",
+    "testnetWarningDesc": "You are on a test network. Funds are not real and transactions have no monetary value."
   },
   "history": {
     "description": "View your transaction history, including deposits, payments, withdrawals, and swaps.",
+    "bitcoin": "Bitcoin",
     "deposits": "Deposits",
     "paymentsWithdrawals": "Payments & Withdrawals",
     "swaps": "Swaps",
     "assets": "Assets",
     "channelOrders": "Channel Orders"
+  },
+  "btcHistory": {
+    "title": "Bitcoin Transactions",
+    "loading": "Loading transactions...",
+    "errorLoading": "Error Loading Transactions",
+    "errorMessage": "Failed to load Bitcoin transaction history. Please try again.",
+    "tryAgain": "Try Again",
+    "refresh": "Refresh",
+    "direction": "Direction",
+    "amount": "Amount",
+    "fee": "Fee",
+    "date": "Date",
+    "txId": "Transaction ID",
+    "status": "Status",
+    "received": "Received",
+    "sent": "Sent",
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "allDirections": "All Directions",
+    "allStatuses": "All Statuses",
+    "searchPlaceholder": "Search by txid...",
+    "noTransactions": "No Bitcoin transactions found.",
+    "noTxFiltered": "No transactions match your filters.",
+    "clearFilters": "Clear Filters",
+    "viewExplorer": "View on Explorer"
   },
   "walletSetup": {
     "getHelpSupport": "Get Help & Support",
@@ -1914,10 +1952,14 @@
     "labels": {
       "capacity": "Capacity",
       "bitcoinLiquidity": "Bitcoin Liquidity",
-      "assetLiquidity": "{{ticker}} Liquidity"
+      "assetLiquidity": "{{ticker}} Liquidity",
+      "outbound": "Outbound",
+      "inbound": "Inbound",
+      "total": "total"
     },
     "buttons": {
       "details": "Details",
+      "manage": "Manage",
       "close": "Close"
     },
     "tooltips": {

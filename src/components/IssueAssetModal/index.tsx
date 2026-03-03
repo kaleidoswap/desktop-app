@@ -103,16 +103,16 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-md">
+        <div className="bg-surface-overlay rounded-xl border border-border-default p-6 w-full max-w-md">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">
               {t('issueAssetModal.title')}
             </h2>
             <button
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-high rounded-lg transition-colors"
               onClick={onClose}
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-content-secondary" />
             </button>
           </div>
 
@@ -122,11 +122,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 {t('issueAssetModal.tickerLabel')}
               </label>
               <input
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
                 maxLength={5}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 placeholder={t('issueAssetModal.tickerPlaceholder')}
@@ -137,11 +137,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 {t('issueAssetModal.nameLabel')}
               </label>
               <input
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('issueAssetModal.namePlaceholder')}
                 required
@@ -151,11 +151,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 {t('issueAssetModal.amountLabel')}
               </label>
               <input
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
                 min="0"
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={t('issueAssetModal.amountPlaceholder')}
@@ -166,11 +166,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 {t('issueAssetModal.precisionLabel')}
               </label>
               <input
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
+                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
                 max="18"
                 min="0"
                 onChange={(e) => {
@@ -194,15 +194,15 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             </div>
 
             {amount && (
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-content-secondary">
                 {t('issueAssetModal.previewPrefix')}{' '}
                 <span className="text-white font-medium">{previewAmount}</span>
               </p>
             )}
             <button
-              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 
-                       text-white rounded-xl font-medium transition-colors
-                       disabled:bg-blue-600/50 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis
+                       text-primary-foreground rounded-xl font-medium transition-colors
+                       disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isLoading}
               type="submit"
             >

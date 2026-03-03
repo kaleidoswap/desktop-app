@@ -171,7 +171,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   if (completed) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-blue-darkest border border-green-600/30 rounded-3xl p-8 shadow-2xl">
+        <div className="max-w-md w-full bg-surface-base border border-green-600/30 rounded-3xl p-8 shadow-2xl">
           <div className="text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
               <CheckCircle2 className="w-8 h-8 text-white" />
@@ -213,7 +213,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-blue-darkest border border-purple-600/30 rounded-3xl p-8 shadow-2xl">
+        <div className="max-w-md w-full bg-surface-base border border-purple-600/30 rounded-3xl p-8 shadow-2xl">
           <div className="text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg relative overflow-hidden">
               <Download className="w-8 h-8 text-white z-10" />
@@ -375,7 +375,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   if (error) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-blue-darkest border border-red-600/30 rounded-3xl p-8 shadow-2xl">
+        <div className="max-w-md w-full bg-surface-base border border-red-600/30 rounded-3xl p-8 shadow-2xl">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-3">
               {t('updaterModal.error.title')}
@@ -406,14 +406,14 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   // Default update modal state
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="max-w-lg w-full bg-blue-darkest border border-amber-600/30 rounded-3xl p-8 shadow-2xl">
+      <div className="max-w-lg w-full bg-surface-base border border-amber-600/30 rounded-3xl p-8 shadow-2xl">
         <div className="relative">
           {/* Close button */}
           <button
-            className="absolute -top-2 -right-2 p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors z-10"
+            className="absolute -top-2 -right-2 p-2 bg-surface-high hover:bg-surface-elevated rounded-full transition-colors z-10"
             onClick={onClose}
           >
-            <X className="w-5 h-5 text-gray-300" />
+            <X className="w-5 h-5 text-content-secondary" />
           </button>
 
           <div className="text-center">
