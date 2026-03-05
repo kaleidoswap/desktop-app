@@ -65,14 +65,44 @@ fn main() {
                             std::thread::spawn(move || {
                                 let node_process = node_process.lock().unwrap();
 
-                                // Update status
-                                window
-                                    .emit(
-                                        "update-shutdown-status",
-                                        "Shutting down local node...",
-                                    )
-                                    .unwrap();
-                                println!("Shutting down node...");
+                                let daemon_port = node_process.get_daemon_port();
+
+                                if let Some(port) = daemon_port {
+                                    let http = reqwest::blocking::Client::builder()
+                                        .timeout(std::time::Duration::from_secs(5))
+                                        .build()
+                                        .unwrap_or_else(|_| reqwest::blocking::Client::new());
+
+                                    // Lock the wallet before shutdown
+                                    window
+                                        .emit("update-shutdown-status", "Locking wallet...")
+                                        .unwrap();
+                                    println!("Locking wallet via HTTP API on port {}...", port);
+                                    let _ = http
+                                        .post(format!("http://127.0.0.1:{}/lock", port))
+                                        .send();
+
+                                    // Tell the node daemon to shut itself down gracefully
+                                    window
+                                        .emit(
+                                            "update-shutdown-status",
+                                            "Shutting down local node...",
+                                        )
+                                        .unwrap();
+                                    println!("Sending shutdown via HTTP API on port {}...", port);
+                                    let _ = http
+                                        .post(format!("http://127.0.0.1:{}/shutdown", port))
+                                        .send();
+                                } else {
+                                    window
+                                        .emit(
+                                            "update-shutdown-status",
+                                            "Shutting down local node...",
+                                        )
+                                        .unwrap();
+                                }
+
+                                println!("Waiting for node process to exit...");
                                 node_process.shutdown();
 
                                 // Wait for node to shut down gracefully with status updates

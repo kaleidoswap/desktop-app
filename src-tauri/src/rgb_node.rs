@@ -105,6 +105,11 @@ impl NodeProcess {
         (daemon_port, ldk_port)
     }
 
+    /// Get the daemon HTTP port for the currently running node
+    pub fn get_daemon_port(&self) -> Option<u16> {
+        self.daemon_port.lock().ok().and_then(|g| *g)
+    }
+
     /// Get the current running node's ports
     pub fn get_running_node_ports(&self) -> HashMap<String, String> {
         let mut ports = HashMap::new();
