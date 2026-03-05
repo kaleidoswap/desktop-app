@@ -15,6 +15,7 @@ interface AssetRowProps {
   asset: NiaAsset
   onChainBalance: number
   offChainBalance: number
+  incomingBalance?: number
   isLoading?: boolean
 }
 
@@ -43,6 +44,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   asset,
   onChainBalance,
   offChainBalance,
+  incomingBalance = 0,
   isLoading,
 }) => {
   const dispatch = useAppDispatch()
@@ -85,8 +87,13 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           {isLoading ? (
             <LoadingPlaceholder />
           ) : (
-            <div className="font-bold">
-              {formatAmount(asset, onChainBalance)}
+            <div className="flex flex-col">
+              <span className="font-bold">{formatAmount(asset, onChainBalance)}</span>
+              {incomingBalance > 0 && (
+                <span className="text-[10px] text-content-tertiary font-medium">
+                  +{formatAmount(asset, incomingBalance)} incoming
+                </span>
+              )}
             </div>
           )}
         </div>

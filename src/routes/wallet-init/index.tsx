@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
   Wallet,
   Lock,
@@ -10,8 +11,11 @@ import {
   AlertTriangle,
   Zap,
   Loader2,
+  Terminal,
+  Key,
+  Shuffle,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -34,7 +38,6 @@ import {
   PasswordFields,
 } from '../../components/PasswordSetupForm'
 import { SkipMnemonicWarningModal } from '../../components/SkipMnemonicWarningModal'
-import { StepIndicator } from '../../components/StepIndicator'
 import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
   Button,
@@ -43,7 +46,6 @@ import {
   SetupSection,
   FormField,
   Input,
-  SetupLayout,
   AdvancedSettings,
   NetworkSettings,
 } from '../../components/ui'
@@ -122,9 +124,13 @@ export const Component = () => {
   const [errors, setErrors] = useState<string[]>([])
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [nodePassword, setNodePassword] = useState('')
+  const isCancelledRef = useRef(false)
   const [isCancellingUnlock, setIsCancellingUnlock] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
+  const [initPhase, setInitPhase] = useState<'starting-node' | 'initializing-wallet' | 'idle'>('idle')
+  const [nodeLogs, setNodeLogs] = useState<string[]>([])
+  const logUnlistenRef = useRef<(() => void) | null>(null)
   const [showSkipMnemonicWarning, setShowSkipMnemonicWarning] = useState(false)
 
   const [init] = nodeApi.endpoints.init.useMutation()
@@ -147,7 +153,7 @@ export const Component = () => {
   const nodeSetupForm = useForm<NodeSetupFields>({
     defaultValues: {
       bearer_token: '',
-      name: 'Test Account',
+      name: generateRandomName(),
       network: 'Regtest',
       ...NETWORK_DEFAULTS['Regtest'],
     },
@@ -280,6 +286,22 @@ export const Component = () => {
     return `kaleidoswap-${formatAccountName(accountName)}`
   }
 
+  const handleCancelInitialization = async () => {
+    isCancelledRef.current = true
+    setIsInitializing(false)
+    setInitPhase('idle')
+    setNodeLogs([])
+    if (logUnlistenRef.current) {
+      logUnlistenRef.current()
+      logUnlistenRef.current = null
+    }
+    try {
+      await invoke('stop_node')
+    } catch (e) {
+      console.error('Failed to stop node during cancellation:', e)
+    }
+  }
+
   // Helper functions for node management
   const checkAndStopExistingNode = async (): Promise<void> => {
     const runningNodeAccount = await invoke<string | null>(
@@ -376,15 +398,31 @@ export const Component = () => {
           if (!recheckPorts.available) {
             throw new Error(
               `Ports ${recheckPorts.conflictingPorts.join(', ')} are still in use by other processes. ` +
-                'Please choose different ports or stop the conflicting processes.'
+              'Please choose different ports or stop the conflicting processes.'
             )
           }
         } else {
-          // Ports are in use by external processes
-          throw new Error(
-            `Ports ${portCheck.conflictingPorts.join(', ')} are in use by other applications. ` +
+          // Ports may be held by a stale node from a previous session.
+          // Try stop_node before giving up.
+          toast.info(t('walletInit.passwordStep.stoppingExistingNodes'), {
+            autoClose: false,
+            toastId: 'stopping-nodes',
+          })
+          try {
+            await invoke('stop_node')
+            await new Promise((resolve) => setTimeout(resolve, 2000))
+          } catch (stopError) {
+            console.warn('Could not stop stale node:', stopError)
+          }
+          toast.dismiss('stopping-nodes')
+
+          const recheckAfterStop = await checkPortAvailability(ports)
+          if (!recheckAfterStop.available) {
+            throw new Error(
+              `Ports ${recheckAfterStop.conflictingPorts.join(', ')} are in use by other applications. ` +
               'Please choose different ports or stop the conflicting applications.'
-          )
+            )
+          }
         }
       }
 
@@ -399,23 +437,36 @@ export const Component = () => {
 
       // Wait for node to be ready with improved detection
       await waitForNodeReady({
+        daemonPort: daemonPort,
         timeoutMs: 60000, // 60 seconds timeout
         onProgress: (message) => {
           console.log('Node startup progress:', message)
         },
       })
-    } catch (error) {
-      // If we fail to start, try to find alternative ports
-      const suggestedPorts = await invoke<{ daemon: string; ldk: string }>(
-        'find_available_ports'
-      )
 
-      throw new Error(
-        `Failed to start node: ${error}\n` +
-          `Suggested alternative ports:\n` +
-          `- Daemon port: ${suggestedPorts.daemon}\n` +
-          `- LDK peer port: ${suggestedPorts.ldk}`
-      )
+      if (isCancelledRef.current) throw new Error('CANCELLED')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // If the error is about ports in use, suggest alternative ports
+      if (errorMessage.includes('Ports') || errorMessage.includes('in use') || errorMessage.includes('port')) {
+        try {
+          const suggestedPorts = await invoke<{ daemon: string; ldk: string }>(
+            'find_available_ports'
+          )
+
+          throw new Error(
+            `${errorMessage}\n` +
+            `Suggested alternative ports:\n` +
+            `- Daemon port: ${suggestedPorts.daemon}\n` +
+            `- LDK peer port: ${suggestedPorts.ldk}`
+          )
+        } catch (e) {
+          throw new Error(errorMessage)
+        }
+      }
+
+      throw new Error(`Failed to start node: ${errorMessage}`)
     }
   }
 
@@ -460,6 +511,7 @@ export const Component = () => {
     const rpcConfig = parseRpcUrl(nodeSetupForm.getValues('rpc_connection_url'))
 
     await unlock({
+      announce_addresses: [],
       bitcoind_rpc_host: rpcConfig.host,
       bitcoind_rpc_password: rpcConfig.password,
       bitcoind_rpc_port: rpcConfig.port,
@@ -480,35 +532,66 @@ export const Component = () => {
     const network = nodeSetupForm.getValues('network')
     const datapath = getDatapath(accountName)
 
+    isCancelledRef.current = false
     setIsInitializing(true)
+    setInitPhase('starting-node')
+    setNodeLogs([])
+
+    // Subscribe to node logs during startup
+    const { listen } = await import('@tauri-apps/api/event')
+    logUnlistenRef.current = await listen<string>('node-log', (event) => {
+      setNodeLogs((prev) => [...prev, event.payload].slice(-100))
+    })
 
     try {
       // Check and stop any existing node
       await checkAndStopExistingNode()
+      if (isCancelledRef.current) return
 
       try {
-        toast.info(t('walletInit.passwordStep.startingNode'), {
-          autoClose: 2000,
-          position: 'bottom-right',
-        })
-
         await startLocalNode(accountName, network, datapath)
       } catch (error) {
-        // Show a warning toast when ports are in use
-        toast.warning(t('walletInit.passwordStep.portsInUse'), {
-          autoClose: false,
-          closeOnClick: true,
-        })
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        if (errorMessage === 'CANCELLED' || isCancelledRef.current) {
+          setIsInitializing(false)
+          setInitPhase('idle')
+          return
+        }
+
+        if (errorMessage.includes('Ports') || errorMessage.includes('in use') || errorMessage.includes('Suggested alternative ports')) {
+          toast.warning(t('walletInit.passwordStep.portsInUse'), {
+            autoClose: false,
+            closeOnClick: true,
+          })
+        } else {
+          toast.error(errorMessage, {
+            autoClose: false,
+            closeOnClick: true,
+          })
+        }
         setIsInitializing(false)
+        setInitPhase('idle')
         return
       }
+
+      // Node is started — now initializing wallet (generating mnemonic)
+      if (logUnlistenRef.current) {
+        logUnlistenRef.current()
+        logUnlistenRef.current = null
+      }
+      setInitPhase('initializing-wallet')
 
       // Rest of the initialization process
       try {
         const mnemonic = await initializeNode(data.password)
+        if (isCancelledRef.current) return
+
         setNodePassword(data.password)
         setMnemonic(mnemonic)
         await saveAccountSettings(accountName, network, datapath)
+        if (isCancelledRef.current) return
+
         handleStepChange('mnemonic')
         toast.success(t('walletInit.passwordStep.nodeInitializedSuccess'))
       } catch (error) {
@@ -542,6 +625,11 @@ export const Component = () => {
       }
     } finally {
       setIsInitializing(false)
+      setInitPhase('idle')
+      if (logUnlistenRef.current) {
+        logUnlistenRef.current()
+        logUnlistenRef.current = null
+      }
     }
   }
 
@@ -655,6 +743,7 @@ export const Component = () => {
       )
 
       await unlock({
+        announce_addresses: [],
         bitcoind_rpc_host: rpcConfig.host,
         bitcoind_rpc_password: rpcConfig.password,
         bitcoind_rpc_port: rpcConfig.port,
@@ -753,28 +842,82 @@ export const Component = () => {
       icon: React.ReactNode,
       content: React.ReactNode,
       onBack?: () => void,
-      maxWidth:
-        | 'sm'
-        | 'md'
-        | 'lg'
-        | 'xl'
-        | '2xl'
-        | '3xl'
-        | '4xl'
-        | '5xl'
-        | '6xl' = '3xl',
-      centered: boolean = false
     ) => (
-      <SetupLayout
-        centered={centered}
-        icon={icon}
-        maxWidth={maxWidth}
-        onBack={onBack}
-        subtitle={subtitle}
-        title={title}
-      >
-        {content}
-      </SetupLayout>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left decorative panel */}
+        <div className="hidden md:flex flex-col w-64 xl:w-72 shrink-0 bg-surface-base border-r border-border-subtle relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full bg-primary/6 blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-secondary/4 blur-2xl" />
+          </div>
+          <div className="relative flex-1 flex flex-col items-center justify-center p-8 gap-6">
+            {/* Icon ring */}
+            <div className="relative w-24 h-24 shrink-0">
+              <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
+              <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+                  {icon}
+                </div>
+              </div>
+            </div>
+            {/* Title + subtitle */}
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-content-primary leading-snug">{title}</h2>
+              <p className="text-xs text-content-secondary leading-relaxed">{subtitle}</p>
+            </div>
+            {/* Step progress */}
+            <div className="w-full space-y-1.5">
+              {WALLET_INIT_STEPS.map((step, idx) => {
+                const currentIdx = WALLET_INIT_STEPS.findIndex(s => s.id === currentStep)
+                const isCompleted = idx < currentIdx
+                const isActive = step.id === currentStep
+                return (
+                  <div className="flex items-center gap-2.5" key={step.id}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                      isCompleted ? 'bg-status-success text-white' :
+                      isActive ? 'bg-primary text-white' :
+                      'bg-surface-high text-content-tertiary'
+                    }`}>
+                      {isCompleted ? '✓' : idx + 1}
+                    </div>
+                    <span className={`text-xs truncate transition-colors ${
+                      isActive ? 'text-content-primary font-medium' :
+                      isCompleted ? 'text-status-success' :
+                      'text-content-tertiary'
+                    }`}>{step.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        {/* Right content panel */}
+        <div className="flex flex-col flex-1 overflow-hidden bg-surface-raised">
+          {onBack && (
+            <div className="flex items-center px-6 py-4 border-b border-border-subtle shrink-0">
+              <button
+                className="flex items-center gap-2 text-sm text-content-secondary hover:text-content-primary transition-colors"
+                onClick={onBack}
+                type="button"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+            </div>
+          )}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="max-w-2xl mx-auto px-6 py-8">
+              {/* Mobile header */}
+              <div className="md:hidden mb-6">
+                <h1 className="text-2xl font-bold text-content-primary mb-1">{title}</h1>
+                <p className="text-sm text-content-secondary">{subtitle}</p>
+              </div>
+              {content}
+            </div>
+          </div>
+        </div>
+      </div>
     )
 
     switch (currentStep) {
@@ -795,9 +938,7 @@ export const Component = () => {
               Review Terms & Privacy Policy
             </Button>
           </div>,
-          () => navigate(WALLET_SETUP_PATH),
-          'xl',
-          true
+          () => navigate(WALLET_SETUP_PATH)
         )
 
       case 'setup':
@@ -816,46 +957,28 @@ export const Component = () => {
         )
 
       case 'password':
+        if (isInitializing) {
+          return renderStepLayout(
+            initPhase === 'starting-node' ? 'Starting Local Node' : 'Initializing Wallet',
+            initPhase === 'starting-node'
+              ? 'The node is starting up — this may take up to 60 seconds'
+              : 'Generating your mnemonic seed phrase',
+            initPhase === 'starting-node'
+              ? <Zap className="w-8 h-8 text-primary animate-pulse" />
+              : <Key className="w-8 h-8 text-primary animate-pulse" />,
+            <NodeStartupProgress
+              logs={nodeLogs}
+              onCancel={handleCancelInitialization}
+              phase={initPhase}
+            />,
+            undefined
+          )
+        }
         return renderStepLayout(
           t('walletInit.passwordStep.title'),
           t('walletInit.passwordStep.subtitle'),
           <Lock />,
           <div className="w-full">
-            {isInitializing && (
-              <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <Alert
-                  className="border-primary/20 bg-primary/5 backdrop-blur-sm"
-                  icon={
-                    <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-                  }
-                  title={t('walletInit.passwordStep.initializingTitle')}
-                  variant="info"
-                >
-                  <div className="space-y-2">
-                    <p className="text-sm text-content-secondary">
-                      {t('walletInit.passwordStep.initializingMessage')}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-content-secondary">
-                      <div className="flex gap-1">
-                        <div
-                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '0ms' }}
-                        ></div>
-                        <div
-                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '150ms' }}
-                        ></div>
-                        <div
-                          className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '300ms' }}
-                        ></div>
-                      </div>
-                      <span>{t('components.walletInit.settingUpWallet')}</span>
-                    </div>
-                  </div>
-                </Alert>
-              </div>
-            )}
             <PasswordSetupForm
               disabled={isInitializing}
               errors={errors}
@@ -866,7 +989,7 @@ export const Component = () => {
               setIsPasswordVisible={setIsPasswordVisible}
             />
           </div>,
-          isInitializing ? undefined : () => handleBackNavigation()
+          () => handleBackNavigation()
         )
 
       case 'mnemonic':
@@ -940,9 +1063,7 @@ export const Component = () => {
               />
             </div>
           ),
-          isNodeError ? () => handleStepChange('verify') : undefined,
-          '3xl',
-          false
+          isNodeError ? () => handleStepChange('verify') : undefined
         )
 
       default:
@@ -953,15 +1074,7 @@ export const Component = () => {
   return (
     <>
       <Layout>
-        <div className="flex-1 flex flex-col">
-          <div className="container mx-auto px-4 py-8">
-            <StepIndicator
-              currentStep={currentStep}
-              steps={WALLET_INIT_STEPS}
-            />
-            {renderCurrentStep()}
-          </div>
-        </div>
+        {renderCurrentStep()}
       </Layout>
       <TermsWarningModal
         isOpen={showTermsModal}
@@ -975,6 +1088,160 @@ export const Component = () => {
       />
     </>
   )
+}
+
+interface NodeStartupProgressProps {
+  phase: 'starting-node' | 'initializing-wallet' | 'idle'
+  logs: string[]
+  onCancel: () => void
+}
+
+const NodeStartupProgress = ({
+  phase,
+  logs,
+  onCancel,
+}: NodeStartupProgressProps) => {
+  const logsEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [logs])
+
+  const phases = [
+    {
+      description:
+        'Starting the RGB Lightning node process and binding to ports. This typically takes 30–60 seconds.',
+      id: 'starting-node',
+      label: 'Start Node',
+    },
+    {
+      description:
+        'Generating a unique 24-word mnemonic seed phrase and encrypting your wallet with your password.',
+      id: 'initializing-wallet',
+      label: 'Init Wallet',
+    },
+  ]
+
+  const currentPhaseIndex = phases.findIndex((p) => p.id === phase)
+  const currentPhaseData = phases[currentPhaseIndex]
+
+  return (
+    <div className="w-full space-y-6">
+      {/* Phase stepper */}
+      <div className="flex items-center justify-center gap-2">
+        {phases.map((p, i) => {
+          const isCompleted = i < currentPhaseIndex
+          const isCurrent = i === currentPhaseIndex
+          return (
+            <div key={p.id} className="flex items-center gap-2">
+              {i > 0 && (
+                <div
+                  className={`h-px w-10 transition-colors ${
+                    isCompleted ? 'bg-status-success' : 'bg-border-subtle'
+                  }`}
+                />
+              )}
+              <div
+                className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
+                  isCurrent
+                    ? 'text-primary'
+                    : isCompleted
+                      ? 'text-status-success'
+                      : 'text-content-tertiary'
+                }`}
+              >
+                {isCompleted ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : isCurrent ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <div className="w-4 h-4 rounded-full border border-border-subtle" />
+                )}
+                <span>{p.label}</span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Description */}
+      {currentPhaseData && (
+        <Card className="p-4 bg-surface-elevated/40 border border-border-subtle/20">
+          <p className="text-sm text-content-secondary leading-relaxed">
+            {currentPhaseData.description}
+          </p>
+          {phase === 'initializing-wallet' && (
+            <div className="mt-3 flex items-start gap-2 rounded-md bg-primary/10 border border-primary/20 px-3 py-2">
+              <Key className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-content-primary">
+                A 24-word mnemonic is being generated. You will need to save it
+                on the next screen — it is the only way to recover your wallet.
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Live log viewer — only during node startup */}
+      {phase === 'starting-node' && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
+            <Terminal className="w-3.5 h-3.5" />
+            <span>Node output</span>
+            {logs.length === 0 && (
+              <span className="text-content-tertiary/60">— waiting...</span>
+            )}
+          </div>
+          <div className="bg-surface-base border border-border-subtle rounded-lg p-3 h-40 overflow-y-auto font-mono text-xs text-content-secondary">
+            {logs.length === 0 ? (
+              <div className="flex items-center gap-2 text-content-tertiary/60">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Waiting for node output...</span>
+              </div>
+            ) : (
+              logs.map((line, i) => (
+                <div className="leading-5 whitespace-pre-wrap break-all" key={i}>
+                  {line}
+                </div>
+              ))
+            )}
+            <div ref={logsEndRef} />
+          </div>
+        </div>
+      )}
+
+      <Button className="w-full" onClick={onCancel} size="sm" variant="outline">
+        Cancel
+      </Button>
+    </div>
+  )
+}
+
+const ADJECTIVES = [
+  'Arctic','Atomic','Bold','Bright','Calm','Cedar','Clear','Cloud','Cold',
+  'Coral','Cyan','Dark','Deep','Ember','Epic','Fast','Firm','Free','Fresh',
+  'Frost','Gold','Grand','Grey','Hard','High','Ice','Iron','Jade','Keen',
+  'Lean','Lost','Lunar','Matte','Meta','Mint','Mist','Neon','Onyx','Open',
+  'Peak','Pine','Pure','Raw','Real','Red','Root','Royal','Rust','Safe','Salt',
+  'Sharp','Silk','Slim','Solar','Steel','Still','Storm','Swift','True','Ultra',
+  'Vast','Void','Warm','Wave','Wild','Zero',
+]
+
+const NOUNS = [
+  'Arc','Ark','Atom','Bay','Beam','Block','Bolt','Bridge','Byte','Chain',
+  'Code','Core','Crypt','Dash','Data','Dawn','Deck','Dex','Digit','Dock',
+  'Drop','Echo','Edge','Field','Flow','Flux','Fog','Forge','Fork','Gate',
+  'Grid','Hash','Hub','Key','Knot','Layer','Link','Loop','Mesh','Mine',
+  'Mint','Mode','Node','Orb','Path','Peer','Pipe','Pool','Port','Proof',
+  'Pulse','Reef','Relay','Ring','Root','Route','Seed','Shard','Shift',
+  'Spark','Stack','State','Sync','Tide','Token','Tower','Trace','Vault',
+  'Wave','Wire','Wing','Zone',
+]
+
+const generateRandomName = () => {
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]
+  return `${adj} ${noun}`
 }
 
 interface NodeSetupFormProps {
@@ -1035,6 +1302,20 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
                   required: t('walletInit.setupStep.accountNameRequired'),
                 })}
                 error={!!form.formState.errors.name}
+                suffixNode={
+                  <button
+                    className="text-content-tertiary hover:text-primary transition-colors"
+                    onClick={() =>
+                      form.setValue('name', generateRandomName(), {
+                        shouldValidate: true,
+                      })
+                    }
+                    title="Generate random name"
+                    type="button"
+                  >
+                    <Shuffle className="w-4 h-4" />
+                  </button>
+                }
               />
             </FormField>
 

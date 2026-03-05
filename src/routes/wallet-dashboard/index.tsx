@@ -54,6 +54,21 @@ const BtcIcon: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) =>
   )
 }
 
+const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
+  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded flex-shrink-0">
+      <img
+        alt={ticker}
+        className="w-3 h-3 rounded-full object-contain"
+        onError={() => setImgSrc(defaultRgbIcon)}
+        src={imgSrc}
+      />
+      {ticker}
+    </span>
+  )
+}
+
 export const Component = () => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
@@ -66,7 +81,7 @@ export const Component = () => {
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
   const [refreshTransfers] = nodeApi.endpoints.refresh.useMutation()
   const [assetBalances, setAssetBalances] = useState<
-    Record<string, { offChain: number; onChain: number }>
+    Record<string, { offChain: number; onChain: number; incoming: number }>
   >({})
   const [assetsMap, setAssetsMap] = useState<Record<string, NiaAsset>>({})
   const { bitcoinUnit } = useSettings()
@@ -114,13 +129,16 @@ export const Component = () => {
 
   useEffect(() => {
     const fetchAssetBalances = async () => {
-      const newBalances: Record<string, { offChain: number; onChain: number }> = {}
+      const newBalances: Record<string, { offChain: number; onChain: number; incoming: number }> = {}
       for (const asset of assetsResponse.data?.nia || []) {
         if (asset.asset_id) {
           const balance = await assetBalance({ asset_id: asset.asset_id })
+          const spendable = balance.data?.spendable || 0
+          const future = balance.data?.future || 0
           newBalances[asset.asset_id] = {
             offChain: balance.data?.offchain_outbound || 0,
-            onChain: balance.data?.future || 0,
+            onChain: spendable,
+            incoming: Math.max(0, future - spendable),
           }
         }
       }
@@ -135,6 +153,8 @@ export const Component = () => {
   const isMainnet = network === 'Mainnet'
 
   const onChainSpendableBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
+  const onChainFutureBalance = btcBalanceResponse.data?.vanilla?.future || 0
+  const btcIncoming = Math.max(0, onChainFutureBalance - onChainSpendableBalance)
   const onChainColoredSpendableBalance = btcBalanceResponse.data?.colored?.spendable || 0
 
   const channels = listChannelsResponse?.data?.channels || []
@@ -165,6 +185,20 @@ export const Component = () => {
   }
 
   const btcOnChain = onChainSpendableBalance + onChainColoredSpendableBalance
+
+  const renderBalanceWithIncoming = (balance: number, incoming: number, formatFn: (val: number) => React.ReactNode) => {
+    if (incoming > 0) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-bold">{formatFn(balance)}</span>
+          <span className="text-[10px] text-content-tertiary font-medium">
+            +{formatFn(incoming)} incoming
+          </span>
+        </div>
+      )
+    }
+    return <div className="font-bold">{formatFn(balance)}</div>
+  }
 
   return (
     <div className="w-full h-full flex flex-col animate-in fade-in duration-500">
@@ -198,10 +232,10 @@ export const Component = () => {
                 <div className="flex items-center gap-2">
                   <div className="relative group/warn">
                     <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border cursor-default ${isMainnet
-                        ? 'text-status-success bg-status-success/10 border-status-success/20'
-                        : network
-                          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                          : 'text-content-tertiary bg-surface-elevated border-border-default/40'
+                      ? 'text-status-success bg-status-success/10 border-status-success/20'
+                      : network
+                        ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : 'text-content-tertiary bg-surface-elevated border-border-default/40'
                       }`}>
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isMainnet ? 'bg-status-success' : network ? 'bg-amber-400 animate-pulse' : 'bg-content-tertiary'}`} />
                       {network || '—'}
@@ -319,9 +353,9 @@ export const Component = () => {
               </div>
               {/* On-chain */}
               <div className="text-sm py-3 px-4">
-                {isLoading ? <LoadingPlaceholder /> : (
-                  <div className="font-bold">{formatBitcoinAmount(btcOnChain, bitcoinUnit)}</div>
-                )}
+                {isLoading ? <LoadingPlaceholder /> :
+                  renderBalanceWithIncoming(btcOnChain, btcIncoming, val => formatBitcoinAmount(val, bitcoinUnit))
+                }
               </div>
               {/* Actions */}
               <div className="py-3 px-2 flex justify-center">
@@ -363,6 +397,7 @@ export const Component = () => {
                     key={asset.asset_id}
                     offChainBalance={(assetBalances[asset.asset_id || ''] || {}).offChain || 0}
                     onChainBalance={(assetBalances[asset.asset_id || ''] || {}).onChain || 0}
+                    incomingBalance={(assetBalances[asset.asset_id || ''] || {}).incoming || 0}
                   />
                 ))
               )}
@@ -448,7 +483,7 @@ export const Component = () => {
                               {ch.peer_alias || ch.peer_pubkey?.slice(0, 10)}…
                             </span>
                             {asset && (
-                              <span className="text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded flex-shrink-0">{asset.ticker}</span>
+                              <ChannelAssetBadge ticker={asset.ticker} />
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -464,19 +499,19 @@ export const Component = () => {
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
                           <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                            <span className="flex items-center gap-0.5 text-amber-400">
+                            <span className="flex items-center gap-0.5 text-primary">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount((ch.outbound_balance_msat || 0) / 1000, bitcoinUnit)}
                             </span>
                             <span className="text-content-tertiary/50 font-medium">BTC</span>
-                            <span className="flex items-center gap-0.5 text-blue-400">
+                            <span className="flex items-center gap-0.5 text-secondary">
                               {formatBitcoinAmount((ch.inbound_balance_msat || 0) / 1000, bitcoinUnit)}
                               <ArrowDownRight className="w-2.5 h-2.5" />
                             </span>
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                            <div className="absolute left-0 top-0 h-full bg-amber-500 rounded-l-full" style={{ width: `${btcOutPct}%` }} />
-                            <div className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full" style={{ width: `${btcInPct}%` }} />
+                            <div className="absolute left-0 top-0 h-full bg-primary rounded-l-full" style={{ width: `${btcOutPct}%` }} />
+                            <div className="absolute right-0 top-0 h-full bg-secondary rounded-r-full" style={{ width: `${btcInPct}%` }} />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
                         </div>
@@ -485,19 +520,19 @@ export const Component = () => {
                         {asset && (
                           <div>
                             <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                              <span className="flex items-center gap-0.5 text-indigo-400">
+                              <span className="flex items-center gap-0.5 text-primary">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
                                 {ch.asset_local_amount || 0}
                               </span>
                               <span className="text-secondary/70 font-medium">{asset.ticker}</span>
-                              <span className="flex items-center gap-0.5 text-fuchsia-400">
+                              <span className="flex items-center gap-0.5 text-secondary">
                                 {ch.asset_remote_amount || 0}
                                 <ArrowDownRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                             <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                              <div className="absolute left-0 top-0 h-full bg-indigo-500 rounded-l-full" style={{ width: `${assetOutPct}%` }} />
-                              <div className="absolute right-0 top-0 h-full bg-fuchsia-500 rounded-r-full" style={{ width: `${assetInPct}%` }} />
+                              <div className="absolute left-0 top-0 h-full bg-primary rounded-l-full" style={{ width: `${assetOutPct}%` }} />
+                              <div className="absolute right-0 top-0 h-full bg-secondary rounded-r-full" style={{ width: `${assetInPct}%` }} />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
                           </div>

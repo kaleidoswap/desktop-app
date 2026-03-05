@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -76,7 +76,10 @@ impl NodeProcess {
 
     /// Check if a port is available
     pub fn is_port_available(port: u16) -> bool {
+        // Check both 127.0.0.1 and 0.0.0.0 — on macOS with SO_REUSEADDR,
+        // binding 127.0.0.1 can succeed even when 0.0.0.0 is already bound.
         TcpListener::bind(("127.0.0.1", port)).is_ok()
+            && TcpListener::bind(("0.0.0.0", port)).is_ok()
     }
 
     /// Get a list of available ports starting from a base port
@@ -231,30 +234,29 @@ impl NodeProcess {
             }
             _ => {}
         }
-
-        // Set state to Starting
-        self.set_state(NodeState::Starting);
+        
+        let was_running = matches!(current_state, NodeState::Running);
 
         // Check if ports are available before proceeding
         let daemon_port = daemon_listening_port
             .parse::<u16>()
             .map_err(|e| {
                 let err = format!("Invalid daemon port number: {}", e);
-                self.set_state(NodeState::Failed(err.clone()));
+                if !was_running { self.set_state(NodeState::Failed(err.clone())); }
                 err
             })?;
         let ldk_port = ldk_peer_listening_port
             .parse::<u16>()
             .map_err(|e| {
-                let err = format!("Invalid LDK peer port number: {}", e);
-                self.set_state(NodeState::Failed(err.clone()));
-                err
-            })?;
+            let err = format!("Invalid LDK peer port number: {}", e);
+            if !was_running { self.set_state(NodeState::Failed(err.clone())); }
+            err
+        })?;
 
         if !Self::is_port_available(daemon_port) {
             let err = format!("Port {} is already in use. Please make sure no other node is running or try a different port.", daemon_port);
             println!("{}", err);
-            self.set_state(NodeState::Failed(err.clone()));
+            if !was_running { self.set_state(NodeState::Failed(err.clone())); }
             if let Ok(window_guard) = self.window.lock() {
                 if let Some(window) = window_guard.as_ref() {
                     let _ = window.emit("node-error", err.clone());
@@ -266,7 +268,7 @@ impl NodeProcess {
         if !Self::is_port_available(ldk_port) {
             let err = format!("Port {} is already in use. Please make sure no other node is running or try a different port.", ldk_port);
             println!("{}", err);
-            self.set_state(NodeState::Failed(err.clone()));
+            if !was_running { self.set_state(NodeState::Failed(err.clone())); }
             if let Ok(window_guard) = self.window.lock() {
                 if let Some(window) = window_guard.as_ref() {
                     let _ = window.emit("node-error", err.clone());
@@ -284,7 +286,7 @@ impl NodeProcess {
         }
 
         // 1) If already running, attempt to stop & wait for complete shutdown
-        if self.is_running() {
+        if was_running {
             println!(
                 "Node is already running for account: {}. Stopping existing process...",
                 self.current_account
@@ -327,6 +329,9 @@ impl NodeProcess {
             // Add a small delay to ensure resources are released
             thread::sleep(Duration::from_secs(2));
         }
+
+        // Set state to Starting now that the old node is stopped
+        self.set_state(NodeState::Starting);
 
         // 2) Build the final data path for the node
         let app_data_dir = if cfg!(debug_assertions) {
@@ -371,13 +376,13 @@ impl NodeProcess {
         };
 
         // 3) Actually spawn the child process
-        let child = match self.run_rgb_lightning_node(
+        let (child, stdout_log_file, stderr_log_file) = match self.run_rgb_lightning_node(
             &network,
             &final_datapath,
             &daemon_listening_port,
             &ldk_peer_listening_port,
         ) {
-            Ok(child) => child,
+            Ok(result) => result,
             Err(e) => {
                 let err = format!("Failed to start RGB Lightning Node: {}", e);
                 println!("{}", err);
@@ -420,6 +425,8 @@ impl NodeProcess {
         let window_for_thread = Arc::clone(&self.window);
         let daemon_port_for_thread = Arc::clone(&self.daemon_port);
         let shutdown_timeout = self.shutdown_timeout;
+        let stdout_log_for_thread = stdout_log_file;
+        let stderr_log_for_thread = stderr_log_file;
 
         std::thread::spawn(move || {
             // Capture stdout and stderr
@@ -429,11 +436,12 @@ impl NodeProcess {
                     if let Some(stdout) = child.stdout.take() {
                         let logs_clone = Arc::clone(&logs_for_thread);
                         let window_clone = Arc::clone(&window_for_thread);
+                        let mut log_file = stdout_log_for_thread;
                         std::thread::spawn(move || {
                             let reader = BufReader::new(stdout);
                             for line in reader.lines().map_while(Result::ok) {
                                 println!("Node stdout: {}", line);
-                                // Use add_log method with rotation
+                                let _ = writeln!(log_file, "{}", line);
                                 if let Ok(mut logs) = logs_clone.lock() {
                                     logs.push(line.clone());
                                     if logs.len() > MAX_LOGS_IN_MEMORY {
@@ -453,11 +461,12 @@ impl NodeProcess {
                     if let Some(stderr) = child.stderr.take() {
                         let logs_clone = Arc::clone(&logs_for_thread);
                         let window_clone = Arc::clone(&window_for_thread);
+                        let mut log_file = stderr_log_for_thread;
                         std::thread::spawn(move || {
                             let reader = BufReader::new(stderr);
                             for line in reader.lines().map_while(Result::ok) {
                                 println!("Node stderr: {}", line);
-                                // Use add_log method with rotation
+                                let _ = writeln!(log_file, "Error: {}", line);
                                 if let Ok(mut logs) = logs_clone.lock() {
                                     logs.push(format!("Error: {}", line));
                                     if logs.len() > MAX_LOGS_IN_MEMORY {
@@ -786,7 +795,7 @@ impl NodeProcess {
         datapath: &str,
         daemon_listening_port: &str,
         ldk_peer_listening_port: &str,
-    ) -> Result<Child, String> {
+    ) -> Result<(Child, File, File), String> {
         let executable_path = if cfg!(debug_assertions) {
             // In debug mode, look in the bin directory relative to CARGO_MANIFEST_DIR
             let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../bin/rgb-lightning-node");
@@ -907,14 +916,14 @@ impl NodeProcess {
             .args(["--ldk-peer-listening-port", ldk_peer_listening_port])
             .args(["--network", network])
             .args(["--disable-authentication"])
-            .stdout(Stdio::from(stdout_log))
-            .stderr(Stdio::from(stderr_log))
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn();
 
         match child {
             Ok(child) => {
                 println!("Successfully spawned RGB Lightning Node process");
-                Ok(child)
+                Ok((child, stdout_log, stderr_log))
             }
             Err(e) => {
                 let err = format!("Failed to spawn rgb-lightning-node process: {}", e);

@@ -41,7 +41,7 @@ class Logger {
   }
 }
 
-// Create a singleton instance of the logger with INFO level to reduce console noise
-const logger = new Logger(LogLevel.INFO)
+// Create a singleton instance of the logger with WARN level to reduce console noise
+const logger = new Logger(LogLevel.WARN)
 
 export { logger, LogLevel }

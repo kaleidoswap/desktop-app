@@ -530,6 +530,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }, [invoiceStatus, onNext])
 
+  const getFaucetLink = async () => {
+    
+    setNetwork(network)
+  }
+
   return (
     <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
       <div className="flex flex-col items-center mb-2">

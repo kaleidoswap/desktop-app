@@ -6,8 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH, WALLET_UNLOCK_PATH } from '../../app/router/paths'
+import {
+  ROOT_PATH,
+  WALLET_SETUP_PATH,
+  WALLET_UNLOCK_PATH,
+} from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { waitForNodeReady } from '../../utils/nodeState'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
 import { BitcoinNetwork } from '../../constants'
@@ -413,6 +419,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
     setIsEditing(!isEditing)
   }
 
+  const [getNodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
+
   const handleNodeChange = async (node: Account) => {
     try {
       setIsSwitching(true)
@@ -449,19 +457,27 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         // Wait for the Redux store to be updated
         await dispatch(setSettingsAsync(formattedNode))
 
-        // Check if node is locked before navigating
-        try {
-          await invoke('node_info')
+        // Check if node is unlocked via API (same logic as root route)
+        const nodeInfoRes = await getNodeInfo()
+        if (nodeInfoRes.isSuccess) {
           console.log('Node unlocked, navigating to dashboard')
           navigate(ROOT_PATH)
-        } catch (error) {
+        } else if (
+          nodeInfoRes.error &&
+          typeof nodeInfoRes.error === 'object' &&
+          'status' in nodeInfoRes.error &&
+          (nodeInfoRes.error as { status?: number }).status === 400
+        ) {
+          navigate(WALLET_SETUP_PATH)
+        } else {
           console.log('Node locked, navigating to unlock page')
           navigate(WALLET_UNLOCK_PATH)
         }
         return
       }
 
-      if (runningNodeAccount && isNodeRunning) {
+      // Only stop the running node if it's a different account than the target
+      if (runningNodeAccount && runningNodeAccount !== node.name) {
         await invoke('stop_node')
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
@@ -488,7 +504,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
       if (
         node.node_url.startsWith('http://localhost:') &&
-        node.datapath !== ''
+        node.datapath !== '' &&
+        runningNodeAccount !== node.name
       ) {
         toast.info(t('toolbar.nodes.startingLocalNode'), {
           autoClose: 2000,
@@ -573,22 +590,43 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                 )
               }
             } else {
-              // Ports are in use by external processes
-              // Try to find alternative ports
-              const suggestedPorts = await invoke<{
-                daemon: number
-                ldk: number
-              }>('find_available_ports', {
-                base_daemon_port: parseInt(node.daemon_listening_port),
-                base_ldk_port: parseInt(node.ldk_peer_listening_port),
+              // Ports may be held by a stale node from a previous session.
+              // Try stop_node before giving up.
+              toast.info(t('toolbar.nodes.stoppingExisting'), {
+                autoClose: false,
+                toastId: 'stopping-nodes',
               })
+              try {
+                await invoke('stop_node')
+                await new Promise((resolve) => setTimeout(resolve, 2000))
+              } catch (stopError) {
+                console.warn('Could not stop stale node:', stopError)
+              }
+              toast.dismiss('stopping-nodes')
 
-              throw new Error(
-                `Ports ${unavailablePorts.join(', ')} are in use by other applications. ` +
-                  'Suggested alternative ports:\n' +
-                  `- Daemon port: ${suggestedPorts.daemon}\n` +
-                  `- LDK peer port: ${suggestedPorts.ldk}`
+              const recheckAfterStop = await invoke<{ [port: string]: boolean }>(
+                'check_ports_available',
+                { ports }
               )
+              const stillUnavailable = Object.entries(recheckAfterStop)
+                .filter(([_, isAvailable]) => !isAvailable)
+                .map(([port]) => port)
+
+              if (stillUnavailable.length > 0) {
+                const suggestedPorts = await invoke<{
+                  daemon: number
+                  ldk: number
+                }>('find_available_ports', {
+                  base_daemon_port: parseInt(node.daemon_listening_port),
+                  base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                })
+                throw new Error(
+                  `Ports ${stillUnavailable.join(', ')} are in use by other applications. ` +
+                    'Suggested alternative ports:\n' +
+                    `- Daemon port: ${suggestedPorts.daemon}\n` +
+                    `- LDK peer port: ${suggestedPorts.ldk}`
+                )
+              }
             }
           }
 
@@ -600,6 +638,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             ldkPeerListeningPort: node.ldk_peer_listening_port,
             network: node.network,
           })
+
+          // Wait for node to be actually ready (avoids "Could not connect" / false "Node locked")
+          await waitForNodeReady({
+            daemonPort: node.daemon_listening_port,
+            timeoutMs: 60000,
+            onProgress: (message) => {
+              console.log('Node startup:', message)
+            },
+          })
         } catch (error) {
           throw new Error(
             error instanceof Error ? error.message : 'Failed to start node'
@@ -607,14 +654,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Check if node is locked before navigating
-      try {
-        await invoke('node_info')
+      // Check if node is unlocked or locked via API (same logic as root route)
+      const nodeInfoRes = await getNodeInfo()
+      if (nodeInfoRes.isSuccess) {
         console.log('Node unlocked, navigating to dashboard')
         navigate(ROOT_PATH)
-      } catch (error) {
+      } else if (
+        nodeInfoRes.error &&
+        typeof nodeInfoRes.error === 'object' &&
+        'status' in nodeInfoRes.error &&
+        (nodeInfoRes.error as { status?: number }).status === 400
+      ) {
+        navigate(WALLET_SETUP_PATH)
+      } else {
         console.log('Node locked, navigating to unlock page')
         navigate(WALLET_UNLOCK_PATH)
       }
@@ -768,6 +820,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
           />
         </Modal>
       )}
+
     </>
   )
 }

@@ -14,6 +14,7 @@ import {
   Clock,
   ArrowDownLeft,
   ArrowUpRight,
+  HardDriveDownload,
 } from 'lucide-react'
 import React from 'react'
 
@@ -144,6 +145,11 @@ export const getUserMenuItems = (t: TFunction) => [
     icon: <Settings className="w-4 h-4" />,
     label: t('navigation.settings'),
     to: SETTINGS_PATH,
+  },
+  {
+    action: 'backup',
+    icon: <HardDriveDownload className="w-4 h-4" />,
+    label: t('settings.backupWallet'),
   },
   {
     action: 'support',

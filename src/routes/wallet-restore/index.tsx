@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
+  ArrowLeft,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -22,13 +23,10 @@ import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { NetworkSelector } from '../../components/NetworkSelector'
 import { Spinner } from '../../components/Spinner'
-import { StepIndicator } from '../../components/StepIndicator'
 import {
   Button,
   Card,
   Alert,
-  SetupLayout,
-  SetupSection,
   FormField,
   Input,
   PasswordInput,
@@ -112,31 +110,27 @@ const StatusModal = ({
     switch (type) {
       case ModalType.SUCCESS:
         return {
-          bgColor: 'bg-green-900/20',
-          borderColor: 'border-green-600/30',
-          buttonColor: 'bg-green-600 hover:bg-green-700',
-          icon: <CheckCircle className="h-8 w-8 text-green-400" />,
+          bgColor: 'bg-status-success/10',
+          borderColor: 'border-status-success/30',
+          icon: <CheckCircle className="h-7 w-7 text-status-success" />,
         }
       case ModalType.ERROR:
         return {
-          bgColor: 'bg-red-900/20',
-          borderColor: 'border-red-600/30',
-          buttonColor: 'bg-red-600 hover:bg-red-700',
-          icon: <XCircle className="h-8 w-8 text-red-400" />,
+          bgColor: 'bg-status-danger/10',
+          borderColor: 'border-status-danger/30',
+          icon: <XCircle className="h-7 w-7 text-status-danger" />,
         }
       case ModalType.WARNING:
         return {
-          bgColor: 'bg-yellow-900/20',
-          borderColor: 'border-yellow-600/30',
-          buttonColor: 'bg-yellow-600 hover:bg-yellow-700',
-          icon: <AlertTriangle className="h-8 w-8 text-yellow-400" />,
+          bgColor: 'bg-status-warning/10',
+          borderColor: 'border-status-warning/30',
+          icon: <AlertTriangle className="h-7 w-7 text-status-warning" />,
         }
       default:
         return {
-          bgColor: 'bg-blue-900/20',
-          borderColor: 'border-blue-600/30',
-          buttonColor: 'bg-primary hover:bg-primary-emphasis',
-          icon: <CheckCircle className="h-8 w-8 text-blue-400" />,
+          bgColor: 'bg-primary/10',
+          borderColor: 'border-primary/30',
+          icon: <CheckCircle className="h-7 w-7 text-primary" />,
         }
     }
   }
@@ -146,25 +140,25 @@ const StatusModal = ({
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
-        className={`max-w-md w-full rounded-xl shadow-2xl ${config.bgColor} border ${config.borderColor} p-6 transform transition-all duration-300 ease-in-out animate-fade-in`}
+        className={`max-w-md w-full rounded-xl shadow-2xl ${config.bgColor} border ${config.borderColor} p-6`}
       >
-        <div className="flex items-start">
-          <div className="flex-shrink-0 mr-4">{config.icon}</div>
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-            <p className="text-content-secondary mb-3">{message}</p>
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 mt-0.5">{config.icon}</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-semibold text-content-primary mb-1.5">{title}</h3>
+            <p className="text-content-secondary text-sm mb-3">{message}</p>
 
             {details && (
-              <div className="mt-3 mb-4">
-                <div className="bg-black/30 rounded-lg p-3 max-h-48 overflow-y-auto text-sm text-content-secondary font-mono border border-border-default">
+              <div className="mb-4">
+                <div className="bg-surface-base rounded-lg p-3 max-h-48 overflow-y-auto text-sm text-content-secondary font-mono border border-border-default/50 custom-scrollbar">
                   <p className="whitespace-pre-wrap break-words">{details}</p>
                 </div>
               </div>
             )}
 
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-end">
               <button
-                className={`px-4 py-2 rounded-lg ${config.buttonColor} text-white font-medium transition-colors duration-200`}
+                className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-emphasis text-white text-sm font-medium transition-colors"
                 onClick={onClose}
               >
                 {type === ModalType.SUCCESS
@@ -439,17 +433,73 @@ export const Component = () => {
 
   return (
     <Layout>
-      <SetupLayout
-        fullHeight
-        icon={<ArrowLeftRight />}
-        maxWidth="xl"
-        onBack={() => navigate(WALLET_SETUP_PATH)}
-        subtitle={t('walletRestore.subtitle')}
-        title={t('walletRestore.title')}
-      >
-        <div className="mb-8">
-          <StepIndicator currentStep={currentStep} steps={steps} />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left decorative panel */}
+        <div className="hidden md:flex flex-col w-64 xl:w-72 shrink-0 bg-surface-base border-r border-border-subtle relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full bg-primary/6 blur-3xl" />
+          </div>
+          <div className="relative flex-1 flex flex-col items-center justify-center p-8 gap-6">
+            {/* Icon ring */}
+            <div className="relative w-24 h-24 shrink-0">
+              <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
+              <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+                  <ArrowLeftRight className="w-7 h-7 text-primary" />
+                </div>
+              </div>
+            </div>
+            {/* Title + subtitle */}
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-content-primary">{t('walletRestore.title')}</h2>
+              <p className="text-xs text-content-secondary leading-relaxed">{t('walletRestore.subtitle')}</p>
+            </div>
+            {/* Step progress */}
+            <div className="w-full space-y-1.5">
+              {steps.map((step, idx) => {
+                const currentIdx = steps.findIndex(s => s.id === currentStep)
+                const isCompleted = idx < currentIdx
+                const isActive = step.id === currentStep
+                return (
+                  <div className="flex items-center gap-2.5" key={step.id}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                      isCompleted ? 'bg-status-success text-white' :
+                      isActive ? 'bg-primary text-white' :
+                      'bg-surface-high text-content-tertiary'
+                    }`}>
+                      {isCompleted ? '✓' : idx + 1}
+                    </div>
+                    <span className={`text-xs truncate transition-colors ${
+                      isActive ? 'text-content-primary font-medium' :
+                      isCompleted ? 'text-status-success' :
+                      'text-content-tertiary'
+                    }`}>{step.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
+        {/* Right content panel */}
+        <div className="flex flex-col flex-1 overflow-hidden bg-surface-raised">
+          <div className="flex items-center px-6 py-4 border-b border-border-subtle shrink-0">
+            <button
+              className="flex items-center gap-2 text-sm text-content-secondary hover:text-content-primary transition-colors"
+              onClick={() => navigate(WALLET_SETUP_PATH)}
+              type="button"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="max-w-2xl mx-auto px-6 py-8">
+              {/* Mobile header */}
+              <div className="md:hidden mb-6">
+                <h1 className="text-2xl font-bold text-content-primary mb-1">{t('walletRestore.title')}</h1>
+                <p className="text-sm text-content-secondary">{t('walletRestore.subtitle')}</p>
+              </div>
 
         {currentStep === 'backup-selection' && (
           <div className="max-w-2xl mx-auto">
@@ -567,19 +617,26 @@ export const Component = () => {
         )}
 
         {currentStep === 'restoration' && (
-          <SetupSection>
-            <div className="text-center py-12">
-              <div className="flex justify-center mb-6">
+          <div className="py-8 space-y-6 text-center">
+            <div className="relative inline-flex">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center">
                 <Spinner size="lg" />
               </div>
-              <h3 className="text-xl font-medium mb-2">
+              <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-semibold text-content-primary">
                 {t('walletRestore.restoringYourWallet')}
               </h3>
-              <p className="text-content-secondary">
+              <p className="text-content-secondary text-sm">
                 {t('walletRestore.restoringMessage')}
               </p>
             </div>
-          </SetupSection>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-overlay/40 border border-border-subtle/30">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs text-content-secondary">This may take up to 60 seconds</span>
+            </div>
+          </div>
         )}
 
         <StatusModal
@@ -592,7 +649,10 @@ export const Component = () => {
           title={modalState.title}
           type={modalState.type}
         />
-      </SetupLayout>
+            </div>
+          </div>
+        </div>
+      </div>
     </Layout>
   )
 }

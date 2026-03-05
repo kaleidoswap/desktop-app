@@ -867,7 +867,11 @@
     "formErrors": {
       "formSubmissionError": "Une erreur s'est produite lors de la soumission du formulaire."
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {

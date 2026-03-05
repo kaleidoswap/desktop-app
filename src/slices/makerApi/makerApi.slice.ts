@@ -249,9 +249,7 @@ export const makerApi = createApi({
       queryFn: async (args, api) => {
         try {
           const client = await getKaleidoClient(api.getState() as RootState)
-          console.log('initSwap', args)
           const res = await client.maker.initSwap(args)
-          console.log('initSwap res', res)
           return { data: res }
         } catch (e) {
           return { error: { status: 500, data: { error: String(e) } } }

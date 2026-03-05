@@ -25,6 +25,8 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
+import { BackupModal } from '../BackupModal'
+import { useBackup } from '../../hooks/useBackup'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -283,6 +285,21 @@ const UserProfile = ({
   const navigate = useNavigate()
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
+  const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+
+  const {
+    showBackupModal,
+    setShowBackupModal,
+    isBackupInProgress,
+    control: backupControl,
+    handleSubmit: handleBackupSubmit,
+    formState: backupFormState,
+    backupPath,
+    handleBackup,
+    selectBackupFolder,
+  } = useBackup({
+    nodeSettings: nodeSettingsData || { rpc_connection_url: '', indexer_url: '', proxy_endpoint: '' },
+  })
 
   // Get translated menu items
   const USER_MENU_ITEMS = getUserMenuItems(t)
@@ -294,6 +311,8 @@ const UserProfile = ({
 
     if (item.action === 'support') {
       onSupportClick()
+    } else if (item.action === 'backup') {
+      setShowBackupModal(true)
     } else if (item.to) {
       navigate(item.to)
     }
@@ -343,6 +362,18 @@ const UserProfile = ({
           )}
         </div>
       </div>
+
+      <BackupModal
+        backupPath={backupPath}
+        control={backupControl}
+        formState={backupFormState}
+        isBackupInProgress={isBackupInProgress}
+        onClose={() => setShowBackupModal(false)}
+        onSelectFolder={selectBackupFolder}
+        onSubmit={handleBackupSubmit(handleBackup)}
+        setValue={backupControl.setValue}
+        showModal={showBackupModal}
+      />
 
       {isOpen && (
         <div
@@ -935,7 +966,7 @@ export const Layout = (props: Props) => {
         </div>
       ) : (
         // For setup and other paths that hide the navbar
-        <div className="min-h-screen">{props.children}</div>
+        <div className="h-screen flex flex-col overflow-hidden">{props.children}</div>
       )}
 
       {/* Support Modal */}

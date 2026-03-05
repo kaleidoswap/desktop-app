@@ -35,11 +35,6 @@ export const getKaleidoClient = async (
     currentBaseUrl !== baseUrl
 
   if (needsRecreate) {
-    console.log('[Client] Creating KaleidoClient', {
-      baseUrl,
-      nodeUrl,
-    })
-
     // Create new instance with the TypeScript SDK using static factory
     clientInstance = KaleidoClient.create({
       baseUrl,
