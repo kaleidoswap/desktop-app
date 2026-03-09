@@ -27,6 +27,7 @@ import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
 import { BackupModal } from '../BackupModal'
 import { useBackup } from '../../hooks/useBackup'
+import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -465,6 +466,8 @@ export const Layout = (props: Props) => {
   const PAGE_CONFIG = getPageConfig(t)
 
   const [lock] = nodeApi.endpoints.lock.useMutation()
+
+  useDcaScheduler()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)

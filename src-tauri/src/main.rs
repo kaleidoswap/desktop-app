@@ -6,8 +6,10 @@ use std::collections::HashMap;
 
 mod crypto;
 mod db;
+mod dca;
 mod rgb_node;
 
+use dca::{DcaOrderInfo, DcaScheduler};
 use rgb_node::NodeProcess;
 
 #[derive(Default)]
@@ -23,6 +25,7 @@ fn main() {
     dotenv::dotenv().ok();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
+    let dca_scheduler = Arc::new(DcaScheduler::new());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -34,6 +37,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Arc::clone(&node_process))
+        .manage(Arc::clone(&dca_scheduler))
         .manage(CurrentAccount::default())
         .on_window_event({
             let node_process = Arc::clone(&node_process);
@@ -158,10 +162,13 @@ fn main() {
         })
         .setup({
             let node_process = Arc::clone(&node_process);
+            let dca_scheduler = Arc::clone(&dca_scheduler);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    node_process.lock().unwrap().set_window(main_window);
+                    node_process.lock().unwrap().set_window(main_window.clone());
+                    dca_scheduler.set_window(main_window);
                 }
+                dca_scheduler.start();
                 db::init();
                 Ok(())
             }
@@ -200,6 +207,9 @@ fn main() {
             // New command
             is_local_node_supported,
             get_markdown_content,
+            // DCA commands
+            dca_set_orders,
+            dca_order_executed,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -599,8 +609,27 @@ fn store_encrypted_mnemonic(
     Ok(())
 }
 
+/// Update the DCA scheduler with the current list of active orders from the frontend.
+#[tauri::command]
+fn dca_set_orders(
+    scheduler: tauri::State<'_, Arc<DcaScheduler>>,
+    orders: Vec<DcaOrderInfo>,
+) {
+    scheduler.set_orders(orders);
+}
+
+/// Called by the frontend after a DCA execution to update last_executed_at timestamp.
+#[tauri::command]
+fn dca_order_executed(
+    scheduler: tauri::State<'_, Arc<DcaScheduler>>,
+    order_id: String,
+    timestamp: u64,
+) {
+    scheduler.update_last_executed(&order_id, timestamp);
+}
+
 /// Retrieve and decrypt mnemonic for an account
-/// 
+///
 /// This command retrieves the encrypted mnemonic from the database and decrypts it
 /// using the provided password. Returns an error if the password is incorrect.
 #[tauri::command]

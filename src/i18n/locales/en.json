@@ -34,6 +34,7 @@
     "marketMaker": "Market Maker",
     "manualSwaps": "Manual Swaps",
     "nostrP2P": "Nostr P2P",
+    "dca": "DCA",
     "helpSupport": "Help & Support",
     "getHelpSupport": "Get Help & Support",
     "menu": "Menu",
@@ -2692,6 +2693,47 @@
       "requirementMatch": "Passwords match",
       "initializingButton": "Initializing...",
       "initializeButton": "Initialize Node"
+    }
+  },
+  "dca": {
+    "title": "DCA Orders",
+    "createOrder": "New DCA Order",
+    "createButton": "Create Order",
+    "tabs": {
+      "active": "Active",
+      "history": "History"
+    },
+    "type": {
+      "scheduled": "Scheduled",
+      "priceTarget": "Price Target"
+    },
+    "intervalLabel": "Buy every",
+    "dropLabel": "Drop threshold",
+    "amountLabel": "Amount per buy",
+    "triggerPrice": "Triggers at ≤",
+    "nextExecution": "Next execution",
+    "executions": "{{count}} executions",
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "empty": {
+      "active": "No active DCA orders",
+      "history": "No order history yet",
+      "hint": "Create a scheduled or price-target order to start automatically buying BTC with USDT."
+    },
+    "errors": {
+      "invalidAmount": "Please enter a valid USDT amount",
+      "noPriceData": "BTC price not available"
+    },
+    "toast": {
+      "created": "DCA order created",
+      "triggered": "DCA order triggered",
+      "success": "DCA: Bought {{amount}} sats",
+      "failed": "DCA order failed: {{error}}",
+      "skippedNoWs": "DCA skipped: not connected to maker"
     }
   }
 }
