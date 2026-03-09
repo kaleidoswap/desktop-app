@@ -235,7 +235,19 @@ impl NodeProcess {
                 return Err("Node is already starting. Please wait.".to_string());
             }
             NodeState::Stopping => {
-                return Err("Node is currently stopping. Please wait for it to finish.".to_string());
+                println!("Node is currently stopping. Waiting for it to finish before starting new node...");
+                let wait_start = std::time::Instant::now();
+                let wait_timeout = Duration::from_secs(15);
+                while matches!(self.get_state(), NodeState::Stopping) {
+                    if wait_start.elapsed() > wait_timeout {
+                        println!("Timed out waiting for node to stop. Force killing...");
+                        self.force_kill();
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(100));
+                }
+                // Small delay to ensure ports are released
+                thread::sleep(Duration::from_secs(1));
             }
             _ => {}
         }

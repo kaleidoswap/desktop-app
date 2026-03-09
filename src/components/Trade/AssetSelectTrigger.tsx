@@ -38,7 +38,7 @@ export const AssetSelectTrigger: React.FC<AssetSelectTriggerProps> = ({
   return (
     <button
       className={twJoin(
-        'flex items-center justify-between w-full px-2.5 rounded-lg border transition-all duration-200',
+        'flex items-center justify-between w-full px-3 py-2.5 rounded-lg border transition-all duration-200',
         'bg-surface-base/50 border-border-default/30 hover:border-border-default/60',
         'focus:border-primary/50 focus:outline-none',
         'relative group',

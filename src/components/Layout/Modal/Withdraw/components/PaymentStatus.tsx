@@ -17,7 +17,7 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({
     <div
       className={`p-3 rounded-xl border ${
         paymentStatus === 'Pending'
-          ? 'bg-blue-500/10 border-blue-500/20'
+          ? 'bg-primary/10 border-primary/20'
           : paymentStatus === 'Succeeded'
             ? 'bg-green-500/10 border-green-500/20'
             : 'bg-red-500/10 border-red-500/20'
@@ -26,8 +26,8 @@ const PaymentStatus: React.FC<PaymentStatusProps> = ({
       <div className="flex items-center gap-2">
         {paymentStatus === 'Pending' && (
           <>
-            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-            <span className="text-blue-400 text-sm">
+            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+            <span className="text-primary text-sm">
               {t('withdrawModal.paymentStatus.pending')}
             </span>
           </>

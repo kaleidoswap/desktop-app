@@ -123,7 +123,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         fee_rate: Math.round(feeRate),
         num: numUtxos,
         size: utxoSize,
-        skip_sync: false,
+        up_to: false,
       }).unwrap()
 
       toast.success('UTXOs created successfully')

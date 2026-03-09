@@ -160,7 +160,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
         <input
           className={`w-full px-3 py-2 bg-surface-overlay/50 border ${
             error ? 'border-red-500' : 'border-border-default'
-          } rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-white text-sm`}
+          } rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/60 transition-all duration-200 text-white text-sm`}
           onBlur={handleBlur}
           onChange={handleChange}
           onFocus={handleFocus}
@@ -186,7 +186,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
                 unit: secondaryUnit,
               })}
             </span>
-            <span className="text-xs text-blue-400 font-medium">
+            <span className="text-xs text-primary font-medium">
               {secondaryValue} {secondaryUnit}
             </span>
           </div>
@@ -194,7 +194,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
       )}
       {showSlider && (
         <input
-          className="w-full h-2 bg-surface-high rounded-lg appearance-none cursor-pointer mt-4 accent-blue-500"
+          className="w-full h-2 bg-surface-high rounded-lg appearance-none cursor-pointer mt-4 accent-primary"
           max={max}
           min={min}
           onChange={(e) => {
@@ -311,9 +311,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
   if (isDecodingInvoice) {
     return (
-      <div className="flex justify-center items-center p-4">
-        <div className="animate-spin mr-2 h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-        <span className="text-blue-400 text-sm">Analyzing input...</span>
+      <div className="flex justify-center items-center gap-2 p-6">
+        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-content-secondary text-sm">{t('withdrawModal.form.analyzing')}</span>
       </div>
     )
   }
@@ -332,14 +332,14 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             render={({ field }) => (
               <input
                 {...field}
-                className={`w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border
-                          text-white placeholder:text-content-tertiary text-sm
+                className={`w-full px-3 py-2 pr-10 bg-surface-overlay/50 rounded-xl border
+                          text-white placeholder:text-content-tertiary text-sm focus:outline-none focus:ring-1
                           ${
                             errors.address ||
                             hasValidationMessage ||
                             addressType === 'invalid'
                               ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                              : 'border-border-default focus:border-blue-500 focus:ring-blue-500'
+                              : 'border-border-default focus:border-primary/60 focus:ring-primary/30'
                           }`}
                 onChange={(e) => {
                   field.onChange(e)
@@ -358,12 +358,13 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             }}
           />
           <button
-            className="absolute right-2 top-1/2 transform -translate-y-1/2
-                      text-content-secondary hover:text-blue-500 p-1"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg
+                      text-content-secondary hover:text-primary hover:bg-primary/10 transition-colors"
             onClick={handlePasteFromClipboard}
+            title="Paste from clipboard"
             type="button"
           >
-            <Copy className="w-4 h-4" />
+            <Copy className="w-3.5 h-3.5" />
           </button>
         </div>
         {errors.address && (
@@ -412,44 +413,31 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           </div>
         )}
 
-        {/* Display the detected address type */}
+        {/* Detected address type badge */}
         {addressType !== 'unknown' &&
           addressType !== 'invalid' &&
           !errors.address &&
           !hasValidationMessage && (
-            <div className="flex items-center mt-1 gap-1">
-              {addressType === 'lightning' && (
-                <Zap className="w-3 h-3 text-blue-400" />
-              )}
-              {addressType === 'lightning-address' && (
-                <Zap className="w-3 h-3 text-blue-400" />
-              )}
-              {addressType === 'bitcoin' && (
-                <ChainIcon className="w-3 h-3 text-orange-400" />
-              )}
-              {addressType === 'rgb' && (
-                <ChainIcon className="w-3 h-3 text-green-400" />
-              )}
-              <span className="text-xs text-content-secondary">
-                {t('withdrawModal.form.detected.label')}{' '}
-                <span
-                  className={`font-medium ${
-                    addressType === 'lightning' ||
-                    addressType === 'lightning-address'
-                      ? 'text-blue-400'
-                      : addressType === 'bitcoin'
-                        ? 'text-orange-400'
-                        : 'text-green-400'
-                  }`}
-                >
-                  {addressType === 'lightning'
-                    ? t('withdrawModal.form.detected.types.lightningInvoice')
-                    : addressType === 'lightning-address'
-                      ? t('withdrawModal.form.detected.types.lightningAddress')
-                      : addressType === 'bitcoin'
-                        ? t('withdrawModal.form.detected.types.bitcoinAddress')
-                        : t('withdrawModal.form.detected.types.rgbInvoice')}
-                </span>
+            <div className="flex items-center mt-1.5">
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
+                  addressType === 'lightning' || addressType === 'lightning-address'
+                    ? 'bg-primary/10 border-primary/30 text-primary'
+                    : addressType === 'bitcoin'
+                      ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
+                      : 'bg-green-500/10 border-green-500/30 text-green-400'
+                }`}
+              >
+                {(addressType === 'lightning' || addressType === 'lightning-address')
+                  ? <Zap className="w-3 h-3" />
+                  : <ChainIcon className="w-3 h-3" />}
+                {addressType === 'lightning'
+                  ? t('withdrawModal.form.detected.types.lightningInvoice')
+                  : addressType === 'lightning-address'
+                    ? t('withdrawModal.form.detected.types.lightningAddress')
+                    : addressType === 'bitcoin'
+                      ? t('withdrawModal.form.detected.types.bitcoinAddress')
+                      : t('withdrawModal.form.detected.types.rgbInvoice')}
               </span>
             </div>
           )}
@@ -458,7 +446,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       {/* Lightning channel capacity for lightning payments */}
       {(addressType === 'lightning' || addressType === 'lightning-address') &&
         !hasValidationMessage && (
-          <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+          <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-content-secondary text-sm">
@@ -473,7 +461,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   <span className="text-content-secondary text-sm">
                     {t('withdrawModal.form.lightningCapacity.withdrawable')}
                   </span>
-                  <span className="text-blue-400 font-medium">
+                  <span className="text-primary font-medium">
                     {formatAmount(
                       calculateMaxWithdrawAmount(BTC_ASSET_ID),
                       'BTC'
@@ -529,7 +517,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   render={({ field }) => (
                     <input
                       className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default
-                             focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                             focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
                              placeholder:text-content-tertiary transition-all duration-200 text-sm"
                       inputMode="numeric"
                       onChange={(e) => {
@@ -591,53 +579,48 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               <label className="text-xs font-medium text-content-secondary">
                 {t('withdrawModal.form.assetSelector.label')}
               </label>
-              <div className="relative">
-                <button
-                  className="w-full p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
-                          hover:border-blue-500/50 transition-all duration-200
-                          flex items-center justify-between text-left text-sm"
-                  onClick={() => setShowAssetDropdown(!showAssetDropdown)}
-                  type="button"
-                >
-                  <span>
-                    {filteredAvailableAssets.find(
-                      (a: AssetOption) => a.value === assetId
-                    )?.label ||
-                      t('withdrawModal.form.assetSelector.placeholder')}
-                  </span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-content-secondary transition-transform duration-200 
-                    ${showAssetDropdown ? 'transform rotate-180' : ''}`}
-                  />
-                </button>
-                {showAssetDropdown && (
-                  <div
-                    className="absolute z-10 mt-1 w-full bg-surface-overlay rounded-xl border border-border-default 
-                              shadow-xl max-h-[200px] overflow-y-auto"
-                  >
-                    {filteredAvailableAssets.map((asset) => (
-                      <button
-                        className="w-full px-3 py-2 text-left hover:bg-blue-500/10 text-sm
-                                text-white transition-colors duration-200"
-                        key={asset.value}
-                        onClick={() => {
-                          setValue('asset_id', asset.value)
-                          setShowAssetDropdown(false)
-                          // Fetch balance for the selected asset
-                          if (asset.value === BTC_ASSET_ID) {
-                            fetchBtcBalance()
-                          } else {
-                            fetchAssetBalance(asset.value)
-                          }
-                        }}
-                        type="button"
-                      >
-                        {asset.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <button
+                className="w-full p-3 bg-surface-overlay/50 rounded-xl border border-border-default
+                        hover:border-primary/50 transition-all duration-200
+                        flex items-center justify-between text-left text-sm text-white"
+                onClick={() => setShowAssetDropdown(!showAssetDropdown)}
+                type="button"
+              >
+                <span>
+                  {filteredAvailableAssets.find(
+                    (a: AssetOption) => a.value === assetId
+                  )?.label ||
+                    t('withdrawModal.form.assetSelector.placeholder')}
+                </span>
+                <ChevronDown
+                  className={`w-4 h-4 text-content-secondary transition-transform duration-200
+                  ${showAssetDropdown ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {/* Inline list — avoids overflow-hidden clipping */}
+              {showAssetDropdown && (
+                <div className="rounded-xl border border-border-default bg-surface-overlay shadow-lg overflow-hidden">
+                  {filteredAvailableAssets.map((asset) => (
+                    <button
+                      className="w-full px-3 py-2.5 text-left hover:bg-primary/10 text-sm
+                              text-white transition-colors duration-200 border-b border-border-default/50 last:border-0"
+                      key={asset.value}
+                      onClick={() => {
+                        setValue('asset_id', asset.value)
+                        setShowAssetDropdown(false)
+                        if (asset.value === BTC_ASSET_ID) {
+                          fetchBtcBalance()
+                        } else {
+                          fetchAssetBalance(asset.value)
+                        }
+                      }}
+                      type="button"
+                    >
+                      {asset.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {errors.asset_id && (
                 <p className="text-red-400 text-xs mt-1">
                   {errors.asset_id.message}
@@ -703,10 +686,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                     if (isLimited) {
                       return (
                         <div className="flex justify-between items-center mt-1 pt-1 border-t border-border-default/30">
-                          <span className="text-xs text-blue-400">
+                          <span className="text-xs text-primary">
                             Max Withdrawable:
                           </span>
-                          <span className="text-xs text-blue-400 font-medium">
+                          <span className="text-xs text-primary font-medium">
                             {precision === 0
                               ? maxAmount.toLocaleString()
                               : maxAmount.toLocaleString('en-US', {
@@ -863,9 +846,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
                       {/* Max button */}
                       <button
-                        className="absolute right-2 top-8 px-2 py-1 text-blue-500 text-xs font-medium hover:text-blue-400 
-                                   hover:bg-blue-500/10 rounded-md transition-all duration-200
-                                   border border-blue-500/30 hover:border-blue-400/50 z-10"
+                        className="absolute right-2 top-8 px-2 py-1 text-primary text-xs font-medium hover:text-primary 
+                                   hover:bg-primary/10 rounded-md transition-all duration-200
+                                   border border-primary/30 hover:border-primary/40 z-10"
                         onClick={() => {
                           // Format the max amount for display
                           let formattedMaxAmount
@@ -993,8 +976,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               {addressType === 'lightning-address' &&
                 assetId === BTC_ASSET_ID &&
                 maxLightningCapacity > 0 && (
-                  <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <p className="text-xs text-blue-400">
+                  <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                    <p className="text-xs text-primary">
                       <span className="font-medium">
                         {t('withdrawModal.form.amount.lightningLimit.title')}
                       </span>{' '}
@@ -1026,8 +1009,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                                   rounded-lg transition-all duration-200 border text-xs
                                   ${
                                     field.value === fee.value
-                                      ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-                                      : 'border-border-default hover:border-blue-500/50 text-content-secondary'
+                                      ? 'bg-primary/10 border-primary text-primary'
+                                      : 'border-border-default hover:border-primary/50 text-content-secondary'
                                   }`}
                           onClick={() => field.onChange(fee.value)}
                           type="button"
@@ -1053,7 +1036,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 </label>
                 <input
                   className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default 
-                        focus:border-blue-500 focus:ring-blue-500 text-white text-sm"
+                        focus:border-primary/60 focus:ring-primary/30 text-white text-sm"
                   min={0.1}
                   onChange={(e) => setCustomFee(parseFloat(e.target.value))}
                   step={0.1}
@@ -1106,8 +1089,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
 
       {/* Submit Button */}
       <button
-        className="w-full py-2.5 px-6 bg-primary hover:bg-primary-emphasis disabled:opacity-60
-                 text-white rounded-xl font-medium transition-all duration-200 
+        className="w-full py-2.5 px-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
+                 text-white rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
                  flex items-center justify-center gap-2 mt-4 disabled:cursor-not-allowed"
         disabled={
           isSubmitting === true ||

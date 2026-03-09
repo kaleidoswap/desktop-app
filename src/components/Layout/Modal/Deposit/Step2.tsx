@@ -470,11 +470,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         className={`
           flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5
           rounded-xl transition-all duration-200 border-2
-          ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+          ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
           ${
             network === type
-              ? 'bg-blue-500/10 border-blue-500 text-blue-500'
-              : 'border-border-default hover:border-blue-500/50 text-content-secondary hover:text-blue-500/80'
+              ? 'bg-primary/10 border-primary text-primary'
+              : 'border-border-default hover:border-primary/50 text-content-secondary hover:text-primary/80'
           }
         `}
         disabled={isDisabled}
@@ -530,11 +530,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }, [invoiceStatus, onNext])
 
-  const getFaucetLink = async () => {
-    
-    setNetwork(network)
-  }
-
   return (
     <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
       <div className="flex flex-col items-center mb-2">
@@ -577,8 +572,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         {/* RGB Privacy Mode Toggle - Only show for RGB assets on on-chain */}
         {network === 'on-chain' && assetId !== BTC_ASSET_ID && (
           <div className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default animate-fadeIn">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-medium text-white">
                   {t('depositModal.step2.privacy.title')}
                 </h4>
@@ -589,17 +584,16 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 </p>
               </div>
               <button
-                className={`
-                  relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-                  ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}
-                `}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
+                  transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40
+                  ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}`}
                 onClick={() => setUsePrivacy(!usePrivacy)}
+                type="button"
               >
                 <span
-                  className={`
-                    inline-block h-4 w-4 transform rounded-full transition-transform
-                    ${usePrivacy ? 'bg-primary translate-x-6' : 'bg-surface-high translate-x-1'}
-                  `}
+                  className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm
+                    transition-transform duration-200
+                    ${usePrivacy ? 'translate-x-6' : 'translate-x-1'}`}
                 />
               </button>
             </div>
@@ -608,7 +602,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {/* Show network info and faucet suggestion in a more compact format */}
         {networkInfo && (
-          <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+          <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
             {(() => {
               const faucetKey =
                 networkInfo.network === Network.Signet
@@ -624,25 +618,25 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               return (
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-500/20 text-xs font-medium">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/20 text-xs font-medium">
                       {networkInfo.network}
                     </span>
-                    <span className="text-blue-400 text-xs">
+                    <span className="text-primary text-xs">
                       {t('depositModal.step2.networkInfo.using', {
                         network: networkInfo.network,
                       })}
                     </span>
                   </div>
 
-                  <div className="text-xs text-blue-400 mt-1">
+                  <div className="text-xs text-primary mt-1">
                     <p className="mb-1.5">
                       {t(
                         `depositModal.step2.networkInfo.description.${faucetKey}`
                       )}
                     </p>
                     <button
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/20 
-                          hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors text-xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/20 
+                          hover:bg-primary/30 text-primary rounded-lg transition-colors text-xs"
                       onClick={() => {
                         openUrl(link)
                       }}
@@ -705,7 +699,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               <div className="flex-1 relative">
                 <input
                   className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default 
-                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                           focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
                            placeholder:text-content-tertiary transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
@@ -750,7 +744,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 <input
                   autoFocus
                   className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default 
-                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white
+                           focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
                            placeholder:text-content-tertiary transition-all duration-200 text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
@@ -769,7 +763,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 {maxDepositAmount > 0 && (
                   <button
                     className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 
-                             bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 
+                             bg-primary/20 hover:bg-primary/30 text-primary 
                              rounded-lg transition-colors text-xs font-medium"
                     onClick={handleSetMaxAmount}
                     type="button"
@@ -813,8 +807,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               )}
 
             {assetId && assetId !== BTC_ASSET_ID && (
-              <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className="text-xs text-blue-400">
+              <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-xs text-primary">
                   {t('depositModal.step2.amount.rgbNote')}
                 </p>
               </div>
@@ -829,8 +823,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             )}
 
             {/* Info about zero-amount invoices */}
-            <div className="mt-1 p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-              <p className="text-xs text-blue-400">
+            <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
+              <p className="text-xs text-primary">
                 {t('depositModal.step2.amount.zeroAmountInfo')}
               </p>
             </div>
@@ -839,8 +833,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {!address ? (
           <button
-            className="w-full py-2.5 px-6 bg-primary hover:bg-primary-emphasis disabled:opacity-60
-                     text-white rounded-xl font-medium transition-all duration-200 
+            className="w-full py-2.5 px-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
+                     text-white rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
                      flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             disabled={
               loading ||
@@ -913,7 +907,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {/* Address Display - More compact */}
             <div
               className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
-                          flex items-center justify-between group hover:border-blue-500/50 
+                          flex items-center justify-between group hover:border-primary/50 
                           transition-all duration-200"
             >
               <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
@@ -933,8 +927,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-content-secondary hover:text-blue-500 disabled:opacity-50 
+                  className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors
+                           text-content-secondary hover:text-primary disabled:opacity-50 
                            disabled:cursor-not-allowed"
                   disabled={loading}
                   onClick={generateAddress}
@@ -945,8 +939,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   />
                 </button>
                 <button
-                  className="p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-content-secondary hover:text-blue-500"
+                  className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors
+                           text-content-secondary hover:text-primary"
                   onClick={handleCopy}
                   title={t('depositModal.step2.actions.copy')}
                 >
@@ -961,7 +955,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               network === 'on-chain' && (
                 <div
                   className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default 
-                            flex items-center justify-between group hover:border-blue-500/50 
+                            flex items-center justify-between group hover:border-primary/50 
                             transition-all duration-200"
                 >
                   <div className="truncate flex-1 text-content-secondary font-mono text-xs">
@@ -971,8 +965,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                       : recipientId}
                   </div>
                   <button
-                    className="ml-2 p-1.5 hover:bg-blue-500/10 rounded-lg transition-colors
-                           text-content-secondary hover:text-blue-500"
+                    className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
+                           text-content-secondary hover:text-primary"
                     onClick={handleCopyRecipientId}
                     title={t('depositModal.step2.actions.copy')}
                   >

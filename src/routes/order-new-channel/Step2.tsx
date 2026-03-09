@@ -506,58 +506,8 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           </p>
         </div>
 
-        <div className="flex justify-between mb-4">
-          <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
-              1
-            </div>
-            <div className="ml-2">
-              <p className="font-medium text-white text-sm">
-                {t('orderChannel.step1.connectLsp')}
-              </p>
-              <p className="text-xs text-content-secondary">
-                {t('orderChannel.step1.completed')}
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-surface-high">
-              <div className="h-1 bg-primary w-1/2"></div>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold text-sm">
-              2
-            </div>
-            <div className="ml-2">
-              <p className="font-medium text-white text-sm">
-                {t('orderChannel.step2.step2Label')}
-              </p>
-              <p className="text-xs text-content-secondary">
-                {t('orderChannel.step1.currentStep')}
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 mx-2 mt-5">
-            <div className="h-1 bg-surface-high"></div>
-          </div>
-          <div className="flex items-center opacity-50">
-            <div className="w-8 h-8 bg-surface-high rounded-full flex items-center justify-center text-white font-bold text-sm">
-              3
-            </div>
-            <div className="ml-2">
-              <p className="font-medium text-white text-sm">
-                {t('orderChannel.step3.step3Label')}
-              </p>
-              <p className="text-xs text-content-secondary">
-                {t('orderChannel.step1.nextStep')}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <form
-          className="bg-surface-base text-white p-4 rounded-lg shadow-lg"
+          className="w-full"
           onSubmit={handleSubmit(onSubmit)}
         >
           {isLoading ? (
@@ -575,7 +525,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                       )
                     : 0
                 }
-                containerClassName="bg-surface-overlay p-4 rounded-lg"
+                containerClassName=""
                 maxCapacity={effectiveMaxCapacity}
                 maxClientBalance={Math.min(
                   parseInt(
@@ -627,25 +577,31 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
 
               {/* Asset Configuration Section - Separate from Bitcoin */}
               <div className="bg-surface-overlay p-4 rounded-lg">
-                <label className="flex items-center space-x-3 mb-4">
-                  <input
-                    checked={addAsset}
-                    className="form-checkbox h-5 w-5 text-purple-500"
-                    onChange={(e) => {
-                      const checked = e.target.checked
-                      setAddAsset(checked)
-                      // Clear asset values when unchecking
-                      if (!checked) {
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-lg font-medium">
+                    {t('orderChannel.step2.addAssetTitle')}
+                  </span>
+                  <button
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                      addAsset ? 'bg-purple-600' : 'bg-surface-high'
+                    }`}
+                    onClick={() => {
+                      const next = !addAsset
+                      setAddAsset(next)
+                      if (!next) {
                         setValue('assetId', '')
                         setValue('lspAssetAmount', '')
                       }
                     }}
-                    type="checkbox"
-                  />
-                  <span className="text-lg font-medium">
-                    {t('orderChannel.step2.addAssetTitle')}
-                  </span>
-                </label>
+                    type="button"
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                        addAsset ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
 
                 {addAsset && (
                   <AssetChannelSection
@@ -670,7 +626,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           )}
 
           {/* Fee Estimate Section */}
-          {fees && (
+          {(fees || isLoadingFees) && (
             <FeeBreakdownDisplay
               containerClassName="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-700/50 rounded-lg p-6 mt-6"
               fees={fees}

@@ -197,7 +197,8 @@ export const makerApi = createApi({
           await client.maker.executeSwap(args)
           return { data: undefined }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),

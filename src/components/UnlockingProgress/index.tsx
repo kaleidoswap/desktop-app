@@ -81,7 +81,7 @@ export const UnlockingProgress = ({
 
       {/* Progress Steps (Vertical) */}
       {isUnlocking && !errorMessage && (
-        <div className="space-y-3 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-surface-high/50 before:to-transparent">
+        <div className="space-y-2">
           {steps.map((step, index) => {
             const Icon = step.icon
             const isCompleted = step.status === 'completed'
@@ -89,11 +89,11 @@ export const UnlockingProgress = ({
 
             return (
               <div
-                className={`relative flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 z-10 ${isCurrent
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${isCurrent
                     ? 'bg-surface-elevated/80 border-primary/30 shadow-sm shadow-primary/5'
                     : isCompleted
-                      ? 'bg-surface-base border-border-subtle/50 opacity-80'
-                      : 'bg-surface-base/50 border-transparent opacity-50'
+                      ? 'bg-surface-base border-border-subtle/50'
+                      : 'bg-surface-base/30 border-border-subtle/20'
                   }`}
                 key={step.title}
                 style={{ animationDelay: `${index * 150}ms` }}
@@ -103,7 +103,7 @@ export const UnlockingProgress = ({
                       ? 'bg-status-success/10 border-status-success/20 text-status-success'
                       : isCurrent
                         ? 'bg-primary/10 border-primary/20 text-primary'
-                        : 'bg-surface-high border-border-subtle text-content-tertiary'
+                        : 'bg-surface-high/50 border-border-subtle/50 text-content-tertiary'
                     }`}
                 >
                   {isCompleted ? (
@@ -111,13 +111,12 @@ export const UnlockingProgress = ({
                   ) : isCurrent ? (
                     <Icon className="w-5 h-5 animate-spin" />
                   ) : (
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-5 h-5 opacity-40" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4
-                    className={`text-sm font-semibold truncate ${isCurrent ? 'text-content-primary' : 'text-content-secondary'
-                      }`}
+                    className={`text-sm font-semibold truncate ${isCurrent ? 'text-content-primary' : isCompleted ? 'text-content-secondary' : 'text-content-tertiary'}`}
                   >
                     {step.title}
                   </h4>

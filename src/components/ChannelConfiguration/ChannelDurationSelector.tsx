@@ -2,8 +2,6 @@ import React from 'react'
 import { Control, Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
-import { Select } from '../Select'
-
 interface ChannelDurationSelectorProps {
   value: number
   onChange: (value: number) => void
@@ -23,30 +21,59 @@ export const ChannelDurationSelector: React.FC<
   control,
   fieldName = 'channelExpireBlocks',
   containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
-  theme = 'dark',
 }) => {
   const { t } = useTranslation()
 
   const getChannelExpiryOptions = () => {
     const options = [
-      { label: t('channelConfiguration.duration.oneMonth'), value: '4320' },
-      { label: t('channelConfiguration.duration.threeMonths'), value: '12960' },
+      { label: t('channelConfiguration.duration.oneMonth'), value: 4320 },
+      { label: t('channelConfiguration.duration.threeMonths'), value: 12960 },
     ]
 
     const sixMonthsBlocks = 25920
     if (!maxExpiryBlocks || sixMonthsBlocks <= maxExpiryBlocks) {
       options.push({
         label: t('channelConfiguration.duration.sixMonths'),
-        value: sixMonthsBlocks.toString(),
+        value: sixMonthsBlocks,
       })
     }
 
     return options
   }
 
+  const options = getChannelExpiryOptions()
+
+  const PillButtons = ({
+    currentValue,
+    onSelect,
+  }: {
+    currentValue: number
+    onSelect: (v: number) => void
+  }) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => {
+        const isSelected = currentValue === opt.value
+        return (
+          <button
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              isSelected
+                ? 'bg-gradient-to-r from-orange-500 to-yellow-600 text-white shadow-md shadow-orange-500/30'
+                : 'bg-surface-overlay/60 text-content-secondary hover:bg-surface-high/70 hover:text-content-primary border border-border-default/50'
+            }`}
+            key={opt.value}
+            onClick={() => onSelect(opt.value)}
+            type="button"
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div className={containerClassName}>
-      <label className="block text-sm font-medium text-content-secondary mb-2">
+      <label className="block text-sm font-medium text-content-secondary mb-3">
         {t('channelConfiguration.duration.label')}
         <span className="ml-2 text-content-secondary hover:text-content-secondary cursor-help relative group">
           ⓘ
@@ -60,21 +87,14 @@ export const ChannelDurationSelector: React.FC<
           control={control}
           name={fieldName}
           render={({ field }) => (
-            <Select
-              active={field.value.toString()}
-              onSelect={(value) => field.onChange(parseInt(value, 10))}
-              options={getChannelExpiryOptions()}
-              theme={theme}
+            <PillButtons
+              currentValue={field.value}
+              onSelect={(v) => field.onChange(v)}
             />
           )}
         />
       ) : (
-        <Select
-          active={value.toString()}
-          onSelect={(value) => onChange(parseInt(value, 10))}
-          options={getChannelExpiryOptions()}
-          theme={theme}
-        />
+        <PillButtons currentValue={value} onSelect={onChange} />
       )}
     </div>
   )

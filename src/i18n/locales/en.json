@@ -1711,7 +1711,9 @@
       "feeReserveConclusion": "These reserves ensure both parties can always afford necessary on-chain operations like cooperative channel closes.",
       "spendingPercentage": "{{percent}}% Spending",
       "zeroSpending": "0% Spending",
-      "fullSpending": "100% Spending"
+      "fullSpending": "100% Spending",
+      "allReceiving": "All Receiving",
+      "allSpending": "All Spending"
     },
     "assetChannel": {
       "title": "{{ticker}} Asset Channel",
@@ -2282,6 +2284,7 @@
     "form": {
       "addressPlaceholder": "Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice",
       "addressRequired": "Address or invoice is required",
+      "analyzing": "Analyzing input…",
       "clear": "Clear",
       "detected": {
         "label": "Detected:",

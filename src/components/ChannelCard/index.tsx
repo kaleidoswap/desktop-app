@@ -404,12 +404,12 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 <span className="font-medium">{asset.ticker}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px]">
-                <span className="flex items-center gap-0.5 text-indigo-300/80">
+                <span className="flex items-center gap-0.5 text-green-300/80">
                   <ArrowUpRight className="h-3 w-3" />
                   <span className="font-mono">{formatAssetAmount(channel.asset_local_amount)}</span>
                 </span>
                 <span className="text-content-tertiary/40">/</span>
-                <span className="flex items-center gap-0.5 text-fuchsia-300/80">
+                <span className="flex items-center gap-0.5 text-purple-300/80">
                   <ArrowDownRight className="h-3 w-3" />
                   <span className="font-mono">{formatAssetAmount(channel.asset_remote_amount)}</span>
                 </span>

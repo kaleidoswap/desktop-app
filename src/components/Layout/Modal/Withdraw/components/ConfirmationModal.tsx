@@ -137,10 +137,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     if (isPollingStatus) {
       return (
-        <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+        <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-            <div className="text-blue-400 text-sm">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="text-primary text-sm">
               <p>{t('withdrawModal.confirmation.status.checking')}</p>
             </div>
           </div>
@@ -150,9 +150,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     if (paymentStatus === HTLCStatus.Pending) {
       return (
-        <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+        <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
           <div className="flex items-start gap-2">
-            <div className="text-blue-400 text-sm">
+            <div className="text-primary text-sm">
               <p>{t('withdrawModal.confirmation.status.pending')}</p>
             </div>
           </div>
@@ -259,7 +259,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <span className="text-content-secondary text-sm">
                   {t('withdrawModal.confirmation.labels.transferType')}
                 </span>
-                <span className="text-blue-400 text-sm font-medium flex items-center gap-1">
+                <span className="text-primary text-sm font-medium flex items-center gap-1">
                   <svg
                     className="w-4 h-4"
                     fill="none"
@@ -357,9 +357,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
         {/* RGB asset notice */}
         {pendingData?.asset_id !== BTC_ASSET_ID && (
-          <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
+          <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
             <div className="flex items-start gap-2">
-              <div className="text-blue-400 text-xs">
+              <div className="text-primary text-xs">
                 <p>{t('withdrawModal.confirmation.rgbNotice')}</p>
               </div>
             </div>
@@ -397,9 +397,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             {t('withdrawModal.confirmation.buttons.back')}
           </button>
           <button
-            className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis disabled:opacity-60
-                     text-white rounded-lg transition-colors flex items-center justify-center
-                     gap-2 disabled:cursor-not-allowed text-sm"
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
+                     text-white rounded-lg font-semibold transition-all duration-200 shadow-md shadow-primary/20
+                     flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
             disabled={
               isConfirming ||
               isPollingStatus ||

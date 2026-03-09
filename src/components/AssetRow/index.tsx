@@ -61,9 +61,9 @@ export const AssetRow: React.FC<AssetRowProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 even:bg-surface-elevated rounded items-center">
+      <div className="grid grid-cols-4 gap-2 even:bg-surface-elevated/40 even:hover:bg-surface-elevated/70 odd:hover:bg-surface-elevated/20 transition-colors border-b border-border-default/20 items-center">
         <div
-          className="py-3 px-4 text-sm truncate cursor-pointer flex items-center hover:bg-surface-overlay/50 rounded-l"
+          className="py-3 px-4 text-sm truncate cursor-pointer flex items-center"
           onClick={() => setShowDetailsModal(true)}
         >
           <AssetIcon ticker={asset.ticker} />

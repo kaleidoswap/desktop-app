@@ -28,7 +28,6 @@ import {
   Card,
   FormField,
   PasswordInput,
-  SetupLayout,
 } from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
 import { parseRpcUrl } from '../../helpers/utils'
@@ -56,6 +55,10 @@ export const Component = () => {
 
   useEffect(() => {
     const checkNodeStatus = async () => {
+      if (!nodeSettings.node_url) {
+        navigate(WALLET_SETUP_PATH)
+        return
+      }
       setIsCheckingStatus(true)
       try {
         const nodeInfoRes = await nodeInfo()

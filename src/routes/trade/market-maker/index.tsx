@@ -72,7 +72,7 @@ import {
 } from './channelUtils'
 
 // Import our utility modules
-import { getValidationError } from './errorMessages'
+import { getValidationError, getValidationWarning } from './errorMessages'
 import {
   createFromAmountChangeHandler,
   createToAmountChangeHandler,
@@ -166,6 +166,7 @@ export const Component = () => {
   const [isPriceLoading, setIsPriceLoading] = useState(true)
   const [isQuoteLoading, setIsQuoteLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [fees, setFees] = useState({
     baseFee: 0,
     feeRate: 0,
@@ -1359,7 +1360,9 @@ export const Component = () => {
       form,
       calculateMaxTradableAmount,
       updateMinMaxAmounts,
-      setMaxFromAmount
+      setMaxFromAmount,
+      formatAmount,
+      getAssetPrecisionWrapper
     )
   }, [
     selectedPair,
@@ -1367,6 +1370,8 @@ export const Component = () => {
     calculateMaxTradableAmount,
     updateMinMaxAmounts,
     setMaxFromAmount,
+    formatAmount,
+    getAssetPrecisionWrapper,
     isUsingOnchainBalance,
     channels,
   ])
@@ -1485,6 +1490,25 @@ export const Component = () => {
         missingChannelAsset,
         t
       )
+
+      // Compute warning for max-exceeded (amber, not cleared by quotes)
+      const warningMsg = getValidationWarning(
+        fromAmount,
+        toAmount,
+        maxFromAmount,
+        maxToAmount,
+        value.fromAsset || '',
+        value.toAsset || '',
+        formatAmount,
+        displayAsset,
+        assets,
+        isToAmountLoading,
+        isQuoteLoading,
+        isPriceLoading,
+        missingChannelAsset,
+        t
+      )
+      setWarningMessage(warningMsg)
 
       // Preserve unconfirmed channel errors - they take priority over amount validation errors
       setErrorMessage((prev) => {
@@ -2863,26 +2887,14 @@ export const Component = () => {
       }
     }
 
-    // Check maximum receivable amount (add explicit check here to prevent bypassing validation)
-    if (toAmount > maxToAmount) {
-      const formattedMaxToAmount = formatAmount(maxToAmount, toAsset)
-      const displayedAsset = displayAsset(toAsset)
-      setErrorMessage(
-        t('tradeMarketMaker.error.canOnlyReceiveUpTo', {
-          amount: formattedMaxToAmount,
-          asset: displayedAsset,
-        })
-      )
-      return
-    }
-
     if (
       !hasChannels ||
       !hasTradablePairs ||
       isSwapInProgress ||
       !wsConnected ||
       !hasValidQuote ||
-      errorMessage
+      errorMessage ||
+      warningMessage
     ) {
       return
     }
@@ -3244,8 +3256,31 @@ export const Component = () => {
                 </div>
               )}
 
+              {/* Amount Limit Warning (amber) */}
+              {warningMessage && (
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/20 border border-amber-500/40 backdrop-blur-xl shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/8 to-amber-500/10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                  <div className="relative p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border border-amber-500/50 flex items-center justify-center mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-amber-300 font-semibold text-sm mb-1">
+                          {t('tradeMarketMaker.error.maxLimitExceeded')}
+                        </h4>
+                        <p className="text-amber-400/90 text-sm leading-relaxed">
+                          {warningMessage}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Compact Ultra Modern Error Message */}
-              {errorMessage && (
+              {errorMessage && !errorMessage.includes('awaiting confirmation') && (
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
                   <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/8 to-red-500/10"></div>
                   <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
@@ -3256,11 +3291,7 @@ export const Component = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-red-300 font-semibold text-sm mb-1">
-                          {errorMessage.includes(
-                            'You can only receive up to'
-                          )
-                            ? t('tradeMarketMaker.error.maxLimitExceeded')
-                            : t('tradeMarketMaker.error.title')}
+                          {t('tradeMarketMaker.error.title')}
                         </h4>
                         <p className="text-red-400/90 text-sm leading-relaxed">
                           {errorMessage}
@@ -3322,6 +3353,7 @@ export const Component = () => {
                 isSwapInProgress={isSwapInProgress}
                 isToAmountLoading={isToAmountLoading}
                 missingChannelAsset={missingChannelAsset}
+                warningMessage={warningMessage}
                 wsConnected={wsConnected}
               />
             </div>

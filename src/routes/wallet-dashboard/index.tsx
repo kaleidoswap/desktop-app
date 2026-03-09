@@ -336,7 +336,7 @@ export const Component = () => {
             </div>
 
             {/* Bitcoin row — always first */}
-            <div className="group grid grid-cols-4 gap-2 items-center hover:bg-surface-elevated/50 transition-colors border-b border-border-default/20">
+            <div className="group grid grid-cols-4 gap-2 items-center bg-surface-elevated/40 hover:bg-surface-elevated/70 transition-colors border-b border-border-default/20">
               {/* Asset cell */}
               <div className="py-3 px-4 text-sm truncate flex items-center">
                 <BtcIcon className="h-6 w-6 mr-2 flex-shrink-0" />
@@ -499,19 +499,19 @@ export const Component = () => {
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
                           <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                            <span className="flex items-center gap-0.5 text-primary">
+                            <span className="flex items-center gap-0.5 text-yellow-400">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount((ch.outbound_balance_msat || 0) / 1000, bitcoinUnit)}
                             </span>
-                            <span className="text-content-tertiary/50 font-medium">BTC</span>
-                            <span className="flex items-center gap-0.5 text-secondary">
+                            <span className="text-content-secondary font-medium">BTC</span>
+                            <span className="flex items-center gap-0.5 text-blue-400">
                               {formatBitcoinAmount((ch.inbound_balance_msat || 0) / 1000, bitcoinUnit)}
                               <ArrowDownRight className="w-2.5 h-2.5" />
                             </span>
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                            <div className="absolute left-0 top-0 h-full bg-primary rounded-l-full" style={{ width: `${btcOutPct}%` }} />
-                            <div className="absolute right-0 top-0 h-full bg-secondary rounded-r-full" style={{ width: `${btcInPct}%` }} />
+                            <div className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full" style={{ width: `${btcOutPct}%` }} />
+                            <div className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full" style={{ width: `${btcInPct}%` }} />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
                         </div>
@@ -520,19 +520,19 @@ export const Component = () => {
                         {asset && (
                           <div>
                             <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                              <span className="flex items-center gap-0.5 text-primary">
+                              <span className="flex items-center gap-0.5 text-green-400">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
                                 {ch.asset_local_amount || 0}
                               </span>
-                              <span className="text-secondary/70 font-medium">{asset.ticker}</span>
-                              <span className="flex items-center gap-0.5 text-secondary">
+                              <span className="text-green-400/60 font-medium">{asset.ticker}</span>
+                              <span className="flex items-center gap-0.5 text-purple-400">
                                 {ch.asset_remote_amount || 0}
                                 <ArrowDownRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                             <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                              <div className="absolute left-0 top-0 h-full bg-primary rounded-l-full" style={{ width: `${assetOutPct}%` }} />
-                              <div className="absolute right-0 top-0 h-full bg-secondary rounded-r-full" style={{ width: `${assetInPct}%` }} />
+                              <div className="absolute left-0 top-0 h-full bg-green-500 rounded-l-full" style={{ width: `${assetOutPct}%` }} />
+                              <div className="absolute right-0 top-0 h-full bg-purple-500 rounded-r-full" style={{ width: `${assetInPct}%` }} />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
                           </div>
@@ -549,7 +549,7 @@ export const Component = () => {
               <div className="border-t border-border-default/40 mt-4 pt-3">
                 <div className="flex justify-between text-xs text-content-tertiary mb-1.5">
                   <span className="flex items-center gap-1">
-                    <ArrowUpRight className="w-3 h-3 text-amber-400" />
+                    <ArrowUpRight className="w-3 h-3 text-yellow-400" />
                     {formatBitcoinAmount(totalOutboundLiquidity, bitcoinUnit)} {bitcoinUnit}
                   </span>
                   <span className="flex items-center gap-1">
@@ -558,7 +558,7 @@ export const Component = () => {
                   </span>
                 </div>
                 <div className="relative w-full bg-surface-elevated/60 rounded-full h-1.5 overflow-hidden">
-                  <div className="absolute left-0 top-0 h-full bg-amber-500 rounded-l-full transition-all duration-500" style={{ width: `${outboundPct}%` }} />
+                  <div className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full transition-all duration-500" style={{ width: `${outboundPct}%` }} />
                   <div className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full transition-all duration-500" style={{ width: `${inboundPct}%` }} />
                   <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                 </div>

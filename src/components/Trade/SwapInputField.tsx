@@ -169,15 +169,20 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               </span>
             </div>
           ) : (
-            <input
-              className={`w-full px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
-              disabled={disabled}
-              onChange={handleAmountChange}
-              placeholder={t('trade.swapInput.placeholder')}
-              readOnly={readOnly}
-              type="text"
-              value={value}
-            />
+            <div className="relative">
+              <input
+                className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
+                disabled={disabled}
+                onChange={handleAmountChange}
+                placeholder={t('trade.swapInput.placeholder')}
+                readOnly={readOnly}
+                type="text"
+                value={value}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide">
+                {getDisplayAsset(asset)}
+              </span>
+            </div>
           )}
         </div>
 
