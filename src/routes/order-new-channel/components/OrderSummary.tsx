@@ -6,6 +6,9 @@ import { toast } from 'react-toastify'
 import { formatBitcoinAmount } from '../../../helpers/number'
 import { Lsps1CreateOrderResponse } from '../../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import { LiquidityBar } from '../../trade/dca/components/LiquidityBar'
+import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
+import tetherLogo from '../../../assets/tether-logo.svg'
 
 interface OrderSummaryProps {
   order: Lsps1CreateOrderResponse
@@ -25,207 +28,132 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const { t } = useTranslation()
   const totalCapacity = order.lsp_balance_sat + order.client_balance_sat
 
-  return (
-    <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-2xl border border-border-default/50 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white flex items-center">
-          <span className="bg-blue-500 w-2 h-2 rounded-full mr-2"></span>
-          {t('orderChannel.step3.orderSummary')}
-        </h3>
-        {order.order_id && (
-          <CopyToClipboard
-            onCopy={() => toast.success(t('orderChannel.orderCopy'))}
-            text={order.order_id}
-          >
-            <button className="text-xs text-content-secondary hover:text-white font-mono bg-surface-base/50 px-2 py-1 rounded transition-colors">
-              {order.order_id.slice(0, 8)}...
-            </button>
-          </CopyToClipboard>
-        )}
-      </div>
+  const lspAssetRaw = order.lsp_asset_amount || orderPayload?.lsp_asset_amount || 0
+  const clientAssetRaw = order.client_asset_amount || orderPayload?.client_asset_amount || 0
+  const hasAsset = !!(order.asset_id || orderPayload?.asset_id)
 
-      <div className="space-y-4">
-        {/* Channel Info (Confirmed) */}
-        <div className="bg-surface-base/50 rounded-xl p-4">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-content-secondary">
+  return (
+    <div className="rounded-xl border border-border-subtle overflow-hidden">
+      {/* BTC Section */}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={bitcoinLogo} alt="BTC" className="w-5 h-5" />
+            <span className="text-sm font-semibold text-content-primary">
               {t('orderChannel.step3.confirmedChannel')}
             </span>
-            <span className="text-white font-bold">
+          </div>
+          <div className="flex items-center gap-2">
+            {order.order_id && (
+              <CopyToClipboard
+                onCopy={() => toast.success(t('orderChannel.orderCopy'))}
+                text={order.order_id}
+              >
+                <button className="text-[11px] text-content-secondary hover:text-white font-mono bg-surface-base/50 px-2 py-0.5 rounded transition-colors">
+                  #{order.order_id.slice(0, 6)}…
+                </button>
+              </CopyToClipboard>
+            )}
+            <span className="text-sm font-bold text-amber-400">
               {formatBitcoinAmount(totalCapacity, bitcoinUnit)} {bitcoinUnit}
             </span>
           </div>
-
-          {/* Liquidity Bar */}
-          <div className="mb-3">
-            <div className="flex justify-between text-xs text-content-secondary mb-1">
-              <span>{t('orderChannel.step3.yourLiquidity')}</span>
-              <span>{t('orderChannel.step3.lspLiquidity')}</span>
-            </div>
-            <div className="relative h-3 bg-surface-high rounded-full overflow-hidden">
-              <div
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
-                style={{
-                  width: `${(order.client_balance_sat / totalCapacity) * 100}%`,
-                }}
-              ></div>
-              <div
-                className="absolute right-0 top-0 h-full bg-gradient-to-l from-purple-500 to-purple-400 transition-all duration-300"
-                style={{
-                  width: `${(order.lsp_balance_sat / totalCapacity) * 100}%`,
-                }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="flex justify-between text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-content-secondary">
-                {t('orderChannel.step3.your')}:
-              </span>
-              <span className="text-blue-400 font-medium">
-                {formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)}{' '}
-                {bitcoinUnit}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-content-secondary">
-                {t('orderChannel.step3.lsp')}:
-              </span>
-              <span className="text-purple-400 font-medium">
-                {formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)}{' '}
-                {bitcoinUnit}
-              </span>
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-            </div>
-          </div>
         </div>
 
-        {/* Asset Information */}
-        {(orderPayload?.asset_id || order.asset_id) && (
-          <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-purple-300 font-medium flex items-center gap-2">
-                <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                {t('orderChannel.step3.rgbAssetChannel')}
+        <LiquidityBar
+          outbound={order.client_balance_sat}
+          inbound={order.lsp_balance_sat}
+          outboundLabel={`${formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)} ${bitcoinUnit}`}
+          inboundLabel={`${formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)} ${bitcoinUnit}`}
+          outboundColor="bg-amber-400"
+          inboundColor="bg-blue-400/50"
+        />
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <p className="text-content-tertiary mb-0.5">Your outbound</p>
+            <p className="font-semibold text-amber-400">
+              {formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)} {bitcoinUnit}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-content-tertiary mb-0.5">LSP inbound</p>
+            <p className="font-semibold text-content-secondary">
+              {formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)} {bitcoinUnit}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Asset section */}
+      {hasAsset && (lspAssetRaw > 0 || clientAssetRaw > 0) && (
+        <>
+          <div className="h-px bg-border-subtle" />
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <img src={tetherLogo} alt="Asset" className="w-5 h-5" />
+              <span className="text-sm font-semibold text-emerald-400">
+                {assetInfo ? `${assetInfo.name} (${assetInfo.ticker})` : t('orderChannel.step3.rgbAssetChannel')}
               </span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-content-secondary">
-                  {t('orderChannel.step3.assetId')}:
-                </span>
-                <span className="text-purple-300 font-mono text-xs">
-                  {assetInfo ? (
-                    <>
-                      {assetInfo.name} ({assetInfo.ticker})
-                    </>
-                  ) : (
-                    <>
-                      {(order.asset_id || orderPayload?.asset_id)
-                        ?.split('-')
-                        .slice(0, 2)
-                        .join('-')}
-                      ...
-                    </>
-                  )}
-                </span>
+
+            <LiquidityBar
+              outbound={clientAssetRaw}
+              inbound={lspAssetRaw}
+              outboundLabel={clientAssetRaw > 0 ? `${clientAssetRaw.toLocaleString()}${assetInfo ? ` ${assetInfo.ticker}` : ''}` : '0'}
+              inboundLabel={`${lspAssetRaw.toLocaleString()}${assetInfo ? ` ${assetInfo.ticker}` : ''}`}
+              outboundColor="bg-emerald-400"
+              inboundColor="bg-emerald-400/30"
+            />
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              {clientAssetRaw > 0 && (
+                <div>
+                  <p className="text-content-tertiary mb-0.5">Your outbound</p>
+                  <p className="font-semibold text-emerald-400">
+                    {clientAssetRaw.toLocaleString()}{assetInfo ? ` ${assetInfo.ticker}` : ''}
+                  </p>
+                </div>
+              )}
+              <div className={clientAssetRaw > 0 ? 'text-right' : ''}>
+                <p className="text-content-tertiary mb-0.5">LSP inbound</p>
+                <p className="font-semibold text-content-secondary">
+                  {lspAssetRaw.toLocaleString()}{assetInfo ? ` ${assetInfo.ticker}` : ''}
+                </p>
               </div>
-              {(order.lsp_asset_amount || orderPayload?.lsp_asset_amount) && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-content-secondary">
-                    {t('orderChannel.step3.lspAssetAmount')}:
-                  </span>
-                  <span className="text-purple-300 font-medium">
-                    {(
-                      order.lsp_asset_amount || orderPayload.lsp_asset_amount
-                    ).toLocaleString()}
-                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
-                  </span>
-                </div>
-              )}
-              {(order.client_asset_amount ||
-                orderPayload?.client_asset_amount) && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-content-secondary">
-                    {t('orderChannel.step3.yourAssetAmount')}:
-                  </span>
-                  <span className="text-blue-300 font-medium">
-                    {(
-                      order.client_asset_amount ||
-                      orderPayload.client_asset_amount
-                    ).toLocaleString()}
-                    {assetInfo ? ` ${assetInfo.ticker}` : ''}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
-        )}
+        </>
+      )}
 
-        {/* Cost Breakdown */}
-        <div className="bg-surface-base/50 rounded-xl p-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-content-secondary">
-                {t('orderChannel.step3.channelAmount')}:
-              </span>
-              <span className="text-white">
-                {formatBitcoinAmount(
-                  (currentPayment?.order_total_sat || 0) -
-                    (currentPayment?.fee_total_sat || 0),
-                  bitcoinUnit
-                )}{' '}
-                {bitcoinUnit}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-content-secondary">
-                {t('orderChannel.step3.serviceFee')}:
-              </span>
-              <span className="text-white">
-                {formatBitcoinAmount(
-                  currentPayment?.fee_total_sat || 0,
-                  bitcoinUnit
-                )}{' '}
-                {bitcoinUnit}
-              </span>
-            </div>
-            <div className="h-px bg-surface-high my-2"></div>
-            <div className="flex justify-between">
-              <span className="text-content-secondary font-medium">
-                {t('orderChannel.step3.total')}:
-              </span>
-              <span className="text-white font-bold">
-                {formatBitcoinAmount(
-                  currentPayment?.order_total_sat || 0,
-                  bitcoinUnit
-                )}{' '}
-                {bitcoinUnit}
-              </span>
-            </div>
-          </div>
+      {/* Cost breakdown */}
+      <div className="h-px bg-border-subtle" />
+      <div className="p-4 space-y-2">
+        <div className="flex justify-between text-xs">
+          <span className="text-content-secondary">{t('orderChannel.step3.channelAmount')}</span>
+          <span className="text-content-primary">
+            {formatBitcoinAmount(
+              (currentPayment?.order_total_sat || 0) - (currentPayment?.fee_total_sat || 0),
+              bitcoinUnit
+            )}{' '}
+            {bitcoinUnit}
+          </span>
         </div>
-
-        {/* Expiry Info */}
-        {/* <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
-          <div className="flex items-center gap-2 text-sm text-blue-400">
-            <Clock className="w-4 h-4" />
-            <span>
-              Expires:{' '}
-              {new Date(currentPayment?.expires_at || '').toLocaleString(
-                'en-US',
-                {
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  month: 'short',
-                }
-              )}
-            </span>
-          </div>
-        </div> */}
+        <div className="flex justify-between text-xs">
+          <span className="text-content-secondary">{t('orderChannel.step3.serviceFee')}</span>
+          <span className="text-content-primary">
+            {formatBitcoinAmount(currentPayment?.fee_total_sat || 0, bitcoinUnit)} {bitcoinUnit}
+          </span>
+        </div>
+        <div className="h-px bg-border-subtle my-1" />
+        <div className="flex justify-between">
+          <span className="text-sm font-semibold text-content-secondary">
+            {t('orderChannel.step3.total')}
+          </span>
+          <span className="text-sm font-bold text-amber-400">
+            {formatBitcoinAmount(currentPayment?.order_total_sat || 0, bitcoinUnit)} {bitcoinUnit}
+          </span>
+        </div>
       </div>
     </div>
   )

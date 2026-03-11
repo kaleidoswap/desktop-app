@@ -29,11 +29,14 @@ import {
   formatRtkQueryError,
 } from '../../utils/channelOrderUtils'
 import {
-  BitcoinChannelSection,
-  AssetChannelSection,
   FeeBreakdownDisplay,
   ChannelDurationSelector,
 } from '../ChannelConfiguration'
+
+import { LiquidityBar } from '../../routes/trade/dca/components/LiquidityBar'
+import { AssetSelectWithModal } from '../Trade/AssetSelectWithModal'
+import bitcoinLogo from '../../assets/bitcoin-logo.svg'
+import rgbIcon from '../../assets/rgb-symbol-color.svg'
 
 import {
   QuoteDisplay,
@@ -99,9 +102,6 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   >(null)
   const [paymentReceived, setPaymentReceived] = useState(false)
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [showPreselectedConfirmation, setShowPreselectedConfirmation] =
-    useState(false)
-  const hasShownConfirmation = useRef(false)
   const onSuccessRef = useRef(onSuccess)
   onSuccessRef.current = onSuccess
 
@@ -128,6 +128,12 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const [isProcessingWalletPayment, setIsProcessingWalletPayment] =
     useState(false)
   const [isLoadingData, setIsLoadingData] = useState(false)
+
+  const [channelType, setChannelType] = useState<'btc' | 'asset'>(
+    preselectedAsset ? 'asset' : 'btc'
+  )
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showCustomAssetCapacity, setShowCustomAssetCapacity] = useState(false)
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -158,16 +164,18 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
     },
   })
 
-  // Update form when preselectedAsset changes - only show confirmation once
+  // Set channel type and asset when preselectedAsset provided
   useEffect(() => {
-    if (preselectedAsset && isOpen && !hasShownConfirmation.current) {
+    if (preselectedAsset && isOpen) {
       setValue('assetId', preselectedAsset.assetId)
-      setValue('clientAssetAmount', preselectedAsset.amount.toString())
-      setShowPreselectedConfirmation(true)
-      hasShownConfirmation.current = true
+      setValue(
+        'clientAssetAmount',
+        preselectedAsset.amount > 0 ? preselectedAsset.amount.toString() : ''
+      )
+      setChannelType('asset')
     } else if (!isOpen) {
-      // Reset when modal closes
-      hasShownConfirmation.current = false
+      setChannelType(preselectedAsset ? 'asset' : 'btc')
+      setShowCustomInput(false)
     }
   }, [preselectedAsset, isOpen, setValue])
 
@@ -225,6 +233,24 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const channelExpireBlocks = watch('channelExpireBlocks')
   const clientAssetAmount = watch('clientAssetAmount')
   const totalAssetAmount = watch('totalAssetAmount')
+
+  const CAPACITY_PRESETS = [50000, 100000, 500000, 1000000, 10000000]
+  const currentCapacity = parseInt(capacitySat.replace(/[^0-9]/g, ''), 10) || 100000
+  const isCustomCapacity = !CAPACITY_PRESETS.includes(currentCapacity)
+  const btcOut = parseInt(clientBalanceSat.replace(/[^0-9]/g, ''), 10) || 0
+  const btcIn = Math.max(0, currentCapacity - btcOut)
+  const usdtOut = parseFloat(clientAssetAmount) || 0
+  const usdtTotal = parseFloat(totalAssetAmount) || 0
+  const usdtIn = Math.max(0, usdtTotal - usdtOut)
+
+  // Asset-specific derived values
+  const assetFactor = assetId && assetMap[assetId] ? Math.pow(10, assetMap[assetId].precision) : 1
+  const assetMax = assetId && assetMap[assetId] ? assetMap[assetId].max_channel_amount / assetFactor : 0
+  const assetPresetsCalc = assetMax > 0
+    ? [0.25, 0.5, 0.75, 1.0].map(p => Math.round(assetMax * p * assetFactor) / assetFactor)
+    : []
+  const isCustomAssetTotal = assetPresetsCalc.length > 0 && usdtTotal > 0 &&
+    !assetPresetsCalc.some(p => Math.abs(p - usdtTotal) < 0.001)
 
   // Set default total asset amount to max capacity when asset is selected
   useEffect(() => {
@@ -547,10 +573,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       const lspBalance = parsedCapacity - parsedClientBalance
 
       try {
-        const nodeInfoResponse = await nodeInfoRequest()
+        const [nodeInfoResponse, addressResponse] = await Promise.all([
+          nodeInfoRequest(),
+          addressRequest(),
+        ])
         const clientPubKey = nodeInfoResponse.data?.pubkey
+        const refundAddress = addressResponse.data?.address
 
-        if (!clientPubKey) {
+        if (!clientPubKey || !refundAddress) {
           return
         }
 
@@ -561,7 +591,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           client_pubkey: clientPubKey,
           funding_confirms_within_blocks: 6,
           lsp_balance_sat: lspBalance,
-          refund_onchain_address: '',
+          refund_onchain_address: refundAddress,
           required_channel_confirmations: 1,
         }
 
@@ -631,6 +661,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
     loading,
     estimateFeesRequest,
     nodeInfoRequest,
+    addressRequest,
     assetMap,
   ])
 
@@ -783,7 +814,6 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         setOrderId(orderId)
         setOrderPayload(payload)
         setOrder(channelResponse.data as Lsps1CreateOrderResponse)
-        setShowPreselectedConfirmation(false) // Hide confirmation to show payment step
         setStep(2)
       } catch (error) {
         toast.error(
@@ -899,10 +929,6 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   }
 
   const handleClose = useCallback(() => {
-    // if (step === 2 && !paymentStatus && paymentReceived) {
-    //   toast.warning('Payment is being processed, please wait')
-    //   return
-    // }
     setStep(1)
     setOrderId(null)
     setPaymentStatus(null)
@@ -911,10 +937,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
     setQuote(null)
     setQuoteError(null)
     setQuoteLoading(false)
-    setShowPreselectedConfirmation(false)
-    hasShownConfirmation.current = false
     onClose()
-  }, [step, paymentStatus, paymentReceived, onClose])
+  }, [onClose])
 
   if (!isOpen) return null
 
@@ -935,24 +959,22 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         <div className="sticky top-0 bg-gradient-to-r from-gray-900 to-gray-950 border-b border-border-subtle/50 p-6 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-              {showPreselectedConfirmation
-                ? t('components.buyChannelModal.confirmAssetPurchase')
-                : step === 1
-                  ? t('components.buyChannelModal.buyChannelWithAsset')
-                  : step === 2
-                    ? t('components.buyChannelModal.completePayment')
-                    : t('components.buyChannelModal.orderStatus')}
+              {step === 1
+                ? channelType === 'asset'
+                  ? 'Open Asset Lightning Channel'
+                  : 'Open BTC Lightning Channel'
+                : step === 2
+                  ? t('components.buyChannelModal.completePayment')
+                  : t('components.buyChannelModal.orderStatus')}
             </h2>
             <p className="text-content-secondary mt-1">
-              {showPreselectedConfirmation
-                ? t('components.buyChannelModal.reviewAndConfirm')
-                : step === 1
-                  ? t('components.buyChannelModal.configureChannel')
-                  : step === 2
-                    ? t('components.buyChannelModal.payForChannel')
-                    : paymentStatus === 'success'
-                      ? t('components.buyChannelModal.orderCompleted')
-                      : t('components.buyChannelModal.orderStatusSubtitle')}
+              {step === 1
+                ? t('components.buyChannelModal.configureChannel')
+                : step === 2
+                  ? t('components.buyChannelModal.payForChannel')
+                  : paymentStatus === 'success'
+                    ? t('components.buyChannelModal.orderCompleted')
+                    : t('components.buyChannelModal.orderStatusSubtitle')}
             </p>
           </div>
           <button
@@ -965,139 +987,23 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
         {/* Content */}
         <div className="p-6">
-          {showPreselectedConfirmation &&
-            preselectedAsset &&
-            assetMap[preselectedAsset.assetId] ? (
-            <div className="space-y-5">
-              {/* Quick Confirmation */}
-              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/40 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-blue-200 mb-1">
-                      {t('components.buyChannelModal.confirmPurchase')}
+          {step === 2 && order ? (
+            <div className="space-y-4">
+              {paymentReceived && isProcessingPayment ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <ClipLoader color="#3b82f6" size={40} />
+                  <div className="text-center">
+                    <h3 className="text-lg font-semibold text-white mb-1">
+                      Processing Payment
                     </h3>
-                    <p className="text-blue-200/80 text-sm">
-                      {t('components.buyChannelModal.purchaseDescription', {
-                        amount: formatNumberWithCommas(
-                          preselectedAsset.amount.toString()
-                        ),
-                        ticker: assetMap[preselectedAsset.assetId].ticker,
-                      })}
+                    <p className="text-content-secondary text-sm">
+                      Payment received, setting up your channel…
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Quote Display */}
-              <QuoteDisplay
-                assetInfo={assetMap[preselectedAsset.assetId]}
-                quote={quote}
-                quoteError={quoteError}
-                quoteLoading={quoteLoading}
-              />
-
-              {/* Quick Summary */}
-              {fees && quote && (
-                <div className="bg-surface-overlay/30 rounded-xl p-4 border border-border-default/30 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-content-secondary">
-                      {t('components.buyChannelModal.assetCost')}
-                    </span>
-                    <span className="text-emerald-300">
-                      {formatNumberWithCommas(
-                        (
-                          (quote.from_asset?.amount ||
-                            (quote as any).from_amount ||
-                            0) / 1000
-                        ).toString()
-                      )}{' '}
-                      sats
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-content-secondary">
-                      {t('components.buyChannelModal.yourLiquidity')}
-                    </span>
-                    <span className="text-content-primary">
-                      {formatNumberWithCommas(clientBalanceSat)} sats
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-content-secondary">
-                      {t('components.buyChannelModal.fees')}
-                    </span>
-                    <span className="text-content-primary">
-                      {formatNumberWithCommas(fees.total_fee)} sats
-                    </span>
-                  </div>
-                  <div className="flex justify-between pt-2 mt-2 border-t border-border-default">
-                    <span className="text-white font-semibold">
-                      {t('components.buyChannelModal.total')}
-                    </span>
-                    <span className="text-white font-semibold">
-                      {formatNumberWithCommas(
-                        (quote.from_asset?.amount ||
-                          (quote as any).from_amount ||
-                          0) /
-                        1000 +
-                        parseInt(
-                          clientBalanceSat.replace(/[^0-9]/g, ''),
-                          10
-                        ) +
-                        fees.total_fee
-                      )}{' '}
-                      sats
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  className="px-5 py-2.5 bg-surface-high hover:bg-surface-elevated text-white rounded-lg font-medium transition-colors"
-                  onClick={handleClose}
-                  type="button"
-                >
-                  {t('components.buyChannelModal.cancel')}
-                </button>
-                <button
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-                  onClick={() => setShowPreselectedConfirmation(false)}
-                  type="button"
-                >
-                  {t('components.buyChannelModal.customize')}
-                </button>
-                <button
-                  className="flex-1 px-5 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-medium transition-colors disabled:opacity-50"
-                  disabled={quoteLoading || !!quoteError || !quote || loading}
-                  onClick={() => handleSubmit(onSubmit)()}
-                  type="button"
-                >
-                  {quoteLoading || loading
-                    ? t('components.buyChannelModal.loading')
-                    : t('components.buyChannelModal.proceedToPayment')}
-                </button>
-              </div>
-            </div>
-          ) : step === 2 && order ? (
-            <div className="space-y-5">
-              {paymentReceived && isProcessingPayment ? (
-                <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <ClipLoader color="#3b82f6" size={40} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Processing Payment
-                  </h3>
-                  <p className="text-content-secondary text-sm">
-                    Payment received and being processed...
-                  </p>
-                </div>
               ) : (
                 <>
-                  {/* Order Summary */}
+                  {/* Channel summary */}
                   <OrderSummary
                     assetMap={assetMap}
                     fees={fees}
@@ -1105,76 +1011,89 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     quote={quote}
                   />
 
-                  {/* Payment Method Selection */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-content-secondary mb-3">
-                      Choose Payment Method
-                    </h3>
-                    <div className="flex gap-3">
-                      <button
-                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${useWalletFunds
-                            ? 'bg-primary text-primary-foreground shadow-lg'
-                            : 'bg-surface-high/50 text-content-secondary hover:bg-surface-high'
-                          }`}
-                        onClick={() => setUseWalletFunds(true)}
-                      >
-                        💰 Use Wallet Funds
-                      </button>
-                      <button
-                        className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${!useWalletFunds
-                            ? 'bg-primary text-primary-foreground shadow-lg'
-                            : 'bg-surface-high/50 text-content-secondary hover:bg-surface-high'
-                          }`}
-                        onClick={() => setUseWalletFunds(false)}
-                      >
-                        📱 External Wallet
-                      </button>
-                    </div>
+                  {/* Payment source selector */}
+                  <div className="flex gap-1.5 p-1 bg-surface-overlay rounded-xl">
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        useWalletFunds
+                          ? 'bg-primary/20 text-primary border border-primary/50'
+                          : 'text-content-secondary hover:text-content-primary'
+                      }`}
+                      onClick={() => setUseWalletFunds(true)}
+                    >
+                      💰 Use Wallet
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        !useWalletFunds
+                          ? 'bg-primary/20 text-primary border border-primary/50'
+                          : 'text-content-secondary hover:text-content-primary'
+                      }`}
+                      onClick={() => setUseWalletFunds(false)}
+                    >
+                      📱 External Wallet
+                    </button>
                   </div>
 
-                  {/* Payment Details */}
                   {useWalletFunds ? (
-                    <div className="space-y-4">
-                      {/* Lightning/On-chain tabs */}
-                      <div className="flex gap-2">
+                    <div className="space-y-3">
+                      {/* Network tabs */}
+                      <div className="flex gap-1.5 p-1 bg-surface-overlay rounded-xl">
                         <button
-                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${paymentMethodTab === 'lightning'
+                          type="button"
+                          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            paymentMethodTab === 'lightning'
                               ? 'bg-primary/20 text-primary border border-primary/50'
-                              : 'bg-surface-overlay/50 text-content-secondary hover:bg-surface-overlay'
-                            }`}
+                              : 'text-content-secondary hover:text-content-primary'
+                          }`}
                           onClick={() => setPaymentMethodTab('lightning')}
                         >
                           ⚡ Lightning
                         </button>
                         <button
-                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${paymentMethodTab === 'onchain'
+                          type="button"
+                          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            paymentMethodTab === 'onchain'
                               ? 'bg-primary/20 text-primary border border-primary/50'
-                              : 'bg-surface-overlay/50 text-content-secondary hover:bg-surface-overlay'
-                            }`}
+                              : 'text-content-secondary hover:text-content-primary'
+                          }`}
                           onClick={() => setPaymentMethodTab('onchain')}
                         >
                           ⛓️ On-chain
                         </button>
                       </div>
 
-                      {/* Balance Display */}
                       {isLoadingData ? (
-                        <div className="flex items-center justify-center gap-3 p-6">
-                          <ClipLoader color="#3B82F6" size={24} />
-                          <span className="text-content-secondary">
-                            Loading balance...
+                        <div className="flex items-center justify-center gap-3 p-4">
+                          <ClipLoader color="#3B82F6" size={20} />
+                          <span className="text-content-secondary text-sm">
+                            Loading balance…
                           </span>
                         </div>
                       ) : (
                         <>
-                          <div className="bg-surface-base/50 rounded-xl p-4">
-                            <div className="flex justify-between items-center mb-3">
-                              <span className="text-content-secondary text-sm">
+                          {/* Balance vs amount */}
+                          <div className="p-4 rounded-xl bg-surface-overlay/40 border border-border-subtle space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-content-tertiary">
                                 {paymentMethodTab === 'lightning'
-                                  ? 'Max Sendable'
-                                  : 'Available Balance'}
+                                  ? 'Lightning balance'
+                                  : 'On-chain balance'}
                               </span>
-                              <span className="text-white font-semibold">
+                              <span
+                                className={`font-semibold ${
+                                  (paymentMethodTab === 'lightning'
+                                    ? outboundLiquidity
+                                    : onChainBalance) >=
+                                  (paymentMethodTab === 'lightning'
+                                    ? order.payment?.bolt11?.order_total_sat || 0
+                                    : order.payment?.onchain?.order_total_sat || 0)
+                                    ? 'text-content-primary'
+                                    : 'text-red-400'
+                                }`}
+                              >
                                 {formatNumberWithCommas(
                                   paymentMethodTab === 'lightning'
                                     ? outboundLiquidity
@@ -1183,170 +1102,95 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                                 sats
                               </span>
                             </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-content-secondary text-sm">
-                                Amount to Pay
+                            <div className="flex justify-between pt-2 border-t border-border-subtle">
+                              <span className="text-content-secondary font-medium">
+                                To pay
                               </span>
-                              <span className="text-emerald-300 font-semibold">
+                              <span className="text-amber-300 font-bold">
                                 {formatNumberWithCommas(
                                   paymentMethodTab === 'lightning'
-                                    ? order.payment?.bolt11?.order_total_sat ||
-                                    0
-                                    : order.payment?.onchain?.order_total_sat ||
-                                    0
+                                    ? order.payment?.bolt11?.order_total_sat || 0
+                                    : order.payment?.onchain?.order_total_sat || 0
                                 )}{' '}
                                 sats
                               </span>
                             </div>
                           </div>
 
-                          {/* Insufficient Balance Warning */}
+                          {/* Insufficient warning */}
                           {((paymentMethodTab === 'lightning' &&
                             outboundLiquidity <
-                            (order.payment?.bolt11?.order_total_sat || 0)) ||
+                              (order.payment?.bolt11?.order_total_sat || 0)) ||
                             (paymentMethodTab === 'onchain' &&
                               onChainBalance <
-                              (order.payment?.onchain?.order_total_sat ||
-                                0))) && (
-                              <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3">
-                                <div className="flex items-start gap-2">
-                                  <Info className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                                  <p className="text-yellow-200/80 text-sm">
-                                    Insufficient balance. Please use external
-                                    wallet or add funds to your wallet.
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                          {/* Channel Fees Breakdown */}
-                          {fees && (
-                            <div className="bg-surface-base/50 rounded-xl p-4 border border-border-default/30">
-                              <h4 className="text-sm font-semibold text-content-secondary mb-3">
-                                Channel Fees
-                              </h4>
-                              <div className="space-y-2 text-sm">
-                                {fees.setup_fee > 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-content-secondary">
-                                      Setup Fee
-                                    </span>
-                                    <span className="text-content-primary">
-                                      {formatNumberWithCommas(fees.setup_fee)}{' '}
-                                      sats
-                                    </span>
-                                  </div>
-                                )}
-                                {fees.capacity_fee > 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-content-secondary">
-                                      Capacity Fee
-                                    </span>
-                                    <span className="text-content-primary">
-                                      {formatNumberWithCommas(
-                                        fees.capacity_fee
-                                      )}{' '}
-                                      sats
-                                    </span>
-                                  </div>
-                                )}
-                                {fees.duration_fee > 0 && (
-                                  <div className="flex justify-between">
-                                    <span className="text-content-secondary">
-                                      Duration Fee
-                                    </span>
-                                    <span className="text-content-primary">
-                                      {formatNumberWithCommas(
-                                        fees.duration_fee
-                                      )}{' '}
-                                      sats
-                                    </span>
-                                  </div>
-                                )}
-                                {fees.applied_discount &&
-                                  fees.applied_discount > 0 && (
-                                    <div className="flex justify-between text-green-400">
-                                      <span>
-                                        {t(
-                                          'components.buyChannelModal.discount'
-                                        )}
-                                      </span>
-                                      <span>
-                                        -
-                                        {formatNumberWithCommas(
-                                          fees.applied_discount
-                                        )}{' '}
-                                        sats
-                                      </span>
-                                    </div>
-                                  )}
-                                <div className="flex justify-between pt-2 mt-2 border-t border-border-default/50">
-                                  <span className="text-content-secondary font-medium">
-                                    Total Channel Fees
-                                  </span>
-                                  <span className="text-blue-300 font-semibold">
-                                    {formatNumberWithCommas(fees.total_fee)}{' '}
-                                    sats
-                                  </span>
-                                </div>
-                              </div>
+                                (order.payment?.onchain?.order_total_sat ||
+                                  0))) && (
+                            <div className="flex items-start gap-2 p-3 rounded-xl bg-red-900/20 border border-red-700/40 text-xs">
+                              <Info className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-red-200/80">
+                                Insufficient balance. Switch to External Wallet
+                                or add funds first.
+                              </span>
                             </div>
                           )}
 
-                          {/* Fee Selector for On-chain */}
+                          {/* On-chain fee rate */}
                           {paymentMethodTab === 'onchain' && (
-                            <div className="bg-surface-base/50 rounded-xl p-4">
-                              <h4 className="text-sm font-semibold text-content-secondary mb-3">
-                                Transaction Fee
-                              </h4>
-                              <div className="grid grid-cols-2 gap-3">
+                            <div className="p-4 rounded-xl bg-surface-overlay/40 border border-border-subtle">
+                              <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider mb-3">
+                                Transaction Fee Rate
+                              </p>
+                              <div className="grid grid-cols-4 gap-2">
                                 {feeRates.map((rate) => (
                                   <button
-                                    className={`p-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between text-sm ${selectedFee === rate.value
-                                        ? 'border-blue-500 bg-blue-500/10 text-blue-500'
-                                        : 'border-border-default text-content-secondary hover:border-blue-500/50'
-                                      }`}
                                     key={rate.value}
-                                    onClick={() => setSelectedFee(rate.value)}
                                     type="button"
+                                    className={`flex flex-col items-center gap-0.5 p-2.5 rounded-xl border transition-all ${
+                                      selectedFee === rate.value
+                                        ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+                                        : 'border-border-default text-content-secondary hover:border-blue-500/50 hover:text-content-primary'
+                                    }`}
+                                    onClick={() => setSelectedFee(rate.value)}
                                   >
-                                    <div className="flex items-center gap-2">
-                                      {getFeeIcon(rate.value)}
-                                      <span>{rate.label}</span>
-                                    </div>
+                                    {getFeeIcon(rate.value)}
+                                    <span className="text-[11px] font-semibold mt-0.5">
+                                      {rate.label}
+                                    </span>
                                     {rate.value !== 'custom' && (
-                                      <span>{rate.rate} sat/vB</span>
+                                      <span className="text-[10px] opacity-60">
+                                        {rate.rate} s/vB
+                                      </span>
                                     )}
                                   </button>
                                 ))}
                               </div>
                               {selectedFee === 'custom' && (
                                 <input
-                                  className="mt-3 w-full px-4 py-3 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white"
+                                  type="number"
+                                  step="0.1"
+                                  value={customFee}
                                   onChange={(e) =>
                                     setCustomFee(parseFloat(e.target.value))
                                   }
-                                  placeholder="Custom fee rate (sat/vB)"
-                                  step="0.1"
-                                  type="number"
-                                  value={customFee}
+                                  placeholder="Custom rate (sat/vB)"
+                                  className="mt-3 w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-blue-500 text-white text-sm"
                                 />
                               )}
                             </div>
                           )}
 
-                          {/* Pay Button */}
+                          {/* Pay button */}
                           <button
-                            className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-bold text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={
                               (paymentMethodTab === 'lightning' &&
                                 outboundLiquidity <
-                                (order.payment?.bolt11?.order_total_sat ||
-                                  0)) ||
+                                  (order.payment?.bolt11?.order_total_sat ||
+                                    0)) ||
                               (paymentMethodTab === 'onchain' &&
                                 onChainBalance <
-                                (order.payment?.onchain?.order_total_sat ||
-                                  0))
+                                  (order.payment?.onchain?.order_total_sat ||
+                                    0))
                             }
                             onClick={() => setShowWalletConfirmation(true)}
                           >
@@ -1357,9 +1201,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     </div>
                   ) : (
                     <PaymentSection
-                      onTabChange={setPaymentMethodTab}
                       paymentData={order.payment}
-                      paymentMethod={paymentMethodTab}
                     />
                   )}
                 </>
@@ -1382,110 +1224,288 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               status={paymentStatus}
             />
           ) : step === 1 ? (
-            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {/* Info Banner */}
-              <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-700/40 rounded-xl p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="text-blue-200 font-semibold mb-1">
-                      Buy Asset in Lightning Channel
-                    </h3>
-                    <p className="text-blue-200/80 text-sm">
-                      You'll purchase the asset at the current market rate and
-                      receive it in a Lightning channel.
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-blue-950/30 rounded-lg p-3 border border-blue-800/30">
-                  <div className="flex items-start gap-2">
-                    <Clock className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-yellow-200/90 text-xs">
-                      <strong>
-                        {t('components.buyChannelModal.confirmationTime')}
-                      </strong>{' '}
-                      The channel requires ~6 on-chain confirmations
-                      (approximately 1 hour). Your asset will be locked at
-                      today's rate and ready to trade once confirmed.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
 
-              {/* Channel Configuration */}
-              <div className="space-y-4">
-                {/* Bitcoin Channel Configuration */}
-                <BitcoinChannelSection
-                  capacityPresets={[50000, 100000, 500000, 1000000, 10000000]}
-                  clientBalance={
-                    clientBalanceSat
-                      ? parseInt(clientBalanceSat.replace(/[^0-9]/g, ''), 10) ||
-                      0
-                      : 0
-                  }
-                  maxCapacity={effectiveMaxCapacity}
-                  maxClientBalance={
-                    capacitySat
-                      ? Math.min(
-                        parseInt(capacitySat.replace(/[^0-9]/g, ''), 10) || 0,
-                        lspOptions?.max_initial_client_balance_sat ||
-                        Number.MAX_SAFE_INTEGER
-                      )
-                      : 0
-                  }
-                  minCapacity={effectiveMinCapacity}
-                  minClientBalance={
-                    lspOptions?.min_initial_client_balance_sat || 0
-                  }
-                  onCapacityChange={(capacity) => {
-                    setValue('capacitySat', capacity.toString())
-                    // Adjust client balance if it exceeds new capacity
-                    const currentClientBalance = parseInt(
-                      clientBalanceSat.replace(/[^0-9]/g, ''),
-                      10
-                    )
-                    if (currentClientBalance > capacity) {
-                      setValue(
-                        'clientBalanceSat',
-                        Math.floor(capacity / 2).toString()
-                      )
-                    }
-                  }}
-                  onClientBalanceChange={(value) =>
-                    setValue('clientBalanceSat', value.toString())
-                  }
-                  totalCapacity={
-                    capacitySat
-                      ? parseInt(capacitySat.replace(/[^0-9]/g, ''), 10) || 0
-                      : 0
-                  }
-                />
+              {/* Channel Type Toggle */}
+              {Object.keys(assetMap).length > 0 && (
+                <div className="flex gap-1.5 p-1 bg-surface-overlay rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelType('btc')
+                      setValue('assetId', '')
+                      setValue('clientAssetAmount', '')
+                      setValue('totalAssetAmount', '0')
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                      channelType === 'btc'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'text-content-secondary hover:text-content-primary'
+                    }`}
+                  >
+                    <img src={bitcoinLogo} alt="BTC" className="w-4 h-4" />
+                    BTC Only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelType('asset')
+                      const firstId =
+                        preselectedAsset?.assetId || Object.keys(assetMap)[0]
+                      setValue('assetId', firstId)
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                      channelType === 'asset'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'text-content-secondary hover:text-content-primary'
+                    }`}
+                  >
+                    <img src={bitcoinLogo} alt="BTC" className="w-4 h-4" />
+                    <span className="text-content-tertiary">+</span>
+                    <img src={rgbIcon} alt="RGB" className="w-4 h-4" />
+                    BTC + RGB Asset
+                  </button>
+                </div>
+              )}
 
-                {/* Asset Selection - Separate Section */}
-                {Object.keys(assetMap).length > 0 && (
-                  <AssetChannelSection
-                    assetMap={assetMap}
-                    clientAssetAmount={
-                      clientAssetAmount ? parseFloat(clientAssetAmount) : 0
-                    }
-                    control={control}
-                    onAssetChange={(value) => setValue('assetId', value)}
-                    onClientAssetAmountChange={(value) =>
-                      setValue('clientAssetAmount', value.toString())
-                    }
-                    onTotalAssetAmountChange={(value) =>
-                      setValue('totalAssetAmount', value.toString())
-                    }
-                    selectedAssetId={assetId}
-                    totalAssetAmount={
-                      totalAssetAmount ? parseFloat(totalAssetAmount) : 0
-                    }
+              {/* Asset selector — shown when asset mode and multiple assets available */}
+              {channelType === 'asset' && Object.keys(assetMap).length > 1 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-content-secondary uppercase tracking-wider mb-2">
+                    {t('channelConfiguration.assetSection.chooseAsset')}
+                  </p>
+                  <AssetSelectWithModal
+                    className="w-full"
+                    fieldLabel={t('channelConfiguration.assetSection.chooseAsset')}
+                    onChange={(value) => {
+                      setValue('assetId', value)
+                      setValue('clientAssetAmount', '')
+                      setValue('totalAssetAmount', '0')
+                    }}
+                    options={Object.entries(assetMap).map(([id, info]) => ({
+                      assetId: id,
+                      label: info.name,
+                      name: info.name,
+                      ticker: info.ticker,
+                      value: id,
+                    }))}
+                    placeholder={t('channelConfiguration.assetSection.searchPlaceholder')}
+                    searchPlaceholder={t('channelConfiguration.assetSection.searchPlaceholder')}
+                    title={t('channelConfiguration.assetSection.selectAssetTitle')}
+                    value={assetId}
+                  />
+                </div>
+              )}
+
+              {/* Channel Capacity */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                  Channel Capacity
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {CAPACITY_PRESETS.filter(
+                    (p) =>
+                      p >= effectiveMinCapacity && p <= effectiveMaxCapacity
+                  ).map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        currentCapacity === preset && !showCustomInput
+                          ? 'bg-primary/20 text-primary border-primary/50'
+                          : 'bg-surface-overlay text-content-secondary border-transparent hover:border-border-default hover:text-content-primary'
+                      }`}
+                      onClick={() => {
+                        setShowCustomInput(false)
+                        setValue('capacitySat', preset.toString())
+                        if (btcOut >= preset) {
+                          setValue(
+                            'clientBalanceSat',
+                            Math.floor(preset * 0.2).toString()
+                          )
+                        }
+                      }}
+                    >
+                      {preset >= 1_000_000
+                        ? `${preset / 1_000_000}M`
+                        : `${preset / 1000}K`}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                      showCustomInput || isCustomCapacity
+                        ? 'bg-primary/20 text-primary border-primary/50'
+                        : 'bg-surface-overlay text-content-secondary border-transparent hover:border-border-default hover:text-content-primary'
+                    }`}
+                    onClick={() => setShowCustomInput(true)}
+                  >
+                    Custom
+                  </button>
+                </div>
+                {(showCustomInput || isCustomCapacity) && (
+                  <input
+                    type="number"
+                    min={effectiveMinCapacity}
+                    max={effectiveMaxCapacity}
+                    value={currentCapacity}
+                    onChange={(e) => setValue('capacitySat', e.target.value)}
+                    className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary text-white text-sm"
+                    placeholder={`${effectiveMinCapacity} – ${effectiveMaxCapacity} sats`}
                   />
                 )}
+                <p className="text-[11px] text-content-tertiary">
+                  Min: {formatNumberWithCommas(effectiveMinCapacity)} · Max:{' '}
+                  {formatNumberWithCommas(effectiveMaxCapacity)} sats
+                </p>
               </div>
 
+              {/* BTC Liquidity */}
+              <div className="space-y-3 p-4 rounded-xl bg-surface-overlay/30 border border-border-subtle">
+                <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                  BTC Liquidity
+                </p>
+                <LiquidityBar
+                  outbound={btcOut}
+                  inbound={btcIn}
+                  outboundLabel={formatNumberWithCommas(btcOut) + ' sats'}
+                  inboundLabel={formatNumberWithCommas(btcIn) + ' sats'}
+                  outboundColor="bg-amber-400"
+                  inboundColor="bg-blue-400/50"
+                />
+                <input
+                  type="range"
+                  min={lspOptions?.min_initial_client_balance_sat || 0}
+                  max={Math.min(
+                    currentCapacity,
+                    lspOptions?.max_initial_client_balance_sat || currentCapacity
+                  )}
+                  value={btcOut}
+                  onChange={(e) =>
+                    setValue('clientBalanceSat', e.target.value)
+                  }
+                  className="w-full h-1.5 cursor-pointer accent-amber-400"
+                />
+                <div className="flex justify-between text-[11px] text-content-tertiary">
+                  <span>Outbound (you send)</span>
+                  <span>Inbound (you receive)</span>
+                </div>
+              </div>
+
+              {/* Asset Liquidity */}
+              {channelType === 'asset' && assetId && assetMap[assetId] && (
+                <div className="rounded-xl border border-emerald-500/30 p-4 space-y-4 bg-emerald-950/10">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <img src={rgbIcon} alt="RGB" className="w-6 h-6" />
+                    <div>
+                      <p className="font-semibold text-sm text-content-primary">
+                        {assetMap[assetId].name} ({assetMap[assetId].ticker})
+                      </p>
+                      <p className="text-xs text-content-secondary">
+                        Total: {usdtTotal.toFixed(assetMap[assetId].precision > 0 ? 2 : 0)}{' '}
+                        {assetMap[assetId].ticker}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Total capacity presets */}
+                  <div>
+                    <p className="text-[11px] font-semibold text-content-secondary uppercase tracking-wider mb-2">
+                      Total Capacity
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {assetPresetsCalc.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            Math.abs(usdtTotal - preset) < 0.001 && !showCustomAssetCapacity
+                              ? 'bg-emerald-400/20 text-emerald-400 border border-emerald-400/50'
+                              : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-emerald-400/30 hover:text-content-primary'
+                          }`}
+                          onClick={() => {
+                            setShowCustomAssetCapacity(false)
+                            setValue('totalAssetAmount', preset.toString())
+                            if (usdtOut > preset) setValue('clientAssetAmount', preset.toString())
+                          }}
+                        >
+                          {preset >= 1000
+                            ? `${(preset / 1000).toFixed(1)}K`
+                            : preset.toFixed(assetMap[assetId].precision > 0 ? 2 : 0)}{' '}
+                          {assetMap[assetId].ticker}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          showCustomAssetCapacity || isCustomAssetTotal
+                            ? 'bg-emerald-400/20 text-emerald-400 border border-emerald-400/50'
+                            : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-emerald-400/30 hover:text-content-primary'
+                        }`}
+                        onClick={() => setShowCustomAssetCapacity((v) => !v)}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    {(showCustomAssetCapacity || isCustomAssetTotal) && (
+                      <input
+                        type="number"
+                        value={totalAssetAmount}
+                        onChange={(e) => {
+                          setValue('totalAssetAmount', e.target.value)
+                          const newTotal = parseFloat(e.target.value) || 0
+                          if (usdtOut > newTotal) setValue('clientAssetAmount', e.target.value)
+                        }}
+                        min={0}
+                        max={assetMax}
+                        step={1 / assetFactor}
+                        placeholder={`Custom (${assetMap[assetId].ticker})`}
+                        className="mt-2 w-full px-3 py-2 bg-surface-overlay rounded-xl border border-border-default focus:border-emerald-400 text-white text-sm outline-none"
+                      />
+                    )}
+                  </div>
+
+                  {/* Asset liquidity bar */}
+                  <LiquidityBar
+                    outbound={usdtOut}
+                    inbound={usdtIn}
+                    outboundLabel={`${usdtOut.toFixed(2)} ${assetMap[assetId].ticker}`}
+                    inboundLabel={`${usdtIn.toFixed(2)} ${assetMap[assetId].ticker}`}
+                    outboundColor="bg-emerald-400"
+                    inboundColor="bg-emerald-400/30"
+                  />
+
+                  {/* Buy amount slider */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1.5">
+                      <span className="text-content-secondary">Buy amount (outbound)</span>
+                      <span className="text-emerald-400 font-semibold">
+                        {usdtOut.toFixed(2)} {assetMap[assetId].ticker}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={usdtTotal || assetMax}
+                      step={1 / assetFactor}
+                      value={usdtOut}
+                      onChange={(e) => setValue('clientAssetAmount', e.target.value)}
+                      className="w-full h-1.5 cursor-pointer accent-emerald-400"
+                    />
+                    <div className="flex justify-between text-[10px] text-content-tertiary mt-1">
+                      <span>0 (all inbound)</span>
+                      <span>
+                        {(usdtTotal || assetMax).toFixed(2)} {assetMap[assetId].ticker} (all outbound)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Quote Display */}
-              {assetId &&
+              {channelType === 'asset' &&
+                assetId &&
                 clientAssetAmount &&
                 parseFloat(clientAssetAmount) > 0 && (
                   <QuoteDisplay
@@ -1496,8 +1516,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   />
                 )}
 
-              {/* Channel Duration - After Asset Configuration */}
-              {assetId && assetMap[assetId] && (
+              {/* Channel Duration */}
+              {channelType === 'asset' && assetId && assetMap[assetId] && (
                 <ChannelDurationSelector
                   control={control}
                   maxExpiryBlocks={lspOptions?.max_channel_expiry_blocks}
@@ -1505,6 +1525,15 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   value={channelExpireBlocks}
                 />
               )}
+
+              {/* Confirmation notice */}
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-surface-overlay/30 border border-border-subtle">
+                <Clock className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p className="text-yellow-200/80 text-xs">
+                  Channel requires ~6 on-chain confirmations (~1 hour). Your
+                  liquidity will be ready to trade once confirmed.
+                </p>
+              </div>
 
               {/* Fee Display */}
               {fees && (
@@ -1514,25 +1543,25 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                       clientAssetAmount &&
                       parseFloat(clientAssetAmount) > 0
                       ? [
-                        {
-                          amount:
-                            (quote.from_asset?.amount ||
-                              (quote as any).from_amount ||
-                              0) / 1000,
-                          className: 'text-emerald-300 font-medium',
-                          label: t(
-                            'components.buyChannelModal.assetPurchase'
-                          ),
-                        },
-                        {
-                          amount: parseInt(
-                            clientBalanceSat.replace(/[^0-9]/g, '') || '0'
-                          ),
-                          label: t(
-                            'components.buyChannelModal.yourLiquidity'
-                          ),
-                        },
-                      ]
+                          {
+                            amount:
+                              (quote.from_asset?.amount ||
+                                (quote as any).from_amount ||
+                                0) / 1000,
+                            className: 'text-emerald-300 font-medium',
+                            label: t(
+                              'components.buyChannelModal.assetPurchase'
+                            ),
+                          },
+                          {
+                            amount: parseInt(
+                              clientBalanceSat.replace(/[^0-9]/g, '') || '0'
+                            ),
+                            label: t(
+                              'components.buyChannelModal.yourLiquidity'
+                            ),
+                          },
+                        ]
                       : []),
                   ]}
                   fees={fees}
@@ -1541,30 +1570,31 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               )}
 
               {/* Actions */}
-              <div className="flex gap-4">
+              <div className="flex gap-3 pt-1">
                 <button
-                  className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors"
-                  onClick={handleClose}
                   type="button"
+                  className="flex-1 px-4 py-2.5 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors text-sm"
+                  onClick={handleClose}
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
                   disabled={
                     loading ||
-                    !assetId ||
-                    (!!clientAssetAmount &&
+                    (channelType === 'asset' &&
+                      !!clientAssetAmount &&
                       parseFloat(clientAssetAmount) > 0 &&
                       (quoteLoading || (!quote && !quoteError)))
                   }
-                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {quoteLoading &&
-                    !!clientAssetAmount &&
-                    parseFloat(clientAssetAmount) > 0
+                  channelType === 'asset' &&
+                  !!clientAssetAmount &&
+                  parseFloat(clientAssetAmount) > 0
                     ? 'Loading Quote...'
-                    : 'Continue to Payment'}
+                    : 'Continue →'}
                 </button>
               </div>
             </form>

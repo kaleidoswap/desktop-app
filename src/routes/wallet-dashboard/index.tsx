@@ -3,6 +3,7 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowLeftRight,
   AlertTriangle,
   Info,
   Plus,
@@ -28,6 +29,7 @@ import {
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
+  TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
@@ -274,14 +276,21 @@ export const Component = () => {
               </div>
             </div>
 
-            {/* Actions — compact 3-button row */}
-            <div className="relative z-10 grid grid-cols-3 gap-2">
+            {/* Actions — compact 4-button row */}
+            <div className="relative z-10 grid grid-cols-4 gap-2">
               <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
                 onClick={() => dispatch(uiSliceActions.setModal({ assetId: niaAssets[0]?.asset_id, type: 'deposit' }))}
               >
                 <Download className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.deposit')}</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-primary/15 hover:bg-primary/25 border border-primary/30 hover:border-primary/50 text-primary text-xs font-semibold transition-all overflow-hidden"
+                onClick={() => navigate(TRADE_PATH)}
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{t('dashboard.swap', 'Swap')}</span>
               </button>
               <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 hover:border-status-danger/50 text-status-danger text-xs font-semibold transition-all overflow-hidden"

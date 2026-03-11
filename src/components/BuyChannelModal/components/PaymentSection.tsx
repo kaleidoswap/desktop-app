@@ -1,4 +1,4 @@
-import { Copy, Info, Clock } from 'lucide-react'
+import React from 'react'
 import QRCode from 'qrcode.react'
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
@@ -8,117 +8,81 @@ import { formatNumberWithCommas } from '../../../helpers/number'
 
 interface PaymentSectionProps {
   paymentData: any
-  paymentMethod: 'lightning' | 'onchain'
-  onTabChange: (method: 'lightning' | 'onchain') => void
 }
 
 export const PaymentSection: React.FC<PaymentSectionProps> = ({
   paymentData,
-  paymentMethod,
-  onTabChange,
 }) => {
-  const { t, i18n } = useTranslation()
-  const currentPayment =
-    paymentMethod === 'lightning' ? paymentData?.bolt11 : paymentData?.onchain
+  const { t } = useTranslation()
 
-  const paymentValue =
-    paymentMethod === 'lightning'
-      ? currentPayment?.invoice
-      : currentPayment?.address
+  const bolt11Invoice = paymentData?.bolt11?.invoice
+  const onchainAddress = paymentData?.onchain?.address
+  const amountSat = paymentData?.bolt11?.order_total_sat || paymentData?.onchain?.order_total_sat || 0
+  const amountBTC = amountSat / 100_000_000
+  const totalAmount = amountSat
+  const expiresAt = paymentData?.bolt11?.expires_at || paymentData?.onchain?.expires_at
 
-  const totalAmount =
-    paymentMethod === 'lightning'
-      ? currentPayment?.order_total_sat
-      : currentPayment?.order_total_sat
+  let bip21URI = ''
+  if (bolt11Invoice && onchainAddress) {
+    bip21URI = `bitcoin:${onchainAddress}?amount=${amountBTC}&lightning=${bolt11Invoice}`
+  } else if (bolt11Invoice) {
+    bip21URI = `lightning:${bolt11Invoice}`
+  } else if (onchainAddress) {
+    bip21URI = `bitcoin:${onchainAddress}?amount=${amountBTC}`
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Total Amount */}
-      <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-700/50 rounded-xl p-4 text-center">
-        <p className="text-content-secondary text-sm mb-1">
-          {t('buyChannel.totalPayment')}
-        </p>
-        <p className="text-2xl font-bold text-white">
-          {formatNumberWithCommas(totalAmount || 0)}{' '}
-          <span className="text-lg text-content-secondary">sats</span>
-        </p>
-        {currentPayment?.expires_at && (
-          <div className="flex items-center justify-center gap-2 mt-2 text-yellow-300 text-xs">
-            <Clock className="w-3 h-3" />
-            <span>
-              {t('buyChannel.expires', {
-                time: new Date(currentPayment.expires_at).toLocaleTimeString(
-                  i18n.language || undefined
-                ),
-              })}
-            </span>
+    <div className="space-y-3">
+      {/* Amount + expiry row */}
+      <div className="flex items-center justify-between p-3 rounded-xl bg-surface-overlay/40 border border-border-subtle">
+        <div>
+          <p className="text-[11px] text-content-tertiary mb-0.5">Send exactly</p>
+          <p className="text-lg font-bold text-white">
+            {formatNumberWithCommas(totalAmount || 0)}{' '}
+            <span className="text-sm text-content-secondary">sats</span>
+          </p>
+        </div>
+        {expiresAt && (
+          <div className="text-right">
+            <p className="text-[11px] text-content-tertiary mb-0.5">Expires</p>
+            <p className="text-xs text-yellow-400 font-medium">
+              {new Date(expiresAt).toLocaleTimeString()}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Payment Method Tabs */}
-      <div className="flex gap-3">
-        <button
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-            paymentMethod === 'lightning'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-surface-high text-content-secondary hover:bg-surface-elevated'
-          }`}
-          onClick={() => onTabChange('lightning')}
-        >
-          {t('buyChannel.lightningTab')}
-        </button>
-        <button
-          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-            paymentMethod === 'onchain'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-surface-high text-content-secondary hover:bg-surface-elevated'
-          }`}
-          onClick={() => onTabChange('onchain')}
-        >
-          {t('buyChannel.onchainTab')}
-        </button>
-      </div>
-
-      {/* Payment Instructions */}
-      <div className="bg-surface-overlay/30 border border-border-default/30 rounded-lg p-3">
-        <div className="flex items-start gap-2">
-          <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-content-secondary">
-            {paymentMethod === 'lightning'
-              ? t('buyChannel.lightningInstructions')
-              : t('buyChannel.onchainInstructions', {
-                  confirmations:
-                    currentPayment?.min_onchain_payment_confirmations || 1,
-                })}
-          </p>
-        </div>
-      </div>
-
-      {/* QR Code and Copy */}
-      <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
-        <div className="flex justify-center mb-3">
-          <div className="bg-white p-3 rounded-lg">
-            <QRCode size={180} value={paymentValue || ''} />
+      {/* BIP21 QR */}
+      {bip21URI && (
+        <div className="flex justify-center p-5 rounded-xl bg-white/5 border border-border-subtle">
+          <div className="bg-white p-3 rounded-xl shadow-lg">
+            <QRCode size={168} value={bip21URI} />
           </div>
         </div>
+      )}
 
-        <div className="bg-surface-base/50 rounded-lg p-2 mb-3 break-all font-mono text-xs text-content-secondary">
-          {paymentValue}
-        </div>
-
-        <CopyToClipboard
-          onCopy={() => toast.success(t('buyChannel.copySuccess'))}
-          text={paymentValue || ''}
-        >
-          <button className="w-full px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-            <Copy className="w-4 h-4" />
-            {paymentMethod === 'lightning'
-              ? t('buyChannel.copyInvoice')
-              : t('buyChannel.copyAddress')}
-          </button>
-        </CopyToClipboard>
+      {/* Copy buttons side by side */}
+      <div className="grid grid-cols-2 gap-2">
+        {bolt11Invoice && (
+          <CopyToClipboard onCopy={() => toast.success(t('buyChannel.copySuccess'))} text={bolt11Invoice}>
+            <button className="py-2.5 rounded-xl text-xs font-semibold bg-surface-overlay border border-border-subtle hover:border-blue-400/50 hover:text-blue-300 transition-all flex items-center justify-center gap-1.5">
+              ⚡ {t('buyChannel.copyInvoice')}
+            </button>
+          </CopyToClipboard>
+        )}
+        {onchainAddress && (
+          <CopyToClipboard onCopy={() => toast.success(t('buyChannel.copySuccess'))} text={onchainAddress}>
+            <button className="py-2.5 rounded-xl text-xs font-semibold bg-surface-overlay border border-border-subtle hover:border-amber-400/50 hover:text-amber-300 transition-all flex items-center justify-center gap-1.5">
+              ₿ {t('buyChannel.copyAddress')}
+            </button>
+          </CopyToClipboard>
+        )}
       </div>
+
+      {/* Instructions */}
+      <p className="text-[11px] text-content-tertiary text-center">
+        {t('buyChannel.bip21Instructions', 'Scan with any Bitcoin wallet — it will automatically choose Lightning or on-chain.')}
+      </p>
     </div>
   )
 }

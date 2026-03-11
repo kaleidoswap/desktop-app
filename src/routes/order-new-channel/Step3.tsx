@@ -2,9 +2,12 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
+import QRCode from 'qrcode.react'
+import { CopyToClipboard } from 'react-copy-to-clipboard'
 
 import 'react-toastify/dist/ReactToastify.css'
 import { useSettings } from '../../hooks/useSettings'
+import { formatBitcoinAmount } from '../../helpers/number'
 import { Lsps1CreateOrderResponse } from '../../slices/makerApi/makerApi.slice'
 import {
   nodeApi,
@@ -15,14 +18,11 @@ import {
 
 import {
   OrderSummary,
-  PaymentMethodTabs,
   WalletConfirmationModal,
-  QRCodePayment,
   PaymentStatusDisplay,
-  WalletPaymentSection,
   OrderProcessingDisplay,
   CountdownTimer,
-  PaymentWaiting,
+  FeeSelector,
 } from './components'
 
 interface StepProps {
@@ -59,7 +59,6 @@ export const Step3: React.FC<StepProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'onchain'>(
     'lightning'
   )
-  const [useWalletFunds, setUseWalletFunds] = useState(true)
   const { bitcoinUnit } = useSettings()
 
   type PaymentStateType =
@@ -302,19 +301,6 @@ export const Step3: React.FC<StepProps> = ({
     )
   }
 
-  const totalAmount = order.payment.onchain
-    ? order.payment.onchain.order_total_sat / 100000000
-    : order.payment.bolt11
-      ? order.payment.bolt11.order_total_sat / 100000000
-      : 0
-
-  const paymentURI =
-    paymentMethod === 'lightning' && order.payment.bolt11
-      ? `lightning:${order.payment.bolt11.invoice}`
-      : order.payment.onchain
-        ? `bitcoin:${order.payment.onchain.address}?amount=${totalAmount}`
-        : ''
-
   const currentPayment =
     paymentMethod === 'lightning' ? order.payment.bolt11 : order.payment.onchain
 
@@ -461,70 +447,153 @@ export const Step3: React.FC<StepProps> = ({
                 />
 
                 {/* Payment Interface */}
-                <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-2xl border border-border-default/50 p-6">
-                  <PaymentMethodTabs
-                    onMethodChange={setPaymentMethod}
-                    paymentMethod={paymentMethod}
-                  />
-
-                  <WalletPaymentSection
-                    bitcoinUnit={bitcoinUnit}
-                    currentPayment={currentPayment}
-                    customFee={customFee}
-                    isLoadingData={isLoadingData}
-                    onChainBalance={onChainBalance}
-                    onCustomFeeChange={setCustomFee}
-                    onFeeChange={setSelectedFee}
-                    onPayClick={() => setShowWalletConfirmation(true)}
-                    onUseWalletFundsChange={setUseWalletFunds}
-                    outboundLiquidity={outboundLiquidity}
-                    paymentMethod={paymentMethod}
-                    selectedFee={selectedFee}
-                    useWalletFunds={useWalletFunds}
-                  />
-                  {/* Countdown Timer - Always visible */}
-                  {(order?.payment?.bolt11?.expires_at ||
-                    order?.payment?.onchain?.expires_at) && (
-                      <div className="mb-6">
-                        <CountdownTimer
-                          expiresAt={
-                            order?.payment?.bolt11?.expires_at ||
-                            order?.payment?.onchain?.expires_at ||
-                            ''
-                          }
-                          onExpiry={handleCountdownExpiry}
-                        />
-                      </div>
+                <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-2xl border border-border-default/50 p-5 space-y-4">
+                  {/* Amount + expiry */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-surface-overlay/40 border border-border-subtle">
+                    <div>
+                      <p className="text-[11px] text-content-tertiary">Amount to pay</p>
+                      <p className="text-xl font-bold text-amber-300">
+                        {formatBitcoinAmount(currentPayment?.order_total_sat || 0, bitcoinUnit)} {bitcoinUnit}
+                      </p>
+                    </div>
+                    {(order?.payment?.bolt11?.expires_at || order?.payment?.onchain?.expires_at) && (
+                      <CountdownTimer
+                        expiresAt={
+                          order?.payment?.bolt11?.expires_at ||
+                          order?.payment?.onchain?.expires_at ||
+                          ''
+                        }
+                        onExpiry={handleCountdownExpiry}
+                      />
                     )}
+                  </div>
 
-                  {/* QR Code Payment */}
-                  {(!useWalletFunds ||
-                    (paymentMethod === 'lightning' &&
-                      outboundLiquidity <= 0)) && (
-                      <div className="text-center">
-                        {localPaymentState === 'waiting' ? (
-                          <PaymentWaiting
-                            bitcoinUnit={bitcoinUnit}
-                            currentPayment={currentPayment}
-                            handleCopy={handleCopy}
-                            order={order}
-                            paymentMethod={paymentMethod}
-                            paymentURI={paymentURI}
+                  {/* BIP21 QR — build URI */}
+                  {(() => {
+                    const bolt11Invoice = order?.payment?.bolt11?.invoice
+                    const onchainAddress = order?.payment?.onchain?.address
+                    const amountSat = order?.payment?.bolt11?.order_total_sat || order?.payment?.onchain?.order_total_sat || 0
+                    const amountBTC = amountSat / 100_000_000
+                    let bip21URI = ''
+                    if (bolt11Invoice && onchainAddress) {
+                      bip21URI = `bitcoin:${onchainAddress}?amount=${amountBTC}&lightning=${bolt11Invoice}`
+                    } else if (bolt11Invoice) {
+                      bip21URI = `lightning:${bolt11Invoice}`
+                    } else if (onchainAddress) {
+                      bip21URI = `bitcoin:${onchainAddress}?amount=${amountBTC}`
+                    }
+                    return bip21URI ? (
+                      <div className="flex justify-center p-4 rounded-xl bg-white/5 border border-border-subtle">
+                        <div className="bg-white p-3 rounded-xl shadow-lg">
+                          <QRCode size={160} value={bip21URI} />
+                        </div>
+                      </div>
+                    ) : null
+                  })()}
+
+                  {/* Copy buttons side by side */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {order?.payment?.bolt11?.invoice && (
+                      <CopyToClipboard onCopy={handleCopy} text={order.payment.bolt11.invoice}>
+                        <button className="py-2.5 rounded-xl text-xs font-semibold bg-surface-overlay border border-border-subtle hover:border-blue-400/50 hover:text-blue-300 transition-all flex items-center justify-center gap-1.5">
+                          ⚡ {t('orderChannel.step3.copyInvoice')}
+                        </button>
+                      </CopyToClipboard>
+                    )}
+                    {order?.payment?.onchain?.address && (
+                      <CopyToClipboard onCopy={handleCopy} text={order.payment.onchain.address}>
+                        <button className="py-2.5 rounded-xl text-xs font-semibold bg-surface-overlay border border-border-subtle hover:border-amber-400/50 hover:text-amber-300 transition-all flex items-center justify-center gap-1.5">
+                          ₿ {t('orderChannel.step3.copyAddress')}
+                        </button>
+                      </CopyToClipboard>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-border-subtle" />
+
+                  {/* Wallet payment options — single view, no tabs */}
+                  {isLoadingData ? (
+                    <div className="flex items-center justify-center gap-2 py-4">
+                      <ClipLoader color="#3B82F6" size={20} />
+                      <span className="text-content-secondary text-sm">{t('orderChannel.step3.loadingBalance')}</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold text-content-secondary uppercase tracking-wider">
+                        Pay from Wallet
+                      </p>
+
+                      {/* Lightning option */}
+                      {order?.payment?.bolt11 && (
+                        <div className={`rounded-xl p-3 border space-y-2 ${
+                          outboundLiquidity >= (order.payment.bolt11.order_total_sat || 0)
+                            ? 'border-blue-500/30 bg-blue-500/5'
+                            : 'border-border-subtle bg-surface-overlay/20 opacity-60'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">⚡</span>
+                              <span className="text-xs font-semibold text-content-secondary">Lightning</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-content-tertiary">Available</p>
+                              <p className={`text-sm font-bold ${
+                                outboundLiquidity >= (order.payment.bolt11.order_total_sat || 0)
+                                  ? 'text-content-primary' : 'text-red-400'
+                              }`}>
+                                {formatBitcoinAmount(outboundLiquidity, bitcoinUnit)} {bitcoinUnit}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            disabled={outboundLiquidity < (order.payment.bolt11.order_total_sat || 0)}
+                            onClick={() => { setPaymentMethod('lightning'); setShowWalletConfirmation(true) }}
+                            className="w-full py-2 rounded-lg text-xs font-bold bg-primary hover:bg-primary-emphasis disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Pay ⚡ {formatBitcoinAmount(order.payment.bolt11.order_total_sat || 0, bitcoinUnit)} {bitcoinUnit}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* On-chain option */}
+                      {order?.payment?.onchain && (
+                        <div className={`rounded-xl p-3 border space-y-2 ${
+                          onChainBalance >= (order.payment.onchain.order_total_sat || 0)
+                            ? 'border-amber-500/30 bg-amber-500/5'
+                            : 'border-border-subtle bg-surface-overlay/20 opacity-60'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">⛓️</span>
+                              <span className="text-xs font-semibold text-content-secondary">On-chain</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-content-tertiary">Available</p>
+                              <p className={`text-sm font-bold ${
+                                onChainBalance >= (order.payment.onchain.order_total_sat || 0)
+                                  ? 'text-content-primary' : 'text-red-400'
+                              }`}>
+                                {formatBitcoinAmount(onChainBalance, bitcoinUnit)} {bitcoinUnit}
+                              </p>
+                            </div>
+                          </div>
+                          <FeeSelector
+                            customFee={customFee}
+                            onCustomFeeChange={setCustomFee}
+                            onFeeChange={setSelectedFee}
+                            selectedFee={selectedFee}
                           />
-                        ) : (
-                          order && (
-                            <QRCodePayment
-                              bitcoinUnit={bitcoinUnit}
-                              currentPayment={currentPayment}
-                              onCopy={handleCopy}
-                              order={order}
-                              paymentMethod={paymentMethod}
-                              paymentURI={paymentURI}
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
+                          <button
+                            disabled={onChainBalance < (order.payment.onchain.order_total_sat || 0)}
+                            onClick={() => { setPaymentMethod('onchain'); setShowWalletConfirmation(true) }}
+                            className="w-full py-2 rounded-lg text-xs font-bold bg-amber-500/80 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-black"
+                          >
+                            Pay ⛓️ {formatBitcoinAmount(order.payment.onchain.order_total_sat || 0, bitcoinUnit)} {bitcoinUnit}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

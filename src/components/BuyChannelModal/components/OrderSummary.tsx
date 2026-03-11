@@ -1,7 +1,9 @@
-import { Info, ArrowRightLeft, Coins, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
+import tetherLogo from '../../../assets/tether-logo.svg'
 import { formatNumberWithCommas } from '../../../helpers/number'
+import { LiquidityBar } from '../../../routes/trade/dca/components/LiquidityBar'
 import { ChannelFees } from '../../../slices/makerApi/makerApi.slice'
 import { AssetInfo } from '../../../utils/channelOrderUtils'
 
@@ -17,176 +19,159 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   orderPayload,
   fees,
   assetMap,
-  compact = false,
   quote,
 }) => {
   const { t } = useTranslation()
   if (!orderPayload) return null
 
-  const totalCapacity =
-    (orderPayload.client_balance_sat || 0) + (orderPayload.lsp_balance_sat || 0)
-  const assetInfo = orderPayload.asset_id
-    ? assetMap[orderPayload.asset_id]
-    : null
+  const clientBtc = orderPayload.client_balance_sat || 0
+  const lspBtc = orderPayload.lsp_balance_sat || 0
+  const totalCapacityBtc = clientBtc + lspBtc
 
-  // Calculate asset price from quote or payload
-  const assetPriceSats = quote
-    ? quote.from_amount / 1000
-    : orderPayload.client_asset_amount && assetInfo
-      ? 0 // Could calculate if we have the info
+  const assetInfo = orderPayload.asset_id ? assetMap[orderPayload.asset_id] : null
+  const precision = assetInfo?.precision ?? 0
+  const factor = Math.pow(10, precision)
+  const clientAsset = assetInfo ? (orderPayload.client_asset_amount || 0) / factor : 0
+  const lspAsset = assetInfo ? (orderPayload.lsp_asset_amount || 0) / factor : 0
+  const totalCapacityAsset = clientAsset + lspAsset
+
+  const assetPriceSats =
+    quote
+      ? (quote.from_asset?.amount || (quote as any).from_amount || 0) / 1000
       : 0
 
-  // Calculate total order
-  const assetCost = assetPriceSats || 0
-  const bitcoinLiquidity = orderPayload.client_balance_sat || 0
   const channelFees = fees?.total_fee || 0
-  const totalOrder = assetCost + bitcoinLiquidity + channelFees
+  const totalOrder = assetPriceSats + clientBtc + channelFees
 
   return (
-    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl p-5 border border-border-default/50">
-      {!compact && (
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Info className="w-5 h-5 text-blue-400" />
-          Order Summary
-        </h3>
-      )}
-
-      <div className="space-y-4">
-        {/* Bitcoin Liquidity Section */}
-        <div className="bg-surface-base/50 rounded-lg p-3 space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-orange-400" />
-            <h4 className="text-xs font-semibold text-orange-300 uppercase tracking-wide">
-              Bitcoin Liquidity
-            </h4>
+    <div className="rounded-xl border border-border-subtle bg-surface-overlay/30 overflow-hidden">
+      {/* BTC Liquidity */}
+      <div className="p-4 space-y-2.5">
+        <div className="flex items-center gap-2">
+          <img src={bitcoinLogo} alt="BTC" className="w-4 h-4 rounded-full" />
+          <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+            Bitcoin
+          </span>
+          <span className="ml-auto text-xs text-content-tertiary">
+            {formatNumberWithCommas(totalCapacityBtc)} sats total
+          </span>
+        </div>
+        <LiquidityBar
+          outbound={clientBtc}
+          inbound={lspBtc}
+          outboundLabel={formatNumberWithCommas(clientBtc) + ' sats'}
+          inboundLabel={formatNumberWithCommas(lspBtc) + ' sats'}
+          outboundColor="bg-amber-400"
+          inboundColor="bg-blue-400/50"
+        />
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <p className="text-content-tertiary mb-0.5">Your Outbound</p>
+            <p className="text-amber-300 font-semibold">
+              {formatNumberWithCommas(clientBtc)} sats
+            </p>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-content-secondary">Your Outbound</span>
-            <span className="text-white font-semibold">
-              {formatNumberWithCommas(orderPayload.client_balance_sat || 0)}{' '}
-              sats
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-content-secondary">Your Inbound</span>
-            <span className="text-content-secondary">
-              {formatNumberWithCommas(orderPayload.lsp_balance_sat || 0)} sats
-            </span>
-          </div>
-          <div className="flex justify-between text-sm pt-2 border-t border-border-default/50">
-            <span className="text-content-secondary">Total Capacity</span>
-            <span className="text-orange-300 font-semibold">
-              {formatNumberWithCommas(totalCapacity)} sats
-            </span>
+          <div className="text-right">
+            <p className="text-content-tertiary mb-0.5">Your Inbound</p>
+            <p className="text-content-secondary font-medium">
+              {formatNumberWithCommas(lspBtc)} sats
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Asset Section */}
-        {assetInfo && orderPayload.client_asset_amount && (
-          <div className="bg-gradient-to-br from-emerald-900/20 to-green-900/20 rounded-lg p-3 border border-emerald-700/30 space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Coins className="w-4 h-4 text-emerald-400" />
-              <h4 className="text-xs font-semibold text-emerald-300 uppercase tracking-wide">
-                Asset Purchase
-              </h4>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-emerald-200/70">Asset</span>
-              <span className="text-white font-semibold">
+      {/* USDT Liquidity */}
+      {assetInfo && (clientAsset > 0 || lspAsset > 0) && (
+        <>
+          <div className="h-px bg-border-subtle" />
+          <div className="p-4 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <img src={tetherLogo} alt={assetInfo.ticker} className="w-4 h-4 rounded-full" />
+              <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
                 {assetInfo.ticker}
               </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-emerald-200/70">Amount</span>
-              <span className="text-emerald-300 font-bold text-base">
-                {formatNumberWithCommas(
-                  (
-                    orderPayload.client_asset_amount /
-                    Math.pow(10, assetInfo.precision)
-                  ).toFixed(assetInfo.precision)
-                )}{' '}
-                {assetInfo.ticker}
+              <span className="ml-auto text-xs text-content-tertiary">
+                {totalCapacityAsset.toFixed(2)} {assetInfo.ticker} total
               </span>
+            </div>
+            <LiquidityBar
+              outbound={clientAsset}
+              inbound={lspAsset}
+              outboundLabel={clientAsset.toFixed(2) + ' ' + assetInfo.ticker}
+              inboundLabel={lspAsset.toFixed(2) + ' ' + assetInfo.ticker}
+              outboundColor="bg-emerald-400"
+              inboundColor="bg-emerald-400/30"
+            />
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <p className="text-content-tertiary mb-0.5">Your Outbound</p>
+                <p className="text-emerald-300 font-semibold">
+                  {clientAsset.toFixed(2)} {assetInfo.ticker}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-content-tertiary mb-0.5">Your Inbound</p>
+                <p className="text-content-secondary font-medium">
+                  {lspAsset.toFixed(2)} {assetInfo.ticker}
+                </p>
+              </div>
             </div>
             {assetPriceSats > 0 && (
-              <div className="flex justify-between text-sm pt-2 border-t border-emerald-700/30">
-                <span className="text-emerald-200/70">Price</span>
+              <div className="flex justify-between text-xs pt-2 border-t border-border-subtle">
+                <span className="text-content-tertiary">Asset cost</span>
                 <span className="text-emerald-300 font-semibold">
                   {formatNumberWithCommas(assetPriceSats)} sats
                 </span>
               </div>
             )}
           </div>
-        )}
+        </>
+      )}
 
-        {/* Fees Section */}
-        {fees && (
-          <div className="bg-surface-base/50 rounded-lg p-3 space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowRightLeft className="w-4 h-4 text-blue-400" />
-              <h4 className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
-                Fees Breakdown
-              </h4>
-            </div>
+      {/* Fees + Total */}
+      <div className="h-px bg-border-subtle" />
+      <div className="p-4 space-y-1.5">
+        {fees && fees.total_fee > 0 && (
+          <>
             {fees.setup_fee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-content-secondary">Setup Fee</span>
+              <div className="flex justify-between text-xs">
+                <span className="text-content-tertiary">Setup fee</span>
                 <span className="text-content-secondary">
                   {formatNumberWithCommas(fees.setup_fee)} sats
                 </span>
               </div>
             )}
             {fees.capacity_fee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-content-secondary">Capacity Fee</span>
+              <div className="flex justify-between text-xs">
+                <span className="text-content-tertiary">Capacity fee</span>
                 <span className="text-content-secondary">
                   {formatNumberWithCommas(fees.capacity_fee)} sats
                 </span>
               </div>
             )}
             {fees.duration_fee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-content-secondary">Duration Fee</span>
+              <div className="flex justify-between text-xs">
+                <span className="text-content-tertiary">Duration fee</span>
                 <span className="text-content-secondary">
                   {formatNumberWithCommas(fees.duration_fee)} sats
                 </span>
               </div>
             )}
             {fees.applied_discount && fees.applied_discount > 0 && (
-              <div className="flex justify-between text-sm text-green-400">
+              <div className="flex justify-between text-xs text-green-400">
                 <span>{t('components.buyChannelModal.discount')}</span>
-                <span>
-                  -{formatNumberWithCommas(fees.applied_discount)} sats
-                </span>
+                <span>-{formatNumberWithCommas(fees.applied_discount)} sats</span>
               </div>
             )}
-            <div className="flex justify-between text-sm pt-2 border-t border-border-default/50">
-              <span className="text-content-secondary">Total Fees</span>
-              <span className="text-blue-300 font-semibold">
-                {formatNumberWithCommas(fees.total_fee)} sats
-              </span>
-            </div>
-          </div>
+          </>
         )}
-
-        {/* Total Order */}
-        <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-4 border border-blue-700/50">
-          <div className="flex justify-between items-center">
-            <span className="text-content-primary font-semibold">Total Order</span>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">
-                {formatNumberWithCommas(totalOrder)}
-                <span className="text-base text-content-secondary ml-1">sats</span>
-              </div>
-              {assetInfo && orderPayload.client_asset_amount && (
-                <div className="text-xs text-content-secondary mt-1">
-                  {assetPriceSats > 0 &&
-                    `${formatNumberWithCommas(assetPriceSats)} (asset) + `}
-                  {formatNumberWithCommas(bitcoinLiquidity)} (liquidity) +{' '}
-                  {formatNumberWithCommas(channelFees)} (fees)
-                </div>
-              )}
-            </div>
+        <div className="flex justify-between items-center pt-2 mt-1 border-t border-border-subtle">
+          <span className="font-semibold text-white text-sm">Total to Pay</span>
+          <div>
+            <span className="text-xl font-bold text-white">
+              {formatNumberWithCommas(totalOrder)}
+            </span>
+            <span className="text-sm text-content-secondary ml-1">sats</span>
           </div>
         </div>
       </div>
