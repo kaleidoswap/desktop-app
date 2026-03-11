@@ -20,6 +20,7 @@ import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logo from '../../assets/logo.svg'
 import logoFull from '../../assets/logo-full.svg'
+import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -468,6 +469,7 @@ export const Layout = (props: Props) => {
   const [lock] = nodeApi.endpoints.lock.useMutation()
 
   useDcaScheduler()
+  useNodeLifecycleEvents()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)

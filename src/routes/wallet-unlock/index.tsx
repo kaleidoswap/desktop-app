@@ -10,14 +10,14 @@ import {
   Loader2,
   ArrowLeft,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
-  WALLET_DASHBOARD_PATH,
+  ROOT_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
@@ -33,17 +33,39 @@ import { UnlockingProgress } from '../../components/UnlockingProgress'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
 
+const withTimeout = <T,>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+        ms
+      )
+    ),
+  ])
+
 interface Fields {
   password: string
 }
 
+const MAX_UNLOCK_RETRIES = 20
+
 export const Component = () => {
   const { t } = useTranslation()
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
+  const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
   const [unlock] = nodeApi.endpoints.unlock.useMutation()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const navigate = useNavigate()
+
+  // Ref-based cancellation flag so handleCancelUnlocking can break the retry loop
+  // synchronously regardless of which async await the loop is currently suspended at.
+  const isCancelledRef = useRef(false)
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isUnlocking, setIsUnlocking] = useState(false)
@@ -52,6 +74,7 @@ export const Component = () => {
   const [unlockError, setUnlockError] = useState<string | null>(null)
   const [isConnectionDetailsOpen, setIsConnectionDetailsOpen] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(true)
+  const [redirectToRoot, setRedirectToRoot] = useState(false)
 
   useEffect(() => {
     const checkNodeStatus = async () => {
@@ -61,12 +84,23 @@ export const Component = () => {
       }
       setIsCheckingStatus(true)
       try {
-        const nodeInfoRes = await nodeInfo()
+        // 10 s timeout — prevents the spinner from hanging if the node HTTP
+        // server accepts the TCP connection but never sends a response.
+        const nodeInfoRes = await withTimeout(
+          nodeInfo(),
+          10000,
+          'Node status check'
+        )
         if (nodeInfoRes.isSuccess) {
-          navigate(WALLET_DASHBOARD_PATH)
+          setRedirectToRoot(true)
         }
       } catch (error: any) {
-        if (error?.status !== 'FETCH_ERROR') {
+        // FETCH_ERROR (connection refused) and timeout both just mean "node is
+        // locked / not ready" — show the form, no toast needed.
+        if (
+          error?.status !== 'FETCH_ERROR' &&
+          !error?.message?.includes('timed out')
+        ) {
           toast.error(
             t('walletUnlock.failedCheckStatus', {
               error: error.message || t('walletUnlock.unknownError'),
@@ -81,6 +115,28 @@ export const Component = () => {
     checkNodeStatus()
   }, [])
 
+  useEffect(() => {
+    if (nodeLifecycle.status === 'Failed') {
+      setUnlockError(nodeLifecycle.message)
+      setErrors([nodeLifecycle.message])
+      setIsUnlocking(false)
+      return
+    }
+
+    if (
+      isUnlocking &&
+      nodeLifecycle.status === 'Stopped' &&
+      !isCancelledRef.current
+    ) {
+      const message = t('walletUnlock.nodeStoppedUnexpectedly', {
+        defaultValue: 'Node stopped before the wallet unlock completed.',
+      })
+      setUnlockError(message)
+      setErrors([message])
+      setIsUnlocking(false)
+    }
+  }, [isUnlocking, nodeLifecycle, t])
+
   const unlockForm = useForm<Fields>({
     defaultValues: { password: '' },
   })
@@ -89,46 +145,97 @@ export const Component = () => {
     let shouldRetry = true
     let pollingInterval = 2000
     const maxPollingInterval = 15000
-    let doubleFetchErrorFlag = false
+    let retryCount = 0
+    // Separate counter for unlock timeouts — the /unlock endpoint can legitimately
+    // take 30–120 s on first run (bitcoind connection + blockchain sync).
+    // We allow one silent timeout retry, then surface an informative message.
+    let unlockTimeoutCount = 0
+    const MAX_UNLOCK_TIMEOUTS = 2
 
+    isCancelledRef.current = false
     setIsUnlocking(true)
     setErrors([])
     setUnlockError(null)
 
-    while (shouldRetry) {
+    while (shouldRetry && !isCancelledRef.current) {
+      if (retryCount >= MAX_UNLOCK_RETRIES) {
+        const maxRetriesMsg = t('walletUnlock.maxRetriesReached', {
+          defaultValue:
+            'Maximum unlock attempts reached. The node may still be syncing — please try again shortly.',
+        })
+        setUnlockError(maxRetriesMsg)
+        setErrors([maxRetriesMsg])
+        shouldRetry = false
+        break
+      }
+
       try {
         const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
 
-        await unlock({
-          announce_addresses: [],
-          announce_alias: 'kaleidoswap-desktop',
-          bitcoind_rpc_host: rpcConfig.host,
-          bitcoind_rpc_password: rpcConfig.password,
-          bitcoind_rpc_port: rpcConfig.port,
-          bitcoind_rpc_username: rpcConfig.username,
-          indexer_url: nodeSettings.indexer_url,
-          password: data.password,
-          proxy_endpoint: nodeSettings.proxy_endpoint,
-        }).unwrap()
+        // 120 s timeout — the RGB Lightning Node's /unlock endpoint connects to
+        // bitcoind, verifies the chain, starts LDK, etc. and can take a long time.
+        // Without a timeout the fetch hangs forever, freezing the UI.
+        await withTimeout(
+          unlock({
+            announce_addresses: [],
+            announce_alias: 'kaleidoswap-desktop',
+            bitcoind_rpc_host: rpcConfig.host,
+            bitcoind_rpc_password: rpcConfig.password,
+            bitcoind_rpc_port: rpcConfig.port,
+            bitcoind_rpc_username: rpcConfig.username,
+            indexer_url: nodeSettings.indexer_url,
+            password: data.password,
+            proxy_endpoint: nodeSettings.proxy_endpoint,
+          }).unwrap(),
+          120000,
+          'Wallet unlock'
+        )
 
-        const nodeInfoRes = await nodeInfo()
+        if (isCancelledRef.current) break
+
+        // 10 s timeout for the follow-up nodeInfo check
+        const nodeInfoRes = await withTimeout(nodeInfo(), 10000, 'Node info check')
         if (nodeInfoRes.isSuccess) {
           toast.success(t('walletUnlock.successMessage'), {
             autoClose: 3000,
             position: 'bottom-right',
           })
-          navigate(WALLET_DASHBOARD_PATH)
+          setRedirectToRoot(true)
         } else {
           throw new Error(t('walletUnlock.failedGetNodeInfo'))
         }
 
         shouldRetry = false
       } catch (e: any) {
+        if (isCancelledRef.current) break
+
+        // Handle unlock-specific timeout: the node is doing a long operation
+        // (blockchain sync, bitcoind connection). Allow a couple of silent retries,
+        // then surface a clear message so the user knows what's happening.
+        if (e?.message?.startsWith('Wallet unlock timed out')) {
+          unlockTimeoutCount++
+          if (unlockTimeoutCount >= MAX_UNLOCK_TIMEOUTS) {
+            const timeoutMsg = t('walletUnlock.unlockTimeoutMessage', {
+              defaultValue:
+                'The node is taking longer than expected to unlock. This is normal during the first unlock while the node syncs the blockchain. Please wait a moment and try again.',
+            })
+            setUnlockError(timeoutMsg)
+            setErrors([timeoutMsg])
+            shouldRetry = false
+            break
+          }
+          // Silent retry — the node is busy, wait a bit
+          await new Promise((res) => setTimeout(res, pollingInterval))
+          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
+          continue
+        }
+
         if (
           e?.message?.includes('timeout') ||
           e?.message?.includes('timed out') ||
           e?.message?.includes('The request timed out')
         ) {
+          retryCount++
           await new Promise((res) => setTimeout(res, pollingInterval))
           pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
           continue
@@ -149,11 +256,9 @@ export const Component = () => {
           typeof error.status === 'string' &&
           (error?.status === 'FETCH_ERROR' || error?.status === 'TIMEOUT_ERROR')
         ) {
+          retryCount++
           await new Promise((res) => setTimeout(res, pollingInterval))
           pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
-          if (!doubleFetchErrorFlag) {
-            doubleFetchErrorFlag = true
-          }
           continue
         }
 
@@ -161,6 +266,7 @@ export const Component = () => {
           error?.status === 403 &&
           errorMessage === 'Cannot call other APIs while node is changing state'
         ) {
+          retryCount++
           await new Promise((res) => setTimeout(res, pollingInterval))
           pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
           continue
@@ -193,7 +299,7 @@ export const Component = () => {
             autoClose: 3000,
             position: 'bottom-right',
           })
-          navigate(WALLET_DASHBOARD_PATH)
+          setRedirectToRoot(true)
           shouldRetry = false
         } else {
           setUnlockError(errorMessage)
@@ -204,7 +310,7 @@ export const Component = () => {
       }
     }
 
-    if (!shouldRetry && !showInitModal) {
+    if (!isCancelledRef.current && !shouldRetry && !showInitModal) {
       setIsUnlocking(false)
     }
   }
@@ -225,6 +331,7 @@ export const Component = () => {
   }
 
   const handleCancelUnlocking = () => {
+    isCancelledRef.current = true
     setIsUnlocking(false)
     setUnlockError(null)
     toast.info(t('walletUnlock.unlockCancelled'), {
@@ -235,6 +342,10 @@ export const Component = () => {
 
   const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
   const accountName = nodeSettings.name || 'Your Wallet'
+
+  if (redirectToRoot) {
+    return <Navigate replace to={ROOT_PATH} />
+  }
 
   return (
     <Layout>

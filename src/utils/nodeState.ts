@@ -109,6 +109,7 @@ export const waitForNodeReady = async (
 
   return new Promise((resolve, reject) => {
     let settled = false
+    let lastNodeError: string | null = null
     let timeoutId: ReturnType<typeof setTimeout> | null = null
     let pollId: ReturnType<typeof setInterval> | null = null
     const unlisteners: Array<() => void> = []
@@ -126,6 +127,46 @@ export const waitForNodeReady = async (
       fn()
     }
 
+    const buildTimeoutMessage = async (): Promise<string> => {
+      const timeoutMessage = 'Timeout waiting for node to become ready'
+
+      try {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const [state, logResponse] = await Promise.all([
+          invoke<NodeState>('get_node_state'),
+          invoke<{ logs: string[]; total: number }>('get_node_logs', {
+            page: 1,
+            pageSize: 20,
+          }),
+        ])
+
+        const recentLogs = logResponse.logs
+          .slice(-5)
+          .map((line) => line.trim())
+          .filter(Boolean)
+
+        const details = [`Current state: ${state.status}`]
+
+        if (state.status === 'Failed') {
+          details.push(`Failure: ${state.message}`)
+        } else if (lastNodeError) {
+          details.push(`Last node error: ${lastNodeError}`)
+        }
+
+        if (recentLogs.length > 0) {
+          details.push(`Recent output: ${recentLogs.join(' | ')}`)
+        }
+
+        return `${timeoutMessage}. ${details.join('. ')}`
+      } catch {
+        if (lastNodeError) {
+          return `${timeoutMessage}. Last node error: ${lastNodeError}`
+        }
+
+        return timeoutMessage
+      }
+    }
+
     const checkReady = async () => {
       if (settled) return
       try {
@@ -133,62 +174,64 @@ export const waitForNodeReady = async (
         const state = await invoke<NodeState>('get_node_state')
 
         if (state.status === 'Failed') {
-          settle(() => reject(new Error(`Node failed: ${(state as Extract<NodeState, { status: 'Failed' }>).message}`)))
+          settle(() =>
+            reject(
+              new Error(
+                `Node failed: ${(state as Extract<NodeState, { status: 'Failed' }>).message}`
+              )
+            )
+          )
+          return
+        }
+
+        if (state.status === 'Stopped') {
+          settle(() => reject(new Error('Node process stopped unexpectedly')))
           return
         }
 
         if (state.status === 'Running') {
-          // Primary check: direct HTTP probe — any response means the node is up
-          if (daemonPort) {
-            try {
-              const controller = new AbortController()
-              const timerId = setTimeout(() => controller.abort(), 2000)
-              const res = await fetch(
-                `http://127.0.0.1:${daemonPort}/nodeinfo`,
-                { signal: controller.signal }
-              )
-              clearTimeout(timerId)
-              if (res.status > 0) {
-                settle(() => resolve())
-              }
-            } catch {
-              // Connection refused or timeout — node not listening yet, keep polling
-            }
-            return
-          }
+          settle(() => resolve())
+          return
+        }
 
-          // Fallback: port binding check via Tauri
+        // Primary check: Tauri-side HTTP probe — avoid coupling frontend readiness
+        // to the backend's final state transition. If the daemon is answering, the UI
+        // can continue even if the backend is still marked Starting momentarily.
+        if (daemonPort) {
           try {
-            const currentAccount = await invoke<string | null>('get_running_node_account')
-            if (currentAccount) {
-              const ports = await invoke<Record<string, string>>('get_running_node_ports')
-              const port = Object.entries(ports).find(([, acc]) => acc === currentAccount)?.[0]
-              if (port) {
-                const availability = await invoke<Record<string, boolean>>('check_ports_available', { ports: [port] })
-                if (availability[port] === true) {
-                  // Port still available — node hasn't bound yet
-                  return
-                }
-                // Port is bound, node is ready
-                await new Promise((r) => setTimeout(r, 500))
-                settle(() => resolve())
-                return
-              }
+            const status = await invoke<number>('probe_node_http', {
+              daemonPort: Number(daemonPort),
+            })
+            console.log(
+              '[waitForNodeReady] Tauri HTTP probe succeeded with status',
+              status,
+              'while backend state is',
+              state.status
+            )
+            if (status > 0) {
+              settle(() => resolve())
             }
-            // Cannot determine port — keep polling rather than resolving early
           } catch {
-            // Not ready yet, keep polling
+            // Connection refused or timeout — node not listening yet, keep polling
           }
         }
+
       } catch {
         // Keep polling
       }
     }
 
     timeoutId = setTimeout(() => {
-      settle(() => reject(new Error('Timeout waiting for node to become ready')))
+      void buildTimeoutMessage()
+        .then((message) => {
+          settle(() => reject(new Error(message)))
+        })
+        .catch(() => {
+          settle(() =>
+            reject(new Error('Timeout waiting for node to become ready'))
+          )
+        })
     }, timeoutMs)
-
     ;(async () => {
       try {
         const { listen } = await import('@tauri-apps/api/event')
@@ -198,22 +241,79 @@ export const waitForNodeReady = async (
         })
         unlisteners.push(unlistenLog)
 
+        const unlistenStarted = await listen<string>('node-started', () => {
+          settle(() => resolve())
+        })
+        unlisteners.push(unlistenStarted)
+
+        const unlistenState = await listen<NodeState>(
+          'node-state-changed',
+          (event) => {
+            const state = event.payload
+            if (state.status === 'Running') {
+              settle(() => resolve())
+              return
+            }
+
+            if (state.status === 'Failed') {
+              settle(() =>
+                reject(
+                  new Error(
+                    `Node failed: ${
+                      (state as Extract<NodeState, { status: 'Failed' }>).message
+                    }`
+                  )
+                )
+              )
+              return
+            }
+
+            // Stopped can arrive when the node is cleanly shut down (e.g. user
+            // cancelled init) or after force_kill. Reject immediately so the
+            // caller doesn't have to wait for the next 2-second poll cycle.
+            if (state.status === 'Stopped') {
+              settle(() => reject(new Error('Node process stopped unexpectedly')))
+            }
+          }
+        )
+        unlisteners.push(unlistenState)
+
+        // Belt-and-suspenders: also listen for the explicit node-stopped event.
+        // The monitoring thread emits this when the process exits cleanly, but
+        // does NOT always emit node-state-changed for the Stopped transition.
+        const unlistenStopped = await listen('node-stopped', () => {
+          settle(() => reject(new Error('Node process stopped unexpectedly')))
+        })
+        unlisteners.push(unlistenStopped)
+
         const unlistenError = await listen<string>('node-error', (event) => {
           const error = event.payload
+          lastNodeError = error
+          if (!settled && onProgress) onProgress(`ERROR: ${error}`)
           if (
             error.includes('Address already in use') ||
             error.includes('failed to start') ||
+            error.includes('panic') ||
             error.includes('unavailable') ||
-            error.includes('is already in use')
+            error.includes('is already in use') ||
+            // Emitted by handle_http_wait_error when the 30-second backend
+            // readiness probe times out
+            error.includes('never became ready')
           ) {
             settle(() => reject(new Error(error)))
           }
         })
         unlisteners.push(unlistenError)
 
-        const unlistenCrashed = await listen<string>('node-crashed', (event) => {
-          settle(() => reject(new Error(`Node crashed: ${event.payload}`)))
-        })
+        const unlistenCrashed = await listen<string>(
+          'node-crashed',
+          (event) => {
+            if (!settled && onProgress) {
+              onProgress(`CRASH: ${event.payload}`)
+            }
+            settle(() => reject(new Error(`Node crashed: ${event.payload}`)))
+          }
+        )
         unlisteners.push(unlistenCrashed)
 
         // Poll every 2s — works even if no log events arrive

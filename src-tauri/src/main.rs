@@ -1,13 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::sync::{Arc, Mutex, RwLock};
-use tauri::{Emitter, Manager, Window};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex, RwLock};
+use tauri::{Listener, Manager, Window};
 
 mod crypto;
 mod db;
 mod dca;
 mod rgb_node;
+mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
 use rgb_node::NodeProcess;
@@ -39,123 +40,15 @@ fn main() {
         .manage(Arc::clone(&node_process))
         .manage(Arc::clone(&dca_scheduler))
         .manage(CurrentAccount::default())
-        .on_window_event({
-            let node_process = Arc::clone(&node_process);
-            move |window, event| {
-                if window.label() == "main" {
-                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                        println!("Window close requested, initiating shutdown sequence...");
-
-                        // Check if node is running before preventing close
-                        let is_node_running = {
-                            let node_process = node_process.lock().unwrap();
-                            node_process.is_running()
-                        };
-
-                        if is_node_running {
-                            // Only prevent close and show shutdown animation if node is running
-                            let window = window.clone();
-                            api.prevent_close();
-
-                            // Trigger initial shutdown animation
-                            window
-                                .emit("trigger-shutdown", "Preparing to shut down...")
-                                .unwrap();
-
-                            // Clone Arc before moving into the new thread
-                            let node_process = Arc::clone(&node_process);
-
-                            // Create a new thread to handle the shutdown sequence
-                            std::thread::spawn(move || {
-                                let node_process = node_process.lock().unwrap();
-
-                                let daemon_port = node_process.get_daemon_port();
-
-                                if let Some(port) = daemon_port {
-                                    let http = reqwest::blocking::Client::builder()
-                                        .timeout(std::time::Duration::from_secs(5))
-                                        .build()
-                                        .unwrap_or_else(|_| reqwest::blocking::Client::new());
-
-                                    // Lock the wallet before shutdown
-                                    window
-                                        .emit("update-shutdown-status", "Locking wallet...")
-                                        .unwrap();
-                                    println!("Locking wallet via HTTP API on port {}...", port);
-                                    let _ = http
-                                        .post(format!("http://127.0.0.1:{}/lock", port))
-                                        .send();
-
-                                    // Tell the node daemon to shut itself down gracefully
-                                    window
-                                        .emit(
-                                            "update-shutdown-status",
-                                            "Shutting down local node...",
-                                        )
-                                        .unwrap();
-                                    println!("Sending shutdown via HTTP API on port {}...", port);
-                                    let _ = http
-                                        .post(format!("http://127.0.0.1:{}/shutdown", port))
-                                        .send();
-                                } else {
-                                    window
-                                        .emit(
-                                            "update-shutdown-status",
-                                            "Shutting down local node...",
-                                        )
-                                        .unwrap();
-                                }
-
-                                println!("Waiting for node process to exit...");
-                                node_process.shutdown();
-
-                                // Wait for node to shut down gracefully with status updates
-                                let mut attempts = 0;
-                                while node_process.is_running() && attempts < 30 {
-                                    std::thread::sleep(std::time::Duration::from_millis(100));
-                                    attempts += 1;
-
-                                    // Update status every second
-                                    if attempts % 10 == 0 {
-                                        window
-                                            .emit(
-                                                "update-shutdown-status",
-                                                format!(
-                                                "Waiting for node to shut down ({} seconds)...",
-                                                attempts / 10
-                                            ),
-                                            )
-                                            .unwrap();
-                                    }
-                                }
-
-                                // Force kill if still running
-                                if node_process.is_running() {
-                                    window
-                                        .emit(
-                                            "update-shutdown-status",
-                                            "Force stopping node...",
-                                        )
-                                        .unwrap();
-                                    println!(
-                                        "Node still running after shutdown, forcing kill..."
-                                    );
-                                    node_process.force_kill();
-                                    std::thread::sleep(std::time::Duration::from_millis(500));
-                                }
-
-                                // Final status update
-                                window
-                                    .emit("update-shutdown-status", "Closing application...")
-                                    .unwrap();
-                                std::thread::sleep(std::time::Duration::from_millis(500));
-
-                                // Close the window
-                                window.close().unwrap();
-                            });
-                        }
-                        // If no node is running, allow the window to close normally
-                        // by not calling api.prevent_close()
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    #[cfg(target_os = "macos")]
+                    {
+                        let app = window.app_handle();
+                        let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
                     }
                 }
             }
@@ -165,11 +58,37 @@ fn main() {
             let dca_scheduler = Arc::clone(&dca_scheduler);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    node_process.lock().unwrap().set_window(main_window.clone());
-                    dca_scheduler.set_window(main_window);
+                    node_process.lock().unwrap().set_window(main_window);
                 }
+                dca_scheduler.set_app_handle(app.handle().clone());
                 dca_scheduler.start();
                 db::init();
+
+                // Set up system tray
+                tray::setup_tray(app.handle(), Arc::clone(&node_process))?;
+
+                // Listen for node state changes to update tray menu
+                let app_handle = app.handle().clone();
+                let np = Arc::clone(&node_process);
+                app.listen("node-started", move |_| {
+                    let state = np.lock().unwrap().get_state();
+                    tray::update_tray_menu(&app_handle, state);
+                });
+
+                let app_handle = app.handle().clone();
+                let np = Arc::clone(&node_process);
+                app.listen("node-stopped", move |_| {
+                    let state = np.lock().unwrap().get_state();
+                    tray::update_tray_menu(&app_handle, state);
+                });
+
+                let app_handle = app.handle().clone();
+                let np = Arc::clone(&node_process);
+                app.listen("node-crashed", move |_| {
+                    let state = np.lock().unwrap().get_state();
+                    tray::update_tray_menu(&app_handle, state);
+                });
+
                 Ok(())
             }
         })
@@ -192,6 +111,7 @@ fn main() {
             is_node_running,
             get_running_node_account,
             get_node_state,
+            probe_node_http,
             // Port management commands
             check_ports_available,
             get_running_node_ports,
@@ -210,24 +130,29 @@ fn main() {
             // DCA commands
             dca_set_orders,
             dca_order_executed,
+            dca_get_orders,
+            dca_upsert_order,
+            dca_delete_order,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
 #[tauri::command]
-async fn close_splashscreen(window: Window) {
-    // Show main window first
+fn close_splashscreen(window: Window) {
+    // Resolve the Tauri command immediately so renderer reloads don't leave a stale callback.
     window.show().unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(1000));
-    // Then close splashscreen
-    if let Some(splashscreen) = window.get_webview_window("splashscreen") {
-        splashscreen.close().unwrap();
-    }
+
+    tauri::async_runtime::spawn_blocking(move || {
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+        if let Some(splashscreen) = window.get_webview_window("splashscreen") {
+            let _ = splashscreen.close();
+        }
+    });
 }
 
 #[tauri::command]
-fn start_node(
+async fn start_node(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
     network: String,
     datapath: Option<String>,
@@ -242,33 +167,72 @@ fn start_node(
     println!("  Daemon port: {}", daemon_listening_port);
     println!("  LDK peer port: {}", ldk_peer_listening_port);
 
-    // Lock the shared NodeProcess
-    let node_process = match node_process.lock() {
-        Ok(process) => process,
-        Err(e) => {
-            let err = format!("Failed to acquire lock on node process: {}", e);
-            println!("{}", err);
-            return Err(err);
-        }
-    };
+    let node_process = Arc::clone(&*node_process);
+    let account_name_for_spawn = account_name.clone();
 
-    // Attempt to start; bubble up any errors
-    match node_process.start(
-        network,
-        datapath,
-        daemon_listening_port,
-        ldk_peer_listening_port,
-        account_name,
-    ) {
-        Ok(_) => {
-            println!("Node started successfully");
-            Ok(())
+    let spawn_result = tauri::async_runtime::spawn_blocking({
+        let node_process = Arc::clone(&node_process);
+        move || {
+            let node_process = match node_process.lock() {
+                Ok(process) => process,
+                Err(e) => {
+                    let err = format!("Failed to acquire lock on node process: {}", e);
+                    println!("{}", err);
+                    return Err(err);
+                }
+            };
+
+            let state_arc = node_process.get_state_arc();
+            let daemon_port = match node_process.start_spawn_only(
+                network,
+                datapath,
+                daemon_listening_port,
+                ldk_peer_listening_port,
+                account_name_for_spawn,
+            ) {
+                Ok(port) => port,
+                Err(e) => {
+                    println!("Failed to start node: {}", e);
+                    return Err(e);
+                }
+            };
+
+            Ok::<_, String>((daemon_port, state_arc))
         }
-        Err(e) => {
-            println!("Failed to start node: {}", e);
-            Err(e)
+    })
+    .await
+    .map_err(|e| format!("Failed to join node startup task: {}", e))?;
+
+    let (daemon_port, state_arc) = spawn_result?;
+    let node_process_for_readiness = Arc::clone(&node_process);
+    let account_name_for_readiness = account_name.clone();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Err(readiness_error) = NodeProcess::wait_for_http_ready_static(daemon_port, state_arc) {
+            if let Ok(node_process) = node_process_for_readiness.lock() {
+                node_process.handle_http_wait_error(&readiness_error);
+            }
+
+            println!(
+                "Failed to start node: Node process started but never became ready: {}",
+                readiness_error
+            );
+            return;
         }
-    }
+
+        match node_process_for_readiness.lock() {
+            Ok(node_process) => {
+                node_process.finalize_running(&account_name_for_readiness);
+                println!("Node started successfully");
+            }
+            Err(e) => {
+                println!("Failed to acquire lock on node process after readiness: {}", e);
+            }
+        }
+    });
+
+    println!("Node process spawned successfully, waiting for readiness in background");
+    Ok(())
 }
 
 #[tauri::command]
@@ -484,10 +448,23 @@ fn get_running_node_account(
 }
 
 #[tauri::command]
-fn get_node_state(
-    node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
-) -> rgb_node::NodeState {
+fn get_node_state(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> rgb_node::NodeState {
     node_process.lock().unwrap().get_state()
+}
+
+#[tauri::command]
+fn probe_node_http(daemon_port: u16) -> Result<u16, String> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
+
+    let response = client
+        .get(format!("http://127.0.0.1:{}/nodeinfo", daemon_port))
+        .send()
+        .map_err(|e| format!("Failed to reach node on port {}: {}", daemon_port, e))?;
+
+    Ok(response.status().as_u16())
 }
 
 #[tauri::command]
@@ -496,7 +473,10 @@ fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, St
     for port in ports {
         match port.parse::<u16>() {
             Ok(port_num) => {
-                result.insert(port.clone(), rgb_node::NodeProcess::is_port_available(port_num));
+                result.insert(
+                    port.clone(),
+                    rgb_node::NodeProcess::is_port_available(port_num),
+                );
             }
             Err(e) => {
                 return Err(format!("Invalid port number {}: {}", port, e));
@@ -507,7 +487,9 @@ fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, St
 }
 
 #[tauri::command]
-fn get_running_node_ports(node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>) -> HashMap<String, String> {
+fn get_running_node_ports(
+    node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>,
+) -> HashMap<String, String> {
     node_process.lock().unwrap().get_running_node_ports()
 }
 
@@ -520,7 +502,7 @@ fn find_available_ports(
         base_daemon_port.unwrap_or(3001),
         base_ldk_port.unwrap_or(9735),
     );
-    
+
     let mut result = HashMap::new();
     result.insert("daemon".to_string(), daemon_port);
     result.insert("ldk".to_string(), ldk_port);
@@ -539,39 +521,43 @@ fn stop_node_by_account(
 #[tauri::command]
 fn insert_channel_order(
     state: tauri::State<CurrentAccount>,
-    #[allow(non_snake_case)] orderId: String, 
-    status: String, 
-    payload: String, 
-    #[allow(non_snake_case)] createdAt: String
+    #[allow(non_snake_case)] orderId: String,
+    status: String,
+    payload: String,
+    #[allow(non_snake_case)] createdAt: String,
 ) -> Result<usize, String> {
     // Get current account
     let current_account = state.0.read().unwrap();
-    let account = current_account.as_ref()
-        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
-    
+    let account = current_account.as_ref().ok_or_else(|| {
+        "No account is currently selected. Please select an account first.".to_string()
+    })?;
+
     db::insert_channel_order(account.id, orderId, status, payload, createdAt)
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn get_channel_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<db::ChannelOrder>, String> {
+fn get_channel_orders(
+    state: tauri::State<CurrentAccount>,
+) -> Result<Vec<db::ChannelOrder>, String> {
     // Get current account
     let current_account = state.0.read().unwrap();
     let account_id = current_account.as_ref().map(|account| account.id);
-    
+
     db::get_channel_orders(account_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn delete_channel_order(
     state: tauri::State<CurrentAccount>,
-    #[allow(non_snake_case)] orderId: String
+    #[allow(non_snake_case)] orderId: String,
 ) -> Result<usize, String> {
     // Get current account
     let current_account = state.0.read().unwrap();
-    let account = current_account.as_ref()
-        .ok_or_else(|| "No account is currently selected. Please select an account first.".to_string())?;
-    
+    let account = current_account.as_ref().ok_or_else(|| {
+        "No account is currently selected. Please select an account first.".to_string()
+    })?;
+
     db::delete_channel_order(account.id, orderId).map_err(|e| e.to_string())
 }
 
@@ -589,7 +575,7 @@ async fn get_markdown_content(file_path: String) -> Result<String, String> {
 }
 
 /// Store encrypted mnemonic for an account
-/// 
+///
 /// This command encrypts the mnemonic using the user's password and stores it securely
 /// in the database. The encryption uses AES-256-GCM with Argon2id key derivation.
 #[tauri::command]
@@ -601,20 +587,51 @@ fn store_encrypted_mnemonic(
     // Encrypt the mnemonic
     let (encrypted, salt, nonce) = crypto::encrypt_mnemonic(&mnemonic, &password)
         .map_err(|e| format!("Failed to encrypt mnemonic: {}", e))?;
-    
+
     // Store in database
     db::store_encrypted_mnemonic(&account_name, &encrypted, &salt, &nonce)
         .map_err(|e| format!("Failed to store encrypted mnemonic: {}", e))?;
-    
+
     Ok(())
+}
+
+#[tauri::command]
+fn dca_get_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<String>, String> {
+    let current_account = state.0.read().unwrap();
+    let account = current_account
+        .as_ref()
+        .ok_or_else(|| "No account selected".to_string())?;
+    db::get_dca_orders(account.id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn dca_upsert_order(
+    state: tauri::State<CurrentAccount>,
+    order_id: String,
+    payload: String,
+) -> Result<usize, String> {
+    let current_account = state.0.read().unwrap();
+    let account = current_account
+        .as_ref()
+        .ok_or_else(|| "No account selected".to_string())?;
+    db::upsert_dca_order(account.id, order_id, payload).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn dca_delete_order(
+    state: tauri::State<CurrentAccount>,
+    order_id: String,
+) -> Result<usize, String> {
+    let current_account = state.0.read().unwrap();
+    let account = current_account
+        .as_ref()
+        .ok_or_else(|| "No account selected".to_string())?;
+    db::delete_dca_order(account.id, order_id).map_err(|e| e.to_string())
 }
 
 /// Update the DCA scheduler with the current list of active orders from the frontend.
 #[tauri::command]
-fn dca_set_orders(
-    scheduler: tauri::State<'_, Arc<DcaScheduler>>,
-    orders: Vec<DcaOrderInfo>,
-) {
+fn dca_set_orders(scheduler: tauri::State<'_, Arc<DcaScheduler>>, orders: Vec<DcaOrderInfo>) {
     scheduler.set_orders(orders);
 }
 
@@ -639,17 +656,22 @@ fn get_decrypted_mnemonic(
 ) -> Result<String, String> {
     // Get current account
     let current_account = state.0.read().unwrap();
-    let account = current_account.as_ref()
+    let account = current_account
+        .as_ref()
         .ok_or_else(|| "No account is currently selected.".to_string())?;
-    
+
     // Retrieve encrypted mnemonic from database
     let (encrypted, salt, nonce) = db::get_encrypted_mnemonic(&account.name)
         .map_err(|e| format!("Failed to retrieve encrypted mnemonic: {}", e))?
         .ok_or_else(|| "No mnemonic stored for this account.".to_string())?;
-    
+
     // Decrypt the mnemonic
-    let mnemonic = crypto::decrypt_mnemonic(&encrypted, &password, &salt, &nonce)
-        .map_err(|e| format!("Failed to decrypt mnemonic: {}. This usually means the password is incorrect.", e))?;
-    
+    let mnemonic = crypto::decrypt_mnemonic(&encrypted, &password, &salt, &nonce).map_err(|e| {
+        format!(
+            "Failed to decrypt mnemonic: {}. This usually means the password is incorrect.",
+            e
+        )
+    })?;
+
     Ok(mnemonic)
 }

@@ -119,7 +119,8 @@ function queryFn<TArgs, TResult>(
       if ('error' in result && result.error) return { error: result.error }
       return { data: (result.data ?? null) as TResult }
     } catch (error) {
-      return { error: { status: 500, data: { error: String(error) } } }
+      const msg = error instanceof Error ? error.message : String(error)
+      return { error: { status: 500, data: { error: msg } } }
     }
   }
 }

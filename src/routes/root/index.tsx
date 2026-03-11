@@ -5,6 +5,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 import { webSocketService } from '../../app/hubs/websocketService'
 import {
+  ROOT_PATH,
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
   WALLET_UNLOCK_PATH,
@@ -19,6 +20,7 @@ export const RootRoute = () => {
   const location = useLocation()
   const [nodeInfo, nodeInfoResponse] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const { t } = useTranslation()
+  const isIndexRoute = location.pathname === ROOT_PATH
 
   useEffect(() => {
     const currentPath = location.pathname
@@ -47,6 +49,10 @@ export const RootRoute = () => {
   }, [])
 
   useEffect(() => {
+    if (!isIndexRoute) {
+      return
+    }
+
     async function run() {
       const nodeInfoResponse = await nodeInfo()
       const error: any = nodeInfoResponse.error
@@ -62,7 +68,15 @@ export const RootRoute = () => {
       }
     }
     run()
-  }, [navigate, nodeInfo])
+  }, [isIndexRoute, navigate, nodeInfo])
+
+  if (!isIndexRoute) {
+    return (
+      <Layout>
+        <Outlet />
+      </Layout>
+    )
+  }
 
   return (
     <Layout>

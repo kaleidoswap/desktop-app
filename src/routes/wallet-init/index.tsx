@@ -18,11 +18,11 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
-  WALLET_DASHBOARD_PATH,
+  ROOT_PATH,
   WALLET_SETUP_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
@@ -52,6 +52,7 @@ import {
 import { UnlockingProgress } from '../../components/UnlockingProgress'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
+import { buildLocalNodeUrl } from '../../api/client'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -117,9 +118,11 @@ type SetupStep =
 export const Component = () => {
   const { t } = useTranslation()
   const [currentStep, setCurrentStep] = useState<SetupStep>('terms')
+  const [redirectToRoot, setRedirectToRoot] = useState(false)
   const [mnemonic, setMnemonic] = useState<string[]>([])
   const [isNodeError, setIsNodeError] = useState(false)
   const [nodeErrorMessage, setNodeErrorMessage] = useState('')
+  const [startupErrorMessage, setStartupErrorMessage] = useState('')
   const [isUnlocking, setIsUnlocking] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -128,14 +131,19 @@ export const Component = () => {
   const [isCancellingUnlock, setIsCancellingUnlock] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(true)
   const [isInitializing, setIsInitializing] = useState(false)
-  const [initPhase, setInitPhase] = useState<'starting-node' | 'initializing-wallet' | 'idle'>('idle')
+  const [initPhase, setInitPhase] = useState<
+    | 'starting-node'
+    | 'waiting-ready'
+    | 'initializing-wallet'
+    | 'unlocking-wallet'
+    | 'idle'
+  >('idle')
   const [nodeLogs, setNodeLogs] = useState<string[]>([])
   const logUnlistenRef = useRef<(() => void) | null>(null)
   const [showSkipMnemonicWarning, setShowSkipMnemonicWarning] = useState(false)
 
   const [init] = nodeApi.endpoints.init.useMutation()
   const [unlock] = nodeApi.endpoints.unlock.useMutation()
-  const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -175,6 +183,10 @@ export const Component = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (logUnlistenRef.current) {
+        logUnlistenRef.current()
+        logUnlistenRef.current = null
+      }
       nodeSetupForm.reset()
       passwordForm.reset()
       mnemonicForm.reset()
@@ -209,6 +221,7 @@ export const Component = () => {
   // Cleanup when changing steps
   const handleStepChange = (newStep: SetupStep) => {
     setErrors([]) // Clear additional errors
+    setStartupErrorMessage('')
 
     // Reset form errors based on step
     switch (newStep) {
@@ -262,7 +275,7 @@ export const Component = () => {
           maker_urls: [defaultMakerUrl],
           name: data.name,
           network: data.network,
-          node_url: `http://localhost:${data.daemon_listening_port}`,
+          node_url: buildLocalNodeUrl(data.daemon_listening_port),
           proxy_endpoint: data.proxy_endpoint,
           rpc_connection_url: data.rpc_connection_url,
         })
@@ -286,15 +299,84 @@ export const Component = () => {
     return `kaleidoswap-${formatAccountName(accountName)}`
   }
 
-  const handleCancelInitialization = async () => {
-    isCancelledRef.current = true
-    setIsInitializing(false)
-    setInitPhase('idle')
-    setNodeLogs([])
+  const buildNodeSettings = (
+    accountName: string,
+    network: BitcoinNetwork,
+    datapath: string
+  ) => {
+    const daemonPort = nodeSetupForm.getValues('daemon_listening_port')
+    const defaultMakerUrl = NETWORK_DEFAULTS[network].default_maker_url
+
+    return {
+      daemon_listening_port: daemonPort,
+      datapath,
+      default_lsp_url: NETWORK_DEFAULTS[network].default_lsp_url,
+      default_maker_url: defaultMakerUrl,
+      indexer_url: nodeSetupForm.getValues('indexer_url'),
+      ldk_peer_listening_port: nodeSetupForm.getValues(
+        'ldk_peer_listening_port'
+      ),
+      maker_urls: [defaultMakerUrl],
+      name: accountName,
+      network,
+      node_url: buildLocalNodeUrl(daemonPort),
+      proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
+      rpc_connection_url: nodeSetupForm.getValues('rpc_connection_url'),
+    }
+  }
+
+  const allowLoadingStateToPaint = async (): Promise<void> => {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve())
+    })
+  }
+
+  const appendNodeOutput = (
+    message: string,
+    type: 'log' | 'error' | 'crash' = 'log'
+  ) => {
+    const line =
+      type === 'log'
+        ? message
+        : `${type === 'crash' ? 'CRASH' : 'ERROR'}: ${message}`
+
+    setNodeLogs((prev) => [...prev, line].slice(-200))
+  }
+
+  const cleanupStartupListeners = () => {
     if (logUnlistenRef.current) {
       logUnlistenRef.current()
       logUnlistenRef.current = null
     }
+  }
+
+  const registerStartupListeners = async () => {
+    cleanupStartupListeners()
+
+    const unlisteners = await Promise.all([
+      listen<string>('node-log', (event) => {
+        appendNodeOutput(event.payload)
+      }),
+      listen<string>('node-error', (event) => {
+        appendNodeOutput(event.payload, 'error')
+      }),
+      listen<string>('node-crashed', (event) => {
+        appendNodeOutput(event.payload, 'crash')
+      }),
+    ])
+
+    logUnlistenRef.current = () => {
+      unlisteners.forEach((unlisten) => unlisten())
+    }
+  }
+
+  const handleCancelInitialization = async () => {
+    isCancelledRef.current = true
+    setIsInitializing(false)
+    setInitPhase('idle')
+    setStartupErrorMessage('')
+    setNodeLogs([])
+    cleanupStartupListeners()
     try {
       await invoke('stop_node')
     } catch (e) {
@@ -348,6 +430,27 @@ export const Component = () => {
     }
   }
 
+  /** Races a promise against a timeout; rejects with a descriptive error if the timeout fires first. */
+  const withTimeout = <T,>(
+    promise: Promise<T>,
+    ms: number,
+    label: string
+  ): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `${label} timed out after ${ms / 1000}s — the node may be busy. Please try again.`
+              )
+            ),
+          ms
+        )
+      ),
+    ])
+
   const startLocalNode = async (
     accountName: string,
     network: BitcoinNetwork,
@@ -398,7 +501,7 @@ export const Component = () => {
           if (!recheckPorts.available) {
             throw new Error(
               `Ports ${recheckPorts.conflictingPorts.join(', ')} are still in use by other processes. ` +
-              'Please choose different ports or stop the conflicting processes.'
+                'Please choose different ports or stop the conflicting processes.'
             )
           }
         } else {
@@ -420,7 +523,7 @@ export const Component = () => {
           if (!recheckAfterStop.available) {
             throw new Error(
               `Ports ${recheckAfterStop.conflictingPorts.join(', ')} are in use by other applications. ` +
-              'Please choose different ports or stop the conflicting applications.'
+                'Please choose different ports or stop the conflicting applications.'
             )
           }
         }
@@ -435,21 +538,20 @@ export const Component = () => {
         network,
       })
 
-      // Wait for node to be ready with improved detection
-      await waitForNodeReady({
-        daemonPort: daemonPort,
-        timeoutMs: 60000, // 60 seconds timeout
-        onProgress: (message) => {
-          console.log('Node startup progress:', message)
-        },
-      })
+      setInitPhase('waiting-ready')
+      await waitForNodeReady({ daemonPort })
 
       if (isCancelledRef.current) throw new Error('CANCELLED')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
 
       // If the error is about ports in use, suggest alternative ports
-      if (errorMessage.includes('Ports') || errorMessage.includes('in use') || errorMessage.includes('port')) {
+      if (
+        errorMessage.includes('Ports') ||
+        errorMessage.includes('in use') ||
+        errorMessage.includes('port')
+      ) {
         try {
           const suggestedPorts = await invoke<{ daemon: string; ldk: string }>(
             'find_available_ports'
@@ -457,9 +559,9 @@ export const Component = () => {
 
           throw new Error(
             `${errorMessage}\n` +
-            `Suggested alternative ports:\n` +
-            `- Daemon port: ${suggestedPorts.daemon}\n` +
-            `- LDK peer port: ${suggestedPorts.ldk}`
+              `Suggested alternative ports:\n` +
+              `- Daemon port: ${suggestedPorts.daemon}\n` +
+              `- LDK peer port: ${suggestedPorts.ldk}`
           )
         } catch (e) {
           throw new Error(errorMessage)
@@ -471,7 +573,13 @@ export const Component = () => {
   }
 
   const initializeNode = async (password: string): Promise<string[]> => {
-    const initResult = await init({ password })
+    const initResult = await withTimeout(
+      init({ password }) as unknown as Promise<
+        Awaited<ReturnType<typeof init>>
+      >,
+      20000,
+      'Node init'
+    )
 
     if ('error' in initResult) {
       const error = initResult.error
@@ -510,48 +618,58 @@ export const Component = () => {
   const unlockExistingNode = async (password: string): Promise<void> => {
     const rpcConfig = parseRpcUrl(nodeSetupForm.getValues('rpc_connection_url'))
 
-    await unlock({
-      announce_addresses: [],
-      bitcoind_rpc_host: rpcConfig.host,
-      bitcoind_rpc_password: rpcConfig.password,
-      bitcoind_rpc_port: rpcConfig.port,
-      bitcoind_rpc_username: rpcConfig.username,
-      indexer_url: nodeSetupForm.getValues('indexer_url'),
-      password,
-      proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
-    }).unwrap()
-
-    const nodeInfoResult = await nodeInfo()
-    if (!nodeInfoResult.isSuccess) {
-      throw new Error('Failed to verify node status after unlock')
-    }
+    await withTimeout(
+      unlock({
+        announce_addresses: [],
+        bitcoind_rpc_host: rpcConfig.host,
+        bitcoind_rpc_password: rpcConfig.password,
+        bitcoind_rpc_port: rpcConfig.port,
+        bitcoind_rpc_username: rpcConfig.username,
+        indexer_url: nodeSetupForm.getValues('indexer_url'),
+        password,
+        proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
+      }).unwrap(),
+      20000,
+      'Node unlock'
+    )
   }
 
   const handlePasswordSetup: SubmitHandler<PasswordFields> = async (data) => {
+    console.log('[init] handlePasswordSetup called')
     const accountName = nodeSetupForm.getValues('name')
     const network = nodeSetupForm.getValues('network')
     const datapath = getDatapath(accountName)
+    const pendingNodeSettings = buildNodeSettings(accountName, network, datapath)
 
     isCancelledRef.current = false
     setIsInitializing(true)
     setInitPhase('starting-node')
+    setStartupErrorMessage('')
     setNodeLogs([])
-
-    // Subscribe to node logs during startup
-    const { listen } = await import('@tauri-apps/api/event')
-    logUnlistenRef.current = await listen<string>('node-log', (event) => {
-      setNodeLogs((prev) => [...prev, event.payload].slice(-100))
-    })
+    setIsNodeError(false)
+    setNodeErrorMessage('')
+    await allowLoadingStateToPaint()
 
     try {
+      await dispatch(setSettingsAsync(pendingNodeSettings))
+
+      console.log('[init] registering startup listeners')
+      await registerStartupListeners()
+      console.log('[init] startup listeners registered')
+
       // Check and stop any existing node
+      console.log('[init] step 1: checkAndStopExistingNode')
       await checkAndStopExistingNode()
+      console.log('[init] step 1 done')
       if (isCancelledRef.current) return
 
       try {
+        console.log('[init] step 2: startLocalNode (spawn + backend readiness)')
         await startLocalNode(accountName, network, datapath)
+        console.log('[init] step 2 done — node HTTP server is responding')
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error)
 
         if (errorMessage === 'CANCELLED' || isCancelledRef.current) {
           setIsInitializing(false)
@@ -559,7 +677,15 @@ export const Component = () => {
           return
         }
 
-        if (errorMessage.includes('Ports') || errorMessage.includes('in use') || errorMessage.includes('Suggested alternative ports')) {
+        setStartupErrorMessage(errorMessage)
+        setNodeLogs((prev) =>
+          prev.length > 0 ? prev : [`ERROR: ${errorMessage}`]
+        )
+        if (
+          errorMessage.includes('Ports') ||
+          errorMessage.includes('in use') ||
+          errorMessage.includes('Suggested alternative ports')
+        ) {
           toast.warning(t('walletInit.passwordStep.portsInUse'), {
             autoClose: false,
             closeOnClick: true,
@@ -576,15 +702,17 @@ export const Component = () => {
       }
 
       // Node is started — now initializing wallet (generating mnemonic)
-      if (logUnlistenRef.current) {
-        logUnlistenRef.current()
-        logUnlistenRef.current = null
-      }
+      cleanupStartupListeners()
       setInitPhase('initializing-wallet')
 
       // Rest of the initialization process
       try {
+        console.log(
+          `[init] step 3 target node URL: ${pendingNodeSettings.node_url}`
+        )
+        console.log('[init] step 3: POST /init')
         const mnemonic = await initializeNode(data.password)
+        console.log('[init] step 3 done — mnemonic received')
         if (isCancelledRef.current) return
 
         setNodePassword(data.password)
@@ -595,15 +723,22 @@ export const Component = () => {
         handleStepChange('mnemonic')
         toast.success(t('walletInit.passwordStep.nodeInitializedSuccess'))
       } catch (error) {
+        console.log(
+          '[init] step 3 error:',
+          error instanceof Error ? error.message : error
+        )
         if (
           error instanceof Error &&
           error.message === 'NODE_ALREADY_INITIALIZED'
         ) {
           toast.info(t('walletInit.passwordStep.nodeAlreadyInitialized'))
           setNodePassword(data.password)
+          setInitPhase('unlocking-wallet')
+          console.log('[init] step 4: POST /unlock')
           await unlockExistingNode(data.password)
+          console.log('[init] step 4 done — unlock succeeded')
           await saveAccountSettings(accountName, network, datapath)
-          navigate(WALLET_DASHBOARD_PATH)
+          setRedirectToRoot(true)
         } else {
           throw error
         }
@@ -613,6 +748,7 @@ export const Component = () => {
         error instanceof Error
           ? error.message
           : t('walletInit.passwordStep.failedToInitialize')
+      setStartupErrorMessage(errorMessage)
       toast.error(errorMessage, {
         autoClose: false,
       })
@@ -626,10 +762,7 @@ export const Component = () => {
     } finally {
       setIsInitializing(false)
       setInitPhase('idle')
-      if (logUnlistenRef.current) {
-        logUnlistenRef.current()
-        logUnlistenRef.current = null
-      }
+      cleanupStartupListeners()
     }
   }
 
@@ -651,7 +784,7 @@ export const Component = () => {
       makerUrls: defaultMakerUrl,
       name: accountName,
       network,
-      nodeUrl: `http://localhost:${nodeSetupForm.getValues('daemon_listening_port')}`,
+      nodeUrl: buildLocalNodeUrl(nodeSetupForm.getValues('daemon_listening_port')),
       proxyEndpoint: nodeSetupForm.getValues('proxy_endpoint'),
       rpcConnectionUrl: nodeSetupForm.getValues('rpc_connection_url'),
     })
@@ -659,22 +792,7 @@ export const Component = () => {
     await invoke('set_current_account', { accountName })
 
     await dispatch(
-      setSettingsAsync({
-        daemon_listening_port: nodeSetupForm.getValues('daemon_listening_port'),
-        datapath,
-        default_lsp_url: NETWORK_DEFAULTS[network].default_lsp_url,
-        default_maker_url: defaultMakerUrl,
-        indexer_url: nodeSetupForm.getValues('indexer_url'),
-        ldk_peer_listening_port: nodeSetupForm.getValues(
-          'ldk_peer_listening_port'
-        ),
-        maker_urls: [defaultMakerUrl],
-        name: accountName,
-        network,
-        node_url: `http://localhost:${nodeSetupForm.getValues('daemon_listening_port')}`,
-        proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
-        rpc_connection_url: nodeSetupForm.getValues('rpc_connection_url'),
-      })
+      setSettingsAsync(buildNodeSettings(accountName, network, datapath))
     )
   }
 
@@ -742,22 +860,20 @@ export const Component = () => {
         nodeSetupForm.getValues('rpc_connection_url')
       )
 
-      await unlock({
-        announce_addresses: [],
-        bitcoind_rpc_host: rpcConfig.host,
-        bitcoind_rpc_password: rpcConfig.password,
-        bitcoind_rpc_port: rpcConfig.port,
-        bitcoind_rpc_username: rpcConfig.username,
-        indexer_url: nodeSetupForm.getValues('indexer_url'),
-        password: nodePassword,
-        proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
-      }).unwrap()
-
-      // Verify node status after unlock
-      const nodeInfoResult = await nodeInfo()
-      if (!nodeInfoResult.isSuccess) {
-        throw new Error(t('walletInit.unlockStep.failedToVerify'))
-      }
+      await withTimeout(
+        unlock({
+          announce_addresses: [],
+          bitcoind_rpc_host: rpcConfig.host,
+          bitcoind_rpc_password: rpcConfig.password,
+          bitcoind_rpc_port: rpcConfig.port,
+          bitcoind_rpc_username: rpcConfig.username,
+          indexer_url: nodeSetupForm.getValues('indexer_url'),
+          password: nodePassword,
+          proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
+        }).unwrap(),
+        45000,
+        'Node unlock'
+      )
 
       // Format settings before dispatching
       const network = nodeSetupForm.getValues('network')
@@ -777,7 +893,9 @@ export const Component = () => {
           maker_urls: [defaultMakerUrl],
           name: nodeSetupForm.getValues('name'),
           network: network,
-          node_url: `http://localhost:${nodeSetupForm.getValues('daemon_listening_port')}`,
+          node_url: buildLocalNodeUrl(
+            nodeSetupForm.getValues('daemon_listening_port')
+          ),
           proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
           rpc_connection_url: nodeSetupForm.getValues('rpc_connection_url'),
         })
@@ -787,7 +905,7 @@ export const Component = () => {
       toast.success(t('walletInit.unlockStep.walletUnlockedSuccess'))
 
       // Navigate to trade path
-      navigate(WALLET_DASHBOARD_PATH)
+      setRedirectToRoot(true)
     } catch (error) {
       setIsNodeError(true)
       setNodeErrorMessage(
@@ -841,7 +959,7 @@ export const Component = () => {
       subtitle: string,
       icon: React.ReactNode,
       content: React.ReactNode,
-      onBack?: () => void,
+      onBack?: () => void
     ) => (
       <div className="flex flex-1 overflow-hidden">
         {/* Left decorative panel */}
@@ -863,29 +981,45 @@ export const Component = () => {
             </div>
             {/* Title + subtitle */}
             <div className="text-center space-y-2">
-              <h2 className="text-lg font-bold text-content-primary leading-snug">{title}</h2>
-              <p className="text-xs text-content-secondary leading-relaxed">{subtitle}</p>
+              <h2 className="text-lg font-bold text-content-primary leading-snug">
+                {title}
+              </h2>
+              <p className="text-xs text-content-secondary leading-relaxed">
+                {subtitle}
+              </p>
             </div>
             {/* Step progress */}
             <div className="w-full space-y-1.5">
               {WALLET_INIT_STEPS.map((step, idx) => {
-                const currentIdx = WALLET_INIT_STEPS.findIndex(s => s.id === currentStep)
+                const currentIdx = WALLET_INIT_STEPS.findIndex(
+                  (s) => s.id === currentStep
+                )
                 const isCompleted = idx < currentIdx
                 const isActive = step.id === currentStep
                 return (
                   <div className="flex items-center gap-2.5" key={step.id}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
-                      isCompleted ? 'bg-status-success text-white' :
-                      isActive ? 'bg-primary text-white' :
-                      'bg-surface-high text-content-tertiary'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                        isCompleted
+                          ? 'bg-status-success text-white'
+                          : isActive
+                            ? 'bg-primary text-white'
+                            : 'bg-surface-high text-content-tertiary'
+                      }`}
+                    >
                       {isCompleted ? '✓' : idx + 1}
                     </div>
-                    <span className={`text-xs truncate transition-colors ${
-                      isActive ? 'text-content-primary font-medium' :
-                      isCompleted ? 'text-status-success' :
-                      'text-content-tertiary'
-                    }`}>{step.label}</span>
+                    <span
+                      className={`text-xs truncate transition-colors ${
+                        isActive
+                          ? 'text-content-primary font-medium'
+                          : isCompleted
+                            ? 'text-status-success'
+                            : 'text-content-tertiary'
+                      }`}
+                    >
+                      {step.label}
+                    </span>
                   </div>
                 )
               })}
@@ -910,7 +1044,9 @@ export const Component = () => {
             <div className="max-w-2xl mx-auto px-6 py-8">
               {/* Mobile header */}
               <div className="md:hidden mb-6">
-                <h1 className="text-2xl font-bold text-content-primary mb-1">{title}</h1>
+                <h1 className="text-2xl font-bold text-content-primary mb-1">
+                  {title}
+                </h1>
                 <p className="text-sm text-content-secondary">{subtitle}</p>
               </div>
               {content}
@@ -958,14 +1094,41 @@ export const Component = () => {
 
       case 'password':
         if (isInitializing) {
+          const phaseTitle: Record<typeof initPhase, string> = {
+            'starting-node': 'Starting Node Process',
+            'waiting-ready': 'Waiting for Node',
+            'initializing-wallet': 'Initializing Wallet',
+            'unlocking-wallet': 'Unlocking Wallet',
+            idle: 'Starting Local Node',
+          }
+          const phaseSubtitle: Record<typeof initPhase, string> = {
+            'starting-node': 'Spawning the node process and binding to ports',
+            'waiting-ready':
+              'Node process started — waiting for HTTP server to respond',
+            'initializing-wallet':
+              'Generating your 24-word mnemonic seed phrase',
+            'unlocking-wallet': 'Sending unlock request to the node',
+            idle: '',
+          }
+          const phaseIcon: Record<typeof initPhase, JSX.Element> = {
+            'starting-node': (
+              <Zap className="w-8 h-8 text-primary animate-pulse" />
+            ),
+            'waiting-ready': (
+              <Zap className="w-8 h-8 text-primary animate-pulse" />
+            ),
+            'initializing-wallet': (
+              <Key className="w-8 h-8 text-primary animate-pulse" />
+            ),
+            'unlocking-wallet': (
+              <Key className="w-8 h-8 text-primary animate-pulse" />
+            ),
+            idle: <Zap className="w-8 h-8 text-primary animate-pulse" />,
+          }
           return renderStepLayout(
-            initPhase === 'starting-node' ? 'Starting Local Node' : 'Initializing Wallet',
-            initPhase === 'starting-node'
-              ? 'The node is starting up — this may take up to 60 seconds'
-              : 'Generating your mnemonic seed phrase',
-            initPhase === 'starting-node'
-              ? <Zap className="w-8 h-8 text-primary animate-pulse" />
-              : <Key className="w-8 h-8 text-primary animate-pulse" />,
+            phaseTitle[initPhase],
+            phaseSubtitle[initPhase],
+            phaseIcon[initPhase],
             <NodeStartupProgress
               logs={nodeLogs}
               onCancel={handleCancelInitialization}
@@ -978,7 +1141,13 @@ export const Component = () => {
           t('walletInit.passwordStep.title'),
           t('walletInit.passwordStep.subtitle'),
           <Lock />,
-          <div className="w-full">
+          <div className="w-full space-y-4">
+            {startupErrorMessage && (
+              <StartupFailureDetails
+                errorMessage={startupErrorMessage}
+                logs={nodeLogs}
+              />
+            )}
             <PasswordSetupForm
               disabled={isInitializing}
               errors={errors}
@@ -1071,11 +1240,13 @@ export const Component = () => {
     }
   }
 
+  if (redirectToRoot) {
+    return <Navigate replace to={ROOT_PATH} />
+  }
+
   return (
     <>
-      <Layout>
-        {renderCurrentStep()}
-      </Layout>
+      <Layout>{renderCurrentStep()}</Layout>
       <TermsWarningModal
         isOpen={showTermsModal}
         onAccept={handleTermsAccept}
@@ -1091,7 +1262,12 @@ export const Component = () => {
 }
 
 interface NodeStartupProgressProps {
-  phase: 'starting-node' | 'initializing-wallet' | 'idle'
+  phase:
+    | 'starting-node'
+    | 'waiting-ready'
+    | 'initializing-wallet'
+    | 'unlocking-wallet'
+    | 'idle'
   logs: string[]
   onCancel: () => void
 }
@@ -1110,15 +1286,27 @@ const NodeStartupProgress = ({
   const phases = [
     {
       description:
-        'Starting the RGB Lightning node process and binding to ports. This typically takes 30–60 seconds.',
+        'Spawning the RGB Lightning node process and binding to daemon and LDK ports.',
       id: 'starting-node',
-      label: 'Start Node',
+      label: 'Start Process',
+    },
+    {
+      description:
+        'Process is running — polling the HTTP server until it starts accepting requests.',
+      id: 'waiting-ready',
+      label: 'Wait Ready',
     },
     {
       description:
         'Generating a unique 24-word mnemonic seed phrase and encrypting your wallet with your password.',
       id: 'initializing-wallet',
       label: 'Init Wallet',
+    },
+    {
+      description:
+        'Wallet already exists — sending the unlock request so the node can resume operations.',
+      id: 'unlocking-wallet',
+      label: 'Unlock',
     },
   ]
 
@@ -1183,7 +1371,7 @@ const NodeStartupProgress = ({
       )}
 
       {/* Live log viewer — only during node startup */}
-      {phase === 'starting-node' && (
+      {(phase === 'starting-node' || phase === 'waiting-ready') && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
             <Terminal className="w-3.5 h-3.5" />
@@ -1200,7 +1388,10 @@ const NodeStartupProgress = ({
               </div>
             ) : (
               logs.map((line, i) => (
-                <div className="leading-5 whitespace-pre-wrap break-all" key={i}>
+                <div
+                  className="leading-5 whitespace-pre-wrap break-all"
+                  key={i}
+                >
                   {line}
                 </div>
               ))
@@ -1217,25 +1408,197 @@ const NodeStartupProgress = ({
   )
 }
 
+interface StartupFailureDetailsProps {
+  errorMessage: string
+  logs: string[]
+}
+
+const StartupFailureDetails = ({
+  errorMessage,
+  logs,
+}: StartupFailureDetailsProps) => {
+  const recentLogs = logs.slice(-20)
+
+  return (
+    <div className="space-y-3">
+      <Alert
+        icon={<AlertTriangle className="w-4 h-4" />}
+        title="Node startup failed"
+        variant="error"
+      >
+        <p className="text-sm whitespace-pre-wrap break-words">
+          {errorMessage}
+        </p>
+      </Alert>
+
+      {recentLogs.length > 0 && (
+        <Card className="p-4 bg-surface-elevated/40 border border-border-subtle/20">
+          <div className="flex items-center gap-1.5 text-xs text-content-tertiary mb-2">
+            <Terminal className="w-3.5 h-3.5" />
+            <span>Recent node output</span>
+          </div>
+          <div className="bg-surface-base border border-border-subtle rounded-lg p-3 max-h-48 overflow-y-auto font-mono text-xs text-content-secondary">
+            {recentLogs.map((line, index) => (
+              <div
+                className={`leading-5 whitespace-pre-wrap break-all ${
+                  line.startsWith('ERROR:') || line.startsWith('CRASH:')
+                    ? 'text-status-error'
+                    : ''
+                }`}
+                key={`${line}-${index}`}
+              >
+                {line}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
 const ADJECTIVES = [
-  'Arctic','Atomic','Bold','Bright','Calm','Cedar','Clear','Cloud','Cold',
-  'Coral','Cyan','Dark','Deep','Ember','Epic','Fast','Firm','Free','Fresh',
-  'Frost','Gold','Grand','Grey','Hard','High','Ice','Iron','Jade','Keen',
-  'Lean','Lost','Lunar','Matte','Meta','Mint','Mist','Neon','Onyx','Open',
-  'Peak','Pine','Pure','Raw','Real','Red','Root','Royal','Rust','Safe','Salt',
-  'Sharp','Silk','Slim','Solar','Steel','Still','Storm','Swift','True','Ultra',
-  'Vast','Void','Warm','Wave','Wild','Zero',
+  'Arctic',
+  'Atomic',
+  'Bold',
+  'Bright',
+  'Calm',
+  'Cedar',
+  'Clear',
+  'Cloud',
+  'Cold',
+  'Coral',
+  'Cyan',
+  'Dark',
+  'Deep',
+  'Ember',
+  'Epic',
+  'Fast',
+  'Firm',
+  'Free',
+  'Fresh',
+  'Frost',
+  'Gold',
+  'Grand',
+  'Grey',
+  'Hard',
+  'High',
+  'Ice',
+  'Iron',
+  'Jade',
+  'Keen',
+  'Lean',
+  'Lost',
+  'Lunar',
+  'Matte',
+  'Meta',
+  'Mint',
+  'Mist',
+  'Neon',
+  'Onyx',
+  'Open',
+  'Peak',
+  'Pine',
+  'Pure',
+  'Raw',
+  'Real',
+  'Red',
+  'Root',
+  'Royal',
+  'Rust',
+  'Safe',
+  'Salt',
+  'Sharp',
+  'Silk',
+  'Slim',
+  'Solar',
+  'Steel',
+  'Still',
+  'Storm',
+  'Swift',
+  'True',
+  'Ultra',
+  'Vast',
+  'Void',
+  'Warm',
+  'Wave',
+  'Wild',
+  'Zero',
 ]
 
 const NOUNS = [
-  'Arc','Ark','Atom','Bay','Beam','Block','Bolt','Bridge','Byte','Chain',
-  'Code','Core','Crypt','Dash','Data','Dawn','Deck','Dex','Digit','Dock',
-  'Drop','Echo','Edge','Field','Flow','Flux','Fog','Forge','Fork','Gate',
-  'Grid','Hash','Hub','Key','Knot','Layer','Link','Loop','Mesh','Mine',
-  'Mint','Mode','Node','Orb','Path','Peer','Pipe','Pool','Port','Proof',
-  'Pulse','Reef','Relay','Ring','Root','Route','Seed','Shard','Shift',
-  'Spark','Stack','State','Sync','Tide','Token','Tower','Trace','Vault',
-  'Wave','Wire','Wing','Zone',
+  'Arc',
+  'Ark',
+  'Atom',
+  'Bay',
+  'Beam',
+  'Block',
+  'Bolt',
+  'Bridge',
+  'Byte',
+  'Chain',
+  'Code',
+  'Core',
+  'Crypt',
+  'Dash',
+  'Data',
+  'Dawn',
+  'Deck',
+  'Dex',
+  'Digit',
+  'Dock',
+  'Drop',
+  'Echo',
+  'Edge',
+  'Field',
+  'Flow',
+  'Flux',
+  'Fog',
+  'Forge',
+  'Fork',
+  'Gate',
+  'Grid',
+  'Hash',
+  'Hub',
+  'Key',
+  'Knot',
+  'Layer',
+  'Link',
+  'Loop',
+  'Mesh',
+  'Mine',
+  'Mint',
+  'Mode',
+  'Node',
+  'Orb',
+  'Path',
+  'Peer',
+  'Pipe',
+  'Pool',
+  'Port',
+  'Proof',
+  'Pulse',
+  'Reef',
+  'Relay',
+  'Ring',
+  'Root',
+  'Route',
+  'Seed',
+  'Shard',
+  'Shift',
+  'Spark',
+  'Stack',
+  'State',
+  'Sync',
+  'Tide',
+  'Token',
+  'Tower',
+  'Trace',
+  'Vault',
+  'Wave',
+  'Wire',
+  'Wing',
+  'Zone',
 ]
 
 const generateRandomName = () => {

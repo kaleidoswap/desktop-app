@@ -33,6 +33,7 @@ import {
   AdvancedSettings,
   NetworkSettings,
 } from '../../components/ui'
+import { buildLocalNodeUrl } from '../../api/client'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
@@ -145,7 +146,9 @@ const StatusModal = ({
         <div className="flex items-start gap-4">
           <div className="shrink-0 mt-0.5">{config.icon}</div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-content-primary mb-1.5">{title}</h3>
+            <h3 className="text-lg font-semibold text-content-primary mb-1.5">
+              {title}
+            </h3>
             <p className="text-content-secondary text-sm mb-3">{message}</p>
 
             {details && (
@@ -322,7 +325,7 @@ export const Component = () => {
             maker_urls: [defaultMakerUrl],
             name: data.name,
             network: data.network,
-            node_url: `http://localhost:${data.daemon_listening_port}`,
+            node_url: buildLocalNodeUrl(data.daemon_listening_port),
             proxy_endpoint: data.proxy_endpoint,
             rpc_connection_url: data.rpc_connection_url,
           })
@@ -335,13 +338,8 @@ export const Component = () => {
             ldkPeerListeningPort: data.ldk_peer_listening_port,
             network: data.network,
           })
-
-          // Wait for node to be ready with improved detection
           await waitForNodeReady({
-            timeoutMs: 60000,
-            onProgress: (message) => {
-              console.log('Node startup:', message)
-            },
+            daemonPort: data.daemon_listening_port,
           })
 
           toast.success(t('walletRestore.nodeStartedSuccess'))
@@ -367,7 +365,7 @@ export const Component = () => {
             makerUrls: defaultMakerUrl,
             name: data.name,
             network: data.network,
-            nodeUrl: `http://localhost:${data.daemon_listening_port}`,
+            nodeUrl: buildLocalNodeUrl(data.daemon_listening_port),
             proxyEndpoint: data.proxy_endpoint,
             rpcConnectionUrl: data.rpc_connection_url,
           })
@@ -452,29 +450,43 @@ export const Component = () => {
             </div>
             {/* Title + subtitle */}
             <div className="text-center space-y-2">
-              <h2 className="text-lg font-bold text-content-primary">{t('walletRestore.title')}</h2>
-              <p className="text-xs text-content-secondary leading-relaxed">{t('walletRestore.subtitle')}</p>
+              <h2 className="text-lg font-bold text-content-primary">
+                {t('walletRestore.title')}
+              </h2>
+              <p className="text-xs text-content-secondary leading-relaxed">
+                {t('walletRestore.subtitle')}
+              </p>
             </div>
             {/* Step progress */}
             <div className="w-full space-y-1.5">
               {steps.map((step, idx) => {
-                const currentIdx = steps.findIndex(s => s.id === currentStep)
+                const currentIdx = steps.findIndex((s) => s.id === currentStep)
                 const isCompleted = idx < currentIdx
                 const isActive = step.id === currentStep
                 return (
                   <div className="flex items-center gap-2.5" key={step.id}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
-                      isCompleted ? 'bg-status-success text-white' :
-                      isActive ? 'bg-primary text-white' :
-                      'bg-surface-high text-content-tertiary'
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                        isCompleted
+                          ? 'bg-status-success text-white'
+                          : isActive
+                            ? 'bg-primary text-white'
+                            : 'bg-surface-high text-content-tertiary'
+                      }`}
+                    >
                       {isCompleted ? '✓' : idx + 1}
                     </div>
-                    <span className={`text-xs truncate transition-colors ${
-                      isActive ? 'text-content-primary font-medium' :
-                      isCompleted ? 'text-status-success' :
-                      'text-content-tertiary'
-                    }`}>{step.label}</span>
+                    <span
+                      className={`text-xs truncate transition-colors ${
+                        isActive
+                          ? 'text-content-primary font-medium'
+                          : isCompleted
+                            ? 'text-status-success'
+                            : 'text-content-tertiary'
+                      }`}
+                    >
+                      {step.label}
+                    </span>
                   </div>
                 )
               })}
@@ -497,158 +509,175 @@ export const Component = () => {
             <div className="max-w-2xl mx-auto px-6 py-8">
               {/* Mobile header */}
               <div className="md:hidden mb-6">
-                <h1 className="text-2xl font-bold text-content-primary mb-1">{t('walletRestore.title')}</h1>
-                <p className="text-sm text-content-secondary">{t('walletRestore.subtitle')}</p>
+                <h1 className="text-2xl font-bold text-content-primary mb-1">
+                  {t('walletRestore.title')}
+                </h1>
+                <p className="text-sm text-content-secondary">
+                  {t('walletRestore.subtitle')}
+                </p>
               </div>
 
-        {currentStep === 'backup-selection' && (
-          <div className="max-w-2xl mx-auto">
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <Card className="p-6 mb-6">
-                <div className="space-y-6">
-                  {additionalErrors.length > 0 && (
-                    <Alert
-                      icon={<AlertCircle className="w-5 h-5" />}
-                      title={t('common.error')}
-                      variant="error"
-                    >
-                      <ul className="text-sm space-y-1">
-                        {additionalErrors.map((error, index) => (
-                          <li className="flex items-center gap-2" key={index}>
-                            <span>•</span> {error}
-                          </li>
-                        ))}
-                      </ul>
-                    </Alert>
-                  )}
+              {currentStep === 'backup-selection' && (
+                <div className="max-w-2xl mx-auto">
+                  <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <Card className="p-6 mb-6">
+                      <div className="space-y-6">
+                        {additionalErrors.length > 0 && (
+                          <Alert
+                            icon={<AlertCircle className="w-5 h-5" />}
+                            title={t('common.error')}
+                            variant="error"
+                          >
+                            <ul className="text-sm space-y-1">
+                              {additionalErrors.map((error, index) => (
+                                <li
+                                  className="flex items-center gap-2"
+                                  key={index}
+                                >
+                                  <span>•</span> {error}
+                                </li>
+                              ))}
+                            </ul>
+                          </Alert>
+                        )}
 
-                  <FormField
-                    description={t('walletRestore.accountNameDescription')}
-                    error={form.formState.errors.name?.message}
-                    htmlFor="name"
-                    label={t('walletRestore.accountName')}
-                  >
-                    <Input
-                      id="name"
-                      placeholder={t('walletRestore.accountNamePlaceholder')}
-                      {...form.register('name', {
-                        required: t('walletRestore.accountNameRequired'),
-                      })}
-                      error={!!form.formState.errors.name}
-                    />
-                  </FormField>
+                        <FormField
+                          description={t(
+                            'walletRestore.accountNameDescription'
+                          )}
+                          error={form.formState.errors.name?.message}
+                          htmlFor="name"
+                          label={t('walletRestore.accountName')}
+                        >
+                          <Input
+                            id="name"
+                            placeholder={t(
+                              'walletRestore.accountNamePlaceholder'
+                            )}
+                            {...form.register('name', {
+                              required: t('walletRestore.accountNameRequired'),
+                            })}
+                            error={!!form.formState.errors.name}
+                          />
+                        </FormField>
 
-                  <NetworkSelector
-                    className="mb-2"
-                    onChange={(network) => form.setValue('network', network)}
-                    selectedNetwork={form.watch('network')}
-                  />
+                        <NetworkSelector
+                          className="mb-2"
+                          onChange={(network) =>
+                            form.setValue('network', network)
+                          }
+                          selectedNetwork={form.watch('network')}
+                        />
 
-                  <FormField
-                    description={t('walletRestore.backupFileDescription')}
-                    error={form.formState.errors.backup_path?.message}
-                    htmlFor="backup_path"
-                    label={t('walletRestore.backupFile')}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Input
-                        error={!!form.formState.errors.backup_path}
-                        id="backup_path"
-                        placeholder={t('walletRestore.backupFilePlaceholder')}
-                        readOnly
-                        value={form.watch('backup_path')}
-                      />
-                      <Button
-                        className="flex-shrink-0"
-                        onClick={handleSelectBackupFile}
-                        type="button"
-                        variant="outline"
-                      >
-                        <Folder className="w-5 h-5" />
-                      </Button>
+                        <FormField
+                          description={t('walletRestore.backupFileDescription')}
+                          error={form.formState.errors.backup_path?.message}
+                          htmlFor="backup_path"
+                          label={t('walletRestore.backupFile')}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Input
+                              error={!!form.formState.errors.backup_path}
+                              id="backup_path"
+                              placeholder={t(
+                                'walletRestore.backupFilePlaceholder'
+                              )}
+                              readOnly
+                              value={form.watch('backup_path')}
+                            />
+                            <Button
+                              className="flex-shrink-0"
+                              onClick={handleSelectBackupFile}
+                              type="button"
+                              variant="outline"
+                            >
+                              <Folder className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </FormField>
+
+                        <FormField
+                          description={t('walletRestore.passwordDescription')}
+                          error={form.formState.errors.password?.message}
+                          htmlFor="password"
+                          label={t('walletRestore.password')}
+                        >
+                          <PasswordInput
+                            id="password"
+                            isVisible={isPasswordVisible}
+                            onToggleVisibility={() =>
+                              setIsPasswordVisible(!isPasswordVisible)
+                            }
+                            placeholder={t('walletRestore.passwordPlaceholder')}
+                            {...form.register('password', {
+                              required: t('walletRestore.passwordRequired'),
+                            })}
+                            error={!!form.formState.errors.password}
+                          />
+                        </FormField>
+
+                        <AdvancedSettings>
+                          <NetworkSettings form={form} />
+                        </AdvancedSettings>
+                      </div>
+
+                      <div className="pt-6">
+                        <Button
+                          className="w-full"
+                          disabled={isStartingNode || isSubmitting.current}
+                          size="lg"
+                          type="submit"
+                        >
+                          {isStartingNode ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Spinner size="sm" />
+                              {t('walletRestore.restoring')}
+                            </span>
+                          ) : (
+                            t('walletRestore.restoreWallet')
+                          )}
+                        </Button>
+                      </div>
+                    </Card>
+                  </form>
+                </div>
+              )}
+
+              {currentStep === 'restoration' && (
+                <div className="py-8 space-y-6 text-center">
+                  <div className="relative inline-flex">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center">
+                      <Spinner size="lg" />
                     </div>
-                  </FormField>
-
-                  <FormField
-                    description={t('walletRestore.passwordDescription')}
-                    error={form.formState.errors.password?.message}
-                    htmlFor="password"
-                    label={t('walletRestore.password')}
-                  >
-                    <PasswordInput
-                      id="password"
-                      isVisible={isPasswordVisible}
-                      onToggleVisibility={() =>
-                        setIsPasswordVisible(!isPasswordVisible)
-                      }
-                      placeholder={t('walletRestore.passwordPlaceholder')}
-                      {...form.register('password', {
-                        required: t('walletRestore.passwordRequired'),
-                      })}
-                      error={!!form.formState.errors.password}
-                    />
-                  </FormField>
-
-                  <AdvancedSettings>
-                    <NetworkSettings form={form} />
-                  </AdvancedSettings>
+                    <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl font-semibold text-content-primary">
+                      {t('walletRestore.restoringYourWallet')}
+                    </h3>
+                    <p className="text-content-secondary text-sm">
+                      {t('walletRestore.restoringMessage')}
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-overlay/40 border border-border-subtle/30">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-xs text-content-secondary">
+                      This may take up to 60 seconds
+                    </span>
+                  </div>
                 </div>
+              )}
 
-                <div className="pt-6">
-                  <Button
-                    className="w-full"
-                    disabled={isStartingNode || isSubmitting.current}
-                    size="lg"
-                    type="submit"
-                  >
-                    {isStartingNode ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Spinner size="sm" />
-                        {t('walletRestore.restoring')}
-                      </span>
-                    ) : (
-                      t('walletRestore.restoreWallet')
-                    )}
-                  </Button>
-                </div>
-              </Card>
-            </form>
-          </div>
-        )}
-
-        {currentStep === 'restoration' && (
-          <div className="py-8 space-y-6 text-center">
-            <div className="relative inline-flex">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/20 flex items-center justify-center">
-                <Spinner size="lg" />
-              </div>
-              <div className="absolute inset-0 rounded-full bg-primary/5 animate-ping" />
-            </div>
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-semibold text-content-primary">
-                {t('walletRestore.restoringYourWallet')}
-              </h3>
-              <p className="text-content-secondary text-sm">
-                {t('walletRestore.restoringMessage')}
-              </p>
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-overlay/40 border border-border-subtle/30">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs text-content-secondary">This may take up to 60 seconds</span>
-            </div>
-          </div>
-        )}
-
-        <StatusModal
-          autoClose={modalState.autoClose}
-          autoCloseDelay={3000}
-          details={modalState.details}
-          isOpen={modalState.isOpen}
-          message={modalState.message}
-          onClose={closeModal}
-          title={modalState.title}
-          type={modalState.type}
-        />
+              <StatusModal
+                autoClose={modalState.autoClose}
+                autoCloseDelay={3000}
+                details={modalState.details}
+                isOpen={modalState.isOpen}
+                message={modalState.message}
+                onClose={closeModal}
+                title={modalState.title}
+                type={modalState.type}
+              />
             </div>
           </div>
         </div>
