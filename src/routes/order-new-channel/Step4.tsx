@@ -170,12 +170,12 @@ export const Step4 = ({
         <button
           className={`px-6 py-4 rounded-lg text-lg font-bold ${
             paymentStatus === 'success'
-              ? 'bg-green-700 hover:bg-green-800'
+              ? 'bg-primary text-[#12131C] hover:bg-primary-emphasis'
               : paymentStatus === 'error'
                 ? 'bg-red-600 hover:bg-red-700'
                 : paymentStatus === 'expired'
                   ? 'bg-yellow-600 hover:bg-yellow-700'
-                  : 'bg-primary hover:bg-primary-emphasis'
+                  : 'bg-primary text-[#12131C] hover:bg-primary-emphasis'
           } transition-colors w-full flex items-center justify-center shadow-lg`}
           onClick={config.buttonAction}
         >

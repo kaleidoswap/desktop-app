@@ -27,27 +27,30 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
 }) => {
   const { t } = useTranslation()
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-8 text-center">
+    <div className="mx-auto max-w-3xl">
+      <div className="relative overflow-hidden rounded-[28px] border border-cyan-400/20 bg-surface-base/90 p-8 text-center shadow-[0_24px_80px_rgba(2,6,23,0.45)]">
+        <div className="pointer-events-none absolute -left-16 top-0 h-44 w-44 rounded-full bg-cyan-400/12 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl" />
+
         {/* Animated Icon */}
-        <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-          <div className="absolute inset-0 rounded-full border-4 border-blue-500/30 border-t-blue-500 animate-spin"></div>
-          <CheckCircle className="w-10 h-10 text-blue-500" />
+        <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-400/15">
+          <div className="absolute inset-0 rounded-full border-4 border-cyan-400/25 border-t-cyan-300 animate-spin"></div>
+          <CheckCircle className="h-10 w-10 text-cyan-300" />
         </div>
 
         {/* Title */}
-        <h3 className="text-2xl font-bold text-white mb-4">
+        <h3 className="mb-4 text-2xl font-bold text-white">
           {t('orderChannel.step3.paymentReceived')}
         </h3>
 
         {/* Subtitle */}
-        <p className="text-content-secondary mb-6">
+        <p className="mb-6 text-content-secondary">
           {t('orderChannel.step3.processingSubtitle')}
         </p>
 
         {/* Payment Details */}
-        <div className="bg-surface-overlay/50 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-center gap-4 text-sm mb-3">
+        <div className="mb-6 rounded-[22px] border border-border-subtle bg-surface-overlay/50 p-4">
+          <div className="mb-3 flex items-center justify-center gap-4 text-sm">
             <span className="text-content-secondary">
               {t('orderChannel.step3.amount')}:
             </span>
@@ -81,10 +84,10 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
 
         {/* Asset Information */}
         {(orderPayload?.asset_id || order?.asset_id) && (
-          <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-4 mb-6">
+          <div className="mb-6 rounded-[22px] border border-emerald-400/20 bg-emerald-400/8 p-4">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              <span className="text-purple-300 text-sm font-medium">
+              <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
+              <span className="text-sm font-medium text-emerald-200">
                 {t('orderChannel.step3.rgbAssetChannel')}
               </span>
             </div>
@@ -114,7 +117,7 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
                     <span className="text-content-tertiary">
                       {t('orderChannel.step3.lspAmount')}:
                     </span>
-                    <span className="text-purple-300">
+                    <span className="text-emerald-300">
                       {(
                         order?.lsp_asset_amount ||
                         orderPayload?.lsp_asset_amount
@@ -145,7 +148,7 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
 
         {/* Progress Steps */}
         <div className="mb-6">
-          <div className="flex items-center justify-center space-x-4 mb-4">
+          <div className="mb-4 flex items-center justify-center space-x-4">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span className="ml-2 text-sm text-green-400">
@@ -170,8 +173,8 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
         </div>
 
         {/* Status Message */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-          <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
+        <div className="rounded-[20px] border border-cyan-400/20 bg-cyan-400/10 p-4">
+          <div className="flex items-center justify-center gap-2 text-sm text-cyan-200">
             <Clock className="w-4 h-4" />
             <span>{t('orderChannel.step3.waitingMakerConfirmation')}</span>
           </div>

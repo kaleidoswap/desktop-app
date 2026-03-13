@@ -13,14 +13,16 @@ export const PaymentMethodTabs: React.FC<PaymentMethodTabsProps> = ({
   const { t } = useTranslation()
 
   return (
-    <div className="flex justify-center mb-6">
-      <div className="bg-surface-base/50 p-1 rounded-xl">
+    <div className="flex justify-start">
+      <div className="grid w-full grid-cols-2 gap-2 rounded-2xl border border-border-subtle bg-surface-overlay/50 p-1.5">
         {['lightning', 'onchain'].map((method) => (
           <button
-            className={`px-6 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+            className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
               paymentMethod === method
-                ? 'bg-primary text-primary-foreground shadow-lg'
-                : 'text-content-secondary hover:text-white'
+                ? method === 'lightning'
+                  ? 'bg-cyan-400/15 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18)]'
+                  : 'bg-amber-400/15 text-amber-100 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.18)]'
+                : 'text-content-secondary hover:bg-surface-base/70 hover:text-content-primary'
             }`}
             key={method}
             onClick={() => onMethodChange(method as 'lightning' | 'onchain')}

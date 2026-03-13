@@ -37,17 +37,17 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
     { label: t('orderChannel.step3.feeCustom'), rate: 0, value: 'custom' },
   ]
   return (
-    <div>
-      <label className="text-sm font-medium text-content-secondary mb-3 block">
+    <div className="space-y-3">
+      <label className="block text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
         {t('orderChannel.step3.feeRateLabel')}
       </label>
       <div className="grid grid-cols-2 gap-3">
         {feeRates.map((rate) => (
           <button
-            className={`p-3 rounded-xl border-2 transition-all duration-200 flex items-center justify-between text-sm ${
+            className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-sm transition-all duration-200 ${
               selectedFee === rate.value
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border-default text-content-secondary hover:border-primary/50'
+                ? 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
+                : 'border-border-subtle bg-surface-base/45 text-content-secondary hover:border-cyan-400/25 hover:text-content-primary'
             }`}
             key={rate.value}
             onClick={() => onFeeChange(rate.value)}
@@ -67,7 +67,7 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
       </div>
       {selectedFee === 'custom' && (
         <input
-          className="mt-3 w-full px-4 py-3 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary focus:ring-1 focus:ring-primary text-white"
+          className="w-full rounded-2xl border border-border-subtle bg-surface-base/60 px-4 py-3 text-white focus:border-cyan-400/40 focus:ring-1 focus:ring-cyan-400/30"
           onChange={(e) => onCustomFeeChange(parseFloat(e.target.value))}
           placeholder={t('orderChannel.step3.customFeePlaceholder')}
           step="0.1"

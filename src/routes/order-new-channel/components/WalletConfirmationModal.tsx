@@ -1,22 +1,25 @@
-import { AlertTriangle, Zap, Link as ChainIcon } from 'lucide-react'
+import { Link as ChainIcon, Wallet, X, Zap } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { formatBitcoinAmount } from '../../../helpers/number'
 
+import { FeeSelector } from './FeeSelector'
+
 interface WalletConfirmationModalProps {
   isOpen: boolean
   isProcessing: boolean
-  paymentMethod: 'lightning' | 'onchain'
-  currentPayment: any
   bitcoinUnit: string
   outboundLiquidity: number
   onChainBalance: number
+  lightningAmountSat?: number
+  onchainAmountSat?: number
   selectedFee: string
   customFee: number
-  feeRates: Array<{ label: string; rate: number; value: string }>
+  onFeeChange: (fee: string) => void
+  onCustomFeeChange: (fee: number) => void
   onClose: () => void
-  onConfirm: () => void
+  onPay: (method: 'lightning' | 'onchain') => void
 }
 
 export const WalletConfirmationModal: React.FC<
@@ -24,161 +27,241 @@ export const WalletConfirmationModal: React.FC<
 > = ({
   isOpen,
   isProcessing,
-  paymentMethod,
-  currentPayment,
   bitcoinUnit,
   outboundLiquidity,
   onChainBalance,
+  lightningAmountSat = 0,
+  onchainAmountSat = 0,
   selectedFee,
   customFee,
-  feeRates,
+  onFeeChange,
+  onCustomFeeChange,
   onClose,
-  onConfirm,
+  onPay,
 }) => {
   const { t } = useTranslation()
+
   if (!isOpen) return null
+
+  const lightningAvailable = lightningAmountSat > 0
+  const onchainAvailable = onchainAmountSat > 0
+  const hasLightningBalance = outboundLiquidity >= lightningAmountSat
+  const hasOnchainBalance = onChainBalance >= onchainAmountSat
 
   return (
     <div className="fixed inset-0 z-50">
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => !isProcessing && onClose()}
       />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-md w-full">
-          {isProcessing ? (
-            <div className="flex flex-col items-center py-6">
-              <div className="w-16 h-16 mb-4">
-                <div
-                  className="w-full h-full border-4 border-blue-500/30 border-t-blue-500
-                              rounded-full animate-spin"
-                />
+
+      <div className="absolute inset-0 overflow-y-auto px-4 py-8 flex items-center justify-center">
+        <div className="w-full max-w-2xl rounded-[28px] border border-border-subtle bg-surface-base/95 shadow-[0_30px_100px_rgba(2,6,23,0.6)]">
+          <div className="flex items-start justify-between border-b border-border-subtle px-6 py-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+                <Wallet className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                {t('orderChannel.step3.processingPayment')}
-              </h3>
-              <p className="text-content-secondary text-center">
-                {t('orderChannel.step3.processingWait')}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-6 h-6 text-yellow-500" />
-                <h3 className="text-xl font-bold text-white">
-                  {t('orderChannel.step3.confirmPayment')}
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
+                  {t('components.buyChannelModal.walletEyebrow')}
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-content-primary">
+                  {t('orderChannel.step3.payWithWallet')}
                 </h3>
+                <p className="mt-2 text-sm text-content-secondary">
+                  {t('components.buyChannelModal.walletDescription')}
+                </p>
               </div>
-              <div className="space-y-4">
-                {/* Payment Details Section */}
-                <div className="bg-surface-overlay/50 rounded-xl p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-content-secondary">
-                      {t('orderChannel.step3.paymentType')}:
-                    </span>
-                    <span className="text-white font-medium flex items-center gap-2">
-                      {paymentMethod === 'lightning' ? (
-                        <>
-                          <Zap className="w-4 h-4 text-yellow-500" />
-                          {t('orderChannel.step3.lightning')}
-                        </>
-                      ) : (
-                        <>
-                          <ChainIcon className="w-4 h-4 text-blue-500" />
-                          {t('orderChannel.step3.onchain')}
-                        </>
-                      )}
-                    </span>
-                  </div>
-                </div>
+            </div>
 
-                {/* Balance Section */}
-                <div className="bg-surface-overlay/50 rounded-xl p-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-content-secondary">
-                      {paymentMethod === 'lightning'
-                        ? t('orderChannel.step3.maxSendable')
-                        : t('orderChannel.step3.availableBalance')}
-                      :
-                    </span>
-                    <span className="text-white font-medium">
-                      {paymentMethod === 'lightning'
-                        ? `${formatBitcoinAmount(outboundLiquidity, bitcoinUnit)}`
-                        : `${formatBitcoinAmount(onChainBalance, bitcoinUnit)}`}{' '}
-                      {bitcoinUnit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-content-secondary">
-                      {t('orderChannel.step3.amountToPay')}:
-                    </span>
-                    <span className="text-white font-medium">
-                      {formatBitcoinAmount(
-                        currentPayment?.order_total_sat || 0,
-                        bitcoinUnit
-                      )}{' '}
-                      {bitcoinUnit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-content-secondary">
-                      {t('orderChannel.step3.remainingBalance')}:
-                    </span>
-                    <span className="text-white font-medium">
-                      {formatBitcoinAmount(
-                        paymentMethod === 'lightning'
-                          ? outboundLiquidity -
-                              (currentPayment?.order_total_sat || 0)
-                          : onChainBalance -
-                              (currentPayment?.order_total_sat || 0),
-                        bitcoinUnit
-                      )}{' '}
-                      {bitcoinUnit}
-                    </span>
-                  </div>
-                </div>
+            <button
+              className="rounded-xl border border-border-subtle bg-surface-overlay/60 p-2 text-content-secondary transition-colors hover:text-content-primary"
+              onClick={onClose}
+              type="button"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
 
-                {/* Fee Section - Only for on-chain */}
-                {paymentMethod === 'onchain' && (
-                  <div className="bg-surface-overlay/50 rounded-xl p-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-content-secondary">
-                        {t('orderChannel.step3.feeRate')}:
-                      </span>
-                      <span className="text-white font-medium">
-                        {selectedFee === 'custom'
-                          ? `${customFee} ${t('orderChannel.feeUnit')}`
-                          : `${feeRates.find((rate) => rate.value === selectedFee)?.rate} ${t('orderChannel.feeUnit')}`}
-                      </span>
+          <div className="space-y-4 px-6 py-5">
+            {isProcessing ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="h-14 w-14 rounded-full border-4 border-cyan-400/20 border-t-cyan-300 animate-spin" />
+                <p className="mt-5 text-lg font-medium text-content-primary">
+                  {t('orderChannel.step3.processingPayment')}
+                </p>
+                <p className="mt-2 text-sm text-content-secondary">
+                  {t('orderChannel.step3.processingWait')}
+                </p>
+              </div>
+            ) : (
+              <>
+                {lightningAvailable && (
+                  <div
+                    className={`rounded-[24px] border p-5 ${
+                      hasLightningBalance
+                        ? 'border-cyan-400/20 bg-cyan-400/8'
+                        : 'border-border-subtle bg-surface-overlay/40'
+                    }`}
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/12 text-cyan-200">
+                          <Zap className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-content-primary">
+                            {t('orderChannel.step3.lightning')}
+                          </p>
+                          <p className="mt-1 text-sm text-content-secondary">
+                            {t(
+                              'components.buyChannelModal.walletLightningDescription'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[320px]">
+                        <div className="rounded-2xl border border-border-subtle bg-surface-base/50 px-4 py-3">
+                          <p className="text-[11px] uppercase tracking-[0.26em] text-content-tertiary">
+                            {t('components.buyChannelModal.availableLabel')}
+                          </p>
+                          <p className="mt-2 text-base font-semibold text-content-primary">
+                            {formatBitcoinAmount(
+                              outboundLiquidity,
+                              bitcoinUnit
+                            )}{' '}
+                            {bitcoinUnit}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-border-subtle bg-surface-base/50 px-4 py-3">
+                          <p className="text-[11px] uppercase tracking-[0.26em] text-content-tertiary">
+                            {t('components.buyChannelModal.paymentLabel')}
+                          </p>
+                          <p className="mt-2 text-base font-semibold text-cyan-200">
+                            {formatBitcoinAmount(
+                              lightningAmountSat,
+                              bitcoinUnit
+                            )}{' '}
+                            {bitcoinUnit}
+                          </p>
+                        </div>
+                      </div>
                     </div>
+
+                    {!hasLightningBalance && (
+                      <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 px-3 py-2">
+                        <p className="text-sm font-medium text-amber-100">
+                          {t('components.buyChannelModal.balanceNeededTitle')}
+                        </p>
+                        <p className="mt-1 text-sm text-amber-100/80">
+                          {t(
+                            'components.buyChannelModal.balanceNeededDescription'
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={!hasLightningBalance}
+                      onClick={() => onPay('lightning')}
+                      type="button"
+                    >
+                      <Zap className="h-4 w-4" />
+                      {t('orderChannel.step3.pay')}{' '}
+                      {formatBitcoinAmount(lightningAmountSat, bitcoinUnit)}{' '}
+                      {bitcoinUnit}
+                    </button>
                   </div>
                 )}
 
-                <div className="border-t border-border-subtle my-4" />
-                <p className="text-yellow-500/80 text-sm">
-                  {t('orderChannel.step3.verifyDetails')}
-                </p>
-                <div className="flex gap-3 mt-6">
-                  <button
-                    className="flex-1 py-3 px-4 rounded-xl border border-border-default
-                             text-content-secondary hover:bg-surface-overlay transition-colors"
-                    onClick={onClose}
-                    type="button"
+                {onchainAvailable && (
+                  <div
+                    className={`rounded-[24px] border p-5 ${
+                      hasOnchainBalance
+                        ? 'border-amber-400/20 bg-amber-400/8'
+                        : 'border-border-subtle bg-surface-overlay/40'
+                    }`}
                   >
-                    {t('orderChannel.step3.cancel')}
-                  </button>
-                  <button
-                    className="flex-1 py-3 px-4 bg-primary hover:bg-primary-emphasis
-                             text-primary-foreground rounded-xl font-medium transition-colors"
-                    onClick={onConfirm}
-                    type="button"
-                  >
-                    {t('orderChannel.step3.confirmPayment')}
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-400/12 text-amber-200">
+                          <ChainIcon className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-content-primary">
+                            {t('orderChannel.step3.onchain')}
+                          </p>
+                          <p className="mt-1 text-sm text-content-secondary">
+                            {t(
+                              'components.buyChannelModal.walletOnchainDescription'
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[320px]">
+                        <div className="rounded-2xl border border-border-subtle bg-surface-base/50 px-4 py-3">
+                          <p className="text-[11px] uppercase tracking-[0.26em] text-content-tertiary">
+                            {t('components.buyChannelModal.availableLabel')}
+                          </p>
+                          <p className="mt-2 text-base font-semibold text-content-primary">
+                            {formatBitcoinAmount(onChainBalance, bitcoinUnit)}{' '}
+                            {bitcoinUnit}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-border-subtle bg-surface-base/50 px-4 py-3">
+                          <p className="text-[11px] uppercase tracking-[0.26em] text-content-tertiary">
+                            {t('components.buyChannelModal.paymentLabel')}
+                          </p>
+                          <p className="mt-2 text-base font-semibold text-amber-200">
+                            {formatBitcoinAmount(onchainAmountSat, bitcoinUnit)}{' '}
+                            {bitcoinUnit}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <FeeSelector
+                        customFee={customFee}
+                        onCustomFeeChange={onCustomFeeChange}
+                        onFeeChange={onFeeChange}
+                        selectedFee={selectedFee}
+                      />
+                    </div>
+
+                    {!hasOnchainBalance && (
+                      <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 px-3 py-2">
+                        <p className="text-sm font-medium text-amber-100">
+                          {t('components.buyChannelModal.balanceNeededTitle')}
+                        </p>
+                        <p className="mt-1 text-sm text-amber-100/80">
+                          {t(
+                            'components.buyChannelModal.balanceNeededDescription'
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    <button
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={!hasOnchainBalance}
+                      onClick={() => onPay('onchain')}
+                      type="button"
+                    >
+                      <ChainIcon className="h-4 w-4" />
+                      {t('orderChannel.step3.pay')}{' '}
+                      {formatBitcoinAmount(onchainAmountSat, bitcoinUnit)}{' '}
+                      {bitcoinUnit}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
