@@ -18,7 +18,7 @@ export const createFromAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
   setDebouncedFromAmount?: (value: string) => void,
-  maxAmount?: number
+  _maxAmount?: number
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
@@ -109,7 +109,7 @@ export const createFromAmountChangeHandler = (
 export const createToAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  maxAmount?: number
+  _maxAmount?: number
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target

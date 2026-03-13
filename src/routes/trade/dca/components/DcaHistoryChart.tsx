@@ -37,14 +37,16 @@ export function DcaHistoryChart({ executions }: Props) {
   const maxPrice = Math.max(...prices)
   const priceRange = maxPrice - minPrice || 1
 
-  const toX = (ts: number) =>
-    PAD.left + ((ts - minTs) / tsRange) * chartW
+  const toX = (ts: number) => PAD.left + ((ts - minTs) / tsRange) * chartW
   const toPriceY = (p: number) =>
     PAD.top + ((maxPrice - p) / priceRange) * chartH
 
   // Price line
   const pricePath = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.ts).toFixed(1)} ${toPriceY(p.price).toFixed(1)}`)
+    .map(
+      (p, i) =>
+        `${i === 0 ? 'M' : 'L'} ${toX(p.ts).toFixed(1)} ${toPriceY(p.price).toFixed(1)}`
+    )
     .join(' ')
 
   // Area under price line
@@ -78,8 +80,16 @@ export function DcaHistoryChart({ executions }: Props) {
         {/* Gradient */}
         <defs>
           <linearGradient id="dcaGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="rgb(var(--color-primary))" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="rgb(var(--color-primary))" stopOpacity="0.02" />
+            <stop
+              offset="0%"
+              stopColor="rgb(var(--color-primary))"
+              stopOpacity="0.25"
+            />
+            <stop
+              offset="100%"
+              stopColor="rgb(var(--color-primary))"
+              stopOpacity="0.02"
+            />
           </linearGradient>
         </defs>
 

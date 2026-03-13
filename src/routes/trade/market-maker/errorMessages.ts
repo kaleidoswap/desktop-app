@@ -124,13 +124,13 @@ export const parseAmountValidationError = (
  */
 export const getValidationError = (
   fromAmount: number,
-  toAmount: number,
+  _toAmount: number,
   minFromAmount: number,
   maxFromAmount: number,
-  maxToAmount: number,
+  _maxToAmount: number,
   maxOutboundHtlcSat: number,
   fromAsset: string,
-  toAsset: string,
+  _toAsset: string,
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
   assets: NiaAsset[] = [],
@@ -160,11 +160,6 @@ export const getValidationError = (
     isAssetId(fromAsset) && assets.length > 0
       ? mapAssetIdToTicker(fromAsset, assets)
       : fromAsset
-
-  const toDisplayAsset =
-    isAssetId(toAsset) && assets.length > 0
-      ? mapAssetIdToTicker(toAsset, assets)
-      : toAsset
 
   // Check if available balance is zero - show error immediately
   if (maxFromAmount === 0) {

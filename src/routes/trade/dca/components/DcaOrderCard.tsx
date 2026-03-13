@@ -10,11 +10,18 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppDispatch } from '../../../../app/store/hooks'
+import bitcoinLogo from '../../../../assets/bitcoin-logo.svg'
+import tetherLogo from '../../../../assets/tether-logo.svg'
+import {
+  DCA_SCHEDULER_INTERVAL_MS,
+  executeOrderManually,
+} from '../../../../hooks/useDcaScheduler'
 import {
   DcaOrder,
   DcaExecution,
@@ -23,7 +30,6 @@ import {
   pauseOrder,
   resumeOrder,
 } from '../../../../slices/dcaSlice'
-import { executeOrderManually } from '../../../../hooks/useDcaScheduler'
 import { DcaHistoryChart } from './DcaHistoryChart'
 
 interface Props {
@@ -41,7 +47,6 @@ function formatInterval(hours: number): string {
 }
 
 function formatTimeRemaining(ms: number): string {
-  if (ms <= 0) return 'now'
   const s = Math.floor(ms / 1000)
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
@@ -67,12 +72,15 @@ function StatusBadge({ status }: { status: DcaOrder['status'] }) {
   const { t } = useTranslation()
   const styles: Record<DcaOrder['status'], string> = {
     active: 'bg-status-success/15 text-status-success border-status-success/30',
-    cancelled: 'bg-border-subtle/30 text-content-tertiary border-border-subtle/50',
+    cancelled:
+      'bg-border-subtle/30 text-content-tertiary border-border-subtle/50',
     completed: 'bg-primary/15 text-primary border-primary/30',
     paused: 'bg-status-warning/15 text-status-warning border-status-warning/30',
   }
   return (
-    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${styles[status]}`}>
+    <span
+      className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${styles[status]}`}
+    >
       {t(`dca.status.${status}`, status)}
     </span>
   )
@@ -96,12 +104,17 @@ function ExecutionRow({ exec }: { exec: DcaExecution }) {
       <div className="flex items-center gap-3 flex-shrink-0 ml-2">
         {exec.status === 'success' ? (
           <>
-            <span className="text-content-secondary">{exec.fromAmountUsdt} USDT</span>
+            <span className="text-content-secondary">
+              {exec.fromAmountUsdt} USDT
+            </span>
             <span className="text-status-success font-medium">
               +{exec.toAmountSats.toLocaleString()} sats
             </span>
             <span className="text-content-tertiary">
-              @${exec.priceBtcUsdt.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              @$
+              {exec.priceBtcUsdt.toLocaleString('en-US', {
+                maximumFractionDigits: 0,
+              })}
             </span>
             {exec.feeSats != null && exec.feeSats > 0 && (
               <span className="text-content-tertiary/70">
@@ -151,9 +164,13 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
       ? order.intervalHours * 3600 * 1000
       : undefined
   const anchorTs =
-    order.type === 'scheduled' ? (order.lastExecutedAt ?? order.createdAt) : undefined
+    order.type === 'scheduled'
+      ? (order.lastExecutedAt ?? order.createdAt)
+      : undefined
   const progressPct =
-    intervalMs && anchorTs ? clamp(((nowTs - anchorTs) / intervalMs) * 100, 0, 100) : undefined
+    intervalMs && anchorTs
+      ? clamp(((nowTs - anchorTs) / intervalMs) * 100, 0, 100)
+      : undefined
   const msToNext =
     intervalMs && anchorTs ? anchorTs + intervalMs - nowTs : undefined
 
@@ -169,7 +186,6 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
 
   return (
     <div className="bg-surface-raised border border-border-subtle rounded-xl overflow-hidden hover:border-border-default transition-colors duration-200">
-
       {/* ── Row 1: header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-3">
         {/* Left: icon + type + amount */}
@@ -194,12 +210,25 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
                   ? t('dca.type.scheduled', 'Scheduled')
                   : t('dca.type.priceTarget', 'Price Target')}
               </span>
-              <span className="text-xs text-content-tertiary font-medium">
-                {order.amountUsdt} USDT / buy
+              <span className="inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-overlay/50 px-2 py-0.5 text-[11px] text-content-secondary font-medium">
+                <img
+                  alt="USDT"
+                  className="w-3 h-3 rounded-full"
+                  src={tetherLogo}
+                />
+                <span>{order.amountUsdt} USDT</span>
+                <ArrowRight className="w-3 h-3" />
+                <img
+                  alt="BTC"
+                  className="w-3 h-3 rounded-full"
+                  src={bitcoinLogo}
+                />
+                <span>{t('dca.card.receiveBtc', 'to BTC')}</span>
               </span>
             </div>
-            <p className="text-[11px] text-content-tertiary mt-0.5">
-              {t('dca.orderHelp.createdAt', 'Created')}: {formatTs(order.createdAt)}
+            <p className="text-xs text-content-secondary mt-0.5">
+              {t('dca.orderHelp.createdAt', 'Created')}:{' '}
+              {formatTs(order.createdAt)}
             </p>
           </div>
         </div>
@@ -217,7 +246,9 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
                   onClick={() => executeOrderManually(order.id)}
                 >
                   <Zap className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('dca.actions.execute', 'Execute')}</span>
+                  <span className="hidden sm:inline">
+                    {t('dca.actions.execute', 'Execute')}
+                  </span>
                 </button>
               )}
               {isActive ? (
@@ -266,25 +297,41 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
         {order.type === 'scheduled' && order.intervalHours != null ? (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-content-tertiary">
+              <span className="text-content-secondary">
                 Every{' '}
                 <span className="text-content-primary font-semibold">
                   {formatInterval(order.intervalHours)}
                 </span>
               </span>
               {isActive && msToNext != null && (
-                <span className="text-content-tertiary">
-                  Next in{' '}
-                  <span className="text-primary font-semibold">
-                    {formatTimeRemaining(msToNext)}
-                  </span>
+                <span className="text-content-secondary">
+                  {msToNext <= 0 ? (
+                    <span className="text-primary font-semibold">
+                      {t('dca.card.checking', 'Checking…')}
+                    </span>
+                  ) : msToNext <= DCA_SCHEDULER_INTERVAL_MS ? (
+                    <>
+                      Next in{' '}
+                      <span className="text-primary font-semibold">
+                        {'<'}
+                        {Math.ceil(DCA_SCHEDULER_INTERVAL_MS / 1000)}s
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Next in{' '}
+                      <span className="text-primary font-semibold">
+                        {formatTimeRemaining(msToNext)}
+                      </span>
+                    </>
+                  )}
                 </span>
               )}
               {isPaused && (
                 <span className="text-status-warning text-xs">Paused</span>
               )}
               {isDone && (
-                <span className="text-content-tertiary text-xs">
+                <span className="text-content-secondary text-xs">
                   {order.status === 'cancelled' ? 'Cancelled' : 'Completed'}
                 </span>
               )}
@@ -298,26 +345,35 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
               </div>
             )}
           </div>
-        ) : order.type === 'price-target' && order.triggerPriceBtcUsdt != null ? (
+        ) : order.type === 'price-target' &&
+          order.triggerPriceBtcUsdt != null ? (
           <div className="flex items-center gap-4 text-xs flex-wrap">
-            <span className="text-content-tertiary">
+            <span className="text-content-secondary">
               Trigger ≤{' '}
               <span className="text-status-warning font-semibold">
-                ${order.triggerPriceBtcUsdt.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                $
+                {order.triggerPriceBtcUsdt.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}
               </span>
             </span>
             {currentBtcPrice && (
-              <span className="text-content-tertiary">
+              <span className="text-content-secondary">
                 Current{' '}
                 <span className="text-content-primary font-semibold">
-                  ${currentBtcPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  $
+                  {currentBtcPrice.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
                 </span>
               </span>
             )}
             {priceGapPct != null && isActive && (
               <span
                 className={
-                  triggerReached ? 'text-status-success font-medium' : 'text-content-tertiary'
+                  triggerReached
+                    ? 'text-status-success font-medium'
+                    : 'text-content-secondary'
                 }
               >
                 {triggerReached
@@ -327,7 +383,7 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
             )}
           </div>
         ) : (
-          <span className="text-xs text-content-tertiary">—</span>
+          <span className="text-xs text-content-secondary">—</span>
         )}
       </div>
 
@@ -336,23 +392,25 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
         className={`flex items-center justify-between px-4 py-2.5 gap-3 ${hasHistory ? 'cursor-pointer' : ''}`}
         onClick={() => hasHistory && setExpanded((p) => !p)}
       >
-        <div className="flex items-center gap-3 text-xs text-content-tertiary flex-wrap">
+        <div className="flex items-center gap-3 text-xs text-content-secondary flex-wrap">
           {/* Buy count */}
           <span className="flex items-center gap-1">
             <CheckCircle className="w-3 h-3 text-status-success" />
-            <span className="text-content-secondary font-medium">{successCount}</span>
-            {' '}buy{successCount !== 1 ? 's' : ''}
+            <span className="text-content-primary font-medium">
+              {successCount}
+            </span>{' '}
+            buy{successCount !== 1 ? 's' : ''}
           </span>
 
           {/* Total sats */}
           {totalSats > 0 && (
             <span>
-              <span className="text-content-secondary font-medium">
+              <span className="text-content-primary font-medium">
                 {totalSats >= 1_000_000
                   ? `${(totalSats / 1_000_000).toFixed(3)}M`
                   : totalSats >= 1_000
-                  ? `${(totalSats / 1_000).toFixed(1)}k`
-                  : totalSats.toLocaleString()}
+                    ? `${(totalSats / 1_000).toFixed(1)}k`
+                    : totalSats.toLocaleString()}
               </span>{' '}
               sats
             </span>
@@ -362,15 +420,16 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
           {avgPrice != null && (
             <span>
               avg{' '}
-              <span className="text-content-secondary font-medium">
-                ${avgPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              <span className="text-content-primary font-medium">
+                $
+                {avgPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </span>
             </span>
           )}
 
           {/* Total fees */}
           {totalFeeSats > 0 && (
-            <span className="text-content-tertiary/70">
+            <span className="text-content-secondary/80">
               fees{' '}
               <span className="font-medium">
                 {totalFeeSats >= 1_000
@@ -391,8 +450,12 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
         </div>
 
         {hasHistory && (
-          <button className="text-content-tertiary hover:text-content-secondary transition-colors flex-shrink-0">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          <button className="text-content-secondary hover:text-content-primary transition-colors flex-shrink-0">
+            {expanded ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
           </button>
         )}
       </div>

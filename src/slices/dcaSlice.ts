@@ -65,8 +65,13 @@ export const dcaSlice = createSlice({
         creationPriceBtcUsdt?: number
       }>
     ) {
-      const { type, amountUsdt, intervalHours, targetDropPercent, creationPriceBtcUsdt } =
-        action.payload
+      const {
+        type,
+        amountUsdt,
+        intervalHours,
+        targetDropPercent,
+        creationPriceBtcUsdt,
+      } = action.payload
 
       const now = Date.now()
       const order: DcaOrder = {
@@ -84,10 +89,15 @@ export const dcaSlice = createSlice({
         order.nextExecutionAt = now + intervalHours * 3600 * 1000
       }
 
-      if (type === 'price-target' && targetDropPercent && creationPriceBtcUsdt) {
+      if (
+        type === 'price-target' &&
+        targetDropPercent &&
+        creationPriceBtcUsdt
+      ) {
         order.targetDropPercent = targetDropPercent
         order.creationPriceBtcUsdt = creationPriceBtcUsdt
-        order.triggerPriceBtcUsdt = creationPriceBtcUsdt * (1 - targetDropPercent / 100)
+        order.triggerPriceBtcUsdt =
+          creationPriceBtcUsdt * (1 - targetDropPercent / 100)
       }
 
       state.orders.unshift(order)
@@ -116,8 +126,15 @@ export const dcaSlice = createSlice({
         error?: string
       }>
     ) {
-      const { orderId, fromAmountUsdt, toAmountSats, priceBtcUsdt, feeSats, status, error } =
-        action.payload
+      const {
+        orderId,
+        fromAmountUsdt,
+        toAmountSats,
+        priceBtcUsdt,
+        feeSats,
+        status,
+        error,
+      } = action.payload
       const order = state.orders.find((o) => o.id === orderId)
       if (!order) return
 
@@ -137,7 +154,8 @@ export const dcaSlice = createSlice({
         order.lastExecutedAt = execution.timestamp
 
         if (order.type === 'scheduled' && order.intervalHours) {
-          order.nextExecutionAt = execution.timestamp + order.intervalHours * 3600 * 1000
+          order.nextExecutionAt =
+            execution.timestamp + order.intervalHours * 3600 * 1000
         }
       }
     },
@@ -166,7 +184,8 @@ export const dcaSlice = createSlice({
       const order = state.orders.find((o) => o.id === orderId)
       if (order && order.type === 'price-target' && order.targetDropPercent) {
         order.creationPriceBtcUsdt = newCreationPrice
-        order.triggerPriceBtcUsdt = newCreationPrice * (1 - order.targetDropPercent / 100)
+        order.triggerPriceBtcUsdt =
+          newCreationPrice * (1 - order.targetDropPercent / 100)
       }
     },
   },

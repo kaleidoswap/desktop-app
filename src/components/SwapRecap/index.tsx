@@ -194,7 +194,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                       )}
                     </span>
                   )}
-                  <span className="font-semibold text-content-primary">Status</span>
+                  <span className="font-semibold text-content-primary">
+                    Status
+                  </span>
                 </div>
                 <span
                   className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-300
@@ -251,7 +253,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-surface-overlay/50 rounded-xl p-5 backdrop-blur-sm">
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <span className="text-sm text-content-secondary">You sent</span>
+                  <span className="text-sm text-content-secondary">
+                    You sent
+                  </span>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-lg font-semibold text-white break-all">
                       {fromAmount}
@@ -261,7 +265,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                 </div>
                 <ArrowRight className="text-content-tertiary mx-3 w-5 h-5 flex-shrink-0" />
                 <div className="space-y-1.5 min-w-0 flex-1 text-right">
-                  <span className="text-sm text-content-secondary">You received</span>
+                  <span className="text-sm text-content-secondary">
+                    You received
+                  </span>
                   <div className="flex items-center gap-2 justify-end flex-wrap">
                     <span className="text-lg font-semibold text-white break-all">
                       {toAmount}
@@ -281,7 +287,9 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm gap-4">
-                  <span className="text-content-secondary flex-shrink-0">Time</span>
+                  <span className="text-content-secondary flex-shrink-0">
+                    Time
+                  </span>
                   <span className="text-white text-right">
                     {new Date(timestamp).toLocaleString(undefined, {
                       dateStyle: 'medium',

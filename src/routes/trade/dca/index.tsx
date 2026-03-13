@@ -4,25 +4,23 @@ import {
   Plus,
   TrendingUp,
   CalendarClock,
-  Target,
   RefreshCw,
-  Bitcoin,
-  Coins,
   BarChart2,
   Info,
   X,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react'
 
 import { useAppSelector } from '../../../app/store/hooks'
+import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
+import tetherLogo from '../../../assets/tether-logo.svg'
 import { useBitcoinPrice } from '../../../hooks/useBitcoinPrice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 import { BuyChannelModal } from '../../../components/BuyChannelModal'
 import { DcaOrderCard } from './components/DcaOrderCard'
 import { CreateDcaForm } from './components/CreateDcaForm'
 import { GetUsdtModal } from './components/GetUsdtModal'
-import { LiquidityBar } from './components/LiquidityBar'
+import { HowItWorksModal } from './components/HowItWorksModal'
+import { AnalyticsModal } from './components/AnalyticsModal'
 
 type Tab = 'active' | 'history'
 
@@ -40,27 +38,16 @@ function formatPrice(n: number): string {
   return `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
-// ── Small stat cell used inside the performance panel ──────────────────────
-function PerfCell({
-  label,
-  value,
-  sub,
-  valueClass = 'text-content-primary',
+function AssetIcon({
+  alt,
+  className,
+  src,
 }: {
-  label: string
-  value: string
-  sub?: string
-  valueClass?: string
+  alt: string
+  className?: string
+  src: string
 }) {
-  return (
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="text-[11px] font-medium text-content-tertiary uppercase tracking-wide truncate">
-        {label}
-      </span>
-      <span className={`text-sm font-semibold truncate ${valueClass}`}>{value}</span>
-      {sub && <span className="text-[11px] text-content-tertiary truncate">{sub}</span>}
-    </div>
-  )
+  return <img alt={alt} className={className} src={src} />
 }
 
 // ── Modal wrapper ──────────────────────────────────────────────────────────
@@ -89,7 +76,7 @@ function CreateOrderModal({
             </h2>
           </div>
           <button
-            className="p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-surface-overlay transition-colors"
+            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
             onClick={onClose}
           >
             <X className="w-4 h-4" />
@@ -97,7 +84,10 @@ function CreateOrderModal({
         </div>
         {/* Modal body */}
         <div className="p-5">
-          <CreateDcaForm currentBtcPrice={currentBtcPrice} onCreated={onClose} />
+          <CreateDcaForm
+            currentBtcPrice={currentBtcPrice}
+            onCreated={onClose}
+          />
         </div>
       </div>
     </div>
@@ -111,6 +101,15 @@ export const Component = () => {
   const [showGetUsdt, setShowGetUsdt] = useState(false)
   const [showGetBtc, setShowGetBtc] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
+  const [analyticsOpen, setAnalyticsOpen] = useState(false)
+
+  // Custom open props for buy modal
+  const [buyModalProps, setBuyModalProps] = useState<{
+    defaultCapacitySat?: string
+    defaultClientBalanceSat?: string
+    preselectedAsset?: { assetId: string; amount: number }
+    defaultTotalAssetAmount?: string
+  }>({})
 
   const orders = useAppSelector((s) => s.dca.orders)
   const { btcPrice: currentBtcPrice } = useBitcoinPrice()
@@ -119,39 +118,69 @@ export const Component = () => {
     data: channelsData,
     isFetching: isChannelsFetching,
     refetch: refetchChannels,
-  } = nodeApi.endpoints.listChannels.useQuery(undefined, { pollingInterval: 30_000 })
+  } = nodeApi.endpoints.listChannels.useQuery(undefined, {
+    pollingInterval: 30_000,
+  })
 
   const {
     data: assetsData,
     isFetching: isAssetsFetching,
     refetch: refetchAssets,
-  } = nodeApi.endpoints.listAssets.useQuery(undefined, { pollingInterval: 60_000 })
+  } = nodeApi.endpoints.listAssets.useQuery(undefined, {
+    pollingInterval: 60_000,
+  })
 
   // ── Order stats ────────────────────────────────────────────────────────
-  const activeOrders = orders.filter((o) => o.status === 'active' || o.status === 'paused')
-  const doneOrders = orders.filter((o) => o.status === 'completed' || o.status === 'cancelled')
+  const activeOrders = orders.filter(
+    (o) => o.status === 'active' || o.status === 'paused'
+  )
+  const doneOrders = orders.filter(
+    (o) => o.status === 'completed' || o.status === 'cancelled'
+  )
   const displayedOrders = tab === 'active' ? activeOrders : doneOrders
 
-  const allSuccess = orders.flatMap((o) => o.executions.filter((e) => e.status === 'success'))
+  const allSuccess = orders.flatMap((o) =>
+    o.executions.filter((e) => e.status === 'success')
+  )
   const totalBuys = allSuccess.length
   const totalSats = allSuccess.reduce((s, e) => s + e.toAmountSats, 0)
   const avgPrice =
-    totalBuys > 0 ? allSuccess.reduce((s, e) => s + e.priceBtcUsdt, 0) / totalBuys : undefined
+    totalBuys > 0
+      ? allSuccess.reduce((s, e) => s + e.priceBtcUsdt, 0) / totalBuys
+      : undefined
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000
-  const monthlyBuys = allSuccess.filter((e) => e.timestamp >= thirtyDaysAgo).length
+  const monthlyBuys = allSuccess.filter(
+    (e) => e.timestamp >= thirtyDaysAgo
+  ).length
   const totalFeeSats = allSuccess.reduce((s, e) => s + (e.feeSats ?? 0), 0)
+  const avgPriceDeltaPct =
+    avgPrice != null && currentBtcPrice != null && avgPrice > 0
+      ? ((currentBtcPrice - avgPrice) / avgPrice) * 100
+      : undefined
 
-  const activeScheduled = activeOrders.filter((o) => o.type === 'scheduled').length
-  const activePriceTarget = activeOrders.filter((o) => o.type === 'price-target').length
+  const activeScheduled = activeOrders.filter(
+    (o) => o.type === 'scheduled'
+  ).length
+  const activePriceTarget = activeOrders.filter(
+    (o) => o.type === 'price-target'
+  ).length
 
   // ── Balances ───────────────────────────────────────────────────────────
-  const readyChannels = (channelsData?.channels ?? []).filter((ch: any) => ch.ready)
+  const allChannels = channelsData?.channels ?? []
+  const readyChannels = allChannels.filter((ch: any) => ch.ready)
 
-  const usdtAsset = (assetsData?.nia ?? []).find((a: any) => a.ticker === 'USDT')
+  const usdtAsset = (assetsData?.nia ?? []).find(
+    (a: any) => a.ticker === 'USDT'
+  )
   const usdtPrecision = usdtAsset?.precision ?? 6
   const usdtChannels = usdtAsset
     ? readyChannels.filter((ch: any) => ch.asset_id === usdtAsset.asset_id)
+    : []
+  const pendingUsdtChannels = usdtAsset
+    ? allChannels.filter(
+        (ch: any) => ch.asset_id === usdtAsset.asset_id && !ch.ready
+      )
     : []
 
   // Derive the LSP peer pubkey from USDT channels (they always connect to the LSP)
@@ -162,23 +191,35 @@ export const Component = () => {
   const lspChannels = lspPubkey
     ? readyChannels.filter((ch: any) => ch.peer_pubkey === lspPubkey)
     : readyChannels
-  const btcLnOut = lspChannels.reduce((s: number, ch: any) => s + (ch.local_balance_sat ?? 0), 0)
-  const btcLnIn = lspChannels.reduce(
-    (s: number, ch: any) => s + Math.round((ch.inbound_balance_msat ?? 0) / 1000),
+  const btcLnOut = lspChannels.reduce(
+    (s: number, ch: any) => s + (ch.local_balance_sat ?? 0),
     0
   )
+  const btcLnIn = lspChannels.reduce(
+    (s: number, ch: any) =>
+      s + Math.round((ch.inbound_balance_msat ?? 0) / 1000),
+    0
+  )
+  const totalBtcSats = btcLnOut + btcLnIn
 
   const usdtLnOut = usdtChannels.reduce(
-    (s: number, ch: any) => s + (ch.asset_local_amount ?? 0) / Math.pow(10, usdtPrecision),
+    (s: number, ch: any) =>
+      s + (ch.asset_local_amount ?? 0) / Math.pow(10, usdtPrecision),
     0
   )
   const usdtLnIn = usdtChannels.reduce(
-    (s: number, ch: any) => s + (ch.asset_remote_amount ?? 0) / Math.pow(10, usdtPrecision),
+    (s: number, ch: any) =>
+      s + (ch.asset_remote_amount ?? 0) / Math.pow(10, usdtPrecision),
     0
   )
+  const btcChannelUsdValue =
+    currentBtcPrice != null
+      ? (totalBtcSats / 100_000_000) * currentBtcPrice
+      : undefined
 
   const isRefreshing = isChannelsFetching || isAssetsFetching
-  const handleRefresh = () => void Promise.all([refetchChannels(), refetchAssets()])
+  const handleRefresh = () =>
+    void Promise.all([refetchChannels(), refetchAssets()])
 
   return (
     <>
@@ -208,328 +249,447 @@ export const Component = () => {
           setShowGetBtc(false)
           void refetchChannels()
         }}
+        {...buyModalProps}
       />
 
-      <div className="flex flex-col h-full space-y-4 max-w-4xl mx-auto w-full">
+      {/* ── How it works modal ────────────────────────────────────────── */}
+      <HowItWorksModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
 
-        {/* ── Stats panel ──────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {/* ── Analytics modal ───────────────────────────────────────────── */}
+      <AnalyticsModal
+        isOpen={analyticsOpen}
+        onClose={() => setAnalyticsOpen(false)}
+        currentBtcPrice={currentBtcPrice}
+        activeOrdersCount={activeOrders.length}
+        activeScheduled={activeScheduled}
+        activePriceTarget={activePriceTarget}
+        totalBuys={totalBuys}
+        totalSats={totalSats}
+        totalFeeSats={totalFeeSats}
+        formatSats={formatSats}
+        formatPrice={formatPrice}
+      />
 
-          {/* Left: Market & Balances */}
-          <div className="bg-surface-raised border border-border-subtle rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-content-tertiary uppercase tracking-wide">
-                {t('dca.section.market', 'Market & Balances')}
-              </span>
-              <button
-                className="h-6 px-2 rounded-md text-[11px] inline-flex items-center gap-1
-                           border border-border-subtle bg-surface-overlay/40 text-content-tertiary
-                           hover:text-content-secondary hover:border-border-default transition-colors
-                           disabled:opacity-50"
-                disabled={isRefreshing}
-                onClick={handleRefresh}
-              >
-                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing
-                  ? t('dca.refreshingAmounts', 'Refreshing…')
-                  : t('dca.refreshAmounts', 'Refresh')}
-              </button>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6">
+        <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+          <section className="h-full overflow-hidden rounded-3xl border border-border-subtle bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] p-5 shadow-[0_24px_70px_-40px_rgba(0,0,0,0.7)]">
+            <div className="flex h-full flex-col gap-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    {t('navigation.dca', 'DCA')}
+                  </div>
+                  <h1 className="mt-3 text-3xl font-semibold text-content-primary">
+                    {t('dca.title', 'DCA Orders')}
+                  </h1>
+                  <p className="mt-2 text-sm leading-relaxed text-content-secondary">
+                    Build recurring BTC buys from your USDT Lightning balance.
+                    Keep enough USDT to send and enough BTC room to receive each
+                    execution.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 font-medium transition-colors ${
+                        infoOpen
+                          ? 'border-primary/30 bg-primary/15 text-primary'
+                          : 'border-border-subtle bg-surface-overlay/60 text-content-secondary hover:text-content-primary'
+                      }`}
+                      onClick={() => setInfoOpen((v) => !v)}
+                      title={t('dca.howItWorks.title', 'How DCA works')}
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                      {t('dca.howItWorks.title', 'How DCA works')}
+                    </button>
+                    <span className="text-content-tertiary">
+                      {t(
+                        'dca.heroHint',
+                        'Recurring buys stay active until you pause or cancel them.'
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border border-primary/30 bg-primary/15 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/25"
+                  onClick={() => setShowModal(true)}
+                  title={t('dca.createOrder', 'New DCA Order')}
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="hidden sm:inline">
+                    {t('dca.createOrder', 'New DCA Order')}
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border-subtle bg-surface-base/35 p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-content-tertiary">
+                    {t('dca.metrics.currentBtcPrice', 'Current BTC price')}
+                  </p>
+                  <p className="mt-1.5 text-lg font-semibold text-content-primary">
+                    {currentBtcPrice != null
+                      ? formatPrice(currentBtcPrice)
+                      : '—'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border-subtle bg-surface-base/35 p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-content-tertiary">
+                    Average BTC price
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <p className="text-lg font-semibold text-content-primary">
+                      {avgPrice != null ? formatPrice(avgPrice) : '—'}
+                    </p>
+                    {avgPriceDeltaPct != null && (
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                          avgPriceDeltaPct >= 0
+                            ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+                            : 'border-rose-400/25 bg-rose-400/10 text-rose-300'
+                        }`}
+                      >
+                        {avgPriceDeltaPct >= 0 ? '+' : ''}
+                        {avgPriceDeltaPct.toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] text-content-secondary">
+                    vs current price
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border-subtle bg-surface-base/35 p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-content-tertiary">
+                    {t('dca.metrics.activeSchedules', 'Active schedules')}
+                  </p>
+                  <p className="mt-1.5 text-lg font-semibold text-content-primary">
+                    {activeOrders.length}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border-subtle bg-surface-base/35 p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-content-tertiary">
+                    Successful buys
+                  </p>
+                  <p className="mt-1.5 text-lg font-semibold text-content-primary">
+                    {monthlyBuys}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex gap-1 rounded-xl bg-surface-overlay/50 p-1">
+                    <button
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
+                        tab === 'active'
+                          ? 'bg-surface-elevated text-content-primary shadow-sm'
+                          : 'text-content-secondary hover:text-content-primary'
+                      }`}
+                      onClick={() => setTab('active')}
+                    >
+                      <CalendarClock className="h-3.5 w-3.5" />
+                      {t('dca.tabs.active', 'Active')}
+                      <span className="text-xs text-content-secondary">
+                        ({activeOrders.length})
+                      </span>
+                    </button>
+                    <button
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
+                        tab === 'history'
+                          ? 'bg-surface-elevated text-content-primary shadow-sm'
+                          : 'text-content-secondary hover:text-content-primary'
+                      }`}
+                      onClick={() => setTab('history')}
+                    >
+                      <BarChart2 className="h-3.5 w-3.5" />
+                      {t('dca.tabs.history', 'History')}
+                      <span className="text-xs text-content-secondary">
+                        ({doneOrders.length})
+                      </span>
+                    </button>
+                  </div>
+
+                  <button
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-overlay/60 px-3 text-sm font-medium text-content-secondary transition-colors hover:text-content-primary"
+                    onClick={() => setAnalyticsOpen(true)}
+                  >
+                    <BarChart2 className="h-3.5 w-3.5" />
+                    {t('dca.analytics.button', 'Stats & Analytics')}
+                  </button>
+                </div>
+              </div>
             </div>
+          </section>
 
-            {/* BTC spot price row */}
+          <section className="h-full rounded-3xl border border-border-subtle bg-surface-raised p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Bitcoin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="text-[11px] font-medium text-content-tertiary uppercase tracking-wide">
-                  {t('dca.spotPrice', 'BTC Spot')}
+              <div className="flex items-center gap-2">
+                <BarChart2 className="h-4 w-4 text-content-secondary" />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-content-secondary">
+                  {t('dca.section.balances', 'Channel Balances')}
                 </span>
               </div>
-              <span className="text-sm font-semibold text-content-primary">
-                {currentBtcPrice ? formatPrice(currentBtcPrice) : '—'}
-              </span>
-            </div>
-
-            {/* Liquidity bars */}
-            <div className="space-y-3">
-              {/* BTC LN */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Bitcoin className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                    <span className="text-[11px] font-semibold text-content-secondary uppercase tracking-wide">
-                      {t('dca.metrics.btcLnBalance', 'BTC LN')}
-                    </span>
-                  </div>
-                  <button
-                    className="h-5 px-2 rounded-md text-[10px] font-semibold inline-flex items-center gap-1
-                               bg-amber-400/10 text-amber-400 border border-amber-400/25
-                               hover:bg-amber-400/20 transition-colors"
-                    onClick={() => setShowGetBtc(true)}
-                  >
-                    <Plus className="w-2.5 h-2.5" />
-                    {t('dca.addBtcLiquidity', 'Add BTC')}
-                  </button>
-                </div>
-                <LiquidityBar
-                  outbound={btcLnOut}
-                  inbound={btcLnIn}
-                  outboundLabel={`${formatSats(btcLnOut)} sats`}
-                  inboundLabel={`${formatSats(btcLnIn)} sats`}
-                  outboundColor="bg-amber-400"
-                  inboundColor="bg-amber-400/20"
-                />
-              </div>
-
-              {/* USDT LN */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Coins className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                    <span className="text-[11px] font-semibold text-content-secondary uppercase tracking-wide">
-                      {t('dca.metrics.usdtLnBalance', 'USDT LN')}
-                    </span>
-                  </div>
-                  <button
-                    className="h-5 px-2 rounded-md text-[10px] font-semibold inline-flex items-center gap-1
-                               bg-emerald-400/10 text-emerald-400 border border-emerald-400/25
-                               hover:bg-emerald-400/20 transition-colors"
-                    onClick={() => setShowGetUsdt(true)}
-                  >
-                    <Plus className="w-2.5 h-2.5" />
-                    {t('dca.addUsdtLiquidity', 'Add USDT')}
-                  </button>
-                </div>
-                <LiquidityBar
-                  outbound={usdtLnOut}
-                  inbound={usdtLnIn}
-                  outboundLabel={`${formatUsdt(usdtLnOut)} USDT`}
-                  inboundLabel={`${formatUsdt(usdtLnIn)} USDT`}
-                  outboundColor="bg-emerald-400"
-                  inboundColor="bg-emerald-400/20"
-                />
-              </div>
-            </div>
-
-            {/* Active order type breakdown */}
-            <div className="pt-2 border-t border-border-subtle/50 flex items-center gap-4 text-xs">
-              <span className="text-content-tertiary">{t('dca.activeOrders', 'Active')}:</span>
-              <span className="flex items-center gap-1 text-primary">
-                <CalendarClock className="w-3 h-3" />
-                <span className="font-semibold">{activeScheduled}</span>
-                <span className="text-content-tertiary">{t('dca.type.scheduled', 'Sched.')}</span>
-              </span>
-              <span className="flex items-center gap-1 text-status-warning">
-                <Target className="w-3 h-3" />
-                <span className="font-semibold">{activePriceTarget}</span>
-                <span className="text-content-tertiary">{t('dca.type.priceTarget', 'Target')}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Right: DCA Performance */}
-          <div className="bg-surface-raised border border-border-subtle rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <BarChart2 className="w-3.5 h-3.5 text-content-tertiary" />
-              <span className="text-[11px] font-semibold text-content-tertiary uppercase tracking-wide">
-                {t('dca.section.performance', 'Performance')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-              <PerfCell
-                label={t('dca.metrics.totalOrders', 'Orders')}
-                value={String(orders.length)}
-                sub={`${activeOrders.length} ${t('dca.metrics.active', 'active')}`}
-              />
-              <PerfCell
-                label={t('dca.metrics.executions', 'Total buys')}
-                value={String(totalBuys)}
-                valueClass="text-status-success"
-              />
-              <PerfCell
-                label={t('dca.metrics.accumulated', 'Accumulated')}
-                value={totalSats > 0 ? `${formatSats(totalSats)} sats` : '—'}
-                valueClass={totalSats > 0 ? 'text-primary' : 'text-content-primary'}
-                sub={totalFeeSats > 0 ? `fees ${formatSats(totalFeeSats)} sats` : undefined}
-              />
-              <PerfCell
-                label={t('dca.metrics.monthlyBuys', 'Last 30 days')}
-                value={`${monthlyBuys} ${monthlyBuys === 1 ? 'buy' : 'buys'}`}
-                sub={
-                  avgPrice != null
-                    ? `avg ${formatPrice(avgPrice)}`
-                    : undefined
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Toolbar: tabs + info toggle + new order ───────────────────── */}
-        <div className="flex items-center gap-2">
-          {/* Tab pills */}
-          <div className="flex gap-1 bg-surface-overlay/50 rounded-xl p-1">
-            <button
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200
-                          inline-flex items-center gap-1.5 ${
-                tab === 'active'
-                  ? 'bg-surface-elevated text-content-primary shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary'
-              }`}
-              onClick={() => setTab('active')}
-            >
-              <CalendarClock className="w-3.5 h-3.5" />
-              {t('dca.tabs.active', 'Active')}
-              <span className="text-xs text-content-tertiary">({activeOrders.length})</span>
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200
-                          inline-flex items-center gap-1.5 ${
-                tab === 'history'
-                  ? 'bg-surface-elevated text-content-primary shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary'
-              }`}
-              onClick={() => setTab('history')}
-            >
-              <BarChart2 className="w-3.5 h-3.5" />
-              {t('dca.tabs.history', 'History')}
-              <span className="text-xs text-content-tertiary">({doneOrders.length})</span>
-            </button>
-          </div>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Info toggle */}
-          <button
-            className={`h-8 w-8 rounded-xl inline-flex items-center justify-center border transition-colors ${
-              infoOpen
-                ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-surface-overlay/50 text-content-tertiary border-border-subtle hover:text-content-secondary'
-            }`}
-            title={t('dca.howItWorks.title', 'How DCA works')}
-            onClick={() => setInfoOpen((v) => !v)}
-          >
-            <Info className="w-4 h-4" />
-          </button>
-
-          {/* New order */}
-          <button
-            className="h-8 px-3 rounded-xl bg-primary/15 text-primary border border-primary/30
-                       hover:bg-primary/25 font-medium text-sm transition-all duration-200
-                       active:scale-[0.97] inline-flex items-center gap-1.5"
-            onClick={() => setShowModal(true)}
-          >
-            <Plus className="w-4 h-4" />
-            {t('dca.createOrder', 'New Order')}
-          </button>
-        </div>
-
-        {/* ── Collapsible info panel ────────────────────────────────────── */}
-        {infoOpen && (
-          <div className="bg-surface-raised border border-border-subtle rounded-xl p-4 space-y-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-content-primary text-sm">
-                {t('dca.howItWorks.title', 'How DCA works')}
-              </span>
               <button
-                className="text-content-tertiary hover:text-content-secondary"
-                onClick={() => setInfoOpen(false)}
+                className="rounded-md p-1 text-content-secondary transition-colors hover:bg-surface-elevated hover:text-content-primary disabled:opacity-50"
+                disabled={isRefreshing}
+                onClick={handleRefresh}
+                title={t('dca.refreshAmounts', 'Refresh')}
               >
-                <ChevronUp className="w-4 h-4" />
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
               </button>
             </div>
-            <p className="text-content-secondary leading-relaxed">
-              {t(
-                'dca.howItWorks.description',
-                'DCA (Dollar-Cost Averaging) automatically buys BTC using your USDT Lightning balance. Each order executes only when your node is unlocked and the wallet is ready.'
-              )}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="flex items-start gap-2.5 p-2.5 bg-primary/5 border border-primary/15 rounded-lg">
-                <CalendarClock className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-content-primary mb-0.5">
-                    {t('dca.type.scheduled', 'Scheduled')}
-                  </p>
-                  <p className="text-content-tertiary leading-relaxed">
-                    {t(
-                      'dca.howItWorks.scheduled',
-                      'Buys at a fixed time interval — e.g. every 24h. Set the amount and interval once; the order runs automatically.'
-                    )}
-                  </p>
-                </div>
+
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-subtle bg-surface-base/45 px-3.5 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-content-tertiary">
+                  BTC value
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-content-primary">
+                  {btcChannelUsdValue != null
+                    ? formatPrice(btcChannelUsdValue)
+                    : '—'}
+                </p>
               </div>
-              <div className="flex items-start gap-2.5 p-2.5 bg-status-warning/5 border border-status-warning/15 rounded-lg">
-                <Target className="w-3.5 h-3.5 text-status-warning mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-content-primary mb-0.5">
-                    {t('dca.type.priceTarget', 'Price Target')}
-                  </p>
-                  <p className="text-content-tertiary leading-relaxed">
-                    {t(
-                      'dca.howItWorks.priceTarget',
-                      'Buys when BTC drops to or below a target price (e.g. −5% from now). Resets after each execution.'
-                    )}
-                  </p>
-                </div>
+              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-subtle bg-surface-base/45 px-3.5 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-content-tertiary">
+                  Ready channels
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-content-primary">
+                  {readyChannels.length}
+                </p>
+              </div>
+              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-subtle bg-surface-base/45 px-3.5 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-content-tertiary">
+                  USDT spendable
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-content-primary">
+                  {formatUsdt(usdtLnOut)} USDT
+                </p>
+              </div>
+              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-subtle bg-surface-base/45 px-3.5 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-content-tertiary">
+                  {t(
+                    'dca.section.pendingUsdtChannels',
+                    'Pending USDT channels'
+                  )}
+                </p>
+                <p className="mt-1.5 text-sm font-semibold text-content-primary">
+                  {pendingUsdtChannels.length}
+                </p>
               </div>
             </div>
-            <p className="text-content-tertiary pt-1 border-t border-border-subtle/50">
-              {t(
-                'dca.howItWorks.actions',
-                'Use ⚡ Execute to trigger an immediate buy, ⏸ Pause to pause auto-execution, or ✕ Cancel to move the order to history.'
-              )}
-            </p>
-          </div>
-        )}
 
-        {/* ── Empty / collapsed hint when no info and no orders ──────────── */}
-        {!infoOpen && displayedOrders.length === 0 && (
-          <button
-            className="flex items-center gap-2 text-xs text-content-tertiary hover:text-content-secondary
-                       transition-colors self-start"
-            onClick={() => setInfoOpen(true)}
-          >
-            <ChevronDown className="w-3.5 h-3.5" />
-            {t('dca.showHowItWorks', 'How does DCA work?')}
-          </button>
-        )}
+            <div className="mt-5 space-y-5">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AssetIcon
+                      alt="BTC"
+                      className="h-4 w-4 rounded-full"
+                      src={bitcoinLogo}
+                    />
+                    <span className="text-sm font-semibold text-content-primary">
+                      BTC LN
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-content-primary">
+                    {formatSats(totalBtcSats)} sats
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-amber-400/20 flex">
+                  {totalBtcSats > 0 ? (
+                    <>
+                      <div
+                        className="h-full bg-amber-400"
+                        style={{
+                          width: `${(btcLnOut / totalBtcSats) * 100}%`,
+                        }}
+                      />
+                      <div
+                        className="h-full bg-amber-400/40"
+                        style={{
+                          width: `${(btcLnIn / totalBtcSats) * 100}%`,
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <div className="h-full w-full bg-surface-overlay/20" />
+                  )}
+                </div>
+                <div className="flex justify-between text-[11px] text-content-secondary">
+                  <span title="Outbound (Spendable)">
+                    Out: {formatSats(btcLnOut)}
+                  </span>
+                  <span title="Inbound (Receivable)">
+                    In: {formatSats(btcLnIn)}
+                  </span>
+                </div>
+                <button
+                  className="mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-400/20"
+                  onClick={() => {
+                    setBuyModalProps({
+                      defaultCapacitySat: '500000',
+                      defaultClientBalanceSat: '20000',
+                    })
+                    setShowGetBtc(true)
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('dca.receiveBtcLn', 'Receive BTC/LN')}
+                </button>
+              </div>
 
-        {/* ── Order list ────────────────────────────────────────────────── */}
-        {displayedOrders.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-12 space-y-3">
-            <div className="p-4 rounded-2xl bg-surface-overlay/50 text-content-tertiary">
-              <TrendingUp className="w-7 h-7" />
+              <div className="space-y-2.5 border-t border-border-subtle/50 pt-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AssetIcon
+                      alt="USDT"
+                      className="h-4 w-4 rounded-full"
+                      src={tetherLogo}
+                    />
+                    <span className="text-sm font-semibold text-content-primary">
+                      USDT LN
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-content-primary">
+                    {formatUsdt(usdtLnOut + usdtLnIn)} USDT
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-400/20 flex">
+                  {usdtLnOut + usdtLnIn > 0 ? (
+                    <>
+                      <div
+                        className="h-full bg-emerald-400"
+                        style={{
+                          width: `${(usdtLnOut / (usdtLnOut + usdtLnIn)) * 100}%`,
+                        }}
+                      />
+                      <div
+                        className="h-full bg-emerald-400/40"
+                        style={{
+                          width: `${(usdtLnIn / (usdtLnOut + usdtLnIn)) * 100}%`,
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <div className="h-full w-full bg-surface-overlay/20" />
+                  )}
+                </div>
+                <div className="flex justify-between text-[11px] text-content-secondary">
+                  <span title="Outbound (Spendable)">
+                    Out: {formatUsdt(usdtLnOut)}
+                  </span>
+                  <span title="Inbound (Receivable)">
+                    In: {formatUsdt(usdtLnIn)}
+                  </span>
+                </div>
+                {pendingUsdtChannels.length > 0 && (
+                  <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-xs font-semibold text-amber-200">
+                        {t(
+                          'dca.section.pendingUsdtTitle',
+                          'New USDT channel pending'
+                        )}
+                      </span>
+                      <span className="rounded-full border border-amber-400/30 bg-amber-400/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
+                        {pendingUsdtChannels.length}{' '}
+                        {t('dca.section.pendingBadge', 'pending')}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-amber-100/80">
+                      {t(
+                        'dca.section.pendingUsdtDescription',
+                        'Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.'
+                      )}
+                    </p>
+                  </div>
+                )}
+                <button
+                  className="mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-3 text-sm font-semibold text-emerald-300 transition-colors hover:bg-emerald-400/20"
+                  onClick={() => {
+                    if (usdtAsset) {
+                      setBuyModalProps({
+                        defaultCapacitySat: '500000',
+                        defaultClientBalanceSat: '20000',
+                        preselectedAsset: {
+                          assetId: usdtAsset.asset_id || '',
+                          amount: 100,
+                        },
+                        defaultTotalAssetAmount: '100',
+                      })
+                      setShowGetBtc(true)
+                    } else {
+                      setShowGetUsdt(true)
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('dca.addUsdtLn', 'Add USDT/LN')}
+                </button>
+              </div>
             </div>
-            <p className="text-content-secondary font-medium text-sm">
+          </section>
+        </div>
+
+        <section className="min-h-[420px] rounded-3xl border border-border-subtle bg-surface-raised p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-content-secondary">
+                {tab === 'active'
+                  ? t('dca.tabs.active', 'Active')
+                  : t('dca.tabs.history', 'History')}
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-content-primary">
+                {tab === 'active'
+                  ? t('dca.orders.activeTitle', 'Scheduled DCA Orders')
+                  : t('dca.orders.historyTitle', 'Executed & Closed Orders')}
+              </h2>
+            </div>
+            <span className="rounded-full border border-border-subtle bg-surface-overlay/60 px-3 py-1 text-xs font-medium text-content-secondary">
+              {displayedOrders.length}{' '}
               {tab === 'active'
-                ? t('dca.empty.active', 'No active DCA orders')
-                : t('dca.empty.history', 'No order history yet')}
-            </p>
-            {tab === 'active' && (
-              <button
-                className="mt-1 px-4 py-2 rounded-xl bg-primary/15 text-primary border border-primary/30
-                           hover:bg-primary/25 font-medium text-sm transition-all duration-200
-                           active:scale-[0.97] inline-flex items-center gap-1.5"
-                onClick={() => setShowModal(true)}
-              >
-                <Plus className="w-4 h-4" />
-                {t('dca.createOrder', 'New Order')}
-              </button>
+                ? t('dca.tabs.active', 'active')
+                : t('dca.tabs.history', 'history')}
+            </span>
+          </div>
+
+          <div className="mt-5">
+            {displayedOrders.length === 0 ? (
+              <div className="flex min-h-[300px] flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border-subtle bg-surface-base/40 px-6 text-center">
+                <div className="rounded-2xl bg-surface-overlay/50 p-4 text-content-secondary">
+                  <TrendingUp className="h-7 w-7" />
+                </div>
+                <p className="text-sm font-medium text-content-secondary">
+                  {tab === 'active'
+                    ? t('dca.empty.active', 'No active DCA orders')
+                    : t('dca.empty.history', 'No order history yet')}
+                </p>
+                {tab === 'active' && (
+                  <button
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/15 px-4 py-2 text-sm font-medium text-primary transition-all duration-200 hover:bg-primary/25"
+                    onClick={() => setShowModal(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t('dca.createOrder', 'New Order')}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {displayedOrders.map((order) => (
+                  <DcaOrderCard
+                    currentBtcPrice={currentBtcPrice}
+                    key={order.id}
+                    order={order}
+                  />
+                ))}
+              </div>
             )}
           </div>
-        ) : (
-          <div className="space-y-3 overflow-y-auto pb-2">
-            {displayedOrders.map((order) => (
-              <DcaOrderCard
-                currentBtcPrice={currentBtcPrice}
-                key={order.id}
-                order={order}
-              />
-            ))}
-          </div>
-        )}
+        </section>
       </div>
     </>
   )

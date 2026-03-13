@@ -227,8 +227,9 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                 <RefreshCw className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
               ) : (
                 <ChevronDown
-                  className={`w-4 h-4 flex-shrink-0 text-blue-400 transition-transform duration-500 ${isOpen ? 'rotate-180' : ''
-                    }`}
+                  className={`w-4 h-4 flex-shrink-0 text-blue-400 transition-transform duration-500 ${
+                    isOpen ? 'rotate-180' : ''
+                  }`}
                 />
               )}
             </div>

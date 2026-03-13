@@ -64,15 +64,18 @@ export const AssetSelectTrigger: React.FC<AssetSelectTriggerProps> = ({
               <div className="text-base font-semibold text-white truncate leading-tight">
                 {displayTicker}
               </div>
-              {selectedOption.assetId && selectedOption.assetId.startsWith('rgb:') && (
-                <div className="text-[10px] text-content-tertiary font-mono truncate leading-tight">
-                  {selectedOption.assetId.slice(4, 15)}…
-                </div>
-              )}
+              {selectedOption.assetId &&
+                selectedOption.assetId.startsWith('rgb:') && (
+                  <div className="text-[10px] text-content-tertiary font-mono truncate leading-tight">
+                    {selectedOption.assetId.slice(4, 15)}…
+                  </div>
+                )}
             </div>
           </>
         ) : (
-          <span className="text-content-tertiary text-sm truncate">{placeholder}</span>
+          <span className="text-content-tertiary text-sm truncate">
+            {placeholder}
+          </span>
         )}
       </div>
       <ChevronDown className="w-4 h-4 text-content-tertiary ml-1.5 flex-shrink-0 group-hover:text-content-secondary transition-colors duration-200" />

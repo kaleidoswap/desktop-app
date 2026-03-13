@@ -315,12 +315,17 @@ export const createSwapAssetsHandler = (
         const parsedToAmount = parseFloat(previousToAmount.replace(/,/g, ''))
 
         // Get min order size for the new fromAsset (which was the toAsset before swap)
-        const minOrderSize = await getMinOrderSizeForAsset(toAsset, selectedPair)
+        const minOrderSize = await getMinOrderSizeForAsset(
+          toAsset,
+          selectedPair
+        )
 
         // Convert display-unit parsedToAmount to raw units for comparison with
         // minOrderSize and newMaxAmount (which are both in raw units).
         // e.g. USDT precision=6: display 0.06 → raw 60,000
-        const newFromPrecision = getAssetPrecision ? getAssetPrecision(toAsset) : 0
+        const newFromPrecision = getAssetPrecision
+          ? getAssetPrecision(toAsset)
+          : 0
         const rawToAmount =
           newFromPrecision > 0
             ? Math.round(parsedToAmount * Math.pow(10, newFromPrecision))

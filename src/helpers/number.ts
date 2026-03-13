@@ -376,7 +376,6 @@ export const calculateAndFormatRate = (
 ): string => {
   if (!price || !selectedPair) return 'Price not available'
 
-  let rate = price
   const displayFromAsset = fromAsset
   const displayToAsset = toAsset
 
@@ -392,37 +391,36 @@ export const calculateAndFormatRate = (
   const toUnit = displayToAsset === 'BTC' ? bitcoinUnit : displayToAsset
 
   // Calculate the rate considering asset precisions
-  if (isInverted) {
-    // When inverted, we need to show how many fromAsset units per toAsset unit
-    // First convert price to base units, then invert and scale by precision difference
-    const basePrice = price / Math.pow(10, toPrecision)
-    rate = (1 / basePrice) * Math.pow(10, fromPrecision - toPrecision)
-  } else {
-    // When not inverted, we need to show how many toAsset units per fromAsset unit
-    // The price is already in the correct units, just need to adjust for display
-    rate = price / Math.pow(10, toPrecision)
-  }
+  const rate = isInverted
+    ? (() => {
+        // When inverted, we need to show how many fromAsset units per toAsset unit
+        // First convert price to base units, then invert and scale by precision difference
+        const basePrice = price / Math.pow(10, toPrecision)
+        return (1 / basePrice) * Math.pow(10, fromPrecision - toPrecision)
+      })()
+    : // When not inverted, we need to show how many toAsset units per fromAsset unit
+      // The price is already in the correct units, just need to adjust for display
+      price / Math.pow(10, toPrecision)
 
   // Handle SAT unit conversion if needed
-  if (fromUnit === 'SAT') {
-    rate = rate / SATOSHIS_PER_BTC
-  } else if (toUnit === 'SAT') {
-    rate = rate * SATOSHIS_PER_BTC
-  }
+  const adjustedRate =
+    fromUnit === 'SAT'
+      ? rate / SATOSHIS_PER_BTC
+      : toUnit === 'SAT'
+        ? rate * SATOSHIS_PER_BTC
+        : rate
 
   // Determine the appropriate precision for display
   // For small rates (< 0.01), use more precision
   // For large rates, use less precision but at least 2 decimal places
-  let displayPrecision = 2
-  if (rate < 0.01) {
-    displayPrecision = Math.min(Math.max(fromPrecision, toPrecision), 8)
-  } else if (rate < 1) {
-    displayPrecision = 4
-  } else if (rate < 100) {
-    displayPrecision = 2
-  } else {
-    displayPrecision = 0
-  }
+  const displayPrecision =
+    adjustedRate < 0.01
+      ? Math.min(Math.max(fromPrecision, toPrecision), 8)
+      : adjustedRate < 1
+        ? 4
+        : adjustedRate < 100
+          ? 2
+          : 0
 
   // Format the rate with the determined precision
   const locale = getNumberLocale()
@@ -430,7 +428,7 @@ export const calculateAndFormatRate = (
     maximumFractionDigits: displayPrecision,
     minimumFractionDigits: displayPrecision,
     useGrouping: true,
-  }).format(rate)
+  }).format(adjustedRate)
 
   return formattedRate
 }

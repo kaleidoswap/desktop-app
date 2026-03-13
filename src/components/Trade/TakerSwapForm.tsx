@@ -76,7 +76,12 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       }
     } catch (error) {
       console.error('Failed to decode swap string:', error)
-      throw new Error('Invalid swap string format. Please check and try again.')
+      throw new Error(
+        'Invalid swap string format. Please check and try again.',
+        {
+          cause: error,
+        }
+      )
     }
   }
 
@@ -368,7 +373,9 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs text-content-secondary">Payment Hash</span>
+                  <span className="text-xs text-content-secondary">
+                    Payment Hash
+                  </span>
                   <span className="text-sm text-white font-mono truncate">
                     {swapDetails.payment_hash}
                   </span>

@@ -1,13 +1,25 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, Zap, Package, Loader2, CheckCircle, AlertCircle, Info } from 'lucide-react'
+import {
+  X,
+  Zap,
+  Package,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Info,
+} from 'lucide-react'
 import { toast } from 'react-toastify'
 
+import { useAppDispatch } from '../../../../app/store/hooks'
 import { BuyChannelModal } from '../../../../components/BuyChannelModal'
-import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../../../constants'
+import {
+  MIN_CHANNEL_CAPACITY,
+  MAX_CHANNEL_CAPACITY,
+} from '../../../../constants'
 import { makerApi } from '../../../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
-import { LiquidityBar } from './LiquidityBar'
+import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 interface GetUsdtModalProps {
   isOpen: boolean
@@ -23,9 +35,13 @@ function formatSats(n: number): string {
   return n.toLocaleString('en-US')
 }
 
-
-export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) {
+export function GetUsdtModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: GetUsdtModalProps) {
   const { t } = useTranslation()
+  const dispatch = useAppDispatch()
   const [showBuyModal, setShowBuyModal] = useState(false)
 
   // Option B state
@@ -43,13 +59,15 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
   const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
   const [openChannel] = nodeApi.endpoints.openChannel.useMutation()
 
-  const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(undefined, {
-    skip: !isOpen,
-  })
-  const { data: channelsData } = nodeApi.endpoints.listChannels.useQuery(undefined, {
-    skip: !isOpen,
-  })
-  const usdtAsset = (assetsData?.nia ?? []).find((a: any) => a.ticker === 'USDT')
+  const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
+    undefined,
+    {
+      skip: !isOpen,
+    }
+  )
+  const usdtAsset = (assetsData?.nia ?? []).find(
+    (a: any) => a.ticker === 'USDT'
+  )
 
   const { data: balanceData } = nodeApi.endpoints.assetBalance.useQuery(
     { asset_id: usdtAsset?.asset_id ?? '' },
@@ -60,35 +78,6 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
   const spendableRaw = balanceData?.spendable ?? 0
   const spendableUsdt = spendableRaw / Math.pow(10, precision)
   const hasOnChain = spendableRaw > 0
-
-  // Derive LN balances from channels
-  const readyChannels = (channelsData?.channels ?? []).filter((ch: any) => ch.ready)
-  const usdtChannels = usdtAsset
-    ? readyChannels.filter((ch: any) => ch.asset_id === usdtAsset.asset_id)
-    : []
-
-  // BTC balance: all ready channels to the same LSP peer as the USDT channel
-  const lspPubkey: string | undefined = usdtChannels[0]?.peer_pubkey
-  const lspChannels = lspPubkey
-    ? readyChannels.filter((ch: any) => ch.peer_pubkey === lspPubkey)
-    : readyChannels
-  const btcLnOutbound = lspChannels.reduce(
-    (s: number, ch: any) => s + (ch.local_balance_sat ?? 0),
-    0
-  )
-  const btcLnInbound = lspChannels.reduce(
-    (s: number, ch: any) => s + Math.round((ch.inbound_balance_msat ?? 0) / 1000),
-    0
-  )
-
-  const usdtLnOutbound = usdtChannels.reduce(
-    (s: number, ch: any) => s + (ch.asset_local_amount ?? 0) / Math.pow(10, precision),
-    0
-  )
-  const usdtLnInbound = usdtChannels.reduce(
-    (s: number, ch: any) => s + (ch.asset_remote_amount ?? 0) / Math.pow(10, precision),
-    0
-  )
 
   // Fetch LSP info on open to get capacity constraints
   useEffect(() => {
@@ -120,7 +109,8 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
   async function handleOpenChannel() {
     if (!usdtAsset?.asset_id) return
     const amountUsdt = parseFloat(usdtAmount)
-    if (isNaN(amountUsdt) || amountUsdt <= 0 || amountUsdt > spendableUsdt) return
+    if (isNaN(amountUsdt) || amountUsdt <= 0 || amountUsdt > spendableUsdt)
+      return
     const satNum = parseInt(capacitySat, 10)
     if (isNaN(satNum) || satNum < lspMinSat || satNum > lspMaxSat) return
 
@@ -132,13 +122,17 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
       if (!connectionUrl) {
         const infoResult = await getInfo()
         if (infoResult.error || !infoResult.data?.lsp_connection_url) {
-          throw new Error(t('dca.getUsdt.errorLspInfo', 'Failed to get LSP info'))
+          throw new Error(
+            t('dca.getUsdt.errorLspInfo', 'Failed to get LSP info')
+          )
         }
         connectionUrl = infoResult.data.lsp_connection_url
       }
 
       // Connect peer (ignore if already connected)
-      await connectPeer({ peer_pubkey_and_addr: connectionUrl }).unwrap().catch(() => {})
+      await connectPeer({ peer_pubkey_and_addr: connectionUrl })
+        .unwrap()
+        .catch(() => {})
 
       const assetAmount = Math.round(amountUsdt * Math.pow(10, precision))
       await openChannel({
@@ -149,7 +143,9 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
       }).unwrap()
 
       setOnChainState('success')
-      toast.success(t('dca.getUsdt.channelOpened', 'USDT channel opening initiated'))
+      toast.success(
+        t('dca.getUsdt.channelOpened', 'USDT channel opening initiated')
+      )
       setTimeout(() => onSuccess(), 1500)
     } catch (err: any) {
       const msg = err?.data?.error ?? err?.message ?? String(err)
@@ -169,8 +165,11 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
           setShowBuyModal(false)
           onSuccess()
         }}
+        defaultTotalAssetAmount="250"
         preselectedAsset={
-          usdtAsset?.asset_id ? { assetId: usdtAsset.asset_id, amount: 0 } : undefined
+          usdtAsset?.asset_id
+            ? { assetId: usdtAsset.asset_id, amount: 100 }
+            : undefined
         }
       />
     )
@@ -179,8 +178,13 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
   const usdtNum = parseFloat(usdtAmount)
   const satNum = parseInt(capacitySat, 10)
   const isUsdtValid = !isNaN(usdtNum) && usdtNum > 0 && usdtNum <= spendableUsdt
-  const isSatValid = !isNaN(satNum) && satNum >= lspMinSat && satNum <= lspMaxSat
-  const canSubmit = isUsdtValid && isSatValid && onChainState !== 'loading' && onChainState !== 'success'
+  const isSatValid =
+    !isNaN(satNum) && satNum >= lspMinSat && satNum <= lspMaxSat
+  const canSubmit =
+    isUsdtValid &&
+    isSatValid &&
+    onChainState !== 'loading' &&
+    onChainState !== 'success'
 
   return (
     <div
@@ -199,48 +203,15 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
             </h2>
           </div>
           <button
-            className="p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-surface-overlay transition-colors"
+            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
             onClick={onClose}
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Liquidity bars */}
-        <div className="px-5 py-3 border-b border-border-subtle/60 space-y-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-content-tertiary uppercase tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
-              {t('dca.getUsdt.btcLn', 'BTC LN')}
-            </div>
-            <LiquidityBar
-              outbound={btcLnOutbound}
-              inbound={btcLnInbound}
-              outboundLabel={`${formatSats(btcLnOutbound)} sats`}
-              inboundLabel={`${formatSats(btcLnInbound)} sats`}
-              outboundColor="bg-amber-400"
-              inboundColor="bg-amber-400/20"
-            />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-content-tertiary uppercase tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-              {t('dca.getUsdt.usdtLn', 'USDT LN')}
-            </div>
-            <LiquidityBar
-              outbound={usdtLnOutbound}
-              inbound={usdtLnInbound}
-              outboundLabel={`${usdtLnOutbound.toLocaleString('en-US', { maximumFractionDigits: 2 })} USDT`}
-              inboundLabel={`${usdtLnInbound.toLocaleString('en-US', { maximumFractionDigits: 2 })} USDT`}
-              outboundColor="bg-emerald-400"
-              inboundColor="bg-emerald-400/20"
-            />
-          </div>
-        </div>
-
         {/* Body */}
-        <div className="p-5 space-y-3">
-
+        <div className="p-5 space-y-4">
           {/* Option A: Buy via LSP */}
           <div className="border border-border-subtle rounded-xl p-4 space-y-3 bg-surface-raised">
             <div className="flex items-start gap-3">
@@ -251,7 +222,7 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                 <p className="text-sm font-semibold text-content-primary">
                   {t('dca.getUsdt.buyTitle', 'Buy via Kaleido LSP')}
                 </p>
-                <p className="text-xs text-content-tertiary mt-0.5 leading-relaxed">
+                <p className="text-xs text-content-secondary mt-0.5 leading-relaxed">
                   {t(
                     'dca.getUsdt.buyDesc',
                     'Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.'
@@ -273,7 +244,7 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
           {/* Option B: Open with on-chain USDT */}
           <div
             className={`border rounded-xl p-4 space-y-3 bg-surface-raised ${
-              hasOnChain ? 'border-border-subtle' : 'border-border-subtle/50 opacity-60'
+              hasOnChain ? 'border-border-subtle' : 'border-border-subtle/50'
             }`}
           >
             <div className="flex items-start gap-3">
@@ -281,7 +252,7 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                 className={`p-2 rounded-lg flex-shrink-0 mt-0.5 ${
                   hasOnChain
                     ? 'bg-status-success/10 text-status-success'
-                    : 'bg-surface-overlay text-content-tertiary'
+                    : 'bg-surface-overlay text-content-secondary'
                 }`}
               >
                 <Package className="w-4 h-4" />
@@ -290,13 +261,46 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                 <p className="text-sm font-semibold text-content-primary">
                   {t('dca.getUsdt.onChainTitle', 'Open with On-Chain USDT')}
                 </p>
-                <p className="text-xs text-content-tertiary mt-0.5">
-                  {hasOnChain
-                    ? t('dca.getUsdt.onChainBalance', 'On-chain balance: {{amount}} USDT', {
-                        amount: spendableUsdt.toLocaleString('en-US', { maximumFractionDigits: 2 }),
-                      })
-                    : t('dca.getUsdt.noOnChain', 'No on-chain USDT available')}
-                </p>
+                <div className="text-xs mt-1.5">
+                  {hasOnChain ? (
+                    <span className="text-content-secondary">
+                      {t(
+                        'dca.getUsdt.onChainBalance',
+                        'On-chain balance: {{amount}} USDT',
+                        {
+                          amount: spendableUsdt.toLocaleString('en-US', {
+                            maximumFractionDigits: 2,
+                          }),
+                        }
+                      )}
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-content-secondary">
+                        {t(
+                          'dca.getUsdt.noOnChain',
+                          'No on-chain USDT available'
+                        )}
+                      </span>
+                      <button
+                        className="text-primary hover:text-primary-emphasis hover:underline font-semibold"
+                        onClick={() => {
+                          onClose()
+                          if (usdtAsset?.asset_id) {
+                            dispatch(
+                              uiSliceActions.setModal({
+                                assetId: usdtAsset.asset_id,
+                                type: 'deposit',
+                              })
+                            )
+                          }
+                        }}
+                      >
+                        {t('dca.getUsdt.depositAction', 'Deposit USDT')}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -304,7 +308,7 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
               <>
                 {/* USDT amount row */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-content-tertiary uppercase tracking-wide">
+                  <label className="text-[11px] font-medium text-content-secondary uppercase tracking-wide">
                     {t('dca.getUsdt.usdtAmountLabel', 'USDT amount')}
                   </label>
                   <div className="flex items-center gap-2">
@@ -316,13 +320,17 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                       value={usdtAmount}
                       onChange={(e) => setUsdtAmount(e.target.value)}
                       placeholder="0.00"
-                      disabled={onChainState === 'loading' || onChainState === 'success'}
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
                       className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
-                                 text-sm text-content-primary placeholder:text-content-tertiary
+                                 text-sm text-content-primary placeholder:text-content-secondary/60
                                  focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
                                  disabled:opacity-50"
                     />
-                    <span className="text-xs text-content-tertiary font-medium flex-shrink-0">USDT</span>
+                    <span className="text-xs text-content-secondary font-medium flex-shrink-0">
+                      USDT
+                    </span>
                     <button
                       className="px-2 py-1.5 rounded-lg border border-border-subtle bg-surface-overlay
                                  text-xs text-content-secondary hover:text-content-primary hover:border-border-default
@@ -332,7 +340,9 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                           spendableUsdt.toFixed(6).replace(/\.?0+$/, '') || '0'
                         )
                       }
-                      disabled={onChainState === 'loading' || onChainState === 'success'}
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
                     >
                       {t('dca.getUsdt.useAll', 'Use all')}
                     </button>
@@ -342,15 +352,17 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                 {/* Capacity row */}
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
-                    <label className="text-[11px] font-medium text-content-tertiary uppercase tracking-wide">
+                    <label className="text-[11px] font-medium text-content-secondary uppercase tracking-wide">
                       {t('dca.getUsdt.capacityLabel', 'Channel capacity')}
                     </label>
                     <span className="group relative">
-                      <Info className="w-3 h-3 text-content-tertiary cursor-help" />
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2
+                      <Info className="w-3 h-3 text-content-secondary cursor-help" />
+                      <span
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2
                                        bg-surface-elevated border border-border-subtle rounded-lg text-[11px]
                                        text-content-secondary leading-relaxed shadow-lg z-10
-                                       invisible group-hover:visible whitespace-normal">
+                                       invisible group-hover:visible whitespace-normal"
+                      >
                         {t(
                           'dca.getUsdt.capacityHint',
                           'BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.'
@@ -366,25 +378,37 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                       max={lspMaxSat}
                       value={capacitySat}
                       onChange={(e) => setCapacitySat(e.target.value)}
-                      disabled={onChainState === 'loading' || onChainState === 'success'}
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
                       className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
-                                 text-sm text-content-primary placeholder:text-content-tertiary
+                                 text-sm text-content-primary placeholder:text-content-secondary/60
                                  focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
                                  disabled:opacity-50"
                     />
-                    <span className="text-xs text-content-tertiary font-medium flex-shrink-0">sats</span>
+                    <span className="text-xs text-content-secondary font-medium flex-shrink-0">
+                      sats
+                    </span>
                   </div>
-                  <p className="text-[11px] text-content-tertiary">
-                    {t('dca.getUsdt.capacityRange', 'Min {{min}} – max {{max}} sats', {
-                      min: formatSats(lspMinSat),
-                      max: formatSats(lspMaxSat),
-                    })}
+                  <p className="text-[11px] text-content-secondary">
+                    {t(
+                      'dca.getUsdt.capacityRange',
+                      'Min {{min}} – max {{max}} sats',
+                      {
+                        min: formatSats(lspMinSat),
+                        max: formatSats(lspMaxSat),
+                      }
+                    )}
                     {satNum > 0 && isSatValid && (
-                      <span className="ml-2 text-content-tertiary">
+                      <span className="ml-2 text-content-secondary">
                         {'· '}
-                        {t('dca.getUsdt.maxReceive', 'max receive ≈ {{sats}} sats BTC', {
-                          sats: formatSats(satNum),
-                        })}
+                        {t(
+                          'dca.getUsdt.maxReceive',
+                          'max receive ≈ {{sats}} sats BTC',
+                          {
+                            sats: formatSats(satNum),
+                          }
+                        )}
                       </span>
                     )}
                   </p>
@@ -400,7 +424,10 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                 {onChainState === 'success' && (
                   <div className="flex items-center gap-2 p-2.5 bg-status-success/10 border border-status-success/20 rounded-lg text-xs text-status-success">
                     <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    {t('dca.getUsdt.channelOpened', 'USDT channel opening initiated')}
+                    {t(
+                      'dca.getUsdt.channelOpened',
+                      'USDT channel opening initiated'
+                    )}
                   </div>
                 )}
 
@@ -412,7 +439,9 @@ export function GetUsdtModal({ isOpen, onClose, onSuccess }: GetUsdtModalProps) 
                     onClick={handleOpenChannel}
                     disabled={!canSubmit}
                   >
-                    {onChainState === 'loading' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {onChainState === 'loading' && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    )}
                     {t('dca.getUsdt.openButton', 'Open USDT Channel')}
                   </button>
                 </div>
