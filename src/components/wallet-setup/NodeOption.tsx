@@ -50,7 +50,9 @@ export const NodeOption: React.FC<NodeOptionProps> = ({
           {title}
         </h2>
       </div>
-      <p className="text-content-secondary text-sm leading-relaxed">{description}</p>
+      <p className="text-content-secondary text-sm leading-relaxed">
+        {description}
+      </p>
     </div>
     {selected && (
       <div className="absolute inset-0 pointer-events-none">

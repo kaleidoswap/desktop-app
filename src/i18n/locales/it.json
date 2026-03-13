@@ -709,6 +709,7 @@
     "unlockCancelled": "Processo di sblocco annullato",
     "failedCheckStatus": "Impossibile verificare lo stato del nodo: {{error}}",
     "failedGetNodeInfo": "Impossibile ottenere le informazioni del nodo dopo lo sblocco",
+    "unlockTimeoutMessage": "Lo sblocco sta richiedendo piu tempo del solito. Se il nodo e rimasto offline per un po', potrebbe ancora sincronizzare la blockchain in background. Tieni aperta l'app mentre lo sblocco continua.",
     "unknownError": "Si è verificato un errore sconosciuto"
   },
   "trade": {
@@ -1199,6 +1200,8 @@
   "buyChannel": {
     "totalPayment": "Pagamento totale",
     "expires": "Scade: {{time}}",
+    "lightning": "Lightning",
+    "onchain": "On-chain",
     "lightningTab": "⚡ Lightning",
     "onchainTab": "⛓️ Su blockchain",
     "lightningInstructions": "Scansiona il QR o copia la fattura per pagare con Lightning.",
@@ -1872,17 +1875,11 @@
       },
       "colored": {
         "title": "UTXO Colorati",
-        "bullets": [
-          "Apri canali Lightning RGB",
-          "Invia asset RGB on-chain"
-        ]
+        "bullets": ["Apri canali Lightning RGB", "Invia asset RGB on-chain"]
       },
       "normal": {
         "title": "UTXO Normali",
-        "bullets": [
-          "Apri canali Lightning Bitcoin",
-          "Transazioni regolari"
-        ]
+        "bullets": ["Apri canali Lightning Bitcoin", "Transazioni regolari"]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -1900,12 +1897,7 @@
     "empty": "Nessun UTXO trovato. Creane alcuni per iniziare."
   },
   "updaterModal": {
-    "fileSizes": [
-      "Byte",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Byte", "KB", "MB", "GB"],
     "fileSizeZero": "0 Byte",
     "errors": {
       "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",
@@ -2525,9 +2517,57 @@
       "built": "Compilato:"
     },
     "buyChannelModal": {
+      "balanceNeededDescription": "Questo percorso di pagamento non e ancora disponibile con il saldo attuale.",
+      "balanceNeededTitle": "Serve piu saldo",
+      "availableLabel": "Disponibile",
+      "availableRoutes": "Percorsi disponibili",
+      "capacityFee": "Commissione di capacita",
       "discount": "Sconto",
+      "continue": "Continua ->",
       "confirmationTime": "Tempo di Conferma:",
+      "durationFee": "Commissione di durata",
+      "expiresLabel": "Scadenza",
+      "lightningInvoice": "Fattura Lightning",
+      "loadingBalance": "Caricamento saldo...",
+      "loadingQuote": "Caricamento quotazione...",
       "noFundsDeducted": "Nessun fondo è stato detratto. Crea un nuovo ordine per riprovare.",
+      "onchainAddress": "Indirizzo on-chain",
+      "openAssetLightningChannel": "Apri canale Lightning con asset",
+      "openBtcLightningChannel": "Apri canale Lightning BTC",
+      "orderIdLabel": "ID ordine",
+      "orderSummaryBitcoin": "Bitcoin",
+      "orderSummaryYourInbound": "Tua liquidita in ingresso",
+      "orderSummaryYourOutbound": "Tua liquidita in uscita",
+      "paymentDescription": "Usa un solo QR per i wallet che supportano sia Lightning che on-chain, oppure copia i dettagli esatti del pagamento qui sotto.",
+      "paymentEyebrow": "Pagamento",
+      "paymentLabel": "Pagamento",
+      "paymentTitle": "Scansiona o copia per finanziare questo ordine",
+      "processingPaymentDescription": "Pagamento ricevuto, stiamo configurando il tuo canale...",
+      "processingPaymentTitle": "Elaborazione pagamento",
+      "requestDetails": "Dettagli richiesta",
+      "sendExactly": "Invia esattamente",
+      "setupFee": "Commissione di attivazione",
+      "statusClose": "Chiudi",
+      "statusConfirmationMessage": "Il tuo canale richiede circa 6 conferme (circa 1 ora). L'asset e bloccato al tasso di oggi e sara pronto per il trading una volta confermato.",
+      "statusConfirmationTitle": "Conferma del canale in corso",
+      "statusCreateNewOrder": "Crea nuovo ordine",
+      "statusErrorHelp": "Se il pagamento e stato effettuato, nessun fondo e stato addebitato. Riprova oppure contatta il supporto se il problema persiste.",
+      "statusErrorMessage": "Si e verificato un problema durante l'elaborazione dell'ordine del canale.",
+      "statusErrorTitle": "Ordine fallito",
+      "statusExpiredMessage": "La finestra di pagamento e scaduta senza ricevere il pagamento.",
+      "statusExpiredTitle": "Pagamento scaduto",
+      "statusGotIt": "Perfetto, grazie!",
+      "statusSuccessMessage": "Il tuo ordine del canale e stato creato con successo.",
+      "statusSuccessTitle": "Pagamento riuscito!",
+      "statusTryAgain": "Riprova",
+      "totalToPay": "Totale da pagare",
+      "unifiedQrBadge": "LN + On-chain",
+      "unifiedQrDescription": "I wallet compatibili possono scegliere automaticamente il percorso migliore.",
+      "unifiedQrTitle": "QR di pagamento unificato",
+      "walletDescription": "Apri le opzioni di pagamento del wallet per controllare i saldi e pagare con Lightning o on-chain da un'unica finestra.",
+      "walletEyebrow": "Pagamento wallet",
+      "walletLightningDescription": "Usa la tua liquidita in uscita attuale per il percorso di pagamento wallet piu rapido.",
+      "walletOnchainDescription": "Finanzia l'ordine direttamente dal saldo del tuo wallet on-chain e scegli qui il livello di commissione.",
       "confirmAssetPurchase": "Conferma Acquisto Asset",
       "buyChannelWithAsset": "Acquista Canale con Asset",
       "completePayment": "Completa Pagamento",
@@ -2603,6 +2643,13 @@
       "activeMix": "Mix attivo",
       "btcLnBalance": "Saldo BTC LN",
       "usdtLnBalance": "Saldo USDT LN"
+    },
+    "section": {
+      "balances": "Saldi canali",
+      "pendingBadge": "in attesa",
+      "pendingUsdtChannels": "Canali USDT in attesa",
+      "pendingUsdtDescription": "Il tuo nuovo canale USDT Lightning e in arrivo e comparira nel saldo spendibile una volta confermato.",
+      "pendingUsdtTitle": "Nuovo canale USDT in attesa"
     },
     "card": {
       "executions": "Esecuzioni",

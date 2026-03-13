@@ -959,7 +959,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                             transition-all duration-200"
                 >
                   <div className="truncate flex-1 text-content-secondary font-mono text-xs">
-                    <span className="text-content-secondary mr-2">Recipient ID:</span>
+                    <span className="text-content-secondary mr-2">
+                      Recipient ID:
+                    </span>
                     {recipientId.length > 45
                       ? `${recipientId.slice(0, 42)}...`
                       : recipientId}

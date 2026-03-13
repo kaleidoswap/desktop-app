@@ -355,7 +355,9 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                   />
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-content-secondary">Available balance:</span>
+                      <span className="text-content-secondary">
+                        Available balance:
+                      </span>
                       <span className="text-content-primary font-medium">
                         {btcBalanceData?.vanilla?.spendable
                           ? btcBalanceData.vanilla.spendable.toLocaleString()
@@ -364,7 +366,9 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-content-secondary">Total amount:</span>
+                      <span className="text-content-secondary">
+                        Total amount:
+                      </span>
                       <span className="text-primary font-medium">
                         {(numUtxos * utxoSize).toLocaleString()} sats
                       </span>
@@ -375,7 +379,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                         style={{
                           backgroundColor:
                             numUtxos * utxoSize >
-                              (btcBalanceData?.vanilla?.spendable || 0)
+                            (btcBalanceData?.vanilla?.spendable || 0)
                               ? 'rgb(239, 68, 68)'
                               : undefined,
                           width: btcBalanceData?.vanilla?.spendable

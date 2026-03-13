@@ -48,7 +48,9 @@ export const DepositModalContent = () => {
           </div>
         </div>
 
-        <div className={`flex-1 pr-1 ${step === 2 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
+        <div
+          className={`flex-1 pr-1 ${step === 2 ? 'overflow-y-auto custom-scrollbar' : ''}`}
+        >
           {step === 1 && (
             <Step1
               onNext={(a) => {

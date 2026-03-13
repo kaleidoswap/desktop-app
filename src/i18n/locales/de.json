@@ -1228,17 +1228,11 @@
       },
       "colored": {
         "title": "Gefärbte UTXOs",
-        "bullets": [
-          "RGB-Lightning-Kanäle öffnen",
-          "RGB-Assets on-chain senden"
-        ]
+        "bullets": ["RGB-Lightning-Kanäle öffnen", "RGB-Assets on-chain senden"]
       },
       "normal": {
         "title": "Normale UTXOs",
-        "bullets": [
-          "Bitcoin-Lightning-Kanäle öffnen",
-          "Reguläre Transaktionen"
-        ]
+        "bullets": ["Bitcoin-Lightning-Kanäle öffnen", "Reguläre Transaktionen"]
       },
       "countLabel": "{{count}} UTXOs"
     },
@@ -1256,12 +1250,7 @@
     "empty": "Keine UTXOs gefunden. Erstelle welche, um zu starten."
   },
   "updaterModal": {
-    "fileSizes": [
-      "Bytes",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "Update brach nach 5 Minuten ab. Prüfe deine Verbindung und versuche es erneut.",

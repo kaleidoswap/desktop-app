@@ -43,7 +43,9 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
               </div>
               <div
                 className={`absolute top-10 whitespace-nowrap text-xs font-medium ${
-                  isActive || isCompleted ? 'text-blue-500' : 'text-content-tertiary'
+                  isActive || isCompleted
+                    ? 'text-blue-500'
+                    : 'text-content-tertiary'
                 }`}
               >
                 {step.label}

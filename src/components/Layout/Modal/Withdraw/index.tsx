@@ -251,7 +251,7 @@ export const WithdrawModalContent: React.FC = () => {
             if (
               !assetCapacities[channel.asset_id] ||
               (channel.asset_local_amount || 0) >
-              assetCapacities[channel.asset_id]
+                assetCapacities[channel.asset_id]
             ) {
               assetCapacities[channel.asset_id] =
                 channel.asset_local_amount || 0
@@ -761,8 +761,8 @@ export const WithdrawModalContent: React.FC = () => {
           data.asset_id === BTC_ASSET_ID
             ? null
             : (assets.data?.nia || []).find(
-              (a: any) => a.asset_id === data.asset_id
-            )
+                (a: any) => a.asset_id === data.asset_id
+              )
         const ticker =
           assetInfo?.ticker ||
           (data.asset_id === BTC_ASSET_ID
@@ -914,7 +914,7 @@ export const WithdrawModalContent: React.FC = () => {
 
         try {
           // Check if this is a zero-amount invoice and prepare amount parameter
-          let paymentParams: any = {
+          const paymentParams: any = {
             invoice: pendingData.address,
           }
 
@@ -1033,8 +1033,8 @@ export const WithdrawModalContent: React.FC = () => {
             fee_rate:
               pendingData.fee_rate !== 'custom'
                 ? feeEstimations[
-                pendingData.fee_rate as keyof typeof feeEstimations
-                ]
+                    pendingData.fee_rate as keyof typeof feeEstimations
+                  ]
                 : Math.round(customFee),
           }).unwrap()
 
@@ -1114,8 +1114,8 @@ export const WithdrawModalContent: React.FC = () => {
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
-                  pendingData.fee_rate as keyof typeof feeEstimations
-                  ]
+                      pendingData.fee_rate as keyof typeof feeEstimations
+                    ]
                   : Math.round(customFee),
               recipient_map: {
                 [targetAssetId]: [
@@ -1140,8 +1140,8 @@ export const WithdrawModalContent: React.FC = () => {
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
-                  pendingData.fee_rate as keyof typeof feeEstimations
-                  ]
+                      pendingData.fee_rate as keyof typeof feeEstimations
+                    ]
                   : Math.round(customFee),
               recipient_map: {
                 [pendingData.asset_id]: [
@@ -1159,7 +1159,7 @@ export const WithdrawModalContent: React.FC = () => {
           if ('error' in res) {
             throw new Error(
               (res.error as ApiError)?.data?.error ||
-              t('withdrawModal.main.errors.rgbPaymentFailed')
+                t('withdrawModal.main.errors.rgbPaymentFailed')
             )
           }
           toast.success(t('withdrawModal.main.toasts.rgbSuccess'), {

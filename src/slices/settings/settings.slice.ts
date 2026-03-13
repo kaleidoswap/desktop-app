@@ -23,7 +23,10 @@ const getInitialLanguage = (): string => {
 
 const getInitialFiatCurrency = (): FiatCurrency => {
   try {
-    return (localStorage.getItem('kaleidoswap_fiat_currency') as FiatCurrency) || 'usd'
+    return (
+      (localStorage.getItem('kaleidoswap_fiat_currency') as FiatCurrency) ||
+      'usd'
+    )
   } catch {
     return 'usd'
   }
@@ -33,7 +36,8 @@ const getInitialTheme = (): Theme => {
   try {
     const stored = localStorage.getItem('kaleidoswap_theme') as Theme | null
     if (stored === 'dark' || stored === 'light') return stored
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'light'
+    if (window.matchMedia('(prefers-color-scheme: light)').matches)
+      return 'light'
   } catch {
     // Silently fail if localStorage / matchMedia not available
   }
@@ -86,6 +90,11 @@ export const settingsSlice = createSlice({
   },
 })
 
-export const { setBitcoinUnit, setFiatCurrency, setLanguage, setNodeConnectionString, setTheme } =
-  settingsSlice.actions
+export const {
+  setBitcoinUnit,
+  setFiatCurrency,
+  setLanguage,
+  setNodeConnectionString,
+  setTheme,
+} = settingsSlice.actions
 export const settingsReducer = settingsSlice.reducer

@@ -11,6 +11,8 @@ import { createPortal } from 'react-dom'
 
 import { UpdateModal } from './UpdateModal'
 
+const DEFAULT_NOTIFICATION_AUTO_CLOSE_MS = 5000
+
 export type NotificationType =
   | 'success'
   | 'error'
@@ -83,7 +85,8 @@ const getNotificationConfig = (type: NotificationType) => {
       }
     default:
       return {
-        badgeClass: 'bg-surface-high/20 text-content-tertiary dark:text-content-secondary',
+        badgeClass:
+          'bg-surface-high/20 text-content-tertiary dark:text-content-secondary',
         containerClass: 'bg-surface-high/10 dark:bg-surface-base/20',
         icon: Bell,
         iconClass: 'text-content-tertiary',
@@ -296,8 +299,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addNotification = (notification: Omit<Notification, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9)
+    const resolvedAutoClose =
+      notification.type === 'loading'
+        ? notification.autoClose
+        : (notification.autoClose ?? DEFAULT_NOTIFICATION_AUTO_CLOSE_MS)
     const newNotification = {
       ...notification,
+      autoClose: resolvedAutoClose,
       id,
       timestamp: new Date(),
     }
@@ -315,10 +323,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setNotifications((prev) => [...prev, newNotification])
 
-    if (notification.autoClose) {
+    if (resolvedAutoClose) {
       const timer = setTimeout(() => {
         removeNotification(id)
-      }, notification.autoClose)
+      }, resolvedAutoClose)
       notificationTimers.current[id] = timer
     }
 
@@ -379,21 +387,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       {createPortal(
         <>
           <div className="fixed bottom-4 right-4 z-50 space-y-4">
-            {notifications
-              .filter((n) => !n.autoClose || n.type === 'loading')
-              .slice(-3)
-              .map((notification) => (
-                <div
-                  className="transition-all duration-300 ease-in-out"
-                  key={notification.id}
-                >
-                  <NotificationItem
-                    notification={notification}
-                    onClose={() => removeNotification(notification.id)}
-                    onNotificationClick={handleNotificationClick}
-                  />
-                </div>
-              ))}
+            {notifications.slice(-3).map((notification) => (
+              <div
+                className="transition-all duration-300 ease-in-out"
+                key={notification.id}
+              >
+                <NotificationItem
+                  notification={notification}
+                  onClose={() => removeNotification(notification.id)}
+                  onNotificationClick={handleNotificationClick}
+                />
+              </div>
+            ))}
           </div>
           {isNotificationPanelOpen && (
             <>

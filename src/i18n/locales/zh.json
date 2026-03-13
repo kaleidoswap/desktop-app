@@ -1865,24 +1865,15 @@
     "summary": {
       "colorable": {
         "title": "可着色 UTXO",
-        "bullets": [
-          "UTXO RGB 就绪但尚未分配",
-          "接收链上 RGB 资产"
-        ]
+        "bullets": ["UTXO RGB 就绪但尚未分配", "接收链上 RGB 资产"]
       },
       "colored": {
         "title": "已着色 UTXO",
-        "bullets": [
-          "开通 RGB Lightning 通道",
-          "发送链上 RGB 资产"
-        ]
+        "bullets": ["开通 RGB Lightning 通道", "发送链上 RGB 资产"]
       },
       "normal": {
         "title": "普通 UTXO",
-        "bullets": [
-          "开通比特币 Lightning 通道",
-          "常规交易"
-        ]
+        "bullets": ["开通比特币 Lightning 通道", "常规交易"]
       },
       "countLabel": "{{count}} 个 UTXO"
     },
@@ -1900,12 +1891,7 @@
     "empty": "未找到 UTXO。创建一些以开始使用。"
   },
   "updaterModal": {
-    "fileSizes": [
-      "字节",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["字节", "KB", "MB", "GB"],
     "fileSizeZero": "0 字节",
     "errors": {
       "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",

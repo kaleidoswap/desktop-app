@@ -59,7 +59,6 @@ export const Component = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const TABS = [
-
     {
       color: 'green',
       icon: <ArrowDown className="w-5 h-5" />,
@@ -99,7 +98,9 @@ export const Component = () => {
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
       <div className="mb-6">
-        <p className="text-content-secondary text-sm">{t('history.description')}</p>
+        <p className="text-content-secondary text-sm">
+          {t('history.description')}
+        </p>
       </div>
 
       {/* Desktop Tabs */}
@@ -110,7 +111,9 @@ export const Component = () => {
             <Link
               className={twJoin(
                 'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center',
-                isActive ? 'text-white' : 'text-content-secondary hover:text-white'
+                isActive
+                  ? 'text-white'
+                  : 'text-content-secondary hover:text-white'
               )}
               key={tab.path}
               to={tab.path}

@@ -174,7 +174,11 @@ export const Step1 = ({ onNext }: Props) => {
                       {asset.asset_id === BTC_ASSET_ID ? (
                         <img alt="Bitcoin" className="w-4 h-4" src={btcLogo} />
                       ) : (
-                        <img alt="RGB Asset" className="w-4 h-4" src={rgbLogo} />
+                        <img
+                          alt="RGB Asset"
+                          className="w-4 h-4"
+                          src={rgbLogo}
+                        />
                       )}
                     </div>
                     <div className="text-left flex-1 min-w-0">

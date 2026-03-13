@@ -135,7 +135,9 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         <h3 className="text-3xl font-bold text-white mb-2">
           {t('createChannel.step3.title')}
         </h3>
-        <p className="text-content-secondary">{t('createChannel.step3.subtitle')}</p>
+        <p className="text-content-secondary">
+          {t('createChannel.step3.subtitle')}
+        </p>
       </div>
 
       {error && (

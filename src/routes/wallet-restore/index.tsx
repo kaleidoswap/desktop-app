@@ -345,7 +345,7 @@ export const Component = () => {
           toast.success(t('walletRestore.nodeStartedSuccess'))
         } catch (error) {
           toast.error(t('walletRestore.couldNotStartNode', { error }))
-          throw new Error(`Could not start node: ${error}`)
+          throw new Error(`Could not start node: ${error}`, { cause: error })
         }
 
         const restoreResponse = await restore({

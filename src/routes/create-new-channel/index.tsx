@@ -194,7 +194,7 @@ export const Component = () => {
       if (!wasHandled) {
         setChannelOpeningError(
           error?.data?.error ||
-          (error instanceof Error ? error.message : 'Failed to open channel')
+            (error instanceof Error ? error.message : 'Failed to open channel')
         )
         setStep(4)
       }

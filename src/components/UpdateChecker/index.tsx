@@ -86,21 +86,14 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         console.warn('Failed to get current version, using fallback:', e)
       }
 
-      let _update: Update | null = null
+      let update: Update | null
 
       try {
-        _update = await check({ timeout: 10000 })
-
-        if (_update) {
-          const isActuallyNewer = isVersionNewer(
-            _update.version,
-            currentVersion
-          )
-
-          if (!isActuallyNewer) {
-            _update = null // Treat as no update available
-          }
-        }
+        const maybeUpdate = await check({ timeout: 10000 })
+        update =
+          maybeUpdate && isVersionNewer(maybeUpdate.version, currentVersion)
+            ? maybeUpdate
+            : null
       } catch (e) {
         console.error('Initial update check failed:', e)
         updateCheckInProgress.current = false
@@ -108,10 +101,10 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
       }
       updateCheckInProgress.current = false
 
-      if (_update) {
+      if (update) {
         addNotification({
-          data: { update: _update },
-          message: `Version ${_update.version} is available. Click to install now.`,
+          data: { update },
+          message: `Version ${update.version} is available. Click to install now.`,
           title: 'Update Available',
           type: 'info',
           // Don't auto-close so user can click it later
@@ -145,18 +138,14 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
 
     lastCheckTime.current = now
     updateCheckInProgress.current = true
-    let _update: Update | null = null
+    let update: Update | null
 
     try {
-      _update = await check({ timeout: 10000 })
-
-      if (_update) {
-        const isActuallyNewer = isVersionNewer(_update.version, currentVersion)
-
-        if (!isActuallyNewer) {
-          _update = null // Treat as no update available
-        }
-      }
+      const maybeUpdate = await check({ timeout: 10000 })
+      update =
+        maybeUpdate && isVersionNewer(maybeUpdate.version, currentVersion)
+          ? maybeUpdate
+          : null
     } catch (e) {
       console.error('Manual update check failed:', e)
       addNotification({
@@ -173,10 +162,10 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     // Reset loading state for successful completion
     updateCheckInProgress.current = false
 
-    if (_update) {
+    if (update) {
       addNotification({
-        data: { update: _update },
-        message: `Version ${_update.version} is available for download. Click to install now.`,
+        data: { update },
+        message: `Version ${update.version} is available for download. Click to install now.`,
         title: 'Update Found',
         type: 'info',
         // Don't auto-close so user can click it later

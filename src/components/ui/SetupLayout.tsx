@@ -75,7 +75,9 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
             {title}
           </h1>
           {subtitle && (
-            <p className="text-content-secondary text-xs md:text-sm">{subtitle}</p>
+            <p className="text-content-secondary text-xs md:text-sm">
+              {subtitle}
+            </p>
           )}
         </div>
 

@@ -129,7 +129,11 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
             <span className={cost.className ? '' : 'text-content-secondary'}>
               {cost.label}
             </span>
-            <span className={cost.className ? '' : 'text-content-primary font-medium'}>
+            <span
+              className={
+                cost.className ? '' : 'text-content-primary font-medium'
+              }
+            >
               {formatNumberWithCommas(cost.amount.toString())} sats
             </span>
           </div>

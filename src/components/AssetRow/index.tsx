@@ -88,7 +88,9 @@ export const AssetRow: React.FC<AssetRowProps> = ({
             <LoadingPlaceholder />
           ) : (
             <div className="flex flex-col">
-              <span className="font-bold">{formatAmount(asset, onChainBalance)}</span>
+              <span className="font-bold">
+                {formatAmount(asset, onChainBalance)}
+              </span>
               {incomingBalance > 0 && (
                 <span className="text-[10px] text-content-tertiary font-medium">
                   +{formatAmount(asset, incomingBalance)} incoming
@@ -101,9 +103,39 @@ export const AssetRow: React.FC<AssetRowProps> = ({
         <div className="py-3 px-2 flex justify-center">
           <div className="flex items-center gap-0.5">
             {[
-              { icon: <Download className="w-3.5 h-3.5" />, label: 'Deposit', color: 'text-primary hover:bg-primary/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: asset.asset_id, type: 'deposit' })) },
-              { icon: <Upload className="w-3.5 h-3.5" />, label: 'Withdraw', color: 'text-status-danger hover:bg-status-danger/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: asset.asset_id, type: 'withdraw' })) },
-              { icon: <History className="w-3.5 h-3.5" />, label: 'History', color: 'text-secondary hover:bg-secondary/15', onClick: () => navigate(`${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`) },
+              {
+                icon: <Download className="w-3.5 h-3.5" />,
+                label: 'Deposit',
+                color: 'text-primary hover:bg-primary/15',
+                onClick: () =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: asset.asset_id,
+                      type: 'deposit',
+                    })
+                  ),
+              },
+              {
+                icon: <Upload className="w-3.5 h-3.5" />,
+                label: 'Withdraw',
+                color: 'text-status-danger hover:bg-status-danger/15',
+                onClick: () =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: asset.asset_id,
+                      type: 'withdraw',
+                    })
+                  ),
+              },
+              {
+                icon: <History className="w-3.5 h-3.5" />,
+                label: 'History',
+                color: 'text-secondary hover:bg-secondary/15',
+                onClick: () =>
+                  navigate(
+                    `${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`
+                  ),
+              },
             ].map(({ icon, label, color, onClick }) => (
               <div key={label} className="relative group/btn">
                 <button

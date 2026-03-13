@@ -932,7 +932,9 @@ export const Component = () => {
                   onChange={() => handleColumnToggle(column.key)}
                   type="checkbox"
                 />
-                <span className="text-sm text-content-secondary">{column.label}</span>
+                <span className="text-sm text-content-secondary">
+                  {column.label}
+                </span>
               </label>
             ))}
           </div>

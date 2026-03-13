@@ -313,7 +313,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
     return (
       <div className="flex justify-center items-center gap-2 p-6">
         <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-content-secondary text-sm">{t('withdrawModal.form.analyzing')}</span>
+        <span className="text-content-secondary text-sm">
+          {t('withdrawModal.form.analyzing')}
+        </span>
       </div>
     )
   }
@@ -421,16 +423,20 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             <div className="flex items-center mt-1.5">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-                  addressType === 'lightning' || addressType === 'lightning-address'
+                  addressType === 'lightning' ||
+                  addressType === 'lightning-address'
                     ? 'bg-primary/10 border-primary/30 text-primary'
                     : addressType === 'bitcoin'
                       ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
                       : 'bg-green-500/10 border-green-500/30 text-green-400'
                 }`}
               >
-                {(addressType === 'lightning' || addressType === 'lightning-address')
-                  ? <Zap className="w-3 h-3" />
-                  : <ChainIcon className="w-3 h-3" />}
+                {addressType === 'lightning' ||
+                addressType === 'lightning-address' ? (
+                  <Zap className="w-3 h-3" />
+                ) : (
+                  <ChainIcon className="w-3 h-3" />
+                )}
                 {addressType === 'lightning'
                   ? t('withdrawModal.form.detected.types.lightningInvoice')
                   : addressType === 'lightning-address'
@@ -589,8 +595,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                 <span>
                   {filteredAvailableAssets.find(
                     (a: AssetOption) => a.value === assetId
-                  )?.label ||
-                    t('withdrawModal.form.assetSelector.placeholder')}
+                  )?.label || t('withdrawModal.form.assetSelector.placeholder')}
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-content-secondary transition-transform duration-200

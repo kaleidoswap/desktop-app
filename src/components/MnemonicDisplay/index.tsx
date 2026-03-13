@@ -44,7 +44,9 @@ export const MnemonicDisplay = ({
                        border border-border-default/50 text-content-secondary"
               key={i}
             >
-              <span className="text-content-tertiary text-xs mr-2">{i + 1}.</span>
+              <span className="text-content-tertiary text-xs mr-2">
+                {i + 1}.
+              </span>
               <span className="font-medium text-sm">{word}</span>
             </div>
           ))}

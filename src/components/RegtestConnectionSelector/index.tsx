@@ -159,10 +159,10 @@ export const RegtestConnectionSelector = ({
       {/* Help text */}
       <div className="mt-4 p-3 bg-surface-elevated/20 border border-blue-500/20 rounded-lg">
         <p className="text-xs text-content-secondary">
-          <strong className="text-content-secondary">Recommended:</strong> Use Remote
-          (Bitfinex Regtest) for most users - it's ready to use immediately.
-          Choose Local Regtest only if you're running your own regtest
-          infrastructure.
+          <strong className="text-content-secondary">Recommended:</strong> Use
+          Remote (Bitfinex Regtest) for most users - it's ready to use
+          immediately. Choose Local Regtest only if you're running your own
+          regtest infrastructure.
         </p>
       </div>
     </div>

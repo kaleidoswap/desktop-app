@@ -47,7 +47,9 @@ export const OnChainDetailsOverlay = ({
                 <div className="text-xs text-content-secondary">Future</div>
                 <div className="text-xs font-medium text-white truncate">
                   {onChainFutureBalance === 0 ? (
-                    <span className="text-content-tertiary">No future balance</span>
+                    <span className="text-content-tertiary">
+                      No future balance
+                    </span>
                   ) : (
                     `${formatBitcoinAmount(onChainFutureBalance, bitcoinUnit)} ${bitcoinUnit}`
                   )}
@@ -57,7 +59,9 @@ export const OnChainDetailsOverlay = ({
                 <div className="text-xs text-content-secondary">Spendable</div>
                 <div className="text-xs font-medium text-white truncate">
                   {onChainSpendableBalance === 0 ? (
-                    <span className="text-content-tertiary">No spendable balance</span>
+                    <span className="text-content-tertiary">
+                      No spendable balance
+                    </span>
                   ) : (
                     `${formatBitcoinAmount(onChainSpendableBalance, bitcoinUnit)} ${bitcoinUnit}`
                   )}
@@ -77,7 +81,9 @@ export const OnChainDetailsOverlay = ({
                 <div className="text-xs text-content-secondary">Settled</div>
                 <div className="text-xs font-medium text-white truncate">
                   {onChainColoredBalance === 0 ? (
-                    <span className="text-content-tertiary">No colored balance</span>
+                    <span className="text-content-tertiary">
+                      No colored balance
+                    </span>
                   ) : (
                     `${formatBitcoinAmount(onChainColoredBalance, bitcoinUnit)} ${bitcoinUnit}`
                   )}

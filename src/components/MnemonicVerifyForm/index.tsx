@@ -186,7 +186,9 @@ export const MnemonicVerifyForm = ({
                     >
                       <span>{word}</span>
                       {index === 0 && (
-                        <span className="text-xs text-content-tertiary">Tab ↹</span>
+                        <span className="text-xs text-content-tertiary">
+                          Tab ↹
+                        </span>
                       )}
                     </button>
                   ))}
