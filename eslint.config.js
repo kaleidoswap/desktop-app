@@ -8,10 +8,10 @@ import tseslint from 'typescript-eslint'
 export default tseslint.config(
   // Base ESLint recommended config
   js.configs.recommended,
-  
+
   // TypeScript ESLint recommended configs
   ...tseslint.configs.recommended,
-  
+
   // React plugin configs
   {
     files: ['**/*.{ts,tsx}'],
@@ -44,49 +44,18 @@ export default tseslint.config(
       'react/prop-types': 'off',
       'react/jsx-sort-props': 'warn',
       'react/no-unescaped-entities': 'off',
-      
+
       // React Hooks rules
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/set-state-in-effect': 'warn',
-      
+
       // Import rules
-      'import/order': [
-        'warn',
-        {
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-          ],
-          'newlines-between': 'always',
-          pathGroups: [
-            {
-              pattern: '@/assets/**',
-              group: 'external',
-              position: 'after',
-            },
-            {
-              pattern: '@/components/**',
-              group: 'external',
-              position: 'after',
-            },
-          ],
-          distinctGroup: false,
-        },
-      ],
       'import/no-default-export': 'error',
-      
+
       // Sort keys rules
       'sort-keys-fix/sort-keys-fix': 'warn',
-      
+
       // TypeScript rules
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -99,7 +68,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
-  
+
   // Ignore patterns
   {
     ignores: [
@@ -114,4 +83,3 @@ export default tseslint.config(
     ],
   }
 )
-
