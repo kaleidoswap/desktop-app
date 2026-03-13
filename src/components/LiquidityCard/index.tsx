@@ -44,7 +44,9 @@ export const LiquidityCard = ({
     <OverlayTooltip content={tooltipDescription} title={title}>
       <HoverCard className="border border-border-default/30 hover:border-border-default/50 transition-all duration-200 p-2.5">
         <div className="flex justify-between items-center mb-1.5">
-          <h2 className="text-xs font-medium text-content-secondary">{title}</h2>
+          <h2 className="text-xs font-medium text-content-secondary">
+            {title}
+          </h2>
           <div className={iconColor}>{icon}</div>
         </div>
         <div className="text-base font-bold text-white mb-1.5">

@@ -148,7 +148,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 type="button"
               >
                 <span>{formatCapacity(preset)}</span>
-                <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>
+                <span
+                  className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}
+                >
                   {t('channelConfiguration.bitcoinChannel.sats')}
                 </span>
               </button>
@@ -166,10 +168,16 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             type="button"
           >
             <PencilLine className="w-3.5 h-3.5" />
-            {customInput !== ''
-              ? <>{formatCapacity(parseInt(customInput, 10))} <span className="text-xs opacity-80">{t('channelConfiguration.bitcoinChannel.sats')}</span></>
-              : 'Custom'
-            }
+            {customInput !== '' ? (
+              <>
+                {formatCapacity(parseInt(customInput, 10))}{' '}
+                <span className="text-xs opacity-80">
+                  {t('channelConfiguration.bitcoinChannel.sats')}
+                </span>
+              </>
+            ) : (
+              'Custom'
+            )}
           </button>
         </div>
       </div>
@@ -178,7 +186,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
       {showCustomModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCustomModal(false) }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCustomModal(false)
+          }}
         >
           <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
             <div className="flex items-center justify-between mb-5">
@@ -186,7 +196,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 <div className="p-2 rounded-lg bg-orange-500/10">
                   <PencilLine className="w-4 h-4 text-orange-400" />
                 </div>
-                <h3 className="text-base font-bold text-white">Custom Capacity</h3>
+                <h3 className="text-base font-bold text-white">
+                  Custom Capacity
+                </h3>
               </div>
               <button
                 className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
@@ -206,7 +218,9 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                 className="w-full bg-surface-overlay/80 border border-border-default/50 focus:border-orange-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-14 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 min={0}
                 onChange={(e) => setModalDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') applyCustomAmount() }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyCustomAmount()
+                }}
                 placeholder="e.g. 250000"
                 ref={modalInputRef}
                 type="number"
@@ -415,12 +429,12 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50" />
               <span>
-                {t('channelConfiguration.bitcoinChannel.zeroSpending')}
+                {t('channelConfiguration.bitcoinChannel.allReceiving')}
               </span>
             </span>
             <span className="flex items-center gap-1.5">
               <span>
-                {t('channelConfiguration.bitcoinChannel.fullSpending')}
+                {t('channelConfiguration.bitcoinChannel.allSpending')}
               </span>
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
             </span>

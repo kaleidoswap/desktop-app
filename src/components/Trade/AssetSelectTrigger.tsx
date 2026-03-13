@@ -38,7 +38,7 @@ export const AssetSelectTrigger: React.FC<AssetSelectTriggerProps> = ({
   return (
     <button
       className={twJoin(
-        'flex items-center justify-between w-full px-2.5 rounded-lg border transition-all duration-200',
+        'flex items-center justify-between w-full px-3 py-2.5 rounded-lg border transition-all duration-200',
         'bg-surface-base/50 border-border-default/30 hover:border-border-default/60',
         'focus:border-primary/50 focus:outline-none',
         'relative group',
@@ -64,15 +64,18 @@ export const AssetSelectTrigger: React.FC<AssetSelectTriggerProps> = ({
               <div className="text-base font-semibold text-white truncate leading-tight">
                 {displayTicker}
               </div>
-              {selectedOption.assetId && selectedOption.assetId.startsWith('rgb:') && (
-                <div className="text-[10px] text-content-tertiary font-mono truncate leading-tight">
-                  {selectedOption.assetId.slice(4, 15)}…
-                </div>
-              )}
+              {selectedOption.assetId &&
+                selectedOption.assetId.startsWith('rgb:') && (
+                  <div className="text-[10px] text-content-tertiary font-mono truncate leading-tight">
+                    {selectedOption.assetId.slice(4, 15)}…
+                  </div>
+                )}
             </div>
           </>
         ) : (
-          <span className="text-content-tertiary text-sm truncate">{placeholder}</span>
+          <span className="text-content-tertiary text-sm truncate">
+            {placeholder}
+          </span>
         )}
       </div>
       <ChevronDown className="w-4 h-4 text-content-tertiary ml-1.5 flex-shrink-0 group-hover:text-content-secondary transition-colors duration-200" />

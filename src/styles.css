@@ -7,23 +7,23 @@
   :root,
   .dark {
     /* Body is notably darker than cards — creates clear depth without full-black */
-    --color-surface-base: 18 19 28;        /* #12131C — deepest bg, sidebar */
-    --color-surface-raised: 24 25 36;      /* #181924 — page body bg */
-    --color-surface-overlay: 36 38 56;     /* #242638 — card bg (~14 lighter than body) */
-    --color-surface-elevated: 50 52 72;    /* #323448 — sections inside cards */
-    --color-surface-high: 66 68 90;        /* #42445A — hover/active highlights */
-    --color-primary: 21 233 154;           /* #15E99A */
-    --color-primary-emphasis: 18 201 126;  /* #12C97E */
+    --color-surface-base: 18 19 28; /* #12131C — deepest bg, sidebar */
+    --color-surface-raised: 24 25 36; /* #181924 — page body bg */
+    --color-surface-overlay: 36 38 56; /* #242638 — card bg (~14 lighter than body) */
+    --color-surface-elevated: 50 52 72; /* #323448 — sections inside cards */
+    --color-surface-high: 66 68 90; /* #42445A — hover/active highlights */
+    --color-primary: 21 233 154; /* #15E99A */
+    --color-primary-emphasis: 18 201 126; /* #12C97E */
     --color-primary-foreground: 18 19 28;
-    --color-secondary: 139 92 246;         /* #8B5CF6 */
+    --color-secondary: 139 92 246; /* #8B5CF6 */
     --color-secondary-emphasis: 124 58 237;
     --color-secondary-foreground: 255 255 255;
-    --color-content-primary: 232 233 242;  /* #E8E9F2 — slightly cool white */
+    --color-content-primary: 232 233 242; /* #E8E9F2 — slightly cool white */
     --color-content-secondary: 142 146 172; /* #8E92AC */
-    --color-content-tertiary: 88 92 116;   /* #585C74 */
+    --color-content-tertiary: 88 92 116; /* #585C74 */
     --color-content-inverse: 18 19 28;
-    --color-border-subtle: 40 42 60;       /* #282A3C */
-    --color-border-default: 54 56 76;      /* #36384C */
+    --color-border-subtle: 40 42 60; /* #282A3C */
+    --color-border-default: 54 56 76; /* #36384C */
     --color-border-strong: 21 233 154;
     --color-status-success: 34 197 94;
     --color-status-danger: 248 113 113;
@@ -34,23 +34,23 @@
   /* ── Design tokens: light ── */
   .light {
     /* Cards = white on a cool-gray page for clear depth */
-    --color-surface-base: 218 220 234;     /* #DADCEA — sidebar/deep backgrounds */
-    --color-surface-raised: 234 236 248;   /* #EAECF8 — page body bg */
-    --color-surface-overlay: 255 255 255;  /* #FFFFFF — card bg (white) */
+    --color-surface-base: 218 220 234; /* #DADCEA — sidebar/deep backgrounds */
+    --color-surface-raised: 234 236 248; /* #EAECF8 — page body bg */
+    --color-surface-overlay: 255 255 255; /* #FFFFFF — card bg (white) */
     --color-surface-elevated: 246 247 253; /* #F6F7FD — sections inside cards */
-    --color-surface-high: 228 230 246;     /* #E4E6F6 — hover/active highlights */
-    --color-primary: 23 181 129;           /* #17B581 */
-    --color-primary-emphasis: 19 138 100;  /* #138A64 */
+    --color-surface-high: 228 230 246; /* #E4E6F6 — hover/active highlights */
+    --color-primary: 23 181 129; /* #17B581 */
+    --color-primary-emphasis: 19 138 100; /* #138A64 */
     --color-primary-foreground: 255 255 255;
-    --color-secondary: 111 50 255;         /* #6F32FF */
+    --color-secondary: 111 50 255; /* #6F32FF */
     --color-secondary-emphasis: 90 31 229; /* #5A1FE5 */
     --color-secondary-foreground: 255 255 255;
-    --color-content-primary: 18 19 30;     /* #12131E */
-    --color-content-secondary: 70 74 105;  /* #464A69 */
+    --color-content-primary: 18 19 30; /* #12131E */
+    --color-content-secondary: 70 74 105; /* #464A69 */
     --color-content-tertiary: 118 122 152; /* #767A98 */
     --color-content-inverse: 255 255 255;
-    --color-border-subtle: 218 220 238;    /* #DADCEE */
-    --color-border-default: 200 203 224;   /* #C8CBE0 */
+    --color-border-subtle: 218 220 238; /* #DADCEE */
+    --color-border-default: 200 203 224; /* #C8CBE0 */
     --color-border-strong: 23 181 129;
     --color-status-success: 22 163 74;
     --color-status-danger: 220 38 38;
@@ -81,7 +81,8 @@
   body {
     @apply bg-surface-raised text-content-primary font-sans;
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-surface-base) / 0.8) rgb(var(--color-surface-base) / 0.3);
+    scrollbar-color: rgb(var(--color-surface-base) / 0.8)
+      rgb(var(--color-surface-base) / 0.3);
   }
 
   /* Global scrollbar styling */
@@ -178,7 +179,8 @@
   /* Custom scrollbar class for specific elements */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-surface-base) / 0.8) rgb(var(--color-surface-base) / 0.3);
+    scrollbar-color: rgb(var(--color-surface-base) / 0.8)
+      rgb(var(--color-surface-base) / 0.3);
   }
 
   .custom-scrollbar::-webkit-scrollbar {

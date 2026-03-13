@@ -867,7 +867,11 @@
     "formErrors": {
       "formSubmissionError": "フォームの送信中にエラーが発生しました。"
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1787,7 +1791,8 @@
     "manage": "管理",
     "history": "履歴",
     "testnetWarning": "テストネットワーク",
-    "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。"
+    "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。",
+    "swap": "Swap"
   },
   "peerManagement": {
     "title": "ピア",
@@ -2569,5 +2574,121 @@
       "initializingButton": "初期化中...",
       "initializeButton": "ノードを初期化"
     }
+  },
+  "dca": {
+    "title": "DCA注文",
+    "subtitle": "固定間隔の買い付けや下落トリガーでBTC積立を自動化します。",
+    "spotPrice": "BTCスポット価格",
+    "spotHint": "価格トリガーの監視に使用",
+    "refreshAmounts": "金額を更新",
+    "refreshingAmounts": "更新中...",
+    "createOrder": "新しいDCA注文",
+    "closeCreate": "フォームを閉じる",
+    "createButton": "注文を作成",
+    "actions": {
+      "execute": "実行",
+      "pause": "一時停止",
+      "resume": "再開",
+      "cancel": "キャンセル"
+    },
+    "metrics": {
+      "totalOrders": "注文数",
+      "executions": "成功した買い付け",
+      "accumulated": "累積",
+      "activeMix": "アクティブ内訳",
+      "btcLnBalance": "BTC LN残高",
+      "usdtLnBalance": "USDT LN残高"
+    },
+    "card": {
+      "executions": "実行回数",
+      "accumulated": "累積",
+      "successRate": "成功率",
+      "lastExecution": "最終実行",
+      "progressToNext": "次回買い付けまでの進捗",
+      "triggerGap": "あと{{pct}}%の下落が必要",
+      "triggerReady": "トリガー閾値以下です"
+    },
+    "form": {
+      "subtitle": "金額、トリガーモード、スケジュールを設定します。いつでも一時停止またはキャンセルできます。",
+      "scheduledHint": "定期的な間隔で買い付け",
+      "targetHint": "BTCがトリガーに達したら買い付け",
+      "estimatedReceive": "1回あたりの受取見込み",
+      "remainingBalance": "各買い付け後の残高",
+      "scheduleNote": "ノードがアンロック中は約30秒ごとに実行可否を確認します。"
+    },
+    "tabs": {
+      "active": "アクティブ",
+      "history": "履歴"
+    },
+    "type": {
+      "scheduled": "定期",
+      "priceTarget": "価格ターゲット"
+    },
+    "intervalLabel": "購入間隔",
+    "dropLabel": "下落閾値",
+    "amountLabel": "1回あたりの金額",
+    "triggerPrice": "次の価格以下で発動 ≤",
+    "nextExecution": "次回実行",
+    "executions": "{{count}} 回実行",
+    "status": {
+      "active": "アクティブ",
+      "paused": "一時停止",
+      "completed": "完了",
+      "cancelled": "キャンセル済み"
+    },
+    "empty": {
+      "active": "アクティブなDCA注文はありません",
+      "history": "まだ履歴がありません",
+      "hint": "定期注文または価格ターゲット注文を作成して、USDTでBTCを自動購入しましょう。"
+    },
+    "howItWorks": {
+      "title": "DCAの仕組み",
+      "description": "各注文は指定したUSDT金額でBTCを繰り返し購入します。実行はノードがアンロックかつ準備完了のときのみ行われます。",
+      "scheduled": "定期: 固定間隔で購入（例: 24時間ごと）。",
+      "priceTarget": "価格ターゲット: BTC価格がトリガー以下になったときに購入。",
+      "actions": "操作: 今すぐ実行で即時購入、一時停止でトリガー停止、キャンセルで履歴へ移動。"
+    },
+    "orderHelp": {
+      "scheduled": "この注文は選択した間隔に基づいて定期的に購入します。",
+      "priceTarget": "この注文は市場価格がトリガー以下のときに購入します。",
+      "statusActive": "アクティブ: 条件を満たすと自動実行されます。",
+      "statusPaused": "一時停止: 再開するまで自動実行されません。",
+      "statusCancelled": "キャンセル済み: これ以上実行されません。履歴は表示されます。",
+      "statusCompleted": "完了: 注文は終了し、履歴に保存されています。",
+      "createdAt": "作成日"
+    },
+    "errors": {
+      "invalidAmount": "有効なUSDT金額を入力してください",
+      "noPriceData": "BTC価格を取得できません",
+      "insufficientBalance": "利用可能なUSDTチャネル残高を超えています"
+    },
+    "toast": {
+      "created": "DCA注文を作成しました",
+      "triggered": "DCA注文がトリガーされました",
+      "success": "DCA: {{amount}} sats を購入しました",
+      "failed": "DCA注文に失敗しました: {{error}}",
+      "skippedNoWs": "DCAをスキップ: Makerに未接続"
+    },
+    "getUsdt": {
+      "cta": "Get USDT",
+      "title": "Get USDT on Lightning",
+      "buyTitle": "Buy via Kaleido LSP",
+      "buyDesc": "Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.",
+      "buyButton": "Buy USDT Channel",
+      "onChainTitle": "Open with On-Chain USDT",
+      "onChainBalance": "On-chain balance: {{amount}} USDT",
+      "noOnChain": "No on-chain USDT available",
+      "useAll": "Use all",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info",
+      "usdtAmountLabel": "USDT amount",
+      "capacityLabel": "Channel capacity",
+      "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
+      "capacityRange": "Min {{min}} – max {{max}} sats",
+      "maxReceive": "max receive ≈ {{sats}} sats BTC"
+    },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT"
   }
 }

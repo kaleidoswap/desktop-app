@@ -9,11 +9,13 @@ import {
   Activity,
   Settings,
   Store,
+  TrendingUp,
   Zap,
   Home,
   Clock,
   ArrowDownLeft,
   ArrowUpRight,
+  HardDriveDownload,
 } from 'lucide-react'
 import React from 'react'
 
@@ -21,6 +23,7 @@ import {
   TRADE_PATH,
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
+  TRADE_DCA_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
   WALLET_HISTORY_WITHDRAWALS_PATH,
   WALLET_HISTORY_TRADES_PATH,
@@ -75,6 +78,12 @@ export const getMainNavItems = (t: TFunction) => [
     label: t('navigation.history'),
     matchPath: WALLET_HISTORY_PATH,
     to: WALLET_HISTORY_PATH,
+  },
+  {
+    icon: <TrendingUp className="w-5 h-5" />,
+    label: t('navigation.dca', 'DCA'),
+    matchPath: TRADE_DCA_PATH,
+    to: TRADE_DCA_PATH,
   },
   {
     icon: <Activity className="w-5 h-5" />,
@@ -146,6 +155,11 @@ export const getUserMenuItems = (t: TFunction) => [
     to: SETTINGS_PATH,
   },
   {
+    action: 'backup',
+    icon: <HardDriveDownload className="w-4 h-4" />,
+    label: t('settings.backupWallet'),
+  },
+  {
     action: 'support',
     icon: <HelpCircle className="w-4 h-4" />,
     label: t('navigation.helpSupport'),
@@ -209,6 +223,10 @@ export const getPageConfig = (t: TFunction) => ({
   [TRADE_MANUAL_PATH]: {
     icon: <Zap className="w-5 h-5" />,
     title: t('navigation.manualSwaps'),
+  },
+  [TRADE_DCA_PATH]: {
+    icon: <TrendingUp className="w-5 h-5" />,
+    title: t('navigation.dca', 'DCA'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
     icon: <Store className="w-5 h-5" />,

@@ -76,8 +76,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
       : false
 
   return (
-    <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20">
-      <h4 className="text-blue-400 text-sm font-medium mb-2">
+    <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
+      <h4 className="text-primary text-sm font-medium mb-2">
         {t('withdrawModal.details.lightning.title')}
       </h4>
       <div className="space-y-2 text-xs">
@@ -116,7 +116,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
               </div>
             )}
 
-            <div className="border-t border-blue-500/20 pt-2 mt-1">
+            <div className="border-t border-primary/20 pt-2 mt-1">
               <div className="flex justify-between">
                 <span className="text-content-secondary">
                   {t('withdrawModal.details.lightning.btcAmountLabel')}
@@ -179,7 +179,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
           </span>
         </div>
 
-        <div className="mt-2 pt-2 border-t border-blue-500/20">
+        <div className="mt-2 pt-2 border-t border-primary/20">
           <div className="flex justify-between items-center">
             <span className="text-content-secondary">
               {t('withdrawModal.details.lightning.maxOutboundLabel')}

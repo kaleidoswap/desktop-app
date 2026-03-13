@@ -1,4 +1,12 @@
-import { Copy, Wallet, Link, Plus, ShoppingCart, Clock, ArrowDownUp } from 'lucide-react'
+import {
+  Copy,
+  Wallet,
+  Link,
+  Plus,
+  ShoppingCart,
+  Clock,
+  ArrowDownUp,
+} from 'lucide-react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -72,7 +80,7 @@ import {
 } from './channelUtils'
 
 // Import our utility modules
-import { getValidationError } from './errorMessages'
+import { getValidationError, getValidationWarning } from './errorMessages'
 import {
   createFromAmountChangeHandler,
   createToAmountChangeHandler,
@@ -166,6 +174,7 @@ export const Component = () => {
   const [isPriceLoading, setIsPriceLoading] = useState(true)
   const [isQuoteLoading, setIsQuoteLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [fees, setFees] = useState({
     baseFee: 0,
     feeRate: 0,
@@ -321,12 +330,14 @@ export const Component = () => {
           // Add asset details if available
           if (currentSwap.qty_from && currentSwap.qty_to) {
             // BTC amounts in the Swap schema are in millisats; convert to sats
-            const fromAmountRaw = (fromTicker === 'BTC')
-              ? Math.round(currentSwap.qty_from / MSATS_PER_SAT)
-              : currentSwap.qty_from
-            const toAmountRaw = (toTicker === 'BTC')
-              ? Math.round(currentSwap.qty_to / MSATS_PER_SAT)
-              : currentSwap.qty_to
+            const fromAmountRaw =
+              fromTicker === 'BTC'
+                ? Math.round(currentSwap.qty_from / MSATS_PER_SAT)
+                : currentSwap.qty_from
+            const toAmountRaw =
+              toTicker === 'BTC'
+                ? Math.round(currentSwap.qty_to / MSATS_PER_SAT)
+                : currentSwap.qty_to
 
             const displayFromAmount = formatAmount(fromAmountRaw, fromTicker)
             const displayToAmount = formatAmount(toAmountRaw, toTicker)
@@ -510,7 +521,7 @@ export const Component = () => {
     const isNewQuote =
       !lastQuoteResponseRef.current ||
       quoteResponse.to_asset.amount !==
-      lastQuoteResponseRef.current.to_asset.amount ||
+        lastQuoteResponseRef.current.to_asset.amount ||
       quoteResponse.timestamp !== lastQuoteResponseRef.current.timestamp
 
     if (isNewQuote) {
@@ -703,10 +714,10 @@ export const Component = () => {
           precision: a.precision ?? 8,
           media: a.media
             ? ({
-              file_path: a.media.file_path ?? '',
-              digest: '',
-              mime: a.media.mime ?? '',
-            } as any)
+                file_path: a.media.file_path ?? '',
+                digest: '',
+                mime: a.media.mime ?? '',
+              } as any)
             : undefined,
         }))
       )
@@ -1037,20 +1048,19 @@ export const Component = () => {
           return 0
         }
 
-        let maxAssetAmount = 0
-        if (isFrom) {
-          const localAmounts = assetChannels.map(
-            (c: Channel) => c.asset_local_amount ?? 0
-          )
-          maxAssetAmount =
-            localAmounts.length > 0 ? Math.max(...localAmounts) : 0
-        } else {
-          const remoteAmounts = assetChannels.map(
-            (c: Channel) => c.asset_remote_amount ?? 0
-          )
-          maxAssetAmount =
-            remoteAmounts.length > 0 ? Math.max(...remoteAmounts) : 0
-        }
+        const maxAssetAmount = isFrom
+          ? (() => {
+              const localAmounts = assetChannels.map(
+                (c: Channel) => c.asset_local_amount ?? 0
+              )
+              return localAmounts.length > 0 ? Math.max(...localAmounts) : 0
+            })()
+          : (() => {
+              const remoteAmounts = assetChannels.map(
+                (c: Channel) => c.asset_remote_amount ?? 0
+              )
+              return remoteAmounts.length > 0 ? Math.max(...remoteAmounts) : 0
+            })()
         return maxAssetAmount
       }
     },
@@ -1359,7 +1369,9 @@ export const Component = () => {
       form,
       calculateMaxTradableAmount,
       updateMinMaxAmounts,
-      setMaxFromAmount
+      setMaxFromAmount,
+      formatAmount,
+      getAssetPrecisionWrapper
     )
   }, [
     selectedPair,
@@ -1367,6 +1379,8 @@ export const Component = () => {
     calculateMaxTradableAmount,
     updateMinMaxAmounts,
     setMaxFromAmount,
+    formatAmount,
+    getAssetPrecisionWrapper,
     isUsingOnchainBalance,
     channels,
   ])
@@ -1486,6 +1500,25 @@ export const Component = () => {
         t
       )
 
+      // Compute warning for max-exceeded (amber, not cleared by quotes)
+      const warningMsg = getValidationWarning(
+        fromAmount,
+        toAmount,
+        maxFromAmount,
+        maxToAmount,
+        value.fromAsset || '',
+        value.toAsset || '',
+        formatAmount,
+        displayAsset,
+        assets,
+        isToAmountLoading,
+        isQuoteLoading,
+        isPriceLoading,
+        missingChannelAsset,
+        t
+      )
+      setWarningMessage(warningMsg)
+
       // Preserve unconfirmed channel errors - they take priority over amount validation errors
       setErrorMessage((prev) => {
         if (prev && prev.includes('awaiting confirmation')) {
@@ -1528,10 +1561,10 @@ export const Component = () => {
           precision: a.precision ?? 8,
           media: a.media
             ? ({
-              file_path: a.media.file_path ?? '',
-              digest: '',
-              mime: a.media.mime ?? '',
-            } as any)
+                file_path: a.media.file_path ?? '',
+                digest: '',
+                mime: a.media.mime ?? '',
+              } as any)
             : undefined,
         })),
         form,
@@ -2009,10 +2042,10 @@ export const Component = () => {
             precision: a.precision ?? 8,
             media: a.media
               ? ({
-                file_path: a.media.file_path ?? '',
-                digest: '',
-                mime: a.media.mime ?? '',
-              } as any)
+                  file_path: a.media.file_path ?? '',
+                  digest: '',
+                  mime: a.media.mime ?? '',
+                } as any)
               : undefined,
           }))
         )
@@ -2048,10 +2081,10 @@ export const Component = () => {
             precision: a.precision ?? 8,
             media: a.media
               ? ({
-                file_path: a.media.file_path ?? '',
-                digest: '',
-                mime: a.media.mime ?? '',
-              } as any)
+                  file_path: a.media.file_path ?? '',
+                  digest: '',
+                  mime: a.media.mime ?? '',
+                } as any)
               : undefined,
           }))
         )
@@ -2863,26 +2896,14 @@ export const Component = () => {
       }
     }
 
-    // Check maximum receivable amount (add explicit check here to prevent bypassing validation)
-    if (toAmount > maxToAmount) {
-      const formattedMaxToAmount = formatAmount(maxToAmount, toAsset)
-      const displayedAsset = displayAsset(toAsset)
-      setErrorMessage(
-        t('tradeMarketMaker.error.canOnlyReceiveUpTo', {
-          amount: formattedMaxToAmount,
-          asset: displayedAsset,
-        })
-      )
-      return
-    }
-
     if (
       !hasChannels ||
       !hasTradablePairs ||
       isSwapInProgress ||
       !wsConnected ||
       !hasValidQuote ||
-      errorMessage
+      errorMessage ||
+      warningMessage
     ) {
       return
     }
@@ -2904,7 +2925,6 @@ export const Component = () => {
   const renderSwapForm = () => (
     <div className="w-full max-w-3xl mx-auto">
       <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/50 shadow-xl flex flex-col">
-
         {/* Header */}
         <div className="relative border-b border-border-default/40 px-4 py-2 flex-shrink-0 bg-surface-high/40">
           <div className="flex justify-between items-center">
@@ -2977,14 +2997,11 @@ export const Component = () => {
                 const unconfirmedAssets = []
                 if (fromAssetUnconfirmed)
                   unconfirmedAssets.push(currentFromAsset)
-                if (toAssetUnconfirmed)
-                  unconfirmedAssets.push(currentToAsset)
+                if (toAssetUnconfirmed) unconfirmedAssets.push(currentToAsset)
 
                 const assetText = unconfirmedAssets.join(' and ')
                 const channelText =
-                  unconfirmedAssets.length > 1
-                    ? 'channels are'
-                    : 'channel is'
+                  unconfirmedAssets.length > 1 ? 'channels are' : 'channel is'
                 const confirmText =
                   unconfirmedAssets.length > 1
                     ? 'both channels are'
@@ -3001,35 +3018,23 @@ export const Component = () => {
                       <div className="flex-1">
                         <p className="text-yellow-300 text-sm font-medium">
                           {unconfirmedAssets.length > 1
-                            ? t(
-                              'tradeMarketMaker.banners.channelsNotReady',
-                              {
+                            ? t('tradeMarketMaker.banners.channelsNotReady', {
                                 assets: assetText,
-                              }
-                            )
-                            : t(
-                              'tradeMarketMaker.banners.channelNotReady',
-                              {
+                              })
+                            : t('tradeMarketMaker.banners.channelNotReady', {
                                 asset: assetText,
-                              }
-                            )}
+                              })}
                         </p>
                         <p className="text-yellow-200/80 text-xs mt-1">
                           {unconfirmedAssets.length > 1
-                            ? t(
-                              'tradeMarketMaker.banners.channelsAwaiting',
-                              {
+                            ? t('tradeMarketMaker.banners.channelsAwaiting', {
                                 assets: assetText,
                                 channelText,
                                 confirmText,
-                              }
-                            )
-                            : t(
-                              'tradeMarketMaker.banners.channelAwaiting',
-                              {
+                              })
+                            : t('tradeMarketMaker.banners.channelAwaiting', {
                                 asset: assetText,
-                              }
-                            )}
+                              })}
                         </p>
                       </div>
                     </div>
@@ -3038,10 +3043,7 @@ export const Component = () => {
               }
 
               // Show general info banner when there are other unconfirmed channels
-              const unconfirmedAssetIds = getUnconfirmedAssets(
-                channels,
-                assets
-              )
+              const unconfirmedAssetIds = getUnconfirmedAssets(channels, assets)
               if (
                 unconfirmedAssetIds.length > 0 &&
                 hasTradableChannels(channels)
@@ -3149,10 +3151,11 @@ export const Component = () => {
               {/* Swap Direction Button — sits in gap between fields */}
               <div className="flex justify-center my-2 relative z-10">
                 <button
-                  className={`p-2 rounded-xl border transition-all duration-300 shadow-sm bg-surface-overlay ${hasChannels && hasTradablePairs && !isSwapInProgress
-                    ? 'border-border-default/60 hover:bg-surface-high hover:border-primary/50 hover:scale-110 cursor-pointer'
-                    : 'border-border-default/20 opacity-30 cursor-not-allowed'
-                    }`}
+                  className={`p-2 rounded-xl border transition-all duration-300 shadow-sm bg-surface-overlay ${
+                    hasChannels && hasTradablePairs && !isSwapInProgress
+                      ? 'border-border-default/60 hover:bg-surface-high hover:border-primary/50 hover:scale-110 cursor-pointer'
+                      : 'border-border-default/20 opacity-30 cursor-not-allowed'
+                  }`}
                   onClick={() =>
                     hasChannels &&
                     hasTradablePairs &&
@@ -3199,9 +3202,7 @@ export const Component = () => {
                     baseHandler(e)
                     quoteHandler(e)
                   }}
-                  onAssetChange={(value) =>
-                    handleAssetChange('toAsset', value)
-                  }
+                  onAssetChange={(value) => handleAssetChange('toAsset', value)}
                   onRefresh={refreshAmounts}
                   readOnly={true}
                   useEnhancedSelector={true}
@@ -3227,16 +3228,36 @@ export const Component = () => {
                         </h4>
                         <p className="text-blue-200/90 text-sm leading-relaxed">
                           {missingChannelAsset.isFromAsset
-                            ? t(
-                              'tradeMarketMaker.channelWarning.sendMessage',
-                              {
+                            ? t('tradeMarketMaker.channelWarning.sendMessage', {
                                 asset: missingChannelAsset.asset,
-                              }
-                            )
+                              })
                             : t(
-                              'tradeMarketMaker.channelWarning.receiveMessage',
-                              { asset: missingChannelAsset.asset }
-                            )}
+                                'tradeMarketMaker.channelWarning.receiveMessage',
+                                { asset: missingChannelAsset.asset }
+                              )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Amount Limit Warning (amber) */}
+              {warningMessage && (
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/20 border border-amber-500/40 backdrop-blur-xl shadow-xl">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/8 to-amber-500/10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                  <div className="relative p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border border-amber-500/50 flex items-center justify-center mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-amber-300 font-semibold text-sm mb-1">
+                          {t('tradeMarketMaker.error.maxLimitExceeded')}
+                        </h4>
+                        <p className="text-amber-400/90 text-sm leading-relaxed">
+                          {warningMessage}
                         </p>
                       </div>
                     </div>
@@ -3245,38 +3266,35 @@ export const Component = () => {
               )}
 
               {/* Compact Ultra Modern Error Message */}
-              {errorMessage && (
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/8 to-red-500/10"></div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-                  <div className="relative p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-red-500/30 to-orange-500/30 border border-red-500/50 flex items-center justify-center mt-0.5">
-                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-red-400 to-orange-400"></div>
+              {errorMessage &&
+                !errorMessage.includes('awaiting confirmation') && (
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-500/20 via-orange-500/15 to-red-500/20 border border-red-500/40 backdrop-blur-xl shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/8 to-red-500/10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                    <div className="relative p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-red-500/30 to-orange-500/30 border border-red-500/50 flex items-center justify-center mt-0.5">
+                          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-red-400 to-orange-400"></div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-red-300 font-semibold text-sm mb-1">
+                            {t('tradeMarketMaker.error.title')}
+                          </h4>
+                          <p className="text-red-400/90 text-sm leading-relaxed">
+                            {errorMessage}
+                          </p>
+                        </div>
+                        <button
+                          className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
+                          onClick={() => copyToClipboard(errorMessage)}
+                          title={t('tradeMarketMaker.error.copyErrorMessage')}
+                        >
+                          <Copy className="w-4 h-4 text-red-400" />
+                        </button>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-red-300 font-semibold text-sm mb-1">
-                          {errorMessage.includes(
-                            'You can only receive up to'
-                          )
-                            ? t('tradeMarketMaker.error.maxLimitExceeded')
-                            : t('tradeMarketMaker.error.title')}
-                        </h4>
-                        <p className="text-red-400/90 text-sm leading-relaxed">
-                          {errorMessage}
-                        </p>
-                      </div>
-                      <button
-                        className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
-                        onClick={() => copyToClipboard(errorMessage)}
-                        title={t('tradeMarketMaker.error.copyErrorMessage')}
-                      >
-                        <Copy className="w-4 h-4 text-red-400" />
-                      </button>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             {/* Exchange Rate — shown inline when a pair is selected */}
@@ -3322,6 +3340,7 @@ export const Component = () => {
                 isSwapInProgress={isSwapInProgress}
                 isToAmountLoading={isToAmountLoading}
                 missingChannelAsset={missingChannelAsset}
+                warningMessage={warningMessage}
                 wsConnected={wsConnected}
               />
             </div>
@@ -3330,7 +3349,6 @@ export const Component = () => {
       </div>
     </div>
   )
-
 
   // Simplified loading state based on validation phase
   const isStillLoading =
@@ -3534,97 +3552,96 @@ export const Component = () => {
           </div>
         </div>
       ) : /* Handle no channels with action buttons */
-        shouldShowNoChannels ? (
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Link className="w-8 h-8 text-blue-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">
-                  {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
-                </h2>
-                <p className="text-slate-400 text-center text-base max-w-md">
-                  {t('tradeMarketMaker.noChannels.noChannelsMessage')}
-                </p>
+      shouldShowNoChannels ? (
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="max-w-2xl w-full bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-slate-800/50 p-8">
+            <div className="flex flex-col items-center space-y-6">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                <Link className="w-8 h-8 text-blue-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                {t('tradeMarketMaker.noChannels.noChannelsAvailable')}
+              </h2>
+              <p className="text-slate-400 text-center text-base max-w-md">
+                {t('tradeMarketMaker.noChannels.noChannelsMessage')}
+              </p>
 
-                <div className="flex gap-4 pt-4">
-                  <button
-                    className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
+              <div className="flex gap-4 pt-4">
+                <button
+                  className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
                            font-medium transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                    onClick={handleCreateChannelAction}
-                  >
-                    <Plus className="w-5 h-5" />
-                    {t('tradeMarketMaker.noChannels.createChannel')}
-                  </button>
-                  <button
-                    className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
+                  onClick={handleCreateChannelAction}
+                >
+                  <Plus className="w-5 h-5" />
+                  {t('tradeMarketMaker.noChannels.createChannel')}
+                </button>
+                <button
+                  className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
                            hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-base
                            shadow-lg hover:shadow-blue-500/25 hover:scale-105"
-                    onClick={handleBuyChannelAction}
-                  >
-                    <ShoppingCart className="w-5 h-5" />
-                    {t('tradeMarketMaker.noChannels.buyFromLSP')}
-                  </button>
-                </div>
+                  onClick={handleBuyChannelAction}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {t('tradeMarketMaker.noChannels.buyFromLSP')}
+                </button>
               </div>
             </div>
           </div>
-        ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
-          shouldShowNoChannelsMessage ? (
-            <NoTradingChannelsMessage
-              {...createTradingChannelsMessageProps(
-                assets,
-                tradablePairs,
-                hasEnoughBalance,
-                navigate,
-                refreshAmounts
-              )}
-            />
-          ) : (
-            <div className="w-full min-h-full relative">
-              <div className="w-full max-w-screen-xl mx-auto px-4 py-2">
-                {isStillLoading ? (
-                  <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
-                      <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
-                        <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
-                      </div>
-                    </div>
-                    <div className="text-center space-y-4 max-w-lg">
-                      <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
-                        {loadingPhase === 'connecting-maker'
-                          ? t('tradeMarketMaker.loading.connectingToMaker')
-                          : t('tradeMarketMaker.loading.initializingInterface')}
-                      </p>
-                      <p className="text-slate-300 text-base leading-relaxed">
-                        {getLoadingMessage()}
-                      </p>
-                      <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
-                        <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
-                      </div>
-                    </div>
+        </div>
+      ) : /* Show existing NoTradingChannelsMessage for maker compatibility issues */
+      shouldShowNoChannelsMessage ? (
+        <NoTradingChannelsMessage
+          {...createTradingChannelsMessageProps(
+            assets,
+            tradablePairs,
+            hasEnoughBalance,
+            navigate,
+            refreshAmounts
+          )}
+        />
+      ) : (
+        <div className="w-full min-h-full relative">
+          <div className="w-full max-w-screen-xl mx-auto px-4 py-2">
+            {isStillLoading ? (
+              <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
+                  <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
+                    <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
                   </div>
-                ) : shouldShowWSDisconnectedMessage ? (
-                  <div className="flex justify-center items-center min-h-[60vh]">
-                    <WebSocketDisconnectedMessage
-                      makerUrl={makerConnectionUrl}
-                      onMakerChange={refreshAmounts}
-                      onRetryConnection={handleReconnectToMaker}
-                    />
+                </div>
+                <div className="text-center space-y-4 max-w-lg">
+                  <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
+                    {loadingPhase === 'connecting-maker'
+                      ? t('tradeMarketMaker.loading.connectingToMaker')
+                      : t('tradeMarketMaker.loading.initializingInterface')}
+                  </p>
+                  <p className="text-slate-300 text-base leading-relaxed">
+                    {getLoadingMessage()}
+                  </p>
+                  <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+                    <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
                   </div>
-                ) : (
-                  <div className="flex justify-center items-start py-4">
-                    {renderSwapForm()}
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
-          )
-      }
+            ) : shouldShowWSDisconnectedMessage ? (
+              <div className="flex justify-center items-center min-h-[60vh]">
+                <WebSocketDisconnectedMessage
+                  makerUrl={makerConnectionUrl}
+                  onMakerChange={refreshAmounts}
+                  onRetryConnection={handleReconnectToMaker}
+                />
+              </div>
+            ) : (
+              <div className="flex justify-center items-start py-4">
+                {renderSwapForm()}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <SwapConfirmation
         bitcoinUnit={bitcoinUnit}
@@ -3641,20 +3658,18 @@ export const Component = () => {
         toAsset={form.getValues().toAsset}
       />
 
-      {
-        swapRecapDetails && (
-          <SwapRecap
-            bitcoinUnit={bitcoinUnit}
-            getAssetPrecision={getAssetPrecisionWrapper}
-            isOpen={showRecap}
-            onClose={() => {
-              setShowRecap(false)
-              refreshChannelsAndAmounts()
-            }}
-            swapDetails={swapRecapDetails}
-          />
-        )
-      }
+      {swapRecapDetails && (
+        <SwapRecap
+          bitcoinUnit={bitcoinUnit}
+          getAssetPrecision={getAssetPrecisionWrapper}
+          isOpen={showRecap}
+          onClose={() => {
+            setShowRecap(false)
+            refreshChannelsAndAmounts()
+          }}
+          swapDetails={swapRecapDetails}
+        />
+      )}
 
       <BuyChannelModal
         isOpen={showBuyChannelModal}
@@ -3726,7 +3741,7 @@ export const Component = () => {
           return undefined
         })()}
       />
-    </div >
+    </div>
   )
 }
 

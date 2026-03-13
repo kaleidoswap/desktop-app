@@ -147,16 +147,16 @@ export const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
               from confirmed transactions
             </li>
             <li>
-              <span className="text-primary font-medium">Spendable:</span> Balance
-              available for on-chain spending
+              <span className="text-primary font-medium">Spendable:</span>{' '}
+              Balance available for on-chain spending
             </li>
             <li>
-              <span className="text-primary font-medium">Outbound:</span> Balance
-              available for sending via Lightning Network
+              <span className="text-primary font-medium">Outbound:</span>{' '}
+              Balance available for sending via Lightning Network
             </li>
             <li>
-              <span className="text-primary font-medium">Inbound:</span> Capacity
-              to receive via Lightning Network
+              <span className="text-primary font-medium">Inbound:</span>{' '}
+              Capacity to receive via Lightning Network
             </li>
           </ul>
         </div>

@@ -18,8 +18,7 @@ fn main() {
     let build_rgb_lightning_node = if cfg!(target_os = "windows") {
         false
     } else {
-        env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE")
-            .unwrap_or_else(|_| "true".to_string())
+        env::var("BUILD_AND_RUN_RGB_LIGHTNING_NODE").unwrap_or_else(|_| "true".to_string())
             == "true"
     };
 
@@ -73,7 +72,7 @@ fn main() {
             "../bin/rgb-lightning-node"
         };
         config.remove_resource(resource_name);
-        
+
         // On Windows, also remove the Unix version to be safe
         if cfg!(target_os = "windows") {
             config.remove_resource("../bin/rgb-lightning-node");
@@ -188,7 +187,7 @@ impl BuildManager {
 
         // Always build in release mode instead of checking the PROFILE env var
         // let is_release = env::var("PROFILE").unwrap_or_else(|_| "debug".to_string()) == "release";
-        let is_release = true;  // Always build in release mode for better performance
+        let is_release = true; // Always build in release mode for better performance
 
         // Build the project
         self.project_builder.build(is_release);
@@ -302,14 +301,14 @@ impl DependencyChecker {
             // Try multiple compiler commands that might be available
             let compilers = ["cl", "cl.exe"];
             let mut compiler_found = false;
-            
+
             for compiler in &compilers {
                 if self.command_exists(compiler) {
                     compiler_found = true;
                     break;
                 }
             }
-            
+
             // Also check if we're in a CI environment where the compiler might be available
             // but not in the standard location
             if !compiler_found {

@@ -14,7 +14,7 @@ import {
   ShoppingCart,
   X,
 } from 'lucide-react'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
@@ -98,6 +98,7 @@ export const Component: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [activeTab, setActiveTab] = useState<'all' | 'bitcoin' | 'rgb'>('all')
+  const isRefreshingRef = useRef(false)
 
   // Sorting and filtering state
   const [sortBy, setSortBy] = useState<SortOption>({
@@ -109,25 +110,39 @@ export const Component: React.FC = () => {
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false)
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false)
 
-  const refreshData = useCallback(() => {
-    setIsLoading(true)
-    Promise.all([listChannels(), listAssets()]).finally(() => {
-      setIsLoading(false)
-      setLastUpdated(new Date())
-    })
-  }, [listChannels, listAssets])
+  const refreshData = useCallback(
+    async (silent = false) => {
+      if (isRefreshingRef.current) return
+
+      isRefreshingRef.current = true
+
+      if (!silent) {
+        setIsLoading(true)
+      }
+
+      try {
+        await Promise.all([listChannels(), listAssets()])
+        setLastUpdated(new Date())
+      } finally {
+        isRefreshingRef.current = false
+        if (!silent) {
+          setIsLoading(false)
+        }
+      }
+    },
+    [listChannels, listAssets]
+  )
 
   useEffect(() => {
     refreshData()
   }, [refreshData])
 
-  // Auto-refresh every 3 seconds
+  // Keep channel data reasonably fresh without making the whole page feel busy.
   useEffect(() => {
     const intervalId = setInterval(() => {
-      refreshData()
-    }, 3000)
+      refreshData(true)
+    }, 15000)
 
-    // Cleanup interval on component unmount
     return () => clearInterval(intervalId)
   }, [refreshData])
 
@@ -356,7 +371,9 @@ export const Component: React.FC = () => {
               isLoading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
             disabled={isLoading}
-            onClick={refreshData}
+            onClick={() => {
+              void refreshData()
+            }}
           >
             <RefreshCw
               className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}

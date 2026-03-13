@@ -228,16 +228,35 @@ export const createAssetChangeHandler = (
         `Changed from asset to ${updatedFromAsset}, set amount to minimum: ${minOrderSize}`
       )
     } else {
-      // For toAsset changes, preserve the current from amount
+      // For toAsset changes, preserve the current from amount but clamp if out of range
       const currentFromAmount = form.getValues().from
-      if (
-        !currentFromAmount ||
-        parseFloat(currentFromAmount.replace(/,/g, '')) === 0
-      ) {
-        // Set to 100% of max using helper function only if no amount is set
+      const parsedFromAmount = currentFromAmount
+        ? parseFloat(currentFromAmount.replace(/,/g, ''))
+        : 0
+
+      if (!parsedFromAmount || parsedFromAmount === 0) {
+        // Set to max if no amount is set
         await setFromAmount(newMaxAmount, updatedFromAsset, 100)
+      } else {
+        const minOrderSize = await getMinOrderSizeForAsset(
+          updatedFromAsset,
+          selectedPair
+        )
+        if (minOrderSize > 0 && parsedFromAmount < minOrderSize) {
+          // Amount is below the new minimum, clamp up to minimum
+          await setFromAmount(minOrderSize, updatedFromAsset, 25)
+          logger.info(
+            `Amount ${parsedFromAmount} is below new minimum ${minOrderSize} for ${updatedFromAsset}, clamped to minimum`
+          )
+        } else if (newMaxAmount > 0 && parsedFromAmount > newMaxAmount) {
+          // Amount exceeds new max, clamp down to max
+          await setFromAmount(newMaxAmount, updatedFromAsset, 100)
+          logger.info(
+            `Amount ${parsedFromAmount} exceeds new maximum ${newMaxAmount} for ${updatedFromAsset}, clamped to maximum`
+          )
+        }
+        // Otherwise keep the existing amount as is
       }
-      // Otherwise keep the existing amount as is
     }
   }
 }
@@ -253,7 +272,9 @@ export const createSwapAssetsHandler = (
     isFrom: boolean
   ) => Promise<number>,
   updateMinMaxAmounts: () => Promise<void>,
-  setMaxFromAmount: (amount: number) => void
+  setMaxFromAmount: (amount: number) => void,
+  formatAmount?: (amount: number, asset: string) => string,
+  getAssetPrecision?: (asset: string) => number
 ) => {
   return async () => {
     if (selectedPair) {
@@ -290,23 +311,54 @@ export const createSwapAssetsHandler = (
         previousToAmount !== '' &&
         previousToAmount !== '0'
       ) {
-        // Parse the previous toAmount and compare with new max amount
+        // Parse the previous toAmount and compare with new min/max amount
         const parsedToAmount = parseFloat(previousToAmount.replace(/,/g, ''))
 
-        if (parsedToAmount > newMaxAmount) {
+        // Get min order size for the new fromAsset (which was the toAsset before swap)
+        const minOrderSize = await getMinOrderSizeForAsset(
+          toAsset,
+          selectedPair
+        )
+
+        // Convert display-unit parsedToAmount to raw units for comparison with
+        // minOrderSize and newMaxAmount (which are both in raw units).
+        // e.g. USDT precision=6: display 0.06 → raw 60,000
+        const newFromPrecision = getAssetPrecision
+          ? getAssetPrecision(toAsset)
+          : 0
+        const rawToAmount =
+          newFromPrecision > 0
+            ? Math.round(parsedToAmount * Math.pow(10, newFromPrecision))
+            : parsedToAmount
+
+        if (rawToAmount > newMaxAmount && newMaxAmount > 0) {
           // If the amount exceeds the new max, set it to the max amount
           logger.info(
             `Previous amount ${parsedToAmount} exceeds new max ${newMaxAmount}, setting to max`
           )
-          // Format the max amount with commas for thousands
-          const formattedMaxAmount = newMaxAmount.toLocaleString('en-US', {
-            maximumFractionDigits: 8,
-            minimumFractionDigits: 0,
-            useGrouping: true,
-          })
+          const formattedMaxAmount = formatAmount
+            ? formatAmount(newMaxAmount, toAsset)
+            : newMaxAmount.toLocaleString('en-US', {
+                maximumFractionDigits: 8,
+                minimumFractionDigits: 0,
+                useGrouping: true,
+              })
           form.setValue('from', formattedMaxAmount)
+        } else if (minOrderSize > 0 && rawToAmount < minOrderSize) {
+          // If the amount is below the new minimum, set it to the minimum
+          logger.info(
+            `Previous amount ${parsedToAmount} is below new minimum ${minOrderSize}, setting to min`
+          )
+          const formattedMinAmount = formatAmount
+            ? formatAmount(minOrderSize, toAsset)
+            : minOrderSize.toLocaleString('en-US', {
+                maximumFractionDigits: 8,
+                minimumFractionDigits: 0,
+                useGrouping: true,
+              })
+          form.setValue('from', formattedMinAmount)
         } else {
-          // Otherwise use the previous toAmount as is
+          // Otherwise use the previous toAmount as is (already display format)
           form.setValue('from', previousToAmount)
         }
       } else {

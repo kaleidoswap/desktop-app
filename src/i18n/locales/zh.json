@@ -277,7 +277,8 @@
     "manage": "管理",
     "history": "历史",
     "testnetWarning": "测试网络",
-    "testnetWarningDesc": "您在测试网络上。资金不是真实的，交易没有货币价值。"
+    "testnetWarningDesc": "您在测试网络上。资金不是真实的，交易没有货币价值。",
+    "swap": "Swap"
   },
   "peerManagement": {
     "title": "对等节点",
@@ -1510,7 +1511,11 @@
     "formErrors": {
       "formSubmissionError": "提交表单时出错。"
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -2560,5 +2565,121 @@
       "initializingButton": "初始化中...",
       "initializeButton": "初始化节点"
     }
+  },
+  "dca": {
+    "title": "DCA 订单",
+    "subtitle": "通过固定间隔买入或下跌触发器自动积累 BTC。",
+    "spotPrice": "BTC 现货价",
+    "spotHint": "用于监控价格触发条件",
+    "refreshAmounts": "刷新金额",
+    "refreshingAmounts": "刷新中...",
+    "createOrder": "新建 DCA 订单",
+    "closeCreate": "关闭表单",
+    "createButton": "创建订单",
+    "actions": {
+      "execute": "执行",
+      "pause": "暂停",
+      "resume": "继续",
+      "cancel": "取消"
+    },
+    "metrics": {
+      "totalOrders": "订单数",
+      "executions": "成功买入",
+      "accumulated": "累计",
+      "activeMix": "活跃构成",
+      "btcLnBalance": "BTC LN 余额",
+      "usdtLnBalance": "USDT LN 余额"
+    },
+    "card": {
+      "executions": "执行次数",
+      "accumulated": "累计",
+      "successRate": "成功率",
+      "lastExecution": "最近执行",
+      "progressToNext": "距下次买入进度",
+      "triggerGap": "还需再下跌 {{pct}}%",
+      "triggerReady": "已达到/低于触发阈值"
+    },
+    "form": {
+      "subtitle": "设置金额、触发模式和频率。你可以随时暂停或取消。",
+      "scheduledHint": "按周期定时买入",
+      "targetHint": "当 BTC 达到触发价时买入",
+      "estimatedReceive": "每次预计获得",
+      "remainingBalance": "每次买入后剩余余额",
+      "scheduleNote": "当节点解锁时，系统大约每 30 秒检查一次是否可执行。"
+    },
+    "tabs": {
+      "active": "进行中",
+      "history": "历史"
+    },
+    "type": {
+      "scheduled": "定时",
+      "priceTarget": "价格目标"
+    },
+    "intervalLabel": "每隔",
+    "dropLabel": "下跌阈值",
+    "amountLabel": "每次买入金额",
+    "triggerPrice": "触发价格 ≤",
+    "nextExecution": "下次执行",
+    "executions": "{{count}} 次执行",
+    "status": {
+      "active": "进行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "empty": {
+      "active": "暂无进行中的 DCA 订单",
+      "history": "暂无历史记录",
+      "hint": "创建定时或价格目标订单，开始用 USDT 自动买入 BTC。"
+    },
+    "howItWorks": {
+      "title": "DCA 工作方式",
+      "description": "每个订单会按你设置的 USDT 金额重复买入 BTC。仅当节点已解锁且可用时才会执行。",
+      "scheduled": "定时：按固定时间间隔买入（例如每 24 小时）。",
+      "priceTarget": "价格目标：当 BTC 跌至触发价或以下时买入。",
+      "actions": "操作：立即执行会立刻买入一次，暂停会停止触发，取消会把订单移到历史。"
+    },
+    "orderHelp": {
+      "scheduled": "该订单会按所选间隔固定执行买入。",
+      "priceTarget": "该订单会在市场价格低于或等于触发价时买入。",
+      "statusActive": "进行中：满足条件时会自动执行。",
+      "statusPaused": "已暂停：恢复前不会自动执行。",
+      "statusCancelled": "已取消：不会再执行，历史记录仍可查看。",
+      "statusCompleted": "已完成：订单已结束并保存在历史中。",
+      "createdAt": "创建时间"
+    },
+    "errors": {
+      "invalidAmount": "请输入有效的 USDT 金额",
+      "noPriceData": "BTC 价格不可用",
+      "insufficientBalance": "超过可用 USDT 通道余额"
+    },
+    "toast": {
+      "created": "DCA 订单已创建",
+      "triggered": "DCA 订单已触发",
+      "success": "DCA：已买入 {{amount}} sats",
+      "failed": "DCA 订单失败：{{error}}",
+      "skippedNoWs": "DCA 已跳过：未连接到 maker"
+    },
+    "getUsdt": {
+      "cta": "Get USDT",
+      "title": "Get USDT on Lightning",
+      "buyTitle": "Buy via Kaleido LSP",
+      "buyDesc": "Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.",
+      "buyButton": "Buy USDT Channel",
+      "onChainTitle": "Open with On-Chain USDT",
+      "onChainBalance": "On-chain balance: {{amount}} USDT",
+      "noOnChain": "No on-chain USDT available",
+      "useAll": "Use all",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info",
+      "usdtAmountLabel": "USDT amount",
+      "capacityLabel": "Channel capacity",
+      "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
+      "capacityRange": "Min {{min}} – max {{max}} sats",
+      "maxReceive": "max receive ≈ {{sats}} sats BTC"
+    },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT"
   }
 }

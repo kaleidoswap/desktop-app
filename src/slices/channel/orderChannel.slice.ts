@@ -16,6 +16,8 @@ export const OrderChannelFormSchema = z.object({
   channelExpireBlocks: z.number().gte(0),
   clientBalanceSat: z.number().gte(0),
   lspAssetAmount: z.number().gte(0).optional(), // LSP-side asset amount for receiving
+  clientAssetAmount: z.number().gte(0).optional(),
+  rfqId: z.string().optional(),
 })
 
 export type TChannelRequestForm = z.infer<typeof OrderChannelFormSchema>
@@ -34,6 +36,8 @@ export const initialState: SliceState = {
       channelExpireBlocks: 4320, // 1 month
       clientBalanceSat: 0,
       lspAssetAmount: 0,
+      clientAssetAmount: 0,
+      rfqId: '',
     },
   },
 }

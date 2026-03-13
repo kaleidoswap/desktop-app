@@ -1,3 +1,29 @@
+## [Version 0.4.0] - TBD
+
+### 🚀 Features
+- **Dollar-Cost Averaging (DCA)**: Added automated BTC buying with scheduled and price-target execution modes using USDT Lightning balance
+- **Redesigned Buy Channel Flow**: Reworked the channel purchase and order flow with richer payment states, improved summaries, wallet funding guidance, and order restart handling
+- **Desktop Node Lifecycle Controls**: Added stronger local node startup, readiness, tray, background-running, and shutdown behavior for desktop usage
+- **Local or Remote Node Setup**: Expanded setup and unlock flows for both managed local nodes and remote node connections
+- **Expanded Internationalization**: Broadened multi-language coverage across trading, wallet history, setup, and channel management flows
+
+### 🔧 Improvements
+- **DCA Dashboard and Execution Reliability**: Improved order persistence, account-aware hydration, retry behavior, queueing, timeout handling, and DCA status visibility
+- **Trading Experience Refresh**: Updated market-maker and swap surfaces with better liquidity visibility, improved asset selection, clearer connection states, and stronger error messaging
+- **Wallet and Channel UX**: Refined dashboard, channel list, transaction history, deposit, withdrawal, backup, and support surfaces for better clarity and usability
+- **Shared Liquidity Components**: Extracted reusable liquidity, quote, and order-summary UI primitives used across channel purchase and trading flows
+- **Tooling and CI Checks**: Standardized frontend format, lint, type-check, and PR verification commands for more consistent local and CI validation
+
+### 🐛 Bug Fixes
+- **Node Readiness and Unlock Handling**: Fixed cases where node startup or unlock could appear stalled without surfacing useful progress or retry behavior
+- **Tray and Window Closing Behavior**: Fixed desktop close flows so the app can hide to tray, keep the node running in the background, or shut down cleanly before exit
+- **Update Detection**: Improved update checks to avoid surfacing non-newer releases as available updates
+- **Channel and Trading State Refresh**: Reduced stale UI states around channel availability, payment progress, and trading readiness
+
+### 🏗️ Infrastructure
+- **Dependency Updates**: Refreshed frontend and Tauri-related dependencies and aligned project scripts with the current toolchain
+- **Build and Release Readiness**: Updated documentation and project configuration to match the current Tauri 2 and pnpm-based workflow
+
 ## [Version 0.3.2] - 2025-11-10
 
 ### 🚀 Features

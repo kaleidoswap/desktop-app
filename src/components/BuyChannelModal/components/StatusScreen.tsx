@@ -23,13 +23,13 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
             className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors"
             onClick={onClose}
           >
-            Close
+            {t('components.buyChannelModal.statusClose')}
           </button>
           <button
-            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
-            Try Again
+            {t('components.buyChannelModal.statusTryAgain')}
           </button>
         </div>
       ),
@@ -39,17 +39,14 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
           <div className="flex items-start gap-2">
             <Info className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-red-200/80">
-              <p>
-                If payment was made, no funds were deducted. Please try again or
-                contact support if the issue persists.
-              </p>
+              <p>{t('components.buyChannelModal.statusErrorHelp')}</p>
             </div>
           </div>
         </div>
       ),
       icon: <XCircle className="w-12 h-12 text-red-400" />,
-      message: 'There was an issue processing your channel order.',
-      title: 'Order Failed',
+      message: t('components.buyChannelModal.statusErrorMessage'),
+      title: t('components.buyChannelModal.statusErrorTitle'),
     },
     expired: {
       actions: (
@@ -58,13 +55,13 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
             className="px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors"
             onClick={onClose}
           >
-            Close
+            {t('components.buyChannelModal.statusClose')}
           </button>
           <button
-            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
-            Create New Order
+            {t('components.buyChannelModal.statusCreateNewOrder')}
           </button>
         </div>
       ),
@@ -80,16 +77,16 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
         </div>
       ),
       icon: <Clock className="w-12 h-12 text-yellow-400" />,
-      message: 'The payment window has expired without receiving payment.',
-      title: 'Payment Expired',
+      message: t('components.buyChannelModal.statusExpiredMessage'),
+      title: t('components.buyChannelModal.statusExpiredTitle'),
     },
     success: {
       actions: (
         <button
-          className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors"
+          className="px-8 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
           onClick={onClose}
         >
-          Got it, thanks!
+          {t('components.buyChannelModal.statusGotIt')}
         </button>
       ),
       bgColor: 'bg-green-500/20',
@@ -99,20 +96,16 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
             <Clock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-200/80">
               <p className="font-semibold text-blue-200 mb-1">
-                Channel Confirmation in Progress
+                {t('components.buyChannelModal.statusConfirmationTitle')}
               </p>
-              <p>
-                Your channel requires ~6 confirmations (about 1 hour). The asset
-                is locked at today's rate and will be ready to trade once
-                confirmed.
-              </p>
+              <p>{t('components.buyChannelModal.statusConfirmationMessage')}</p>
             </div>
           </div>
         </div>
       ),
       icon: <CheckCircle className="w-12 h-12 text-green-400" />,
-      message: 'Your channel order has been created successfully.',
-      title: 'Payment Successful!',
+      message: t('components.buyChannelModal.statusSuccessMessage'),
+      title: t('components.buyChannelModal.statusSuccessTitle'),
     },
   }
 
@@ -136,7 +129,8 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
       {orderId && (
         <div className="bg-surface-overlay/30 rounded-lg p-3 border border-border-default/30">
           <p className="text-xs text-content-secondary text-center">
-            Order ID: <span className="text-content-secondary font-mono">{orderId}</span>
+            {t('components.buyChannelModal.orderIdLabel')}:{' '}
+            <span className="text-content-secondary font-mono">{orderId}</span>
           </p>
         </div>
       )}

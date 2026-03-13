@@ -1,9 +1,10 @@
-import { ChevronDown, Info, Loader, Settings, Zap } from 'lucide-react'
+import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 
 import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { Button, IconButton } from '../ui'
 
 interface CreateUTXOModalProps {
   isOpen: boolean
@@ -79,7 +80,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         if (!feeRate) {
           throw Error('Unable to calculate fee-rate')
         }
-        setFeeRate(feeRate)
+        setFeeRate(Math.round(feeRate))
       } catch (error) {
         console.error('Failed to fetch fee rate:', error)
         // Default to a reasonable fee rate if we can't fetch it
@@ -119,10 +120,10 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
     try {
       await createUtxos({
-        fee_rate: feeRate,
+        fee_rate: Math.round(feeRate),
         num: numUtxos,
         size: utxoSize,
-        skip_sync: false,
+        up_to: false,
       }).unwrap()
 
       toast.success('UTXOs created successfully')
@@ -158,49 +159,36 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 animate-fadeIn"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-b from-blue-dark to-blue-darker p-0 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-divider/20 animate-scaleIn overflow-hidden flex flex-col max-h-[80vh]"
+        className="bg-surface-base p-0 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-border-subtle/50 animate-scaleIn overflow-hidden flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - Fixed */}
-        <div className="relative px-6 pt-6 pb-4 border-b border-divider/10 flex-shrink-0">
+        <div className="relative px-6 pt-6 pb-4 border-b border-border-subtle/50 flex-shrink-0">
           <h3 className="text-xl font-bold text-white flex items-center">
-            <Zap className="mr-2 text-blue-400" size={20} />
+            <Zap className="mr-2 text-primary" size={20} />
             Create Colored UTXOs
           </h3>
-          <button
+          <IconButton
             aria-label="Close"
-            className="absolute top-6 right-6 text-content-secondary hover:text-white transition-colors"
+            className="absolute top-5 right-5"
+            icon={<X size={18} />}
             onClick={onClose}
-          >
-            <svg
-              fill="none"
-              height="18"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              width="18"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <line x1="18" x2="6" y1="6" y2="18"></line>
-              <line x1="6" x2="18" y1="6" y2="18"></line>
-            </svg>
-          </button>
+            variant="ghost"
+          />
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 shadow-inner animate-pulse">
+              <div className="bg-status-danger/10 border border-status-danger/30 rounded-xl p-4 mb-6 shadow-inner animate-pulse">
                 <div className="flex items-center gap-2">
                   <svg
-                    className="text-red-400"
+                    className="text-status-danger"
                     fill="none"
                     height="16"
                     stroke="currentColor"
@@ -215,15 +203,15 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                     <line x1="12" x2="12" y1="8" y2="12"></line>
                     <line x1="12" x2="12.01" y1="16" y2="16"></line>
                   </svg>
-                  <p className="text-sm font-medium text-red-300">
+                  <p className="text-sm font-medium text-status-danger">
                     Error: {error}
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3 mb-6 shadow-inner">
-              <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start gap-3 mb-6 shadow-inner">
+              <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="text-sm text-content-primary">
                 <p className="mb-2 font-medium">
                   {operationType === 'issuance'
@@ -242,12 +230,12 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
             </div>
 
             <button
-              className="w-full flex items-center justify-between py-3 px-4 mb-5 text-sm font-medium text-content-primary hover:text-white bg-surface-overlay/40 hover:bg-surface-overlay/60 border border-border-default/50 rounded-xl transition-all duration-200 group hover:shadow-md"
+              className="w-full flex items-center justify-between py-3 px-4 mb-5 text-sm font-medium text-content-primary hover:text-white bg-surface-overlay/40 hover:bg-surface-overlay/60 border border-border-default rounded-xl transition-all duration-200 group hover:shadow-md"
               onClick={toggleAdvanced}
             >
               <div className="flex items-center">
                 <Settings
-                  className="mr-2 text-blue-400 group-hover:text-blue-300 transition-colors"
+                  className="mr-2 text-primary group-hover:text-primary-emphasis transition-colors"
                   size={15}
                 />
                 <span>Advanced Settings</span>
@@ -256,20 +244,20 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                 className={`transition-transform duration-300 ease-in-out ${showAdvanced ? 'rotate-180' : ''}`}
               >
                 <ChevronDown
-                  className="text-content-secondary group-hover:text-blue-300 transition-colors"
+                  className="text-content-secondary group-hover:text-primary transition-colors"
                   size={16}
                 />
               </div>
             </button>
 
             {showAdvanced && (
-              <div className="mb-6 space-y-5 bg-surface-overlay/90 p-5 rounded-xl border border-border-default/30 shadow-inner animate-fadeIn max-h-[200px] overflow-y-auto">
+              <div className="mb-6 space-y-5 bg-surface-overlay/50 p-5 rounded-xl border border-border-default shadow-inner animate-fadeIn max-h-[200px] overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-content-primary mb-2 flex items-center">
                     Number of UTXOs
                     <div className="relative ml-2 group">
                       <Info
-                        className="text-content-secondary hover:text-blue-400 cursor-help"
+                        className="text-content-secondary hover:text-primary cursor-help"
                         size={14}
                       />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-surface-overlay text-xs text-content-primary rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
@@ -278,7 +266,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                       </div>
                     </div>
                   </label>
-                  <div className="flex rounded-lg overflow-hidden border border-border-default focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                  <div className="flex rounded-lg overflow-hidden border border-border-default focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                     <button
                       className="bg-surface-high text-white px-3 py-2 hover:bg-surface-elevated disabled:opacity-50 transition-colors"
                       disabled={numUtxos <= 1}
@@ -343,7 +331,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                     UTXO Size (in satoshis)
                     <div className="relative ml-2 group">
                       <Info
-                        className="text-content-secondary hover:text-blue-400 cursor-help"
+                        className="text-content-secondary hover:text-primary cursor-help"
                         size={14}
                       />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 bg-surface-overlay text-xs text-content-primary rounded-lg shadow-lg w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10">
@@ -354,7 +342,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                   </label>
                   <input
                     className="w-full bg-surface-overlay/80 text-white px-4 py-2 rounded-lg border border-border-default 
-                           focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                           focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     max={maxPossibleSize}
                     min="5000"
                     onChange={(e) =>
@@ -367,7 +355,9 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                   />
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-content-secondary">Available balance:</span>
+                      <span className="text-content-secondary">
+                        Available balance:
+                      </span>
                       <span className="text-content-primary font-medium">
                         {btcBalanceData?.vanilla?.spendable
                           ? btcBalanceData.vanilla.spendable.toLocaleString()
@@ -376,8 +366,10 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-content-secondary">Total amount:</span>
-                      <span className="text-blue-300 font-medium">
+                      <span className="text-content-secondary">
+                        Total amount:
+                      </span>
+                      <span className="text-primary font-medium">
                         {(numUtxos * utxoSize).toLocaleString()} sats
                       </span>
                     </div>
@@ -404,36 +396,30 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         </div>
 
         {/* Footer - Fixed */}
-        <div className="px-6 py-4 border-t border-divider/10 bg-surface-overlay flex-shrink-0 sticky bottom-0 z-10">
-          <div className="flex justify-end space-x-4">
-            <button
-              className="px-5 py-2.5 rounded-lg text-content-secondary bg-surface-overlay/50 hover:bg-surface-high/70 border border-border-default/50 transition-colors disabled:opacity-50"
+        <div className="px-6 py-4 border-t border-border-subtle/50 bg-surface-overlay/50 flex-shrink-0 sticky bottom-0 z-10 w-full">
+          <div className="flex justify-end space-x-3 w-full">
+            <Button
+              className="flex-1 max-w-[140px]"
               disabled={isLoading}
               onClick={onClose}
+              variant="outline"
             >
               Cancel
-            </button>
-            <button
-              className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium flex items-center justify-center min-w-[120px] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            </Button>
+            <Button
+              className="flex-1 max-w-[160px]"
               disabled={
                 isLoading ||
                 (btcBalanceData?.vanilla?.spendable !== undefined &&
                   numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
               }
+              isLoading={isLoading}
+              icon={!isLoading ? <Zap size={18} /> : undefined}
               onClick={handleCreateUTXOs}
+              variant="primary"
             >
-              {isLoading ? (
-                <>
-                  <Loader className="animate-spin mr-2" size={18} />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Zap className="mr-2" size={18} />
-                  Create UTXOs
-                </>
-              )}
-            </button>
+              Create UTXOs
+            </Button>
           </div>
         </div>
       </div>

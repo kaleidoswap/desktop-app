@@ -867,7 +867,11 @@
     "formErrors": {
       "formSubmissionError": "Une erreur s'est produite lors de la soumission du formulaire."
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1787,7 +1791,8 @@
     "manage": "Gérer",
     "history": "Historique",
     "testnetWarning": "Réseau de test",
-    "testnetWarningDesc": "Vous êtes sur un réseau de test. Les fonds ne sont pas réels et les transactions n'ont aucune valeur monétaire."
+    "testnetWarningDesc": "Vous êtes sur un réseau de test. Les fonds ne sont pas réels et les transactions n'ont aucune valeur monétaire.",
+    "swap": "Swap"
   },
   "peerManagement": {
     "title": "Pairs",
@@ -2569,5 +2574,121 @@
       "initializingButton": "Initialisation...",
       "initializeButton": "Initialiser le Nœud"
     }
+  },
+  "dca": {
+    "title": "Ordres DCA",
+    "subtitle": "Automatisez l'accumulation de BTC avec des achats à intervalle fixe ou des déclencheurs de baisse.",
+    "spotPrice": "Prix spot BTC",
+    "spotHint": "Utilisé pour surveiller les déclencheurs de prix",
+    "refreshAmounts": "Rafraîchir les montants",
+    "refreshingAmounts": "Actualisation...",
+    "createOrder": "Nouvel ordre DCA",
+    "closeCreate": "Fermer le formulaire",
+    "createButton": "Créer l'ordre",
+    "actions": {
+      "execute": "Exécuter",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "cancel": "Annuler"
+    },
+    "metrics": {
+      "totalOrders": "Ordres",
+      "executions": "Achats réussis",
+      "accumulated": "Accumulation",
+      "activeMix": "Mix actif",
+      "btcLnBalance": "Solde BTC LN",
+      "usdtLnBalance": "Solde USDT LN"
+    },
+    "card": {
+      "executions": "Exécutions",
+      "accumulated": "Accumulation",
+      "successRate": "Taux de réussite",
+      "lastExecution": "Dernière exécution",
+      "progressToNext": "Progression vers le prochain achat",
+      "triggerGap": "Encore {{pct}}% de baisse nécessaire",
+      "triggerReady": "Au niveau/sous le seuil de déclenchement"
+    },
+    "form": {
+      "subtitle": "Définissez le montant, le mode de déclenchement et la fréquence. Vous pouvez mettre en pause ou annuler à tout moment.",
+      "scheduledHint": "Achète à intervalles récurrents",
+      "targetHint": "Achète quand BTC atteint votre déclencheur",
+      "estimatedReceive": "Réception estimée par achat",
+      "remainingBalance": "Solde restant après chaque achat",
+      "scheduleNote": "L'exécution est vérifiée environ toutes les 30 secondes tant que votre nœud est déverrouillé."
+    },
+    "tabs": {
+      "active": "Actif",
+      "history": "Historique"
+    },
+    "type": {
+      "scheduled": "Planifié",
+      "priceTarget": "Objectif de prix"
+    },
+    "intervalLabel": "Acheter toutes les",
+    "dropLabel": "Seuil de baisse",
+    "amountLabel": "Montant par achat",
+    "triggerPrice": "Déclenche à ≤",
+    "nextExecution": "Prochaine exécution",
+    "executions": "{{count}} exécutions",
+    "status": {
+      "active": "Actif",
+      "paused": "En pause",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    },
+    "empty": {
+      "active": "Aucun ordre DCA actif",
+      "history": "Aucun historique pour le moment",
+      "hint": "Créez un ordre planifié ou un ordre à objectif de prix pour commencer à acheter automatiquement du BTC avec de l'USDT."
+    },
+    "howItWorks": {
+      "title": "Comment fonctionne le DCA",
+      "description": "Chaque ordre achète du BTC de façon répétée avec le montant USDT choisi. Les exécutions ont lieu uniquement lorsque votre nœud est déverrouillé et prêt.",
+      "scheduled": "Planifié : achats à intervalles fixes (par exemple toutes les 24h).",
+      "priceTarget": "Objectif de prix : achat quand le BTC tombe au niveau ou en dessous de votre déclencheur.",
+      "actions": "Actions : Exécuter maintenant lance un achat immédiat, Mettre en pause stoppe les déclencheurs, Annuler déplace l'ordre dans l'historique."
+    },
+    "orderHelp": {
+      "scheduled": "Cet ordre achète selon un calendrier fixe basé sur l'intervalle sélectionné.",
+      "priceTarget": "Cet ordre achète lorsque le prix du marché est au niveau ou en dessous du déclencheur.",
+      "statusActive": "Actif : il se déclenchera automatiquement lorsque les conditions sont remplies.",
+      "statusPaused": "En pause : aucune exécution automatique jusqu'à la reprise.",
+      "statusCancelled": "Annulé : plus aucune exécution ; l'historique reste visible.",
+      "statusCompleted": "Terminé : l'ordre est finalisé et stocké dans l'historique.",
+      "createdAt": "Créé"
+    },
+    "errors": {
+      "invalidAmount": "Veuillez saisir un montant USDT valide",
+      "noPriceData": "Prix BTC indisponible",
+      "insufficientBalance": "Dépasse le solde USDT disponible du canal"
+    },
+    "toast": {
+      "created": "Ordre DCA créé",
+      "triggered": "Ordre DCA déclenché",
+      "success": "DCA : {{amount}} sats achetés",
+      "failed": "Échec de l'ordre DCA : {{error}}",
+      "skippedNoWs": "DCA ignoré : non connecté au maker"
+    },
+    "getUsdt": {
+      "cta": "Get USDT",
+      "title": "Get USDT on Lightning",
+      "buyTitle": "Buy via Kaleido LSP",
+      "buyDesc": "Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.",
+      "buyButton": "Buy USDT Channel",
+      "onChainTitle": "Open with On-Chain USDT",
+      "onChainBalance": "On-chain balance: {{amount}} USDT",
+      "noOnChain": "No on-chain USDT available",
+      "useAll": "Use all",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info",
+      "usdtAmountLabel": "USDT amount",
+      "capacityLabel": "Channel capacity",
+      "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
+      "capacityRange": "Min {{min}} – max {{max}} sats",
+      "maxReceive": "max receive ≈ {{sats}} sats BTC"
+    },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT"
   }
 }

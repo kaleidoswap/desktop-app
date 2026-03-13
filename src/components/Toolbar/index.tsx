@@ -6,8 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH, WALLET_UNLOCK_PATH } from '../../app/router/paths'
+import {
+  ROOT_PATH,
+  WALLET_SETUP_PATH,
+  WALLET_UNLOCK_PATH,
+} from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
+import { buildLocalNodeUrl, normalizeNodeUrl } from '../../api/client'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
 import { BitcoinNetwork } from '../../constants'
@@ -15,6 +21,7 @@ import {
   nodeSettingsActions,
   setSettingsAsync,
 } from '../../slices/nodeSettings/nodeSettings.slice'
+import { waitForNodeReady } from '../../utils/nodeState'
 
 export interface Account {
   datapath: string
@@ -88,6 +95,31 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
     </div>
   )
 }
+
+const withTimeout = <T,>(
+  promise: Promise<T>,
+  ms: number,
+  label: string
+): Promise<T> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms / 1000}s`)),
+        ms
+      )
+    ),
+  ])
+
+const invokeWithTimeout = <T,>(
+  command: string,
+  args: Record<string, unknown> | undefined,
+  ms: number,
+  label: string
+): Promise<T> =>
+  withTimeout(args ? invoke<T>(command, args) : invoke<T>(command), ms, label)
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const NodeCard: React.FC<NodeCardProps> = ({
   account,
@@ -413,25 +445,88 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
     setIsEditing(!isEditing)
   }
 
+  const [getNodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
+
+  const waitForNodeStopped = useCallback(
+    (timeoutMs = 15000): Promise<void> =>
+      new Promise((resolve, reject) => {
+        let unlisten: (() => void) | null = null
+
+        const cleanup = () => {
+          if (unlisten) {
+            unlisten()
+          }
+        }
+
+        const timeoutId = window.setTimeout(() => {
+          cleanup()
+          reject(
+            new Error(
+              `Waiting for node shutdown timed out after ${timeoutMs / 1000}s`
+            )
+          )
+        }, timeoutMs)
+
+        listen('node-stopped', () => {
+          window.clearTimeout(timeoutId)
+          cleanup()
+          resolve()
+        })
+          .then((fn) => {
+            unlisten = fn
+          })
+          .catch((error) => {
+            window.clearTimeout(timeoutId)
+            cleanup()
+            reject(
+              new Error(
+                `Failed to subscribe to node shutdown event: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              )
+            )
+          })
+      }),
+    []
+  )
+
   const handleNodeChange = async (node: Account) => {
     try {
       setIsSwitching(true)
 
-      const currentNode = await invoke<Account | null>('get_current_account')
+      const currentNode = await invokeWithTimeout<Account | null>(
+        'get_current_account',
+        undefined,
+        10000,
+        'Loading current account'
+      )
 
-      const isNodeRunning = await invoke<boolean>('is_node_running', {
-        accountName: node.name,
-      })
+      const isNodeRunning = await invokeWithTimeout<boolean>(
+        'is_node_running',
+        {
+          accountName: node.name,
+        },
+        10000,
+        'Checking target node status'
+      )
 
-      const runningNodeAccount = await invoke<string | null>(
-        'get_running_node_account'
+      const runningNodeAccount = await invokeWithTimeout<string | null>(
+        'get_running_node_account',
+        undefined,
+        10000,
+        'Loading running node account'
       )
 
       if (currentNode && currentNode.name === node.name && isNodeRunning) {
         // First update the Redux store before navigating
-        const dbNode = await invoke<Account>('get_account_by_name', {
-          name: node.name,
-        })
+        const dbNode = await invokeWithTimeout<Account>(
+          'get_account_by_name',
+          {
+            name: node.name,
+          },
+          10000,
+          'Loading selected account'
+        )
 
         if (!dbNode) {
           throw new Error('Node not found in database')
@@ -449,28 +544,61 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         // Wait for the Redux store to be updated
         await dispatch(setSettingsAsync(formattedNode))
 
-        // Check if node is locked before navigating
-        try {
-          await invoke('node_info')
+        // Check if node is unlocked via API (same logic as root route)
+        const nodeInfoRes = await withTimeout(
+          getNodeInfo(),
+          15000,
+          'Checking node status'
+        )
+        if (nodeInfoRes.isSuccess) {
           console.log('Node unlocked, navigating to dashboard')
           navigate(ROOT_PATH)
-        } catch (error) {
+        } else if (
+          nodeInfoRes.error &&
+          typeof nodeInfoRes.error === 'object' &&
+          'status' in nodeInfoRes.error &&
+          (nodeInfoRes.error as { status?: number }).status === 400
+        ) {
+          navigate(WALLET_SETUP_PATH)
+        } else {
           console.log('Node locked, navigating to unlock page')
           navigate(WALLET_UNLOCK_PATH)
         }
         return
       }
 
-      if (runningNodeAccount && isNodeRunning) {
-        await invoke('stop_node')
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Only stop the running node if it's a different account than the target
+      if (runningNodeAccount && runningNodeAccount !== node.name) {
+        const stoppedPromise = waitForNodeStopped()
+        try {
+          await invokeWithTimeout(
+            'stop_node',
+            undefined,
+            5000,
+            'Stopping currently running node'
+          )
+        } catch (error) {
+          void stoppedPromise.catch(() => undefined)
+          throw error
+        }
+        await stoppedPromise
       }
 
-      await invoke('set_current_account', { accountName: node.name })
+      await invokeWithTimeout(
+        'set_current_account',
+        { accountName: node.name },
+        10000,
+        'Setting current account'
+      )
 
-      const dbNode = await invoke<Account>('get_account_by_name', {
-        name: node.name,
-      })
+      const dbNode = await invokeWithTimeout<Account>(
+        'get_account_by_name',
+        {
+          name: node.name,
+        },
+        10000,
+        'Loading selected account'
+      )
 
       if (!dbNode) {
         throw new Error('Node not found in database')
@@ -487,8 +615,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       await dispatch(setSettingsAsync(formattedNode))
 
       if (
-        node.node_url.startsWith('http://localhost:') &&
-        node.datapath !== ''
+        normalizeNodeUrl(node.node_url)?.startsWith('http://127.0.0.1:') &&
+        node.datapath !== '' &&
+        runningNodeAccount !== node.name
       ) {
         toast.info(t('toolbar.nodes.startingLocalNode'), {
           autoClose: 2000,
@@ -501,9 +630,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             node.daemon_listening_port,
             node.ldk_peer_listening_port,
           ]
-          const portCheck = await invoke<{ [port: string]: boolean }>(
+          const portCheck = await invokeWithTimeout<{
+            [port: string]: boolean
+          }>(
             'check_ports_available',
-            { ports }
+            { ports },
+            10000,
+            'Checking port availability'
           )
           const unavailablePorts = Object.entries(portCheck)
             .filter(([_, isAvailable]) => !isAvailable)
@@ -511,8 +644,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
           if (unavailablePorts.length > 0) {
             // Get running node ports to check if they're our own nodes
-            const runningNodePorts = await invoke<{ [port: string]: string }>(
-              'get_running_node_ports'
+            const runningNodePorts = await invokeWithTimeout<{
+              [port: string]: string
+            }>(
+              'get_running_node_ports',
+              undefined,
+              10000,
+              'Loading running node ports'
             )
             const ourConflictingPorts = unavailablePorts.filter(
               (port) => port in runningNodePorts
@@ -528,14 +666,24 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
               for (const port of ourConflictingPorts) {
                 const nodeAccount = runningNodePorts[port]
                 try {
-                  await invoke('stop_node_by_account', {
-                    accountName: nodeAccount,
-                  })
-                  await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait for cleanup
+                  const stoppedPromise = waitForNodeStopped()
+                  try {
+                    await invokeWithTimeout(
+                      'stop_node_by_account',
+                      { accountName: nodeAccount },
+                      5000,
+                      `Stopping node for account ${nodeAccount}`
+                    )
+                  } catch (error) {
+                    void stoppedPromise.catch(() => undefined)
+                    throw error
+                  }
+                  await stoppedPromise
                 } catch (error) {
                   console.error(`Failed to stop node on port ${port}:`, error)
                   throw new Error(
-                    `Failed to stop existing node on port ${port}`
+                    `Failed to stop existing node on port ${port}`,
+                    { cause: error }
                   )
                 }
               }
@@ -547,9 +695,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
               })
 
               // Recheck port availability after stopping our nodes
-              const recheckPorts = await invoke<{ [port: string]: boolean }>(
+              const recheckPorts = await invokeWithTimeout<{
+                [port: string]: boolean
+              }>(
                 'check_ports_available',
-                { ports }
+                { ports },
+                10000,
+                'Re-checking port availability'
               )
               const stillUnavailablePorts = Object.entries(recheckPorts)
                 .filter(([_, isAvailable]) => !isAvailable)
@@ -557,13 +709,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
               if (stillUnavailablePorts.length > 0) {
                 // Try to find alternative ports
-                const suggestedPorts = await invoke<{
+                const suggestedPorts = await invokeWithTimeout<{
                   daemon: number
                   ldk: number
-                }>('find_available_ports', {
-                  base_daemon_port: parseInt(node.daemon_listening_port),
-                  base_ldk_port: parseInt(node.ldk_peer_listening_port),
-                })
+                }>(
+                  'find_available_ports',
+                  {
+                    base_daemon_port: parseInt(node.daemon_listening_port),
+                    base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                  },
+                  10000,
+                  'Finding available ports'
+                )
 
                 throw new Error(
                   `Ports ${stillUnavailablePorts.join(', ')} are still in use by other processes. ` +
@@ -573,48 +730,153 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                 )
               }
             } else {
-              // Ports are in use by external processes
-              // Try to find alternative ports
-              const suggestedPorts = await invoke<{
-                daemon: number
-                ldk: number
-              }>('find_available_ports', {
-                base_daemon_port: parseInt(node.daemon_listening_port),
-                base_ldk_port: parseInt(node.ldk_peer_listening_port),
+              // Ports may be held by a stale node from a previous session.
+              // Try stop_node before giving up.
+              toast.info(t('toolbar.nodes.stoppingExisting'), {
+                autoClose: false,
+                toastId: 'stopping-nodes',
               })
+              try {
+                const stoppedPromise = waitForNodeStopped()
+                try {
+                  await invokeWithTimeout(
+                    'stop_node',
+                    undefined,
+                    5000,
+                    'Stopping stale node process'
+                  )
+                } catch (error) {
+                  void stoppedPromise.catch(() => undefined)
+                  throw error
+                }
+                await stoppedPromise
+              } catch (stopError) {
+                console.warn('Could not stop stale node:', stopError)
+              }
+              toast.dismiss('stopping-nodes')
 
-              throw new Error(
-                `Ports ${unavailablePorts.join(', ')} are in use by other applications. ` +
-                  'Suggested alternative ports:\n' +
-                  `- Daemon port: ${suggestedPorts.daemon}\n` +
-                  `- LDK peer port: ${suggestedPorts.ldk}`
+              const recheckAfterStop = await invokeWithTimeout<{
+                [port: string]: boolean
+              }>(
+                'check_ports_available',
+                { ports },
+                10000,
+                'Re-checking ports after stop'
               )
+              const stillUnavailable = Object.entries(recheckAfterStop)
+                .filter(([_, isAvailable]) => !isAvailable)
+                .map(([port]) => port)
+
+              if (stillUnavailable.length > 0) {
+                const suggestedPorts = await invokeWithTimeout<{
+                  daemon: number
+                  ldk: number
+                }>(
+                  'find_available_ports',
+                  {
+                    base_daemon_port: parseInt(node.daemon_listening_port),
+                    base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                  },
+                  10000,
+                  'Finding available ports'
+                )
+                throw new Error(
+                  `Ports ${stillUnavailable.join(', ')} are in use by other applications. ` +
+                    'Suggested alternative ports:\n' +
+                    `- Daemon port: ${suggestedPorts.daemon}\n` +
+                    `- LDK peer port: ${suggestedPorts.ldk}`
+                )
+              }
             }
           }
 
           // Start the node with the checked ports
-          await invoke('start_node', {
-            accountName: node.name,
-            daemonListeningPort: node.daemon_listening_port,
-            datapath: node.datapath,
-            ldkPeerListeningPort: node.ldk_peer_listening_port,
-            network: node.network,
+          await invokeWithTimeout(
+            'start_node',
+            {
+              accountName: node.name,
+              daemonListeningPort: node.daemon_listening_port,
+              datapath: node.datapath,
+              ldkPeerListeningPort: node.ldk_peer_listening_port,
+              network: node.network,
+            },
+            90000,
+            'Starting local node process'
+          )
+
+          await waitForNodeReady({
+            daemonPort: node.daemon_listening_port,
+            timeoutMs: 90000,
           })
+
+          // Decide destination from real node API status:
+          // - unlocked: dashboard
+          // - locked: unlock
+          // - uninitialized: setup
+          let destination:
+            | typeof ROOT_PATH
+            | typeof WALLET_UNLOCK_PATH
+            | typeof WALLET_SETUP_PATH = WALLET_UNLOCK_PATH
+
+          for (let attempt = 0; attempt < 8; attempt++) {
+            const nodeInfoRes = await withTimeout(
+              getNodeInfo(),
+              5000,
+              'Checking node status after start'
+            )
+
+            if (nodeInfoRes.isSuccess) {
+              destination = ROOT_PATH
+              break
+            }
+
+            const status =
+              nodeInfoRes.error &&
+              typeof nodeInfoRes.error === 'object' &&
+              'status' in nodeInfoRes.error
+                ? (nodeInfoRes.error as { status?: number | string }).status
+                : undefined
+
+            if (status === 400) {
+              destination = WALLET_SETUP_PATH
+              break
+            }
+
+            if (status === 401 || status === 403) {
+              destination = WALLET_UNLOCK_PATH
+              break
+            }
+
+            await sleep(750)
+          }
+
+          navigate(destination)
+          return
         } catch (error) {
           throw new Error(
-            error instanceof Error ? error.message : 'Failed to start node'
+            error instanceof Error ? error.message : 'Failed to start node',
+            { cause: error }
           )
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Check if node is locked before navigating
-      try {
-        await invoke('node_info')
+      // Check if node is unlocked or locked via API (same logic as root route)
+      const nodeInfoRes = await withTimeout(
+        getNodeInfo(),
+        15000,
+        'Checking node status'
+      )
+      if (nodeInfoRes.isSuccess) {
         console.log('Node unlocked, navigating to dashboard')
         navigate(ROOT_PATH)
-      } catch (error) {
+      } else if (
+        nodeInfoRes.error &&
+        typeof nodeInfoRes.error === 'object' &&
+        'status' in nodeInfoRes.error &&
+        (nodeInfoRes.error as { status?: number }).status === 400
+      ) {
+        navigate(WALLET_SETUP_PATH)
+      } else {
         console.log('Node locked, navigating to unlock page')
         navigate(WALLET_UNLOCK_PATH)
       }
@@ -709,7 +971,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
           {accounts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               {!isCollapsed && (
-                <div className={`bg-surface-overlay/50 rounded-xl p-6 max-w-xs`}>
+                <div
+                  className={`bg-surface-overlay/50 rounded-xl p-6 max-w-xs`}
+                >
                   <p className="text-content-secondary mb-2">
                     {t('toolbar.main.noNodesFound')}
                   </p>
@@ -777,7 +1041,7 @@ interface NodeSelectionModalContentProps {
   account: Account
   isLoading: boolean
   onCancel: () => void
-  onConfirm: (account: Account) => void
+  onConfirm: (account: Account) => void | Promise<void>
 }
 
 const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
@@ -807,9 +1071,12 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
       setError(null)
 
       // Check if node is already running
-      const isNodeRunning = await invoke<boolean>('is_node_running', {
-        accountName: account.name,
-      })
+      const isNodeRunning = await invokeWithTimeout<boolean>(
+        'is_node_running',
+        { accountName: account.name },
+        10000,
+        'Checking selected node status'
+      )
 
       if (isNodeRunning) {
         setLoadingState({
@@ -828,7 +1095,11 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         })
       }
 
-      await onConfirm(account)
+      await withTimeout(
+        Promise.resolve(onConfirm(account)),
+        45000,
+        'Node switch operation'
+      )
     } catch (error) {
       console.error('Node switch error:', error)
       if (error instanceof Error) {
@@ -852,19 +1123,29 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     }
   }
 
-  const handleUseSuggestedPorts = () => {
+  const handleUseSuggestedPorts = async () => {
     if (!suggestedPorts) return
 
     const updatedAccount = {
       ...account,
       daemon_listening_port: suggestedPorts.daemon,
       ldk_peer_listening_port: suggestedPorts.ldk,
-      node_url: `http://localhost:${suggestedPorts.daemon}`,
+      node_url: buildLocalNodeUrl(suggestedPorts.daemon),
     }
 
-    onConfirm(updatedAccount)
-    setError(null)
-    setSuggestedPorts(null)
+    try {
+      await withTimeout(
+        Promise.resolve(onConfirm(updatedAccount)),
+        45000,
+        'Node switch operation'
+      )
+      setError(null)
+      setSuggestedPorts(null)
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : t('toolbar.modal.unknownError')
+      )
+    }
   }
 
   const toggleSection = (section: string) => {

@@ -1,6 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
+export type BackendNodeState =
+  | { status: 'Stopped' }
+  | { status: 'Starting' }
+  | { status: 'Running' }
+  | { status: 'Stopping' }
+  | { status: 'Failed'; message: string }
+
 interface NodeState {
+  lifecycle: BackendNodeState
   isRunning: boolean
   logs: string[]
   isLoading: boolean
@@ -11,6 +19,7 @@ const initialState: NodeState = {
   error: null,
   isLoading: false,
   isRunning: false,
+  lifecycle: { status: 'Stopped' },
   logs: [],
 }
 
@@ -28,6 +37,22 @@ const nodeSlice = createSlice({
     clearLogs: (state) => {
       state.logs = []
     },
+    setLifecycleState: (state, action: PayloadAction<BackendNodeState>) => {
+      state.lifecycle = action.payload
+      state.isRunning =
+        action.payload.status === 'Running' ||
+        action.payload.status === 'Starting'
+      state.isLoading =
+        action.payload.status === 'Starting' ||
+        action.payload.status === 'Stopping'
+
+      if (action.payload.status === 'Failed') {
+        state.error = action.payload.message
+        return
+      }
+
+      state.error = null
+    },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload
     },
@@ -40,6 +65,12 @@ const nodeSlice = createSlice({
   },
 })
 
-export const { setNodeRunning, addLog, clearLogs, setLoading, setError } =
-  nodeSlice.actions
+export const {
+  setNodeRunning,
+  addLog,
+  clearLogs,
+  setLoading,
+  setError,
+  setLifecycleState,
+} = nodeSlice.actions
 export const nodeReducer = nodeSlice.reducer

@@ -149,7 +149,9 @@ export const AssetSelectionField: React.FC<AssetSelectionFieldProps> = ({
   return (
     <div className={twJoin('w-full', className)}>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-content-secondary">{label}</label>
+        <label className="text-sm font-medium text-content-secondary">
+          {label}
+        </label>
         {maxBalance && maxBalance > 0 && (
           <span className="text-xs text-content-tertiary">
             Max: {maxBalance.toFixed(precision)}

@@ -34,6 +34,7 @@
     "marketMaker": "Market Maker",
     "manualSwaps": "Manual Swaps",
     "nostrP2P": "Nostr P2P",
+    "dca": "DCA",
     "helpSupport": "Help & Support",
     "getHelpSupport": "Get Help & Support",
     "menu": "Menu",
@@ -271,6 +272,7 @@
     "totalBalance": "Total Balance",
     "deposit": "Deposit",
     "depositNow": "Deposit Now",
+    "swap": "Swap",
     "withdraw": "Withdraw",
     "onChain": "On-chain",
     "offChain": "Off-chain",
@@ -711,6 +713,7 @@
     "unlockCancelled": "Unlocking process cancelled",
     "failedCheckStatus": "Failed to check node status: {{error}}",
     "failedGetNodeInfo": "Failed to get node info after unlock",
+    "unlockTimeoutMessage": "Unlocking is taking longer than usual. If the node was offline for a while, it may still be syncing the blockchain in the background. Please keep the app open while unlock continues.",
     "unknownError": "An unknown error occurred"
   },
   "trade": {
@@ -1290,6 +1293,8 @@
   "buyChannel": {
     "totalPayment": "Total Payment",
     "expires": "Expires: {{time}}",
+    "lightning": "Lightning",
+    "onchain": "On-chain",
     "lightningTab": "⚡ Lightning",
     "onchainTab": "⛓️ On-chain",
     "lightningInstructions": "Scan the QR code or copy the invoice to pay with Lightning.",
@@ -1684,7 +1689,11 @@
     "formErrors": {
       "formSubmissionError": "There was an error submitting the form."
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1707,7 +1716,9 @@
       "feeReserveConclusion": "These reserves ensure both parties can always afford necessary on-chain operations like cooperative channel closes.",
       "spendingPercentage": "{{percent}}% Spending",
       "zeroSpending": "0% Spending",
-      "fullSpending": "100% Spending"
+      "fullSpending": "100% Spending",
+      "allReceiving": "All Receiving",
+      "allSpending": "All Spending"
     },
     "assetChannel": {
       "title": "{{ticker}} Asset Channel",
@@ -2278,6 +2289,7 @@
     "form": {
       "addressPlaceholder": "Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice",
       "addressRequired": "Address or invoice is required",
+      "analyzing": "Analyzing input…",
       "clear": "Clear",
       "detected": {
         "label": "Detected:",
@@ -2632,9 +2644,57 @@
       "built": "Built:"
     },
     "buyChannelModal": {
+      "balanceNeededDescription": "This payment route is not available with your current balance yet.",
+      "balanceNeededTitle": "More balance needed",
+      "availableLabel": "Available",
+      "capacityFee": "Capacity fee",
       "discount": "Discount",
+      "continue": "Continue ->",
       "confirmationTime": "Confirmation Time:",
+      "durationFee": "Duration fee",
+      "expiresLabel": "Expires",
+      "lightningInvoice": "Lightning invoice",
+      "loadingBalance": "Loading balance...",
+      "loadingQuote": "Loading Quote...",
       "noFundsDeducted": "No funds were deducted. Create a new order to try again.",
+      "onchainAddress": "On-chain address",
+      "openAssetLightningChannel": "Open Asset Lightning Channel",
+      "openBtcLightningChannel": "Open BTC Lightning Channel",
+      "orderIdLabel": "Order ID",
+      "orderSummaryBitcoin": "Bitcoin",
+      "orderSummaryYourInbound": "Your Inbound",
+      "orderSummaryYourOutbound": "Your Outbound",
+      "paymentDescription": "Use one QR for wallets that support both Lightning and on-chain, or copy the exact payment details below.",
+      "paymentEyebrow": "Payment",
+      "paymentLabel": "Payment",
+      "paymentTitle": "Scan or copy to fund this order",
+      "processingPaymentDescription": "Payment received, setting up your channel...",
+      "processingPaymentTitle": "Processing Payment",
+      "requestDetails": "Request details",
+      "sendExactly": "Send exactly",
+      "setupFee": "Setup fee",
+      "statusClose": "Close",
+      "statusConfirmationMessage": "Your channel requires ~6 confirmations (about 1 hour). The asset is locked at today's rate and will be ready to trade once confirmed.",
+      "statusConfirmationTitle": "Channel Confirmation in Progress",
+      "statusCreateNewOrder": "Create New Order",
+      "statusErrorHelp": "If payment was made, no funds were deducted. Please try again or contact support if the issue persists.",
+      "statusErrorMessage": "There was an issue processing your channel order.",
+      "statusErrorTitle": "Order Failed",
+      "statusExpiredMessage": "The payment window has expired without receiving payment.",
+      "statusExpiredTitle": "Payment Expired",
+      "statusGotIt": "Got it, thanks!",
+      "statusSuccessMessage": "Your channel order has been created successfully.",
+      "statusSuccessTitle": "Payment Successful!",
+      "statusTryAgain": "Try Again",
+      "totalToPay": "Total to Pay",
+      "unifiedQrBadge": "LN + On-chain",
+      "unifiedQrDescription": "Compatible wallets can choose the best route automatically.",
+      "unifiedQrTitle": "Unified payment QR",
+      "availableRoutes": "Available routes",
+      "walletDescription": "Open wallet payment options to review balances and pay with Lightning or on-chain from one modal.",
+      "walletEyebrow": "Wallet payment",
+      "walletLightningDescription": "Use your current outbound liquidity for the fastest wallet payment path.",
+      "walletOnchainDescription": "Fund the order directly from your on-chain wallet balance and choose the fee level here.",
       "confirmAssetPurchase": "Confirm Asset Purchase",
       "buyChannelWithAsset": "Buy Channel with Asset",
       "completePayment": "Complete Payment",
@@ -2685,6 +2745,139 @@
       "requirementMatch": "Passwords match",
       "initializingButton": "Initializing...",
       "initializeButton": "Initialize Node"
+    }
+  },
+  "dca": {
+    "title": "DCA Orders",
+    "subtitle": "Automate BTC accumulation with fixed-interval buys or downside price triggers.",
+    "spotPrice": "BTC spot",
+    "spotHint": "Used for price-trigger monitoring",
+    "refreshAmounts": "Refresh amounts",
+    "refreshingAmounts": "Refreshing...",
+    "createOrder": "New DCA Order",
+    "closeCreate": "Close form",
+    "createButton": "Create Order",
+    "actions": {
+      "execute": "Execute",
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel"
+    },
+    "metrics": {
+      "totalOrders": "Orders",
+      "executions": "Successful buys",
+      "accumulated": "Accumulated",
+      "activeMix": "Active mix",
+      "btcLnBalance": "BTC LN balance",
+      "usdtLnBalance": "USDT LN balance"
+    },
+    "section": {
+      "balances": "Channel Balances",
+      "pendingBadge": "pending",
+      "pendingUsdtChannels": "Pending USDT channels",
+      "pendingUsdtDescription": "Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.",
+      "pendingUsdtTitle": "New USDT channel pending"
+    },
+    "card": {
+      "executions": "Executions",
+      "accumulated": "Accumulated",
+      "successRate": "Success rate",
+      "lastExecution": "Last execution",
+      "progressToNext": "Progress to next buy",
+      "triggerGap": "Needs another {{pct}}% drop",
+      "triggerReady": "At/under trigger threshold",
+      "checking": "Checking…",
+      "receiveBtc": "to BTC"
+    },
+    "form": {
+      "subtitle": "Choose how much USDT to spend per buy and when the order should fire. Every successful execution converts that fixed USDT amount into BTC sats.",
+      "scheduledHint": "Buys the same USDT amount on a fixed cadence",
+      "targetHint": "Waits for a BTC dip, then buys once and re-arms",
+      "conversionHint": "Each execution spends USDT once and credits BTC sats.",
+      "estimatedReceive": "Estimated receive per buy",
+      "remainingBalance": "Remaining after each buy",
+      "scheduleNote": "The app checks due orders about every 5 seconds while your node is unlocked.",
+      "liquidityHint": "DCA needs spendable USDT Lightning balance plus enough BTC receive capacity for each execution."
+    },
+    "tabs": {
+      "active": "Active",
+      "history": "History"
+    },
+    "type": {
+      "scheduled": "Scheduled",
+      "priceTarget": "Price Target"
+    },
+    "intervalLabel": "Buy every",
+    "dropLabel": "Drop threshold",
+    "amountLabel": "Amount per buy",
+    "triggerPrice": "Triggers at ≤",
+    "nextExecution": "Next execution",
+    "executions": "{{count}} executions",
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "empty": {
+      "active": "No active DCA orders",
+      "history": "No order history yet",
+      "hint": "Create a scheduled or price-target order to start automatically buying BTC with USDT."
+    },
+    "howItWorks": {
+      "title": "How DCA works",
+      "description": "DCA automatically spends your USDT Lightning balance to buy BTC on Lightning. Orders run only when your node is unlocked, maker pricing is reachable, and your channels can both spend USDT and receive BTC.",
+      "fundingTitle": "1. Fund the order",
+      "fundingDescription": "Keep enough USDT Lightning balance for the buy amount. Your BTC Lightning capacity sets how many sats you can receive per execution.",
+      "triggerTitle": "2. Choose the trigger",
+      "triggerDescription": "Scheduled orders buy after each interval. Price Target orders wait for BTC to hit your threshold, then re-arm from the new market price after a successful buy.",
+      "manageTitle": "3. Monitor and control",
+      "manageDescription": "Use Execute for one immediate buy, Pause to stop automatic runs, and Cancel to move the order into history without deleting past executions.",
+      "scheduled": "Buys the same USDT amount on a fixed cadence, such as every hour or every 24 hours.",
+      "priceTarget": "Buys once BTC falls to or below your threshold. After a successful buy, the next trigger is recalculated from the latest price.",
+      "actions": "A buy only happens when the wallet is ready. If liquidity or maker connectivity is missing, the order stays active and retries on the next eligible check."
+    },
+    "orderHelp": {
+      "scheduled": "This order buys on a fixed schedule based on the selected interval.",
+      "priceTarget": "This order buys when market price is at or below the trigger.",
+      "statusActive": "Active: it will trigger automatically when conditions are met.",
+      "statusPaused": "Paused: no automatic execution until resumed.",
+      "statusCancelled": "Cancelled: no more executions; history remains visible.",
+      "statusCompleted": "Completed: order has finished and is stored in history.",
+      "createdAt": "Created"
+    },
+    "errors": {
+      "invalidAmount": "Please enter a valid USDT amount",
+      "noPriceData": "BTC price not available",
+      "insufficientBalance": "Exceeds available USDT channel balance"
+    },
+    "toast": {
+      "created": "DCA order created",
+      "triggered": "DCA order triggered",
+      "success": "DCA: Bought {{amount}} sats",
+      "failed": "DCA order failed: {{error}}",
+      "skippedNoWs": "DCA skipped: not connected to maker"
+    },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT",
+    "getUsdt": {
+      "cta": "Get USDT",
+      "title": "Get USDT on Lightning",
+      "buyTitle": "Buy via Kaleido LSP",
+      "buyDesc": "Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.",
+      "buyButton": "Buy USDT Channel",
+      "onChainTitle": "Open with On-Chain USDT",
+      "onChainBalance": "On-chain balance: {{amount}} USDT",
+      "noOnChain": "No on-chain USDT available",
+      "useAll": "Use all",
+      "usdtAmountLabel": "USDT amount",
+      "capacityLabel": "Channel capacity",
+      "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
+      "capacityRange": "Min {{min}} – max {{max}} sats",
+      "maxReceive": "max receive ≈ {{sats}} sats BTC",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info"
     }
   }
 }

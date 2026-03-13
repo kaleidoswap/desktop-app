@@ -17,26 +17,40 @@ export const DepositModalContent = () => {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-4 h-[80vh] flex flex-col">
+      <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
         {/* Progress bar */}
         <div className="mb-4">
-          <div className="h-2 w-full bg-surface-overlay rounded-full overflow-hidden">
+          <div className="h-1.5 w-full bg-surface-overlay rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-sm text-content-secondary">
-            <span className={step === 1 ? 'text-blue-400 font-medium' : ''}>
+          <div className="flex justify-between mt-2 text-xs">
+            <span
+              className={
+                step === 1
+                  ? 'text-primary font-semibold'
+                  : 'text-content-secondary line-through opacity-60'
+              }
+            >
               {t('depositModal.progress.selectAsset')}
             </span>
-            <span className={step === 2 ? 'text-blue-400 font-medium' : ''}>
+            <span
+              className={
+                step === 2
+                  ? 'text-primary font-semibold'
+                  : 'text-content-secondary'
+              }
+            >
               {t('depositModal.progress.details')}
             </span>
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
+        <div
+          className={`flex-1 pr-1 ${step === 2 ? 'overflow-y-auto custom-scrollbar' : ''}`}
+        >
           {step === 1 && (
             <Step1
               onNext={(a) => {

@@ -31,9 +31,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   if (!showModal) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-surface-overlay p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-white">
+        <h2 className="text-2xl font-bold mb-6 text-center text-content-primary">
           {t('backupModal.title')}
         </h2>
         <form className="space-y-4" onSubmit={onSubmit}>
@@ -43,13 +43,13 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             </label>
             <div className="flex">
               <input
-                className="flex-grow px-3 py-2 text-white bg-surface-high border border-border-default rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-grow px-3 py-2 text-content-primary bg-surface-high border border-border-default rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary"
                 onChange={(e) => setValue('backupPath', e.target.value)}
                 type="text"
                 value={backupPath}
               />
               <button
-                className="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                className="px-3 py-2 bg-primary text-content-inverse rounded-r-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
                 onClick={onSelectFolder}
                 type="button"
               >
@@ -57,7 +57,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
               </button>
             </div>
             {formState.errors.backupPath && (
-              <p className="mt-1 text-sm text-red-500">
+              <p className="mt-1 text-sm text-status-danger">
                 {t('backupModal.invalidBackupPath')}
               </p>
             )}
@@ -72,7 +72,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                 </label>
                 <input
                   {...field}
-                  className="w-full px-3 py-2 text-white bg-surface-high border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-content-primary bg-surface-high border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={t('backupModal.nodePasswordPlaceholder')}
                   type="password"
                 />
@@ -82,9 +82,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
           {isBackupInProgress && (
             <div className="mt-4">
               <div className="flex items-center justify-center mb-2">
-                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
               </div>
-              <p className="text-white text-center">
+              <p className="text-content-primary text-center">
                 {t('backupModal.backupInProgressMessage')}
                 <br />
                 {t('backupModal.backupLockedMessage')}
@@ -93,7 +93,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
           )}
           <div className="flex justify-between space-x-4 pt-6">
             <button
-              className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-surface-elevated text-content-primary rounded-md hover:bg-surface-high border border-border-default focus:outline-none focus:ring-2 focus:ring-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isBackupInProgress}
               onClick={onClose}
               type="button"
@@ -101,7 +101,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
               {t('backupModal.cancel')}
             </button>
             <button
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-primary text-content-inverse rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isBackupInProgress}
               type="submit"
             >

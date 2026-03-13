@@ -133,12 +133,14 @@ export const AssetChannelSection: React.FC<AssetChannelSectionProps> = ({
       )}
 
       {selectedAssetId && assetMap[selectedAssetId] && (
-        <div className={showAssetSelector ? 'mt-4' : ''}>
+        <div className={showAssetSelector ? 'mt-3' : ''}>
           <AssetChannelSelector
             assetInfo={assetMap[selectedAssetId]}
+            className="rounded-xl p-4 border border-emerald-700/30 bg-emerald-950/20"
             clientAssetAmount={clientAssetAmount}
             onClientAssetAmountChange={onClientAssetAmountChange}
             onTotalAssetAmountChange={onTotalAssetAmountChange}
+            showHeader={false}
             totalAssetAmount={totalAssetAmount}
           />
         </div>

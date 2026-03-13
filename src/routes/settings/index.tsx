@@ -44,6 +44,7 @@ import { useBackup } from '../../hooks/useBackup'
 import { LANGUAGES } from '../../i18n'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import { waitForNodeReady } from '../../utils/nodeState'
 import {
   setBitcoinUnit,
   setFiatCurrency,
@@ -56,7 +57,6 @@ import {
   CURRENCY_SYMBOLS,
   SUPPORTED_CURRENCIES,
 } from '../../slices/priceApi/priceApi.slice'
-import { waitForNodeReady } from '../../utils/nodeState'
 
 import { TerminalLogDisplay } from './TerminalLogDisplay'
 
@@ -78,9 +78,8 @@ export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, theme } = useSelector(
-    (state: RootState) => state.settings
-  )
+  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, theme } =
+    useSelector((state: RootState) => state.settings)
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
 
@@ -285,13 +284,8 @@ export const Component: React.FC = () => {
         ldkPeerListeningPort: currentAccount.ldk_peer_listening_port,
         network: currentAccount.network,
       })
-
-      // Wait for node to be ready
       await waitForNodeReady({
-        timeoutMs: 60000,
-        onProgress: (message) => {
-          console.log('Node restart:', message)
-        },
+        daemonPort: currentAccount.daemon_listening_port,
       })
 
       toast.success('Node restarted successfully with new settings')
@@ -563,7 +557,9 @@ export const Component: React.FC = () => {
     <div className="flex flex-col min-h-screen py-8 px-4">
       {/* Page Header */}
       <div className="w-full max-w-7xl mx-auto mb-8">
-        <p className="text-content-secondary text-sm">{t('settings.subtitle')}</p>
+        <p className="text-content-secondary text-sm">
+          {t('settings.subtitle')}
+        </p>
       </div>
 
       {/* Main Content Grid */}
@@ -635,7 +631,8 @@ export const Component: React.FC = () => {
                               >
                                 {SUPPORTED_CURRENCIES.map((currency) => (
                                   <option key={currency} value={currency}>
-                                    {CURRENCY_SYMBOLS[currency]}{CURRENCY_LABELS[currency]}
+                                    {CURRENCY_SYMBOLS[currency]}
+                                    {CURRENCY_LABELS[currency]}
                                   </option>
                                 ))}
                               </select>

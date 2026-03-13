@@ -1,73 +1,97 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
   ChevronDown,
-  ArrowLeft,
-  Eye,
-  EyeOff,
   Lock,
   Shield,
   Server,
   Globe,
   Zap,
+  AlertCircle,
+  Loader2,
+  ArrowLeft,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import {
-  WALLET_DASHBOARD_PATH,
-  WALLET_SETUP_PATH,
-} from '../../app/router/paths'
+import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
-import { Button, Card, SetupLayout } from '../../components/ui'
+import {
+  Alert,
+  Button,
+  Card,
+  FormField,
+  PasswordInput,
+} from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
 import { parseRpcUrl } from '../../helpers/utils'
-import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
 
 interface Fields {
   password: string
 }
 
+const MAX_UNLOCK_RETRIES = 20
+
 export const Component = () => {
   const { t } = useTranslation()
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
+  const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
   const [unlock] = nodeApi.endpoints.unlock.useMutation()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
   const navigate = useNavigate()
+
+  // Ref-based cancellation flag so handleCancelUnlocking can break the retry loop
+  // synchronously regardless of which async await the loop is currently suspended at.
+  const isCancelledRef = useRef(false)
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isUnlocking, setIsUnlocking] = useState(false)
   const [showInitModal, setShowInitModal] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [unlockError, setUnlockError] = useState<string | null>(null)
+  const [unlockStatusMessage, setUnlockStatusMessage] = useState<string | null>(
+    null
+  )
   const [isConnectionDetailsOpen, setIsConnectionDetailsOpen] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(true)
+  const [redirectToRoot, setRedirectToRoot] = useState(false)
 
-  // Check if the node is already unlocked when the component mounts
   useEffect(() => {
     const checkNodeStatus = async () => {
+      if (!nodeSettings.node_url) {
+        navigate(WALLET_SETUP_PATH)
+        return
+      }
       setIsCheckingStatus(true)
       try {
-        const nodeInfoRes = await nodeInfo()
+        // 10 s timeout — prevents the spinner from hanging if the node HTTP
+        // server accepts the TCP connection but never sends a response.
+        const nodeInfoRes = await withTimeout(
+          nodeInfo(),
+          10000,
+          'Node status check'
+        )
         if (nodeInfoRes.isSuccess) {
-          navigate(WALLET_DASHBOARD_PATH)
+          setRedirectToRoot(true)
         }
       } catch (error: any) {
-        // Only show error toast if it's not a FETCH_ERROR (connection error)
-        // as we expect connection errors when node is not running
-        if (error?.status !== 'FETCH_ERROR') {
+        // FETCH_ERROR (connection refused) and timeout both just mean "node is
+        // locked / not ready" — show the form, no toast needed.
+        if (
+          error?.status !== 'FETCH_ERROR' &&
+          !error?.message?.includes('timed out')
+        ) {
           toast.error(
             t('walletUnlock.failedCheckStatus', {
               error: error.message || t('walletUnlock.unknownError'),
             }),
-            {
-              autoClose: 5000,
-              position: 'top-right',
-            }
+            { autoClose: 5000, position: 'top-right' }
           )
         }
       } finally {
@@ -77,136 +101,109 @@ export const Component = () => {
     checkNodeStatus()
   }, [])
 
+  useEffect(() => {
+    if (nodeLifecycle.status === 'Failed') {
+      setUnlockError(nodeLifecycle.message)
+      setUnlockStatusMessage(null)
+      setErrors([nodeLifecycle.message])
+      setIsUnlocking(false)
+      return
+    }
+
+    if (
+      isUnlocking &&
+      nodeLifecycle.status === 'Stopped' &&
+      !isCancelledRef.current
+    ) {
+      const message = t('walletUnlock.nodeStoppedUnexpectedly', {
+        defaultValue: 'Node stopped before the wallet unlock completed.',
+      })
+      setUnlockError(message)
+      setUnlockStatusMessage(null)
+      setErrors([message])
+      setIsUnlocking(false)
+    }
+  }, [isUnlocking, nodeLifecycle, t])
+
   const unlockForm = useForm<Fields>({
-    defaultValues: {
-      password: '',
-    },
+    defaultValues: { password: '' },
   })
 
   const onSubmit: SubmitHandler<Fields> = async (data) => {
-    let shouldRetry = true
-    let pollingInterval = 2000 // Start with 2 seconds
-    const maxPollingInterval = 15000 // Max 15 seconds
-    let doubleFetchErrorFlag = false
-
+    isCancelledRef.current = false
     setIsUnlocking(true)
     setErrors([])
     setUnlockError(null)
+    setUnlockStatusMessage(null)
 
-    while (shouldRetry) {
-      try {
-        const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
-
-        await unlock({
-          bitcoind_rpc_host: rpcConfig.host,
-          bitcoind_rpc_password: rpcConfig.password,
-          bitcoind_rpc_port: rpcConfig.port,
-          bitcoind_rpc_username: rpcConfig.username,
-          indexer_url: nodeSettings.indexer_url,
-          password: data.password,
-          proxy_endpoint: nodeSettings.proxy_endpoint,
-          announce_addresses: [],
-          announce_alias: 'kaleidoswap-desktop',
-        }).unwrap()
-
-        const nodeInfoRes = await nodeInfo()
-        if (nodeInfoRes.isSuccess) {
-          toast.success(t('walletUnlock.successMessage'), {
-            autoClose: 3000,
-            position: 'bottom-right',
+    try {
+      const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
+      const outcome = await unlockNodeWithRetry({
+        getNodeInfo: () => nodeInfo(),
+        invalidPasswordMessage: t('walletUnlock.invalidPassword'),
+        isCancelled: () => isCancelledRef.current,
+        maxRetries: MAX_UNLOCK_RETRIES,
+        maxRetriesMessage: t('walletUnlock.maxRetriesReached', {
+          defaultValue:
+            'Maximum unlock attempts reached. The node may still be syncing — please try again shortly.',
+        }),
+        onLongUnlock: setUnlockStatusMessage,
+        unlock: () =>
+          unlock({
+            announce_addresses: [],
+            announce_alias: 'kaleidoswap-desktop',
+            bitcoind_rpc_host: rpcConfig.host,
+            bitcoind_rpc_password: rpcConfig.password,
+            bitcoind_rpc_port: rpcConfig.port,
+            bitcoind_rpc_username: rpcConfig.username,
+            indexer_url: nodeSettings.indexer_url,
+            password: data.password,
+            proxy_endpoint: nodeSettings.proxy_endpoint,
           })
-          navigate(WALLET_DASHBOARD_PATH)
-        } else {
-          throw new Error(t('walletUnlock.failedGetNodeInfo'))
-        }
+            .unwrap()
+            .then(() => undefined),
+        unlockLabel: 'Wallet unlock',
+        unlockTimeoutMessage: t('walletUnlock.unlockTimeoutMessage', {
+          defaultValue:
+            'Unlocking is taking longer than usual. If the node was offline for a while, it may still be syncing the blockchain in the background. Please keep the app open while unlock continues.',
+        }),
+        verifyFailureMessage: t('walletUnlock.failedGetNodeInfo'),
+      })
 
-        shouldRetry = false
-      } catch (e: any) {
-        // Handle any kind of timeout or resource loading error
-        if (
-          e?.message?.includes('timeout') ||
-          e?.message?.includes('timed out') ||
-          e?.message?.includes('The request timed out')
-        ) {
-          // For timeouts, silently retry with backoff
-          await new Promise((res) => setTimeout(res, pollingInterval))
-          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
-          continue
-        }
-
-        const error = e as NodeApiError
-        let errorMessage: string
-
-        if (error?.data?.error) {
-          errorMessage = error.data.error
-        } else if (e instanceof Error) {
-          errorMessage = e.message
-        } else {
-          errorMessage = t('walletUnlock.unknownError')
-        }
-
-        // Handle network/connection errors - silently retry like timeouts
-        if (
-          typeof error.status === 'string' &&
-          (error?.status === 'FETCH_ERROR' || error?.status === 'TIMEOUT_ERROR')
-        ) {
-          // Don't show any error, just retry
-          await new Promise((res) => setTimeout(res, pollingInterval))
-          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
-          if (!doubleFetchErrorFlag) {
-            doubleFetchErrorFlag = true
-          }
-          continue
-        }
-
-        // Handle node state change - silently retry with backoff
-        if (
-          error?.status === 403 &&
-          errorMessage === 'Cannot call other APIs while node is changing state'
-        ) {
-          await new Promise((res) => setTimeout(res, pollingInterval))
-          pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval)
-          continue
-        }
-
-        if (error?.status === 401 && errorMessage === 'Invalid password') {
-          setUnlockError(t('walletUnlock.invalidPassword'))
-          toast.error(t('walletUnlock.invalidPassword'), {
-            autoClose: 5000,
-            position: 'top-right',
-          })
-          shouldRetry = false
-          continue
-        }
-
-        // Handle initialization and already unlocked cases
-        if (
-          error.status === 403 &&
-          errorMessage === 'Wallet has not been initialized (hint: call init)'
-        ) {
-          setShowInitModal(true)
-          shouldRetry = false
-        } else if (errorMessage === 'Node has already been unlocked') {
-          toast.info(t('walletUnlock.alreadyUnlocked'), {
-            autoClose: 3000,
-            position: 'bottom-right',
-          })
-          navigate(WALLET_DASHBOARD_PATH)
-          shouldRetry = false
-        } else {
-          // For any other error that we haven't explicitly handled, show it to the user
-          setUnlockError(errorMessage)
-          setErrors([errorMessage])
-          toast.error(errorMessage, {
-            autoClose: 5000,
-            position: 'top-right',
-          })
-          shouldRetry = false
-        }
+      if (outcome === 'cancelled') {
+        return
       }
-    }
 
-    if (!shouldRetry && !showInitModal) {
+      if (outcome === 'needs-init') {
+        setShowInitModal(true)
+        return
+      }
+
+      if (outcome === 'already-unlocked') {
+        toast.info(t('walletUnlock.alreadyUnlocked'), {
+          autoClose: 3000,
+          position: 'bottom-right',
+        })
+      } else {
+        toast.success(t('walletUnlock.successMessage'), {
+          autoClose: 3000,
+          position: 'bottom-right',
+        })
+      }
+
+      setRedirectToRoot(true)
+    } catch (error) {
+      if (isCancelledRef.current) {
+        return
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : t('walletUnlock.unknownError')
+      setUnlockError(errorMessage)
+      setUnlockStatusMessage(null)
+      setErrors([errorMessage])
+      toast.error(errorMessage, { autoClose: 5000, position: 'top-right' })
+    } finally {
       setIsUnlocking(false)
     }
   }
@@ -227,321 +224,314 @@ export const Component = () => {
   }
 
   const handleCancelUnlocking = () => {
+    isCancelledRef.current = true
     setIsUnlocking(false)
     setUnlockError(null)
+    setUnlockStatusMessage(null)
     toast.info(t('walletUnlock.unlockCancelled'), {
       autoClose: 3000,
       position: 'bottom-right',
     })
   }
 
-  const ConnectionDetailsCard = () => {
-    const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
+  const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
+  const accountName = nodeSettings.name || 'Your Wallet'
 
-    return (
-      <div className="mb-8">
-        <button
-          className="w-full group flex items-center justify-between p-4 bg-gradient-to-r from-surface-overlay/40 to-surface-high/40 backdrop-blur-sm text-content-primary border border-border-default/30 rounded-xl hover:border-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
-          onClick={() => setIsConnectionDetailsOpen(!isConnectionDetailsOpen)}
-        >
-          <span className="flex items-center">
-            <div className="p-2 bg-primary/10 rounded-lg mr-3 group-hover:bg-primary/20 transition-colors">
-              <Server className="w-5 h-5 text-primary" />
-            </div>
-            <span className="font-medium">Connection Details</span>
-          </span>
-          <ChevronDown
-            className={`w-5 h-5 transition-all duration-300 text-content-secondary group-hover:text-primary ${
-              isConnectionDetailsOpen ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
-
-        <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            isConnectionDetailsOpen
-              ? 'max-h-96 opacity-100 mt-3'
-              : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="p-5 bg-gradient-to-br from-surface-overlay/60 to-surface-base/60 backdrop-blur-sm border border-border-default/30 rounded-xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-emerald-500/20 rounded-lg">
-                  <Globe className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-content-secondary text-sm font-medium">Node URL</p>
-                  <p className="text-content-primary font-mono text-sm">
-                    {nodeSettings.node_url}
-                  </p>
-                </div>
-              </div>
-              <div className="w-full h-[1px] bg-surface-high my-4" />
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Zap className="w-4 h-4 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-content-secondary text-sm font-medium">
-                    Bitcoind RPC
-                  </p>
-                  <p className="text-content-primary font-mono text-sm">
-                    {rpcConfig.host}:{rpcConfig.port}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="p-2 bg-orange-500/20 rounded-lg mt-0.5">
-                  <Server className="w-4 h-4 text-orange-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-content-secondary text-sm font-medium mb-1">
-                    Indexer URL
-                  </p>
-                  <p className="text-content-primary font-mono text-sm break-all bg-surface-overlay/50 p-2 rounded-lg">
-                    {nodeSettings.indexer_url}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="p-2 bg-cyan-500/20 rounded-lg mt-0.5">
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-content-secondary text-sm font-medium mb-1">
-                    RGB Proxy Endpoint
-                  </p>
-                  <p className="text-content-primary font-mono text-sm break-all bg-surface-overlay/50 p-2 rounded-lg">
-                    {nodeSettings.proxy_endpoint}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  if (redirectToRoot) {
+    return <Navigate replace to={ROOT_PATH} />
   }
 
-  const renderUnlockForm = () => (
-    <div className="w-full max-w-lg mx-auto">
-      {/* Header Section */}
-      <div className="text-center mb-8">
-        <div className="relative inline-block mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-lg opacity-20 animate-pulse"></div>
-          <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/20">
-            <Shield className="w-12 h-12 text-white" />
+  return (
+    <Layout>
+      {isCheckingStatus ? (
+        <div className="flex flex-col items-center justify-center h-full gap-3">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <div className="text-center">
+            <p className="text-content-primary font-medium">
+              {t('walletUnlock.checkingStatus')}
+            </p>
+            <p className="text-content-secondary text-sm mt-1">
+              {t('walletUnlock.checkingMessage')}
+            </p>
           </div>
         </div>
+      ) : (
+        <div className="flex flex-1 overflow-hidden">
+          {/* ── Left decorative panel ── */}
+          <div className="hidden md:flex flex-col items-center justify-center relative overflow-hidden flex-1 bg-gradient-to-br from-surface-raised via-surface-base to-surface-raised border-r border-border-subtle p-10">
+            {/* Background glows */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-primary/8 blur-3xl" />
+              <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 translate-y-1/2 w-56 h-56 rounded-full bg-secondary/6 blur-3xl" />
+            </div>
 
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent mb-3">
-          {t('walletUnlock.title')}
-        </h1>
-        <p className="text-content-secondary text-lg">{t('walletUnlock.subtitle')}</p>
-      </div>
-
-      {/* Main Card */}
-      <Card className="bg-gradient-to-br from-surface-overlay/80 to-surface-base/80 backdrop-blur-xl border border-border-default/30 rounded-2xl shadow-2xl shadow-black/20 overflow-hidden">
-        <div className="p-8">
-          <form
-            className="space-y-6"
-            onSubmit={unlockForm.handleSubmit(onSubmit)}
-          >
-            {/* Connection details */}
-            <ConnectionDetailsCard />
-
-            {/* Password field */}
-            <div className="space-y-3">
-              <label
-                className="block text-sm font-semibold text-content-secondary mb-2"
-                htmlFor="password"
-              >
-                {t('walletUnlock.walletPassword')}
-              </label>
-
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative flex items-center">
-                  <div className="absolute left-4 z-10">
-                    <Lock className="w-5 h-5 text-content-secondary" />
+            <div className="relative flex flex-col items-center gap-8 w-full max-w-xs">
+              {/* Animated lock ring */}
+              <div className="relative w-32 h-32">
+                <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
+                <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary/50 border-r-primary/30 animate-[spin_4s_linear_infinite]" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+                    <Lock className="w-9 h-9 text-primary" />
                   </div>
-                  <input
-                    className="w-full pl-12 pr-12 py-4 bg-surface-overlay/50 backdrop-blur-sm border border-border-default/50 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 text-white placeholder-content-tertiary font-medium"
-                    id="password"
-                    placeholder={t('walletUnlock.passwordPlaceholder')}
-                    type={isPasswordVisible ? 'text' : 'password'}
-                    {...unlockForm.register('password', {
-                      required: t('walletUnlock.passwordRequired'),
-                    })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        unlockForm.handleSubmit(onSubmit)()
-                      }
-                    }}
-                  />
-
-                  <button
-                    className="absolute right-4 text-content-secondary hover:text-primary transition-colors duration-200 z-10"
-                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                    type="button"
-                  >
-                    {isPasswordVisible ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
                 </div>
               </div>
 
-              {unlockForm.formState.errors.password && (
-                <div className="flex items-center space-x-2 text-red-400 text-sm">
-                  <div className="w-1 h-1 bg-red-400 rounded-full"></div>
-                  <p>{unlockForm.formState.errors.password.message}</p>
+              {/* Account info */}
+              <div className="text-center space-y-2">
+                <p className="text-xs font-medium text-content-tertiary uppercase tracking-widest">
+                  Account
+                </p>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  {accountName}
+                </h2>
+              </div>
+
+              {/* Node info pills */}
+              <div className="w-full space-y-2">
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-surface-overlay/40 border border-border-subtle">
+                  <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="text-xs text-content-secondary font-mono truncate">
+                    {nodeSettings.node_url || 'Node not configured'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-surface-overlay/40 border border-border-subtle">
+                  <Zap className="w-3.5 h-3.5 text-secondary shrink-0" />
+                  <span className="text-xs text-content-secondary font-mono truncate">
+                    {rpcConfig.host}:{rpcConfig.port}
+                  </span>
+                </div>
+              </div>
+
+              {/* Security badge */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-status-success/10 border border-status-success/20">
+                <Shield className="w-3 h-3 text-status-success" />
+                <span className="text-xs text-status-success font-medium">
+                  End-to-end encrypted
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right form panel ── */}
+          <div className="flex flex-col w-full md:w-[420px] lg:w-[460px] overflow-y-auto">
+            <div className="flex flex-col justify-center min-h-full px-8 md:px-10 py-8">
+              {/* Back button */}
+              {!isUnlocking && (
+                <div className="mb-8">
+                  <Button
+                    icon={<ArrowLeft className="w-4 h-4" />}
+                    onClick={handleBack}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    {t('common.back', { defaultValue: 'Back' })}
+                  </Button>
+                </div>
+              )}
+
+              {!isUnlocking ? (
+                <>
+                  {/* Header */}
+                  <div className="mb-8">
+                    <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 mb-4 md:hidden">
+                      <Lock className="w-5 h-5 text-primary" />
+                    </div>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-content-primary mb-2">
+                      {t('walletUnlock.title')}
+                    </h1>
+                    <p className="text-content-secondary text-sm leading-relaxed">
+                      {t('walletUnlock.subtitle')}
+                    </p>
+                  </div>
+
+                  {/* Form */}
+                  <form
+                    className="space-y-5"
+                    onSubmit={unlockForm.handleSubmit(onSubmit)}
+                  >
+                    {/* Connection Details */}
+                    <div>
+                      <button
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface-overlay/40 border border-border-default/30 hover:border-primary/30 transition-colors text-sm"
+                        onClick={() =>
+                          setIsConnectionDetailsOpen(!isConnectionDetailsOpen)
+                        }
+                        type="button"
+                      >
+                        <span className="flex items-center gap-2 text-content-secondary">
+                          <Server className="w-4 h-4 text-primary" />
+                          Connection Details
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 text-content-tertiary transition-transform duration-200 ${
+                            isConnectionDetailsOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {isConnectionDetailsOpen && (
+                        <div className="mt-2 p-4 rounded-lg bg-surface-base border border-border-default/20 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <Globe className="w-4 h-4 text-primary shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-content-tertiary mb-0.5">
+                                Node URL
+                              </p>
+                              <p className="text-sm text-content-primary font-mono truncate">
+                                {nodeSettings.node_url}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Zap className="w-4 h-4 text-secondary shrink-0" />
+                            <div>
+                              <p className="text-xs text-content-tertiary mb-0.5">
+                                Bitcoind RPC
+                              </p>
+                              <p className="text-sm text-content-primary font-mono">
+                                {rpcConfig.host}:{rpcConfig.port}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Server className="w-4 h-4 text-content-secondary mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-content-tertiary mb-0.5">
+                                Indexer
+                              </p>
+                              <p className="text-sm text-content-primary font-mono break-all">
+                                {nodeSettings.indexer_url}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Globe className="w-4 h-4 text-content-secondary mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs text-content-tertiary mb-0.5">
+                                RGB Proxy
+                              </p>
+                              <p className="text-sm text-content-primary font-mono break-all">
+                                {nodeSettings.proxy_endpoint}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Password */}
+                    <FormField
+                      htmlFor="password"
+                      label={t('walletUnlock.walletPassword')}
+                    >
+                      <PasswordInput
+                        id="password"
+                        isVisible={isPasswordVisible}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            unlockForm.handleSubmit(onSubmit)()
+                          }
+                        }}
+                        onToggleVisibility={() =>
+                          setIsPasswordVisible(!isPasswordVisible)
+                        }
+                        placeholder={t('walletUnlock.passwordPlaceholder')}
+                        {...unlockForm.register('password', {
+                          required: t('walletUnlock.passwordRequired'),
+                        })}
+                        error={!!unlockForm.formState.errors.password}
+                      />
+                      {unlockForm.formState.errors.password && (
+                        <p className="mt-1 text-xs text-status-danger">
+                          {unlockForm.formState.errors.password.message}
+                        </p>
+                      )}
+                    </FormField>
+
+                    {/* Errors */}
+                    {errors.length > 0 && (
+                      <Alert
+                        icon={<AlertCircle className="w-4 h-4" />}
+                        title={t('common.error')}
+                        variant="error"
+                      >
+                        <ul className="text-xs space-y-1">
+                          {errors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </Alert>
+                    )}
+
+                    <Button
+                      className="w-full"
+                      disabled={isUnlocking}
+                      icon={<Shield className="w-4 h-4" />}
+                      size="lg"
+                      type="submit"
+                      variant="primary"
+                    >
+                      {t('walletUnlock.unlockButton')}
+                    </Button>
+                  </form>
+                </>
+              ) : (
+                <div className="flex flex-col flex-1 pb-8">
+                  <UnlockingProgress
+                    errorMessage={unlockError || undefined}
+                    infoMessage={unlockStatusMessage || undefined}
+                    isUnlocking={isUnlocking}
+                    onCancel={handleCancelUnlocking}
+                  />
                 </div>
               )}
             </div>
-
-            {/* Error messages */}
-            {errors.length > 0 && (
-              <div className="p-4 bg-gradient-to-r from-red-900/40 to-red-800/40 border border-red-500/30 rounded-xl backdrop-blur-sm">
-                <div className="text-sm text-red-300 space-y-1">
-                  {errors.map((error, index) => (
-                    <div className="flex items-center space-x-2" key={index}>
-                      <div className="w-1 h-1 bg-red-400 rounded-full"></div>
-                      <p>{error}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="pt-4 space-y-4">
-              <Button
-                className="w-full py-4 rounded-xl font-semibold text-lg shadow-lg shadow-primary/20"
-                disabled={isUnlocking}
-                icon={<Shield className="w-5 h-5" />}
-                type="submit"
-                variant="primary"
-              >
-                {t('walletUnlock.unlockButton')}
-              </Button>
-
-              <button
-                className="w-full flex items-center justify-center text-content-secondary hover:text-white py-3 bg-transparent hover:bg-surface-overlay/30 rounded-xl transition-all duration-300 group"
-                onClick={handleBack}
-                type="button"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-                {t('walletUnlock.backToSetup')}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Card>
-    </div>
-  )
-
-  const ModernModal = () => (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-md">
-        <Card className="bg-gradient-to-br from-surface-overlay/90 to-surface-base/90 backdrop-blur-xl border border-border-default/30 rounded-2xl shadow-2xl overflow-hidden">
-          <div className="p-8">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                {t('walletUnlock.initializeWalletTitle')}
-              </h3>
-              <p className="text-content-secondary leading-relaxed">
-                {t('walletUnlock.initializeWalletMessage')}
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                className="flex-1 border-border-default text-content-secondary hover:bg-surface-high/50 py-3 rounded-xl transition-all duration-200"
-                onClick={() => setShowInitModal(false)}
-                variant="outline"
-              >
-                {t('walletUnlock.cancel')}
-              </Button>
-              <Button
-                className="flex-1 py-3 rounded-xl"
-                onClick={() => {
-                  setShowInitModal(false)
-                  navigate(WALLET_SETUP_PATH)
-                }}
-                variant="primary"
-              >
-                {t('walletUnlock.initialize')}
-              </Button>
-            </div>
           </div>
-        </Card>
-      </div>
-    </div>
-  )
-
-  return (
-    <Layout className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {isCheckingStatus ? (
-        <div className="flex items-center justify-center min-h-screen px-4 py-12">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10 w-full max-w-lg mx-auto">
-            <div className="text-center">
-              <div className="relative inline-block mb-6">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-lg opacity-20 animate-pulse"></div>
-                <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/20">
-                  <Shield className="w-12 h-12 text-white animate-pulse" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-3">
-                {t('walletUnlock.checkingStatus')}
-              </h2>
-              <p className="text-content-secondary">
-                {t('walletUnlock.checkingMessage')}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : isUnlocking ? (
-        <SetupLayout
-          centered={true}
-          className="flex items-center justify-center min-h-screen py-8"
-          fullHeight
-          maxWidth="2xl"
-          title={t('walletUnlock.walletAccess')}
-        >
-          <UnlockingProgress
-            errorMessage={unlockError || undefined}
-            isUnlocking={isUnlocking}
-            onBack={handleBack}
-            onCancel={handleCancelUnlocking}
-          />
-        </SetupLayout>
-      ) : (
-        <div className="flex items-center justify-center min-h-screen px-4 py-12">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none"></div>
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
-          </div>
-          <div className="relative z-10 w-full">{renderUnlockForm()}</div>
         </div>
       )}
 
-      {showInitModal && <ModernModal />}
+      {/* Wallet not initialized modal */}
+      {showInitModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-sm">
+            <Card className="p-6">
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-warning/10 border border-status-warning/20 mb-3">
+                  <Shield className="w-6 h-6 text-status-warning" />
+                </div>
+                <h3 className="text-lg font-bold text-content-primary mb-2">
+                  {t('walletUnlock.initializeWalletTitle')}
+                </h3>
+                <p className="text-content-secondary text-sm leading-relaxed">
+                  {t('walletUnlock.initializeWalletMessage')}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  className="flex-1"
+                  onClick={() => setShowInitModal(false)}
+                  variant="outline"
+                >
+                  {t('walletUnlock.cancel')}
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    setShowInitModal(false)
+                    navigate(WALLET_SETUP_PATH)
+                  }}
+                  variant="primary"
+                >
+                  {t('walletUnlock.initialize')}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }

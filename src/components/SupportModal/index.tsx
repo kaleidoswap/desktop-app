@@ -119,7 +119,9 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
         <div className="p-6">
           {activeSection === 'main' && (
             <div className="space-y-6">
-              <p className="text-content-secondary">{t('supportModal.intro')}</p>
+              <p className="text-content-secondary">
+                {t('supportModal.intro')}
+              </p>
 
               {/* Support Options */}
               <div className="grid gap-4">

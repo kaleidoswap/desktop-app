@@ -175,7 +175,8 @@ export const makerApi = createApi({
           const res = await client.maker.createLspOrder(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -186,18 +187,20 @@ export const makerApi = createApi({
           const res = await client.maker.estimateLspFees(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
-    execSwap: builder.query<void, ExecSwapRequest>({
+    execSwap: builder.query<null, ExecSwapRequest>({
       queryFn: async (args, api) => {
         try {
           const client = await getKaleidoClient(api.getState() as RootState)
           await client.maker.executeSwap(args)
-          return { data: undefined }
+          return { data: null }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -208,7 +211,8 @@ export const makerApi = createApi({
           const res = await client.maker.listPairs()
           return { data: res as any }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -219,7 +223,8 @@ export const makerApi = createApi({
           const res = await client.maker.getQuote(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -230,7 +235,8 @@ export const makerApi = createApi({
           const res = await client.maker.getLspInfo()
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -241,7 +247,8 @@ export const makerApi = createApi({
           const res = await client.maker.getLspOrder(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -249,12 +256,11 @@ export const makerApi = createApi({
       queryFn: async (args, api) => {
         try {
           const client = await getKaleidoClient(api.getState() as RootState)
-          console.log('initSwap', args)
           const res = await client.maker.initSwap(args)
-          console.log('initSwap res', res)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -265,7 +271,8 @@ export const makerApi = createApi({
           const res = await client.maker.retryAssetDelivery(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),
@@ -276,7 +283,8 @@ export const makerApi = createApi({
           const res = await client.maker.getAtomicSwapStatus(args)
           return { data: res }
         } catch (e) {
-          return { error: { status: 500, data: { error: String(e) } } }
+          const msg = e instanceof Error ? e.message : String(e)
+          return { error: { status: 500, data: { error: msg } } }
         }
       },
     }),

@@ -867,7 +867,11 @@
     "formErrors": {
       "formSubmissionError": "Beim Absenden des Formulars ist ein Fehler aufgetreten."
     },
-    "feeUnit": "sat/vB"
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1781,7 +1785,8 @@
     "manage": "Verwalten",
     "history": "Verlauf",
     "testnetWarning": "Testnetzwerk",
-    "testnetWarningDesc": "Sie befinden sich in einem Testnetzwerk. Gelder sind nicht echt und haben keinen monetären Wert."
+    "testnetWarningDesc": "Sie befinden sich in einem Testnetzwerk. Gelder sind nicht echt und haben keinen monetären Wert.",
+    "swap": "Swap"
   },
   "peerManagement": {
     "title": "Peers",
@@ -2563,5 +2568,121 @@
       "initializingButton": "Wird initialisiert...",
       "initializeButton": "Node initialisieren"
     }
+  },
+  "dca": {
+    "title": "DCA-Aufträge",
+    "subtitle": "Automatisieren Sie die BTC-Akkumulation mit festen Intervallen oder Kursrückgang-Triggern.",
+    "spotPrice": "BTC-Spotkurs",
+    "spotHint": "Wird für die Überwachung von Kurs-Triggern verwendet",
+    "refreshAmounts": "Beträge aktualisieren",
+    "refreshingAmounts": "Wird aktualisiert...",
+    "createOrder": "Neuer DCA-Auftrag",
+    "closeCreate": "Formular schließen",
+    "createButton": "Auftrag erstellen",
+    "actions": {
+      "execute": "Ausführen",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen",
+      "cancel": "Abbrechen"
+    },
+    "metrics": {
+      "totalOrders": "Aufträge",
+      "executions": "Erfolgreiche Käufe",
+      "accumulated": "Akkumuliert",
+      "activeMix": "Aktive Mischung",
+      "btcLnBalance": "BTC-LN-Guthaben",
+      "usdtLnBalance": "USDT-LN-Guthaben"
+    },
+    "card": {
+      "executions": "Ausführungen",
+      "accumulated": "Akkumuliert",
+      "successRate": "Erfolgsrate",
+      "lastExecution": "Letzte Ausführung",
+      "progressToNext": "Fortschritt bis zum nächsten Kauf",
+      "triggerGap": "Noch {{pct}}% Rückgang erforderlich",
+      "triggerReady": "Am/unter Trigger-Schwelle"
+    },
+    "form": {
+      "subtitle": "Legen Sie Betrag, Trigger-Modus und Zeitplan fest. Sie können später jederzeit pausieren oder abbrechen.",
+      "scheduledHint": "Kauft in wiederkehrenden Intervallen",
+      "targetHint": "Kauft, wenn BTC den Trigger erreicht",
+      "estimatedReceive": "Geschätzter Erhalt pro Kauf",
+      "remainingBalance": "Verbleibend nach jedem Kauf",
+      "scheduleNote": "Die Ausführung wird ungefähr alle 30 Sekunden geprüft, solange Ihr Node entsperrt ist."
+    },
+    "tabs": {
+      "active": "Aktiv",
+      "history": "Verlauf"
+    },
+    "type": {
+      "scheduled": "Geplant",
+      "priceTarget": "Kursziel"
+    },
+    "intervalLabel": "Kaufen alle",
+    "dropLabel": "Rückgangsschwelle",
+    "amountLabel": "Betrag pro Kauf",
+    "triggerPrice": "Wird ausgelöst bei ≤",
+    "nextExecution": "Nächste Ausführung",
+    "executions": "{{count}} Ausführungen",
+    "status": {
+      "active": "Aktiv",
+      "paused": "Pausiert",
+      "completed": "Abgeschlossen",
+      "cancelled": "Abgebrochen"
+    },
+    "empty": {
+      "active": "Keine aktiven DCA-Aufträge",
+      "history": "Noch kein Verlauf",
+      "hint": "Erstellen Sie einen geplanten Auftrag oder Kursziel-Auftrag, um automatisch BTC mit USDT zu kaufen."
+    },
+    "howItWorks": {
+      "title": "So funktioniert DCA",
+      "description": "Jeder Auftrag kauft wiederholt BTC mit Ihrem gewählten USDT-Betrag. Ausführungen erfolgen nur, wenn Ihr Node entsperrt und bereit ist.",
+      "scheduled": "Geplant: Käufe in festen Zeitintervallen (z. B. alle 24h).",
+      "priceTarget": "Kursziel: Käufe, wenn BTC auf oder unter Ihren Trigger fällt.",
+      "actions": "Aktionen: Jetzt ausführen startet einen sofortigen Kauf, Pausieren stoppt Trigger, Abbrechen verschiebt den Auftrag in den Verlauf."
+    },
+    "orderHelp": {
+      "scheduled": "Dieser Auftrag kauft nach einem festen Zeitplan basierend auf dem gewählten Intervall.",
+      "priceTarget": "Dieser Auftrag kauft, wenn der Marktpreis auf oder unter dem Trigger liegt.",
+      "statusActive": "Aktiv: Der Auftrag wird automatisch ausgelöst, wenn die Bedingungen erfüllt sind.",
+      "statusPaused": "Pausiert: Keine automatische Ausführung bis zur Fortsetzung.",
+      "statusCancelled": "Abgebrochen: Keine weiteren Ausführungen; Verlauf bleibt sichtbar.",
+      "statusCompleted": "Abgeschlossen: Auftrag ist beendet und im Verlauf gespeichert.",
+      "createdAt": "Erstellt"
+    },
+    "errors": {
+      "invalidAmount": "Bitte geben Sie einen gültigen USDT-Betrag ein",
+      "noPriceData": "BTC-Kurs nicht verfügbar",
+      "insufficientBalance": "Übersteigt das verfügbare USDT-Kanalguthaben"
+    },
+    "toast": {
+      "created": "DCA-Auftrag erstellt",
+      "triggered": "DCA-Auftrag ausgelöst",
+      "success": "DCA: {{amount}} sats gekauft",
+      "failed": "DCA-Auftrag fehlgeschlagen: {{error}}",
+      "skippedNoWs": "DCA übersprungen: nicht mit Maker verbunden"
+    },
+    "getUsdt": {
+      "cta": "Get USDT",
+      "title": "Get USDT on Lightning",
+      "buyTitle": "Buy via Kaleido LSP",
+      "buyDesc": "Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.",
+      "buyButton": "Buy USDT Channel",
+      "onChainTitle": "Open with On-Chain USDT",
+      "onChainBalance": "On-chain balance: {{amount}} USDT",
+      "noOnChain": "No on-chain USDT available",
+      "useAll": "Use all",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info",
+      "usdtAmountLabel": "USDT amount",
+      "capacityLabel": "Channel capacity",
+      "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
+      "capacityRange": "Min {{min}} – max {{max}} sats",
+      "maxReceive": "max receive ≈ {{sats}} sats BTC"
+    },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT"
   }
 }

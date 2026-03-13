@@ -84,7 +84,9 @@ const AssetOption = React.memo(
               )}
             </div>
             {name && (
-              <span className="text-content-secondary text-sm truncate">{name}</span>
+              <span className="text-content-secondary text-sm truncate">
+                {name}
+              </span>
             )}
             {assetId && assetId !== 'BTC' && assetId !== displayTicker && (
               <div className="flex items-center gap-2 mt-1">
@@ -249,7 +251,9 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
             <div>
               <h2 className="text-xl font-bold text-white">{displayTitle}</h2>
               {fieldLabel && (
-                <p className="text-sm text-content-secondary mt-1">{fieldLabel}</p>
+                <p className="text-sm text-content-secondary mt-1">
+                  {fieldLabel}
+                </p>
               )}
             </div>
             <button

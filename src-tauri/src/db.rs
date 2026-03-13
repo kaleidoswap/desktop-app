@@ -45,7 +45,7 @@ pub fn init() {
     // Create/verify tables regardless of whether the file existed
     let path = get_db_path();
     let conn = Connection::open(path).unwrap();
-    
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,15 +69,22 @@ pub fn init() {
             language TEXT DEFAULT 'en'
         )",
         [],
-    ).unwrap();
+    )
+    .unwrap();
 
     // Add mnemonic encryption columns if they don't exist (migration)
-    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN encrypted_mnemonic TEXT", ());
+    let _ = conn.execute(
+        "ALTER TABLE Accounts ADD COLUMN encrypted_mnemonic TEXT",
+        (),
+    );
     let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_salt TEXT", ());
     let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN mnemonic_nonce TEXT", ());
 
     // Add language column if it doesn't exist (migration)
-    let _ = conn.execute("ALTER TABLE Accounts ADD COLUMN language TEXT DEFAULT 'en'", ());
+    let _ = conn.execute(
+        "ALTER TABLE Accounts ADD COLUMN language TEXT DEFAULT 'en'",
+        (),
+    );
     // Add ChannelOrders table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS 'ChannelOrders' (
@@ -90,7 +97,8 @@ pub fn init() {
             FOREIGN KEY(account_id) REFERENCES Accounts(id) ON DELETE CASCADE
         );",
         (),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Add account_id column to existing ChannelOrders table if it doesn't exist
     let _ = conn.execute(
@@ -98,9 +106,23 @@ pub fn init() {
         (),
     );
     // Note: We ignore the error if the column already exists
-    
+
     // Migrate existing orders without account_id to the first available account
     migrate_existing_orders(&conn);
+
+    // Add DcaOrders table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS 'DcaOrders' (
+            'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+            'account_id' INTEGER NOT NULL,
+            'order_id' TEXT NOT NULL,
+            'payload' TEXT NOT NULL,
+            UNIQUE(account_id, order_id),
+            FOREIGN KEY(account_id) REFERENCES Accounts(id) ON DELETE CASCADE
+        );",
+        (),
+    )
+    .unwrap();
 }
 
 // Create the database file.
@@ -163,25 +185,27 @@ fn migrate_existing_orders(conn: &Connection) {
     let count_result: Result<i64, _> = conn.query_row(
         "SELECT COUNT(*) FROM ChannelOrders WHERE account_id IS NULL",
         [],
-        |row| row.get(0)
+        |row| row.get(0),
     );
-    
+
     if let Ok(count) = count_result {
         if count > 0 {
             // Get the first account id
-            let first_account_result: Result<i32, _> = conn.query_row(
-                "SELECT id FROM Accounts ORDER BY id LIMIT 1",
-                [],
-                |row| row.get(0)
-            );
-            
+            let first_account_result: Result<i32, _> =
+                conn.query_row("SELECT id FROM Accounts ORDER BY id LIMIT 1", [], |row| {
+                    row.get(0)
+                });
+
             if let Ok(first_account_id) = first_account_result {
                 // Update all orders without account_id to use the first account
                 let _ = conn.execute(
                     "UPDATE ChannelOrders SET account_id = ?1 WHERE account_id IS NULL",
                     [first_account_id],
                 );
-                println!("Migrated {} existing channel orders to account {}", count, first_account_id);
+                println!(
+                    "Migrated {} existing channel orders to account {}",
+                    count, first_account_id
+                );
             }
         }
     }
@@ -376,7 +400,13 @@ pub fn check_account_exists(name: &str) -> Result<bool, rusqlite::Error> {
     Ok(count > 0)
 }
 
-pub fn insert_channel_order(account_id: i32, order_id: String, status: String, payload: String, created_at: String) -> Result<usize, rusqlite::Error> {
+pub fn insert_channel_order(
+    account_id: i32,
+    order_id: String,
+    status: String,
+    payload: String,
+    created_at: String,
+) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(
         "INSERT INTO ChannelOrders (account_id, order_id, created_at, status, payload) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -386,7 +416,7 @@ pub fn insert_channel_order(account_id: i32, order_id: String, status: String, p
 
 pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
-    
+
     match account_id {
         Some(id) => {
             let mut stmt = conn.prepare("SELECT id, account_id, order_id, created_at, status, payload FROM ChannelOrders WHERE account_id = ?1 ORDER BY created_at DESC")?;
@@ -404,7 +434,7 @@ pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, 
                 .map(|res| res.unwrap())
                 .collect();
             Ok(orders)
-        },
+        }
         None => {
             let mut stmt = conn.prepare("SELECT id, account_id, order_id, created_at, status, payload FROM ChannelOrders ORDER BY created_at DESC")?;
             let orders = stmt
@@ -447,22 +477,58 @@ pub fn store_encrypted_mnemonic(
     )
 }
 
-pub fn get_encrypted_mnemonic(account_name: &str) -> Result<Option<(String, String, String)>, rusqlite::Error> {
+pub fn upsert_dca_order(
+    account_id: i32,
+    order_id: String,
+    payload: String,
+) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "INSERT INTO DcaOrders (account_id, order_id, payload) VALUES (?1, ?2, ?3)
+         ON CONFLICT(account_id, order_id) DO UPDATE SET payload = excluded.payload",
+        rusqlite::params![account_id, order_id, payload],
+    )
+}
+
+pub fn get_dca_orders(account_id: i32) -> Result<Vec<String>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let mut stmt =
+        conn.prepare("SELECT payload FROM DcaOrders WHERE account_id = ?1 ORDER BY id ASC")?;
+    let payloads = stmt
+        .query_map([account_id], |row| row.get(0))?
+        .map(|r| r.unwrap())
+        .collect();
+    Ok(payloads)
+}
+
+pub fn delete_dca_order(account_id: i32, order_id: String) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "DELETE FROM DcaOrders WHERE account_id = ?1 AND order_id = ?2",
+        rusqlite::params![account_id, order_id],
+    )
+}
+
+pub fn get_encrypted_mnemonic(
+    account_name: &str,
+) -> Result<Option<(String, String, String)>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     let mut stmt = conn.prepare(
-        "SELECT encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts WHERE name = ?"
+        "SELECT encrypted_mnemonic, mnemonic_salt, mnemonic_nonce FROM Accounts WHERE name = ?",
     )?;
-    
-    let result = stmt.query_row([account_name], |row| {
-        let encrypted: Option<String> = row.get(0)?;
-        let salt: Option<String> = row.get(1)?;
-        let nonce: Option<String> = row.get(2)?;
-        
-        match (encrypted, salt, nonce) {
-            (Some(e), Some(s), Some(n)) => Ok(Some((e, s, n))),
-            _ => Ok(None),
-        }
-    }).optional()?;
-    
+
+    let result = stmt
+        .query_row([account_name], |row| {
+            let encrypted: Option<String> = row.get(0)?;
+            let salt: Option<String> = row.get(1)?;
+            let nonce: Option<String> = row.get(2)?;
+
+            match (encrypted, salt, nonce) {
+                (Some(e), Some(s), Some(n)) => Ok(Some((e, s, n))),
+                _ => Ok(None),
+            }
+        })
+        .optional()?;
+
     Ok(result.flatten())
 }

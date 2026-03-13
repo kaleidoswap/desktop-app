@@ -32,27 +32,27 @@ const ConnectPopup: React.FC<{
   isAlreadyConnected: boolean
   t: any
 }> = ({ onClose, onConfirm, connectionUrl, isAlreadyConnected, t }) => (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl border border-border-default/50 max-w-lg w-full mx-4 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-      <div className="flex items-center gap-4 mb-6">
-        {isAlreadyConnected ? (
-          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <CheckCircle className="text-green-400" size={28} />
-          </div>
-        ) : (
-          <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <Link className="text-blue-400" size={28} />
-          </div>
-        )}
-        <h3 className="text-2xl font-bold text-white">
-          {isAlreadyConnected
-            ? t('orderChannel.step1.alreadyConnected')
-            : t('orderChannel.step1.modalTitle')}
-        </h3>
-      </div>
+  <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="flex min-h-full items-start justify-center p-4 sm:items-center sm:p-6">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 sm:p-8 rounded-2xl border border-border-default/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
+        <div className="flex items-center gap-4 mb-6">
+          {isAlreadyConnected ? (
+            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="text-green-400" size={28} />
+            </div>
+          ) : (
+            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <Link className="text-blue-400" size={28} />
+            </div>
+          )}
+          <h3 className="text-2xl font-bold text-white">
+            {isAlreadyConnected
+              ? t('orderChannel.step1.alreadyConnected')
+              : t('orderChannel.step1.modalTitle')}
+          </h3>
+        </div>
 
-      {isAlreadyConnected ? (
-        <>
+        {isAlreadyConnected ? (
           <div className="mb-6 p-4 bg-green-900/20 border border-green-700/50 rounded-xl">
             <div className="flex items-start gap-3">
               <CheckCircle
@@ -69,37 +69,37 @@ const ConnectPopup: React.FC<{
               </div>
             </div>
           </div>
-        </>
-      ) : (
-        <p className="mb-6 text-content-secondary text-lg">
-          {t('orderChannel.step1.establishConnection')}
-        </p>
-      )}
+        ) : (
+          <p className="mb-6 text-content-secondary text-lg">
+            {t('orderChannel.step1.establishConnection')}
+          </p>
+        )}
 
-      <div className="mb-6 p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
-        <p className="text-xs text-content-secondary mb-2 font-semibold uppercase tracking-wide">
-          {t('orderChannel.step1.lspConnectionLabel')}
-        </p>
-        <p className="text-sm text-content-secondary break-all font-mono">
-          {connectionUrl}
-        </p>
-      </div>
+        <div className="mb-6 p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
+          <p className="text-xs text-content-secondary mb-2 font-semibold uppercase tracking-wide">
+            {t('orderChannel.step1.lspConnectionLabel')}
+          </p>
+          <p className="text-sm text-content-secondary break-all font-mono">
+            {connectionUrl}
+          </p>
+        </div>
 
-      <div className="flex gap-3">
-        <button
-          className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-all duration-200 font-semibold transform active:scale-95"
-          onClick={onClose}
-        >
-          {t('orderChannel.step1.cancelButton')}
-        </button>
-        <button
-          className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg font-semibold transition-all duration-200 transform active:scale-95 shadow-lg shadow-primary/20"
-          onClick={onConfirm}
-        >
-          {isAlreadyConnected
-            ? t('orderChannel.step1.continueButton')
-            : t('orderChannel.step1.connectButton')}
-        </button>
+        <div className="flex gap-3">
+          <button
+            className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-all duration-200 font-semibold transform active:scale-95"
+            onClick={onClose}
+          >
+            {t('orderChannel.step1.cancelButton')}
+          </button>
+          <button
+            className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-semibold transition-all duration-200 transform active:scale-95 shadow-lg shadow-primary/20"
+            onClick={onConfirm}
+          >
+            {isAlreadyConnected
+              ? t('orderChannel.step1.continueButton')
+              : t('orderChannel.step1.connectButton')}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -408,13 +408,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     }
     if (isAlreadyConnected) {
       return {
-        className: 'bg-primary hover:bg-primary-emphasis text-primary-foreground',
+        className: 'bg-primary hover:bg-primary-emphasis text-[#12131C]',
         disabled: false,
         text: t('orderChannel.step1.continueWithConnectedLsp'),
       }
     }
     return {
-      className: 'bg-primary hover:bg-primary-emphasis text-primary-foreground',
+      className: 'bg-primary hover:bg-primary-emphasis text-[#12131C]',
       disabled: false,
       text: t('orderChannel.step1.connectButton'),
     }
@@ -602,7 +602,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               </div>
 
               <button
-                className={`w-full bg-primary hover:bg-primary-emphasis text-primary-foreground px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`w-full bg-primary hover:bg-primary-emphasis text-[#12131C] px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                   isLoading || !tempLspUrl.trim()
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
@@ -696,7 +696,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         <div className="flex justify-center">
           <button
             className={`
-              group px-10 py-4 text-primary-foreground rounded-xl text-lg font-bold
+              group px-10 py-4 rounded-xl text-lg font-bold
               transition-all duration-300 transform
               focus:ring-4 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none 
               flex items-center justify-center gap-3 min-w-[280px]

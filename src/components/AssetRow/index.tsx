@@ -15,6 +15,7 @@ interface AssetRowProps {
   asset: NiaAsset
   onChainBalance: number
   offChainBalance: number
+  incomingBalance?: number
   isLoading?: boolean
 }
 
@@ -43,6 +44,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   asset,
   onChainBalance,
   offChainBalance,
+  incomingBalance = 0,
   isLoading,
 }) => {
   const dispatch = useAppDispatch()
@@ -59,9 +61,9 @@ export const AssetRow: React.FC<AssetRowProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-2 even:bg-surface-elevated rounded items-center">
+      <div className="grid grid-cols-4 gap-2 even:bg-surface-elevated/40 even:hover:bg-surface-elevated/70 odd:hover:bg-surface-elevated/20 transition-colors border-b border-border-default/20 items-center">
         <div
-          className="py-3 px-4 text-sm truncate cursor-pointer flex items-center hover:bg-surface-overlay/50 rounded-l"
+          className="py-3 px-4 text-sm truncate cursor-pointer flex items-center"
           onClick={() => setShowDetailsModal(true)}
         >
           <AssetIcon ticker={asset.ticker} />
@@ -85,8 +87,15 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           {isLoading ? (
             <LoadingPlaceholder />
           ) : (
-            <div className="font-bold">
-              {formatAmount(asset, onChainBalance)}
+            <div className="flex flex-col">
+              <span className="font-bold">
+                {formatAmount(asset, onChainBalance)}
+              </span>
+              {incomingBalance > 0 && (
+                <span className="text-[10px] text-content-tertiary font-medium">
+                  +{formatAmount(asset, incomingBalance)} incoming
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -94,9 +103,39 @@ export const AssetRow: React.FC<AssetRowProps> = ({
         <div className="py-3 px-2 flex justify-center">
           <div className="flex items-center gap-0.5">
             {[
-              { icon: <Download className="w-3.5 h-3.5" />, label: 'Deposit', color: 'text-primary hover:bg-primary/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: asset.asset_id, type: 'deposit' })) },
-              { icon: <Upload className="w-3.5 h-3.5" />, label: 'Withdraw', color: 'text-status-danger hover:bg-status-danger/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: asset.asset_id, type: 'withdraw' })) },
-              { icon: <History className="w-3.5 h-3.5" />, label: 'History', color: 'text-secondary hover:bg-secondary/15', onClick: () => navigate(`${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`) },
+              {
+                icon: <Download className="w-3.5 h-3.5" />,
+                label: 'Deposit',
+                color: 'text-primary hover:bg-primary/15',
+                onClick: () =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: asset.asset_id,
+                      type: 'deposit',
+                    })
+                  ),
+              },
+              {
+                icon: <Upload className="w-3.5 h-3.5" />,
+                label: 'Withdraw',
+                color: 'text-status-danger hover:bg-status-danger/15',
+                onClick: () =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: asset.asset_id,
+                      type: 'withdraw',
+                    })
+                  ),
+              },
+              {
+                icon: <History className="w-3.5 h-3.5" />,
+                label: 'History',
+                color: 'text-secondary hover:bg-secondary/15',
+                onClick: () =>
+                  navigate(
+                    `${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`
+                  ),
+              },
             ].map(({ icon, label, color, onClick }) => (
               <div key={label} className="relative group/btn">
                 <button

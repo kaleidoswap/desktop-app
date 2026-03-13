@@ -46,7 +46,9 @@ const AssetSelectorOption: React.FC<AssetSelectorOptionProps> = ({
       <div className="flex items-center">
         <div>
           <div className="font-medium">{`${assetInfo.name} (${assetInfo.ticker})`}</div>
-          <div className="text-sm text-content-secondary break-all">{assetId}</div>
+          <div className="text-sm text-content-secondary break-all">
+            {assetId}
+          </div>
         </div>
       </div>
       <button

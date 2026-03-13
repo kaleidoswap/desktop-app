@@ -1,6 +1,19 @@
-import { ArrowLeft, XCircle, Shield, CheckCircle2, Loader2 } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Globe,
+  Loader2,
+  RefreshCw,
+  Shield,
+  XCircle,
+  Zap,
+} from 'lucide-react'
+
+import { Button } from '../ui'
 
 interface UnlockingProgressProps {
+  infoMessage?: string
   isUnlocking: boolean
   errorMessage?: string
   onBack?: () => void
@@ -8,6 +21,7 @@ interface UnlockingProgressProps {
 }
 
 export const UnlockingProgress = ({
+  infoMessage,
   isUnlocking,
   errorMessage,
   onBack,
@@ -20,326 +34,159 @@ export const UnlockingProgress = ({
       status: 'current',
       title: 'Synchronizing Bitcoin blockchain',
     },
-    { icon: CheckCircle2, status: 'pending', title: 'Connecting to RGB proxy' },
-    { icon: CheckCircle2, status: 'pending', title: 'Connecting to Lightning' },
+    { icon: Globe, status: 'pending', title: 'Connecting to RGB proxy' },
+    { icon: Zap, status: 'pending', title: 'Connecting to Lightning' },
   ]
 
-  // Dynamically calculate active progress line width (for desktop view)
-  let progressPosition = steps.findIndex((s) => s.status === 'current')
-  if (progressPosition === -1) {
-    // Fallback to last completed step
-    const lastCompleted = Math.max(
-      ...steps.map((s, i) => (s.status === 'completed' ? i : -1))
-    )
-    progressPosition = lastCompleted
-  }
-  const progressPercentage =
-    progressPosition <= 0 ? 0 : (progressPosition / (steps.length - 1)) * 100
-
   return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-4 flex flex-col items-center justify-center space-y-5 overflow-hidden">
-      {/* Main Progress Section */}
-      <div className="relative w-full flex flex-col items-center">
-        {/* Background Glow Effects */}
-        <div className="absolute inset-0 -m-6">
-          <div
-            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-3xl opacity-15 ${
-              errorMessage ? 'bg-red-500' : 'bg-blue-500'
-            } animate-pulse`}
-          ></div>
-          <div
-            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full blur-2xl opacity-25 ${
-              errorMessage ? 'bg-red-400' : 'bg-purple-500'
-            } animate-pulse`}
-            style={{ animationDelay: '1s' }}
-          ></div>
-        </div>
-
-        {/* Enhanced Progress Ring */}
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4">
-          {/* Outer decorative rings */}
-          <div
-            className={`absolute inset-0 rounded-full border-2 ${
-              errorMessage ? 'border-red-500/20' : 'border-blue-500/20'
-            }`}
-          />
-          <div
-            className={`absolute inset-1 rounded-full border border-dashed ${
-              errorMessage ? 'border-red-400/30' : 'border-primary/30'
-            } animate-[spin_8s_linear_infinite]`}
-          />
-
-          {/* Main spinning gradient ring */}
-          <div
-            className={`absolute inset-0 rounded-full border-4 border-transparent ${
-              errorMessage
-                ? 'border-t-red-400 border-r-red-500 border-b-red-600'
-                : 'border-t-blue-400 border-r-blue-500 border-b-purple-500'
-            } animate-[spin_2s_linear_infinite]`}
-          />
-
-          {/* Inner glowing circle */}
-          <div className="absolute inset-0 m-auto w-16 h-16 sm:w-18 sm:h-18">
-            <div
-              className={`w-full h-full rounded-full relative overflow-hidden ${
-                errorMessage
-                  ? 'bg-gradient-to-br from-red-400 via-red-500 to-red-600 shadow-lg shadow-red-500/40'
-                  : 'bg-gradient-to-br from-blue-400 via-blue-500 to-purple-600 shadow-lg shadow-blue-500/40'
-              } animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] flex items-center justify-center`}
-            >
-              {!errorMessage && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] -translate-x-full"></div>
-              )}
-
-              {errorMessage ? (
-                <XCircle className="w-8 h-8 sm:w-9 sm:h-9 text-white relative z-10" />
-              ) : (
-                <Shield className="w-8 h-8 sm:w-9 sm:h-9 text-white relative z-10" />
-              )}
-            </div>
-          </div>
-
-          {/* Floating particles */}
-          {!errorMessage && (
-            <>
-              <div className="absolute top-2 right-4 w-2 h-2 bg-blue-400 rounded-full opacity-60 animate-[float_3s_ease-in-out_infinite]"></div>
-              <div
-                className="absolute bottom-3 left-3 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-40 animate-[float_3s_ease-in-out_infinite]"
-                style={{ animationDelay: '1s' }}
-              ></div>
-              <div
-                className="absolute top-4 left-2 w-1 h-1 bg-blue-300 rounded-full opacity-50 animate-[float_3s_ease-in-out_infinite]"
-                style={{ animationDelay: '2s' }}
-              ></div>
-            </>
+    <div className="w-full max-w-md mx-auto flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header Info */}
+      <div className="flex flex-col items-center text-center space-y-3">
+        <div
+          className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 shadow-lg ${
+            errorMessage
+              ? 'bg-status-danger/10 text-status-danger shadow-status-danger/20'
+              : 'bg-primary/10 text-primary shadow-primary/20'
+          }`}
+        >
+          {errorMessage ? (
+            <XCircle className="w-8 h-8" />
+          ) : (
+            <Shield className="w-8 h-8 animate-pulse" />
           )}
         </div>
-
-        {/* Status Text */}
-        <div className="text-center space-y-3">
-          <h2
-            className={`text-2xl sm:text-3xl font-bold ${
-              errorMessage
-                ? 'bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent'
-                : 'bg-gradient-to-r from-blue-400 via-blue-300 to-purple-400 bg-clip-text text-transparent'
-            }`}
-          >
-            {errorMessage
-              ? 'Unlock Failed'
-              : isUnlocking
-                ? 'Unlocking Wallet'
-                : 'Preparing Wallet'}
-          </h2>
-
-          <p className="text-content-secondary text-base sm:text-lg max-w-lg mx-auto leading-relaxed px-4">
-            {errorMessage
-              ? 'We encountered an issue while unlocking your wallet'
-              : isUnlocking
-                ? 'Please wait while we securely unlock and prepare your wallet'
-                : 'Verifying your credentials and preparing the unlock process'}
-          </p>
-        </div>
+        <h2 className="text-2xl font-bold text-content-primary">
+          {errorMessage
+            ? 'Unlock Failed'
+            : isUnlocking
+              ? 'Unlocking Wallet'
+              : 'Preparing Wallet'}
+        </h2>
+        <p className="text-content-secondary text-sm leading-relaxed max-w-sm">
+          {errorMessage
+            ? 'We encountered an issue while unlocking your wallet'
+            : isUnlocking
+              ? 'Please wait while we securely unlock and prepare your wallet'
+              : 'Verifying your credentials and preparing the unlock process'}
+        </p>
       </div>
 
-      {/* Error Message Display */}
+      {/* Error Message */}
       {errorMessage && (
-        <div className="w-full max-w-2xl mx-auto animate-[fadeIn_0.5s_ease-out] px-2">
-          <div className="p-4 rounded-xl bg-gradient-to-br from-red-900/40 to-red-800/30 backdrop-blur-sm border border-red-500/30 shadow-lg">
-            <div className="flex items-start space-x-3">
-              <div className="p-2 bg-red-500/20 rounded-lg mt-0.5 flex-shrink-0">
-                <XCircle className="w-4 h-4 text-red-400" />
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <h4 className="font-semibold text-red-200 mb-1">
-                  Error Details
-                </h4>
-                <p className="text-red-300 text-sm leading-relaxed break-words">
-                  {errorMessage}
-                </p>
-              </div>
-            </div>
+        <div className="p-4 rounded-xl bg-status-danger/10 border border-status-danger/30 flex items-start gap-3">
+          <XCircle className="w-5 h-5 text-status-danger shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-status-danger text-sm mb-1">
+              Error Details
+            </h4>
+            <p className="text-status-danger/80 text-xs leading-relaxed break-words">
+              {errorMessage}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Progress Steps */}
+      {infoMessage && !errorMessage && (
+        <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-primary text-sm mb-1">
+              Unlock is taking longer than usual
+            </h4>
+            <p className="text-content-secondary text-xs leading-relaxed break-words">
+              {infoMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Steps (Vertical) */}
       {isUnlocking && !errorMessage && (
-        <div className="w-full space-y-5 animate-[fadeIn_0.5s_ease-out] overflow-hidden">
-          <h3 className="text-xl sm:text-2xl font-semibold text-content-primary text-center">
-            Processing Steps
-          </h3>
+        <div className="space-y-2">
+          {steps.map((step, index) => {
+            const Icon = step.icon
+            const isCompleted = step.status === 'completed'
+            const isCurrent = step.status === 'current'
 
-          {/* Step indicators */}
-          <div className="relative w-full px-2">
-            {/* Connecting line (desktop only) */}
-            <div className="hidden lg:block absolute top-9 left-8 right-8 h-1 bg-surface-high/50 rounded-full"></div>
-            {/* Active progress portion */}
-            <div
-              className="hidden lg:block absolute top-9 left-8 h-1 bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-500 rounded-full transition-[width] duration-700 ease-out"
-              style={{ width: `calc(${progressPercentage}% - 2rem)` }}
-            ></div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 place-items-center w-full">
-              {steps.map((step, index) => {
-                const Icon = step.icon
-                const isCompleted = step.status === 'completed'
-                const isCurrent = step.status === 'current'
-                const isPending = step.status === 'pending'
-
-                return (
-                  <div
-                    className="flex flex-col items-center space-y-2 w-full max-w-[120px] animate-[slideInUp_0.6s_ease-out]"
-                    key={step.title}
-                    style={{ animationDelay: `${index * 150}ms` }}
+            return (
+              <div
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${
+                  isCurrent
+                    ? 'bg-surface-elevated/80 border-primary/30 shadow-sm shadow-primary/5'
+                    : isCompleted
+                      ? 'bg-surface-base border-border-subtle/50'
+                      : 'bg-surface-base/30 border-border-subtle/20'
+                }`}
+                key={step.title}
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border transition-colors ${
+                    isCompleted
+                      ? 'bg-status-success/10 border-status-success/20 text-status-success'
+                      : isCurrent
+                        ? 'bg-primary/10 border-primary/20 text-primary'
+                        : 'bg-surface-high/50 border-border-subtle/50 text-content-tertiary'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : isCurrent ? (
+                    <Icon className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Icon className="w-5 h-5 opacity-40" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4
+                    className={`text-sm font-semibold truncate ${isCurrent ? 'text-content-primary' : isCompleted ? 'text-content-secondary' : 'text-content-tertiary'}`}
                   >
-                    {/* Step circle */}
-                    <div className="relative">
-                      <div
-                        className={`relative w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
-                          isCompleted
-                            ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30 scale-110'
-                            : isCurrent
-                              ? 'bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/30 animate-pulse'
-                              : 'bg-gradient-to-br from-slate-700 to-slate-600 shadow-lg'
-                        } border-2 ${
-                          isCompleted || isCurrent
-                            ? 'border-white/20'
-                            : 'border-border-subtle/30'
-                        }`}
-                      >
-                        {/* Step number badge */}
-                        <div
-                          className={`absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            isCompleted
-                              ? 'bg-emerald-600 border-emerald-400'
-                              : isCurrent
-                                ? 'bg-primary border-primary/60'
-                                : 'bg-surface-overlay border-border-default'
-                          }`}
-                        >
-                          <span className="text-xs font-bold text-white">
-                            {index + 1}
-                          </span>
-                        </div>
-
-                        {/* Icon */}
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
-                        ) : (
-                          <Icon
-                            className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 transition-colors ${
-                              isCurrent
-                                ? 'text-white animate-pulse'
-                                : isPending
-                                  ? 'text-content-secondary'
-                                  : 'text-white'
-                            }`}
-                          />
-                        )}
-
-                        {/* Loading spinner */}
-                        {isCurrent && (
-                          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white/60 animate-spin"></div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Step content */}
-                    <div className="text-center space-y-1 w-full">
-                      <h4
-                        className={`font-semibold text-xs sm:text-sm transition-colors leading-tight break-words text-center ${
-                          isCompleted
-                            ? 'text-emerald-300'
-                            : isCurrent
-                              ? 'text-white'
-                              : 'text-content-secondary'
-                        }`}
-                      >
-                        {step.title}
-                      </h4>
-
-                      <div className="flex flex-col items-center space-y-1">
-                        {isCompleted && (
-                          <div className="flex items-center space-x-1 text-emerald-400">
-                            <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-                            <span className="text-[10px] sm:text-xs font-medium">
-                              Completed
-                            </span>
-                          </div>
-                        )}
-                        {isCurrent && (
-                          <div className="flex flex-col items-center space-y-1">
-                            <div className="flex items-center space-x-1 text-blue-400">
-                              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse flex-shrink-0"></div>
-                              <span className="text-[10px] sm:text-xs font-medium">
-                                In Progress
-                              </span>
-                            </div>
-                            {/* Progress bar */}
-                            <div className="w-16 sm:w-20 h-1 bg-surface-high/50 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-[progressBar_2s_ease-in-out_infinite] shadow-sm shadow-blue-400/50"></div>
-                            </div>
-                          </div>
-                        )}
-                        {isPending && (
-                          <div className="flex items-center space-x-1 text-content-tertiary">
-                            <div className="w-1.5 h-1.5 bg-content-tertiary rounded-full flex-shrink-0"></div>
-                            <span className="text-[10px] sm:text-xs font-medium">
-                              Pending
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Security Notice */}
-          <div className="w-full px-2">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-900/30 via-slate-800/40 to-purple-900/30 backdrop-blur-sm border border-blue-500/20 animate-[fadeIn_0.5s_ease-out] max-w-3xl mx-auto">
-              <div className="flex items-center justify-center space-x-2 text-center">
-                <Shield className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                <p className="text-content-secondary text-sm break-words">
-                  Keep the application open during the unlock process.
-                  Blockchain sync may take several minutes.
-                </p>
+                    {step.title}
+                  </h4>
+                  <p className="text-xs text-content-tertiary mt-0.5">
+                    {isCompleted
+                      ? 'Completed'
+                      : isCurrent
+                        ? 'In progress...'
+                        : 'Waiting'}
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
+            )
+          })}
         </div>
       )}
 
       {/* Action Buttons */}
       {(onBack || onCancel) && (
-        <div
-          className="flex flex-col sm:flex-row justify-center gap-3 w-full max-w-md mx-auto animate-[fadeIn_0.5s_ease-out] px-2"
-          style={{ animationDelay: '1000ms' }}
-        >
-          {onBack && (
-            <button
-              className="group px-5 py-2.5 bg-gradient-to-r from-surface-high/80 to-surface-elevated/80 hover:from-surface-elevated/80 hover:to-surface-elevated/60 text-content-secondary hover:text-white border border-border-subtle/50 hover:border-border-default/60 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 backdrop-blur-sm shadow-lg hover:shadow-xl text-sm w-full sm:w-auto"
-              onClick={onBack}
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200 flex-shrink-0" />
-              <span className="font-medium">Back to Setup</span>
-            </button>
-          )}
-
+        <div className="pt-4 flex flex-col gap-3">
           {onCancel && (
-            <button
-              className={`px-5 py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 font-semibold shadow-lg hover:shadow-xl text-sm w-full sm:w-auto ${
-                errorMessage
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white hover:shadow-blue-500/25'
-                  : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white hover:shadow-red-500/25'
-              }`}
+            <Button
+              className="w-full"
+              icon={
+                errorMessage ? (
+                  <RefreshCw className="w-4 h-4" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )
+              }
               onClick={onCancel}
+              size="lg"
+              variant={errorMessage ? 'primary' : 'outline'}
             >
-              <XCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errorMessage ? 'Try Again' : 'Cancel Process'}</span>
-            </button>
+              {errorMessage ? 'Try Again' : 'Cancel Process'}
+            </Button>
+          )}
+          {onBack && (
+            <Button
+              className="w-full"
+              icon={<ArrowLeft className="w-4 h-4" />}
+              onClick={onBack}
+              size="lg"
+              variant="ghost"
+            >
+              Back to Setup
+            </Button>
           )}
         </div>
       )}

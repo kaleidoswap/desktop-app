@@ -94,7 +94,11 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       onAmountChange(e)
       return
     }
-    if (maxAmount !== undefined && !isNaN(parsedValue) && parsedValue > maxAmount) {
+    if (
+      maxAmount !== undefined &&
+      !isNaN(parsedValue) &&
+      parsedValue > maxAmount
+    ) {
       e.target.value = formatAmount(maxAmount, asset)
     }
     onAmountChange(e)
@@ -112,11 +116,15 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
         {/* Right side: available + refresh + size chips */}
         <div className="flex items-center gap-2 min-w-0">
           {availableAmount && (
-            <div className={`flex items-center gap-1 text-xs ${amountAnimationClass} shrink-0`}>
+            <div
+              className={`flex items-center gap-1 text-xs ${amountAnimationClass} shrink-0`}
+            >
               <span className="text-content-tertiary">
                 {availableAmountLabel || t('trade.swapInput.available')}:
               </span>
-              <span className="text-content-primary font-medium">{availableAmount}</span>
+              <span className="text-content-primary font-medium">
+                {availableAmount}
+              </span>
               {onRefresh && (
                 <button
                   className="p-0.5 rounded hover:bg-surface-high/60 active:scale-95 transition-all duration-200 group/refresh"
@@ -138,10 +146,11 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
             <div className="flex items-center gap-1">
               {[25, 50, 75, 100].map((pct) => (
                 <button
-                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-all duration-150 active:scale-95 ${selectedSize === pct
+                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-all duration-150 active:scale-95 ${
+                    selectedSize === pct
                       ? 'bg-primary/25 border-primary/50 text-primary'
                       : 'bg-surface-high/40 border-border-default/30 text-content-tertiary hover:text-white hover:border-border-default/60'
-                    } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                  } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                   disabled={disabled}
                   key={pct}
                   onClick={() => onSizeClick(pct)}
@@ -169,15 +178,20 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               </span>
             </div>
           ) : (
-            <input
-              className={`w-full px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
-              disabled={disabled}
-              onChange={handleAmountChange}
-              placeholder={t('trade.swapInput.placeholder')}
-              readOnly={readOnly}
-              type="text"
-              value={value}
-            />
+            <div className="relative">
+              <input
+                className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
+                disabled={disabled}
+                onChange={handleAmountChange}
+                placeholder={t('trade.swapInput.placeholder')}
+                readOnly={readOnly}
+                type="text"
+                value={value}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide">
+                {getDisplayAsset(asset)}
+              </span>
+            </div>
           )}
         </div>
 
@@ -211,18 +225,27 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
         <div className="px-4 pb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-content-tertiary">
           {showMinAmount && minAmount && (
             <span>
-              Min: <span className="text-content-secondary font-medium">{formatAmount(minAmount, asset)} {getDisplayAsset(asset)}</span>
+              Min:{' '}
+              <span className="text-content-secondary font-medium">
+                {formatAmount(minAmount, asset)} {getDisplayAsset(asset)}
+              </span>
             </span>
           )}
           {showMaxAmount && maxAmount && (
             <span>
-              Max: <span className="text-content-secondary font-medium">{formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}</span>
+              Max:{' '}
+              <span className="text-content-secondary font-medium">
+                {formatAmount(maxAmount, asset)} {getDisplayAsset(asset)}
+              </span>
             </span>
           )}
           {showMaxHtlc && maxHtlcAmount && asset === 'BTC' && (
             <div className="relative group/tooltip">
               <span className="cursor-help border-b border-dotted border-border-subtle hover:text-content-secondary transition-colors">
-                Max HTLC: <span className="font-medium">{formatAmount(maxHtlcAmount, 'BTC')} {getDisplayAsset('BTC')}</span>
+                Max HTLC:{' '}
+                <span className="font-medium">
+                  {formatAmount(maxHtlcAmount, 'BTC')} {getDisplayAsset('BTC')}
+                </span>
               </span>
               <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-surface-overlay text-xs text-content-primary rounded-xl w-64 hidden group-hover/tooltip:block shadow-2xl border border-border-default/50 z-30">
                 {t('trade.swapInput.maxHtlcTooltip')}

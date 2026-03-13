@@ -19,6 +19,7 @@ interface SwapButtonProps {
   isPriceLoading: boolean
   isQuoteLoading?: boolean
   errorMessage: string | null
+  warningMessage?: string | null
   hasChannels: boolean
   hasTradablePairs: boolean
   isSwapInProgress: boolean
@@ -37,6 +38,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
   isPriceLoading,
   isQuoteLoading,
   errorMessage,
+  warningMessage = null,
   hasChannels,
   hasTradablePairs,
   isSwapInProgress,
@@ -62,10 +64,8 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       return t('trade.swapButton.preparingSwap')
     if (!hasChannels) return t('trade.swapButton.noChannels')
     if (!hasTradablePairs) return t('trade.swapButton.noTradablePairs')
+    if (warningMessage) return t('trade.swapButton.exceedsMax')
     if (errorMessage) {
-      if (errorMessage.includes('You can only receive up to')) {
-        return t('trade.swapButton.exceedsMax')
-      }
       if (hasUnconfirmedChannel) {
         return t('trade.swapButton.channelAwaiting')
       }
@@ -86,6 +86,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     if (!hasChannels) return <Ban className="w-5 h-5" />
     if (!hasTradablePairs) return <Ban className="w-5 h-5" />
     if (hasUnconfirmedChannel) return <Clock className="w-5 h-5" />
+    if (warningMessage) return <AlertCircle className="w-5 h-5" />
     if (errorMessage) return <AlertCircle className="w-5 h-5" />
     if (hasZeroAmount) return <Wallet className="w-5 h-5" />
     if (isSwapInProgress) return <RefreshCw className="w-5 h-5 animate-spin" />
@@ -100,6 +101,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       (isQuoteLoading && !hasValidQuote) ||
       (!hasValidQuote && (isToAmountLoading || isPriceLoading)) ||
       !!errorMessage ||
+      !!warningMessage ||
       !hasChannels ||
       !hasTradablePairs ||
       isSwapInProgress ||
@@ -117,7 +119,8 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
     // Only show as actionable (success) if there's truly no channel (not just unconfirmed)
     if (missingChannelAsset && !hasUnconfirmedChannel) return 'success'
     if (isDisabled) {
-      if (hasUnconfirmedChannel) return 'warning' // Show warning for unconfirmed channels
+      if (hasUnconfirmedChannel) return 'warning'
+      if (warningMessage) return 'warning'
       if (errorMessage) return 'error'
       if (!hasChannels || !hasTradablePairs) return 'warning'
       return 'disabled'

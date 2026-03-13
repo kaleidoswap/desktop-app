@@ -10,21 +10,26 @@ import {
   Bell,
   HelpCircle,
   User,
+  Loader2,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ToastContainer } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logo from '../../assets/logo.svg'
 import logoFull from '../../assets/logo-full.svg'
+import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
+import { BackupModal } from '../BackupModal'
+import { useBackup } from '../../hooks/useBackup'
+import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -46,6 +51,7 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
 
 interface Props {
   className?: string
@@ -283,6 +289,25 @@ const UserProfile = ({
   const navigate = useNavigate()
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
+  const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+
+  const {
+    showBackupModal,
+    setShowBackupModal,
+    isBackupInProgress,
+    control: backupControl,
+    handleSubmit: handleBackupSubmit,
+    formState: backupFormState,
+    backupPath,
+    handleBackup,
+    selectBackupFolder,
+  } = useBackup({
+    nodeSettings: nodeSettingsData || {
+      rpc_connection_url: '',
+      indexer_url: '',
+      proxy_endpoint: '',
+    },
+  })
 
   // Get translated menu items
   const USER_MENU_ITEMS = getUserMenuItems(t)
@@ -294,6 +319,8 @@ const UserProfile = ({
 
     if (item.action === 'support') {
       onSupportClick()
+    } else if (item.action === 'backup') {
+      setShowBackupModal(true)
     } else if (item.to) {
       navigate(item.to)
     }
@@ -343,6 +370,18 @@ const UserProfile = ({
           )}
         </div>
       </div>
+
+      <BackupModal
+        backupPath={backupPath}
+        control={backupControl}
+        formState={backupFormState}
+        isBackupInProgress={isBackupInProgress}
+        onClose={() => setShowBackupModal(false)}
+        onSelectFolder={selectBackupFolder}
+        onSubmit={handleBackupSubmit(handleBackup)}
+        setValue={backupControl.setValue}
+        showModal={showBackupModal}
+      />
 
       {isOpen && (
         <div
@@ -412,6 +451,8 @@ export const Layout = (props: Props) => {
   )
   const [isShuttingDown, setIsShuttingDown] = useState(false)
   const [shutdownStatus, setShutdownStatus] = useState<string>('')
+  const [showCloseConfirmModal, setShowCloseConfirmModal] = useState(false)
+  const [isHandlingCloseAction, setIsHandlingCloseAction] = useState(false)
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
   const [isTransactionMenuOpen, setIsTransactionMenuOpen] = useState(false)
   const [isSupportMenuOpen, setIsSupportMenuOpen] = useState(false)
@@ -421,6 +462,9 @@ export const Layout = (props: Props) => {
   const channelMenuRef = useRef(null)
   const transactionMenuRef = useRef(null)
   const supportMenuRef = useRef(null)
+  const toastAutoDismissTimers = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({})
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -435,6 +479,9 @@ export const Layout = (props: Props) => {
 
   const [lock] = nodeApi.endpoints.lock.useMutation()
 
+  useDcaScheduler()
+  useNodeLifecycleEvents()
+
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -446,7 +493,12 @@ export const Layout = (props: Props) => {
   useOnClickOutside(supportMenuRef, () => setIsSupportMenuOpen(false))
 
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
+  const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
   const shouldPoll = nodeInfo.isSuccess
+  const isNodeActive =
+    nodeLifecycle.status === 'Running' ||
+    nodeLifecycle.status === 'Starting' ||
+    nodeLifecycle.status === 'Stopping'
 
   const { data, isFetching, error } = nodeApi.useListTransactionsQuery(
     undefined,
@@ -455,6 +507,43 @@ export const Layout = (props: Props) => {
       skip: isRetrying || !shouldPoll,
     }
   )
+
+  useEffect(() => {
+    const clearToastTimer = (toastId: string) => {
+      const timer = toastAutoDismissTimers.current[toastId]
+
+      if (timer) {
+        clearTimeout(timer)
+        delete toastAutoDismissTimers.current[toastId]
+      }
+    }
+
+    const unsubscribe = toast.onChange((item) => {
+      const toastId = String(item.id)
+
+      if (item.status === 'removed') {
+        clearToastTimer(toastId)
+        return
+      }
+
+      if (item.isLoading) {
+        clearToastTimer(toastId)
+        return
+      }
+
+      clearToastTimer(toastId)
+      toastAutoDismissTimers.current[toastId] = setTimeout(() => {
+        toast.dismiss(item.id)
+        clearToastTimer(toastId)
+      }, DEFAULT_TOAST_AUTO_CLOSE_MS)
+    })
+
+    return () => {
+      unsubscribe()
+      Object.values(toastAutoDismissTimers.current).forEach(clearTimeout)
+      toastAutoDismissTimers.current = {}
+    }
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -569,6 +658,10 @@ export const Layout = (props: Props) => {
 
     // Listen for Tauri shutdown events
     const setupShutdownListeners = async () => {
+      const unlistenCloseConfirm = await listen('confirm-app-close', () => {
+        setShowCloseConfirmModal(true)
+      })
+
       const unlistenTrigger = await listen<string>(
         'trigger-shutdown',
         (event) => {
@@ -585,6 +678,7 @@ export const Layout = (props: Props) => {
       )
 
       return () => {
+        unlistenCloseConfirm()
         unlistenTrigger()
         unlistenStatus()
       }
@@ -609,9 +703,101 @@ export const Layout = (props: Props) => {
     )
   }
 
+  const handleKeepRunningInBackground = async () => {
+    setIsHandlingCloseAction(true)
+    try {
+      setShowCloseConfirmModal(false)
+      await invoke('hide_main_window')
+    } finally {
+      setIsHandlingCloseAction(false)
+    }
+  }
+
+  const handleQuitApp = async () => {
+    setIsHandlingCloseAction(true)
+    try {
+      setShowCloseConfirmModal(false)
+      await invoke('quit_app')
+    } finally {
+      setIsHandlingCloseAction(false)
+    }
+  }
+
+  const handleShutdownAndQuit = async () => {
+    setIsHandlingCloseAction(true)
+    setIsShuttingDown(true)
+    setShutdownStatus('Shutting down local node...')
+    setShowCloseConfirmModal(false)
+
+    try {
+      await invoke('shutdown_node_and_quit')
+    } finally {
+      setIsHandlingCloseAction(false)
+    }
+  }
+
   return (
     <div className={props.className}>
       <ShutdownAnimation isVisible={isShuttingDown} status={shutdownStatus} />
+
+      {showCloseConfirmModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-md bg-surface-base rounded-xl border border-divider/20 shadow-xl p-6">
+            <h3 className="text-xl font-semibold text-white">
+              {isNodeActive ? 'Close KaleidoSwap?' : 'Quit KaleidoSwap?'}
+            </h3>
+            <p className="text-content-secondary mt-3">
+              {isNodeActive
+                ? 'The local node is still running. You can keep it running in the background or stop it before quitting the app.'
+                : 'The app is ready to quit.'}
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3">
+              {isNodeActive ? (
+                <>
+                  <button
+                    className="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
+                    disabled={isHandlingCloseAction}
+                    onClick={handleKeepRunningInBackground}
+                  >
+                    Keep Running In Background
+                  </button>
+                  <button
+                    className="w-full px-4 py-3 rounded-lg bg-red-500/15 text-red-300 border border-red-500/30 font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    disabled={isHandlingCloseAction}
+                    onClick={handleShutdownAndQuit}
+                  >
+                    {isHandlingCloseAction ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Stopping Node...</span>
+                      </>
+                    ) : (
+                      'Stop Node And Quit'
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
+                  disabled={isHandlingCloseAction}
+                  onClick={handleQuitApp}
+                >
+                  Quit App
+                </button>
+              )}
+
+              <button
+                className="w-full px-4 py-3 rounded-lg bg-surface-overlay text-content-secondary font-medium disabled:opacity-60"
+                disabled={isHandlingCloseAction}
+                onClick={() => setShowCloseConfirmModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {!shouldHideNavbar ? (
         <div className="min-h-screen flex m-0 p-0">
@@ -935,7 +1121,9 @@ export const Layout = (props: Props) => {
         </div>
       ) : (
         // For setup and other paths that hide the navbar
-        <div className="min-h-screen">{props.children}</div>
+        <div className="h-screen flex flex-col overflow-hidden">
+          {props.children}
+        </div>
       )}
 
       {/* Support Modal */}
@@ -959,7 +1147,7 @@ export const Layout = (props: Props) => {
         hideProgressBar={false}
         newestOnTop={false}
         pauseOnFocusLoss={false}
-        pauseOnHover={true}
+        pauseOnHover={false}
         position="bottom-right"
         rtl={false}
         theme="dark"

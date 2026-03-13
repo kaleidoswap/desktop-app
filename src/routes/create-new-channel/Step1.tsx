@@ -245,7 +245,9 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         <h3 className="text-3xl font-bold text-white mb-4">
           {t('createChannel.step1.title')}
         </h3>
-        <p className="text-content-secondary">{t('createChannel.step1.subtitle')}</p>
+        <p className="text-content-secondary">
+          {t('createChannel.step1.subtitle')}
+        </p>
       </div>
 
       {/* Connected Peers Section */}

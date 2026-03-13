@@ -1,4 +1,12 @@
-import { Info, Wallet, ArrowDownCircle, BatteryCharging, PencilLine, X, Check } from 'lucide-react'
+import {
+  Info,
+  Wallet,
+  ArrowDownCircle,
+  BatteryCharging,
+  PencilLine,
+  X,
+  Check,
+} from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,6 +33,9 @@ interface AssetChannelSelectorProps {
   onClientAssetAmountChange?: (value: number) => void
   // Presets for capacity selection
   capacityPresets?: number[]
+  // Whether to show the asset name header (hide when already shown by a parent dropdown)
+  showHeader?: boolean
+  className?: string
 }
 
 export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
@@ -34,6 +45,8 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
   clientAssetAmount = 0,
   onClientAssetAmountChange,
   capacityPresets,
+  showHeader = true,
+  className,
 }) => {
   const { t } = useTranslation()
   const [customInput, setCustomInput] = useState('')
@@ -55,9 +68,13 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
       const currentPercentage =
         totalAssetAmount > 0 ? clientAssetAmount / totalAssetAmount : 0.5
       const newClientAmount = num * currentPercentage
-      const constrainedClientAmount = Math.max(0, Math.min(num, newClientAmount))
+      const constrainedClientAmount = Math.max(
+        0,
+        Math.min(num, newClientAmount)
+      )
       onTotalAssetAmountChange(num)
-      if (onClientAssetAmountChange) onClientAssetAmountChange(constrainedClientAmount)
+      if (onClientAssetAmountChange)
+        onClientAssetAmountChange(constrainedClientAmount)
     }
     setShowCustomModal(false)
   }
@@ -92,35 +109,43 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
   ]
 
   return (
-    <div className="bg-gradient-to-br from-emerald-950/40 via-gray-900 to-green-950/40 rounded-2xl p-6 border border-emerald-700/50 shadow-2xl">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <img
-              alt={assetInfo.ticker}
-              className="w-6 h-6 rounded-full"
-              onError={() => setAssetIconSrc(defaultRgbIcon)}
-              src={assetIconSrc}
-            />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500">
-              {t('channelConfiguration.assetChannel.title', {
-                ticker: assetInfo.ticker,
-              })}
-            </span>
-          </h3>
+    <div
+      className={
+        className ??
+        'bg-gradient-to-br from-emerald-950/40 via-gray-900 to-green-950/40 rounded-2xl p-6 border border-emerald-700/50 shadow-2xl'
+      }
+    >
+      {/* Header — hidden when parent already shows the asset via a dropdown */}
+      {showHeader && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <img
+                alt={assetInfo.ticker}
+                className="w-6 h-6 rounded-full"
+                onError={() => setAssetIconSrc(defaultRgbIcon)}
+                src={assetIconSrc}
+              />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-500">
+                {t('channelConfiguration.assetChannel.title', {
+                  ticker: assetInfo.ticker,
+                })}
+              </span>
+            </h3>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Capacity Presets */}
-      <div className="mb-6">
+      <div className="mb-4">
         <label className="text-sm font-semibold text-content-secondary mb-3 flex items-center gap-2">
           <BatteryCharging className="w-4 h-4 text-emerald-400" />
           {t('channelConfiguration.assetChannel.totalCapacity')}
         </label>
         <div className="flex flex-wrap items-center gap-2">
           {presetAmounts.map((preset, idx) => {
-            const isSelected = Math.abs(totalAssetAmount - preset) < 0.01 && customInput === ''
+            const isSelected =
+              Math.abs(totalAssetAmount - preset) < 0.01 && customInput === ''
 
             return (
               <button
@@ -150,7 +175,9 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                 type="button"
               >
                 <span>{formatAssetAmount(preset)}</span>
-                <span className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}>
+                <span
+                  className={`text-xs ${isSelected ? 'opacity-80' : 'opacity-50'}`}
+                >
                   {assetInfo.ticker}
                 </span>
               </button>
@@ -168,10 +195,14 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
             type="button"
           >
             <PencilLine className="w-3.5 h-3.5" />
-            {customInput !== ''
-              ? <>{formatAssetAmount(parseFloat(customInput))} <span className="text-xs opacity-80">{assetInfo.ticker}</span></>
-              : 'Custom'
-            }
+            {customInput !== '' ? (
+              <>
+                {formatAssetAmount(parseFloat(customInput))}{' '}
+                <span className="text-xs opacity-80">{assetInfo.ticker}</span>
+              </>
+            ) : (
+              'Custom'
+            )}
           </button>
         </div>
       </div>
@@ -180,7 +211,9 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
       {showCustomModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCustomModal(false) }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCustomModal(false)
+          }}
         >
           <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
             <div className="flex items-center justify-between mb-5">
@@ -188,7 +221,9 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                 <div className="p-2 rounded-lg bg-emerald-500/10">
                   <PencilLine className="w-4 h-4 text-emerald-400" />
                 </div>
-                <h3 className="text-base font-bold text-white">Custom Amount</h3>
+                <h3 className="text-base font-bold text-white">
+                  Custom Amount
+                </h3>
               </div>
               <button
                 className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
@@ -208,7 +243,9 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
                 className="w-full bg-surface-overlay/80 border border-border-default/50 focus:border-emerald-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 min={0}
                 onChange={(e) => setModalDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') applyCustomAmount() }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyCustomAmount()
+                }}
                 placeholder="0"
                 ref={modalInputRef}
                 type="number"

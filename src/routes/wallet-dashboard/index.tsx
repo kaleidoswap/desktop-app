@@ -3,6 +3,7 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowLeftRight,
   AlertTriangle,
   Info,
   Plus,
@@ -28,6 +29,7 @@ import {
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
+  TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
@@ -47,10 +49,32 @@ import { Asset as NiaAsset } from 'kaleidoswap-sdk'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
-const BtcIcon: React.FC<{ className?: string }> = ({ className = 'h-6 w-6' }) => {
+const BtcIcon: React.FC<{ className?: string }> = ({
+  className = 'h-6 w-6',
+}) => {
   const [imgSrc, setImgSrc] = useAssetIcon('BTC', defaultRgbIcon)
   return (
-    <img alt="BTC icon" className={className} onError={() => setImgSrc(defaultRgbIcon)} src={imgSrc} />
+    <img
+      alt="BTC icon"
+      className={className}
+      onError={() => setImgSrc(defaultRgbIcon)}
+      src={imgSrc}
+    />
+  )
+}
+
+const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
+  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded flex-shrink-0">
+      <img
+        alt={ticker}
+        className="w-3 h-3 rounded-full object-contain"
+        onError={() => setImgSrc(defaultRgbIcon)}
+        src={imgSrc}
+      />
+      {ticker}
+    </span>
   )
 }
 
@@ -66,7 +90,7 @@ export const Component = () => {
   const [assetBalance] = nodeApi.endpoints.assetBalance.useLazyQuery()
   const [refreshTransfers] = nodeApi.endpoints.refresh.useMutation()
   const [assetBalances, setAssetBalances] = useState<
-    Record<string, { offChain: number; onChain: number }>
+    Record<string, { offChain: number; onChain: number; incoming: number }>
   >({})
   const [assetsMap, setAssetsMap] = useState<Record<string, NiaAsset>>({})
   const { bitcoinUnit } = useSettings()
@@ -94,7 +118,14 @@ export const Component = () => {
     } finally {
       setIsRefreshing(false)
     }
-  }, [assets, btcBalance, listChannels, refreshTransfers, getNodeInfo, getNetworkInfo])
+  }, [
+    assets,
+    btcBalance,
+    listChannels,
+    refreshTransfers,
+    getNodeInfo,
+    getNetworkInfo,
+  ])
 
   useEffect(() => {
     if (assetsResponse.data?.nia) {
@@ -114,47 +145,73 @@ export const Component = () => {
 
   useEffect(() => {
     const fetchAssetBalances = async () => {
-      const newBalances: Record<string, { offChain: number; onChain: number }> = {}
+      const newBalances: Record<
+        string,
+        { offChain: number; onChain: number; incoming: number }
+      > = {}
       for (const asset of assetsResponse.data?.nia || []) {
         if (asset.asset_id) {
           const balance = await assetBalance({ asset_id: asset.asset_id })
+          const spendable = balance.data?.spendable || 0
+          const future = balance.data?.future || 0
           newBalances[asset.asset_id] = {
             offChain: balance.data?.offchain_outbound || 0,
-            onChain: balance.data?.future || 0,
+            onChain: spendable,
+            incoming: Math.max(0, future - spendable),
           }
         }
       }
       setAssetBalances(newBalances)
     }
     if (assetsResponse.data) fetchAssetBalances()
-  }, [assetsResponse.data, btcBalanceResponse.data, listChannelsResponse.data, assetBalance])
+  }, [
+    assetsResponse.data,
+    btcBalanceResponse.data,
+    listChannelsResponse.data,
+    assetBalance,
+  ])
 
   const { formatFiat, btcPrice } = useBitcoinPrice()
 
-  const network = networkInfoResponse.data?.network as unknown as BitcoinNetwork | undefined
+  const network = networkInfoResponse.data?.network as unknown as
+    | BitcoinNetwork
+    | undefined
   const isMainnet = network === 'Mainnet'
 
-  const onChainSpendableBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
-  const onChainColoredSpendableBalance = btcBalanceResponse.data?.colored?.spendable || 0
+  const onChainSpendableBalance =
+    btcBalanceResponse.data?.vanilla?.spendable || 0
+  const onChainFutureBalance = btcBalanceResponse.data?.vanilla?.future || 0
+  const btcIncoming = Math.max(
+    0,
+    onChainFutureBalance - onChainSpendableBalance
+  )
+  const onChainColoredSpendableBalance =
+    btcBalanceResponse.data?.colored?.spendable || 0
 
   const channels = listChannelsResponse?.data?.channels || []
   const offChainBalance = channels.reduce(
-    (sum, ch) => sum + (ch.local_balance_sat || 0), 0
+    (sum, ch) => sum + (ch.local_balance_sat || 0),
+    0
   )
   const totalBalance =
     offChainBalance + onChainSpendableBalance + onChainColoredSpendableBalance
   const totalInboundLiquidity = channels.reduce(
-    (sum, ch) => sum + (ch.inbound_balance_msat || 0) / 1000, 0
+    (sum, ch) => sum + (ch.inbound_balance_msat || 0) / 1000,
+    0
   )
   const totalOutboundLiquidity = channels.reduce(
-    (sum, ch) => sum + (ch.outbound_balance_msat || 0) / 1000, 0
+    (sum, ch) => sum + (ch.outbound_balance_msat || 0) / 1000,
+    0
   )
 
-  const isLoading = btcBalanceResponse.isLoading || listChannelsResponse.isLoading
+  const isLoading =
+    btcBalanceResponse.isLoading || listChannelsResponse.isLoading
 
   const liquidityTotal = totalInboundLiquidity + totalOutboundLiquidity
-  const outboundPct = liquidityTotal > 0 ? (totalOutboundLiquidity / liquidityTotal) * 100 : 50
-  const inboundPct = liquidityTotal > 0 ? (totalInboundLiquidity / liquidityTotal) * 100 : 50
+  const outboundPct =
+    liquidityTotal > 0 ? (totalOutboundLiquidity / liquidityTotal) * 100 : 50
+  const inboundPct =
+    liquidityTotal > 0 ? (totalInboundLiquidity / liquidityTotal) * 100 : 50
 
   const pubkey = nodeInfoResponse.data?.pubkey || ''
   const niaAssets = assetsResponse.data?.nia || []
@@ -166,24 +223,46 @@ export const Component = () => {
 
   const btcOnChain = onChainSpendableBalance + onChainColoredSpendableBalance
 
+  const renderBalanceWithIncoming = (
+    balance: number,
+    incoming: number,
+    formatFn: (val: number) => React.ReactNode
+  ) => {
+    if (incoming > 0) {
+      return (
+        <div className="flex flex-col">
+          <span className="font-bold">{formatFn(balance)}</span>
+          <span className="text-[10px] text-content-tertiary font-medium">
+            +{formatFn(incoming)} incoming
+          </span>
+        </div>
+      )
+    }
+    return <div className="font-bold">{formatFn(balance)}</div>
+  }
+
   return (
     <div className="w-full h-full flex flex-col animate-in fade-in duration-500">
       {/* Modals */}
       {showIssueAssetModal && (
-        <IssueAssetModal onClose={() => setShowIssueAssetModal(false)} onSuccess={refreshData} />
+        <IssueAssetModal
+          onClose={() => setShowIssueAssetModal(false)}
+          onSuccess={refreshData}
+        />
       )}
       {showUTXOModal && (
-        <UTXOManagementModal bitcoinUnit={bitcoinUnit} onClose={() => setShowUTXOModal(false)} />
+        <UTXOManagementModal
+          bitcoinUnit={bitcoinUnit}
+          onClose={() => setShowUTXOModal(false)}
+        />
       )}
       {showPeerModal && (
         <PeerManagementModal onClose={() => setShowPeerModal(false)} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-
         {/* ── LEFT COLUMN: Balance + Assets ── */}
         <div className="lg:col-span-7 flex flex-col gap-5 min-h-0">
-
           {/* Balance Card */}
           <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl p-6 group">
             <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -197,20 +276,31 @@ export const Component = () => {
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="relative group/warn">
-                    <span className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border cursor-default ${isMainnet
-                        ? 'text-status-success bg-status-success/10 border-status-success/20'
-                        : network
-                          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                          : 'text-content-tertiary bg-surface-elevated border-border-default/40'
-                      }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isMainnet ? 'bg-status-success' : network ? 'bg-amber-400 animate-pulse' : 'bg-content-tertiary'}`} />
+                    <span
+                      className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border cursor-default ${
+                        isMainnet
+                          ? 'text-status-success bg-status-success/10 border-status-success/20'
+                          : network
+                            ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                            : 'text-content-tertiary bg-surface-elevated border-border-default/40'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isMainnet ? 'bg-status-success' : network ? 'bg-amber-400 animate-pulse' : 'bg-content-tertiary'}`}
+                      />
                       {network || '—'}
-                      {!isMainnet && network && <AlertTriangle className="w-3 h-3" />}
+                      {!isMainnet && network && (
+                        <AlertTriangle className="w-3 h-3" />
+                      )}
                     </span>
                     {!isMainnet && network && (
                       <div className="absolute right-0 top-7 w-52 bg-surface-elevated text-content-primary text-xs rounded-xl py-2.5 px-3 opacity-0 group-hover/warn:opacity-100 transition-opacity pointer-events-none border border-amber-500/30 shadow-lg z-30">
-                        <p className="font-semibold text-amber-400 mb-1">{t('dashboard.testnetWarning')}</p>
-                        <p className="text-content-tertiary leading-relaxed">{t('dashboard.testnetWarningDesc')}</p>
+                        <p className="font-semibold text-amber-400 mb-1">
+                          {t('dashboard.testnetWarning')}
+                        </p>
+                        <p className="text-content-tertiary leading-relaxed">
+                          {t('dashboard.testnetWarningDesc')}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -221,37 +311,67 @@ export const Component = () => {
               </div>
               <div className="flex items-baseline gap-2.5 mb-1.5">
                 <span className="text-4xl font-bold text-content-primary leading-none">
-                  {isLoading
-                    ? <LoadingPlaceholder width="w-48" />
-                    : formatBitcoinAmount(totalBalance, bitcoinUnit)}
+                  {isLoading ? (
+                    <LoadingPlaceholder width="w-48" />
+                  ) : (
+                    formatBitcoinAmount(totalBalance, bitcoinUnit)
+                  )}
                 </span>
-                <span className="text-xl font-semibold text-primary">{bitcoinUnit}</span>
+                <span className="text-xl font-semibold text-primary">
+                  {bitcoinUnit}
+                </span>
               </div>
               <div className="flex items-center gap-4 text-sm flex-wrap">
                 {!isLoading && formatFiat(totalBalance) && (
-                  <span className="text-content-secondary">≈ {formatFiat(totalBalance)}</span>
+                  <span className="text-content-secondary">
+                    ≈ {formatFiat(totalBalance)}
+                  </span>
                 )}
                 {btcPrice !== undefined && (
                   <span className="flex items-center gap-1 text-xs text-content-tertiary">
                     <TrendingUp className="w-3 h-3 text-primary" />
-                    {t('dashboard.btcPrice')}: <span className="text-content-secondary ml-0.5">{formatFiat(100_000_000)}</span>
+                    {t('dashboard.btcPrice')}:{' '}
+                    <span className="text-content-secondary ml-0.5">
+                      {formatFiat(100_000_000)}
+                    </span>
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Actions — compact 3-button row */}
-            <div className="relative z-10 grid grid-cols-3 gap-2">
+            {/* Actions — compact 4-button row */}
+            <div className="relative z-10 grid grid-cols-4 gap-2">
               <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
-                onClick={() => dispatch(uiSliceActions.setModal({ assetId: niaAssets[0]?.asset_id, type: 'deposit' }))}
+                onClick={() =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: niaAssets[0]?.asset_id,
+                      type: 'deposit',
+                    })
+                  )
+                }
               >
                 <Download className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.deposit')}</span>
               </button>
               <button
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-primary/15 hover:bg-primary/25 border border-primary/30 hover:border-primary/50 text-primary text-xs font-semibold transition-all overflow-hidden"
+                onClick={() => navigate(TRADE_PATH)}
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{t('dashboard.swap', 'Swap')}</span>
+              </button>
+              <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 hover:border-status-danger/50 text-status-danger text-xs font-semibold transition-all overflow-hidden"
-                onClick={() => dispatch(uiSliceActions.setModal({ assetId: niaAssets[0]?.asset_id, type: 'withdraw' }))}
+                onClick={() =>
+                  dispatch(
+                    uiSliceActions.setModal({
+                      assetId: niaAssets[0]?.asset_id,
+                      type: 'withdraw',
+                    })
+                  )
+                }
               >
                 <Upload className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.withdraw')}</span>
@@ -261,10 +381,16 @@ export const Component = () => {
                 disabled={isRefreshing}
                 onClick={refreshData}
               >
-                {isRefreshing
-                  ? <LoaderIcon className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                  : <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />}
-                <span className="truncate">{isRefreshing ? t('dashboard.refreshing') : t('dashboard.refresh')}</span>
+                {isRefreshing ? (
+                  <LoaderIcon className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
+                )}
+                <span className="truncate">
+                  {isRefreshing
+                    ? t('dashboard.refreshing')
+                    : t('dashboard.refresh')}
+                </span>
               </button>
             </div>
           </div>
@@ -273,7 +399,9 @@ export const Component = () => {
           <div className="flex-1 min-h-0 flex flex-col bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl overflow-hidden">
             {/* Card header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border-default/40">
-              <h3 className="text-base font-bold text-content-primary">{t('dashboard.assets')}</h3>
+              <h3 className="text-base font-bold text-content-primary">
+                {t('dashboard.assets')}
+              </h3>
               <div className="flex items-center gap-2">
                 <Button
                   icon={<Database className="w-4 h-4" />}
@@ -296,13 +424,17 @@ export const Component = () => {
             {/* Column headers */}
             <div className="grid grid-cols-4 gap-2 text-[11px] font-semibold uppercase tracking-wider text-content-tertiary border-b border-border-default/30">
               <div className="px-4 py-2.5">{t('dashboard.asset')}</div>
-              <div className="px-4 py-2.5">{t('dashboard.offChainBalance')}</div>
+              <div className="px-4 py-2.5">
+                {t('dashboard.offChainBalance')}
+              </div>
               <div className="px-4 py-2.5">{t('dashboard.onChainBalance')}</div>
-              <div className="px-4 py-2.5 text-center">{t('dashboard.actions')}</div>
+              <div className="px-4 py-2.5 text-center">
+                {t('dashboard.actions')}
+              </div>
             </div>
 
             {/* Bitcoin row — always first */}
-            <div className="group grid grid-cols-4 gap-2 items-center hover:bg-surface-elevated/50 transition-colors border-b border-border-default/20">
+            <div className="group grid grid-cols-4 gap-2 items-center bg-surface-elevated/40 hover:bg-surface-elevated/70 transition-colors border-b border-border-default/20">
               {/* Asset cell */}
               <div className="py-3 px-4 text-sm truncate flex items-center">
                 <BtcIcon className="h-6 w-6 mr-2 flex-shrink-0" />
@@ -313,23 +445,58 @@ export const Component = () => {
               </div>
               {/* Off-chain */}
               <div className="text-sm py-3 px-4">
-                {isLoading ? <LoadingPlaceholder /> : (
-                  <div className="font-bold">{formatBitcoinAmount(offChainBalance, bitcoinUnit)}</div>
+                {isLoading ? (
+                  <LoadingPlaceholder />
+                ) : (
+                  <div className="font-bold">
+                    {formatBitcoinAmount(offChainBalance, bitcoinUnit)}
+                  </div>
                 )}
               </div>
               {/* On-chain */}
               <div className="text-sm py-3 px-4">
-                {isLoading ? <LoadingPlaceholder /> : (
-                  <div className="font-bold">{formatBitcoinAmount(btcOnChain, bitcoinUnit)}</div>
+                {isLoading ? (
+                  <LoadingPlaceholder />
+                ) : (
+                  renderBalanceWithIncoming(btcOnChain, btcIncoming, (val) =>
+                    formatBitcoinAmount(val, bitcoinUnit)
+                  )
                 )}
               </div>
               {/* Actions */}
               <div className="py-3 px-2 flex justify-center">
                 <div className="flex items-center gap-0.5">
                   {[
-                    { icon: <Download className="w-3.5 h-3.5" />, label: t('dashboard.deposit'), color: 'text-primary hover:bg-primary/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: niaAssets[0]?.asset_id, type: 'deposit' })) },
-                    { icon: <Upload className="w-3.5 h-3.5" />, label: t('dashboard.withdraw'), color: 'text-status-danger hover:bg-status-danger/15', onClick: () => dispatch(uiSliceActions.setModal({ assetId: niaAssets[0]?.asset_id, type: 'withdraw' })) },
-                    { icon: <History className="w-3.5 h-3.5" />, label: t('dashboard.history'), color: 'text-secondary hover:bg-secondary/15', onClick: () => navigate(WALLET_HISTORY_DEPOSITS_PATH) },
+                    {
+                      icon: <Download className="w-3.5 h-3.5" />,
+                      label: t('dashboard.deposit'),
+                      color: 'text-primary hover:bg-primary/15',
+                      onClick: () =>
+                        dispatch(
+                          uiSliceActions.setModal({
+                            assetId: niaAssets[0]?.asset_id,
+                            type: 'deposit',
+                          })
+                        ),
+                    },
+                    {
+                      icon: <Upload className="w-3.5 h-3.5" />,
+                      label: t('dashboard.withdraw'),
+                      color: 'text-status-danger hover:bg-status-danger/15',
+                      onClick: () =>
+                        dispatch(
+                          uiSliceActions.setModal({
+                            assetId: niaAssets[0]?.asset_id,
+                            type: 'withdraw',
+                          })
+                        ),
+                    },
+                    {
+                      icon: <History className="w-3.5 h-3.5" />,
+                      label: t('dashboard.history'),
+                      color: 'text-secondary hover:bg-secondary/15',
+                      onClick: () => navigate(WALLET_HISTORY_DEPOSITS_PATH),
+                    },
                   ].map(({ icon, label, color, onClick }) => (
                     <div key={label} className="relative group/btn">
                       <button
@@ -354,15 +521,24 @@ export const Component = () => {
                 <div className="flex flex-col items-center justify-center py-10 text-content-tertiary">
                   <Database className="w-10 h-10 mb-3 opacity-40" />
                   <p className="text-sm font-medium">No RGB assets found.</p>
-                  <p className="text-xs mt-1 opacity-70">Issue an asset or deposit to get started.</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    Issue an asset or deposit to get started.
+                  </p>
                 </div>
               ) : (
                 niaAssets.map((asset) => (
                   <AssetRow
                     asset={asset as NiaAsset}
                     key={asset.asset_id}
-                    offChainBalance={(assetBalances[asset.asset_id || ''] || {}).offChain || 0}
-                    onChainBalance={(assetBalances[asset.asset_id || ''] || {}).onChain || 0}
+                    offChainBalance={
+                      (assetBalances[asset.asset_id || ''] || {}).offChain || 0
+                    }
+                    onChainBalance={
+                      (assetBalances[asset.asset_id || ''] || {}).onChain || 0
+                    }
+                    incomingBalance={
+                      (assetBalances[asset.asset_id || ''] || {}).incoming || 0
+                    }
                   />
                 ))
               )}
@@ -372,17 +548,17 @@ export const Component = () => {
 
         {/* ── RIGHT COLUMN: Node + Channels ── */}
         <div className="lg:col-span-5 flex flex-col min-h-0">
-
           {/* Single node card */}
           <div className="flex-1 min-h-0 flex flex-col bg-surface-overlay rounded-2xl border border-border-default/60 p-5">
-
             {/* Header: title + channel count */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-content-primary">{t('dashboard.lightningChannels')}</h3>
+                <h3 className="text-base font-bold text-content-primary">
+                  {t('dashboard.lightningChannels')}
+                </h3>
                 {channels.length > 0 && (
                   <span className="text-xs font-bold bg-secondary/15 text-secondary border border-secondary/20 rounded-full px-2 py-0.5">
-                    {channels.filter(c => c.ready).length}/{channels.length}
+                    {channels.filter((c) => c.ready).length}/{channels.length}
                   </span>
                 )}
               </div>
@@ -398,7 +574,9 @@ export const Component = () => {
             <div className="flex items-center justify-between bg-surface-elevated/60 px-3 py-2 rounded-lg border border-dashed border-border-default mb-4">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Lock className="w-3 h-3 text-content-tertiary flex-shrink-0" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary flex-shrink-0">Node ID</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary flex-shrink-0">
+                  Node ID
+                </span>
                 <code className="text-xs font-mono text-primary truncate">
                   {pubkey ? `${pubkey.slice(0, 14)}…${pubkey.slice(-6)}` : '—'}
                 </code>
@@ -409,9 +587,11 @@ export const Component = () => {
                 title={pubkey}
                 type="button"
               >
-                {pubkeyCopied
-                  ? <Check className="w-3.5 h-3.5 text-status-success" />
-                  : <Copy className="w-3.5 h-3.5" />}
+                {pubkeyCopied ? (
+                  <Check className="w-3.5 h-3.5 text-status-success" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
 
@@ -419,64 +599,112 @@ export const Component = () => {
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 -mr-1">
               {isLoading ? (
                 <div className="space-y-2">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="h-16 bg-surface-elevated/50 rounded-xl animate-pulse" />
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 bg-surface-elevated/50 rounded-xl animate-pulse"
+                    />
                   ))}
                 </div>
               ) : channels.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 text-center h-full">
                   <Zap className="w-7 h-7 text-content-tertiary mb-2 opacity-50" />
-                  <p className="text-xs text-content-tertiary">{t('dashboard.noChannelsFound')}</p>
+                  <p className="text-xs text-content-tertiary">
+                    {t('dashboard.noChannelsFound')}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-1.5">
                   {channels.map((ch) => {
                     const asset = assetsMap[ch.asset_id || '']
-                    const btcTotal = (ch.outbound_balance_msat || 0) + (ch.inbound_balance_msat || 0)
-                    const btcOutPct = btcTotal > 0 ? ((ch.outbound_balance_msat || 0) / btcTotal) * 100 : 50
-                    const btcInPct = btcTotal > 0 ? ((ch.inbound_balance_msat || 0) / btcTotal) * 100 : 50
-                    const assetTotal = (ch.asset_local_amount || 0) + (ch.asset_remote_amount || 0)
-                    const assetOutPct = assetTotal > 0 ? ((ch.asset_local_amount || 0) / assetTotal) * 100 : 50
-                    const assetInPct = assetTotal > 0 ? ((ch.asset_remote_amount || 0) / assetTotal) * 100 : 50
+                    const btcTotal =
+                      (ch.outbound_balance_msat || 0) +
+                      (ch.inbound_balance_msat || 0)
+                    const btcOutPct =
+                      btcTotal > 0
+                        ? ((ch.outbound_balance_msat || 0) / btcTotal) * 100
+                        : 50
+                    const btcInPct =
+                      btcTotal > 0
+                        ? ((ch.inbound_balance_msat || 0) / btcTotal) * 100
+                        : 50
+                    const assetTotal =
+                      (ch.asset_local_amount || 0) +
+                      (ch.asset_remote_amount || 0)
+                    const assetOutPct =
+                      assetTotal > 0
+                        ? ((ch.asset_local_amount || 0) / assetTotal) * 100
+                        : 50
+                    const assetInPct =
+                      assetTotal > 0
+                        ? ((ch.asset_remote_amount || 0) / assetTotal) * 100
+                        : 50
                     return (
-                      <div key={ch.channel_id} className="group/ch bg-surface-elevated/60 hover:bg-surface-elevated/90 rounded-xl border border-border-subtle/40 hover:border-border-default/50 p-3 transition-all duration-200">
+                      <div
+                        key={ch.channel_id}
+                        className="group/ch bg-surface-elevated/60 hover:bg-surface-elevated/90 rounded-xl border border-border-subtle/40 hover:border-border-default/50 p-3 transition-all duration-200"
+                      >
                         {/* Channel header row */}
                         <div className="flex items-center justify-between text-xs mb-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${ch.is_usable ? 'bg-status-success' : 'bg-status-danger'}`} />
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${ch.is_usable ? 'bg-status-success' : 'bg-status-danger'}`}
+                            />
                             <span className="text-content-secondary font-medium truncate">
                               {ch.peer_alias || ch.peer_pubkey?.slice(0, 10)}…
                             </span>
                             {asset && (
-                              <span className="text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded flex-shrink-0">{asset.ticker}</span>
+                              <ChannelAssetBadge ticker={asset.ticker} />
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {ch.ready
-                              ? <span className="text-[10px] font-semibold text-status-success border border-status-success/30 px-1.5 py-0.5 rounded uppercase">{t('channelCard.status.open')}</span>
-                              : <span className="text-[10px] font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">{t('channelCard.status.pending')}</span>}
-                            {ch.public
-                              ? <Unlock className="w-3 h-3 text-content-tertiary" />
-                              : <Lock className="w-3 h-3 text-secondary/70" />}
+                            {ch.ready ? (
+                              <span className="text-[10px] font-semibold text-status-success border border-status-success/30 px-1.5 py-0.5 rounded uppercase">
+                                {t('channelCard.status.open')}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">
+                                {t('channelCard.status.pending')}
+                              </span>
+                            )}
+                            {ch.public ? (
+                              <Unlock className="w-3 h-3 text-content-tertiary" />
+                            ) : (
+                              <Lock className="w-3 h-3 text-secondary/70" />
+                            )}
                           </div>
                         </div>
 
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
                           <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                            <span className="flex items-center gap-0.5 text-amber-400">
+                            <span className="flex items-center gap-0.5 text-yellow-400">
                               <ArrowUpRight className="w-2.5 h-2.5" />
-                              {formatBitcoinAmount((ch.outbound_balance_msat || 0) / 1000, bitcoinUnit)}
+                              {formatBitcoinAmount(
+                                (ch.outbound_balance_msat || 0) / 1000,
+                                bitcoinUnit
+                              )}
                             </span>
-                            <span className="text-content-tertiary/50 font-medium">BTC</span>
+                            <span className="text-content-secondary font-medium">
+                              BTC
+                            </span>
                             <span className="flex items-center gap-0.5 text-blue-400">
-                              {formatBitcoinAmount((ch.inbound_balance_msat || 0) / 1000, bitcoinUnit)}
+                              {formatBitcoinAmount(
+                                (ch.inbound_balance_msat || 0) / 1000,
+                                bitcoinUnit
+                              )}
                               <ArrowDownRight className="w-2.5 h-2.5" />
                             </span>
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                            <div className="absolute left-0 top-0 h-full bg-amber-500 rounded-l-full" style={{ width: `${btcOutPct}%` }} />
-                            <div className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full" style={{ width: `${btcInPct}%` }} />
+                            <div
+                              className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full"
+                              style={{ width: `${btcOutPct}%` }}
+                            />
+                            <div
+                              className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full"
+                              style={{ width: `${btcInPct}%` }}
+                            />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
                         </div>
@@ -485,19 +713,27 @@ export const Component = () => {
                         {asset && (
                           <div>
                             <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                              <span className="flex items-center gap-0.5 text-indigo-400">
+                              <span className="flex items-center gap-0.5 text-green-400">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
                                 {ch.asset_local_amount || 0}
                               </span>
-                              <span className="text-secondary/70 font-medium">{asset.ticker}</span>
-                              <span className="flex items-center gap-0.5 text-fuchsia-400">
+                              <span className="text-green-400/60 font-medium">
+                                {asset.ticker}
+                              </span>
+                              <span className="flex items-center gap-0.5 text-purple-400">
                                 {ch.asset_remote_amount || 0}
                                 <ArrowDownRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                             <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
-                              <div className="absolute left-0 top-0 h-full bg-indigo-500 rounded-l-full" style={{ width: `${assetOutPct}%` }} />
-                              <div className="absolute right-0 top-0 h-full bg-fuchsia-500 rounded-r-full" style={{ width: `${assetInPct}%` }} />
+                              <div
+                                className="absolute left-0 top-0 h-full bg-green-500 rounded-l-full"
+                                style={{ width: `${assetOutPct}%` }}
+                              />
+                              <div
+                                className="absolute right-0 top-0 h-full bg-purple-500 rounded-r-full"
+                                style={{ width: `${assetInPct}%` }}
+                              />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
                           </div>
@@ -514,17 +750,28 @@ export const Component = () => {
               <div className="border-t border-border-default/40 mt-4 pt-3">
                 <div className="flex justify-between text-xs text-content-tertiary mb-1.5">
                   <span className="flex items-center gap-1">
-                    <ArrowUpRight className="w-3 h-3 text-amber-400" />
-                    {formatBitcoinAmount(totalOutboundLiquidity, bitcoinUnit)} {bitcoinUnit}
+                    <ArrowUpRight className="w-3 h-3 text-yellow-400" />
+                    {formatBitcoinAmount(
+                      totalOutboundLiquidity,
+                      bitcoinUnit
+                    )}{' '}
+                    {bitcoinUnit}
                   </span>
                   <span className="flex items-center gap-1">
-                    {formatBitcoinAmount(totalInboundLiquidity, bitcoinUnit)} {bitcoinUnit}
+                    {formatBitcoinAmount(totalInboundLiquidity, bitcoinUnit)}{' '}
+                    {bitcoinUnit}
                     <ArrowDownRight className="w-3 h-3 text-blue-400" />
                   </span>
                 </div>
                 <div className="relative w-full bg-surface-elevated/60 rounded-full h-1.5 overflow-hidden">
-                  <div className="absolute left-0 top-0 h-full bg-amber-500 rounded-l-full transition-all duration-500" style={{ width: `${outboundPct}%` }} />
-                  <div className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full transition-all duration-500" style={{ width: `${inboundPct}%` }} />
+                  <div
+                    className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full transition-all duration-500"
+                    style={{ width: `${outboundPct}%` }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full transition-all duration-500"
+                    style={{ width: `${inboundPct}%` }}
+                  />
                   <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                 </div>
               </div>
@@ -543,9 +790,21 @@ export const Component = () => {
               <div className="flex-1" />
               {/* Secondary: icon-only */}
               {[
-                { icon: <Plus className="w-3.5 h-3.5" />, label: t('dashboard.openChannel'), onClick: () => navigate(CREATE_NEW_CHANNEL_PATH) },
-                { icon: <ShoppingCart className="w-3.5 h-3.5" />, label: t('channels.buyChannel'), onClick: () => navigate(ORDER_CHANNEL_PATH) },
-                { icon: <Users className="w-3.5 h-3.5" />, label: t('dashboard.peers'), onClick: () => setShowPeerModal(true) },
+                {
+                  icon: <Plus className="w-3.5 h-3.5" />,
+                  label: t('dashboard.openChannel'),
+                  onClick: () => navigate(CREATE_NEW_CHANNEL_PATH),
+                },
+                {
+                  icon: <ShoppingCart className="w-3.5 h-3.5" />,
+                  label: t('channels.buyChannel'),
+                  onClick: () => navigate(ORDER_CHANNEL_PATH),
+                },
+                {
+                  icon: <Users className="w-3.5 h-3.5" />,
+                  label: t('dashboard.peers'),
+                  onClick: () => setShowPeerModal(true),
+                },
               ].map(({ icon, label, onClick }) => (
                 <div key={label} className="relative group/act">
                   <button
@@ -562,7 +821,6 @@ export const Component = () => {
               ))}
             </div>
           </div>
-
         </div>
       </div>
 

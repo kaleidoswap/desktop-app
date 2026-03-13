@@ -102,7 +102,9 @@ const SwapStatusContent: React.FC<{
 
       <div className="flex items-center justify-between gap-4 bg-white dark:bg-blue-900/80 p-3 rounded-lg shadow-md border border-gray-100 dark:border-blue-800">
         <div className="flex-1">
-          <span className="text-sm text-content-tertiary dark:text-content-secondary">From</span>
+          <span className="text-sm text-content-tertiary dark:text-content-secondary">
+            From
+          </span>
           <AssetDisplay amount={fromAssetQty} asset={fromAssetTicker} />
         </div>
 
@@ -111,7 +113,9 @@ const SwapStatusContent: React.FC<{
         />
 
         <div className="flex-1">
-          <span className="text-sm text-content-tertiary dark:text-content-secondary">To</span>
+          <span className="text-sm text-content-tertiary dark:text-content-secondary">
+            To
+          </span>
           <AssetDisplay
             align="right"
             amount={toAssetQty}

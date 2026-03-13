@@ -102,7 +102,9 @@ const ConnectionItem = ({
     <div className="flex items-start">
       <div className="mt-0.5 mr-3">{icon}</div>
       <div>
-        <span className="text-xs text-content-secondary block mb-1">{label}</span>
+        <span className="text-xs text-content-secondary block mb-1">
+          {label}
+        </span>
         <span className="text-content-primary font-medium break-all text-sm">
           {value}
         </span>

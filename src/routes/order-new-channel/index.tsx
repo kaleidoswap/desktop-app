@@ -44,8 +44,7 @@ export const Component = () => {
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
   const [createOrderRequest, createOrderResponse] =
     makerApi.endpoints.create_order.useLazyQuery()
-  const [getOrderRequest, getOrderResponse] =
-    makerApi.endpoints.get_order.useLazyQuery()
+  const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
 
   const toastId: string | number | null = null
@@ -63,23 +62,18 @@ export const Component = () => {
         const bolt11State = orderData?.payment?.bolt11?.state
         const onchainState = orderData?.payment?.onchain?.state
 
-        let actualPaymentState = null
-        let detectedPaymentMethod = null
-
-        // Check if bolt11 payment was made
-        if (bolt11State && ['HOLD', 'PAID'].includes(bolt11State)) {
-          actualPaymentState = bolt11State
-          detectedPaymentMethod = 'lightning'
-        }
-        // Check if onchain payment was made (only if bolt11 wasn't paid)
-        else if (onchainState && ['HOLD', 'PAID'].includes(onchainState)) {
-          actualPaymentState = onchainState
-          detectedPaymentMethod = 'onchain'
-        }
-        // Fall back to any payment state if neither is in HOLD/PAID
-        else {
-          actualPaymentState = bolt11State || onchainState
-        }
+        const actualPaymentState =
+          bolt11State && ['HOLD', 'PAID'].includes(bolt11State)
+            ? bolt11State
+            : onchainState && ['HOLD', 'PAID'].includes(onchainState)
+              ? onchainState
+              : bolt11State || onchainState
+        const detectedPaymentMethod =
+          bolt11State && ['HOLD', 'PAID'].includes(bolt11State)
+            ? 'lightning'
+            : onchainState && ['HOLD', 'PAID'].includes(onchainState)
+              ? 'onchain'
+              : null
 
         const paymentJustReceived =
           actualPaymentState &&
@@ -227,6 +221,8 @@ export const Component = () => {
           clientBalanceSat,
           assetId,
           lspAssetAmount,
+          clientAssetAmount,
+          rfqId,
           channelExpireBlocks,
         } = data
 
@@ -271,7 +267,8 @@ export const Component = () => {
             channelExpireBlocks,
             clientBalanceSat,
             clientPubKey,
-            lspAssetAmount: lspAssetAmount || undefined,
+            lspAssetAmount:
+              (lspAssetAmount || 0) + (clientAssetAmount || 0) || undefined,
             lspOptions,
           },
           assets,
@@ -289,10 +286,12 @@ export const Component = () => {
           assetId: assetId || undefined,
           capacitySat,
           channelExpireBlocks,
+          clientAssetAmount: clientAssetAmount || undefined,
           clientBalanceSat,
           clientPubKey,
           lspAssetAmount: lspAssetAmount || undefined,
           lspOptions,
+          rfqId: rfqId || undefined,
         })
 
         // Log the payload for the request
@@ -352,7 +351,7 @@ export const Component = () => {
 
   const handleRestartFlow = useCallback(() => {
     // Reset all state
-    setStep(1)
+    setStep(2)
     setOrderId(null)
     setOrderPayload(null)
     setPaymentStatus(null)
@@ -374,9 +373,9 @@ export const Component = () => {
   }, [])
 
   const BackConfirmationModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setShowBackConfirmation(false)}
       />
       <div className="bg-surface-overlay rounded-xl p-6 max-w-md w-full relative z-10">
@@ -394,7 +393,7 @@ export const Component = () => {
             {t('orderChannel.backConfirmCancel')}
           </button>
           <button
-            className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis transition-colors"
+            className="flex-1 px-4 py-2 bg-primary text-[#12131C] rounded-lg hover:bg-primary-emphasis transition-colors"
             onClick={handleConfirmBack}
           >
             {t('orderChannel.backConfirmGoBack')}
@@ -405,26 +404,22 @@ export const Component = () => {
   )
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white relative min-h-fit">
+    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white relative isolate min-h-fit">
       {loading && (
         <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
           <ClipLoader color={'#123abc'} loading={loading} size={50} />
         </div>
       )}
       {showBackConfirmation && <BackConfirmationModal />}
-      <div className={step !== 1 ? 'hidden' : ''}>
-        <Step1 onNext={onSubmitStep1} />
-      </div>
+      {step === 1 && <Step1 onNext={onSubmitStep1} />}
 
-      <div className={step !== 2 ? 'hidden' : ''}>
-        <Step2 onBack={onStepBack} onNext={onSubmitStep2} />
-      </div>
+      {step === 2 && <Step2 onBack={onStepBack} onNext={onSubmitStep2} />}
 
-      <div className={step !== 3 ? 'hidden' : ''}>
+      {step === 3 && (
         <Step3
+          key={orderId ?? 'draft-order'}
           detectedPaymentMethod={paymentMethod}
           isProcessingPayment={isProcessingPayment}
-          loading={getOrderResponse.isLoading}
           onBack={onStepBack}
           onRestart={handleRestartFlow}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
@@ -432,15 +427,15 @@ export const Component = () => {
           paymentReceived={paymentReceived}
           paymentStatus={paymentStatus}
         />
-      </div>
+      )}
 
-      <div className={step !== 4 ? 'hidden' : ''}>
+      {step === 4 && (
         <Step4
           onRestart={handleRestartFlow}
           orderId={orderId ?? undefined}
           paymentStatus={paymentStatus || 'error'}
         />
-      </div>
+      )}
 
       {/* Info Section */}
       <div className="flex items-center space-x-2 text-sm text-content-secondary mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">

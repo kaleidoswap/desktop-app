@@ -124,13 +124,13 @@ export const parseAmountValidationError = (
  */
 export const getValidationError = (
   fromAmount: number,
-  toAmount: number,
+  _toAmount: number,
   minFromAmount: number,
   maxFromAmount: number,
-  maxToAmount: number,
+  _maxToAmount: number,
   maxOutboundHtlcSat: number,
   fromAsset: string,
-  toAsset: string,
+  _toAsset: string,
   formatAmount: (amount: number, asset: string) => string,
   displayAsset: (asset: string) => string,
   assets: NiaAsset[] = [],
@@ -160,11 +160,6 @@ export const getValidationError = (
     isAssetId(fromAsset) && assets.length > 0
       ? mapAssetIdToTicker(fromAsset, assets)
       : fromAsset
-
-  const toDisplayAsset =
-    isAssetId(toAsset) && assets.length > 0
-      ? mapAssetIdToTicker(toAsset, assets)
-      : toAsset
 
   // Check if available balance is zero - show error immediately
   if (maxFromAmount === 0) {
@@ -198,57 +193,6 @@ export const getValidationError = (
     )} ${displayAsset(fromDisplayAsset)}.`
   }
 
-  // Maximum amount check
-  if (fromAmount > maxFromAmount) {
-    // Special case: if max is 0, show a clearer insufficient balance message
-    if (maxFromAmount === 0) {
-      if (t) {
-        return t('tradeMarketMaker.validation.insufficientBalance', {
-          asset: displayAsset(fromDisplayAsset),
-        })
-      }
-      return `Insufficient balance. You don't have any ${displayAsset(fromDisplayAsset)} available to send.`
-    }
-    if (t) {
-      return t('tradeMarketMaker.validation.maxSendAmount', {
-        amount: formatAmount(maxFromAmount, fromDisplayAsset),
-        asset: displayAsset(fromDisplayAsset),
-      })
-    }
-    return `You can only send up to ${formatAmount(
-      maxFromAmount,
-      fromDisplayAsset
-    )} ${displayAsset(fromDisplayAsset)}.`
-  }
-
-  // Only check maxToAmount if we're not loading any quote-related data
-  if (
-    !isToAmountLoading &&
-    !isQuoteLoading &&
-    !isPriceLoading &&
-    toAmount > maxToAmount
-  ) {
-    // Special case: if max is 0, show a clearer message
-    if (maxToAmount === 0) {
-      if (t) {
-        return t('tradeMarketMaker.validation.unableToReceive', {
-          asset: displayAsset(toDisplayAsset),
-        })
-      }
-      return `Unable to receive ${displayAsset(toDisplayAsset)}. No channel capacity available.`
-    }
-    if (t) {
-      return t('tradeMarketMaker.validation.maxReceiveAmount', {
-        amount: formatAmount(maxToAmount, toDisplayAsset),
-        asset: displayAsset(toDisplayAsset),
-      })
-    }
-    return `You can only receive up to ${formatAmount(
-      maxToAmount,
-      toDisplayAsset
-    )} ${displayAsset(toDisplayAsset)}.`
-  }
-
   // HTLC limit for BTC
   if (fromAsset === 'BTC' && fromAmount > maxOutboundHtlcSat) {
     if (t) {
@@ -280,4 +224,65 @@ export const getFieldError = (
   }
 
   return errors[field].message
+}
+
+/**
+ * Returns a warning message when the entered amount exceeds the allowed maximum.
+ * These are soft warnings (amber) — the swap is blocked but the input is not clamped.
+ */
+export const getValidationWarning = (
+  fromAmount: number,
+  toAmount: number,
+  maxFromAmount: number,
+  maxToAmount: number,
+  fromAsset: string,
+  toAsset: string,
+  formatAmount: (amount: number, asset: string) => string,
+  displayAsset: (asset: string) => string,
+  assets: NiaAsset[] = [],
+  isToAmountLoading: boolean = false,
+  isQuoteLoading: boolean = false,
+  isPriceLoading: boolean = false,
+  missingChannelAsset: {
+    asset: string
+    assetId: string
+    isFromAsset: boolean
+  } | null = null,
+  t?: TFunction
+): string | null => {
+  // Don't show warnings while loading or when a channel is being bought
+  if (isToAmountLoading || isQuoteLoading || isPriceLoading) return null
+  if (missingChannelAsset) return null
+
+  const fromDisplayAsset =
+    isAssetId(fromAsset) && assets.length > 0
+      ? mapAssetIdToTicker(fromAsset, assets)
+      : fromAsset
+
+  const toDisplayAsset =
+    isAssetId(toAsset) && assets.length > 0
+      ? mapAssetIdToTicker(toAsset, assets)
+      : toAsset
+
+  if (fromAmount > maxFromAmount && maxFromAmount > 0) {
+    if (t) {
+      return t('tradeMarketMaker.validation.maxSendAmount', {
+        amount: formatAmount(maxFromAmount, fromDisplayAsset),
+        asset: displayAsset(fromDisplayAsset),
+      })
+    }
+    return `You can only send up to ${formatAmount(maxFromAmount, fromDisplayAsset)} ${displayAsset(fromDisplayAsset)}.`
+  }
+
+  if (toAmount > maxToAmount && maxToAmount > 0) {
+    if (t) {
+      return t('tradeMarketMaker.validation.maxReceiveAmount', {
+        amount: formatAmount(maxToAmount, toDisplayAsset),
+        asset: displayAsset(toDisplayAsset),
+      })
+    }
+    return `You can only receive up to ${formatAmount(maxToAmount, toDisplayAsset)} ${displayAsset(toDisplayAsset)}.`
+  }
+
+  return null
 }

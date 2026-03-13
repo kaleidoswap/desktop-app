@@ -75,7 +75,9 @@ const FeeItem: React.FC<FeeItemProps> = ({
           </div>
           <div className="text-left">
             <h4 className="text-sm font-bold text-content-primary">{title}</h4>
-            <p className="text-xs text-content-secondary mt-0.5">{description}</p>
+            <p className="text-xs text-content-secondary mt-0.5">
+              {description}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -126,7 +128,10 @@ export const FeeBreakdown: React.FC<FeeBreakdownProps> = ({
   const { t } = useTranslation()
   const [expandedFee, setExpandedFee] = useState<string | null>(null)
 
-  const fees: Record<string, Fee & { icon: React.ReactNode; color: ColorConfig }> = {
+  const fees: Record<
+    string,
+    Fee & { icon: React.ReactNode; color: ColorConfig }
+  > = {
     capacity: {
       amount: capacityFee,
       color: {

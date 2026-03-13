@@ -17,10 +17,29 @@ let currentBaseUrl: string | null = null
 let currentNodeUrl: string | null = null
 let currentAuthToken: string | null = null
 
+export const buildLocalNodeUrl = (port: string | number): string =>
+  `http://127.0.0.1:${port}`
+
+export const normalizeNodeUrl = (
+  nodeUrl?: string | null
+): string | undefined => {
+  if (!nodeUrl) return undefined
+
+  try {
+    const normalizedUrl = new URL(nodeUrl)
+    if (normalizedUrl.hostname === 'localhost') {
+      normalizedUrl.hostname = '127.0.0.1'
+    }
+    return normalizedUrl.toString().replace(/\/$/, '')
+  } catch {
+    return nodeUrl
+  }
+}
+
 export const getKaleidoClient = async (
   state: MinimalState
 ): Promise<KaleidoClient> => {
-  const nodeUrl = state.nodeSettings.data?.node_url
+  const nodeUrl = normalizeNodeUrl(state.nodeSettings.data?.node_url)
   const authToken = state.nodeSettings.data?.bearer_token
   const baseUrl =
     state.nodeSettings.data?.default_maker_url || 'http://localhost:8000'
@@ -35,11 +54,6 @@ export const getKaleidoClient = async (
     currentBaseUrl !== baseUrl
 
   if (needsRecreate) {
-    console.log('[Client] Creating KaleidoClient', {
-      baseUrl,
-      nodeUrl,
-    })
-
     // Create new instance with the TypeScript SDK using static factory
     clientInstance = KaleidoClient.create({
       baseUrl,

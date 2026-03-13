@@ -6,7 +6,7 @@ import { formatNumberWithCommas } from '../../helpers/number'
 import { ChannelFees } from '../../slices/makerApi/makerApi.slice'
 
 interface FeeBreakdownDisplayProps {
-  fees: ChannelFees
+  fees: ChannelFees | null
   isLoading?: boolean
   showGrandTotal?: boolean
   additionalCosts?: Array<{
@@ -27,12 +27,19 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
   const { t } = useTranslation()
 
   const calculateGrandTotal = () => {
+    if (!fees) return 0
     const additionalTotal = additionalCosts.reduce(
       (sum, cost) => sum + cost.amount,
       0
     )
     return fees.total_fee + additionalTotal
   }
+
+  const SkeletonBar = ({ wide }: { wide?: boolean }) => (
+    <div
+      className={`h-4 rounded bg-surface-high/60 animate-pulse ${wide ? 'w-24' : 'w-16'}`}
+    />
+  )
 
   return (
     <div className={containerClassName}>
@@ -53,29 +60,41 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.setupFee')}
           </span>
-          <span className="text-content-primary font-medium">
-            {formatNumberWithCommas(fees.setup_fee.toString())} sats
-          </span>
+          {fees ? (
+            <span className="text-content-primary font-medium">
+              {formatNumberWithCommas(fees.setup_fee.toString())} sats
+            </span>
+          ) : (
+            <SkeletonBar />
+          )}
         </div>
         <div className="flex justify-between text-sm items-center">
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.capacityFee')}
           </span>
-          <span className="text-content-primary font-medium">
-            {formatNumberWithCommas(fees.capacity_fee.toString())} sats
-          </span>
+          {fees ? (
+            <span className="text-content-primary font-medium">
+              {formatNumberWithCommas(fees.capacity_fee.toString())} sats
+            </span>
+          ) : (
+            <SkeletonBar />
+          )}
         </div>
         <div className="flex justify-between text-sm items-center">
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.durationFee')}
           </span>
-          <span className="text-content-primary font-medium">
-            {formatNumberWithCommas(fees.duration_fee.toString())} sats
-          </span>
+          {fees ? (
+            <span className="text-content-primary font-medium">
+              {formatNumberWithCommas(fees.duration_fee.toString())} sats
+            </span>
+          ) : (
+            <SkeletonBar />
+          )}
         </div>
 
         {/* Discount if applicable */}
-        {fees.applied_discount && fees.discount_code && (
+        {fees?.applied_discount && fees?.discount_code && (
           <div className="flex justify-between items-center py-2 border-b border-status-success/20 bg-status-success/10 -mx-3 px-3">
             <span className="text-status-success font-medium">
               {t('channelConfiguration.feeBreakdown.discount', {
@@ -92,9 +111,13 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           <span className="text-content-secondary font-medium">
             {t('channelConfiguration.feeBreakdown.channelFees')}
           </span>
-          <span className="text-content-primary font-semibold">
-            {formatNumberWithCommas(fees.total_fee.toString())} sats
-          </span>
+          {fees ? (
+            <span className="text-content-primary font-semibold">
+              {formatNumberWithCommas(fees.total_fee.toString())} sats
+            </span>
+          ) : (
+            <SkeletonBar wide />
+          )}
         </div>
 
         {/* Additional costs */}
@@ -106,7 +129,11 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
             <span className={cost.className ? '' : 'text-content-secondary'}>
               {cost.label}
             </span>
-            <span className={cost.className ? '' : 'text-content-primary font-medium'}>
+            <span
+              className={
+                cost.className ? '' : 'text-content-primary font-medium'
+              }
+            >
               {formatNumberWithCommas(cost.amount.toString())} sats
             </span>
           </div>
@@ -118,9 +145,13 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
             <span className="text-content-primary font-bold text-base">
               {t('channelConfiguration.feeBreakdown.totalPayment')}
             </span>
-            <span className="text-primary font-bold text-base">
-              {formatNumberWithCommas(calculateGrandTotal().toString())} sats
-            </span>
+            {fees ? (
+              <span className="text-primary font-bold text-base">
+                {formatNumberWithCommas(calculateGrandTotal().toString())} sats
+              </span>
+            ) : (
+              <SkeletonBar wide />
+            )}
           </div>
         )}
       </div>

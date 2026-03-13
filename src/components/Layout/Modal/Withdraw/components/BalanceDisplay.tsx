@@ -17,7 +17,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
 
   if (addressType === 'bitcoin') {
     return (
-      <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-4">
+      <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 mb-4">
         <div className="flex justify-between items-center">
           <span className="text-content-secondary text-sm">
             {t('withdrawModal.balance.btcLabel')}
@@ -50,7 +50,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
       const displayBalance = assetBalance / Math.pow(10, precision)
 
       return (
-        <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 mb-4">
+        <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-content-secondary text-sm">
               {t('withdrawModal.balance.assetLabel', { ticker })}

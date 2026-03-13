@@ -37,7 +37,12 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
     }
     // Fallback to error field
     if ('error' in errorData && typeof errorData.error === 'string') {
-      return errorData.error
+      // Strip SDK class prefixes and "API Error (N): " wrappers to show only the core message
+      const stripped = errorData.error
+        .replace(/^[A-Za-z]*Error:\s*/i, '')
+        .replace(/^API Error \(\d+\):\s*/i, '')
+        .trim()
+      return stripped || errorData.error
     }
     // If no recognized error format, stringify the object
     return JSON.stringify(errorData)
@@ -105,7 +110,7 @@ export const createRefreshDataHandler = (
       logger.info('Data refreshed successfully')
     } catch (error) {
       logger.error('Error refreshing data:', error)
-      throw new Error('Failed to refresh data. Please try again.')
+      throw new Error('Failed to refresh data. Please try again.', { cause: error })
     } finally {
       setIsLoading(false)
     }

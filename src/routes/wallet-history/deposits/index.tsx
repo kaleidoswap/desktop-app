@@ -241,7 +241,9 @@ export const Component: React.FC = () => {
           {deposit.rgbAssetLabel ? (
             <>
               <span className="font-medium">{deposit.rgbAssetLabel}</span>
-              <span className="text-xs text-content-secondary">{bitcoinUnit}</span>
+              <span className="text-xs text-content-secondary">
+                {bitcoinUnit}
+              </span>
               {deposit.rgbAssetId && (
                 <div className="flex items-center">
                   {renderCopyableField(
