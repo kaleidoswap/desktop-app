@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - dev
       - develop
 
 jobs:
@@ -28,6 +29,8 @@ jobs:
         run: pnpm run lint
       - name: Type Check
         run: pnpm run type-check
+      - name: Test
+        run: pnpm run test:run
       - name: Build Frontend
         run: pnpm run build
 
