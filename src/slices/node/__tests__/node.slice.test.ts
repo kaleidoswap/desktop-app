@@ -9,13 +9,8 @@ import {
   setNodeRunning,
 } from '../node.slice'
 
-const initialState = {
-  error: null,
-  isLoading: false,
-  isRunning: false,
-  lifecycle: { status: 'Stopped' as const },
-  logs: [],
-}
+// Derive the state shape from the reducer so TypeScript uses the correct type
+const initialState = nodeReducer(undefined, { type: '@@INIT' })
 
 // ─── addLog ────────────────────────────────────────────────────────────────
 

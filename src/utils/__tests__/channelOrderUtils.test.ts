@@ -340,6 +340,7 @@ describe('formatRtkQueryError', () => {
       status: 'PARSING_ERROR',
       error: 'bad json',
       originalStatus: 200,
+      data: '',
     })
     expect(result).toContain('parsing error')
   })

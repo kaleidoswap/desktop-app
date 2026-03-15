@@ -81,6 +81,7 @@ const makeAsset = (ticker: string, rgbId?: string) => ({
   name: ticker,
   precision: 8,
   protocol_ids: rgbId ? { RGB: rgbId } : undefined,
+  is_active: true,
 })
 
 const BTC_USDT = makePair('BTC', 'BTC', 'USDT', 'rgb:usdt-id')

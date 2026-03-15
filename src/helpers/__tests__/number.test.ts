@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
 // Mock i18next before importing the module under test
 vi.mock('i18next', () => ({
