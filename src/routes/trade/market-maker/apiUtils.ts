@@ -110,7 +110,9 @@ export const createRefreshDataHandler = (
       logger.info('Data refreshed successfully')
     } catch (error) {
       logger.error('Error refreshing data:', error)
-      throw new Error('Failed to refresh data. Please try again.', { cause: error })
+      throw new Error('Failed to refresh data. Please try again.', {
+        cause: error,
+      })
     } finally {
       setIsLoading(false)
     }

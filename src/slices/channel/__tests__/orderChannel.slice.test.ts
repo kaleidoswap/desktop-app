@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { orderChannelSlice, orderChannelSliceActions } from '../orderChannel.slice'
+import {
+  orderChannelSlice,
+  orderChannelSliceActions,
+} from '../orderChannel.slice'
 
 const reducer = orderChannelSlice.reducer
 
@@ -29,7 +32,9 @@ describe('setChannelRequestForm', () => {
   it('updates clientBalanceSat', () => {
     const state = reducer(
       getInitialState(),
-      orderChannelSliceActions.setChannelRequestForm({ clientBalanceSat: 50_000 })
+      orderChannelSliceActions.setChannelRequestForm({
+        clientBalanceSat: 50_000,
+      })
     )
     expect(state.forms.request.clientBalanceSat).toBe(50_000)
   })
@@ -37,7 +42,9 @@ describe('setChannelRequestForm', () => {
   it('updates optional lspAssetAmount', () => {
     const state = reducer(
       getInitialState(),
-      orderChannelSliceActions.setChannelRequestForm({ lspAssetAmount: 1_000_000 })
+      orderChannelSliceActions.setChannelRequestForm({
+        lspAssetAmount: 1_000_000,
+      })
     )
     expect(state.forms.request.lspAssetAmount).toBe(1_000_000)
   })
@@ -52,8 +59,16 @@ describe('setChannelRequestForm', () => {
 
   it('applies multiple partial updates sequentially', () => {
     let state = getInitialState()
-    state = reducer(state, orderChannelSliceActions.setChannelRequestForm({ capacitySat: 300_000 }))
-    state = reducer(state, orderChannelSliceActions.setChannelRequestForm({ clientBalanceSat: 100_000 }))
+    state = reducer(
+      state,
+      orderChannelSliceActions.setChannelRequestForm({ capacitySat: 300_000 })
+    )
+    state = reducer(
+      state,
+      orderChannelSliceActions.setChannelRequestForm({
+        clientBalanceSat: 100_000,
+      })
+    )
     expect(state.forms.request.capacitySat).toBe(300_000)
     expect(state.forms.request.clientBalanceSat).toBe(100_000)
   })

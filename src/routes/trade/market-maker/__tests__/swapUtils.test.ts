@@ -1,8 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // Mock modules with side effects before importing the module under test
-vi.mock('react-toastify', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
-vi.mock('../../../../utils/logger', () => ({ logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() } }))
+vi.mock('react-toastify', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}))
+vi.mock('../../../../utils/logger', () => ({
+  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+}))
 vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
   getAssetId: vi.fn((asset: any) => asset.ticker),
   normalizePairs: vi.fn((pairs: any[]) => pairs),
@@ -44,14 +48,28 @@ describe('validateSwapString', () => {
 
   it('rejects a swap string with fewer than 6 parts', () => {
     expect(
-      validateSwapString('100/BTC/200', FROM_AMOUNT, FROM_ASSET, TO_AMOUNT, TO_ASSET, PAYMENT_HASH)
+      validateSwapString(
+        '100/BTC/200',
+        FROM_AMOUNT,
+        FROM_ASSET,
+        TO_AMOUNT,
+        TO_ASSET,
+        PAYMENT_HASH
+      )
     ).toBe(false)
   })
 
   it('rejects a swap string with more than 6 parts', () => {
     const extra = makeSwapString() + '/extra'
     expect(
-      validateSwapString(extra, FROM_AMOUNT, FROM_ASSET, TO_AMOUNT, TO_ASSET, PAYMENT_HASH)
+      validateSwapString(
+        extra,
+        FROM_AMOUNT,
+        FROM_ASSET,
+        TO_AMOUNT,
+        TO_ASSET,
+        PAYMENT_HASH
+      )
     ).toBe(false)
   })
 
@@ -110,7 +128,14 @@ describe('validateSwapString', () => {
   it('rejects when payment_hash does not match', () => {
     expect(
       validateSwapString(
-        makeSwapString(FROM_AMOUNT, FROM_ASSET, TO_AMOUNT, TO_ASSET, 'extra', 'wrong-hash'),
+        makeSwapString(
+          FROM_AMOUNT,
+          FROM_ASSET,
+          TO_AMOUNT,
+          TO_ASSET,
+          'extra',
+          'wrong-hash'
+        ),
         FROM_AMOUNT,
         FROM_ASSET,
         TO_AMOUNT,

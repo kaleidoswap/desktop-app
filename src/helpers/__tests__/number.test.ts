@@ -120,11 +120,14 @@ describe('numberFormatter.format', () => {
 
 describe('getBitcoinPrecision', () => {
   it('returns 0 for SAT', () => expect(getBitcoinPrecision('SAT')).toBe(0))
-  it('returns 0 for lowercase sat', () => expect(getBitcoinPrecision('sat')).toBe(0))
+  it('returns 0 for lowercase sat', () =>
+    expect(getBitcoinPrecision('sat')).toBe(0))
   it('returns 3 for MSAT', () => expect(getBitcoinPrecision('MSAT')).toBe(3))
   it('returns 8 for BTC', () => expect(getBitcoinPrecision('BTC')).toBe(8))
-  it('returns 8 for unknown unit', () => expect(getBitcoinPrecision('UNKNOWN')).toBe(8))
-  it('returns 8 for empty string (falsy)', () => expect(getBitcoinPrecision('')).toBe(8))
+  it('returns 8 for unknown unit', () =>
+    expect(getBitcoinPrecision('UNKNOWN')).toBe(8))
+  it('returns 8 for empty string (falsy)', () =>
+    expect(getBitcoinPrecision('')).toBe(8))
 })
 
 // ─── getAssetPrecision ────────────────────────────────────────────────────────
@@ -190,15 +193,21 @@ describe('formatAssetAmountWithPrecision', () => {
     expect(formatAssetAmountWithPrecision(3000, 'BTC', 'SAT')).toBe('3,000')
   })
   it('handles precision 8 (BTC)', () => {
-    expect(formatAssetAmountWithPrecision(300_000_000, 'BTC', 'BTC')).toBe('3.00000000')
+    expect(formatAssetAmountWithPrecision(300_000_000, 'BTC', 'BTC')).toBe(
+      '3.00000000'
+    )
   })
   it('handles precision 6 for an asset', () => {
     const assets = [makeAsset('USDT', 6)]
-    expect(formatAssetAmountWithPrecision(1_000_000, 'USDT', 'BTC', assets)).toBe('1.000000')
+    expect(
+      formatAssetAmountWithPrecision(1_000_000, 'USDT', 'BTC', assets)
+    ).toBe('1.000000')
   })
   it('formats large amounts with thousands separator', () => {
     const assets = [makeAsset('USDT', 6)]
-    expect(formatAssetAmountWithPrecision(10_000_000_000, 'USDT', 'BTC', assets)).toBe('10,000.000000')
+    expect(
+      formatAssetAmountWithPrecision(10_000_000_000, 'USDT', 'BTC', assets)
+    ).toBe('10,000.000000')
   })
 })
 
@@ -221,12 +230,21 @@ describe('parseAssetAmountWithPrecision', () => {
     expect(parseAssetAmountWithPrecision('3,000', 'BTC', 'SAT')).toBe(3000)
   })
   it('parses BTC (precision 8) and returns sats', () => {
-    expect(parseAssetAmountWithPrecision('1.00000000', 'BTC', 'BTC')).toBe(100_000_000)
+    expect(parseAssetAmountWithPrecision('1.00000000', 'BTC', 'BTC')).toBe(
+      100_000_000
+    )
   })
   it('round-trips with formatAssetAmountWithPrecision for precision 6', () => {
     const assets = [makeAsset('USDT', 6)]
-    const formatted = formatAssetAmountWithPrecision(1_500_000, 'USDT', 'BTC', assets)
-    expect(parseAssetAmountWithPrecision(formatted, 'USDT', 'BTC', assets)).toBe(1_500_000)
+    const formatted = formatAssetAmountWithPrecision(
+      1_500_000,
+      'USDT',
+      'BTC',
+      assets
+    )
+    expect(
+      parseAssetAmountWithPrecision(formatted, 'USDT', 'BTC', assets)
+    ).toBe(1_500_000)
   })
 })
 
@@ -318,26 +336,40 @@ describe('calculateAndFormatRate', () => {
   const getPrecision = (asset: string) => (asset === 'BTC' ? 8 : 6)
 
   it('returns "Price not available" when price is null', () => {
-    expect(calculateAndFormatRate('BTC', 'USDT', null, pair, 'BTC', getPrecision)).toBe(
-      'Price not available'
-    )
+    expect(
+      calculateAndFormatRate('BTC', 'USDT', null, pair, 'BTC', getPrecision)
+    ).toBe('Price not available')
   })
 
   it('returns "Price not available" when selectedPair is null', () => {
-    expect(calculateAndFormatRate('BTC', 'USDT', 50000, null, 'BTC', getPrecision)).toBe(
-      'Price not available'
-    )
+    expect(
+      calculateAndFormatRate('BTC', 'USDT', 50000, null, 'BTC', getPrecision)
+    ).toBe('Price not available')
   })
 
   it('computes a non-inverted rate', () => {
     // price = 50_000_000_000 (in USDT base units with precision 6 = 50,000 USDT)
     // rate = price / 10^toPrecision = 50_000_000_000 / 1_000_000 = 50,000
-    const result = calculateAndFormatRate('BTC', 'USDT', 50_000_000_000, pair, 'BTC', getPrecision)
+    const result = calculateAndFormatRate(
+      'BTC',
+      'USDT',
+      50_000_000_000,
+      pair,
+      'BTC',
+      getPrecision
+    )
     expect(result).toBe('50,000')
   })
 
   it('computes an inverted rate (USDT -> BTC)', () => {
-    const result = calculateAndFormatRate('USDT', 'BTC', 50_000_000_000, pair, 'BTC', getPrecision)
+    const result = calculateAndFormatRate(
+      'USDT',
+      'BTC',
+      50_000_000_000,
+      pair,
+      'BTC',
+      getPrecision
+    )
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
   })

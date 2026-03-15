@@ -53,7 +53,9 @@ const ASSET: AssetInfo = {
 
 describe('extractErrorMessage', () => {
   it('returns string errors directly', () => {
-    expect(extractErrorMessage('something went wrong')).toBe('something went wrong')
+    expect(extractErrorMessage('something went wrong')).toBe(
+      'something went wrong'
+    )
   })
 
   it('extracts "message" field from an object', () => {
@@ -69,11 +71,15 @@ describe('extractErrorMessage', () => {
   })
 
   it('recurses into nested error objects', () => {
-    expect(extractErrorMessage({ error: { message: 'inner error' } })).toBe('inner error')
+    expect(extractErrorMessage({ error: { message: 'inner error' } })).toBe(
+      'inner error'
+    )
   })
 
   it('extracts from the first element of an array', () => {
-    expect(extractErrorMessage([{ message: 'first item error' }])).toBe('first item error')
+    expect(extractErrorMessage([{ message: 'first item error' }])).toBe(
+      'first item error'
+    )
   })
 
   it('stringifies unknown objects and truncates at 200 chars', () => {
@@ -103,7 +109,10 @@ describe('buildChannelOrderPayload', () => {
   })
 
   it('uses lspOptions values for confirmation fields', () => {
-    const payload = buildChannelOrderPayload({ ...BASE_PARAMS, lspOptions: LSP_OPTIONS })
+    const payload = buildChannelOrderPayload({
+      ...BASE_PARAMS,
+      lspOptions: LSP_OPTIONS,
+    })
     expect(payload.required_channel_confirmations).toBe(3)
     expect(payload.funding_confirms_within_blocks).toBe(1)
   })
@@ -123,7 +132,10 @@ describe('buildChannelOrderPayload', () => {
   })
 
   it('includes asset_id when provided', () => {
-    const payload = buildChannelOrderPayload({ ...BASE_PARAMS, assetId: ASSET.asset_id })
+    const payload = buildChannelOrderPayload({
+      ...BASE_PARAMS,
+      assetId: ASSET.asset_id,
+    })
     expect(payload.asset_id).toBe(ASSET.asset_id)
   })
 
@@ -179,7 +191,12 @@ describe('validateChannelParams', () => {
   const MAX_CAPACITY = 5_000_000
 
   it('returns isValid: true for valid parameters', () => {
-    const result = validateChannelParams(BASE_PARAMS, [], MIN_CAPACITY, MAX_CAPACITY)
+    const result = validateChannelParams(
+      BASE_PARAMS,
+      [],
+      MIN_CAPACITY,
+      MAX_CAPACITY
+    )
     expect(result.isValid).toBe(true)
     expect(result.error).toBeUndefined()
   })
@@ -275,7 +292,11 @@ describe('validateChannelParams', () => {
 
   it('rejects lsp_asset_amount above asset maximum', () => {
     const result = validateChannelParams(
-      { ...BASE_PARAMS, assetId: ASSET.asset_id, lspAssetAmount: 1_000_000_000 },
+      {
+        ...BASE_PARAMS,
+        assetId: ASSET.asset_id,
+        lspAssetAmount: 1_000_000_000,
+      },
       [ASSET],
       MIN_CAPACITY,
       MAX_CAPACITY
@@ -299,22 +320,35 @@ describe('validateChannelParams', () => {
 
 describe('formatRtkQueryError', () => {
   it('handles FETCH_ERROR status', () => {
-    const result = formatRtkQueryError({ status: 'FETCH_ERROR', error: 'TypeError: Failed to fetch' })
+    const result = formatRtkQueryError({
+      status: 'FETCH_ERROR',
+      error: 'TypeError: Failed to fetch',
+    })
     expect(result).toContain('Network error')
   })
 
   it('handles TIMEOUT_ERROR status', () => {
-    const result = formatRtkQueryError({ status: 'TIMEOUT_ERROR', error: 'timeout' })
+    const result = formatRtkQueryError({
+      status: 'TIMEOUT_ERROR',
+      error: 'timeout',
+    })
     expect(result).toContain('timeout')
   })
 
   it('handles PARSING_ERROR status', () => {
-    const result = formatRtkQueryError({ status: 'PARSING_ERROR', error: 'bad json', originalStatus: 200 })
+    const result = formatRtkQueryError({
+      status: 'PARSING_ERROR',
+      error: 'bad json',
+      originalStatus: 200,
+    })
     expect(result).toContain('parsing error')
   })
 
   it('handles 400 client error with message in data', () => {
-    const result = formatRtkQueryError({ status: 400, data: { message: 'bad params' } })
+    const result = formatRtkQueryError({
+      status: 400,
+      data: { message: 'bad params' },
+    })
     expect(result).toContain('400')
     expect(result).toContain('bad params')
   })
@@ -355,7 +389,10 @@ describe('formatRtkQueryError', () => {
   })
 
   it('appends server error detail when present in data', () => {
-    const result = formatRtkQueryError({ status: 503, data: { error: 'DB unavailable' } })
+    const result = formatRtkQueryError({
+      status: 503,
+      data: { error: 'DB unavailable' },
+    })
     expect(result).toContain('503')
     expect(result).toContain('DB unavailable')
   })

@@ -26,7 +26,10 @@ describe('addLog', () => {
   })
 
   it('caps logs at 100 entries', () => {
-    let state = { ...initialState, logs: Array.from({ length: 100 }, (_, i) => `log-${i}`) }
+    let state = {
+      ...initialState,
+      logs: Array.from({ length: 100 }, (_, i) => `log-${i}`),
+    }
     state = nodeReducer(state, addLog('new-entry'))
     expect(state.logs).toHaveLength(100)
     expect(state.logs[99]).toBe('new-entry')
@@ -38,7 +41,10 @@ describe('addLog', () => {
 
 describe('clearLogs', () => {
   it('empties the logs array', () => {
-    const state = nodeReducer({ ...initialState, logs: ['a', 'b'] }, clearLogs())
+    const state = nodeReducer(
+      { ...initialState, logs: ['a', 'b'] },
+      clearLogs()
+    )
     expect(state.logs).toEqual([])
   })
 })
@@ -47,20 +53,29 @@ describe('clearLogs', () => {
 
 describe('setLifecycleState', () => {
   it('sets Running → isRunning=true, isLoading=false', () => {
-    const state = nodeReducer(initialState, setLifecycleState({ status: 'Running' }))
+    const state = nodeReducer(
+      initialState,
+      setLifecycleState({ status: 'Running' })
+    )
     expect(state.isRunning).toBe(true)
     expect(state.isLoading).toBe(false)
     expect(state.error).toBeNull()
   })
 
   it('sets Starting → isRunning=true, isLoading=true', () => {
-    const state = nodeReducer(initialState, setLifecycleState({ status: 'Starting' }))
+    const state = nodeReducer(
+      initialState,
+      setLifecycleState({ status: 'Starting' })
+    )
     expect(state.isRunning).toBe(true)
     expect(state.isLoading).toBe(true)
   })
 
   it('sets Stopping → isRunning=false, isLoading=true', () => {
-    const state = nodeReducer(initialState, setLifecycleState({ status: 'Stopping' }))
+    const state = nodeReducer(
+      initialState,
+      setLifecycleState({ status: 'Stopping' })
+    )
     expect(state.isRunning).toBe(false)
     expect(state.isLoading).toBe(true)
   })
@@ -85,7 +100,10 @@ describe('setLifecycleState', () => {
 
   it('clears error when transitioning away from Failed', () => {
     const withError = { ...initialState, error: 'previous error' }
-    const state = nodeReducer(withError, setLifecycleState({ status: 'Running' }))
+    const state = nodeReducer(
+      withError,
+      setLifecycleState({ status: 'Running' })
+    )
     expect(state.error).toBeNull()
   })
 })
@@ -112,7 +130,10 @@ describe('setLoading', () => {
   })
 
   it('sets isLoading to false', () => {
-    expect(nodeReducer({ ...initialState, isLoading: true }, setLoading(false)).isLoading).toBe(false)
+    expect(
+      nodeReducer({ ...initialState, isLoading: true }, setLoading(false))
+        .isLoading
+    ).toBe(false)
   })
 })
 
@@ -124,6 +145,9 @@ describe('setNodeRunning', () => {
   })
 
   it('sets isRunning to false', () => {
-    expect(nodeReducer({ ...initialState, isRunning: true }, setNodeRunning(false)).isRunning).toBe(false)
+    expect(
+      nodeReducer({ ...initialState, isRunning: true }, setNodeRunning(false))
+        .isRunning
+    ).toBe(false)
   })
 })

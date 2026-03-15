@@ -19,7 +19,8 @@ describe('shortenAddress', () => {
   })
 
   it('produces symmetric truncation around the ellipsis', () => {
-    const addr = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const addr =
+      'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     const result = shortenAddress(addr)
     const [before, after] = result.split('...')
     expect(before.length).toBe(after.length)
@@ -52,7 +53,9 @@ describe('isValidPubkeyAndAddress — full pubkey@host:port format', () => {
   })
 
   it('accepts an IP address as host', () => {
-    expect(isValidPubkeyAndAddress(`${VALID_PUBKEY}@192.168.1.1:9735`)).toBe(true)
+    expect(isValidPubkeyAndAddress(`${VALID_PUBKEY}@192.168.1.1:9735`)).toBe(
+      true
+    )
   })
 
   it('accepts port 1 (minimum valid port)', () => {
@@ -80,7 +83,9 @@ describe('isValidPubkeyAndAddress — full pubkey@host:port format', () => {
   })
 
   it('rejects a string with multiple @ separators', () => {
-    expect(isValidPubkeyAndAddress(`${VALID_PUBKEY}@host@extra:9735`)).toBe(false)
+    expect(isValidPubkeyAndAddress(`${VALID_PUBKEY}@host@extra:9735`)).toBe(
+      false
+    )
   })
 
   it('rejects a string with no port separator', () => {

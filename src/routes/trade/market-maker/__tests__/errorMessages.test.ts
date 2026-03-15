@@ -29,7 +29,11 @@ describe('ASSET_CONFLICT_MESSAGES', () => {
   })
 
   it('TICKER_CONFLICT includes ticker and pair count', () => {
-    const msg = ASSET_CONFLICT_MESSAGES.TICKER_CONFLICT('USDT', ['id1', 'id2'], 2)
+    const msg = ASSET_CONFLICT_MESSAGES.TICKER_CONFLICT(
+      'USDT',
+      ['id1', 'id2'],
+      2
+    )
     expect(msg).toContain('USDT')
     expect(msg).toContain('2')
   })
@@ -57,19 +61,25 @@ describe('ASSET_CONFLICT_MESSAGES', () => {
 describe('parseAmountValidationError', () => {
   it('returns null for unrelated error messages', () => {
     expect(
-      parseAmountValidationError('some unrelated error', formatAmount, displayAsset)
+      parseAmountValidationError(
+        'some unrelated error',
+        formatAmount,
+        displayAsset
+      )
     ).toBeNull()
   })
 
   it('returns a min-order message when got < min', () => {
-    const msg = 'For pair BTC/USDT, the amount must be between 1000 and 5000 but got 500'
+    const msg =
+      'For pair BTC/USDT, the amount must be between 1000 and 5000 but got 500'
     const result = parseAmountValidationError(msg, formatAmount, displayAsset)
     expect(result).not.toBeNull()
     expect(result).toContain('minimum')
   })
 
   it('returns a max-order message when got > max', () => {
-    const msg = 'For pair BTC/USDT, the amount must be between 1000 and 5000 but got 9000'
+    const msg =
+      'For pair BTC/USDT, the amount must be between 1000 and 5000 but got 9000'
     const result = parseAmountValidationError(msg, formatAmount, displayAsset)
     expect(result).not.toBeNull()
     expect(result).toContain('maximum')
@@ -83,7 +93,11 @@ describe('parseAmountValidationError', () => {
   })
 
   it('returns null when message does not match any pattern', () => {
-    const result = parseAmountValidationError('Network timeout', formatAmount, displayAsset)
+    const result = parseAmountValidationError(
+      'Network timeout',
+      formatAmount,
+      displayAsset
+    )
     expect(result).toBeNull()
   })
 })
@@ -100,33 +114,59 @@ describe('getValidationError', () => {
 
   it('returns null while quote is loading', () => {
     const result = getValidationError(
-      1000, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset, defaults.assets,
-      false, true // isQuoteLoading = true
+      1000,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset,
+      defaults.assets,
+      false,
+      true // isQuoteLoading = true
     )
     expect(result).toBeNull()
   })
 
   it('returns null while price is loading', () => {
     const result = getValidationError(
-      1000, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset, defaults.assets,
-      false, false, true // isPriceLoading = true
+      1000,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset,
+      defaults.assets,
+      false,
+      false,
+      true // isPriceLoading = true
     )
     expect(result).toBeNull()
   })
 
   it('returns null when missingChannelAsset is set', () => {
     const result = getValidationError(
-      1000, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset, defaults.assets,
-      false, false, false,
+      1000,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset,
+      defaults.assets,
+      false,
+      false,
+      false,
       { asset: 'USDT', assetId: 'rgb:id', isFromAsset: true }
     )
     expect(result).toBeNull()
@@ -134,10 +174,16 @@ describe('getValidationError', () => {
 
   it('returns an insufficient balance error when maxFromAmount is 0', () => {
     const result = getValidationError(
-      1000, defaults.toAmount, 100, 0,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset
+      1000,
+      defaults.toAmount,
+      100,
+      0,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('Insufficient')
@@ -145,10 +191,16 @@ describe('getValidationError', () => {
 
   it('returns "enter amount" error when fromAmount is 0', () => {
     const result = getValidationError(
-      0, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset
+      0,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('enter an amount')
@@ -156,10 +208,16 @@ describe('getValidationError', () => {
 
   it('returns a minimum order size error when fromAmount < minFromAmount', () => {
     const result = getValidationError(
-      50, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset
+      50,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('minimum')
@@ -167,10 +225,16 @@ describe('getValidationError', () => {
 
   it('returns an HTLC limit error for BTC when fromAmount > maxOutboundHtlcSat', () => {
     const result = getValidationError(
-      2_000_000, defaults.toAmount, 0, 10_000_000,
-      defaults.maxToAmount, 1_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset
+      2_000_000,
+      defaults.toAmount,
+      0,
+      10_000_000,
+      defaults.maxToAmount,
+      1_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('channel constraints')
@@ -178,10 +242,16 @@ describe('getValidationError', () => {
 
   it('returns null for valid parameters', () => {
     const result = getValidationError(
-      1000, defaults.toAmount, 100, 10_000,
-      defaults.maxToAmount, 10_000_000,
-      'BTC', defaults.toAsset,
-      formatAmount, displayAsset
+      1000,
+      defaults.toAmount,
+      100,
+      10_000,
+      defaults.maxToAmount,
+      10_000_000,
+      'BTC',
+      defaults.toAsset,
+      formatAmount,
+      displayAsset
     )
     expect(result).toBeNull()
   })
@@ -192,20 +262,35 @@ describe('getValidationError', () => {
 describe('getValidationWarning', () => {
   it('returns null while loading', () => {
     const result = getValidationWarning(
-      5000, 0, 10_000, 100_000,
-      'BTC', 'USDT',
-      formatAmount, displayAsset,
-      [], false, true // isQuoteLoading
+      5000,
+      0,
+      10_000,
+      100_000,
+      'BTC',
+      'USDT',
+      formatAmount,
+      displayAsset,
+      [],
+      false,
+      true // isQuoteLoading
     )
     expect(result).toBeNull()
   })
 
   it('returns null when missingChannelAsset is set', () => {
     const result = getValidationWarning(
-      5000, 0, 1000, 100_000,
-      'BTC', 'USDT',
-      formatAmount, displayAsset,
-      [], false, false, false,
+      5000,
+      0,
+      1000,
+      100_000,
+      'BTC',
+      'USDT',
+      formatAmount,
+      displayAsset,
+      [],
+      false,
+      false,
+      false,
       { asset: 'USDT', assetId: 'rgb:id', isFromAsset: true }
     )
     expect(result).toBeNull()
@@ -213,9 +298,14 @@ describe('getValidationWarning', () => {
 
   it('warns when fromAmount exceeds maxFromAmount', () => {
     const result = getValidationWarning(
-      20_000, 0, 10_000, 100_000,
-      'BTC', 'USDT',
-      formatAmount, displayAsset
+      20_000,
+      0,
+      10_000,
+      100_000,
+      'BTC',
+      'USDT',
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('send up to')
@@ -223,9 +313,14 @@ describe('getValidationWarning', () => {
 
   it('warns when toAmount exceeds maxToAmount', () => {
     const result = getValidationWarning(
-      500, 200_000, 10_000, 100_000,
-      'BTC', 'USDT',
-      formatAmount, displayAsset
+      500,
+      200_000,
+      10_000,
+      100_000,
+      'BTC',
+      'USDT',
+      formatAmount,
+      displayAsset
     )
     expect(result).not.toBeNull()
     expect(result).toContain('receive up to')
@@ -233,9 +328,14 @@ describe('getValidationWarning', () => {
 
   it('returns null when amounts are within bounds', () => {
     const result = getValidationWarning(
-      1000, 500, 10_000, 100_000,
-      'BTC', 'USDT',
-      formatAmount, displayAsset
+      1000,
+      500,
+      10_000,
+      100_000,
+      'BTC',
+      'USDT',
+      formatAmount,
+      displayAsset
     )
     expect(result).toBeNull()
   })

@@ -30,8 +30,20 @@ const makePair = (base: string, quote: string, baseId?: string) => ({
   quote_asset: quote,
   base_asset_id: baseId ?? base,
   quote_asset_id: quote,
-  base: { ticker: base, name: base, precision: 8, protocol_ids: {}, endpoints: [] },
-  quote: { ticker: quote, name: quote, precision: 8, protocol_ids: {}, endpoints: [] },
+  base: {
+    ticker: base,
+    name: base,
+    precision: 8,
+    protocol_ids: {},
+    endpoints: [],
+  },
+  quote: {
+    ticker: quote,
+    name: quote,
+    precision: 8,
+    protocol_ids: {},
+    endpoints: [],
+  },
   routes: [],
   is_active: true,
 })
@@ -96,7 +108,10 @@ describe('setWsConnected', () => {
   })
 
   it('sets wsConnected to false', () => {
-    const state = pairsReducer({ ...getInitialState(), wsConnected: true }, setWsConnected(false))
+    const state = pairsReducer(
+      { ...getInitialState(), wsConnected: true },
+      setWsConnected(false)
+    )
     expect(state.wsConnected).toBe(false)
   })
 })
@@ -109,7 +124,11 @@ describe('updatePrice', () => {
       getInitialState(),
       updatePrice({ pair: 'BTC/USDT', price: 50000, size: 1, rfq_id: 'abc' })
     )
-    expect(state.feed['BTC/USDT']).toEqual({ price: 50000, size: 1, rfq_id: 'abc' })
+    expect(state.feed['BTC/USDT']).toEqual({
+      price: 50000,
+      size: 1,
+      rfq_id: 'abc',
+    })
   })
 })
 
@@ -136,7 +155,10 @@ describe('clearQuote', () => {
   it('removes the quote for the specified key', () => {
     const quote = makeQuoteResponse('BTC', 'USDT', 1000)
     let state = pairsReducer(getInitialState(), updateQuote(quote as any))
-    state = pairsReducer(state, clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 }))
+    state = pairsReducer(
+      state,
+      clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 })
+    )
     expect(state.quotes['BTC/USDT/1000']).toBeUndefined()
   })
 
@@ -145,7 +167,10 @@ describe('clearQuote', () => {
     const q2 = makeQuoteResponse('BTC', 'USDT', 2000)
     let state = pairsReducer(getInitialState(), updateQuote(q1 as any))
     state = pairsReducer(state, updateQuote(q2 as any))
-    state = pairsReducer(state, clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 }))
+    state = pairsReducer(
+      state,
+      clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 })
+    )
     expect(state.quotes['BTC/USDT/2000']).toBeDefined()
   })
 })
@@ -154,7 +179,10 @@ describe('clearQuote', () => {
 
 describe('setQuoteError', () => {
   it('sets the quoteError', () => {
-    const state = pairsReducer(getInitialState(), setQuoteError('pair not found'))
+    const state = pairsReducer(
+      getInitialState(),
+      setQuoteError('pair not found')
+    )
     expect(state.quoteError).toBe('pair not found')
   })
 })

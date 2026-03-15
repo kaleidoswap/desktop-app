@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('react-toastify', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('react-toastify', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}))
 vi.mock('../../../../utils/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
 }))
@@ -119,14 +121,18 @@ describe('stopQuoteRequestTimer', () => {
 
 describe('createAmountChangeQuoteHandler', () => {
   const makeEvent = (value: string) =>
-    ({ target: { value } } as React.ChangeEvent<HTMLInputElement>)
+    ({ target: { value } }) as React.ChangeEvent<HTMLInputElement>
 
   it('sets loading states and schedules a quote request for valid amount', async () => {
     const requestQuote = vi.fn().mockResolvedValue(undefined)
     const setIsQuoteLoading = vi.fn()
     const setIsToAmountLoading = vi.fn()
 
-    const handler = createAmountChangeQuoteHandler(requestQuote, setIsQuoteLoading, setIsToAmountLoading)
+    const handler = createAmountChangeQuoteHandler(
+      requestQuote,
+      setIsQuoteLoading,
+      setIsToAmountLoading
+    )
     handler(makeEvent('1000'))
 
     expect(setIsQuoteLoading).toHaveBeenCalledWith(true)
@@ -159,7 +165,11 @@ describe('createAmountChangeQuoteHandler', () => {
     const setIsQuoteLoading = vi.fn()
     const setIsToAmountLoading = vi.fn()
 
-    const handler = createAmountChangeQuoteHandler(requestQuote, setIsQuoteLoading, setIsToAmountLoading)
+    const handler = createAmountChangeQuoteHandler(
+      requestQuote,
+      setIsQuoteLoading,
+      setIsToAmountLoading
+    )
     handler(makeEvent(''))
 
     expect(setIsQuoteLoading).toHaveBeenCalledWith(false)
@@ -171,7 +181,10 @@ describe('createAmountChangeQuoteHandler', () => {
     const requestQuote = vi.fn().mockResolvedValue(undefined)
     const setIsQuoteLoading = vi.fn()
 
-    const handler = createAmountChangeQuoteHandler(requestQuote, setIsQuoteLoading)
+    const handler = createAmountChangeQuoteHandler(
+      requestQuote,
+      setIsQuoteLoading
+    )
     handler(makeEvent('0'))
 
     expect(setIsQuoteLoading).toHaveBeenCalledWith(false)

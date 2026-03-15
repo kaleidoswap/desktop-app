@@ -42,18 +42,24 @@ describe('isTradableChannel', () => {
 
   it('returns false when both balances are zero', () => {
     expect(
-      isTradableChannel(makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0 }))
+      isTradableChannel(
+        makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0 })
+      )
     ).toBe(false)
   })
 
   it('returns true when only inbound balance is positive', () => {
     expect(
-      isTradableChannel(makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 500 }))
+      isTradableChannel(
+        makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 500 })
+      )
     ).toBe(true)
   })
 
   it('returns false when next_outbound_htlc_minimum_msat is 0', () => {
-    expect(isTradableChannel(makeChannel({ next_outbound_htlc_minimum_msat: 0 }))).toBe(false)
+    expect(
+      isTradableChannel(makeChannel({ next_outbound_htlc_minimum_msat: 0 }))
+    ).toBe(false)
   })
 
   it('returns false when asset_id is null', () => {
@@ -103,7 +109,11 @@ describe('countTradableChannels', () => {
   })
 
   it('counts only tradable channels', () => {
-    const channels = [makeChannel(), makeChannel(), makeChannel({ ready: false })]
+    const channels = [
+      makeChannel(),
+      makeChannel(),
+      makeChannel({ ready: false }),
+    ]
     expect(countTradableChannels(channels)).toBe(2)
   })
 })
@@ -122,10 +132,10 @@ describe('getTradableChannelDiagnostics', () => {
 
   it('correctly counts each category', () => {
     const channels = [
-      makeChannel(),                                          // tradable: ✓ ready ✓ balance ✓ assetId
-      makeChannel({ ready: false }),                          // not ready
+      makeChannel(), // tradable: ✓ ready ✓ balance ✓ assetId
+      makeChannel({ ready: false }), // not ready
       makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0 }), // no balance
-      makeChannel({ asset_id: null }),                        // no assetId
+      makeChannel({ asset_id: null }), // no assetId
     ]
     const d = getTradableChannelDiagnostics(channels)
     expect(d.totalChannels).toBe(4)
@@ -158,7 +168,11 @@ describe('getChannelDiagnosticsMessage', () => {
 
   it('reports no balance when channels are ready but have no balance', () => {
     const channels = [
-      makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0, next_outbound_htlc_minimum_msat: 0 }),
+      makeChannel({
+        outbound_balance_msat: 0,
+        inbound_balance_msat: 0,
+        next_outbound_htlc_minimum_msat: 0,
+      }),
     ]
     const msg = getChannelDiagnosticsMessage(channels)
     expect(msg).toMatch(/no balance|not ready|no tradable/)
@@ -195,18 +209,25 @@ describe('hasOnlyUnconfirmedChannelsForAsset', () => {
   })
 
   it('returns false when no channels exist for asset', () => {
-    expect(hasOnlyUnconfirmedChannelsForAsset([makeChannel()], 'rgb:other-id')).toBe(false)
+    expect(
+      hasOnlyUnconfirmedChannelsForAsset([makeChannel()], 'rgb:other-id')
+    ).toBe(false)
   })
 
   it('returns true when all channels for asset are not ready', () => {
     expect(
-      hasOnlyUnconfirmedChannelsForAsset([makeChannel({ ready: false })], 'rgb:asset-id')
+      hasOnlyUnconfirmedChannelsForAsset(
+        [makeChannel({ ready: false })],
+        'rgb:asset-id'
+      )
     ).toBe(true)
   })
 
   it('returns false when at least one channel is ready', () => {
     const channels = [makeChannel(), makeChannel({ ready: false })]
-    expect(hasOnlyUnconfirmedChannelsForAsset(channels, 'rgb:asset-id')).toBe(false)
+    expect(hasOnlyUnconfirmedChannelsForAsset(channels, 'rgb:asset-id')).toBe(
+      false
+    )
   })
 })
 
@@ -219,8 +240,8 @@ describe('getReadyChannelCountForAsset', () => {
 
   it('counts only ready channels for the given asset', () => {
     const channels = [
-      makeChannel(),                          // ready, 'rgb:asset-id'
-      makeChannel({ ready: false }),          // not ready, 'rgb:asset-id'
+      makeChannel(), // ready, 'rgb:asset-id'
+      makeChannel({ ready: false }), // not ready, 'rgb:asset-id'
       makeChannel({ asset_id: 'rgb:other' }), // ready, different asset
     ]
     expect(getReadyChannelCountForAsset(channels, 'rgb:asset-id')).toBe(1)
@@ -237,7 +258,9 @@ describe('getChannelsForAsset', () => {
   it('returns only channels matching the given assetId', () => {
     const target = makeChannel()
     const other = makeChannel({ asset_id: 'rgb:other' })
-    expect(getChannelsForAsset([target, other], 'rgb:asset-id')).toEqual([target])
+    expect(getChannelsForAsset([target, other], 'rgb:asset-id')).toEqual([
+      target,
+    ])
   })
 })
 
@@ -264,7 +287,10 @@ describe('getAssetChannelStatus', () => {
   })
 
   it('sets allUnconfirmed when all channels are not ready', () => {
-    const status = getAssetChannelStatus([makeChannel({ ready: false })], 'rgb:asset-id')
+    const status = getAssetChannelStatus(
+      [makeChannel({ ready: false })],
+      'rgb:asset-id'
+    )
     expect(status.allUnconfirmed).toBe(true)
     expect(status.hasReadyChannels).toBe(false)
   })

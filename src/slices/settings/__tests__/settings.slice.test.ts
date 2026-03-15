@@ -5,13 +5,22 @@ const localStorageMock = (() => {
   let store: Record<string, string> = {}
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => { store[key] = value }),
-    removeItem: vi.fn((key: string) => { delete store[key] }),
-    clear: vi.fn(() => { store = {} }),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key]
+    }),
+    clear: vi.fn(() => {
+      store = {}
+    }),
   }
 })()
 
-Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+})
 Object.defineProperty(globalThis, 'window', {
   value: {
     matchMedia: vi.fn(() => ({ matches: false })),
@@ -62,7 +71,10 @@ describe('setFiatCurrency', () => {
 
   it('persists to localStorage', () => {
     settingsReducer(getInitialState(), setFiatCurrency('eur'))
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('kaleidoswap_fiat_currency', 'eur')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'kaleidoswap_fiat_currency',
+      'eur'
+    )
   })
 })
 
@@ -76,7 +88,10 @@ describe('setLanguage', () => {
 
   it('persists to localStorage', () => {
     settingsReducer(getInitialState(), setLanguage('fr'))
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('kaleidoswap_language', 'fr')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'kaleidoswap_language',
+      'fr'
+    )
   })
 })
 
@@ -84,7 +99,10 @@ describe('setLanguage', () => {
 
 describe('setNodeConnectionString', () => {
   it('updates nodeConnectionString', () => {
-    const state = settingsReducer(getInitialState(), setNodeConnectionString('http://example.com:3001'))
+    const state = settingsReducer(
+      getInitialState(),
+      setNodeConnectionString('http://example.com:3001')
+    )
     expect(state.nodeConnectionString).toBe('http://example.com:3001')
   })
 })
@@ -104,6 +122,9 @@ describe('setTheme', () => {
 
   it('persists theme to localStorage', () => {
     settingsReducer(getInitialState(), setTheme('light'))
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('kaleidoswap_theme', 'light')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith(
+      'kaleidoswap_theme',
+      'light'
+    )
   })
 })

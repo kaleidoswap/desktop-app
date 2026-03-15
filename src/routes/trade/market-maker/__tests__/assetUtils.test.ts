@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('react-toastify', () => ({ toast: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }))
+vi.mock('react-toastify', () => ({
+  toast: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}))
 vi.mock('../../../../utils/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
 }))
@@ -210,7 +212,10 @@ describe('validateTradingPairs', () => {
   it('detects a conflict when the same ticker has two different asset IDs', () => {
     const conflict1 = makePair('BTC', 'BTC', 'USDT', 'rgb:usdt-v1')
     const conflict2 = makePair('BTC', 'BTC', 'USDT', 'rgb:usdt-v2')
-    const { validPairs, conflicts } = validateTradingPairs([conflict1, conflict2])
+    const { validPairs, conflicts } = validateTradingPairs([
+      conflict1,
+      conflict2,
+    ])
     expect(conflicts.length).toBeGreaterThan(0)
     expect(validPairs).toHaveLength(0)
   })
@@ -358,7 +363,9 @@ describe('getDefaultMakerUrls', () => {
 
   it('does not add localhost duplicate for localhost with trailing slash', () => {
     const result = getDefaultMakerUrls('http://localhost:8000/')
-    const count = result.filter((u) => u.startsWith('http://localhost:8000')).length
+    const count = result.filter((u) =>
+      u.startsWith('http://localhost:8000')
+    ).length
     expect(count).toBe(1)
   })
 

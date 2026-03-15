@@ -18,17 +18,26 @@ describe('handleApiError', () => {
   })
 
   it('handles TIMEOUT_ERROR', () => {
-    const result = handleApiError({ status: 'TIMEOUT_ERROR', error: 'timeout' } as any)
+    const result = handleApiError({
+      status: 'TIMEOUT_ERROR',
+      error: 'timeout',
+    } as any)
     expect(result).toContain('timed out')
   })
 
   it('handles FETCH_ERROR with timeout in message', () => {
-    const result = handleApiError({ status: 'FETCH_ERROR', error: 'connection timeout' } as any)
+    const result = handleApiError({
+      status: 'FETCH_ERROR',
+      error: 'connection timeout',
+    } as any)
     expect(result).toContain('timed out')
   })
 
   it('handles FETCH_ERROR without timeout', () => {
-    const result = handleApiError({ status: 'FETCH_ERROR', error: 'Failed to fetch' } as any)
+    const result = handleApiError({
+      status: 'FETCH_ERROR',
+      error: 'Failed to fetch',
+    } as any)
     expect(result).toContain('Network error')
   })
 
@@ -43,32 +52,50 @@ describe('handleApiError', () => {
   })
 
   it('extracts detail field from object, stripping status code prefix', () => {
-    const result = handleApiError({ status: 400, data: { detail: '400: Bad input' } } as any)
+    const result = handleApiError({
+      status: 400,
+      data: { detail: '400: Bad input' },
+    } as any)
     expect(result).toBe('Bad input')
   })
 
   it('returns detail field as-is when no status code prefix', () => {
-    const result = handleApiError({ status: 400, data: { detail: 'invalid parameters' } } as any)
+    const result = handleApiError({
+      status: 400,
+      data: { detail: 'invalid parameters' },
+    } as any)
     expect(result).toBe('invalid parameters')
   })
 
   it('extracts and strips "Error: " prefix from error field', () => {
-    const result = handleApiError({ status: 500, data: { error: 'Error: something failed' } } as any)
+    const result = handleApiError({
+      status: 500,
+      data: { error: 'Error: something failed' },
+    } as any)
     expect(result).toBe('something failed')
   })
 
   it('strips "API Error (N): " prefix from error field', () => {
-    const result = handleApiError({ status: 500, data: { error: 'API Error (500): server down' } } as any)
+    const result = handleApiError({
+      status: 500,
+      data: { error: 'API Error (500): server down' },
+    } as any)
     expect(result).toBe('server down')
   })
 
   it('returns error field as-is when no recognized prefix', () => {
-    const result = handleApiError({ status: 500, data: { error: 'internal failure' } } as any)
+    const result = handleApiError({
+      status: 500,
+      data: { error: 'internal failure' },
+    } as any)
     expect(result).toBe('internal failure')
   })
 
   it('falls back to JSON.stringify for unrecognized object data', () => {
-    const result = handleApiError({ status: 500, data: { unknown: 'field' } } as any)
+    const result = handleApiError({
+      status: 500,
+      data: { unknown: 'field' },
+    } as any)
     expect(result).toContain('unknown')
   })
 
