@@ -9,7 +9,6 @@ import {
   Activity,
   Settings,
   Store,
-  TrendingUp,
   Zap,
   Home,
   Clock,
@@ -41,6 +40,7 @@ import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
 } from '../../app/router/paths'
+import { DcaBagIcon } from '../icons/DcaBagIcon'
 
 // Define types for navigation items
 export interface NavItem {
@@ -80,7 +80,7 @@ export const getMainNavItems = (t: TFunction) => [
     to: WALLET_HISTORY_PATH,
   },
   {
-    icon: <TrendingUp className="w-5 h-5" />,
+    icon: <DcaBagIcon className="h-6 w-6" />,
     label: t('navigation.dca', 'DCA'),
     matchPath: TRADE_DCA_PATH,
     to: TRADE_DCA_PATH,
@@ -220,13 +220,13 @@ export const getPageConfig = (t: TFunction) => ({
     icon: <Settings className="w-5 h-5" />,
     title: t('navigation.settings'),
   },
+  [TRADE_DCA_PATH]: {
+    icon: <DcaBagIcon className="h-9 w-9" />,
+    title: t('navigation.dca', 'DCA'),
+  },
   [TRADE_MANUAL_PATH]: {
     icon: <Zap className="w-5 h-5" />,
     title: t('navigation.manualSwaps'),
-  },
-  [TRADE_DCA_PATH]: {
-    icon: <TrendingUp className="w-5 h-5" />,
-    title: t('navigation.dca', 'DCA'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
     icon: <Store className="w-5 h-5" />,
@@ -240,28 +240,28 @@ export const getPageConfig = (t: TFunction) => ({
     icon: <Home className="w-5 h-5" />,
     title: t('navigation.dashboard'),
   },
-  [WALLET_HISTORY_PATH]: {
-    icon: <Clock className="w-5 h-5" />,
-    title: t('navigation.history'),
-  },
-  [WALLET_HISTORY_DEPOSITS_PATH]: {
-    icon: <ArrowDownLeft className="w-5 h-5" />,
-    title: t('navigation.history'),
-  },
-  [WALLET_HISTORY_WITHDRAWALS_PATH]: {
-    icon: <ArrowUpRight className="w-5 h-5" />,
-    title: t('navigation.history'),
-  },
-  [WALLET_HISTORY_TRADES_PATH]: {
-    icon: <Zap className="w-5 h-5" />,
-    title: t('navigation.history'),
-  },
   [WALLET_HISTORY_ASSETS_PATH]: {
     icon: <Activity className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_CHANNEL_ORDERS_PATH]: {
     icon: <ShoppingCart className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_DEPOSITS_PATH]: {
+    icon: <ArrowDownLeft className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_PATH]: {
+    icon: <Clock className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_TRADES_PATH]: {
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.history'),
+  },
+  [WALLET_HISTORY_WITHDRAWALS_PATH]: {
+    icon: <ArrowUpRight className="w-5 h-5" />,
     title: t('navigation.history'),
   },
 })

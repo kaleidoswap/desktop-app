@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Plus,
-  TrendingUp,
   CalendarClock,
   RefreshCw,
   BarChart2,
@@ -13,6 +12,7 @@ import {
 import { useAppSelector } from '../../../app/store/hooks'
 import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
 import tetherLogo from '../../../assets/tether-logo.svg'
+import { DcaBagIcon } from '../../../components/icons/DcaBagIcon'
 import { useBitcoinPrice } from '../../../hooks/useBitcoinPrice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 import { BuyChannelModal } from '../../../components/BuyChannelModal'
@@ -69,7 +69,7 @@ function CreateOrderModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-              <TrendingUp className="w-4 h-4" />
+              <DcaBagIcon className="h-[1.125rem] w-[1.125rem]" />
             </div>
             <h2 className="text-sm font-semibold text-content-primary">
               {t('dca.createOrder', 'New DCA Order')}
@@ -257,17 +257,17 @@ export const Component = () => {
 
       {/* ── Analytics modal ───────────────────────────────────────────── */}
       <AnalyticsModal
+        activeOrdersCount={activeOrders.length}
+        activePriceTarget={activePriceTarget}
+        activeScheduled={activeScheduled}
+        currentBtcPrice={currentBtcPrice}
+        formatPrice={formatPrice}
+        formatSats={formatSats}
         isOpen={analyticsOpen}
         onClose={() => setAnalyticsOpen(false)}
-        currentBtcPrice={currentBtcPrice}
-        activeOrdersCount={activeOrders.length}
-        activeScheduled={activeScheduled}
-        activePriceTarget={activePriceTarget}
         totalBuys={totalBuys}
-        totalSats={totalSats}
         totalFeeSats={totalFeeSats}
-        formatSats={formatSats}
-        formatPrice={formatPrice}
+        totalSats={totalSats}
       />
 
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6">
@@ -277,7 +277,7 @@ export const Component = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="max-w-2xl">
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-                    <TrendingUp className="h-3.5 w-3.5" />
+                    <DcaBagIcon className="h-4 w-4" />
                     {t('navigation.dca', 'DCA')}
                   </div>
                   <h1 className="mt-3 text-3xl font-semibold text-content-primary">
@@ -614,11 +614,11 @@ export const Component = () => {
                       setBuyModalProps({
                         defaultCapacitySat: '500000',
                         defaultClientBalanceSat: '20000',
-                        preselectedAsset: {
-                          assetId: usdtAsset.asset_id || '',
-                          amount: 100,
-                        },
                         defaultTotalAssetAmount: '100',
+                        preselectedAsset: {
+                          amount: 100,
+                          assetId: usdtAsset.asset_id || '',
+                        },
                       })
                       setShowGetBtc(true)
                     } else {
@@ -660,7 +660,7 @@ export const Component = () => {
             {displayedOrders.length === 0 ? (
               <div className="flex min-h-[300px] flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border-subtle bg-surface-base/40 px-6 text-center">
                 <div className="rounded-2xl bg-surface-overlay/50 p-4 text-content-secondary">
-                  <TrendingUp className="h-7 w-7" />
+                  <DcaBagIcon className="h-8 w-8" />
                 </div>
                 <p className="text-sm font-medium text-content-secondary">
                   {tab === 'active'
