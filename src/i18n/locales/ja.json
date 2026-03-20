@@ -37,7 +37,8 @@
     "helpSupport": "ヘルプ&サポート",
     "getHelpSupport": "ヘルプ&サポートを利用",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "dca": "DCA"
   },
   "channels": {
     "buyChannel": "チャネルを購入",
@@ -177,7 +178,9 @@
     "restartNow": "今すぐ再起動",
     "later": "後で",
     "shuttingDownTitle": "ノードをシャットダウン中",
-    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください..."
+    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください...",
+    "fiatCurrency": "法定通貨",
+    "fiatCurrencyDescription": "法定通貨表示に使う通貨"
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",
@@ -436,7 +439,9 @@
     "lightningPaymentSuccess": "Lightning支払いが正常に開始されました！",
     "onchainPaymentSuccess": "オンチェーン支払いが正常に送信されました！",
     "paymentFailed": "支払いに失敗しました：{{error}}",
-    "unknownError": "不明なエラー"
+    "unknownError": "不明なエラー",
+    "lightning": "Lightning",
+    "onchain": "オンチェーン"
   },
   "websocket": {
     "connectionLost": "メイカーへの接続が失われました。再接続を試みています...",
@@ -573,6 +578,95 @@
       "clearSearch": "検索をクリアしてすべてのアセットを表示",
       "tip": "ヒント: ティッカーで検索または完全なアセットIDを貼り付けできます",
       "selectedLabel": "選択済み"
+    },
+    "noChannels": {
+      "insufficientBalance": "Bitcoin残高が不足しています",
+      "insufficientBalanceMessage": "チャネルを開設するにはビットコインが必要です。開始するにはBTCを入金してください。",
+      "depositBTC": "BTCを入金",
+      "noRGBChannels": "利用可能なRGBチャネルがありません",
+      "noRGBChannelsMessage": "スワップを始めるには、いくつかの資産を含むチャネルが必要です。",
+      "openChannel": "チャネルを開設",
+      "buyFromLSP": "LSPから購入",
+      "marketMaker": "マーケットメイカー",
+      "noTradingChannels": "利用可能な取引チャネルがありません",
+      "buyChannel": "チャネルを購入",
+      "availableTradingPairs": "利用可能な取引ペア",
+      "supportedAssets": "対応資産",
+      "quickStartGuide": "クイックスタートガイド",
+      "quickStartMessage": "RGB資産の取引を始めるには以下の手順に従ってください。",
+      "checkSupportedAssets": "対応資産を確認",
+      "checkSupportedAssetsMessage": "このメイカーが対応する資産を確認するにはレジストリをご覧ください。",
+      "createYourChannel": "チャネルを作成",
+      "createChannelMessage": "LSPからチャネルを購入するか、お持ちの資産で直接チャネルを開設してください。",
+      "startTrading": "取引を開始",
+      "startTradingMessage": "チャネルが有効になったらここに戻って取引を始めてください。",
+      "recommendationCompatible": "このマーケットメイカーと互換性のある資産をすでに保有しています。直接チャネルを開設できます。",
+      "recommendationBuy": "最短で始めるには、このメイカーが対応する資産付きのチャネルをLSPから購入することをおすすめします。",
+      "recommendationOpen": "このマーケットメイカーは特定の資産に対応しています。これらの資産でチャネルを開設できます。",
+      "recommendationDefault": "このマーケットメイカーで取引するには、対応資産のいずれかを含むチャネルが必要です。"
+    },
+    "channelsNotReady": {
+      "title": "チャネルはまだ準備中です",
+      "message": "取引用チャネルを設定しています。この処理には通常数分かかります。準備が完了するまでお待ちください。",
+      "channelStatus": "チャネル状態",
+      "initializing": "初期化中...",
+      "checkStatus": "状態を確認",
+      "setupTime": "設定時間",
+      "setupTimeMessage": "チャネルの設定完了には通常3〜5分かかります。",
+      "autoRefresh": "自動更新",
+      "autoRefreshMessage": "30秒ごとに自動で状態を確認します。"
+    },
+    "connectionIssues": {
+      "connectionLost": "マーケットメイカーとの接続が失われました",
+      "connectionLostMessage": "取引用チャネルは利用可能ですが、マーケットメイカーとのリアルタイム接続の維持に問題があります。",
+      "preventsTradingMessage": "このため、価格のライブ更新と取引ができません。",
+      "retryConnection": "再接続",
+      "connectionIssue": "接続の問題",
+      "network": "ネットワーク",
+      "checkInternetMessage": "インターネット接続を確認してください",
+      "switchMaker": "メイカーを切り替え",
+      "tryDifferentMaker": "上で別のマーケットメイカーを試してください",
+      "wait": "待機",
+      "serverBusy": "サーバーが一時的に混雑している可能性があります",
+      "currentMaker": "現在のメイカー:",
+      "marketMakerSelector": "現在のメイカーが利用できない場合は、別のメイカーに切り替えて取引を続けてください。",
+      "connectingToMaker": "マーケットメイカーに接続中",
+      "connectionTimeout": "接続タイムアウト",
+      "establishingConnection": "接続を確立中",
+      "connectingMessage": "マーケットメイカーへの接続を試みています...",
+      "usuallyFastMessage": "通常は数秒で完了します。",
+      "timeoutMessage": "30秒以内にマーケットメイカーへ接続できませんでした。",
+      "serverUnreachableMessage": "サーバーに到達できないか、障害が発生している可能性があります。",
+      "connectingForSeconds": "{{seconds}}秒間接続中...",
+      "cancelAndRetry": "キャンセルして再試行",
+      "elapsedTime": "{{seconds}}秒経過",
+      "tryingSwitchMessage": "現在接続を試みています。別のメイカーを試すために切り替えることもできます。",
+      "switchIfUnavailable": "現在のメイカーが利用できない場合は別のメイカーに切り替えてください。",
+      "connectionInProgress": "接続処理中"
+    },
+    "manual": {
+      "balancesUpdated": "資産残高を更新しました",
+      "balancesFailed": "資産残高の取得に失敗しました",
+      "swapInitiated": "スワップを開始しました",
+      "swapInitiateFailed": "スワップの開始に失敗しました。もう一度お試しください。",
+      "noActiveSwap": "実行できるアクティブなスワップがありません",
+      "missingTakerPubkey": "テイカーの公開鍵を入力してください",
+      "swapExecuted": "スワップを実行しました",
+      "swapExecuteFailed": "スワップの実行に失敗しました。もう一度お試しください。"
+    },
+    "taker": {
+      "balancesUpdated": "資産残高を更新しました",
+      "balancesFailed": "資産残高の取得に失敗しました",
+      "missingSwapString": "スワップ文字列を入力してください",
+      "whitelistSuccess": "取引をホワイトリストに追加しました",
+      "whitelistFailed": "取引のホワイトリスト登録に失敗しました。もう一度お試しください。",
+      "pubkeyCopied": "公開鍵をクリップボードにコピーしました"
+    },
+    "statusToast": {
+      "swapSucceeded": "スワップ成功",
+      "swapExpired": "スワップ期限切れ",
+      "pendingSwaps_one": "{{count}}件のスワップを処理中",
+      "pendingSwaps_other": "{{count}}件のスワップを処理中"
     }
   },
   "toolbar": {
@@ -826,7 +920,69 @@
       "onchainSuccess": "オンチェーン支払いが正常に送信されました！",
       "paymentFailed": "支払いに失敗しました：{{error}}",
       "unknownError": "不明なエラー",
-      "lightningPaymentFailed": "Lightning支払いが失敗しました"
+      "lightningPaymentFailed": "Lightning支払いが失敗しました",
+      "orderSummary": "注文概要",
+      "confirmedChannel": "確認済みチャネル",
+      "yourLiquidity": "あなたの流動性",
+      "lspLiquidity": "LSPの流動性",
+      "your": "あなた",
+      "lsp": "LSP",
+      "rgbAssetChannel": "RGB資産チャネル",
+      "assetId": "資産ID",
+      "lspAssetAmount": "LSP資産額",
+      "yourAssetAmount": "あなたの資産額",
+      "channelAmount": "チャネル金額",
+      "serviceFee": "サービス手数料",
+      "total": "合計",
+      "paymentStatus": "支払い状況",
+      "keepWindowOpen": "このウィンドウを開いたままにしてください",
+      "autoUpdate": "状況は自動で更新されます",
+      "feeSlow": "低速",
+      "feeNormal": "標準",
+      "feeFast": "高速",
+      "feeCustom": "カスタム",
+      "feeRateLabel": "手数料率",
+      "customFeePlaceholder": "カスタム手数料率を入力",
+      "paymentExpiresIn": "支払い期限まで",
+      "expiresVerySoon": "まもなく期限切れです！",
+      "expiresSoon": "まもなく期限切れ",
+      "processingWait": "支払いを処理しています。しばらくお待ちください",
+      "confirmPayment": "支払いを確認",
+      "paymentType": "支払い方法",
+      "maxSendable": "最大送金可能額",
+      "availableBalance": "利用可能残高",
+      "amountToPay": "支払額",
+      "remainingBalance": "残高",
+      "feeRate": "手数料率",
+      "verifyDetails": "確認前に支払い内容をご確認ください",
+      "cancel": "キャンセル",
+      "loadingBalance": "残高を読み込み中...",
+      "payWithWallet": "ウォレット残高で支払う",
+      "available": "利用可能",
+      "insufficientBalance": "残高不足",
+      "required": "必要",
+      "pay": "支払う",
+      "paymentSuccessful": "支払いが完了しました！",
+      "method": "方法",
+      "lspAmount": "LSP金額",
+      "yourAmount": "あなたの金額",
+      "expiredMessage": "支払い可能時間が終了しました。新しい注文を作成してください。",
+      "createNewOrder": "新しい注文を作成",
+      "errorMessage": "支払い処理中にエラーが発生しました。もう一度お試しください。",
+      "tryAgain": "再試行",
+      "or": "または",
+      "paymentInstructions": "QRコードまたは以下の支払い詳細を使って支払ってください",
+      "externalWalletTitle": "外部ウォレットで支払う",
+      "showDetails": "詳細を表示",
+      "hideDetails": "詳細を非表示",
+      "processingSubtitle": "支払いを処理し、チャネルを開設しています",
+      "order": "注文",
+      "paymentReceivedStatus": "支払い受領",
+      "processingOrder": "注文を処理中",
+      "channelReady": "チャネル準備完了",
+      "waitingMakerConfirmation": "LSPからの最終確認を待っています...",
+      "lightningTab": "⚡ Lightning",
+      "onchainTab": "⛓️ オンチェーン"
     },
     "step4": {
       "success": {
@@ -859,7 +1015,27 @@
         "message": "支払いを処理中です。しばらくお待ちください。",
         "buttonText": "状態を確認"
       },
-      "returnToChannels": "チャネルに戻る"
+      "returnToChannels": "チャネルに戻る",
+      "errorButtonText": "再試行",
+      "errorMessage": "お支払いに問題が発生しました。もう一度お試しください。",
+      "errorTitle": "支払い失敗",
+      "expiredButtonText": "新しい注文を作成",
+      "expiredMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。",
+      "expiredTitle": "注文期限切れ",
+      "pendingButtonText": "状態を確認",
+      "pendingMessage": "お支払いを処理中です。少し時間がかかる場合があります。",
+      "pendingTitle": "支払いを処理中",
+      "successButtonText": "チャネルページへ",
+      "successMessage": "支払いを受領し、チャネルを開設しています。",
+      "successTitle": "注文が完了しました！",
+      "channelProgress": "チャネル開設中",
+      "refundHeader": "お支払いについて:",
+      "refundProcess": "オンチェーン返金は自動で処理されます",
+      "refundProcessSuffix": "まもなくウォレットへ送金されます。",
+      "refundSupport": "24時間以内に返金が届かない場合は、以下の注文IDを添えてLSPサポートへお問い合わせください。",
+      "orderIdHelp": "返金についてサポートへ連絡する際はこのIDをコピーしてください",
+      "expiredSectionTitle": "注文期限切れ:",
+      "expiredSectionMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。"
     },
     "orderCopy": "注文IDがコピーされました！",
     "paymentCopied": "支払い詳細がクリップボードにコピーされました！",
@@ -894,7 +1070,9 @@
       "feeReserveConclusion": "これらの予約により、両当事者が協力的なチャネル閉鎖などの必要なオンチェーン操作を常に実行できることが保証されます。",
       "spendingPercentage": "{{percent}}% 支出",
       "zeroSpending": "0% 支出",
-      "fullSpending": "100% 支出"
+      "fullSpending": "100% 支出",
+      "allReceiving": "全て受取",
+      "allSpending": "全て支払"
     },
     "assetChannel": {
       "title": "{{ticker}}アセットチャネル",
@@ -1256,7 +1434,12 @@
     "empty": "UTXOが見つかりません。開始するにはいくつか作成してください。"
   },
   "updaterModal": {
-    "fileSizes": ["バイト", "KB", "MB", "GB"],
+    "fileSizes": [
+      "バイト",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0バイト",
     "errors": {
       "timeout": "アップデートプロセスが5分後にタイムアウトしました。インターネット接続を確認してもう一度お試しください。",
@@ -1369,7 +1552,8 @@
         "maxButton": "最大",
         "rgbNote": "注：RGB アセット転送には 3,000 サトシが必要です。",
         "noChannels": "警告：アクティブな Lightning チャネルが見つかりません。Lightning 入金は利用できません。",
-        "exceeds": "金額が利用可能な上限を超えています：{{amount}} {{asset}}"
+        "exceeds": "金額が利用可能な上限を超えています：{{amount}} {{asset}}",
+        "zeroAmountInfo": "支払う側が金額を決めるゼロ金額インボイスを作成するには空欄のままにしてください"
       },
       "actions": {
         "copy": "クリップボードにコピー",
@@ -1470,7 +1654,9 @@
     },
     "swap": {
       "errorDetailsClipboard": "エラー詳細がクリップボードにコピーされました",
-      "swapFailed": "スワップ失敗：{{error}}"
+      "swapFailed": "スワップ失敗：{{error}}",
+      "exchangeRateQuote": "為替レートと見積もり",
+      "refresh": "↻ 更新"
     },
     "noChannels": {
       "insufficientBalance": "Bitcoin残高不足",
@@ -1607,7 +1793,8 @@
         "lightning": "インボイスを支払う",
         "rgb": "RGBアセットを送信",
         "onchain": "出金"
-      }
+      },
+      "analyzing": "入力を解析中…"
     },
     "main": {
       "title": {
@@ -1659,11 +1846,16 @@
         "withdrawalFailedDetails": "出金に失敗しました: {{error}}",
         "withdrawalFailedDefault": "出金に失敗しました",
         "onchainExceedsBalance": "出金金額({{amount}})が利用可能残高({{balance}})を超えています",
-        "capacityToast": "続行できません: インボイス金額({{amount}}サトシ)がアウトバウンド容量({{capacity}}サトシ)を超えています。"
+        "capacityToast": "続行できません: インボイス金額({{amount}}サトシ)がアウトバウンド容量({{capacity}}サトシ)を超えています。",
+        "lightningSendPayment": "Lightning支払いに失敗しました: {{error}}",
+        "zeroAmountRequired": "このゼロ金額インボイスには金額を入力してください。"
       },
       "warnings": {
         "invoiceAdjusted": "警告: インボイスは{{requested}} {{asset}}を要求していますが、残高は{{balance}} {{asset}}のみです。最大送信可能額に調整されました。",
         "noRgbAssets": "警告: 送信可能なRGBアセットがありません。"
+      },
+      "info": {
+        "zeroAmountInvoice": "これはゼロ金額インボイスです。下に支払いたい金額を入力してください。"
       }
     },
     "details": {
@@ -1792,7 +1984,9 @@
     "history": "履歴",
     "testnetWarning": "テストネットワーク",
     "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。",
-    "swap": "Swap"
+    "swap": "Swap",
+    "btcPrice": "BTC価格",
+    "priceUnavailable": "価格を利用できません"
   },
   "peerManagement": {
     "title": "ピア",
@@ -2223,7 +2417,8 @@
     "unlockCancelled": "ロック解除プロセスがキャンセルされました",
     "failedCheckStatus": "ノードステータスの確認に失敗しました：{{error}}",
     "failedGetNodeInfo": "ロック解除後のノード情報の取得に失敗しました",
-    "unknownError": "不明なエラーが発生しました"
+    "unknownError": "不明なエラーが発生しました",
+    "unlockTimeoutMessage": "ウォレットのロック解除に通常より時間がかかっています。ノードがしばらくオフラインだった場合、バックグラウンドでまだブロックチェーンを同期している可能性があります。解除が完了するまでアプリを開いたままにしてください。"
   },
   "walletRestore": {
     "title": "ウォレットを復元",
@@ -2543,7 +2738,55 @@
       "loading": "読み込み中...",
       "proceedToPayment": "支払いに進む",
       "payWithWallet": "ウォレットで支払う",
-      "assetPurchase": "アセット購入"
+      "assetPurchase": "アセット購入",
+      "balanceNeededDescription": "現在の残高では、この支払いルートはまだ利用できません。",
+      "balanceNeededTitle": "残高をさらに用意してください",
+      "availableLabel": "利用可能",
+      "capacityFee": "容量手数料",
+      "continue": "続行 ->",
+      "durationFee": "期間手数料",
+      "expiresLabel": "有効期限",
+      "lightningInvoice": "Lightningインボイス",
+      "loadingBalance": "残高を読み込み中...",
+      "loadingQuote": "見積もりを読み込み中...",
+      "onchainAddress": "オンチェーンアドレス",
+      "openAssetLightningChannel": "資産Lightningチャネルを開設",
+      "openBtcLightningChannel": "BTC Lightningチャネルを開設",
+      "orderIdLabel": "注文ID",
+      "orderSummaryBitcoin": "Bitcoin",
+      "orderSummaryYourInbound": "あなたの受取側",
+      "orderSummaryYourOutbound": "あなたの送信側",
+      "paymentDescription": "Lightningとオンチェーンの両方に対応したウォレットでは1つのQRで支払えます。必要なら下の正確な支払い情報をコピーしてください。",
+      "paymentEyebrow": "支払い",
+      "paymentLabel": "支払い",
+      "paymentTitle": "スキャンまたはコピーしてこの注文に入金",
+      "processingPaymentDescription": "支払いを受領しました。チャネルを設定しています...",
+      "processingPaymentTitle": "支払いを処理中",
+      "requestDetails": "リクエスト詳細",
+      "sendExactly": "正確な金額を送金",
+      "setupFee": "設定手数料",
+      "statusClose": "閉じる",
+      "statusConfirmationMessage": "チャネルには約6承認（約1時間）が必要です。資産は本日のレートで固定され、承認後に取引可能になります。",
+      "statusConfirmationTitle": "チャネル確認中",
+      "statusCreateNewOrder": "新しい注文を作成",
+      "statusErrorHelp": "支払いが行われた場合でも資金は差し引かれていません。もう一度お試しいただくか、問題が続く場合はサポートへご連絡ください。",
+      "statusErrorMessage": "チャネル注文の処理中に問題が発生しました。",
+      "statusErrorTitle": "注文に失敗しました",
+      "statusExpiredMessage": "支払いを受け取らないまま支払い期限が切れました。",
+      "statusExpiredTitle": "支払い期限切れ",
+      "statusGotIt": "了解しました",
+      "statusSuccessMessage": "チャネル注文が正常に作成されました。",
+      "statusSuccessTitle": "支払いが完了しました！",
+      "statusTryAgain": "再試行",
+      "totalToPay": "支払い合計",
+      "unifiedQrBadge": "LN + On-chain",
+      "unifiedQrDescription": "対応ウォレットは最適なルートを自動で選択できます。",
+      "unifiedQrTitle": "統合支払いQR",
+      "availableRoutes": "利用可能なルート",
+      "walletDescription": "ウォレット支払いオプションを開いて残高を確認し、1つのモーダルからLightningまたはオンチェーンで支払えます。",
+      "walletEyebrow": "ウォレット支払い",
+      "walletLightningDescription": "現在の送信可能流動性を使って、最速のウォレット支払いルートを利用します。",
+      "walletOnchainDescription": "オンチェーンのウォレット残高から直接注文に資金を入れ、ここで手数料レベルを選択します。"
     },
     "feeBreakdown": {
       "channelFees": "チャネル手数料:"
@@ -2606,7 +2849,9 @@
       "lastExecution": "最終実行",
       "progressToNext": "次回買い付けまでの進捗",
       "triggerGap": "あと{{pct}}%の下落が必要",
-      "triggerReady": "トリガー閾値以下です"
+      "triggerReady": "トリガー閾値以下です",
+      "checking": "確認中…",
+      "receiveBtc": "BTCへ"
     },
     "form": {
       "subtitle": "金額、トリガーモード、スケジュールを設定します。いつでも一時停止またはキャンセルできます。",
@@ -2614,7 +2859,9 @@
       "targetHint": "BTCがトリガーに達したら買い付け",
       "estimatedReceive": "1回あたりの受取見込み",
       "remainingBalance": "各買い付け後の残高",
-      "scheduleNote": "ノードがアンロック中は約30秒ごとに実行可否を確認します。"
+      "scheduleNote": "ノードがアンロック中は約30秒ごとに実行可否を確認します。",
+      "conversionHint": "各実行でUSDTを一度使い、BTC satsが加算されます。",
+      "liquidityHint": "DCAには使えるUSDT Lightning残高と、各実行に十分なBTC受取容量が必要です。"
     },
     "tabs": {
       "active": "アクティブ",
@@ -2646,7 +2893,13 @@
       "description": "各注文は指定したUSDT金額でBTCを繰り返し購入します。実行はノードがアンロックかつ準備完了のときのみ行われます。",
       "scheduled": "定期: 固定間隔で購入（例: 24時間ごと）。",
       "priceTarget": "価格ターゲット: BTC価格がトリガー以下になったときに購入。",
-      "actions": "操作: 今すぐ実行で即時購入、一時停止でトリガー停止、キャンセルで履歴へ移動。"
+      "actions": "操作: 今すぐ実行で即時購入、一時停止でトリガー停止、キャンセルで履歴へ移動。",
+      "fundingTitle": "1. 注文に資金を入れる",
+      "fundingDescription": "購入額に十分なUSDT Lightning残高を維持してください。BTC Lightning容量によって、各実行で受け取れるsats数が決まります。",
+      "triggerTitle": "2. トリガーを選ぶ",
+      "triggerDescription": "定期注文は各間隔ごとに購入します。価格目標注文はBTCがしきい値に達するのを待ち、購入が成功すると新しい市場価格から再度有効になります。",
+      "manageTitle": "3. 監視して操作する",
+      "manageDescription": "今すぐ購入するには実行、自動実行を止めるには一時停止、過去の実行を残したまま履歴へ移すにはキャンセルを使います。"
     },
     "orderHelp": {
       "scheduled": "この注文は選択した間隔に基づいて定期的に購入します。",
@@ -2689,6 +2942,13 @@
       "maxReceive": "max receive ≈ {{sats}} sats BTC"
     },
     "addBtcLiquidity": "Add BTC",
-    "addUsdtLiquidity": "Add USDT"
+    "addUsdtLiquidity": "Add USDT",
+    "section": {
+      "balances": "チャネル残高",
+      "pendingBadge": "保留中",
+      "pendingUsdtChannels": "保留中のUSDTチャネル",
+      "pendingUsdtDescription": "新しいUSDT Lightningチャネルは作成中です。承認されると利用可能残高に表示されます。",
+      "pendingUsdtTitle": "新しいUSDTチャネルが保留中"
+    }
   }
 }

@@ -37,7 +37,8 @@
     "helpSupport": "帮助与支持",
     "getHelpSupport": "获取帮助与支持",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "dca": "DCA"
   },
   "channels": {
     "pageTitle": "闪电钱包仪表板",
@@ -177,7 +178,9 @@
     "restartNow": "立即重启",
     "later": "稍后",
     "shuttingDownTitle": "正在关闭节点",
-    "shuttingDownMessage": "请稍候，节点正在关闭..."
+    "shuttingDownMessage": "请稍候，节点正在关闭...",
+    "fiatCurrency": "法币",
+    "fiatCurrencyDescription": "用于显示法币价值的货币"
   },
   "modals": {
     "logoutTitle": "确认退出登录",
@@ -278,7 +281,9 @@
     "history": "历史",
     "testnetWarning": "测试网络",
     "testnetWarningDesc": "您在测试网络上。资金不是真实的，交易没有货币价值。",
-    "swap": "Swap"
+    "swap": "Swap",
+    "btcPrice": "BTC 价格",
+    "priceUnavailable": "价格不可用"
   },
   "peerManagement": {
     "title": "对等节点",
@@ -709,7 +714,8 @@
     "unlockCancelled": "解锁过程已取消",
     "failedCheckStatus": "检查节点状态失败：{{error}}",
     "failedGetNodeInfo": "解锁后获取节点信息失败",
-    "unknownError": "发生未知错误"
+    "unknownError": "发生未知错误",
+    "unlockTimeoutMessage": "解锁时间比平时更长。如果节点离线了一段时间，它可能仍在后台同步区块链。请保持应用打开，等待解锁继续完成。"
   },
   "trade": {
     "header": {
@@ -842,6 +848,95 @@
       "clearSearch": "清除搜索并显示所有资产",
       "tip": "提示：您可以按代码搜索或粘贴完整资产 ID",
       "selectedLabel": "已选择"
+    },
+    "noChannels": {
+      "insufficientBalance": "Bitcoin 余额不足",
+      "insufficientBalanceMessage": "开通通道需要一些比特币。请先存入 BTC 后再开始。",
+      "depositBTC": "存入 BTC",
+      "noRGBChannels": "没有可用的 RGB 通道",
+      "noRGBChannelsMessage": "要开始交换，你需要一个包含部分资产的通道。",
+      "openChannel": "打开通道",
+      "buyFromLSP": "从 LSP 购买",
+      "marketMaker": "做市商",
+      "noTradingChannels": "没有可用的交易通道",
+      "buyChannel": "购买通道",
+      "availableTradingPairs": "可用交易对",
+      "supportedAssets": "支持的资产",
+      "quickStartGuide": "快速开始指南",
+      "quickStartMessage": "按照这些步骤开始交易 RGB 资产。",
+      "checkSupportedAssets": "查看支持的资产",
+      "checkSupportedAssetsMessage": "访问注册表查看该做市商支持哪些资产。",
+      "createYourChannel": "创建你的通道",
+      "createChannelMessage": "从 LSP 购买通道，或者直接用你的资产开通一个通道。",
+      "startTrading": "开始交易",
+      "startTradingMessage": "当你的通道激活后回到这里开始交易。",
+      "recommendationCompatible": "你已经拥有与该做市商兼容的资产，可以直接开通通道。",
+      "recommendationBuy": "为了最快开始，我们建议从 LSP 购买一个包含该做市商支持资产的通道。",
+      "recommendationOpen": "该做市商支持特定资产。你可以用这些资产开通通道。",
+      "recommendationDefault": "要与该做市商交易，你需要一个包含其支持资产之一的通道。"
+    },
+    "channelsNotReady": {
+      "title": "通道尚未准备好",
+      "message": "你的交易通道正在设置中。此过程通常只需几分钟。请稍候，我们正在为你准备一切。",
+      "channelStatus": "通道状态",
+      "initializing": "初始化中...",
+      "checkStatus": "检查状态",
+      "setupTime": "设置时间",
+      "setupTimeMessage": "通道设置通常需要 3 到 5 分钟完成。",
+      "autoRefresh": "自动刷新",
+      "autoRefreshMessage": "我们会每 30 秒自动检查一次状态。"
+    },
+    "connectionIssues": {
+      "connectionLost": "与做市商的连接已断开",
+      "connectionLostMessage": "你的交易通道仍然可用，但我们无法稳定保持与做市商的实时连接。",
+      "preventsTradingMessage": "这会阻止实时价格更新和交易。",
+      "retryConnection": "重试连接",
+      "connectionIssue": "连接问题",
+      "network": "网络",
+      "checkInternetMessage": "请检查你的网络连接",
+      "switchMaker": "切换做市商",
+      "tryDifferentMaker": "请在上方尝试其他做市商",
+      "wait": "等待",
+      "serverBusy": "服务器可能暂时繁忙",
+      "currentMaker": "当前做市商：",
+      "marketMakerSelector": "如果当前做市商不可用，请切换到其他做市商继续交易。",
+      "connectingToMaker": "正在连接做市商",
+      "connectionTimeout": "连接超时",
+      "establishingConnection": "正在建立连接",
+      "connectingMessage": "正在尝试连接做市商...",
+      "usuallyFastMessage": "这通常只需要几秒钟。",
+      "timeoutMessage": "30 秒内无法连接到做市商。",
+      "serverUnreachableMessage": "服务器可能无法访问或出现故障。",
+      "connectingForSeconds": "已连接 {{seconds}} 秒...",
+      "cancelAndRetry": "取消并重试",
+      "elapsedTime": "已过去 {{seconds}} 秒",
+      "tryingSwitchMessage": "当前正在尝试连接。你也可以切换到其他做市商进行尝试。",
+      "switchIfUnavailable": "如果当前做市商不可用，请切换到其他做市商。",
+      "connectionInProgress": "正在连接"
+    },
+    "manual": {
+      "balancesUpdated": "资产余额已更新",
+      "balancesFailed": "获取资产余额失败",
+      "swapInitiated": "交换已成功发起",
+      "swapInitiateFailed": "发起交换失败。请重试。",
+      "noActiveSwap": "没有可执行的活动交换",
+      "missingTakerPubkey": "请输入 taker 公钥",
+      "swapExecuted": "交换已成功执行",
+      "swapExecuteFailed": "执行交换失败。请重试。"
+    },
+    "taker": {
+      "balancesUpdated": "资产余额已更新",
+      "balancesFailed": "获取资产余额失败",
+      "missingSwapString": "请输入交换字符串",
+      "whitelistSuccess": "交易已成功加入白名单",
+      "whitelistFailed": "交易加入白名单失败。请重试。",
+      "pubkeyCopied": "公钥已复制到剪贴板"
+    },
+    "statusToast": {
+      "swapSucceeded": "交换成功",
+      "swapExpired": "交换已过期",
+      "pendingSwaps_one": "{{count}} 笔交换进行中",
+      "pendingSwaps_other": "{{count}} 笔交换进行中"
     }
   },
   "walletRestore": {
@@ -1213,7 +1308,9 @@
     "lightningPaymentSuccess": "Lightning 支付成功启动！",
     "onchainPaymentSuccess": "链上支付成功发送！",
     "paymentFailed": "支付失败：{{error}}",
-    "unknownError": "未知错误"
+    "unknownError": "未知错误",
+    "lightning": "Lightning",
+    "onchain": "链上"
   },
   "websocket": {
     "connectionLost": "与做市商的连接已丢失。正在尝试重新连接...",
@@ -1470,7 +1567,69 @@
       "onchainSuccess": "链上支付成功发送！",
       "paymentFailed": "支付失败：{{error}}",
       "unknownError": "未知错误",
-      "lightningPaymentFailed": "闪电网络支付失败"
+      "lightningPaymentFailed": "闪电网络支付失败",
+      "orderSummary": "订单摘要",
+      "confirmedChannel": "已确认通道",
+      "yourLiquidity": "你的流动性",
+      "lspLiquidity": "LSP 流动性",
+      "your": "你的",
+      "lsp": "LSP",
+      "rgbAssetChannel": "RGB 资产通道",
+      "assetId": "资产 ID",
+      "lspAssetAmount": "LSP 资产数量",
+      "yourAssetAmount": "你的资产数量",
+      "channelAmount": "通道金额",
+      "serviceFee": "服务费",
+      "total": "总计",
+      "paymentStatus": "支付状态",
+      "keepWindowOpen": "请保持此窗口打开",
+      "autoUpdate": "状态会自动更新",
+      "feeSlow": "慢",
+      "feeNormal": "普通",
+      "feeFast": "快",
+      "feeCustom": "自定义",
+      "feeRateLabel": "费率",
+      "customFeePlaceholder": "输入自定义费率",
+      "paymentExpiresIn": "支付将在以下时间后过期",
+      "expiresVerySoon": "即将过期！",
+      "expiresSoon": "即将过期",
+      "processingWait": "我们正在处理你的付款，请稍候",
+      "confirmPayment": "确认支付",
+      "paymentType": "支付类型",
+      "maxSendable": "最大可发送金额",
+      "availableBalance": "可用余额",
+      "amountToPay": "应付金额",
+      "remainingBalance": "剩余余额",
+      "feeRate": "费率",
+      "verifyDetails": "确认前请核对支付详情",
+      "cancel": "取消",
+      "loadingBalance": "正在加载余额...",
+      "payWithWallet": "使用钱包余额支付",
+      "available": "可用",
+      "insufficientBalance": "余额不足",
+      "required": "需要",
+      "pay": "支付",
+      "paymentSuccessful": "支付成功！",
+      "method": "方式",
+      "lspAmount": "LSP 金额",
+      "yourAmount": "你的金额",
+      "expiredMessage": "支付窗口已过期。请创建新订单。",
+      "createNewOrder": "创建新订单",
+      "errorMessage": "处理你的支付时出现错误。请重试。",
+      "tryAgain": "重试",
+      "or": "或",
+      "paymentInstructions": "使用二维码或下方支付详情完成付款",
+      "externalWalletTitle": "使用外部钱包支付",
+      "showDetails": "显示详情",
+      "hideDetails": "隐藏详情",
+      "processingSubtitle": "我们正在处理你的付款并开通通道",
+      "order": "订单",
+      "paymentReceivedStatus": "已收到付款",
+      "processingOrder": "订单处理中",
+      "channelReady": "通道已就绪",
+      "waitingMakerConfirmation": "正在等待 LSP 的最终确认...",
+      "lightningTab": "⚡ Lightning",
+      "onchainTab": "⛓️ 链上"
     },
     "step4": {
       "success": {
@@ -1503,7 +1662,27 @@
         "message": "您的支付正在处理中。这可能需要几分钟。",
         "buttonText": "检查状态"
       },
-      "returnToChannels": "返回通道"
+      "returnToChannels": "返回通道",
+      "errorButtonText": "重试",
+      "errorMessage": "你的付款出现问题。请重试。",
+      "errorTitle": "支付失败",
+      "expiredButtonText": "创建新订单",
+      "expiredMessage": "订单已过期。请创建新订单后继续。",
+      "expiredTitle": "订单已过期",
+      "pendingButtonText": "检查状态",
+      "pendingMessage": "你的付款正在处理中。这可能需要一点时间。",
+      "pendingTitle": "处理中",
+      "successButtonText": "前往通道页面",
+      "successMessage": "已收到你的付款，通道正在开通。",
+      "successTitle": "订单已完成！",
+      "channelProgress": "通道开通中",
+      "refundHeader": "关于你的付款：",
+      "refundProcess": "链上退款将自动处理",
+      "refundProcessSuffix": "并很快发送到你的钱包。",
+      "refundSupport": "如果 24 小时内仍未收到退款，请使用下方订单 ID 联系 LSP 支持。",
+      "orderIdHelp": "联系客服处理退款时，请复制此 ID",
+      "expiredSectionTitle": "订单已过期：",
+      "expiredSectionMessage": "订单已过期。请创建新订单后继续。"
     },
     "orderCopy": "订单 ID 已复制！",
     "paymentCopied": "支付详情已复制到剪贴板！",
@@ -1538,7 +1717,9 @@
       "feeReserveConclusion": "这些预留金确保双方始终能够承担必要的链上操作，如协作关闭通道。",
       "spendingPercentage": "{{percent}}% 支出",
       "zeroSpending": "0% 支出",
-      "fullSpending": "100% 支出"
+      "fullSpending": "100% 支出",
+      "allReceiving": "全部接收",
+      "allSpending": "全部支出"
     },
     "assetChannel": {
       "title": "{{ticker}}资产通道",
@@ -1865,15 +2046,24 @@
     "summary": {
       "colorable": {
         "title": "可着色 UTXO",
-        "bullets": ["UTXO RGB 就绪但尚未分配", "接收链上 RGB 资产"]
+        "bullets": [
+          "UTXO RGB 就绪但尚未分配",
+          "接收链上 RGB 资产"
+        ]
       },
       "colored": {
         "title": "已着色 UTXO",
-        "bullets": ["开通 RGB Lightning 通道", "发送链上 RGB 资产"]
+        "bullets": [
+          "开通 RGB Lightning 通道",
+          "发送链上 RGB 资产"
+        ]
       },
       "normal": {
         "title": "普通 UTXO",
-        "bullets": ["开通比特币 Lightning 通道", "常规交易"]
+        "bullets": [
+          "开通比特币 Lightning 通道",
+          "常规交易"
+        ]
       },
       "countLabel": "{{count}} 个 UTXO"
     },
@@ -1891,7 +2081,12 @@
     "empty": "未找到 UTXO。创建一些以开始使用。"
   },
   "updaterModal": {
-    "fileSizes": ["字节", "KB", "MB", "GB"],
+    "fileSizes": [
+      "字节",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 字节",
     "errors": {
       "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
@@ -2004,7 +2199,8 @@
         "maxButton": "最高",
         "rgbNote": "注意：RGB 资产转账需要 3,000 sats。",
         "noChannels": "警告：未找到活跃的闪电通道。闪电存款不可用。",
-        "exceeds": "金额超过最大可用限额：{{amount}} {{asset}}"
+        "exceeds": "金额超过最大可用限额：{{amount}} {{asset}}",
+        "zeroAmountInfo": "留空可创建零金额发票，由付款方决定金额"
       },
       "actions": {
         "copy": "复制到剪贴板",
@@ -2105,7 +2301,9 @@
     },
     "swap": {
       "errorDetailsClipboard": "错误详情已复制到剪贴板",
-      "swapFailed": "交换失败：{{error}}"
+      "swapFailed": "交换失败：{{error}}",
+      "exchangeRateQuote": "汇率与报价",
+      "refresh": "↻ 刷新"
     },
     "noChannels": {
       "insufficientBalance": "比特币余额不足",
@@ -2242,7 +2440,8 @@
         "lightning": "支付发票",
         "rgb": "发送 RGB 资产",
         "onchain": "提取"
-      }
+      },
+      "analyzing": "正在分析输入…"
     },
     "main": {
       "title": {
@@ -2294,11 +2493,16 @@
         "withdrawalFailedDetails": "提取失败：{{error}}",
         "withdrawalFailedDefault": "提取失败",
         "onchainExceedsBalance": "提取金额（{{amount}}）超过可用余额（{{balance}}）",
-        "capacityToast": "无法继续：发票金额（{{amount}} sats）超过您的出站容量（{{capacity}} sats）。"
+        "capacityToast": "无法继续：发票金额（{{amount}} sats）超过您的出站容量（{{capacity}} sats）。",
+        "lightningSendPayment": "Lightning 支付失败：{{error}}",
+        "zeroAmountRequired": "请为这张零金额发票输入金额。"
       },
       "warnings": {
         "invoiceAdjusted": "警告：发票请求 {{requested}} {{asset}}，但您的余额仅为 {{balance}} {{asset}}。已调整为最大可发送金额。",
         "noRgbAssets": "警告：没有可用于发送的 RGB 资产。"
+      },
+      "info": {
+        "zeroAmountInvoice": "这是一张零金额发票。请在下方输入你要支付的金额。"
       }
     },
     "details": {
@@ -2534,7 +2738,55 @@
       "loading": "加载中...",
       "proceedToPayment": "进行支付",
       "payWithWallet": "使用钱包支付",
-      "assetPurchase": "资产购买"
+      "assetPurchase": "资产购买",
+      "balanceNeededDescription": "以你当前的余额，还无法使用这条支付路径。",
+      "balanceNeededTitle": "需要更多余额",
+      "availableLabel": "可用",
+      "capacityFee": "容量费用",
+      "continue": "继续 ->",
+      "durationFee": "时长费用",
+      "expiresLabel": "到期时间",
+      "lightningInvoice": "Lightning 发票",
+      "loadingBalance": "正在加载余额...",
+      "loadingQuote": "正在加载报价...",
+      "onchainAddress": "链上地址",
+      "openAssetLightningChannel": "开通资产 Lightning 通道",
+      "openBtcLightningChannel": "开通 BTC Lightning 通道",
+      "orderIdLabel": "订单 ID",
+      "orderSummaryBitcoin": "Bitcoin",
+      "orderSummaryYourInbound": "你的入站",
+      "orderSummaryYourOutbound": "你的出站",
+      "paymentDescription": "支持 Lightning 和链上的钱包可使用同一个二维码，或在下方复制精确的支付信息。",
+      "paymentEyebrow": "支付",
+      "paymentLabel": "支付",
+      "paymentTitle": "扫描或复制以为此订单付款",
+      "processingPaymentDescription": "已收到付款，正在设置你的通道...",
+      "processingPaymentTitle": "正在处理付款",
+      "requestDetails": "请求详情",
+      "sendExactly": "精确发送",
+      "setupFee": "设置费用",
+      "statusClose": "关闭",
+      "statusConfirmationMessage": "你的通道需要约 6 次确认（约 1 小时）。资产会按今日价格锁定，并在确认后可开始交易。",
+      "statusConfirmationTitle": "通道确认进行中",
+      "statusCreateNewOrder": "创建新订单",
+      "statusErrorHelp": "如果已付款，资金并未被扣除。请重试；若问题持续，请联系支持。",
+      "statusErrorMessage": "处理你的通道订单时出现问题。",
+      "statusErrorTitle": "订单失败",
+      "statusExpiredMessage": "支付窗口已过期，未收到付款。",
+      "statusExpiredTitle": "支付已过期",
+      "statusGotIt": "知道了，谢谢！",
+      "statusSuccessMessage": "你的通道订单已成功创建。",
+      "statusSuccessTitle": "支付成功！",
+      "statusTryAgain": "重试",
+      "totalToPay": "应付总额",
+      "unifiedQrBadge": "LN + 链上",
+      "unifiedQrDescription": "兼容的钱包可以自动选择最佳路径。",
+      "unifiedQrTitle": "统一支付二维码",
+      "availableRoutes": "可用路径",
+      "walletDescription": "打开钱包支付选项查看余额，并在同一个弹窗中通过 Lightning 或链上完成支付。",
+      "walletEyebrow": "钱包支付",
+      "walletLightningDescription": "使用你当前的出站流动性，走最快的钱包支付路径。",
+      "walletOnchainDescription": "直接用钱包的链上余额为订单付款，并在这里选择手续费级别。"
     },
     "feeBreakdown": {
       "channelFees": "通道费用:"
@@ -2597,7 +2849,9 @@
       "lastExecution": "最近执行",
       "progressToNext": "距下次买入进度",
       "triggerGap": "还需再下跌 {{pct}}%",
-      "triggerReady": "已达到/低于触发阈值"
+      "triggerReady": "已达到/低于触发阈值",
+      "checking": "检查中…",
+      "receiveBtc": "转为 BTC"
     },
     "form": {
       "subtitle": "设置金额、触发模式和频率。你可以随时暂停或取消。",
@@ -2605,7 +2859,9 @@
       "targetHint": "当 BTC 达到触发价时买入",
       "estimatedReceive": "每次预计获得",
       "remainingBalance": "每次买入后剩余余额",
-      "scheduleNote": "当节点解锁时，系统大约每 30 秒检查一次是否可执行。"
+      "scheduleNote": "当节点解锁时，系统大约每 30 秒检查一次是否可执行。",
+      "conversionHint": "每次执行都会花费一次 USDT，并记入 BTC sats。",
+      "liquidityHint": "DCA 需要可用的 USDT Lightning 余额，以及每次执行足够的 BTC 接收容量。"
     },
     "tabs": {
       "active": "进行中",
@@ -2637,7 +2893,13 @@
       "description": "每个订单会按你设置的 USDT 金额重复买入 BTC。仅当节点已解锁且可用时才会执行。",
       "scheduled": "定时：按固定时间间隔买入（例如每 24 小时）。",
       "priceTarget": "价格目标：当 BTC 跌至触发价或以下时买入。",
-      "actions": "操作：立即执行会立刻买入一次，暂停会停止触发，取消会把订单移到历史。"
+      "actions": "操作：立即执行会立刻买入一次，暂停会停止触发，取消会把订单移到历史。",
+      "fundingTitle": "1. 为订单注资",
+      "fundingDescription": "请保持足够的 USDT Lightning 余额用于每次买入。你的 BTC Lightning 容量决定了每次执行能接收多少 sats。",
+      "triggerTitle": "2. 选择触发条件",
+      "triggerDescription": "定时订单会在每个间隔后买入。目标价订单会等待 BTC 触及阈值，成功买入后再根据新的市场价格重新设定触发点。",
+      "manageTitle": "3. 监控与控制",
+      "manageDescription": "使用“执行”立即买入一次，使用“暂停”停止自动执行，使用“取消”将订单移入历史记录，同时保留过去的执行记录。"
     },
     "orderHelp": {
       "scheduled": "该订单会按所选间隔固定执行买入。",
@@ -2680,6 +2942,13 @@
       "maxReceive": "max receive ≈ {{sats}} sats BTC"
     },
     "addBtcLiquidity": "Add BTC",
-    "addUsdtLiquidity": "Add USDT"
+    "addUsdtLiquidity": "Add USDT",
+    "section": {
+      "balances": "通道余额",
+      "pendingBadge": "待处理",
+      "pendingUsdtChannels": "待确认的 USDT 通道",
+      "pendingUsdtDescription": "新的 USDT Lightning 通道正在创建中，确认后会显示在可用余额中。",
+      "pendingUsdtTitle": "新的 USDT 通道待确认"
+    }
   }
 }
