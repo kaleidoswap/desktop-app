@@ -2053,17 +2053,11 @@
       },
       "colored": {
         "title": "UTXO Colorati",
-        "bullets": [
-          "Apri canali Lightning RGB",
-          "Invia asset RGB on-chain"
-        ]
+        "bullets": ["Apri canali Lightning RGB", "Invia asset RGB on-chain"]
       },
       "normal": {
         "title": "UTXO Normali",
-        "bullets": [
-          "Apri canali Lightning Bitcoin",
-          "Transazioni regolari"
-        ]
+        "bullets": ["Apri canali Lightning Bitcoin", "Transazioni regolari"]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -2081,12 +2075,7 @@
     "empty": "Nessun UTXO trovato. Creane alcuni per iniziare."
   },
   "updaterModal": {
-    "fileSizes": [
-      "Byte",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Byte", "KB", "MB", "GB"],
     "fileSizeZero": "0 Byte",
     "errors": {
       "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",

@@ -1434,12 +1434,7 @@
     "empty": "Aucun UTXO trouvé. Créez-en pour commencer."
   },
   "updaterModal": {
-    "fileSizes": [
-      "Octets",
-      "Ko",
-      "Mo",
-      "Go"
-    ],
+    "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
       "timeout": "Le processus de mise à jour a expiré après 5 minutes. Vérifiez votre connexion Internet puis réessayez.",

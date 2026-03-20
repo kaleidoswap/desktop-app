@@ -2081,12 +2081,7 @@
     "empty": "No se encontraron UTXOs. Crea algunos para comenzar."
   },
   "updaterModal": {
-    "fileSizes": [
-      "Bytes",
-      "KB",
-      "MB",
-      "GB"
-    ],
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 bytes",
     "errors": {
       "timeout": "El proceso de actualización se agotó después de 5 minutos. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
