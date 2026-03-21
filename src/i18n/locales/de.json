@@ -37,7 +37,8 @@
     "helpSupport": "Hilfe & Support",
     "getHelpSupport": "Hilfe & Support erhalten",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "dca": "DCA"
   },
   "channels": {
     "buyChannel": "Kanal kaufen",
@@ -177,7 +178,9 @@
     "restartNow": "Jetzt neu starten",
     "later": "Später",
     "shuttingDownTitle": "Node wird heruntergefahren",
-    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt..."
+    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt...",
+    "fiatCurrency": "Fiat-Währung",
+    "fiatCurrencyDescription": "Währung für die Anzeige von Fiat-Werten"
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",
@@ -436,7 +439,9 @@
     "lightningPaymentSuccess": "Lightning-Zahlung erfolgreich gestartet!",
     "onchainPaymentSuccess": "On-Chain-Zahlung erfolgreich gesendet!",
     "paymentFailed": "Zahlung fehlgeschlagen: {{error}}",
-    "unknownError": "Unbekannter Fehler"
+    "unknownError": "Unbekannter Fehler",
+    "lightning": "Lightning",
+    "onchain": "On-Chain"
   },
   "websocket": {
     "connectionLost": "Verbindung zum Maker verloren. Erneuter Verbindungsversuch...",
@@ -573,6 +578,95 @@
       "clearSearch": "Suche löschen und alle Assets anzeigen",
       "tip": "Tipp: Du kannst nach Ticker suchen oder die vollständige Asset-ID einfügen",
       "selectedLabel": "Ausgewählt"
+    },
+    "noChannels": {
+      "insufficientBalance": "Unzureichendes Bitcoin-Guthaben",
+      "insufficientBalanceMessage": "Sie benötigen etwas Bitcoin, um einen Kanal zu eröffnen. Bitte zahlen Sie BTC ein, um zu beginnen.",
+      "depositBTC": "BTC einzahlen",
+      "noRGBChannels": "Keine RGB-Kanäle verfügbar",
+      "noRGBChannelsMessage": "Um mit dem Swappen zu beginnen, benötigen Sie einen Kanal mit einigen Assets.",
+      "openChannel": "Kanal öffnen",
+      "buyFromLSP": "Beim LSP kaufen",
+      "marketMaker": "Market Maker",
+      "noTradingChannels": "Keine Handelskanäle verfügbar",
+      "buyChannel": "Kanal kaufen",
+      "availableTradingPairs": "Verfügbare Handelspaare",
+      "supportedAssets": "Unterstützte Assets",
+      "quickStartGuide": "Schnellstart-Anleitung",
+      "quickStartMessage": "Folgen Sie diesen Schritten, um mit RGB-Assets zu handeln.",
+      "checkSupportedAssets": "Unterstützte Assets prüfen",
+      "checkSupportedAssetsMessage": "Besuchen Sie die Registry, um zu sehen, welche Assets dieser Maker unterstützt.",
+      "createYourChannel": "Eigenen Kanal erstellen",
+      "createChannelMessage": "Kaufen Sie einen Kanal von einem LSP oder öffnen Sie direkt einen mit Ihren Assets.",
+      "startTrading": "Mit dem Handel beginnen",
+      "startTradingMessage": "Kehren Sie hierher zurück, sobald Ihr Kanal aktiv ist, um mit dem Handel zu beginnen.",
+      "recommendationCompatible": "Sie haben bereits Assets, die mit diesem Market Maker kompatibel sind. Sie können direkt einen Kanal öffnen.",
+      "recommendationBuy": "Für den schnellsten Start empfehlen wir, einen Kanal von einem LSP mit von diesem Maker unterstützten Assets zu kaufen.",
+      "recommendationOpen": "Dieser Market Maker unterstützt bestimmte Assets. Sie können mit diesen Assets einen Kanal öffnen.",
+      "recommendationDefault": "Um mit diesem Market Maker zu handeln, benötigen Sie einen Kanal mit einem seiner unterstützten Assets."
+    },
+    "channelsNotReady": {
+      "title": "Kanäle noch nicht bereit",
+      "message": "Ihre Handelskanäle werden gerade eingerichtet. Dieser Vorgang dauert gewöhnlich nur wenige Minuten. Bitte warten Sie, während wir alles für Sie vorbereiten.",
+      "channelStatus": "Kanalstatus",
+      "initializing": "Wird initialisiert...",
+      "checkStatus": "Status prüfen",
+      "setupTime": "Einrichtungszeit",
+      "setupTimeMessage": "Die Einrichtung eines Kanals dauert in der Regel 3-5 Minuten.",
+      "autoRefresh": "Automatische Aktualisierung",
+      "autoRefreshMessage": "Wir prüfen den Status automatisch alle 30 Sekunden."
+    },
+    "connectionIssues": {
+      "connectionLost": "Verbindung zum Market Maker verloren",
+      "connectionLostMessage": "Ihre Handelskanäle sind verfügbar, aber wir haben Probleme, eine Echtzeitverbindung zum Market Maker aufrechtzuerhalten.",
+      "preventsTradingMessage": "Dadurch sind Live-Preisupdates und Handel nicht möglich.",
+      "retryConnection": "Verbindung erneut versuchen",
+      "connectionIssue": "Verbindungsproblem",
+      "network": "Netzwerk",
+      "checkInternetMessage": "Überprüfen Sie Ihre Internetverbindung",
+      "switchMaker": "Maker wechseln",
+      "tryDifferentMaker": "Versuchen Sie oben einen anderen Market Maker",
+      "wait": "Warten",
+      "serverBusy": "Der Server ist möglicherweise vorübergehend ausgelastet",
+      "currentMaker": "Aktueller Maker:",
+      "marketMakerSelector": "Wenn der aktuelle Maker nicht verfügbar ist, wechseln Sie zu einem anderen, um weiterzuhandeln.",
+      "connectingToMaker": "Verbinde mit dem Market Maker",
+      "connectionTimeout": "Zeitüberschreitung der Verbindung",
+      "establishingConnection": "Verbindung wird hergestellt",
+      "connectingMessage": "Es wird versucht, eine Verbindung zum Market Maker herzustellen...",
+      "usuallyFastMessage": "Das dauert normalerweise nur wenige Sekunden.",
+      "timeoutMessage": "Es konnte innerhalb von 30 Sekunden keine Verbindung zum Market Maker hergestellt werden.",
+      "serverUnreachableMessage": "Der Server ist möglicherweise nicht erreichbar oder hat Probleme.",
+      "connectingForSeconds": "Verbindungsaufbau seit {{seconds}} Sekunden...",
+      "cancelAndRetry": "Abbrechen & erneut versuchen",
+      "elapsedTime": "{{seconds}} s vergangen",
+      "tryingSwitchMessage": "Derzeit wird versucht, eine Verbindung herzustellen. Sie können wechseln, um einen anderen Maker zu testen.",
+      "switchIfUnavailable": "Wechseln Sie zu einem anderen Maker, wenn der aktuelle nicht verfügbar ist.",
+      "connectionInProgress": "Verbindung läuft"
+    },
+    "manual": {
+      "balancesUpdated": "Asset-Guthaben aktualisiert",
+      "balancesFailed": "Asset-Guthaben konnten nicht abgerufen werden",
+      "swapInitiated": "Swap erfolgreich gestartet",
+      "swapInitiateFailed": "Swap konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+      "noActiveSwap": "Kein aktiver Swap zum Ausführen",
+      "missingTakerPubkey": "Bitte geben Sie den Pubkey des Takers ein",
+      "swapExecuted": "Swap erfolgreich ausgeführt",
+      "swapExecuteFailed": "Swap konnte nicht ausgeführt werden. Bitte versuchen Sie es erneut."
+    },
+    "taker": {
+      "balancesUpdated": "Asset-Guthaben aktualisiert",
+      "balancesFailed": "Asset-Guthaben konnten nicht abgerufen werden",
+      "missingSwapString": "Bitte geben Sie einen Swap-String ein",
+      "whitelistSuccess": "Trade erfolgreich freigegeben",
+      "whitelistFailed": "Trade konnte nicht freigegeben werden. Bitte versuchen Sie es erneut.",
+      "pubkeyCopied": "Öffentlicher Schlüssel in die Zwischenablage kopiert"
+    },
+    "statusToast": {
+      "swapSucceeded": "Swap erfolgreich",
+      "swapExpired": "Swap abgelaufen",
+      "pendingSwaps_one": "{{count}} Swap in Bearbeitung",
+      "pendingSwaps_other": "{{count}} Swaps in Bearbeitung"
     }
   },
   "toolbar": {
@@ -826,7 +920,69 @@
       "onchainSuccess": "On-Chain-Zahlung erfolgreich gesendet!",
       "paymentFailed": "Zahlung fehlgeschlagen: {{error}}",
       "unknownError": "Unbekannter Fehler",
-      "lightningPaymentFailed": "Lightning-Zahlung fehlgeschlagen"
+      "lightningPaymentFailed": "Lightning-Zahlung fehlgeschlagen",
+      "orderSummary": "Bestellübersicht",
+      "confirmedChannel": "Bestätigter Kanal",
+      "yourLiquidity": "Ihre Liquidität",
+      "lspLiquidity": "LSP-Liquidität",
+      "your": "Ihre",
+      "lsp": "LSP",
+      "rgbAssetChannel": "RGB-Asset-Kanal",
+      "assetId": "Asset-ID",
+      "lspAssetAmount": "LSP-Asset-Betrag",
+      "yourAssetAmount": "Ihr Asset-Betrag",
+      "channelAmount": "Kanalbetrag",
+      "serviceFee": "Servicegebühr",
+      "total": "Gesamt",
+      "paymentStatus": "Zahlungsstatus",
+      "keepWindowOpen": "Bitte lassen Sie dieses Fenster geöffnet",
+      "autoUpdate": "Der Status wird automatisch aktualisiert",
+      "feeSlow": "Langsam",
+      "feeNormal": "Normal",
+      "feeFast": "Schnell",
+      "feeCustom": "Benutzerdefiniert",
+      "feeRateLabel": "Gebührensatz",
+      "customFeePlaceholder": "Benutzerdefinierten Gebührensatz eingeben",
+      "paymentExpiresIn": "Zahlung läuft ab in",
+      "expiresVerySoon": "Läuft sehr bald ab!",
+      "expiresSoon": "Läuft bald ab",
+      "processingWait": "Bitte warten Sie, während wir Ihre Zahlung verarbeiten",
+      "confirmPayment": "Zahlung bestätigen",
+      "paymentType": "Zahlungsart",
+      "maxSendable": "Maximal sendbar",
+      "availableBalance": "Verfügbares Guthaben",
+      "amountToPay": "Zu zahlender Betrag",
+      "remainingBalance": "Verbleibendes Guthaben",
+      "feeRate": "Gebührensatz",
+      "verifyDetails": "Bitte prüfen Sie die Zahlungsdetails vor der Bestätigung",
+      "cancel": "Abbrechen",
+      "loadingBalance": "Guthaben wird geladen...",
+      "payWithWallet": "Mit Wallet-Guthaben bezahlen",
+      "available": "Verfügbar",
+      "insufficientBalance": "Unzureichendes Guthaben",
+      "required": "Erforderlich",
+      "pay": "Bezahlen",
+      "paymentSuccessful": "Zahlung erfolgreich!",
+      "method": "Methode",
+      "lspAmount": "LSP-Betrag",
+      "yourAmount": "Ihr Betrag",
+      "expiredMessage": "Das Zahlungsfenster ist abgelaufen. Bitte erstellen Sie eine neue Bestellung.",
+      "createNewOrder": "Neue Bestellung erstellen",
+      "errorMessage": "Bei der Verarbeitung Ihrer Zahlung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+      "tryAgain": "Erneut versuchen",
+      "or": "oder",
+      "paymentInstructions": "Zahlen Sie mit dem QR-Code oder den Zahlungsdetails unten",
+      "externalWalletTitle": "Mit externer Wallet bezahlen",
+      "showDetails": "Details anzeigen",
+      "hideDetails": "Details ausblenden",
+      "processingSubtitle": "Wir verarbeiten Ihre Zahlung und eröffnen den Kanal",
+      "order": "Bestellung",
+      "paymentReceivedStatus": "Zahlung erhalten",
+      "processingOrder": "Bestellung wird verarbeitet",
+      "channelReady": "Kanal bereit",
+      "waitingMakerConfirmation": "Warte auf die endgültige Bestätigung vom LSP...",
+      "lightningTab": "⚡ Lightning",
+      "onchainTab": "⛓️ On-Chain"
     },
     "step4": {
       "success": {
@@ -859,7 +1015,27 @@
         "message": "Deine Zahlung wird verarbeitet. Dies kann einige Momente dauern.",
         "buttonText": "Status prüfen"
       },
-      "returnToChannels": "Zurück zu Kanälen"
+      "returnToChannels": "Zurück zu Kanälen",
+      "errorButtonText": "Erneut versuchen",
+      "errorMessage": "Bei Ihrer Zahlung ist ein Problem aufgetreten. Bitte versuchen Sie es erneut.",
+      "errorTitle": "Zahlung fehlgeschlagen",
+      "expiredButtonText": "Neue Bestellung erstellen",
+      "expiredMessage": "Die Bestellung ist abgelaufen. Bitte erstellen Sie eine neue Bestellung, um fortzufahren.",
+      "expiredTitle": "Bestellung abgelaufen",
+      "pendingButtonText": "Status prüfen",
+      "pendingMessage": "Ihre Zahlung wird verarbeitet. Dies kann einen Moment dauern.",
+      "pendingTitle": "Zahlung wird verarbeitet",
+      "successButtonText": "Zur Kanalseite",
+      "successMessage": "Ihre Zahlung wurde erhalten und der Kanal wird eröffnet.",
+      "successTitle": "Bestellung abgeschlossen!",
+      "channelProgress": "Kanaleröffnung läuft",
+      "refundHeader": "Zu Ihrer Zahlung:",
+      "refundProcess": "Eine On-Chain-Rückerstattung wird automatisch verarbeitet",
+      "refundProcessSuffix": "und bald an Ihre Wallet gesendet.",
+      "refundSupport": "Wenn Sie innerhalb von 24 Stunden keine Rückerstattung erhalten, kontaktieren Sie bitte den LSP mit Ihrer Bestell-ID unten.",
+      "orderIdHelp": "Kopieren Sie diese ID, wenn Sie den Support wegen Ihrer Rückerstattung kontaktieren",
+      "expiredSectionTitle": "Bestellung abgelaufen:",
+      "expiredSectionMessage": "Die Bestellung ist abgelaufen. Bitte erstellen Sie eine neue Bestellung, um fortzufahren."
     },
     "orderCopy": "Bestell-ID kopiert!",
     "paymentCopied": "Zahlungsdetails kopiert!",
@@ -894,7 +1070,9 @@
       "feeReserveConclusion": "Diese Reserven stellen sicher, dass beide Parteien sich notwendige On-Chain-Operationen wie kooperative Kanalschließungen immer leisten können.",
       "spendingPercentage": "{{percent}}% Ausgeben",
       "zeroSpending": "0% Ausgeben",
-      "fullSpending": "100% Ausgeben"
+      "fullSpending": "100% Ausgeben",
+      "allReceiving": "Alles empfangen",
+      "allSpending": "Alles ausgeben"
     },
     "assetChannel": {
       "title": "{{ticker}} Asset-Kanal",
@@ -1363,7 +1541,8 @@
         "maxButton": "Max",
         "rgbNote": "Hinweis: 3.000 Sats sind für RGB-Asset-Übertragungen erforderlich.",
         "noChannels": "Warnung: Keine aktiven Lightning-Kanäle gefunden. Lightning-Einzahlungen sind nicht verfügbar.",
-        "exceeds": "Betrag überschreitet das verfügbare Maximum: {{amount}} {{asset}}"
+        "exceeds": "Betrag überschreitet das verfügbare Maximum: {{amount}} {{asset}}",
+        "zeroAmountInfo": "Leer lassen, um eine Nullbetrags-Rechnung zu erstellen, bei der der Zahler den Betrag festlegt"
       },
       "actions": {
         "copy": "In Zwischenablage kopieren",
@@ -1464,7 +1643,9 @@
     },
     "swap": {
       "errorDetailsClipboard": "Fehlerdetails in Zwischenablage kopiert",
-      "swapFailed": "Tausch fehlgeschlagen: {{error}}"
+      "swapFailed": "Tausch fehlgeschlagen: {{error}}",
+      "exchangeRateQuote": "Wechselkurs & Angebot",
+      "refresh": "↻ Aktualisieren"
     },
     "noChannels": {
       "insufficientBalance": "Unzureichendes Bitcoin-Guthaben",
@@ -1601,7 +1782,8 @@
         "lightning": "Rechnung bezahlen",
         "rgb": "RGB-Asset senden",
         "onchain": "Auszahlen"
-      }
+      },
+      "analyzing": "Eingabe wird analysiert…"
     },
     "main": {
       "title": {
@@ -1653,11 +1835,16 @@
         "withdrawalFailedDetails": "Auszahlung fehlgeschlagen: {{error}}",
         "withdrawalFailedDefault": "Auszahlung fehlgeschlagen",
         "onchainExceedsBalance": "Auszahlungsbetrag ({{amount}}) überschreitet verfügbares Guthaben ({{balance}})",
-        "capacityToast": "Kann nicht fortfahren: Rechnungsbetrag ({{amount}} sats) überschreitet Ihre ausgehende Kapazität ({{capacity}} sats)."
+        "capacityToast": "Kann nicht fortfahren: Rechnungsbetrag ({{amount}} sats) überschreitet Ihre ausgehende Kapazität ({{capacity}} sats).",
+        "lightningSendPayment": "Lightning-Zahlung fehlgeschlagen: {{error}}",
+        "zeroAmountRequired": "Bitte geben Sie einen Betrag für diese Nullbetrags-Rechnung ein."
       },
       "warnings": {
         "invoiceAdjusted": "Warnung: Die Rechnung forderte {{requested}} {{asset}}, aber Ihr Guthaben beträgt nur {{balance}} {{asset}}. Auf maximal sendbaren Betrag angepasst.",
         "noRgbAssets": "Warnung: Keine RGB-Assets zum Senden verfügbar."
+      },
+      "info": {
+        "zeroAmountInvoice": "Dies ist eine Nullbetrags-Rechnung. Bitte geben Sie unten den Betrag ein, den Sie zahlen möchten."
       }
     },
     "details": {
@@ -1786,7 +1973,9 @@
     "history": "Verlauf",
     "testnetWarning": "Testnetzwerk",
     "testnetWarningDesc": "Sie befinden sich in einem Testnetzwerk. Gelder sind nicht echt und haben keinen monetären Wert.",
-    "swap": "Swap"
+    "swap": "Swap",
+    "btcPrice": "BTC-Preis",
+    "priceUnavailable": "Preis nicht verfügbar"
   },
   "peerManagement": {
     "title": "Peers",
@@ -2217,7 +2406,8 @@
     "unlockCancelled": "Entsperrvorgang abgebrochen",
     "failedCheckStatus": "Node-Status konnte nicht geprüft werden: {{error}}",
     "failedGetNodeInfo": "Node-Infos nach dem Entsperren konnten nicht geladen werden",
-    "unknownError": "Ein unbekannter Fehler ist aufgetreten"
+    "unknownError": "Ein unbekannter Fehler ist aufgetreten",
+    "unlockTimeoutMessage": "Das Entsperren dauert länger als gewöhnlich. Wenn der Node eine Weile offline war, synchronisiert er möglicherweise noch im Hintergrund die Blockchain. Bitte lassen Sie die App geöffnet, während das Entsperren fortgesetzt wird."
   },
   "walletRestore": {
     "title": "Wallet wiederherstellen",
@@ -2537,7 +2727,55 @@
       "loading": "Wird geladen...",
       "proceedToPayment": "Zur Zahlung gehen",
       "payWithWallet": "Mit Wallet bezahlen",
-      "assetPurchase": "Asset-Kauf"
+      "assetPurchase": "Asset-Kauf",
+      "balanceNeededDescription": "Diese Zahlungsroute ist mit Ihrem aktuellen Guthaben noch nicht verfügbar.",
+      "balanceNeededTitle": "Mehr Guthaben erforderlich",
+      "availableLabel": "Verfügbar",
+      "capacityFee": "Kapazitätsgebühr",
+      "continue": "Weiter ->",
+      "durationFee": "Laufzeitgebühr",
+      "expiresLabel": "Läuft ab",
+      "lightningInvoice": "Lightning-Rechnung",
+      "loadingBalance": "Guthaben wird geladen...",
+      "loadingQuote": "Angebot wird geladen...",
+      "onchainAddress": "On-Chain-Adresse",
+      "openAssetLightningChannel": "Lightning-Asset-Kanal öffnen",
+      "openBtcLightningChannel": "BTC-Lightning-Kanal öffnen",
+      "orderIdLabel": "Bestell-ID",
+      "orderSummaryBitcoin": "Bitcoin",
+      "orderSummaryYourInbound": "Ihr Inbound",
+      "orderSummaryYourOutbound": "Ihr Outbound",
+      "paymentDescription": "Nutzen Sie einen QR-Code für Wallets, die Lightning und On-Chain unterstützen, oder kopieren Sie unten die exakten Zahlungsdetails.",
+      "paymentEyebrow": "Zahlung",
+      "paymentLabel": "Zahlung",
+      "paymentTitle": "Scannen oder kopieren, um diese Bestellung zu bezahlen",
+      "processingPaymentDescription": "Zahlung erhalten, Ihr Kanal wird eingerichtet...",
+      "processingPaymentTitle": "Zahlung wird verarbeitet",
+      "requestDetails": "Anfragedetails",
+      "sendExactly": "Genau senden",
+      "setupFee": "Einrichtungsgebühr",
+      "statusClose": "Schließen",
+      "statusConfirmationMessage": "Ihr Kanal benötigt etwa 6 Bestätigungen (ca. 1 Stunde). Das Asset ist zum heutigen Kurs fixiert und nach der Bestätigung handelbar.",
+      "statusConfirmationTitle": "Kanalbestätigung läuft",
+      "statusCreateNewOrder": "Neue Bestellung erstellen",
+      "statusErrorHelp": "Wenn eine Zahlung erfolgt ist, wurden keine Mittel abgezogen. Bitte versuchen Sie es erneut oder kontaktieren Sie den Support, wenn das Problem bestehen bleibt.",
+      "statusErrorMessage": "Bei der Verarbeitung Ihrer Kanalbestellung ist ein Problem aufgetreten.",
+      "statusErrorTitle": "Bestellung fehlgeschlagen",
+      "statusExpiredMessage": "Das Zahlungsfenster ist abgelaufen, ohne dass eine Zahlung eingegangen ist.",
+      "statusExpiredTitle": "Zahlung abgelaufen",
+      "statusGotIt": "Verstanden, danke!",
+      "statusSuccessMessage": "Ihre Kanalbestellung wurde erfolgreich erstellt.",
+      "statusSuccessTitle": "Zahlung erfolgreich!",
+      "statusTryAgain": "Erneut versuchen",
+      "totalToPay": "Gesamtbetrag",
+      "unifiedQrBadge": "LN + On-Chain",
+      "unifiedQrDescription": "Kompatible Wallets können die beste Route automatisch auswählen.",
+      "unifiedQrTitle": "Einheitlicher Zahlungs-QR",
+      "availableRoutes": "Verfügbare Routen",
+      "walletDescription": "Öffnen Sie die Wallet-Zahlungsoptionen, um Guthaben zu prüfen und Lightning oder On-Chain aus einem einzigen Modal zu bezahlen.",
+      "walletEyebrow": "Wallet-Zahlung",
+      "walletLightningDescription": "Nutzen Sie Ihre aktuelle ausgehende Liquidität für den schnellsten Wallet-Zahlungsweg.",
+      "walletOnchainDescription": "Finanzieren Sie die Bestellung direkt aus Ihrem On-Chain-Wallet-Guthaben und wählen Sie hier die Gebührenstufe."
     },
     "feeBreakdown": {
       "channelFees": "Channel-Gebühren:"
@@ -2600,7 +2838,9 @@
       "lastExecution": "Letzte Ausführung",
       "progressToNext": "Fortschritt bis zum nächsten Kauf",
       "triggerGap": "Noch {{pct}}% Rückgang erforderlich",
-      "triggerReady": "Am/unter Trigger-Schwelle"
+      "triggerReady": "Am/unter Trigger-Schwelle",
+      "checking": "Wird geprüft…",
+      "receiveBtc": "zu BTC"
     },
     "form": {
       "subtitle": "Legen Sie Betrag, Trigger-Modus und Zeitplan fest. Sie können später jederzeit pausieren oder abbrechen.",
@@ -2608,7 +2848,9 @@
       "targetHint": "Kauft, wenn BTC den Trigger erreicht",
       "estimatedReceive": "Geschätzter Erhalt pro Kauf",
       "remainingBalance": "Verbleibend nach jedem Kauf",
-      "scheduleNote": "Die Ausführung wird ungefähr alle 30 Sekunden geprüft, solange Ihr Node entsperrt ist."
+      "scheduleNote": "Die Ausführung wird ungefähr alle 30 Sekunden geprüft, solange Ihr Node entsperrt ist.",
+      "conversionHint": "Jede Ausführung verbraucht einmal USDT und schreibt BTC-Sats gut.",
+      "liquidityHint": "DCA benötigt verfügbares USDT-Lightning-Guthaben plus genug BTC-Empfangskapazität für jede Ausführung."
     },
     "tabs": {
       "active": "Aktiv",
@@ -2640,7 +2882,13 @@
       "description": "Jeder Auftrag kauft wiederholt BTC mit Ihrem gewählten USDT-Betrag. Ausführungen erfolgen nur, wenn Ihr Node entsperrt und bereit ist.",
       "scheduled": "Geplant: Käufe in festen Zeitintervallen (z. B. alle 24h).",
       "priceTarget": "Kursziel: Käufe, wenn BTC auf oder unter Ihren Trigger fällt.",
-      "actions": "Aktionen: Jetzt ausführen startet einen sofortigen Kauf, Pausieren stoppt Trigger, Abbrechen verschiebt den Auftrag in den Verlauf."
+      "actions": "Aktionen: Jetzt ausführen startet einen sofortigen Kauf, Pausieren stoppt Trigger, Abbrechen verschiebt den Auftrag in den Verlauf.",
+      "fundingTitle": "1. Bestellung finanzieren",
+      "fundingDescription": "Halten Sie genügend USDT-Lightning-Guthaben für den Kaufbetrag bereit. Ihre BTC-Lightning-Kapazität bestimmt, wie viele Sats Sie pro Ausführung empfangen können.",
+      "triggerTitle": "2. Auslöser wählen",
+      "triggerDescription": "Geplante Orders kaufen nach jedem Intervall. Preisziel-Orders warten, bis BTC Ihren Schwellenwert erreicht, und aktivieren sich nach einem erfolgreichen Kauf erneut vom neuen Marktpreis aus.",
+      "manageTitle": "3. Überwachen und steuern",
+      "manageDescription": "Nutzen Sie Ausführen für einen sofortigen Kauf, Pause zum Stoppen automatischer Läufe und Abbrechen, um die Order in den Verlauf zu verschieben, ohne vergangene Ausführungen zu löschen."
     },
     "orderHelp": {
       "scheduled": "Dieser Auftrag kauft nach einem festen Zeitplan basierend auf dem gewählten Intervall.",
@@ -2683,6 +2931,13 @@
       "maxReceive": "max receive ≈ {{sats}} sats BTC"
     },
     "addBtcLiquidity": "Add BTC",
-    "addUsdtLiquidity": "Add USDT"
+    "addUsdtLiquidity": "Add USDT",
+    "section": {
+      "balances": "Kanalguthaben",
+      "pendingBadge": "ausstehend",
+      "pendingUsdtChannels": "Ausstehende USDT-Kanäle",
+      "pendingUsdtDescription": "Ihr neuer USDT-Lightning-Kanal ist unterwegs und erscheint nach Bestätigung im verfügbaren Guthaben.",
+      "pendingUsdtTitle": "Neuer USDT-Kanal ausstehend"
+    }
   }
 }
