@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { execSync } from 'child_process'
+import { fileURLToPath } from 'url'
 
 // Get git information at build time
 const getGitInfo = () => {
@@ -19,6 +20,7 @@ const getGitInfo = () => {
 export default defineConfig(async () => {
   const { gitCommit, gitBranch } = getGitInfo()
   const buildDate = new Date().toISOString()
+  const devHost = process.env.TAURI_DEV_HOST || '127.0.0.1'
 
   return {
     plugins: [
@@ -39,6 +41,12 @@ export default defineConfig(async () => {
     clearScreen: false,
     // 2. tauri expects a fixed port, fail if that port is not available
     server: {
+      host: devHost,
+      hmr: {
+        host: devHost,
+        port: 1421,
+        protocol: 'ws',
+      },
       port: 1420,
       strictPort: true,
     },
@@ -52,6 +60,17 @@ export default defineConfig(async () => {
       __GIT_BRANCH__: JSON.stringify(gitBranch),
       __BUILD_DATE__: JSON.stringify(buildDate),
       __NODE_ENV__: JSON.stringify(process.env.NODE_ENV || 'development'),
+    },
+    resolve: {
+      alias: {
+        'vite-plugin-node-polyfills/shims/process':
+          fileURLToPath(
+            new URL(
+              './node_modules/vite-plugin-node-polyfills/shims/process/dist/index.js',
+              import.meta.url
+            )
+          ),
+      },
     },
   }
 })
