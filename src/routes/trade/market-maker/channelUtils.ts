@@ -9,10 +9,11 @@ import { logger } from '../../../utils/logger'
 export const isTradableChannel = (channel: Channel): boolean => {
   return (
     // Channel must be ready
-    channel.ready &&
+    (channel.ready ?? false) &&
     // Channel must have either outbound or inbound balance
-    (channel.outbound_balance_msat > 0 || channel.inbound_balance_msat > 0) &&
-    channel.next_outbound_htlc_minimum_msat > 0 &&
+    ((channel.outbound_balance_msat ?? 0) > 0 ||
+      (channel.inbound_balance_msat ?? 0) > 0) &&
+    (channel.next_outbound_htlc_minimum_msat ?? 0) > 0 &&
     // Channel must have a valid asset_id
     channel.asset_id !== null &&
     channel.asset_id !== undefined
@@ -70,7 +71,8 @@ export const getTradableChannelDiagnostics = (
       (c) => c.asset_id !== null && c.asset_id !== undefined
     ).length,
     channelsWithBalance: channels.filter(
-      (c) => c.outbound_balance_msat > 0 || c.inbound_balance_msat > 0
+      (c) =>
+        (c.outbound_balance_msat ?? 0) > 0 || (c.inbound_balance_msat ?? 0) > 0
     ).length,
     readyChannels: channels.filter((c) => c.ready).length,
     totalChannels: channels.length,

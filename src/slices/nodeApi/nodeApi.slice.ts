@@ -1,29 +1,36 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { getNodeApiWrapper, MinimalState } from '../../api/client'
-import type { NodeApiWrapper } from '../../api/node-api-wrapper'
-import type { ApiResult } from '../../api/node-api-wrapper'
+import type { NodeApiWrapper, ApiResult } from '../../api/node-api-wrapper'
+import type {
+  CreateUtxosInput,
+  LNInvoiceInput,
+  OpenChannelInput,
+  RefreshInput,
+  SendBtcInput,
+  SendRgbInput,
+  RgbInvoiceInput,
+} from '../../api/node-api-wrapper'
 import type {
   AddressResponse,
-  AssetBalanceResponse,
   AssetBalanceRequest,
+  AssetBalanceResponse,
   BackupRequest,
   BtcBalanceResponse,
   CloseChannelRequest,
   ConnectPeerRequest,
   ConnectPeerResponse,
-  CreateUtxosRequest,
   DecodeLNInvoiceResponse,
   DecodeLNInvoiceRequest,
-  DecodeRgbInvoiceResponse as DecodeRGBInvoiceResponse,
-  DecodeRgbInvoiceRequest as DecodeRGBInvoiceRequest,
+  DecodeRGBInvoiceResponse,
+  DecodeRGBInvoiceRequest,
   DisconnectPeerRequest,
-  EstimateFeeResponse,
   EstimateFeeRequest,
+  EstimateFeeResponse,
   InitRequest,
   InitResponse,
-  GetInvoiceStatusResponse as InvoiceStatusResponse,
-  GetInvoiceStatusRequest as InvoiceStatusRequest,
+  InvoiceStatusResponse,
+  InvoiceStatusRequest,
   IssueAssetNIAResponse,
   IssueAssetNIARequest,
   ListAssetsResponse,
@@ -33,7 +40,6 @@ import type {
   ListTransfersResponse,
   ListUnspentsResponse,
   CreateLNInvoiceResponse as LNInvoiceResponse,
-  CreateLNInvoiceRequest as LNInvoiceRequest,
   MakerExecuteRequest,
   MakerExecuteResponse,
   MakerInitRequest,
@@ -41,14 +47,9 @@ import type {
   NetworkInfoResponse,
   NodeInfoResponse,
   OpenChannelResponse,
-  OpenChannelRequest,
-  RefreshTransfersRequest as RefreshRequest,
   RestoreRequest,
-  CreateRgbInvoiceResponse as RgbInvoiceResponse,
-  CreateRgbInvoiceRequest as RgbInvoiceRequest,
+  RgbInvoiceResponse,
   SendRgbResponse,
-  SendRgbRequest,
-  SendBtcRequest,
   SendPaymentResponse,
   SendPaymentRequest,
   SignMessageResponse,
@@ -58,8 +59,8 @@ import type {
   KeysendRequest,
   ListPeersResponse,
   ListSwapsResponse,
-  WhitelistTradeRequest,
-} from 'kaleidoswap-sdk'
+  TakerRequest as WhitelistTradeRequest,
+} from 'kaleidoswap-sdk/rln'
 
 export type {
   Assignment,
@@ -76,16 +77,16 @@ export type {
   MakerExecuteRequest,
   MakerInitRequest,
   MakerInitResponse,
-} from 'kaleidoswap-sdk'
+} from 'kaleidoswap-sdk/rln'
 
 // TakerRequest kept as local type for backward compatibility
 export type { TakerRequest } from './types'
 
 export const Network = {
   Mainnet: 'mainnet',
-  Testnet: 'testnet',
   Regtest: 'regtest',
   Signet: 'signet',
+  Testnet: 'testnet',
 } as const
 export type Network = (typeof Network)[keyof typeof Network]
 
@@ -120,7 +121,7 @@ function queryFn<TArgs, TResult>(
       return { data: (result.data ?? null) as TResult }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error)
-      return { error: { status: 500, data: { error: msg } } }
+      return { error: { data: { error: msg }, status: 500 } }
     }
   }
 }
@@ -128,84 +129,111 @@ function queryFn<TArgs, TResult>(
 import { TakerRequest } from './types'
 
 export const nodeApi = createApi({
-  reducerPath: 'nodeApi',
   baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
-    // ============================================================================
-    // Wallet Management
-    // ============================================================================
+    
+    
+    
 
-    nodeInfo: builder.query<NodeInfoResponse, void>({
-      queryFn: queryFn((w, _: void) => w.getNodeInfo()),
-    }),
-
-    networkInfo: builder.query<NetworkInfoResponse, void>({
-      queryFn: queryFn((w, _: void) => w.getNetworkInfo()),
-    }),
-
-    // init/unlock/lock/shutdown are state-changing operations — mutations, not queries
-    init: builder.mutation<InitResponse, InitRequest>({
-      queryFn: queryFn((w, args) => w.initWallet(args)),
-    }),
-
-    unlock: builder.mutation<void, UnlockRequest>({
-      queryFn: queryFn((w, args) => w.unlockWallet(args)),
-    }),
-
-    lock: builder.mutation<void, void>({
-      queryFn: queryFn((w, _: void) => w.lockWallet()),
-    }),
-
-    shutdown: builder.mutation<void, void>({
-      queryFn: queryFn((w, _: void) => w.shutdown()),
-    }),
-
-    backup: builder.mutation<void, BackupRequest>({
-      queryFn: queryFn((w, args) => w.backup(args)),
-    }),
-
-    restore: builder.mutation<void, RestoreRequest>({
-      queryFn: queryFn((w, args) => w.restore(args)),
-    }),
-
-    // ============================================================================
-    // BTC Operations
-    // ============================================================================
-
-    address: builder.query<AddressResponse, void>({
+    
+// ============================================================================
+// BTC Operations
+// ============================================================================
+address: builder.query<AddressResponse, void>({
       queryFn: queryFn((w, _: void) => w.getAddress()),
     }),
 
-    btcBalance: builder.query<BtcBalanceResponse, void>({
+    
+
+
+
+
+
+
+
+backup: builder.mutation<void, BackupRequest>({
+      queryFn: queryFn((w, args) => w.backup(args)),
+    }),
+
+    
+    
+
+
+
+
+
+
+btcBalance: builder.query<BtcBalanceResponse, void>({
       queryFn: queryFn((w, _: void) => w.getBtcBalance()),
     }),
 
-    sendBtc: builder.mutation<void, SendBtcRequest>({
-      queryFn: queryFn((w, args) => w.sendBtc(args)),
+    
+
+
+
+
+
+// init/unlock/lock/shutdown are state-changing operations — mutations, not queries
+init: builder.mutation<InitResponse, InitRequest>({
+      queryFn: queryFn((w, args) => w.initWallet(args)),
     }),
 
-    listTransactions: builder.query<ListTransactionsResponse, void>({
+    
+
+
+
+
+
+listTransactions: builder.query<ListTransactionsResponse, void>({
       queryFn: queryFn((w, _: void) => w.listTransactions()),
     }),
 
-    listUnspents: builder.query<ListUnspentsResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listUnspents()),
+    
+
+
+
+
+
+lock: builder.mutation<void, void>({
+      queryFn: queryFn((w, _: void) => w.lockWallet()),
     }),
 
-    createUtxos: builder.mutation<void, CreateUtxosRequest>({
+    
+
+
+
+
+
+createUtxos: builder.mutation<void, CreateUtxosInput>({
       queryFn: queryFn((w, args) => w.createUtxos(args)),
     }),
 
-    estimateFee: builder.query<EstimateFeeResponse, EstimateFeeRequest>({
+    
+
+
+
+
+
+networkInfo: builder.query<NetworkInfoResponse, void>({
+      queryFn: queryFn((w, _: void) => w.getNetworkInfo()),
+    }),
+
+    
+    
+    
+
+    
+
+
+estimateFee: builder.query<EstimateFeeResponse, EstimateFeeRequest>({
       queryFn: queryFn((w, args) => w.estimateFee(args)),
     }),
 
     // ============================================================================
-    // RGB Asset Operations
-    // ============================================================================
-
-    listAssets: builder.query<ListAssetsResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listAssets()),
+// Wallet Management
+// ============================================================================
+nodeInfo: builder.query<NodeInfoResponse, void>({
+      queryFn: queryFn((w, _: void) => w.getNodeInfo()),
     }),
 
     assetBalance: builder.query<AssetBalanceResponse, AssetBalanceRequest>({
@@ -219,124 +247,254 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.issueAssetNIA(args)),
     }),
 
-    sendRgb: builder.mutation<SendRgbResponse, SendRgbRequest>({
-      queryFn: queryFn((w, args) => w.sendRgb(args)),
-    }),
-
-    listTransfers: builder.query<ListTransfersResponse, string>({
-      queryFn: queryFn((w, assetId: string) => w.listTransfers(assetId)),
-    }),
-
-    refresh: builder.mutation<void, RefreshRequest | void>({
-      queryFn: queryFn((w, args) => w.refreshTransfers(args || {})),
+    unlock: builder.mutation<void, UnlockRequest>({
+      queryFn: queryFn((w, args) => w.unlockWallet(args)),
     }),
 
     // ============================================================================
-    // Lightning Network - Channels
-    // ============================================================================
-
-    listChannels: builder.query<ListChannelsResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listChannels()),
+// RGB Asset Operations
+// ============================================================================
+listAssets: builder.query<ListAssetsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listAssets()),
     }),
 
-    openChannel: builder.mutation<OpenChannelResponse, OpenChannelRequest>({
-      queryFn: queryFn((w, args) => w.openChannel(args)),
+    
+
+
+shutdown: builder.mutation<void, void>({
+      queryFn: queryFn((w, _: void) => w.shutdown()),
     }),
 
-    closeChannel: builder.mutation<void, CloseChannelRequest>({
+    
+    
+    
+
+    
+
+
+closeChannel: builder.mutation<void, CloseChannelRequest>({
       queryFn: queryFn((w, args) => w.closeChannel(args)),
     }),
 
-    // ============================================================================
-    // Lightning Network - Peers
-    // ============================================================================
+    
 
-    listPeers: builder.query<ListPeersResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listPeers()),
+
+
+
+
+restore: builder.mutation<void, RestoreRequest>({
+      queryFn: queryFn((w, args) => w.restore(args)),
     }),
 
-    connectPeer: builder.mutation<ConnectPeerResponse, ConnectPeerRequest>({
+    
+
+
+connectPeer: builder.mutation<ConnectPeerResponse, ConnectPeerRequest>({
       queryFn: queryFn((w, args) => w.connectPeer(args)),
     }),
 
-    disconnectPeer: builder.mutation<void, DisconnectPeerRequest>({
+    
+
+
+disconnectPeer: builder.mutation<void, DisconnectPeerRequest>({
       queryFn: queryFn((w, args) => w.disconnectPeer(args)),
     }),
 
-    // ============================================================================
-    // Lightning Network - Invoices & Payments
-    // ============================================================================
+    
 
-    lnInvoice: builder.mutation<LNInvoiceResponse, LNInvoiceRequest>({
-      queryFn: queryFn((w, args) => w.createLNInvoice(args)),
+
+
+
+
+sendBtc: builder.mutation<void, SendBtcInput>({
+      queryFn: queryFn((w, args) => w.sendBtc(args)),
     }),
 
-    rgbInvoice: builder.mutation<RgbInvoiceResponse, RgbInvoiceRequest>({
-      queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
-    }),
+    
 
-    decodeInvoice: builder.query<
+
+
+
+
+decodeInvoice: builder.query<
       DecodeLNInvoiceResponse,
       DecodeLNInvoiceRequest
     >({
       queryFn: queryFn((w, args) => w.decodeLNInvoice(args)),
     }),
 
-    decodeRgbInvoice: builder.query<
+    
+    
+    
+
+    
+
+
+listUnspents: builder.query<ListUnspentsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listUnspents()),
+    }),
+
+    
+
+
+decodeRgbInvoice: builder.query<
       DecodeRGBInvoiceResponse,
       DecodeRGBInvoiceRequest
     >({
       queryFn: queryFn((w, args) => w.decodeRgbInvoice(args)),
     }),
 
+    // ============================================================================
+// Lightning Network - Channels
+// ============================================================================
+listChannels: builder.query<ListChannelsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listChannels()),
+    }),
+
+    
+    
+    
+
     invoiceStatus: builder.query<InvoiceStatusResponse, InvoiceStatusRequest>({
       queryFn: queryFn((w, args) => w.getInvoiceStatus(args)),
+    }),
+
+    
+
+
+listTransfers: builder.query<ListTransfersResponse, string>({
+      queryFn: queryFn((w, assetId: string) => w.listTransfers(assetId)),
+    }),
+
+    
+
+
+keysend: builder.mutation<KeysendResponse, KeysendRequest>({
+      queryFn: queryFn((w, args) => w.keysend(args)),
+    }),
+
+    
+    
+    
+
+    
+
+
+sendRgb: builder.mutation<SendRgbResponse, SendRgbInput>({
+      queryFn: queryFn((w, args) => w.sendRgb(args)),
+    }),
+
+    
+
+
+
+
+
+listPayments: builder.query<ListPaymentsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listPayments()),
+    }),
+
+    
+
+
+
+
+
+refresh: builder.mutation<void, RefreshInput | void>({
+      queryFn: queryFn((w, args) =>
+        w.refreshTransfers(args === undefined ? undefined : args)
+      ),
+    }),
+
+    
+
+
+
+
+
+// ============================================================================
+// Lightning Network - Peers
+// ============================================================================
+listPeers: builder.query<ListPeersResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listPeers()),
+    }),
+
+    
+
+
+
+
+
+openChannel: builder.mutation<OpenChannelResponse, OpenChannelInput>({
+      queryFn: queryFn((w, args) => w.openChannel(args)),
+    }),
+
+    
+
+
+// ============================================================================
+// Swaps
+// ============================================================================
+listSwaps: builder.query<ListSwapsResponse, void>({
+      queryFn: queryFn((w, _: void) => w.listSwaps()),
+    }),
+
+    
+
+
+// ============================================================================
+// Lightning Network - Invoices & Payments
+// ============================================================================
+lnInvoice: builder.mutation<LNInvoiceResponse, LNInvoiceInput>({
+      queryFn: queryFn((w, args) => w.createLNInvoice(args)),
+    }),
+
+    
+
+
+makerExecute: builder.mutation<MakerExecuteResponse, MakerExecuteRequest>({
+      queryFn: queryFn((w, args) => w.makerExecute(args)),
+    }),
+
+    
+    
+    
+
+    makerInit: builder.mutation<MakerInitResponse, MakerInitRequest>({
+      queryFn: queryFn((w, args) => w.makerInit(args)),
+    }),
+
+    rgbInvoice: builder.mutation<RgbInvoiceResponse, RgbInvoiceInput>({
+      queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
     }),
 
     sendPayment: builder.mutation<SendPaymentResponse, SendPaymentRequest>({
       queryFn: queryFn((w, args) => w.sendPayment(args)),
     }),
 
-    keysend: builder.mutation<KeysendResponse, KeysendRequest>({
-      queryFn: queryFn((w, args) => w.keysend(args)),
-    }),
-
-    listPayments: builder.query<ListPaymentsResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listPayments()),
-    }),
-
     // ============================================================================
-    // Swaps
-    // ============================================================================
-
-    listSwaps: builder.query<ListSwapsResponse, void>({
-      queryFn: queryFn((w, _: void) => w.listSwaps()),
+// Utility Methods
+// ============================================================================
+signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
+      queryFn: queryFn((w, args) => w.signMessage(args)),
     }),
+
+    
+
+
+taker: builder.mutation<void, TakerRequest>({
+      queryFn: queryFn((w, args) => w.taker(args)),
+    }),
+
+    
+    
+    
 
     whitelistTrade: builder.mutation<void, WhitelistTradeRequest>({
       queryFn: queryFn((w, args) => w.whitelistTrade(args)),
     }),
-
-    makerInit: builder.mutation<MakerInitResponse, MakerInitRequest>({
-      queryFn: queryFn((w, args) => w.makerInit(args)),
-    }),
-
-    makerExecute: builder.mutation<MakerExecuteResponse, MakerExecuteRequest>({
-      queryFn: queryFn((w, args) => w.makerExecute(args)),
-    }),
-
-    taker: builder.mutation<void, TakerRequest>({
-      queryFn: queryFn((w, args) => w.taker(args)),
-    }),
-
-    // ============================================================================
-    // Utility Methods
-    // ============================================================================
-
-    signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
-      queryFn: queryFn((w, args) => w.signMessage(args)),
-    }),
   }),
+  reducerPath: 'nodeApi',
 })
 
 export const {

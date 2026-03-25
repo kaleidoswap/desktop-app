@@ -686,7 +686,16 @@ export const Component = () => {
 
       for (const order of orders) {
         try {
-          const response = await getOrderRequest({ order_id: order.order_id })
+          const payload = JSON.parse(order.payload || '{}')
+          const accessToken = payload.access_token
+          if (!accessToken) {
+            continue
+          }
+
+          const response = await getOrderRequest({
+            access_token: accessToken,
+            order_id: order.order_id,
+          })
           if (response.data) {
             statuses[order.order_id] = response.data.order_state
             data[order.order_id] = response.data

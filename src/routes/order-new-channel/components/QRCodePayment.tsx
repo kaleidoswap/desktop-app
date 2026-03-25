@@ -1,6 +1,6 @@
 import QRCode from 'qrcode.react'
 import React from 'react'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
+import CopyToClipboard from 'react-copy-to-clipboard'
 import { useTranslation } from 'react-i18next'
 
 import { formatBitcoinAmount } from '../../../helpers/number'

@@ -53,11 +53,6 @@ export const AssetDetailsModal: React.FC<AssetDetailsModalProps> = ({
               {asset.asset_id}
             </p>
           </div>
-
-          <div className="bg-surface-elevated/50 p-4 rounded-lg">
-            <p className="text-content-secondary text-sm mb-1">Interface</p>
-            <p className="text-white">{asset.asset_iface}</p>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

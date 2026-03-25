@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
+import type { Channel } from 'kaleidoswap-sdk/rln'
 
 vi.mock('../../../../utils/logger', () => ({
-  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+  logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 
 import {
@@ -20,14 +21,15 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const makeChannel = (overrides: Record<string, any> = {}) => ({
-  ready: true,
-  outbound_balance_msat: 1000,
-  inbound_balance_msat: 0,
-  next_outbound_htlc_minimum_msat: 1,
-  asset_id: 'rgb:asset-id',
-  ...overrides,
-})
+const makeChannel = (overrides: Record<string, any> = {}) =>
+  ({
+    asset_id: 'rgb:asset-id',
+    inbound_balance_msat: 0,
+    next_outbound_htlc_minimum_msat: 1,
+    outbound_balance_msat: 1000,
+    ready: true,
+    ...overrides,
+  }) as unknown as Channel
 
 // ─── isTradableChannel ─────────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ describe('isTradableChannel', () => {
   it('returns false when both balances are zero', () => {
     expect(
       isTradableChannel(
-        makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0 })
+        makeChannel({ inbound_balance_msat: 0, outbound_balance_msat: 0 })
       )
     ).toBe(false)
   })
@@ -51,7 +53,7 @@ describe('isTradableChannel', () => {
   it('returns true when only inbound balance is positive', () => {
     expect(
       isTradableChannel(
-        makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 500 })
+        makeChannel({ inbound_balance_msat: 500, outbound_balance_msat: 0 })
       )
     ).toBe(true)
   })
@@ -134,7 +136,7 @@ describe('getTradableChannelDiagnostics', () => {
     const channels = [
       makeChannel(), // tradable: ✓ ready ✓ balance ✓ assetId
       makeChannel({ ready: false }), // not ready
-      makeChannel({ outbound_balance_msat: 0, inbound_balance_msat: 0 }), // no balance
+      makeChannel({ inbound_balance_msat: 0, outbound_balance_msat: 0 }), // no balance
       makeChannel({ asset_id: null }), // no assetId
     ]
     const d = getTradableChannelDiagnostics(channels)
@@ -169,9 +171,9 @@ describe('getChannelDiagnosticsMessage', () => {
   it('reports no balance when channels are ready but have no balance', () => {
     const channels = [
       makeChannel({
-        outbound_balance_msat: 0,
         inbound_balance_msat: 0,
         next_outbound_htlc_minimum_msat: 0,
+        outbound_balance_msat: 0,
       }),
     ]
     const msg = getChannelDiagnosticsMessage(channels)

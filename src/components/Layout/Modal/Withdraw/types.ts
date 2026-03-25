@@ -1,7 +1,7 @@
 import {
   DecodeLNInvoiceResponse as DecodeInvoiceResponse,
-  DecodeRgbInvoiceResponse,
-} from 'kaleidoswap-sdk'
+  DecodeRGBInvoiceResponse,
+} from 'kaleidoswap-sdk/rln'
 
 // Use the same enum values as in nodeApi.slice.ts
 export enum HTLCStatus {
@@ -73,7 +73,7 @@ export interface LightningInvoiceDetailsProps {
 
 // RGBInvoiceDetails component props
 export interface RGBInvoiceDetailsProps {
-  decodedRgbInvoice: DecodeRgbInvoiceResponse
+  decodedRgbInvoice: DecodeRGBInvoiceResponse
   assets: any
   bitcoinUnit: string
 }
@@ -119,7 +119,7 @@ export interface WithdrawFormProps {
   isDecodingInvoice: boolean
   showAssetDropdown: boolean
   decodedInvoice: DecodeInvoiceResponse | null
-  decodedRgbInvoice: DecodeRgbInvoiceResponse | null
+  decodedRgbInvoice: DecodeRGBInvoiceResponse | null
   maxLightningCapacity: number
   maxAssetCapacities: Record<string, number>
   assetId: string

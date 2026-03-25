@@ -1,10 +1,10 @@
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
-import { Asset as NiaAssetSource } from 'kaleidoswap-sdk'
+import type {
+  AssetNIA as NiaAssetSource,
+  Channel as SdkChannel,
+} from 'kaleidoswap-sdk/rln'
 export type NiaAsset = NiaAssetSource
-// Define locally if not exported
-export interface Channel {
-  [key: string]: any
-}
+export type Channel = SdkChannel
 
 export interface Fields {
   rfq_id: string

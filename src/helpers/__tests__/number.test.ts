@@ -30,17 +30,22 @@ import {
 
 // Minimal NiaAsset stub used across tests
 const makeAsset = (ticker: string, precision: number) => ({
-  asset_id: `id-${ticker}`,
-  asset_iface: 'RGB20',
-  ticker,
-  name: ticker,
-  details: null,
-  precision,
-  issued_supply: 1_000_000,
-  timestamp: 0,
   added_at: 0,
-  balance: { settled: 0, future: 0, spendable: 0 },
+  asset_id: `id-${ticker}`,
+  balance: {
+    future: 0,
+    offchain_inbound: 0,
+    offchain_outbound: 0,
+    settled: 0,
+    spendable: 0,
+  },
+  details: null,
+  issued_supply: 1_000_000,
   media: null,
+  name: ticker,
+  precision,
+  ticker,
+  timestamp: 0,
 })
 
 // ─── Constants ────────────────────────────────────────────────────────────────

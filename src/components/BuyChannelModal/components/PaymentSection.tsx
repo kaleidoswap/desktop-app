@@ -1,6 +1,6 @@
 import React from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
+import CopyToClipboard from 'react-copy-to-clipboard'
 import { Copy, QrCode } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -150,9 +150,9 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
             <div className="mt-4 rounded-[20px] border border-border-subtle bg-white/5 p-3">
               <div className="mx-auto w-full max-w-[200px] rounded-[16px] bg-white p-3 shadow-lg">
                 <QRCodeSVG
-                  value={bip21URI}
                   size={256}
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                  style={{ display: 'block', height: 'auto', width: '100%' }}
+                  value={bip21URI}
                 />
               </div>
             </div>

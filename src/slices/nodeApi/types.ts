@@ -1,15 +1,15 @@
-export type Channel = any
-
-// Alias Asset to NiaAsset for compatibility
-export type NiaAsset = any
-export type Asset = any
+export type {
+  Channel,
+  AssetNIA as NiaAsset,
+  AssetNIA as Asset,
+} from 'kaleidoswap-sdk/rln'
 
 // Stub types for backwards compatibility (not in SDK)
 export const Network = {
   Mainnet: 'mainnet',
-  Testnet: 'testnet',
   Regtest: 'regtest',
   Signet: 'signet',
+  Testnet: 'testnet',
 } as const
 export type Network = (typeof Network)[keyof typeof Network]
 
@@ -43,15 +43,15 @@ export interface Assignment {
 }
 
 export interface SwapDetails {
-  from_asset?: string
-  to_asset?: string
+  from_asset?: string | null
+  to_asset?: string | null
   qty_from?: number
   qty_to?: number
   status?: string
   payment_hash?: string
   created_at?: number
-  completed_at?: number
-  initiated_at?: number
+  completed_at?: number | null
+  initiated_at?: number | null
   requested_at?: number
 }
 
@@ -66,9 +66,9 @@ export enum SwapStatus {
 export interface Transfer {
   status?: string
   kind?: 'Send' | 'ReceiveBlind' | 'ReceiveWitness' | 'Issuance' | 'Inflation'
-  requested_assignment?: Assignment
-  txid?: string
+  requested_assignment?: Assignment | null
+  txid?: string | null
   idx?: number
   created_at?: number
-  recipient_id?: string
+  recipient_id?: string | null
 }

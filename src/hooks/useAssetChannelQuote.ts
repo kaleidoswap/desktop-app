@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { Layer } from 'kaleidoswap-sdk'
 import { QuoteResponse, makerApi } from '../slices/makerApi/makerApi.slice'
 import { AssetInfo } from '../utils/channelOrderUtils'
 
@@ -89,12 +90,12 @@ export function useAssetChannelQuote({
       const response = await getQuote({
         from_asset: {
           asset_id: 'BTC',
-          layer: 'BTC_LN',
+          layer: Layer.BTC_LN,
         },
         to_asset: {
           amount: requestedAmount,
           asset_id: assetId,
-          layer: 'RGB_LN',
+          layer: Layer.RGB_LN,
         },
       })
 
@@ -173,8 +174,8 @@ export function useAssetChannelQuote({
     quote,
     quoteError,
     quoteLoading,
+    refetchQuote: requestQuote,
     requestedAmount,
     resetQuote,
-    refetchQuote: requestQuote,
   }
 }

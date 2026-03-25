@@ -5,23 +5,28 @@ import {
   TradingPair,
   normalizePairs,
 } from '../../../slices/makerApi/makerApi.slice'
-import { Asset } from 'kaleidoswap-sdk'
 import { logger } from '../../../utils/logger'
+
+interface Asset {
+  asset_id?: string | null
+  ticker: string
+  name?: string
+  precision?: number
+  protocol_ids?: Record<string, string>
+  is_active?: boolean
+}
 
 import {
   ASSET_CONFLICT_MESSAGES,
   createAssetConflictMessages,
 } from './errorMessages'
 
-// Type for channel (previously imported from nodeApi)
-// Define minimal compatible Channel interface matching SDK
+// Minimal channel interface for utility functions; tests can pass partial objects
 interface Channel {
   ready?: boolean
   outbound_balance_msat?: number
   inbound_balance_msat?: number
-  asset_id?: string
-  status?: { status?: string } | string // handle both object and potential simple status
-  [key: string]: any
+  asset_id?: string | null
 }
 
 const MSATS_PER_SAT = 1000

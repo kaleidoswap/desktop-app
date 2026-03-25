@@ -75,11 +75,11 @@ export const parseBitcoinAmount = (
 export const formatAmount = (
   amount: number,
   asset_ticker: string,
-  assets: NiaAsset[],
+  assets: NiaAsset[] | null,
   bitcoinUnit: 'BTC' | 'SAT'
 ): string => {
   const locale = getNumberLocale()
-  const asset = assets.find((a) => a.ticker === asset_ticker) || {
+  const asset = assets?.find((a) => a.ticker === asset_ticker) || {
     precision: 8,
   }
   if (asset_ticker === 'BTC') {
@@ -96,13 +96,13 @@ export const formatAmount = (
 export const parseAssetAmount = (
   amount: string,
   asset_ticker: string,
-  assets: NiaAsset[],
+  assets: NiaAsset[] | null,
   bitcoinUnit: 'BTC' | 'SAT'
 ): number => {
   if (asset_ticker === 'BTC') {
     return parseBitcoinAmount(amount, bitcoinUnit)
   } else {
-    const asset = assets.find((a) => a.ticker === asset_ticker) || {
+    const asset = assets?.find((a) => a.ticker === asset_ticker) || {
       precision: 8,
     }
     const cleanAmount = amount.replace(/[^\d.-]/g, '')
@@ -159,7 +159,7 @@ export const formatNumberInput = (value: string, precision: number): string => {
 export const getAssetPrecision = (
   asset: string,
   bitcoinUnit: string,
-  assets?: NiaAsset[]
+  assets?: NiaAsset[] | null
 ): number => {
   // Handle undefined, null or empty asset
   if (!asset) {
@@ -214,7 +214,7 @@ export const formatAssetAmountWithPrecision = (
   amount: number,
   asset: string,
   bitcoinUnit: string,
-  assets?: NiaAsset[]
+  assets?: NiaAsset[] | null
 ): string => {
   const locale = getNumberLocale()
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
@@ -253,7 +253,7 @@ export const parseAssetAmountWithPrecision = (
   amount: string | undefined | null,
   asset: string,
   bitcoinUnit: string,
-  assets?: NiaAsset[]
+  assets?: NiaAsset[] | null
 ): number => {
   const precision = getAssetPrecision(asset, bitcoinUnit, assets)
 

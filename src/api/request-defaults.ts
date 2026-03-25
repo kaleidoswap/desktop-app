@@ -5,12 +5,12 @@
  */
 
 import type {
+  CreateUtxosRequest,
+  FailTransfersRequest,
+  RefreshRequest,
   SendBtcRequest,
   SendRgbRequest,
-  CreateUtxosRequest,
-  RefreshTransfersRequest as RefreshRequest,
-  FailTransfersRequest,
-} from 'kaleidoswap-sdk'
+} from 'kaleidoswap-sdk/rln'
 
 /**
  * Default values for common request parameters

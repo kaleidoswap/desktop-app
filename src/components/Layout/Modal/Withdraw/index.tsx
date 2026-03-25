@@ -20,8 +20,8 @@ import {
 } from '../../../../slices/nodeApi/nodeApi.slice'
 import {
   DecodeLNInvoiceResponse as DecodeInvoiceResponse,
-  DecodeRgbInvoiceResponse,
-} from 'kaleidoswap-sdk'
+  DecodeRGBInvoiceResponse,
+} from 'kaleidoswap-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 import { WithdrawForm, ConfirmationModal } from './components'
@@ -69,7 +69,7 @@ export const WithdrawModalContent: React.FC = () => {
   const [decodedInvoice, setDecodedInvoice] =
     useState<DecodeInvoiceResponse | null>(null)
   const [decodedRgbInvoice, setDecodedRgbInvoice] =
-    useState<DecodeRgbInvoiceResponse | null>(null)
+    useState<DecodeRGBInvoiceResponse | null>(null)
   const [isDecodingInvoice, setIsDecodingInvoice] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingData, setPendingData] = useState<Fields | null>(null)
@@ -1146,17 +1146,17 @@ export const WithdrawModalContent: React.FC = () => {
                       pendingData.fee_rate as keyof typeof feeEstimations
                     ]
                   : Math.round(customFee),
+              min_confirmations: 1,
               recipient_map: {
                 [targetAssetId]: [
                   {
-                    recipient_id: decodedRgbInvoice.recipient_id,
                     assignment,
+                    recipient_id: decodedRgbInvoice.recipient_id,
                     transport_endpoints: decodedRgbInvoice.transport_endpoints,
                     ...(witnessData ? { witness_data: witnessData } : {}),
                   },
                 ],
               },
-              min_confirmations: 1,
             }).unwrap()
           } else {
             if (!transportEndpoint) {
@@ -1172,16 +1172,16 @@ export const WithdrawModalContent: React.FC = () => {
                       pendingData.fee_rate as keyof typeof feeEstimations
                     ]
                   : Math.round(customFee),
+              min_confirmations: 1,
               recipient_map: {
                 [pendingData.asset_id]: [
                   {
-                    recipient_id: pendingData.address,
                     assignment: createFungibleAssignment(rawAmount),
+                    recipient_id: pendingData.address,
                     transport_endpoints: [transportEndpoint],
                   },
                 ],
               },
-              min_confirmations: 1,
             }).unwrap()
           }
 

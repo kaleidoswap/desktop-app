@@ -49,12 +49,8 @@ import {
   clearQuoteError,
 } from '../../../slices/makerApi/pairs.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-import { Asset, NodeComponents } from 'kaleidoswap-sdk'
+import type { AssetNIA as NiaAsset, Channel } from 'kaleidoswap-sdk/rln'
 
-// Define types from SDK components
-type Channel = NodeComponents['schemas']['Channel']
-// type SwapStatus = NodeComponents['schemas']['SwapStatus']
-type NiaAsset = Asset // Alias for backward compatibility if needed, or replace usages
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { logger } from '../../../utils/logger'
 
@@ -709,16 +705,16 @@ export const Component = () => {
         assetsData.nia.map((a) => ({
           ...a,
           is_active: true,
-          ticker: a.ticker ?? '',
-          name: a.name ?? '',
-          precision: a.precision ?? 8,
           media: a.media
             ? ({
-                file_path: a.media.file_path ?? '',
                 digest: '',
+                file_path: a.media.file_path ?? '',
                 mime: a.media.mime ?? '',
               } as any)
             : undefined,
+          name: a.name ?? '',
+          precision: a.precision ?? 8,
+          ticker: a.ticker ?? '',
         }))
       )
       setIsAssetsLoaded(true)
@@ -1556,16 +1552,16 @@ export const Component = () => {
         (assetsData?.nia || []).map((a) => ({
           ...a,
           is_active: true,
-          ticker: a.ticker ?? '',
-          name: a.name ?? '',
-          precision: a.precision ?? 8,
           media: a.media
             ? ({
-                file_path: a.media.file_path ?? '',
                 digest: '',
+                file_path: a.media.file_path ?? '',
                 mime: a.media.mime ?? '',
               } as any)
             : undefined,
+          name: a.name ?? '',
+          precision: a.precision ?? 8,
+          ticker: a.ticker ?? '',
         })),
         form,
         formatAmount,
@@ -2037,16 +2033,16 @@ export const Component = () => {
           assetsData.nia.map((a) => ({
             ...a,
             is_active: true,
-            ticker: a.ticker ?? '',
-            name: a.name ?? '',
-            precision: a.precision ?? 8,
             media: a.media
               ? ({
-                  file_path: a.media.file_path ?? '',
                   digest: '',
+                  file_path: a.media.file_path ?? '',
                   mime: a.media.mime ?? '',
                 } as any)
               : undefined,
+            name: a.name ?? '',
+            precision: a.precision ?? 8,
+            ticker: a.ticker ?? '',
           }))
         )
         setIsAssetsLoaded(true)
@@ -2076,16 +2072,16 @@ export const Component = () => {
           assetsData.nia.map((a) => ({
             ...a,
             is_active: true,
-            ticker: a.ticker ?? '',
-            name: a.name ?? '',
-            precision: a.precision ?? 8,
             media: a.media
               ? ({
-                  file_path: a.media.file_path ?? '',
                   digest: '',
+                  file_path: a.media.file_path ?? '',
                   mime: a.media.mime ?? '',
                 } as any)
               : undefined,
+            name: a.name ?? '',
+            precision: a.precision ?? 8,
+            ticker: a.ticker ?? '',
           }))
         )
 
@@ -3078,11 +3074,11 @@ export const Component = () => {
                             {t(
                               'tradeMarketMaker.banners.channelPendingConfirmation',
                               {
-                                count: unconfirmedTickers.length,
                                 asset: unconfirmedTickers[0],
                                 assets: unconfirmedTickers
                                   .slice(0, 3)
                                   .join(', '),
+                                count: unconfirmedTickers.length,
                               }
                             )}
                           </p>

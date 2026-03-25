@@ -107,7 +107,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
         }
 
         const channelHtlcLimits = channels.map(
-          (c: Channel) => c.next_outbound_htlc_limit_msat / MSATS_PER_SAT
+          (c: Channel) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
         )
 
         if (
@@ -130,9 +130,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           return 0
         }
 
-        const assetRemoteAmounts = assetChannels.map(
-          (c: Channel) => c.asset_remote_amount
-        )
+        const assetRemoteAmounts = assetChannels
+          .map((c: Channel) => c.asset_remote_amount)
+          .filter((v): v is number => v != null)
 
         return Math.max(...assetRemoteAmounts)
       }

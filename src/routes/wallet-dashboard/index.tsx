@@ -45,7 +45,7 @@ import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
-import { Asset as NiaAsset } from 'kaleidoswap-sdk'
+import type { AssetNIA as NiaAsset } from 'kaleidoswap-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 
@@ -155,9 +155,9 @@ export const Component = () => {
           const spendable = balance.data?.spendable || 0
           const future = balance.data?.future || 0
           newBalances[asset.asset_id] = {
+            incoming: Math.max(0, future - spendable),
             offChain: balance.data?.offchain_outbound || 0,
             onChain: spendable,
-            incoming: Math.max(0, future - spendable),
           }
         }
       }
@@ -468,9 +468,9 @@ export const Component = () => {
                 <div className="flex items-center gap-0.5">
                   {[
                     {
+                      color: 'text-primary hover:bg-primary/15',
                       icon: <Download className="w-3.5 h-3.5" />,
                       label: t('dashboard.deposit'),
-                      color: 'text-primary hover:bg-primary/15',
                       onClick: () =>
                         dispatch(
                           uiSliceActions.setModal({
@@ -480,9 +480,9 @@ export const Component = () => {
                         ),
                     },
                     {
+                      color: 'text-emerald-300 hover:bg-emerald-900/30',
                       icon: <Upload className="w-3.5 h-3.5" />,
                       label: t('dashboard.withdraw'),
-                      color: 'text-emerald-300 hover:bg-emerald-900/30',
                       onClick: () =>
                         dispatch(
                           uiSliceActions.setModal({
@@ -492,13 +492,13 @@ export const Component = () => {
                         ),
                     },
                     {
+                      color: 'text-secondary hover:bg-secondary/15',
                       icon: <History className="w-3.5 h-3.5" />,
                       label: t('dashboard.history'),
-                      color: 'text-secondary hover:bg-secondary/15',
                       onClick: () => navigate(WALLET_HISTORY_DEPOSITS_PATH),
                     },
                   ].map(({ icon, label, color, onClick }) => (
-                    <div key={label} className="relative group/btn">
+                    <div className="relative group/btn" key={label}>
                       <button
                         className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
                         onClick={onClick}
@@ -529,15 +529,15 @@ export const Component = () => {
                 niaAssets.map((asset) => (
                   <AssetRow
                     asset={asset as NiaAsset}
+                    incomingBalance={
+                      (assetBalances[asset.asset_id || ''] || {}).incoming || 0
+                    }
                     key={asset.asset_id}
                     offChainBalance={
                       (assetBalances[asset.asset_id || ''] || {}).offChain || 0
                     }
                     onChainBalance={
                       (assetBalances[asset.asset_id || ''] || {}).onChain || 0
-                    }
-                    incomingBalance={
-                      (assetBalances[asset.asset_id || ''] || {}).incoming || 0
                     }
                   />
                 ))
@@ -601,8 +601,8 @@ export const Component = () => {
                 <div className="space-y-2">
                   {[0, 1, 2].map((i) => (
                     <div
-                      key={i}
                       className="h-16 bg-surface-elevated/50 rounded-xl animate-pulse"
+                      key={i}
                     />
                   ))}
                 </div>
@@ -641,8 +641,8 @@ export const Component = () => {
                         : 50
                     return (
                       <div
-                        key={ch.channel_id}
                         className="group/ch bg-surface-elevated/60 hover:bg-surface-elevated/90 rounded-xl border border-border-subtle/40 hover:border-border-default/50 p-3 transition-all duration-200"
+                        key={ch.channel_id}
                       >
                         {/* Channel header row */}
                         <div className="flex items-center justify-between text-xs mb-2">
@@ -806,7 +806,7 @@ export const Component = () => {
                   onClick: () => setShowPeerModal(true),
                 },
               ].map(({ icon, label, onClick }) => (
-                <div key={label} className="relative group/act">
+                <div className="relative group/act" key={label}>
                   <button
                     className="p-1.5 rounded-lg hover:bg-surface-elevated text-content-tertiary hover:text-content-primary transition-colors"
                     onClick={onClick}

@@ -1,5 +1,5 @@
 import { Copy } from 'lucide-react'
-import { CopyToClipboard } from 'react-copy-to-clipboard'
+import CopyToClipboard from 'react-copy-to-clipboard'
 
 interface OrderIdCardProps {
   copyLabel: string

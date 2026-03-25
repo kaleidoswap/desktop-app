@@ -1,4 +1,4 @@
-import type { RlnClient } from 'kaleidoswap-sdk'
+import type { RlnClient } from 'kaleidoswap-sdk/rln'
 import type {
   AddressResponse,
   AssetBalanceRequest,
@@ -11,13 +11,13 @@ import type {
   CreateUtxosRequest,
   DecodeLNInvoiceRequest,
   DecodeLNInvoiceResponse,
-  DecodeRgbInvoiceRequest as DecodeRGBInvoiceRequest,
-  DecodeRgbInvoiceResponse as DecodeRGBInvoiceResponse,
+  DecodeRGBInvoiceRequest,
+  DecodeRGBInvoiceResponse,
   DisconnectPeerRequest,
   EstimateFeeRequest,
   EstimateFeeResponse,
-  GetInvoiceStatusRequest as InvoiceStatusRequest,
-  GetInvoiceStatusResponse as InvoiceStatusResponse,
+  InvoiceStatusRequest,
+  InvoiceStatusResponse,
   InitResponse,
   InitRequest,
   IssueAssetNIARequest,
@@ -28,7 +28,7 @@ import type {
   ListTransactionsResponse,
   ListTransfersResponse,
   ListUnspentsResponse,
-  CreateLNInvoiceRequest as LNInvoiceRequest,
+  LNInvoiceRequest,
   CreateLNInvoiceResponse as LNInvoiceResponse,
   MakerExecuteRequest,
   MakerExecuteResponse,
@@ -38,10 +38,10 @@ import type {
   NodeInfoResponse,
   OpenChannelRequest,
   OpenChannelResponse,
-  RefreshTransfersRequest as RefreshRequest,
+  RefreshRequest,
   RestoreRequest,
-  CreateRgbInvoiceRequest as RgbInvoiceRequest,
-  CreateRgbInvoiceResponse as RgbInvoiceResponse,
+  RgbInvoiceRequest,
+  RgbInvoiceResponse,
   SendBtcRequest,
   SendPaymentRequest,
   SendPaymentResponse,
@@ -54,8 +54,8 @@ import type {
   KeysendResponse,
   ListPeersResponse,
   ListSwapsResponse,
-  WhitelistTradeRequest,
-} from 'kaleidoswap-sdk'
+  TakerRequest as WhitelistTradeRequest,
+} from 'kaleidoswap-sdk/rln'
 
 import { ensureSkipSync } from './request-defaults'
 import { transformSdkError } from './errors'
@@ -64,6 +64,17 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 export type ApiResult<T> =
   | { data: T; error?: never }
   | { data?: never; error: FetchBaseQueryError }
+
+export type CreateUtxosInput = Omit<CreateUtxosRequest, 'skip_sync'>
+export type LNInvoiceInput = Omit<LNInvoiceRequest, 'expiry_sec'>
+export type OpenChannelInput = Omit<
+  OpenChannelRequest,
+  'public' | 'push_msat' | 'with_anchors'
+>
+export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync'>>
+export type SendBtcInput = Omit<SendBtcRequest, 'skip_sync'>
+export type SendRgbInput = Omit<SendRgbRequest, 'skip_sync'>
+export type RgbInvoiceInput = Omit<RgbInvoiceRequest, 'min_confirmations'>
 
 export class NodeApiWrapper {
   constructor(private readonly client: RlnClient) {}
@@ -127,7 +138,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.getBtcBalance(skipSync))
   }
 
-  async sendBtc(request: SendBtcRequest): Promise<ApiResult<void>> {
+  async sendBtc(request: SendBtcInput): Promise<ApiResult<void>> {
     return this.execute(() => this.client.sendBtc(ensureSkipSync(request)))
   }
 
@@ -139,7 +150,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.listUnspents())
   }
 
-  async createUtxos(request: CreateUtxosRequest): Promise<ApiResult<void>> {
+  async createUtxos(request: CreateUtxosInput): Promise<ApiResult<void>> {
     return this.execute(() => this.client.createUtxos(ensureSkipSync(request)))
   }
 
@@ -154,7 +165,7 @@ export class NodeApiWrapper {
   // ============================================================================
 
   async listAssets(
-    filterAssetSchemas: ('Nia' | 'Uda' | 'Cfa')[] = []
+    filterAssetSchemas: Parameters<RlnClient['listAssets']>[0] = []
   ): Promise<ApiResult<ListAssetsResponse>> {
     return this.execute(() => this.client.listAssets(filterAssetSchemas))
   }
@@ -171,7 +182,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.issueAssetNIA(request))
   }
 
-  async sendRgb(request: SendRgbRequest): Promise<ApiResult<SendRgbResponse>> {
+  async sendRgb(request: SendRgbInput): Promise<ApiResult<SendRgbResponse>> {
     return this.execute(() => this.client.sendRgb(ensureSkipSync(request)))
   }
 
@@ -181,7 +192,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.listTransfers({ asset_id: assetId }))
   }
 
-  async refreshTransfers(request?: RefreshRequest): Promise<ApiResult<void>> {
+  async refreshTransfers(request?: RefreshInput): Promise<ApiResult<void>> {
     return this.execute(() =>
       this.client.refreshTransfers(ensureSkipSync(request || {}))
     )
@@ -196,12 +207,12 @@ export class NodeApiWrapper {
   }
 
   async openChannel(
-    request: OpenChannelRequest
+    request: OpenChannelInput
   ): Promise<ApiResult<OpenChannelResponse>> {
     const body: OpenChannelRequest = {
-      public: true,
       ...request,
       // Protocol requirements — always enforced regardless of caller input
+      public: true,
       push_msat: 3100000,
       with_anchors: true,
       // Floor asset_amount to an integer if provided
@@ -241,20 +252,20 @@ export class NodeApiWrapper {
   // ============================================================================
 
   async createLNInvoice(
-    request: LNInvoiceRequest
+    request: LNInvoiceInput
   ): Promise<ApiResult<LNInvoiceResponse>> {
     // Always set expiry_sec; for RGB invoices force a fixed route-hint amount
     const body: LNInvoiceRequest = request.asset_id
-      ? { expiry_sec: 3600, amt_msat: 3000000, ...request }
-      : { expiry_sec: 3600, ...request }
+      ? { ...request, amt_msat: request.amt_msat ?? 3000000, expiry_sec: 3600 }
+      : { ...request, expiry_sec: 3600 }
     return this.execute(() => this.client.createLNInvoice(body))
   }
 
   async createRgbInvoice(
-    request: RgbInvoiceRequest
+    request: RgbInvoiceInput
   ): Promise<ApiResult<RgbInvoiceResponse>> {
     return this.execute(() =>
-      this.client.createRgbInvoice({ min_confirmations: 1, ...request })
+      this.client.createRgbInvoice({ ...request, min_confirmations: 1 })
     )
   }
 

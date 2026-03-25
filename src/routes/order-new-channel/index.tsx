@@ -50,11 +50,15 @@ export const Component = () => {
   const toastId: string | number | null = null
 
   useEffect(() => {
-    if (orderId && step === 3) {
+    const accessToken = createOrderResponse.data?.access_token
+    if (orderId && accessToken && step === 3) {
       const timeoutId: ReturnType<typeof setTimeout> | null = null
 
       const intervalId = setInterval(async () => {
-        const orderResponse = await getOrderRequest({ order_id: orderId })
+        const orderResponse = await getOrderRequest({
+          access_token: accessToken,
+          order_id: orderId,
+        })
         const orderData = orderResponse.data
 
         // Check if payment has been received (either in HOLD or PAID state)
@@ -98,7 +102,12 @@ export const Component = () => {
               await invoke('insert_channel_order', {
                 createdAt: orderData?.created_at || new Date().toISOString(),
                 orderId: orderId,
-                payload: JSON.stringify(orderPayload),
+                payload: JSON.stringify({
+                  ...orderPayload,
+                  access_token:
+                    orderData?.access_token ??
+                    createOrderResponse.data?.access_token,
+                }),
                 status: orderData?.order_state || 'paid',
               })
               console.log('Order saved to database successfully!')
@@ -168,7 +177,14 @@ export const Component = () => {
         if (timeoutId) clearTimeout(timeoutId)
       }
     }
-  }, [orderId, getOrderRequest, step, paymentReceived, orderPayload])
+  }, [
+    orderId,
+    createOrderResponse.data?.access_token,
+    getOrderRequest,
+    step,
+    paymentReceived,
+    orderPayload,
+  ])
 
   const onSubmitStep1 = useCallback(
     async (data: { connectionUrl: string; success: boolean }) => {
@@ -417,9 +433,9 @@ export const Component = () => {
 
       {step === 3 && (
         <Step3
-          key={orderId ?? 'draft-order'}
           detectedPaymentMethod={paymentMethod}
           isProcessingPayment={isProcessingPayment}
+          key={orderId ?? 'draft-order'}
           onBack={onStepBack}
           onRestart={handleRestartFlow}
           order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}

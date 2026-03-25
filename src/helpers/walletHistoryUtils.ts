@@ -50,7 +50,7 @@ export const formatAssetAmount = (
 }
 
 export const resolveAssetInfo = (
-  assetId: string | undefined,
+  assetId: string | null | undefined,
   listAssetsData: any
 ): AssetInfo | null => {
   if (!assetId) return null
@@ -62,30 +62,30 @@ export const resolveAssetInfo = (
   const niaMatch = nia.find((a: any) => a.asset_id === assetId)
   if (niaMatch)
     return {
+      fullId: assetId,
       label: niaMatch.ticker ?? niaMatch.name ?? assetId,
       precision: niaMatch.precision ?? 0,
-      fullId: assetId,
     }
 
   const udaMatch = uda.find((a: any) => a.asset_id === assetId)
   if (udaMatch)
     return {
+      fullId: assetId,
       label: udaMatch.ticker ?? udaMatch.name ?? assetId,
       precision: udaMatch.precision ?? 0,
-      fullId: assetId,
     }
 
   const cfaMatch = cfa.find((a: any) => a.asset_id === assetId)
   if (cfaMatch)
     return {
+      fullId: assetId,
       label: cfaMatch.name ?? assetId,
       precision: cfaMatch.precision ?? 0,
-      fullId: assetId,
     }
 
   return {
+    fullId: assetId,
     label: assetId,
     precision: 0,
-    fullId: assetId,
   }
 }
