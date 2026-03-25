@@ -6,7 +6,7 @@ import {
   TradingPair,
   getAssetId,
 } from '../../../slices/makerApi/makerApi.slice'
-import type { AssetNIA as NiaAsset } from 'kaleidoswap-sdk/rln'
+import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { logger } from '../../../utils/logger'
 
 import { handleApiError } from './apiUtils'

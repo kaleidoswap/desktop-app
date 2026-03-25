@@ -6,8 +6,8 @@ vi.mock('../makerApi.slice', () => ({
   normalizePairs: vi.fn((pairs: any[]) => pairs),
 }))
 
-// Mock kaleidoswap-sdk to prevent module resolution errors
-vi.mock('kaleidoswap-sdk', () => ({
+// Mock kaleido-sdk to prevent module resolution errors
+vi.mock('kaleido-sdk', () => ({
   ApiComponents: {},
 }))
 
@@ -25,27 +25,27 @@ import {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const makePair = (base: string, quote: string, baseId?: string) => ({
-  id: `${base}-${quote}`,
-  base_asset: base,
-  quote_asset: quote,
-  base_asset_id: baseId ?? base,
-  quote_asset_id: quote,
   base: {
-    ticker: base,
+    endpoints: [],
     name: base,
     precision: 8,
     protocol_ids: {},
-    endpoints: [],
+    ticker: base,
   },
+  base_asset: base,
+  base_asset_id: baseId ?? base,
+  id: `${base}-${quote}`,
+  is_active: true,
   quote: {
-    ticker: quote,
+    endpoints: [],
     name: quote,
     precision: 8,
     protocol_ids: {},
-    endpoints: [],
+    ticker: quote,
   },
+  quote_asset: quote,
+  quote_asset_id: quote,
   routes: [],
-  is_active: true,
 })
 
 const makeQuoteResponse = (
@@ -53,20 +53,20 @@ const makeQuoteResponse = (
   toTicker: string,
   fromAmount: number
 ) => ({
-  rfq_id: 'rfq-test',
-  from_asset: { ticker: fromTicker, amount: fromAmount, asset_id: fromTicker },
-  to_asset: { ticker: toTicker, amount: 50_000, asset_id: toTicker },
-  price: 50000,
-  timestamp: Date.now(),
   expires_at: Date.now() + 30000,
   fee: {
     base_fee: 0,
-    variable_fee: 0,
-    fee_rate: 0,
     fee_asset: fromTicker,
-    final_fee: 0,
     fee_asset_precision: 8,
+    fee_rate: 0,
+    final_fee: 0,
+    variable_fee: 0,
   },
+  from_asset: { amount: fromAmount, asset_id: fromTicker, ticker: fromTicker },
+  price: 50000,
+  rfq_id: 'rfq-test',
+  timestamp: Date.now(),
+  to_asset: { amount: 50_000, asset_id: toTicker, ticker: toTicker },
 })
 
 const getInitialState = () => pairsReducer(undefined, { type: '@@INIT' })
@@ -122,12 +122,12 @@ describe('updatePrice', () => {
   it('stores price data under the pair key', () => {
     const state = pairsReducer(
       getInitialState(),
-      updatePrice({ pair: 'BTC/USDT', price: 50000, size: 1, rfq_id: 'abc' })
+      updatePrice({ pair: 'BTC/USDT', price: 50000, rfq_id: 'abc', size: 1 })
     )
     expect(state.feed['BTC/USDT']).toEqual({
       price: 50000,
-      size: 1,
       rfq_id: 'abc',
+      size: 1,
     })
   })
 })
@@ -157,7 +157,7 @@ describe('clearQuote', () => {
     let state = pairsReducer(getInitialState(), updateQuote(quote as any))
     state = pairsReducer(
       state,
-      clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 })
+      clearQuote({ fromAmount: 1000, fromAsset: 'BTC', toAsset: 'USDT' })
     )
     expect(state.quotes['BTC/USDT/1000']).toBeUndefined()
   })
@@ -169,7 +169,7 @@ describe('clearQuote', () => {
     state = pairsReducer(state, updateQuote(q2 as any))
     state = pairsReducer(
       state,
-      clearQuote({ fromAsset: 'BTC', toAsset: 'USDT', fromAmount: 1000 })
+      clearQuote({ fromAmount: 1000, fromAsset: 'BTC', toAsset: 'USDT' })
     )
     expect(state.quotes['BTC/USDT/2000']).toBeDefined()
   })

@@ -21,7 +21,7 @@ import {
 import {
   DecodeLNInvoiceResponse as DecodeInvoiceResponse,
   DecodeRGBInvoiceResponse,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 import { WithdrawForm, ConfirmationModal } from './components'

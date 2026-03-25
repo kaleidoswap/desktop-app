@@ -1,7 +1,7 @@
 import {
   DecodeLNInvoiceResponse as DecodeInvoiceResponse,
   DecodeRGBInvoiceResponse,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 
 // Use the same enum values as in nodeApi.slice.ts
 export enum HTLCStatus {

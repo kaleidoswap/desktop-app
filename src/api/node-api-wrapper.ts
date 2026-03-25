@@ -1,4 +1,4 @@
-import type { RlnClient } from 'kaleidoswap-sdk/rln'
+import type { RlnClient } from 'kaleido-sdk/rln'
 import type {
   AddressResponse,
   AssetBalanceRequest,
@@ -55,7 +55,7 @@ import type {
   ListPeersResponse,
   ListSwapsResponse,
   TakerRequest as WhitelistTradeRequest,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 
 import { ensureSkipSync } from './request-defaults'
 import { transformSdkError } from './errors'

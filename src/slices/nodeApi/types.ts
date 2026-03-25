@@ -2,7 +2,7 @@ export type {
   Channel,
   AssetNIA as NiaAsset,
   AssetNIA as Asset,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 
 // Stub types for backwards compatibility (not in SDK)
 export const Network = {

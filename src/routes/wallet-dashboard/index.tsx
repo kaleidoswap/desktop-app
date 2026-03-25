@@ -45,7 +45,7 @@ import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
-import type { AssetNIA as NiaAsset } from 'kaleidoswap-sdk/rln'
+import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 

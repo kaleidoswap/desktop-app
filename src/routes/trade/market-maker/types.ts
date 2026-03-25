@@ -2,7 +2,7 @@ import { TradingPair } from '../../../slices/makerApi/makerApi.slice'
 import type {
   AssetNIA as NiaAssetSource,
   Channel as SdkChannel,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 export type NiaAsset = NiaAssetSource
 export type Channel = SdkChannel
 

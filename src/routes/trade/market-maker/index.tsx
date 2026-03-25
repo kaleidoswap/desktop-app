@@ -49,7 +49,7 @@ import {
   clearQuoteError,
 } from '../../../slices/makerApi/pairs.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
-import type { AssetNIA as NiaAsset, Channel } from 'kaleidoswap-sdk/rln'
+import type { AssetNIA as NiaAsset, Channel } from 'kaleido-sdk/rln'
 
 import { uiSliceActions } from '../../../slices/ui/ui.slice'
 import { logger } from '../../../utils/logger'

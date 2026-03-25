@@ -60,9 +60,9 @@ importers:
       i18next-browser-languagedetector:
         specifier: ^8.2.1
         version: 8.2.1
-      kaleidoswap-sdk:
-        specifier: 0.5.6
-        version: 0.5.6
+      kaleido-sdk:
+        specifier: 0.1.0
+        version: 0.1.0
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@18.3.1)
@@ -2351,8 +2351,8 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
-  kaleidoswap-sdk@0.5.6:
-    resolution: {integrity: sha512-8XUD/aBt5Iqny6ra/fEan+4A/H/5WgNtig4ed6gPdYjHPVX6BpoiSB2ciTbz/qYys8XSE52j9bByZJCxD3vclA==}
+  kaleido-sdk@0.1.0:
+    resolution: {integrity: sha512-a/yfpShtJbt5B9qB5uavcCyW9Sc7BKZFbCatkPu3RddT8Xe3dSNPgTcC1TmYRpdUtc2OgbpKP6RmIOlRUnmLiA==}
     engines: {node: '>=18.0.0'}
 
   keyv@4.5.4:
@@ -5908,7 +5908,7 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  kaleidoswap-sdk@0.5.6:
+  kaleido-sdk@0.1.0:
     dependencies:
       openapi-fetch: 0.15.2
 

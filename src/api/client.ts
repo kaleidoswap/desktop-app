@@ -1,4 +1,4 @@
-import { KaleidoClient } from 'kaleidoswap-sdk'
+import { KaleidoClient } from 'kaleido-sdk'
 import { NodeApiWrapper } from './node-api-wrapper'
 
 export interface MinimalState {
@@ -56,9 +56,9 @@ export const getKaleidoClient = async (
   if (needsRecreate) {
     // Create new instance with the TypeScript SDK using static factory
     clientInstance = KaleidoClient.create({
+      apiKey: authToken,
       baseUrl,
       nodeUrl,
-      apiKey: authToken,
     })
 
     // Create wrapper instance

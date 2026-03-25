@@ -18,7 +18,6 @@ import {
   Coins,
   Activity,
   Info,
-  RotateCw,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -42,6 +41,18 @@ interface ChannelOrder {
   order_id: string
   payload: string
 }
+
+type OrderDeliveryMetadata = {
+  asset_delivery_error?: string | null
+  asset_delivery_status?: string | null
+}
+
+const getOrderDeliveryMetadata = (
+  orderData?: Lsps1CreateOrderResponse
+): OrderDeliveryMetadata =>
+  (orderData as
+    | (Lsps1CreateOrderResponse & OrderDeliveryMetadata)
+    | undefined) || {}
 
 const getAvailableColumns = (t: any) => [
   {
@@ -159,18 +170,7 @@ const OrderDetailCard: React.FC<{
   orderData: Lsps1CreateOrderResponse | undefined
   orderStatus: string
   onDelete: () => void
-  onRetryDelivery?: () => void
-  isRetrying?: boolean
-}> = ({
-  isOpen,
-  onClose,
-  order,
-  orderData,
-  orderStatus,
-  onDelete,
-  onRetryDelivery,
-  isRetrying = false,
-}) => {
+}> = ({ isOpen, onClose, order, orderData, orderStatus, onDelete }) => {
   const { t } = useTranslation()
   if (!isOpen) return null
 
@@ -215,6 +215,7 @@ const OrderDetailCard: React.FC<{
   const bolt11Fee = (orderData?.payment as any)?.bolt11?.fee_total_sat
   const onchainFee = (orderData?.payment as any)?.onchain?.fee_total_sat
   const feePaid = bolt11Fee || onchainFee
+  const delivery = getOrderDeliveryMetadata(orderData)
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -456,8 +457,8 @@ const OrderDetailCard: React.FC<{
                 </div>
 
                 {/* Asset Delivery Status */}
-                {orderData?.asset_delivery_status &&
-                  orderData.asset_delivery_status !== 'NOT_REQUIRED' && (
+                {delivery.asset_delivery_status &&
+                  delivery.asset_delivery_status !== 'NOT_REQUIRED' && (
                     <div className="mt-4 pt-4 border-t border-border-default">
                       <div className="flex items-center justify-between">
                         <div>
@@ -467,39 +468,15 @@ const OrderDetailCard: React.FC<{
                             )}
                           </div>
                           <div className="text-base font-semibold text-white">
-                            {orderData.asset_delivery_status}
+                            {delivery.asset_delivery_status}
                           </div>
-                          {orderData.asset_delivery_error && (
+                          {delivery.asset_delivery_error && (
                             <div className="text-xs text-red-400 mt-1">
                               {t('common.error')}:{' '}
-                              {orderData.asset_delivery_error}
+                              {delivery.asset_delivery_error}
                             </div>
                           )}
                         </div>
-                        {orderData.asset_delivery_status === 'PENDING' &&
-                          onRetryDelivery && (
-                            <button
-                              className="flex items-center gap-2 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                              disabled={isRetrying}
-                              onClick={onRetryDelivery}
-                            >
-                              {isRetrying ? (
-                                <>
-                                  <LoaderIcon className="w-4 h-4 animate-spin" />
-                                  {t(
-                                    'components.walletHistory.channelOrders.actions.retrying'
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <RotateCw className="w-4 h-4" />
-                                  {t(
-                                    'components.walletHistory.channelOrders.actions.retryDelivery'
-                                  )}
-                                </>
-                              )}
-                            </button>
-                          )}
                       </div>
                     </div>
                   )}
@@ -651,11 +628,8 @@ export const Component = () => {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
   const [showDetailCard, setShowDetailCard] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<ChannelOrder | null>(null)
-  const [retryingOrders, setRetryingOrders] = useState<Set<string>>(new Set())
 
   const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
-  const [retryDeliveryRequest] =
-    makerApi.endpoints.retry_delivery.useLazyQuery()
 
   const fetchOrders = async () => {
     try {
@@ -762,73 +736,6 @@ export const Component = () => {
   const closeDetailCard = () => {
     setShowDetailCard(false)
     setSelectedOrder(null)
-  }
-
-  const handleRetryDelivery = async (orderId: string) => {
-    setRetryingOrders((prev) => new Set(prev).add(orderId))
-
-    try {
-      const response = await retryDeliveryRequest({ order_id: orderId })
-
-      if (response.data) {
-        const { status, message } = response.data
-
-        switch (status) {
-          case 'processing':
-            toast.success(
-              message ||
-                t('components.walletHistory.channelOrders.messages.retryQueued')
-            )
-            // Refresh order status after a short delay
-            setTimeout(async () => {
-              await fetchOrders()
-            }, 2000)
-            break
-          case 'not_found':
-            toast.error(
-              message ||
-                t(
-                  'components.walletHistory.channelOrders.messages.orderNotFound'
-                )
-            )
-            break
-          case 'no_pending_delivery':
-            toast.info(
-              message ||
-                t(
-                  'components.walletHistory.channelOrders.messages.noPendingDelivery'
-                )
-            )
-            break
-          case 'error':
-            toast.error(
-              message ||
-                t('components.walletHistory.channelOrders.messages.retryFailed')
-            )
-            break
-          default:
-            toast.info(message || 'Unknown response')
-        }
-      } else if (response.error) {
-        console.error('Error retrying delivery:', response.error)
-        toast.error(
-          t('components.walletHistory.channelOrders.messages.retryFailed')
-        )
-      }
-    } catch (err) {
-      console.error('Error retrying delivery:', err)
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : t('components.walletHistory.channelOrders.messages.retryFailed')
-      )
-    } finally {
-      setRetryingOrders((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(orderId)
-        return newSet
-      })
-    }
   }
 
   const handleColumnToggle = (columnKey: string) => {
@@ -985,6 +892,7 @@ export const Component = () => {
             return {
               accessor: (order: ChannelOrder) => {
                 const currentOrderData = orderData[order.order_id]
+                const delivery = getOrderDeliveryMetadata(currentOrderData)
                 const orderStatus = orderStatuses[order.order_id] || 'Unknown'
 
                 const getStatusBadge = (status: string) => {
@@ -1067,8 +975,7 @@ export const Component = () => {
                   case 'status':
                     return getStatusBadge(orderStatus)
                   case 'asset_delivery_status': {
-                    const deliveryStatus =
-                      currentOrderData?.asset_delivery_status
+                    const deliveryStatus = delivery.asset_delivery_status
                     if (!deliveryStatus || deliveryStatus === 'NOT_REQUIRED') {
                       return renderEmptyField()
                     }
@@ -1118,34 +1025,8 @@ export const Component = () => {
                     return getDeliveryStatusBadge(deliveryStatus)
                   }
                   case 'actions': {
-                    const hasPendingDelivery =
-                      currentOrderData?.client_asset_amount &&
-                      currentOrderData.client_asset_amount > 0 &&
-                      currentOrderData?.asset_delivery_status === 'PENDING'
-
-                    const isRetrying = retryingOrders.has(order.order_id)
-
                     return (
                       <div className="flex items-center justify-center gap-2">
-                        {hasPendingDelivery && (
-                          <button
-                            className="flex items-center justify-center w-8 h-8 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={isRetrying}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleRetryDelivery(order.order_id)
-                            }}
-                            title={t(
-                              'components.walletHistory.channelOrders.actions.retryDelivery'
-                            )}
-                          >
-                            {isRetrying ? (
-                              <LoaderIcon className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <RotateCw className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
                         <button
                           className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
                           onClick={(e) => {
@@ -1226,10 +1107,8 @@ export const Component = () => {
       {selectedOrder && (
         <OrderDetailCard
           isOpen={showDetailCard}
-          isRetrying={retryingOrders.has(selectedOrder.order_id)}
           onClose={closeDetailCard}
           onDelete={() => handleDelete(selectedOrder.order_id)}
-          onRetryDelivery={() => handleRetryDelivery(selectedOrder.order_id)}
           order={selectedOrder}
           orderData={orderData[selectedOrder.order_id]}
           orderStatus={orderStatuses[selectedOrder.order_id] || 'Unknown'}

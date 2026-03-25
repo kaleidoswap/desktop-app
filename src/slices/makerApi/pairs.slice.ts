@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from '@reduxjs/toolkit'
 
 import { TradingPair } from '../makerApi/makerApi.slice'
-import { ApiComponents } from 'kaleidoswap-sdk'
+import { ApiComponents } from 'kaleido-sdk'
 
 interface PriceData {
   price: number

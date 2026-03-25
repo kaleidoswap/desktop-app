@@ -11,14 +11,12 @@ import {
   GetLspOrderResponse as OrderResponse,
   CreateOrderRequest,
   OrderRequest as GetOrderRequest,
-  RetryDeliveryResponse,
-  RetryDeliveryRequest,
   SwapStatusResponse,
   SwapStatusRequest,
   EstimateLspFeesResponse as ChannelFees,
   SwapRequest as InitiateSwapRequest,
   SwapResponse as InitiateSwapResponse,
-} from 'kaleidoswap-sdk'
+} from 'kaleido-sdk'
 
 // Types matching new OpenAPI schema
 
@@ -257,18 +255,6 @@ export const makerApi = createApi({
         try {
           const client = await getKaleidoClient(api.getState() as RootState)
           const res = await client.maker.initSwap(args)
-          return { data: res }
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e)
-          return { error: { data: { error: msg }, status: 500 } }
-        }
-      },
-    }),
-    retry_delivery: builder.query<RetryDeliveryResponse, RetryDeliveryRequest>({
-      queryFn: async (args, api) => {
-        try {
-          const client = await getKaleidoClient(api.getState() as RootState)
-          const res = await client.maker.retryAssetDelivery(args)
           return { data: res }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e)

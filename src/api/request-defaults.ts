@@ -10,7 +10,7 @@ import type {
   RefreshRequest,
   SendBtcRequest,
   SendRgbRequest,
-} from 'kaleidoswap-sdk/rln'
+} from 'kaleido-sdk/rln'
 
 /**
  * Default values for common request parameters

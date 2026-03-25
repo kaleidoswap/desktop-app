@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { Channel } from 'kaleidoswap-sdk/rln'
+import type { Channel } from 'kaleido-sdk/rln'
 
 vi.mock('../../../../utils/logger', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },

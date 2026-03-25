@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Layer } from 'kaleidoswap-sdk'
+import { Layer } from 'kaleido-sdk'
 import { QuoteResponse, makerApi } from '../slices/makerApi/makerApi.slice'
 import { AssetInfo } from '../utils/channelOrderUtils'
 
