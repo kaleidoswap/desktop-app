@@ -24,6 +24,7 @@ pub struct NodeLogsResponse {
 
 fn main() {
     dotenv::dotenv().ok();
+    let _ = rustls::crypto::ring::default_provider().install_default();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
     let dca_scheduler = Arc::new(DcaScheduler::new());
