@@ -207,13 +207,14 @@ export function useLimitOrderScheduler() {
   const pubKey = (nodeInfoData as any)?.pubkey ?? ''
   const isNodeReady = nodeInfoSuccess && !!pubKey
 
+  // Only poll assets/channels when node is unlocked — avoids 403s during startup
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
-    { pollingInterval: 60_000 }
+    { pollingInterval: 60_000, skip: !isNodeReady }
   )
   const { data: channelsData } = nodeApi.endpoints.listChannels.useQuery(
     undefined,
-    { pollingInterval: 30_000 }
+    { pollingInterval: 30_000, skip: !isNodeReady }
   )
 
   const isExecuting = useRef(false)
@@ -425,7 +426,14 @@ export function useLimitOrderScheduler() {
         )
 
         // 2. Slippage check against limit price
-        const quotedPrice = (quote as any).price
+        const rawQuotedPrice = (quote as any).price
+        let quotedPrice: number | undefined = undefined
+        if (rawQuotedPrice && rawQuotedPrice > 0) {
+          const pair = pairs.find(p => p.id === order.pairId)
+          const quotePrecision = pair?.quote?.precision ?? 6
+          quotedPrice = rawQuotedPrice / Math.pow(10, quotePrecision)
+        }
+        
         if (quotedPrice && quotedPrice > 0) {
           const slippagePct =
             order.side === 'buy'
@@ -622,11 +630,16 @@ export function useLimitOrderScheduler() {
 
         const price = (quoteResp.data as any).price
         if (price && price > 0) {
+          // Convert raw price to display price using quote precision
+          const pair = pairs.find((p) => p.id === pairId)
+          const quotePrecision = pair?.quote?.precision ?? 6
+          const displayPrice = price / Math.pow(10, quotePrecision)
+
           priceCacheRef.current[pairId] = {
-            price,
+            price: displayPrice,
             timestamp: Date.now(),
           }
-          return price
+          return displayPrice
         }
       } catch {
         // Skip this tick

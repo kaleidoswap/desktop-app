@@ -29,7 +29,7 @@ export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
-  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [, setAccessToken] = useState<string | null>(null)
   const [orderPayload, setOrderPayload] = useState<any>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<

@@ -311,25 +311,26 @@ export function useDcaScheduler() {
   const [execSwap] = makerApi.endpoints.execSwap.useLazyQuery()
   const [whitelistTrade] = nodeApi.endpoints.whitelistTrade.useMutation()
 
-  // Poll nodeInfo every 30s so the scheduler always knows node/wallet state,
-  // regardless of which other components are mounted.
+  // Poll nodeInfo every 30s so the scheduler always knows node/wallet state.
   const { data: nodeInfoData, isSuccess: nodeInfoSuccess } =
     nodeApi.endpoints.nodeInfo.useQuery(undefined, { pollingInterval: 30_000 })
   const pubKey = (nodeInfoData as any)?.pubkey ?? ''
   // Node is ready only when nodeInfo succeeds AND we have a pubkey (wallet unlocked)
   const isNodeReady = nodeInfoSuccess && !!pubKey
 
-  // Poll assets every 60s for USDT precision
+  // Only poll assets/channels when node is unlocked — avoids 403s during startup
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
     {
       pollingInterval: 60_000,
+      skip: !isNodeReady,
     }
   )
   const { data: channelsData } = nodeApi.endpoints.listChannels.useQuery(
     undefined,
     {
       pollingInterval: 30_000,
+      skip: !isNodeReady,
     }
   )
 
@@ -380,6 +381,19 @@ export function useDcaScheduler() {
   useEffect(() => {
     whitelistTradeRef.current = whitelistTrade
   }, [whitelistTrade])
+
+  // ── Start/stop Rust DCA scheduler based on node readiness ──
+  useEffect(() => {
+    if (isNodeReady) {
+      invoke('dca_start_scheduler').catch((err) =>
+        logger.error('dca_start_scheduler failed', err)
+      )
+    } else {
+      invoke('dca_stop_scheduler').catch((err) =>
+        logger.error('dca_stop_scheduler failed', err)
+      )
+    }
+  }, [isNodeReady])
 
   // ── Load orders from DB for the active account (with localStorage migration) ──
   useEffect(() => {

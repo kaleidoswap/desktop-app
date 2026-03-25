@@ -12,28 +12,35 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/80 backdrop-blur-md"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-              <Target className="h-[1.125rem] w-[1.125rem]" />
+      <div className="w-full max-w-lg bg-surface-elevated border border-border-default shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8)] rounded-3xl overflow-hidden p-[1px]">
+        <div className="bg-surface-base rounded-[calc(1.5rem-1px)] h-full w-full">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-border-default/50 bg-surface-overlay/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                <Target className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-content-primary">
+                  {t('limitOrders.createOrder', 'New Limit Order')}
+                </h2>
+                <p className="text-xs text-content-tertiary mt-0.5">
+                  Set target prices for automatic execution
+                </p>
+              </div>
             </div>
-            <h2 className="text-sm font-semibold text-content-primary">
-              {t('limitOrders.createOrder', 'New Limit Order')}
-            </h2>
+            <button
+              className="p-2 rounded-xl text-content-secondary hover:text-content-primary hover:bg-surface-elevated transition-colors border border-transparent hover:border-border-default/50"
+              onClick={onClose}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="p-5">
-          <CreateLimitOrderForm onCreated={onClose} />
+          <div className="p-6">
+            <CreateLimitOrderForm onCreated={onClose} />
+          </div>
         </div>
       </div>
     </div>

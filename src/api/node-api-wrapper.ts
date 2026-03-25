@@ -1,5 +1,4 @@
 import type { NetworkInfoResponse } from 'kaleido-sdk'
-import type { RlnClient } from 'kaleido-sdk/rln'
 import type {
   RlnClient,
   AddressResponse,

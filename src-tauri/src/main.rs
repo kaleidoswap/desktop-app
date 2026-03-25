@@ -57,7 +57,8 @@ fn main() {
                     node_process.lock().unwrap().set_window(main_window);
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
-                dca_scheduler.start();
+                // DCA scheduler is started lazily via dca_start_scheduler
+                // when the frontend detects the node is unlocked.
                 db::init();
 
                 // Set up system tray
@@ -124,6 +125,8 @@ fn main() {
             is_local_node_supported,
             get_markdown_content,
             // DCA commands
+            dca_start_scheduler,
+            dca_stop_scheduler,
             dca_set_orders,
             dca_order_executed,
             dca_get_orders,
@@ -667,6 +670,18 @@ fn dca_delete_order(
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
     db::delete_dca_order(account.id, order_id).map_err(|e| e.to_string())
+}
+
+/// Start the DCA scheduler (called when node becomes unlocked).
+#[tauri::command]
+fn dca_start_scheduler(scheduler: tauri::State<'_, Arc<DcaScheduler>>) {
+    scheduler.start();
+}
+
+/// Stop the DCA scheduler (called when node is locked/stopped).
+#[tauri::command]
+fn dca_stop_scheduler(scheduler: tauri::State<'_, Arc<DcaScheduler>>) {
+    scheduler.stop();
 }
 
 /// Update the DCA scheduler with the current list of active orders from the frontend.

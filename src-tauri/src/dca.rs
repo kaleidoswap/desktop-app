@@ -29,12 +29,12 @@ struct DcaTriggerPayload {
 
 #[derive(Debug, Deserialize)]
 struct CoinGeckoResponse {
-    bitcoin: CoinGeckoPrice,
+    bitcoin: Option<CoinGeckoPrice>,
 }
 
 #[derive(Debug, Deserialize)]
 struct CoinGeckoPrice {
-    usd: f64,
+    usd: Option<f64>,
 }
 
 pub struct DcaScheduler {
@@ -161,7 +161,6 @@ impl DcaScheduler {
         });
     }
 
-    #[allow(dead_code)]
     pub fn stop(&self) {
         *self.running.lock().unwrap() = false;
     }
@@ -170,10 +169,16 @@ impl DcaScheduler {
 fn fetch_btc_price(http: &reqwest::blocking::Client) -> Option<f64> {
     match http.get(COINGECKO_URL).send() {
         Ok(resp) => match resp.json::<CoinGeckoResponse>() {
-            Ok(data) => {
-                println!("[DCA] BTC price fetched: ${}", data.bitcoin.usd);
-                Some(data.bitcoin.usd)
-            }
+            Ok(data) => match data.bitcoin.and_then(|b| b.usd) {
+                Some(price) => {
+                    println!("[DCA] BTC price fetched: ${}", price);
+                    Some(price)
+                }
+                None => {
+                    println!("[DCA] price response missing bitcoin/usd field (rate-limited?)");
+                    None
+                }
+            },
             Err(e) => {
                 println!("[DCA] price JSON parse error: {:?}", e);
                 None
