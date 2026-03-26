@@ -114,6 +114,7 @@ fn main() {
             get_running_node_ports,
             find_available_ports,
             stop_node_by_account,
+            kill_processes_on_ports,
             // ChannelOrders commands
             insert_channel_order,
             get_channel_orders,
@@ -559,6 +560,76 @@ fn stop_node_by_account(
 ) -> Result<(), String> {
     let node_process = node_process.lock().unwrap();
     node_process.stop_by_account(&account_name)
+}
+
+#[tauri::command]
+fn kill_processes_on_ports(ports: Vec<u16>) -> Result<HashMap<u16, bool>, String> {
+    let mut results = HashMap::new();
+    for port in ports {
+        let killed = kill_process_on_port(port);
+        results.insert(port, killed);
+    }
+    // Give OS time to release the ports
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+    Ok(results)
+}
+
+#[cfg(unix)]
+fn kill_process_on_port(port: u16) -> bool {
+    use std::process::Command;
+
+    // Use lsof to find the PID listening on the port
+    let output = Command::new("lsof")
+        .args(["-ti", &format!(":{}", port)])
+        .output();
+
+    match output {
+        Ok(out) => {
+            let pids_str = String::from_utf8_lossy(&out.stdout);
+            let pids: Vec<&str> = pids_str.trim().lines().collect();
+            if pids.is_empty() || pids[0].is_empty() {
+                return false;
+            }
+            let mut any_killed = false;
+            for pid_str in pids {
+                if let Ok(pid) = pid_str.trim().parse::<i32>() {
+                    println!("Killing process {} on port {}", pid, port);
+                    unsafe {
+                        libc::kill(pid, libc::SIGTERM);
+                    }
+                    any_killed = true;
+                }
+            }
+            // If SIGTERM didn't work, try SIGKILL after a short wait
+            if any_killed {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                let recheck = Command::new("lsof")
+                    .args(["-ti", &format!(":{}", port)])
+                    .output();
+                if let Ok(out) = recheck {
+                    let remaining = String::from_utf8_lossy(&out.stdout);
+                    for pid_str in remaining.trim().lines() {
+                        if let Ok(pid) = pid_str.trim().parse::<i32>() {
+                            println!("Force killing process {} on port {}", pid, port);
+                            unsafe {
+                                libc::kill(pid, libc::SIGKILL);
+                            }
+                        }
+                    }
+                }
+            }
+            any_killed
+        }
+        Err(e) => {
+            eprintln!("Failed to run lsof for port {}: {}", port, e);
+            false
+        }
+    }
+}
+
+#[cfg(not(unix))]
+fn kill_process_on_port(_port: u16) -> bool {
+    false
 }
 
 #[tauri::command]

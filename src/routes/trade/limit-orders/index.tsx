@@ -15,9 +15,9 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/80 backdrop-blur-md"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-surface-elevated border border-border-default shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8)] rounded-3xl overflow-hidden p-[1px]">
-        <div className="bg-surface-base rounded-[calc(1.5rem-1px)] h-full w-full">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-border-default/50 bg-surface-overlay/30">
+      <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] bg-surface-elevated border border-border-default shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8)] rounded-3xl overflow-hidden p-[1px] flex flex-col">
+        <div className="bg-surface-base rounded-[calc(1.5rem-1px)] flex flex-col min-h-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border-default/50 bg-surface-overlay/30 shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
                 <Target className="h-5 w-5" />
@@ -38,7 +38,7 @@ function CreateOrderModal({ onClose }: { onClose: () => void }) {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="p-6">
+          <div className="p-6 overflow-y-auto overscroll-contain">
             <CreateLimitOrderForm onCreated={onClose} />
           </div>
         </div>

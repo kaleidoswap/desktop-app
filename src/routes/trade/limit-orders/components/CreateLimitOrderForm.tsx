@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
-import { ArrowDown } from 'lucide-react'
+import { ArrowUpDown } from 'lucide-react'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
 import { createLimitOrder } from '../../../../slices/limitOrderSlice'
@@ -9,7 +9,7 @@ import { getAssetId } from '../../../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { useSettings } from '../../../../hooks/useSettings'
 import { SwapInputField } from '../../../../components/Trade/SwapInputField'
-import { getDisplayAsset, formatAssetAmountWithPrecision } from '../../../../helpers/number'
+import { getDisplayAsset, formatAssetAmountWithPrecision, parseAssetAmount, SATOSHIS_PER_BTC } from '../../../../helpers/number'
 
 interface Props {
   onCreated?: () => void
@@ -64,9 +64,12 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
   }, [fromAsset, activePairs, toAsset])
 
   const [fromAmountStr, setFromAmountStr] = useState('')
+  const [toAmountStr, setToAmountStr] = useState('')
   const [limitPriceStr, setLimitPriceStr] = useState('')
   const [expirationMs, setExpirationMs] = useState<number | null>(24 * 3600 * 1000)
   const [selectedSize, setSelectedSize] = useState<number | undefined>(undefined)
+  // Track which field was last edited to avoid circular updates
+  const [lastEdited, setLastEdited] = useState<'from' | 'to' | 'price'>('from')
 
   const derivedPairInfo = useMemo(() => {
     if (!fromAsset || !toAsset) return { pair: null, side: null }
@@ -97,7 +100,6 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
   }, [currentPrice, limitPriceStr])
 
   const limitPrice = parseFloat(limitPriceStr)
-  const fromAmount = parseFloat(fromAmountStr)
 
   // Asset options formatting
   const fromAssetOptions = useMemo(
@@ -129,7 +131,17 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
   // spendingAsset is always fromAsset
   const spendingAssetStr = fromAsset
   const spendingAssetData = allAssets.find((a) => a.id === spendingAssetStr)
+  const nodeAssets = useMemo(() => assetsData?.nia ?? null, [assetsData])
 
+  // Parse from-amount to raw units (sats for BTC, raw integer for others)
+  // Reuses parseAssetAmount from helpers — same as market maker page
+  const fromAmountRaw = useMemo(() => {
+    if (!fromAmountStr || !spendingAssetData) return 0
+    return parseAssetAmount(fromAmountStr, spendingAssetData.ticker, nodeAssets, bitcoinUnit as 'BTC' | 'SAT')
+  }, [fromAmountStr, spendingAssetData, nodeAssets, bitcoinUnit])
+
+  // spendingBalance in raw units: sats for BTC, smallest unit for RGB assets
+  // formatAssetAmountWithPrecision handles the display conversion
   const spendingBalance = useMemo(() => {
     if (!spendingAssetData || !channelsData?.channels) return undefined
     const assetId = spendingAssetData.id
@@ -141,39 +153,97 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         .reduce((sum: number, ch: any) => sum + (ch.local_balance_sat ?? 0), 0)
     }
 
-    const precision = spendingAssetData.precision ?? 6
-    const factor = Math.pow(10, precision)
-
     const nodeAsset = (assetsData?.nia ?? []).find((a: any) => a.ticker === spendingAssetData.ticker)
     const matchId = nodeAsset?.asset_id || assetId
 
     return channelsData.channels
       .filter((ch: any) => ch.asset_id === matchId && ch.ready)
-      .reduce((sum: number, ch: any) => sum + (ch.asset_local_amount ?? 0) / factor, 0)
+      .reduce((sum: number, ch: any) => sum + (ch.asset_local_amount ?? 0), 0)
   }, [spendingAssetData, channelsData, assetsData])
 
-  const insufficientBalance =
-    spendingBalance !== undefined && fromAmount > 0 ? fromAmount > spendingBalance : false
+  // Both fromAmountRaw and spendingBalance are in raw units — direct comparison
+  const insufficientBalance = useMemo(() => {
+    if (spendingBalance === undefined || !fromAmountRaw || fromAmountRaw <= 0) return false
+    return fromAmountRaw > spendingBalance
+  }, [fromAmountRaw, spendingBalance])
+
+  const rawAssetsLookup = useMemo(() =>
+    assetsData?.nia?.map((a: any) => ({ ...a, asset_id: a.asset_id, is_active: true, precision: a.precision || 8, ticker: a.ticker || '', name: a.name || '' })) || []
+  , [assetsData])
+  const formatAmt = (amt: number, ast: string) => formatAssetAmountWithPrecision(amt, ast, bitcoinUnit, rawAssetsLookup)
+  const getDispAst = (ast: string) => getDisplayAsset(allAssets.find(a => a.id === ast)?.ticker || ast, bitcoinUnit)
 
   const handleSizeClick = (sizePct: number) => {
     setSelectedSize(sizePct)
+    setLastEdited('from')
     if (spendingBalance !== undefined && spendingBalance > 0) {
       const amt = (spendingBalance * sizePct) / 100
-      // We can use formatAssetAmountWithPrecision to format it to appropriate decimals
-      const rawAssets = assetsData?.nia?.map((a: any) => ({ ...a, asset_id: a.asset_id, is_active: true, precision: a.precision || 8, ticker: a.ticker || '', name: a.name || '' })) || []
-      const precisionStr = formatAssetAmountWithPrecision(amt, spendingAssetData?.ticker || '', bitcoinUnit, rawAssets)
+      const precisionStr = formatAssetAmountWithPrecision(amt, spendingAssetData?.ticker || '', bitcoinUnit, rawAssetsLookup)
       setFromAmountStr(precisionStr)
     }
   }
 
-  const estimatedReceive = useMemo(() => {
-    if (!selectedPair || !limitPrice || !fromAmount) return undefined
-    if (side === 'sell') {
-      return fromAmount * limitPrice
-    } else {
-      return fromAmount / limitPrice
+  const receivingAssetData = allAssets.find((a) => a.id === toAsset)
+
+  // Parse to-amount to raw units (same logic as fromAmountRaw)
+  const toAmountRaw = useMemo(() => {
+    if (!toAmountStr || !receivingAssetData) return 0
+    return parseAssetAmount(toAmountStr, receivingAssetData.ticker, nodeAssets, bitcoinUnit as 'BTC' | 'SAT')
+  }, [toAmountStr, receivingAssetData, nodeAssets, bitcoinUnit])
+
+  // Helper: convert raw amount to whole units for price math
+  const rawToWhole = (raw: number, ticker: string, precision: number) =>
+    ticker.toUpperCase() === 'BTC' ? raw / SATOSHIS_PER_BTC : raw / Math.pow(10, precision)
+
+  // Helper: convert whole units to raw
+  const wholeToRaw = (whole: number, ticker: string, precision: number) =>
+    ticker.toUpperCase() === 'BTC' ? Math.round(whole * SATOSHIS_PER_BTC) : Math.round(whole * Math.pow(10, precision))
+
+  // When user edits "from" or "price" → compute to-amount
+  useEffect(() => {
+    if (lastEdited === 'to') return
+    if (!selectedPair || !limitPrice || !fromAmountRaw) {
+      setToAmountStr('')
+      return
     }
-  }, [selectedPair, side, limitPrice, fromAmount])
+    const fromTicker = spendingAssetData?.ticker ?? ''
+    const fromPrec = selectedPair[side === 'sell' ? 'base' : 'quote'].precision ?? 6
+    const fromWhole = rawToWhole(fromAmountRaw, fromTicker, fromPrec)
+
+    const toWhole = side === 'sell' ? fromWhole * limitPrice : fromWhole / limitPrice
+    const toTicker = receivingAssetData?.ticker ?? ''
+    const toPrec = selectedPair[side === 'sell' ? 'quote' : 'base'].precision ?? 6
+    const toRaw = wholeToRaw(toWhole, toTicker, toPrec)
+    if (toRaw > 0) {
+      setToAmountStr(formatAmt(toRaw, toTicker))
+    } else {
+      setToAmountStr('')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromAmountRaw, limitPrice, lastEdited, selectedPair, side])
+
+  // When user edits "to" → derive limit price from from+to amounts
+  useEffect(() => {
+    if (lastEdited !== 'to') return
+    if (!selectedPair || !fromAmountRaw || !toAmountRaw) return
+
+    const fromTicker = spendingAssetData?.ticker ?? ''
+    const fromPrec = selectedPair[side === 'sell' ? 'base' : 'quote'].precision ?? 6
+    const fromWhole = rawToWhole(fromAmountRaw, fromTicker, fromPrec)
+
+    const toTicker = receivingAssetData?.ticker ?? ''
+    const toPrec = selectedPair[side === 'sell' ? 'quote' : 'base'].precision ?? 6
+    const toWhole = rawToWhole(toAmountRaw, toTicker, toPrec)
+
+    if (fromWhole <= 0 || toWhole <= 0) return
+
+    // Derive price: sell → price = toWhole / fromWhole, buy → price = fromWhole / toWhole
+    const derivedPrice = side === 'sell' ? toWhole / fromWhole : fromWhole / toWhole
+    if (isFinite(derivedPrice) && derivedPrice > 0) {
+      setLimitPriceStr(derivedPrice.toPrecision(8).replace(/\.?0+$/, ''))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toAmountRaw, lastEdited, selectedPair, side, fromAmountRaw])
 
   const handleCreate = () => {
     if (!selectedPair || !side) {
@@ -184,31 +254,27 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
       toast.error(t('limitOrders.errors.invalidPrice', 'Please enter a valid limit price'))
       return
     }
-    if (!fromAmount || fromAmount <= 0) {
+    if (!fromAmountRaw || fromAmountRaw <= 0) {
       toast.error(t('limitOrders.errors.invalidAmount', 'Please enter a valid amount'))
       return
     }
 
-    const baseAmount = side === 'sell' ? fromAmount : fromAmount / limitPrice
+    // Compute base amount in whole units for the order record
+    const fromTicker = spendingAssetData?.ticker?.toUpperCase()
+    const fromWhole = fromTicker === 'BTC'
+      ? fromAmountRaw / SATOSHIS_PER_BTC
+      : fromAmountRaw / Math.pow(10, selectedPair[side === 'sell' ? 'base' : 'quote'].precision ?? 6)
+    const baseAmount = side === 'sell' ? fromWhole : fromWhole / limitPrice
 
     const baseAssetId = getAssetId(selectedPair.base)
     const quoteAssetId = getAssetId(selectedPair.quote)
 
+    // Convert fromAmountRaw to msats for BTC, otherwise use raw directly
     let amountRaw: number
-    if (side === 'buy') {
-      const quotePrecision = selectedPair.quote.precision ?? 6
-      if (selectedPair.quote.ticker.toUpperCase() === 'BTC') {
-        amountRaw = Math.round(fromAmount * 1000) // msats
-      } else {
-        amountRaw = Math.round(fromAmount * Math.pow(10, quotePrecision))
-      }
+    if (fromTicker === 'BTC') {
+      amountRaw = fromAmountRaw * 1000 // sats → msats
     } else {
-      const basePrecision = selectedPair.base.precision ?? 8
-      if (selectedPair.base.ticker.toUpperCase() === 'BTC') {
-        amountRaw = Math.round(fromAmount * 1000) // msats
-      } else {
-        amountRaw = Math.round(fromAmount * Math.pow(10, basePrecision))
-      }
+      amountRaw = fromAmountRaw
     }
 
     dispatch(
@@ -230,12 +296,8 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
     onCreated?.()
   }
 
-  const rawAssetsLookup = assetsData?.nia?.map((a: any) => ({ ...a, asset_id: a.asset_id, is_active: true, precision: a.precision || 8, ticker: a.ticker || '', name: a.name || '' })) || []
-  const formatAmt = (amt: number, ast: string) => formatAssetAmountWithPrecision(amt, ast, bitcoinUnit, rawAssetsLookup)
-  const getDispAst = (ast: string) => getDisplayAsset(allAssets.find(a => a.id === ast)?.ticker || ast, bitcoinUnit)
-
   const spendingAssetTickerForFormat = spendingAssetData?.ticker || ''
-  const receivingAssetTickerForFormat = allAssets.find(a => a.id === toAsset)?.ticker || ''
+  const receivingAssetTickerForFormat = receivingAssetData?.ticker || ''
 
   return (
     <div className="space-y-5">
@@ -250,6 +312,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         maxAmount={spendingBalance}
         onAmountChange={(e) => {
           setFromAmountStr(e.target.value)
+          setLastEdited('from')
           setSelectedSize(undefined)
         }}
         onAssetChange={(val) => {
@@ -264,10 +327,25 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         value={fromAmountStr}
       />
 
-      <div className="flex justify-center -my-3 relative z-10 pointer-events-none">
-        <div className="bg-surface-elevated border border-border-default/40 p-2 rounded-full shadow-sm text-content-tertiary">
-          <ArrowDown className="w-4 h-4" />
-        </div>
+      <div className="flex justify-center -my-3 relative z-10">
+        <button
+          className="group bg-surface-elevated border border-border-default/40 p-2 rounded-full shadow-sm text-content-tertiary hover:text-primary hover:border-primary/40 hover:bg-surface-elevated/80 transition-all duration-200 active:scale-90 cursor-pointer"
+          onClick={() => {
+            const prevFrom = fromAsset
+            const prevTo = toAsset
+            setFromAsset(prevTo)
+            setToAsset(prevFrom)
+            setFromAmountStr('')
+            setToAmountStr('')
+            setLimitPriceStr('')
+            setSelectedSize(undefined)
+            setLastEdited('from')
+          }}
+          title="Swap assets"
+          type="button"
+        >
+          <ArrowUpDown className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" />
+        </button>
       </div>
 
       <SwapInputField
@@ -277,10 +355,17 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         formatAmount={(a) => formatAmt(a, receivingAssetTickerForFormat)}
         getDisplayAsset={(a) => getDispAst(a)}
         label={t('limitOrders.form.youReceive', 'You Receive (Est)')}
-        onAssetChange={(val) => setToAsset(val)}
-        readOnly={true}
+        onAmountChange={(e) => {
+          setToAmountStr(e.target.value)
+          setLastEdited('to')
+        }}
+        onAssetChange={(val) => {
+          setToAsset(val)
+          setToAmountStr('')
+          setLastEdited('from')
+        }}
         useEnhancedSelector={true}
-        value={estimatedReceive !== undefined && estimatedReceive > 0 ? formatAmt(estimatedReceive, receivingAssetTickerForFormat) : ''}
+        value={toAmountStr}
       />
 
       {/* Target Limit Price */}
@@ -292,7 +377,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
           {selectedPair && currentPrice !== undefined && (
             <button 
               className="text-xs text-content-tertiary font-medium hover:text-primary transition-colors flex items-center gap-1 group"
-              onClick={() => setLimitPriceStr(currentPrice.toString())}
+              onClick={() => { setLimitPriceStr(currentPrice.toString()); setLastEdited('price') }}
               title="Click to use market price"
               type="button"
             >
@@ -308,7 +393,10 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
             <input
               className="w-full bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none pl-4 pr-16 transition-all duration-300"
               inputMode="decimal"
-              onChange={(e) => setLimitPriceStr(e.target.value.replace(/[^\d.]/g, ''))}
+              onChange={(e) => {
+                setLimitPriceStr(e.target.value.replace(/[^\d.]/g, ''))
+                setLastEdited('price')
+              }}
               placeholder="0.00"
               type="text"
               value={limitPriceStr}
@@ -329,9 +417,10 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
                 min={currentPrice * 0.1}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value)
-                  // Use same precision as current price (approximately) 
+                  // Use same precision as current price (approximately)
                   const decimals = (currentPrice.toString().split('.')[1] || '').length
                   setLimitPriceStr(val.toFixed(Math.max(decimals, 2)))
+                  setLastEdited('price')
                 }}
                 step={currentPrice * 0.01} // 1% steps
                 type="range"
@@ -379,13 +468,13 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
       {/* Submit */}
       <button
         className={`mt-4 w-full rounded-xl py-4 text-sm font-bold transition-all duration-200 shadow-sm ${
-          !selectedPair || !limitPrice || limitPrice <= 0 || !fromAmount || fromAmount <= 0 || insufficientBalance
+          !selectedPair || !limitPrice || limitPrice <= 0 || !fromAmountRaw || fromAmountRaw <= 0 || insufficientBalance
             ? 'bg-surface-elevated text-content-tertiary cursor-not-allowed border border-border-default/30'
             : side === 'buy'
               ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
               : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30'
         }`}
-        disabled={!selectedPair || !limitPrice || limitPrice <= 0 || !fromAmount || fromAmount <= 0 || insufficientBalance}
+        disabled={!selectedPair || !limitPrice || limitPrice <= 0 || !fromAmountRaw || fromAmountRaw <= 0 || insufficientBalance}
         onClick={handleCreate}
         type="button"
       >

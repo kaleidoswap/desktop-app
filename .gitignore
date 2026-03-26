@@ -39,3 +39,4 @@ src-tauri/gen
 
 # Rust build artifacts
 target/
+.claude

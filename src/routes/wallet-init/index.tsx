@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { ask } from '@tauri-apps/plugin-dialog'
 import {
   AlertCircle,
   ArrowLeft,
@@ -507,10 +508,41 @@ export const Component = () => {
 
           const recheckAfterStop = await checkPortAvailability(ports)
           if (!recheckAfterStop.available) {
-            throw new Error(
-              `Ports ${recheckAfterStop.conflictingPorts.join(', ')} are in use by other applications. ` +
-                'Please choose different ports or stop the conflicting applications.'
+            const conflicting = recheckAfterStop.conflictingPorts.join(', ')
+            const userWantsKill = await ask(
+              t('walletInit.errors.killProcessPrompt', {
+                ports: conflicting,
+              }),
+              {
+                title: t('walletInit.errors.portConflictTitle'),
+                kind: 'warning',
+                okLabel: t('walletInit.errors.killProcessConfirm'),
+                cancelLabel: t('common.cancel'),
+              }
             )
+
+            if (userWantsKill) {
+              toast.info(t('walletInit.errors.killingProcesses'), {
+                autoClose: false,
+                toastId: 'killing-processes',
+              })
+              const portsToKill = recheckAfterStop.conflictingPorts.map(Number)
+              await invoke('kill_processes_on_ports', { ports: portsToKill })
+              toast.dismiss('killing-processes')
+
+              const finalCheck = await checkPortAvailability(ports)
+              if (!finalCheck.available) {
+                throw new Error(
+                  `Ports ${finalCheck.conflictingPorts.join(', ')} are still in use after killing processes. ` +
+                    'Please choose different ports.'
+                )
+              }
+            } else {
+              throw new Error(
+                `Ports ${conflicting} are in use by other applications. ` +
+                  'Please choose different ports or stop the conflicting applications.'
+              )
+            }
           }
         }
       }

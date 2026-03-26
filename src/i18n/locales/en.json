@@ -683,6 +683,10 @@
       "failedToStopNode": "Failed to stop existing node on port {{port}}",
       "failedToStart": "Failed to start node",
       "suggestedPorts": "Suggested alternative ports:\n- Daemon port: {{daemon}}\n- LDK peer port: {{ldk}}",
+      "portConflictTitle": "Port Conflict",
+      "killProcessPrompt": "Ports {{ports}} are in use by other applications. Do you want to stop those processes so the node can start?",
+      "killProcessConfirm": "Stop Processes",
+      "killingProcesses": "Stopping conflicting processes...",
       "nodeInitFailed": "Node initialization failed",
       "invalidResponse": "Invalid response: missing mnemonic"
     }
@@ -1329,6 +1333,10 @@
       "startingLocalNode": "Starting local node...",
       "stoppingExisting": "Stopping existing nodes on conflicting ports...",
       "existingStopped": "Existing nodes stopped successfully",
+      "portConflictTitle": "Port Conflict",
+      "killProcessPrompt": "Ports {{ports}} are in use by other applications. Do you want to stop those processes so the node can start?",
+      "killProcessConfirm": "Stop Processes",
+      "killingProcesses": "Stopping conflicting processes...",
       "startFailed": "Failed to start node",
       "startFailedWithReason": "Failed to start node: {{error}}",
       "portErrors": "Please fix the port configuration errors",

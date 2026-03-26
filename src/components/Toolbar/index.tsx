@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { ask } from '@tauri-apps/plugin-dialog'
 import { Trash2, Edit, X, Server, Cloud, AlertTriangle } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -768,24 +769,66 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                 .map(([port]) => port)
 
               if (stillUnavailable.length > 0) {
-                const suggestedPorts = await invokeWithTimeout<{
-                  daemon: number
-                  ldk: number
-                }>(
-                  'find_available_ports',
+                const conflicting = stillUnavailable.join(', ')
+                const userWantsKill = await ask(
+                  t('toolbar.nodes.killProcessPrompt', {
+                    ports: conflicting,
+                  }),
                   {
-                    base_daemon_port: parseInt(node.daemon_listening_port),
-                    base_ldk_port: parseInt(node.ldk_peer_listening_port),
-                  },
-                  10000,
-                  'Finding available ports'
+                    title: t('toolbar.nodes.portConflictTitle'),
+                    kind: 'warning',
+                    okLabel: t('toolbar.nodes.killProcessConfirm'),
+                    cancelLabel: t('common.cancel'),
+                  }
                 )
-                throw new Error(
-                  `Ports ${stillUnavailable.join(', ')} are in use by other applications. ` +
-                    'Suggested alternative ports:\n' +
-                    `- Daemon port: ${suggestedPorts.daemon}\n` +
-                    `- LDK peer port: ${suggestedPorts.ldk}`
-                )
+
+                if (userWantsKill) {
+                  toast.info(t('toolbar.nodes.killingProcesses'), {
+                    autoClose: false,
+                    toastId: 'killing-processes',
+                  })
+                  const portsToKill = stillUnavailable.map(Number)
+                  await invoke('kill_processes_on_ports', { ports: portsToKill })
+                  toast.dismiss('killing-processes')
+
+                  const finalCheck = await invokeWithTimeout<{
+                    [port: string]: boolean
+                  }>(
+                    'check_ports_available',
+                    { ports },
+                    10000,
+                    'Re-checking ports after kill'
+                  )
+                  const finalUnavailable = Object.entries(finalCheck)
+                    .filter(([_, isAvailable]) => !isAvailable)
+                    .map(([port]) => port)
+
+                  if (finalUnavailable.length > 0) {
+                    throw new Error(
+                      `Ports ${finalUnavailable.join(', ')} are still in use after killing processes. ` +
+                        'Please choose different ports.'
+                    )
+                  }
+                } else {
+                  const suggestedPorts = await invokeWithTimeout<{
+                    daemon: number
+                    ldk: number
+                  }>(
+                    'find_available_ports',
+                    {
+                      base_daemon_port: parseInt(node.daemon_listening_port),
+                      base_ldk_port: parseInt(node.ldk_peer_listening_port),
+                    },
+                    10000,
+                    'Finding available ports'
+                  )
+                  throw new Error(
+                    `Ports ${conflicting} are in use by other applications. ` +
+                      'Suggested alternative ports:\n' +
+                      `- Daemon port: ${suggestedPorts.daemon}\n` +
+                      `- LDK peer port: ${suggestedPorts.ldk}`
+                  )
+                }
               }
             }
           }
