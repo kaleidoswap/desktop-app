@@ -429,11 +429,11 @@ export function useLimitOrderScheduler() {
         const rawQuotedPrice = (quote as any).price
         let quotedPrice: number | undefined = undefined
         if (rawQuotedPrice && rawQuotedPrice > 0) {
-          const pair = pairs.find(p => p.id === order.pairId)
+          const pair = pairs.find((p) => p.id === order.pairId)
           const quotePrecision = pair?.quote?.precision ?? 6
           quotedPrice = rawQuotedPrice / Math.pow(10, quotePrecision)
         }
-        
+
         if (quotedPrice && quotedPrice > 0) {
           const slippagePct =
             order.side === 'buy'

@@ -157,7 +157,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       // Normalize network name to match NETWORK_DEFAULTS keys
       const network = networkInfo.network
         .toLowerCase()
-        .replace(/^\w/, (c) => c.toUpperCase())
+        .replace(/^\w/, (c: string) => c.toUpperCase())
 
       if (!NETWORK_DEFAULTS[network]) {
         throw new Error(

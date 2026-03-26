@@ -788,7 +788,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                     toastId: 'killing-processes',
                   })
                   const portsToKill = stillUnavailable.map(Number)
-                  await invoke('kill_processes_on_ports', { ports: portsToKill })
+                  await invoke('kill_processes_on_ports', {
+                    ports: portsToKill,
+                  })
                   toast.dismiss('killing-processes')
 
                   const finalCheck = await invokeWithTimeout<{
