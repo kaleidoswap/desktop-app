@@ -9,10 +9,7 @@ import {
   createAssetLiquiditySection,
   createBitcoinLiquiditySection,
 } from '../../../utils/orderSummaryUtils'
-import {
-  CostBreakdownItem,
-  OrderSummaryCard,
-} from '../../OrderSummaryCard'
+import { CostBreakdownItem, OrderSummaryCard } from '../../OrderSummaryCard'
 
 interface OrderSummaryProps {
   orderPayload: any

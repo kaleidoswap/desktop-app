@@ -212,14 +212,11 @@ export const MarketMakerFormPanel = ({
                   {t('tradeMarketMaker.banners.additionalChannelsPending')}
                 </p>
                 <p className="text-blue-200/80 text-xs mt-1">
-                  {t(
-                    'tradeMarketMaker.banners.channelPendingConfirmation',
-                    {
-                      asset: unconfirmedTickers[0],
-                      assets: unconfirmedTickers.slice(0, 3).join(', '),
-                      count: unconfirmedTickers.length,
-                    }
-                  )}
+                  {t('tradeMarketMaker.banners.channelPendingConfirmation', {
+                    asset: unconfirmedTickers[0],
+                    assets: unconfirmedTickers.slice(0, 3).join(', '),
+                    count: unconfirmedTickers.length,
+                  })}
                 </p>
               </div>
             </div>
@@ -364,7 +361,9 @@ export const MarketMakerFormPanel = ({
                       ? t('tradeMarketMaker.form.status')
                       : t('tradeMarketMaker.form.canReceiveUpTo')
                   }
-                  disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
+                  disabled={
+                    !hasChannels || !hasTradablePairs || isSwapInProgress
+                  }
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
                   isLoading={isToAmountLoading}
