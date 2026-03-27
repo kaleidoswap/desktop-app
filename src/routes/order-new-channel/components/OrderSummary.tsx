@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 
 import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
 import tetherLogo from '../../../assets/tether-logo.svg'
-import {
-  LiquiditySection,
-  OrderSummaryCard,
-} from '../../../components/OrderSummaryCard'
+import { OrderSummaryCard } from '../../../components/OrderSummaryCard'
 import { formatBitcoinAmount } from '../../../helpers/number'
 import { Lsps1CreateOrderResponse } from '../../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import {
+  createAssetLiquiditySection,
+  createBitcoinLiquiditySection,
+} from '../../../utils/orderSummaryUtils'
 
 interface OrderSummaryProps {
   order: Lsps1CreateOrderResponse
@@ -39,54 +40,44 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     (currentPayment?.order_total_sat || 0) -
     (currentPayment?.fee_total_sat || 0)
 
-  const liquiditySections: LiquiditySection[] = [
-    {
-      accentClassName: 'text-amber-300',
-      backgroundClassName: 'bg-amber-400/6',
-      borderClassName: 'border-amber-400/15',
-      iconAlt: 'BTC',
+  const liquiditySections = [
+    createBitcoinLiquiditySection({
       iconSrc: bitcoinLogo,
       inbound: order.lsp_balance_sat,
-      inboundColor: 'bg-blue-400/50',
       inboundLabel: `${formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
       outbound: order.client_balance_sat,
-      outboundColor: 'bg-amber-400',
       outboundLabel: `${formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
       ticker: t('orderChannel.step3.confirmedChannel'),
       title: t('orderChannel.step3.confirmedChannel'),
       totalLabel: `${formatBitcoinAmount(totalCapacity, bitcoinUnit)} ${bitcoinUnit}`,
-    },
+    }),
   ]
 
   if (hasAsset && (lspAssetRaw > 0 || clientAssetRaw > 0)) {
-    liquiditySections.push({
-      accentClassName: 'text-cyan-300',
-      backgroundClassName: 'bg-cyan-400/6',
-      borderClassName: 'border-cyan-400/15',
-      iconAlt: assetInfo?.ticker || 'Asset',
-      iconSrc: tetherLogo,
-      inbound: lspAssetRaw,
-      inboundColor: 'bg-sky-400/35',
-      inboundLabel: `${lspAssetRaw.toLocaleString()}${
-        assetInfo ? ` ${assetInfo.ticker}` : ''
-      }`,
-      outbound: clientAssetRaw,
-      outboundColor: 'bg-cyan-400',
-      outboundLabel:
-        clientAssetRaw > 0
-          ? `${clientAssetRaw.toLocaleString()}${
-              assetInfo ? ` ${assetInfo.ticker}` : ''
-            }`
-          : '0',
-      ticker: assetInfo?.ticker || 'RGB',
-      title: assetInfo
-        ? `${assetInfo.name} (${assetInfo.ticker})`
-        : t('orderChannel.step3.rgbAssetChannel'),
-      titleClassName: 'text-cyan-300',
-      totalLabel: `${(clientAssetRaw + lspAssetRaw).toLocaleString()}${
-        assetInfo ? ` ${assetInfo.ticker}` : ''
-      }`,
-    })
+    liquiditySections.push(
+      createAssetLiquiditySection({
+        iconSrc: tetherLogo,
+        inbound: lspAssetRaw,
+        inboundLabel: `${lspAssetRaw.toLocaleString()}${
+          assetInfo ? ` ${assetInfo.ticker}` : ''
+        }`,
+        outbound: clientAssetRaw,
+        outboundLabel:
+          clientAssetRaw > 0
+            ? `${clientAssetRaw.toLocaleString()}${
+                assetInfo ? ` ${assetInfo.ticker}` : ''
+              }`
+            : '0',
+        ticker: assetInfo?.ticker || 'RGB',
+        title: assetInfo
+          ? `${assetInfo.name} (${assetInfo.ticker})`
+          : t('orderChannel.step3.rgbAssetChannel'),
+        titleClassName: 'text-cyan-300',
+        totalLabel: `${(clientAssetRaw + lspAssetRaw).toLocaleString()}${
+          assetInfo ? ` ${assetInfo.ticker}` : ''
+        }`,
+      })
+    )
   }
 
   return (

@@ -4,9 +4,13 @@ import {
   buildChannelOrderPayload,
   validateChannelParams,
   formatRtkQueryError,
+  getChannelOrderFailureStatus,
+  getChannelOrderPaymentSnapshot,
+  getChannelOrderTerminalStatus,
 } from '../channelOrderUtils'
 import type {
   AssetInfo,
+  ChannelOrderStatusLike,
   CreateChannelOrderParams,
   LspOptions,
 } from '../channelOrderUtils'
@@ -14,39 +18,39 @@ import type {
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const BASE_PARAMS: CreateChannelOrderParams = {
-  capacitySat: 500_000,
-  clientBalanceSat: 100_000,
-  channelExpireBlocks: 4032,
-  clientPubKey: 'abc123pubkey',
   addressRefund: 'bc1qrefundaddress',
+  capacitySat: 500_000,
+  channelExpireBlocks: 4032,
+  clientBalanceSat: 100_000,
+  clientPubKey: 'abc123pubkey',
 }
 
 const LSP_OPTIONS: LspOptions = {
-  min_required_channel_confirmations: 3,
-  min_funding_confirms_within_blocks: 1,
-  min_onchain_payment_confirmations: 6,
-  supports_zero_channel_reserve: false,
-  min_onchain_payment_size_sat: 1000,
+  max_channel_balance_sat: 10_000_000,
   max_channel_expiry_blocks: 6048,
-  min_initial_client_balance_sat: 10_000,
   max_initial_client_balance_sat: 1_000_000,
-  min_initial_lsp_balance_sat: 0,
   max_initial_lsp_balance_sat: 5_000_000,
   min_channel_balance_sat: 20_000,
-  max_channel_balance_sat: 10_000_000,
+  min_funding_confirms_within_blocks: 1,
+  min_initial_client_balance_sat: 10_000,
+  min_initial_lsp_balance_sat: 0,
+  min_onchain_payment_confirmations: 6,
+  min_onchain_payment_size_sat: 1000,
+  min_required_channel_confirmations: 3,
+  supports_zero_channel_reserve: false,
 }
 
 const ASSET: AssetInfo = {
-  name: 'Test Token',
-  ticker: 'TEST',
   asset_id: 'rgb:test-asset-id',
-  precision: 8,
-  min_initial_client_amount: 0,
+  max_channel_amount: 500_000_000,
   max_initial_client_amount: 100_000_000,
-  min_initial_lsp_amount: 0,
   max_initial_lsp_amount: 100_000_000,
   min_channel_amount: 1_000_000,
-  max_channel_amount: 500_000_000,
+  min_initial_client_amount: 0,
+  min_initial_lsp_amount: 0,
+  name: 'Test Token',
+  precision: 8,
+  ticker: 'TEST',
 }
 
 // ─── extractErrorMessage ──────────────────────────────────────────────────────
@@ -321,80 +325,202 @@ describe('validateChannelParams', () => {
 describe('formatRtkQueryError', () => {
   it('handles FETCH_ERROR status', () => {
     const result = formatRtkQueryError({
-      status: 'FETCH_ERROR',
       error: 'TypeError: Failed to fetch',
+      status: 'FETCH_ERROR',
     })
     expect(result).toContain('Network error')
   })
 
   it('handles TIMEOUT_ERROR status', () => {
     const result = formatRtkQueryError({
-      status: 'TIMEOUT_ERROR',
       error: 'timeout',
+      status: 'TIMEOUT_ERROR',
     })
     expect(result).toContain('timeout')
   })
 
   it('handles PARSING_ERROR status', () => {
     const result = formatRtkQueryError({
-      status: 'PARSING_ERROR',
+      data: '',
       error: 'bad json',
       originalStatus: 200,
-      data: '',
+      status: 'PARSING_ERROR',
     })
     expect(result).toContain('parsing error')
   })
 
   it('handles 400 client error with message in data', () => {
     const result = formatRtkQueryError({
-      status: 400,
       data: { message: 'bad params' },
+      status: 400,
     })
     expect(result).toContain('400')
     expect(result).toContain('bad params')
   })
 
   it('handles 401 with no data message', () => {
-    const result = formatRtkQueryError({ status: 401, data: null })
+    const result = formatRtkQueryError({ data: null, status: 401 })
     expect(result).toContain('401')
     expect(result).toContain('Authentication')
   })
 
   it('handles 403', () => {
-    const result = formatRtkQueryError({ status: 403, data: null })
+    const result = formatRtkQueryError({ data: null, status: 403 })
     expect(result).toContain('403')
     expect(result).toContain('forbidden')
   })
 
   it('handles 404', () => {
-    const result = formatRtkQueryError({ status: 404, data: null })
+    const result = formatRtkQueryError({ data: null, status: 404 })
     expect(result).toContain('404')
     expect(result).toContain('not found')
   })
 
   it('handles 422', () => {
-    const result = formatRtkQueryError({ status: 422, data: null })
+    const result = formatRtkQueryError({ data: null, status: 422 })
     expect(result).toContain('422')
   })
 
   it('handles 429', () => {
-    const result = formatRtkQueryError({ status: 429, data: null })
+    const result = formatRtkQueryError({ data: null, status: 429 })
     expect(result).toContain('429')
     expect(result).toContain('Too many')
   })
 
   it('handles 500 server error', () => {
-    const result = formatRtkQueryError({ status: 500, data: null })
+    const result = formatRtkQueryError({ data: null, status: 500 })
     expect(result).toContain('500')
     expect(result).toContain('Server error')
   })
 
   it('appends server error detail when present in data', () => {
     const result = formatRtkQueryError({
-      status: 503,
       data: { error: 'DB unavailable' },
+      status: 503,
     })
     expect(result).toContain('503')
     expect(result).toContain('DB unavailable')
+  })
+})
+
+// ─── channel order payment helpers ───────────────────────────────────────────
+
+describe('getChannelOrderPaymentSnapshot', () => {
+  it('detects lightning payments in HOLD state', () => {
+    const order: ChannelOrderStatusLike = {
+      payment: {
+        bolt11: { state: 'HOLD' },
+        onchain: { state: 'EXPECT_PAYMENT' },
+      },
+    }
+
+    expect(getChannelOrderPaymentSnapshot(order)).toEqual({
+      actualPaymentState: 'HOLD',
+      bolt11State: 'HOLD',
+      onchainState: 'EXPECT_PAYMENT',
+      paymentMethod: 'lightning',
+      paymentReceived: true,
+    })
+  })
+
+  it('detects onchain payments in PAID state', () => {
+    const order: ChannelOrderStatusLike = {
+      payment: {
+        bolt11: { state: 'EXPECT_PAYMENT' },
+        onchain: { state: 'PAID' },
+      },
+    }
+
+    expect(getChannelOrderPaymentSnapshot(order)).toEqual({
+      actualPaymentState: 'PAID',
+      bolt11State: 'EXPECT_PAYMENT',
+      onchainState: 'PAID',
+      paymentMethod: 'onchain',
+      paymentReceived: true,
+    })
+  })
+
+  it('reports no received payment when still waiting', () => {
+    const order: ChannelOrderStatusLike = {
+      payment: {
+        bolt11: { state: 'EXPECT_PAYMENT' },
+      },
+    }
+
+    expect(getChannelOrderPaymentSnapshot(order)).toEqual({
+      actualPaymentState: 'EXPECT_PAYMENT',
+      bolt11State: 'EXPECT_PAYMENT',
+      onchainState: null,
+      paymentMethod: null,
+      paymentReceived: false,
+    })
+  })
+})
+
+describe('getChannelOrderFailureStatus', () => {
+  const NOW = new Date('2026-03-27T10:00:00.000Z').getTime()
+
+  it('returns expired when no payment was ever made', () => {
+    const order: ChannelOrderStatusLike = {
+      order_state: 'FAILED',
+      payment: {
+        bolt11: { state: 'EXPECT_PAYMENT' },
+        onchain: { state: 'EXPIRED' },
+      },
+    }
+
+    expect(getChannelOrderFailureStatus(order, NOW)).toBe('expired')
+  })
+
+  it('returns expired when the payment window has passed', () => {
+    const order: ChannelOrderStatusLike = {
+      order_state: 'FAILED',
+      payment: {
+        bolt11: { expires_at: '2026-03-27T09:59:00.000Z', state: 'PENDING' },
+      },
+    }
+
+    expect(getChannelOrderFailureStatus(order, NOW)).toBe('expired')
+  })
+
+  it('returns error when payment was made but the order still failed', () => {
+    const order: ChannelOrderStatusLike = {
+      order_state: 'FAILED',
+      payment: {
+        bolt11: { state: 'PAID' },
+      },
+    }
+
+    expect(getChannelOrderFailureStatus(order, NOW)).toBe('error')
+  })
+})
+
+describe('getChannelOrderTerminalStatus', () => {
+  const NOW = new Date('2026-03-27T10:00:00.000Z').getTime()
+
+  it('maps completed orders to success', () => {
+    expect(
+      getChannelOrderTerminalStatus({ order_state: 'COMPLETED' }, NOW)
+    ).toBe('success')
+  })
+
+  it('maps failed orders through the shared failure classifier', () => {
+    expect(
+      getChannelOrderTerminalStatus(
+        {
+          order_state: 'FAILED',
+          payment: {
+            bolt11: { state: 'EXPECT_PAYMENT' },
+          },
+        },
+        NOW
+      )
+    ).toBe('expired')
+  })
+
+  it('returns null for non-terminal orders', () => {
+    expect(
+      getChannelOrderTerminalStatus({ order_state: 'CREATED' }, NOW)
+    ).toBeNull()
   })
 })

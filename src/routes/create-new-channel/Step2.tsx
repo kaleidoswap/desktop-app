@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 import { useSettings } from '../../hooks/useSettings'
 import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import { FormError } from '../../components/FormError'
 import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { Button } from '../../components/ui'
 import { MAX_CHANNEL_CAPACITY, MIN_CHANNEL_CAPACITY } from '../../constants'
@@ -22,7 +23,6 @@ import {
 } from '../../slices/channel/channel.slice'
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
-import { FormError } from './FormError'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface Props {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { LiquidityBar } from '../routes/trade/dca/components/LiquidityBar'
+import { LiquidityBar } from './Liquidity'
 
 export interface CostBreakdownItem {
   label: string
@@ -178,8 +178,8 @@ export const OrderSummaryCard = ({
             <div className="space-y-1.5">
               {costBreakdown.items.map((item) => (
                 <div
-                  key={item.label}
                   className="flex justify-between gap-4 text-sm"
+                  key={item.label}
                 >
                   <span className="text-content-secondary">{item.label}</span>
                   <span

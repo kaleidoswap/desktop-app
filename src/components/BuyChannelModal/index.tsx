@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
 import { X, Clock } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -6,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
+import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
 import { useSettings } from '../../hooks/useSettings'
 import {
   getQuoteFromAmount,
@@ -35,6 +35,7 @@ import {
   validateChannelParams,
   formatRtkQueryError,
 } from '../../utils/channelOrderUtils'
+import { persistChannelOrder } from '../../utils/channelOrderPersistence'
 import {
   FeeBreakdownDisplay,
   ChannelDurationSelector,
@@ -98,13 +99,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
-  const [, setAccessToken] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const [orderPayload, setOrderPayload] = useState<any>(null)
-  const [paymentStatus, setPaymentStatus] = useState<
-    'success' | 'error' | 'expired' | null
-  >(null)
-  const [paymentReceived, setPaymentReceived] = useState(false)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const onSuccessRef = useRef(onSuccess)
   onSuccessRef.current = onSuccess
   const modalShellRef = useRef<HTMLDivElement>(null)
@@ -146,6 +142,27 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const [sendBtc] = nodeApi.endpoints.sendBtc.useMutation()
   const [listPeers] = nodeApi.endpoints.listPeers.useLazyQuery()
   const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
+
+  const {
+    isProcessingPayment,
+    markPaymentReceived,
+    paymentReceived,
+    paymentStatus,
+    reset: resetPaymentMonitor,
+    setPaymentStatus,
+  } = useChannelOrderPaymentMonitor({
+    accessToken,
+    enabled: step === 2,
+    getOrder: getOrderRequest,
+    onTerminalState: (status) => {
+      setStep(3)
+      if (status === 'success' && onSuccessRef.current) {
+        setTimeout(onSuccessRef.current, 2000)
+      }
+    },
+    orderId,
+    orderPayload,
+  })
 
   const { handleSubmit, setValue, control, watch } = useForm<FormFields>({
     defaultValues: {
@@ -380,7 +397,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
             setAssetMap(tmpMap)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error(t('buyChannel.lspFetchError'))
       } finally {
         setLoading(false)
@@ -388,102 +405,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
     }
 
     fetchData()
-  }, [getInfoRequest, isOpen])
-
-  // Poll for order status when on payment step
-  useEffect(() => {
-    const accessToken = order?.access_token
-    if (orderId && accessToken && step === 2) {
-      const intervalId = setInterval(async () => {
-        const orderResponse = await getOrderRequest({
-          access_token: accessToken,
-          order_id: orderId,
-        })
-        const orderData = orderResponse.data
-
-        const bolt11State = orderData?.payment?.bolt11?.state
-        const onchainState = orderData?.payment?.onchain?.state
-
-        const actualPaymentState =
-          bolt11State && ['HOLD', 'PAID'].includes(bolt11State)
-            ? bolt11State
-            : onchainState && ['HOLD', 'PAID'].includes(onchainState)
-              ? onchainState
-              : bolt11State || onchainState
-
-        const paymentJustReceived =
-          actualPaymentState &&
-          ['HOLD', 'PAID'].includes(actualPaymentState) &&
-          !paymentReceived
-
-        if (paymentJustReceived) {
-          setPaymentReceived(true)
-          setIsProcessingPayment(true)
-
-          if (orderPayload) {
-            try {
-              await invoke('insert_channel_order', {
-                createdAt: orderData?.created_at || new Date().toISOString(),
-                orderId: orderId,
-                payload: JSON.stringify({
-                  ...orderPayload,
-                  access_token: orderData?.access_token ?? order?.access_token,
-                }),
-                status: orderData?.order_state || 'paid',
-              })
-            } catch (error) {
-              console.error('Error saving order to database:', error)
-            }
-          }
-        }
-
-        if (orderData?.order_state === 'COMPLETED') {
-          clearInterval(intervalId)
-          setIsProcessingPayment(false)
-          setPaymentStatus('success')
-          setStep(3)
-          if (onSuccessRef.current) {
-            setTimeout(onSuccessRef.current, 2000)
-          }
-        } else if (orderData?.order_state === 'FAILED') {
-          const now = new Date().getTime()
-          const bolt11ExpiresAt = orderData?.payment?.bolt11?.expires_at
-            ? new Date(orderData.payment.bolt11.expires_at).getTime()
-            : 0
-          const onchainExpiresAt = orderData?.payment?.onchain?.expires_at
-            ? new Date(orderData.payment.onchain.expires_at).getTime()
-            : 0
-
-          const noPaymentMadeStates = ['EXPECT_PAYMENT', 'TIMEOUT', 'EXPIRED']
-          const bolt11NoPayment = bolt11State
-            ? noPaymentMadeStates.includes(bolt11State)
-            : true
-          const onchainNoPayment = onchainState
-            ? noPaymentMadeStates.includes(onchainState)
-            : true
-
-          const noPaymentMade = bolt11NoPayment && onchainNoPayment
-          const isPastExpiry =
-            (bolt11ExpiresAt > 0 && now > bolt11ExpiresAt) ||
-            (onchainExpiresAt > 0 && now > onchainExpiresAt)
-
-          clearInterval(intervalId)
-          setIsProcessingPayment(false)
-          setPaymentStatus(noPaymentMade || isPastExpiry ? 'expired' : 'error')
-          setStep(3)
-        }
-      }, 5000)
-
-      return () => clearInterval(intervalId)
-    }
-  }, [
-    orderId,
-    order?.access_token,
-    getOrderRequest,
-    step,
-    paymentReceived,
-    orderPayload,
-  ])
+  }, [getInfoRequest, isOpen, t])
 
   // Fetch fee estimates
   useEffect(() => {
@@ -769,6 +691,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       getInfoRequest,
       listPeers,
       connectPeer,
+      t,
     ]
   )
 
@@ -793,20 +716,15 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         }
 
         toast.success(t('buyChannel.lightningPaymentSuccess'))
-        setPaymentReceived(true)
-        setIsProcessingPayment(true)
+        markPaymentReceived('lightning')
 
         // Save order to database immediately after successful payment
         if (orderId && orderPayload) {
           try {
-            await invoke('insert_channel_order', {
-              createdAt: order.created_at || new Date().toISOString(),
-              orderId: orderId,
-              payload: JSON.stringify({
-                ...orderPayload,
-                access_token: order.access_token,
-              }),
-              status: 'paid',
+            await persistChannelOrder({
+              order,
+              orderId,
+              orderPayload,
             })
           } catch (dbError) {
             console.error('Error saving order to database:', dbError)
@@ -831,20 +749,15 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         }
 
         toast.success(t('buyChannel.onchainPaymentSuccess'))
-        setPaymentReceived(true)
-        setIsProcessingPayment(true)
+        markPaymentReceived('onchain')
 
         // Save order to database immediately after successful payment
         if (orderId && orderPayload) {
           try {
-            await invoke('insert_channel_order', {
-              createdAt: order.created_at || new Date().toISOString(),
-              orderId: orderId,
-              payload: JSON.stringify({
-                ...orderPayload,
-                access_token: order.access_token,
-              }),
-              status: 'paid',
+            await persistChannelOrder({
+              order,
+              orderId,
+              orderPayload,
             })
           } catch (dbError) {
             console.error('Error saving order to database:', dbError)
@@ -868,18 +781,16 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
   const handlePaymentExpiry = useCallback(() => {
     setPaymentStatus('expired')
-  }, [])
+  }, [setPaymentStatus])
 
   const handleClose = useCallback(() => {
     setStep(1)
     setOrderId(null)
     setAccessToken(null)
-    setPaymentStatus(null)
-    setPaymentReceived(false)
-    setIsProcessingPayment(false)
+    resetPaymentMonitor()
     resetQuote()
     onClose()
-  }, [onClose, resetQuote])
+  }, [onClose, resetPaymentMonitor, resetQuote])
 
   if (!isOpen) return null
 
@@ -1046,9 +957,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                 setStep(1)
                 setOrderId(null)
                 setAccessToken(null)
-                setPaymentStatus(null)
-                setPaymentReceived(false)
-                setIsProcessingPayment(false)
+                resetPaymentMonitor()
                 resetQuote()
               }}
               orderId={orderId}

@@ -6,8 +6,11 @@ import { formatNumberWithCommas } from '../../../helpers/number'
 import { ChannelFees } from '../../../slices/makerApi/makerApi.slice'
 import { AssetInfo } from '../../../utils/channelOrderUtils'
 import {
+  createAssetLiquiditySection,
+  createBitcoinLiquiditySection,
+} from '../../../utils/orderSummaryUtils'
+import {
   CostBreakdownItem,
-  LiquiditySection,
   OrderSummaryCard,
 } from '../../OrderSummaryCard'
 
@@ -52,23 +55,17 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const hasAssetLiquidity = !!assetInfo && (clientAsset > 0 || lspAsset > 0)
 
   const costItems: CostBreakdownItem[] = []
-  const liquiditySections: LiquiditySection[] = [
-    {
-      accentClassName: 'text-amber-300',
-      backgroundClassName: 'bg-amber-400/6',
-      borderClassName: 'border-amber-400/15',
-      iconAlt: 'BTC',
+  const liquiditySections = [
+    createBitcoinLiquiditySection({
       iconSrc: bitcoinLogo,
       inbound: lspBtc,
-      inboundColor: 'bg-blue-400/50',
       inboundLabel: `${formatNumberWithCommas(lspBtc)} sats`,
       outbound: clientBtc,
-      outboundColor: 'bg-amber-400',
       outboundLabel: `${formatNumberWithCommas(clientBtc)} sats`,
       ticker: t('components.buyChannelModal.orderSummaryBitcoin'),
       title: t('components.buyChannelModal.orderSummaryBitcoin'),
       totalLabel: `${formatNumberWithCommas(totalCapacityBtc)} sats`,
-    },
+    }),
   ]
 
   if (assetPriceSats > 0) {
@@ -111,29 +108,25 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   }
 
   if (hasAssetLiquidity && assetInfo) {
-    liquiditySections.push({
-      accentClassName: 'text-cyan-300',
-      backgroundClassName: 'bg-cyan-400/6',
-      borderClassName: 'border-cyan-400/15',
-      iconAlt: assetInfo.ticker,
-      iconSrc: tetherLogo,
-      inbound: lspAsset,
-      inboundColor: 'bg-sky-400/35',
-      inboundLabel: `${lspAsset.toLocaleString('en-US', {
-        maximumFractionDigits: 2,
-      })} ${assetInfo.ticker}`,
-      outbound: clientAsset,
-      outboundColor: 'bg-cyan-400',
-      outboundLabel: `${clientAsset.toLocaleString('en-US', {
-        maximumFractionDigits: 2,
-      })} ${assetInfo.ticker}`,
-      subtitle: assetInfo.name,
-      ticker: assetInfo.ticker,
-      title: `${assetInfo.name} (${assetInfo.ticker})`,
-      totalLabel: `${totalCapacityAsset.toLocaleString('en-US', {
-        maximumFractionDigits: 2,
-      })} ${assetInfo.ticker}`,
-    })
+    liquiditySections.push(
+      createAssetLiquiditySection({
+        iconSrc: tetherLogo,
+        inbound: lspAsset,
+        inboundLabel: `${lspAsset.toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        })} ${assetInfo.ticker}`,
+        outbound: clientAsset,
+        outboundLabel: `${clientAsset.toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        })} ${assetInfo.ticker}`,
+        subtitle: assetInfo.name,
+        ticker: assetInfo.ticker,
+        title: `${assetInfo.name} (${assetInfo.ticker})`,
+        totalLabel: `${totalCapacityAsset.toLocaleString('en-US', {
+          maximumFractionDigits: 2,
+        })} ${assetInfo.ticker}`,
+      })
+    )
   }
 
   return (

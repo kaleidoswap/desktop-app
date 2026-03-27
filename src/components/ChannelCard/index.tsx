@@ -17,7 +17,7 @@ import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { CloseChannelModal } from '../CloseChannelModal'
-import { LiquidityBar } from '../LiquidityBar'
+import { LiquidityBar } from '../Liquidity'
 
 interface InfoModalProps {
   isOpen: boolean
@@ -396,9 +396,20 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             </div>
           </div>
           <LiquidityBar
-            localAmount={channel.outbound_balance_msat / 1000}
-            remoteAmount={channel.inbound_balance_msat / 1000}
-            type="bitcoin"
+            inbound={channel.inbound_balance_msat / 1000}
+            inboundColor="bg-blue-500"
+            inboundLabel={formatBitcoinAmount(
+              channel.inbound_balance_msat / 1000,
+              bitcoinUnit
+            )}
+            outbound={channel.outbound_balance_msat / 1000}
+            outboundColor="bg-yellow-500"
+            outboundLabel={formatBitcoinAmount(
+              channel.outbound_balance_msat / 1000,
+              bitcoinUnit
+            )}
+            showSummary={false}
+            trackClassName="h-2.5 border-0 bg-surface-overlay p-0"
           />
           <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
             <span>{t('channelCard.labels.outbound')}</span>
@@ -431,9 +442,14 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               </div>
             </div>
             <LiquidityBar
-              localAmount={channel.asset_local_amount}
-              remoteAmount={channel.asset_remote_amount}
-              type="asset"
+              inbound={channel.asset_remote_amount}
+              inboundColor="bg-emerald-700"
+              inboundLabel={formatAssetAmount(channel.asset_remote_amount)}
+              outbound={channel.asset_local_amount}
+              outboundColor="bg-lime-300"
+              outboundLabel={formatAssetAmount(channel.asset_local_amount)}
+              showSummary={false}
+              trackClassName="h-2.5 border-0 bg-surface-overlay p-0"
             />
             <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
               <span>{t('channelCard.labels.outbound')}</span>

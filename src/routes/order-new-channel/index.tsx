@@ -1,11 +1,11 @@
-import { invoke } from '@tauri-apps/api/core'
 import { Info } from 'lucide-react'
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
+import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
 import {
   makerApi,
   Lsps1CreateOrderResponse,
@@ -29,17 +29,9 @@ export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
-  const [, setAccessToken] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const [orderPayload, setOrderPayload] = useState<any>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<
-    'success' | 'error' | 'expired' | null
-  >(null)
-  const [paymentReceived, setPaymentReceived] = useState(false)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState<
-    'lightning' | 'onchain' | null
-  >(null)
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -50,142 +42,21 @@ export const Component = () => {
 
   const toastId: string | number | null = null
 
-  useEffect(() => {
-    const accessToken = createOrderResponse.data?.access_token
-    if (orderId && accessToken && step === 3) {
-      const timeoutId: ReturnType<typeof setTimeout> | null = null
-
-      const intervalId = setInterval(async () => {
-        const orderResponse = await getOrderRequest({
-          access_token: accessToken,
-          order_id: orderId,
-        })
-        const orderData = orderResponse.data
-
-        // Check if payment has been received (either in HOLD or PAID state)
-        // Properly detect which payment method was used
-        const bolt11State = orderData?.payment?.bolt11?.state
-        const onchainState = orderData?.payment?.onchain?.state
-
-        const actualPaymentState =
-          bolt11State && ['HOLD', 'PAID'].includes(bolt11State)
-            ? bolt11State
-            : onchainState && ['HOLD', 'PAID'].includes(onchainState)
-              ? onchainState
-              : bolt11State || onchainState
-        const detectedPaymentMethod =
-          bolt11State && ['HOLD', 'PAID'].includes(bolt11State)
-            ? 'lightning'
-            : onchainState && ['HOLD', 'PAID'].includes(onchainState)
-              ? 'onchain'
-              : null
-
-        const paymentJustReceived =
-          actualPaymentState &&
-          ['HOLD', 'PAID'].includes(actualPaymentState) &&
-          !paymentReceived
-
-        if (paymentJustReceived) {
-          setPaymentReceived(true)
-          setIsProcessingPayment(true)
-          setPaymentMethod(detectedPaymentMethod as 'lightning' | 'onchain')
-
-          console.log('Payment just received! Saving order to database...')
-          console.log('Order ID:', orderId)
-          console.log('Payment method:', detectedPaymentMethod)
-          console.log('Payment state:', actualPaymentState)
-          console.log('Order payload:', orderPayload)
-          console.log('Order data:', orderData)
-
-          // Save the order to the database when payment is received
-          if (orderPayload) {
-            try {
-              await invoke('insert_channel_order', {
-                createdAt: orderData?.created_at || new Date().toISOString(),
-                orderId: orderId,
-                payload: JSON.stringify({
-                  ...orderPayload,
-                  access_token:
-                    orderData?.access_token ??
-                    createOrderResponse.data?.access_token,
-                }),
-                status: orderData?.order_state || 'paid',
-              })
-              console.log('Order saved to database successfully!')
-            } catch (error) {
-              console.error('Error saving order to database:', error)
-            }
-          } else {
-            console.log('No order payload available to save')
-          }
-        }
-
-        if (orderData?.order_state === 'COMPLETED') {
-          clearInterval(intervalId)
-          if (timeoutId) clearTimeout(timeoutId)
-          setIsProcessingPayment(false)
-          setPaymentStatus('success')
-          setStep(4)
-        } else if (orderData?.order_state === 'FAILED') {
-          // Check if payment was actually made or not
-          const now = new Date().getTime()
-          const bolt11ExpiresAt = orderData?.payment?.bolt11?.expires_at
-            ? new Date(orderData.payment.bolt11.expires_at).getTime()
-            : 0
-          const onchainExpiresAt = orderData?.payment?.onchain?.expires_at
-            ? new Date(orderData.payment.onchain.expires_at).getTime()
-            : 0
-
-          // Get payment states
-          const bolt11State = orderData?.payment?.bolt11?.state
-          const onchainState = orderData?.payment?.onchain?.state
-
-          // Check if no payment was actually made
-          // Payment states that indicate no payment was made:
-          // - EXPECT_PAYMENT: waiting for payment
-          // - TIMEOUT: payment timed out before being made
-          // - EXPIRED: payment expired
-          const noPaymentMadeStates = ['EXPECT_PAYMENT', 'TIMEOUT', 'EXPIRED']
-          const bolt11NoPayment = bolt11State
-            ? noPaymentMadeStates.includes(bolt11State)
-            : true
-          const onchainNoPayment = onchainState
-            ? noPaymentMadeStates.includes(onchainState)
-            : true
-
-          // If no payment was made on either method, show expired instead of error
-          // This prevents showing refund messages when no payment was actually made
-          const noPaymentMade = bolt11NoPayment && onchainNoPayment
-
-          // Also check if we're past the expiry time as an additional indicator
-          const isPastExpiry =
-            (bolt11ExpiresAt > 0 && now > bolt11ExpiresAt) ||
-            (onchainExpiresAt > 0 && now > onchainExpiresAt)
-
-          clearInterval(intervalId)
-          if (timeoutId) clearTimeout(timeoutId)
-          setIsProcessingPayment(false)
-
-          // Show 'expired' if no payment was made or if past expiry time
-          // Show 'error' only if payment was made but still failed (requires refund)
-          setPaymentStatus(noPaymentMade || isPastExpiry ? 'expired' : 'error')
-          setStep(4)
-        }
-      }, 5000)
-
-      return () => {
-        clearInterval(intervalId)
-        if (timeoutId) clearTimeout(timeoutId)
-      }
-    }
-  }, [
-    orderId,
-    createOrderResponse.data?.access_token,
-    getOrderRequest,
-    step,
+  const {
+    isProcessingPayment,
+    paymentMethod,
     paymentReceived,
+    paymentStatus,
+    reset: resetPaymentMonitor,
+    setPaymentStatus,
+  } = useChannelOrderPaymentMonitor({
+    accessToken,
+    enabled: step === 3,
+    getOrder: getOrderRequest,
+    onTerminalState: () => setStep(4),
+    orderId,
     orderPayload,
-  ])
+  })
 
   const onSubmitStep1 = useCallback(
     async (data: { connectionUrl: string; success: boolean }) => {
@@ -196,7 +67,7 @@ export const Component = () => {
         setStep(4)
       }
     },
-    []
+    [setPaymentStatus]
   )
 
   const onSubmitStep2 = useCallback(
@@ -373,24 +244,23 @@ export const Component = () => {
     setOrderId(null)
     setAccessToken(null)
     setOrderPayload(null)
-    setPaymentStatus(null)
-    setPaymentReceived(false)
-    setIsProcessingPayment(false)
-    setPaymentMethod(null)
+    resetPaymentMonitor()
     if (toastId) {
       toast.dismiss(toastId)
     }
-  }, [])
+  }, [resetPaymentMonitor])
 
   const handleConfirmBack = useCallback(() => {
     setShowBackConfirmation(false)
     setOrderId(null)
     setAccessToken(null)
+    setOrderPayload(null)
+    resetPaymentMonitor()
     if (toastId) {
       toast.dismiss(toastId)
     }
     setStep(2)
-  }, [])
+  }, [resetPaymentMonitor])
 
   const BackConfirmationModal = () => (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-4">

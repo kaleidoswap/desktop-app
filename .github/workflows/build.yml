@@ -19,9 +19,9 @@ jobs:
       matrix:
         include:
           - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
+            args: '--target aarch64-apple-darwin --bundles app'
           - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
+            args: '--target x86_64-apple-darwin --bundles app'
           - platform: 'ubuntu-22.04'
             args: ''
           - platform: 'windows-latest'
@@ -190,8 +190,8 @@ jobs:
             ---
 
             **Installation Notes:**
-            - macOS Apple Silicon (aarch64): Native ARM64 build, code signed and notarized
-            - macOS Intel (x86_64): Native Intel build, code signed and notarized
+            - macOS Apple Silicon (aarch64): Download and extract the `.app.tar.gz` asset; native ARM64 build, code signed and notarized
+            - macOS Intel (x86_64): Download and extract the `.app.tar.gz` asset; native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
             

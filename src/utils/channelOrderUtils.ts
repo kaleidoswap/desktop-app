@@ -61,6 +61,38 @@ export interface CreateChannelOrderParams {
   rfqId?: string
 }
 
+export type ChannelOrderPaymentMethod = 'lightning' | 'onchain'
+export type ChannelOrderTerminalStatus = 'success' | 'error' | 'expired'
+
+interface ChannelOrderPaymentLike {
+  expires_at?: string | null
+  state?: string | null
+}
+
+export interface ChannelOrderStatusLike {
+  access_token?: string | null
+  created_at?: string | null
+  order_state?: string | null
+  payment?: {
+    bolt11?: ChannelOrderPaymentLike | null
+    onchain?: ChannelOrderPaymentLike | null
+  } | null
+}
+
+export interface ChannelOrderPaymentSnapshot {
+  actualPaymentState: string | null
+  bolt11State: string | null
+  onchainState: string | null
+  paymentMethod: ChannelOrderPaymentMethod | null
+  paymentReceived: boolean
+}
+
+const PAYMENT_RECEIVED_STATES = ['HOLD', 'PAID'] as const
+const NO_PAYMENT_MADE_STATES = ['EXPECT_PAYMENT', 'TIMEOUT', 'EXPIRED'] as const
+
+const isPaymentReceivedState = (state?: string | null): boolean =>
+  !!state && PAYMENT_RECEIVED_STATES.includes(state as any)
+
 /**
  * Helper function to extract meaningful error messages
  */
@@ -229,6 +261,75 @@ export const formatRtkQueryError = (error: FetchBaseQueryError): string => {
   }
 
   return errorMessage
+}
+
+export const getChannelOrderPaymentSnapshot = (
+  order: ChannelOrderStatusLike | null | undefined
+): ChannelOrderPaymentSnapshot => {
+  const bolt11State = order?.payment?.bolt11?.state ?? null
+  const onchainState = order?.payment?.onchain?.state ?? null
+
+  const actualPaymentState = isPaymentReceivedState(bolt11State)
+    ? bolt11State
+    : isPaymentReceivedState(onchainState)
+      ? onchainState
+      : bolt11State || onchainState
+
+  const paymentMethod = isPaymentReceivedState(bolt11State)
+    ? 'lightning'
+    : isPaymentReceivedState(onchainState)
+      ? 'onchain'
+      : null
+
+  return {
+    actualPaymentState,
+    bolt11State,
+    onchainState,
+    paymentMethod,
+    paymentReceived: isPaymentReceivedState(actualPaymentState),
+  }
+}
+
+export const getChannelOrderFailureStatus = (
+  order: ChannelOrderStatusLike | null | undefined,
+  now = Date.now()
+): Extract<ChannelOrderTerminalStatus, 'error' | 'expired'> => {
+  const bolt11ExpiresAt = order?.payment?.bolt11?.expires_at
+    ? new Date(order.payment.bolt11.expires_at).getTime()
+    : 0
+  const onchainExpiresAt = order?.payment?.onchain?.expires_at
+    ? new Date(order.payment.onchain.expires_at).getTime()
+    : 0
+
+  const { bolt11State, onchainState } = getChannelOrderPaymentSnapshot(order)
+  const bolt11NoPayment = bolt11State
+    ? NO_PAYMENT_MADE_STATES.includes(bolt11State as any)
+    : true
+  const onchainNoPayment = onchainState
+    ? NO_PAYMENT_MADE_STATES.includes(onchainState as any)
+    : true
+
+  const noPaymentMade = bolt11NoPayment && onchainNoPayment
+  const isPastExpiry =
+    (bolt11ExpiresAt > 0 && now > bolt11ExpiresAt) ||
+    (onchainExpiresAt > 0 && now > onchainExpiresAt)
+
+  return noPaymentMade || isPastExpiry ? 'expired' : 'error'
+}
+
+export const getChannelOrderTerminalStatus = (
+  order: ChannelOrderStatusLike | null | undefined,
+  now = Date.now()
+): ChannelOrderTerminalStatus | null => {
+  if (order?.order_state === 'COMPLETED') {
+    return 'success'
+  }
+
+  if (order?.order_state === 'FAILED') {
+    return getChannelOrderFailureStatus(order, now)
+  }
+
+  return null
 }
 
 /**

@@ -1,4 +1,4 @@
-export { QuoteDisplay } from './QuoteDisplay'
+export { AssetQuoteDisplay as QuoteDisplay } from '../../../components/Liquidity'
 export { OrderSummary } from './OrderSummary'
 export { PaymentSection } from './PaymentSection'
 export { StatusScreen } from './StatusScreen'

@@ -10,6 +10,7 @@ import {
   FeeBreakdownDisplay,
   ChannelDurationSelector,
 } from '../../components/ChannelConfiguration'
+import { FormError } from '../../components/FormError'
 import {
   AssetQuoteDisplay,
   LiquidityCard,
@@ -35,7 +36,6 @@ import { AssetInfo, LspOptions } from '../../utils/channelOrderUtils'
 import bitcoinLogo from '../../assets/bitcoin-logo.svg'
 import rgbIcon from '../../assets/rgb-symbol-color.svg'
 
-import { FormError } from './FormError'
 import 'react-toastify/dist/ReactToastify.css'
 
 interface Props {
@@ -994,7 +994,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
           </div>
 
           {!formState.isSubmitSuccessful && formState.isSubmitted && (
-            <FormError />
+            <FormError
+              message={t('orderChannel.formErrors.formSubmissionError')}
+              variant="inline"
+            />
           )}
         </form>
       </div>
