@@ -158,10 +158,7 @@ export const useChannelOrderPaymentMonitor = ({
 
         const paymentSnapshot = getChannelOrderPaymentSnapshot(orderData)
 
-        if (
-          paymentSnapshot.paymentReceived &&
-          !paymentReceivedRef.current
-        ) {
+        if (paymentSnapshot.paymentReceived && !paymentReceivedRef.current) {
           markPaymentReceived(paymentSnapshot.paymentMethod)
           await persistOrder(orderData)
         }
