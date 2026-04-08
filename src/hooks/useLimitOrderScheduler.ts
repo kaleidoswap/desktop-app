@@ -267,6 +267,7 @@ export function useLimitOrderScheduler() {
   }, [whitelistTrade])
 
   // ── Load orders from DB for the active account ──
+  // Only load when the node is unlocked to avoid "No account selected" errors.
   useEffect(() => {
     const loadOrders = async () => {
       hydratedAccountRef.current = null
@@ -274,7 +275,7 @@ export function useLimitOrderScheduler() {
       prevOrderIdsRef.current = new Set()
       dispatch(setLimitOrders([]))
 
-      if (!accountName) {
+      if (!accountName || !isNodeReady) {
         isHydratingOrdersRef.current = false
         return
       }
@@ -300,7 +301,7 @@ export function useLimitOrderScheduler() {
     }
 
     loadOrders()
-  }, [accountName, dispatch])
+  }, [accountName, isNodeReady, dispatch])
 
   // ── Mirror orders → DB on every change ──
   const prevOrderIdsRef = useRef<Set<string>>(new Set())

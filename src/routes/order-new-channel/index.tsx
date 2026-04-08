@@ -14,6 +14,7 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import {
   AssetInfo,
   buildChannelOrderPayload,
+  getChannelOrderAccessToken,
   validateChannelParams,
   formatRtkQueryError,
 } from '../../utils/channelOrderUtils'
@@ -205,8 +206,11 @@ export const Component = () => {
           if (!orderId) {
             throw new Error('Could not get order id from server response')
           }
+          const orderAccessToken = getChannelOrderAccessToken(
+            channelResponse.data
+          )
           setOrderId(orderId)
-          setAccessToken(channelResponse.data?.access_token || null)
+          setAccessToken(orderAccessToken)
           setOrderPayload(payload)
           setStep(3)
         }

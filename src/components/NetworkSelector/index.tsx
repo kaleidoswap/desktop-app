@@ -41,6 +41,7 @@ export const NetworkSelector = ({
       case 'Testnet':
         return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
       case 'Signet':
+      case 'SignetCustom':
         return 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
       default:
         return 'bg-primary/20 text-primary border border-primary/30'

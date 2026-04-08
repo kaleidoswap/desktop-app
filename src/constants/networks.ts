@@ -48,6 +48,15 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
 
   Signet: {
     daemon_listening_port: '3001',
+    default_lsp_url: '',
+    default_maker_url: '',
+    indexer_url: '',
+    ldk_peer_listening_port: '9735',
+    proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',
+    rpc_connection_url: '',
+  },
+  SignetCustom: {
+    daemon_listening_port: '3001',
     default_lsp_url: 'https://api.signet.kaleidoswap.com/',
     default_maker_url: 'https://api.signet.kaleidoswap.com/',
     indexer_url: 'electrum.signet.kaleidoswap.com:60601',

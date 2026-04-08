@@ -9,7 +9,12 @@ export const DEFAULT_RGB_ICON = 'rgb-symbol-color.svg'
 export const COIN_ICON_URL =
   'https://raw.githubusercontent.com/kaleidoswap/coinmarketcap-icons-cryptos/refs/heads/main/icons/'
 
-export type BitcoinNetwork = 'Regtest' | 'Testnet' | 'Mainnet' | 'Signet'
+export type BitcoinNetwork =
+  | 'Regtest'
+  | 'Testnet'
+  | 'Mainnet'
+  | 'Signet'
+  | 'SignetCustom'
 export type RegtestConnectionType = 'local' | 'bitfinex'
 
 // Error constants

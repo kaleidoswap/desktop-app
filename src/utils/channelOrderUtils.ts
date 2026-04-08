@@ -71,8 +71,12 @@ interface ChannelOrderPaymentLike {
 
 export interface ChannelOrderStatusLike {
   access_token?: string | null
+  channel?: unknown | null
   created_at?: string | null
   order_state?: string | null
+  state?: string | null
+  status?: string | null
+  token?: string | null
   payment?: {
     bolt11?: ChannelOrderPaymentLike | null
     onchain?: ChannelOrderPaymentLike | null
@@ -90,8 +94,20 @@ export interface ChannelOrderPaymentSnapshot {
 const PAYMENT_RECEIVED_STATES = ['HOLD', 'PAID'] as const
 const NO_PAYMENT_MADE_STATES = ['EXPECT_PAYMENT', 'TIMEOUT', 'EXPIRED'] as const
 
+const normalizeOrderState = (state?: string | null): string | null =>
+  state ? state.trim().toUpperCase() : null
+
 const isPaymentReceivedState = (state?: string | null): boolean =>
-  !!state && PAYMENT_RECEIVED_STATES.includes(state as any)
+  PAYMENT_RECEIVED_STATES.includes(normalizeOrderState(state) as any)
+
+const getChannelOrderState = (
+  order: ChannelOrderStatusLike | null | undefined
+): string | null =>
+  normalizeOrderState(order?.order_state ?? order?.state ?? order?.status)
+
+export const getChannelOrderAccessToken = (
+  order: ChannelOrderStatusLike | null | undefined
+): string | null => order?.access_token || order?.token || null
 
 /**
  * Helper function to extract meaningful error messages
@@ -303,10 +319,10 @@ export const getChannelOrderFailureStatus = (
 
   const { bolt11State, onchainState } = getChannelOrderPaymentSnapshot(order)
   const bolt11NoPayment = bolt11State
-    ? NO_PAYMENT_MADE_STATES.includes(bolt11State as any)
+    ? NO_PAYMENT_MADE_STATES.includes(normalizeOrderState(bolt11State) as any)
     : true
   const onchainNoPayment = onchainState
-    ? NO_PAYMENT_MADE_STATES.includes(onchainState as any)
+    ? NO_PAYMENT_MADE_STATES.includes(normalizeOrderState(onchainState) as any)
     : true
 
   const noPaymentMade = bolt11NoPayment && onchainNoPayment
@@ -321,11 +337,22 @@ export const getChannelOrderTerminalStatus = (
   order: ChannelOrderStatusLike | null | undefined,
   now = Date.now()
 ): ChannelOrderTerminalStatus | null => {
-  if (order?.order_state === 'COMPLETED') {
+  const orderState = getChannelOrderState(order)
+
+  if (
+    orderState === 'COMPLETED' ||
+    orderState === 'COMPLETE' ||
+    orderState === 'SUCCESS' ||
+    orderState === 'SUCCEEDED'
+  ) {
     return 'success'
   }
 
-  if (order?.order_state === 'FAILED') {
+  if (
+    orderState === 'FAILED' ||
+    orderState === 'ERROR' ||
+    orderState === 'EXPIRED'
+  ) {
     return getChannelOrderFailureStatus(order, now)
   }
 

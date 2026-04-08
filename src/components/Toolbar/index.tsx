@@ -448,6 +448,48 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
   const [getNodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
 
+  const navigateFromNodeStatus = useCallback(
+    async (timeoutMs = 15000): Promise<boolean> => {
+      const nodeInfoRes = await withTimeout(
+        getNodeInfo(),
+        timeoutMs,
+        'Checking node status'
+      )
+
+      if (nodeInfoRes.isSuccess) {
+        console.log('Node unlocked, navigating to dashboard')
+        navigate(ROOT_PATH)
+        return true
+      }
+
+      const status =
+        nodeInfoRes.error &&
+        typeof nodeInfoRes.error === 'object' &&
+        'status' in nodeInfoRes.error
+          ? (nodeInfoRes.error as { status?: number | string }).status
+          : undefined
+
+      if (status === 400 || status === '400') {
+        navigate(WALLET_SETUP_PATH)
+        return true
+      }
+
+      if (
+        status === 401 ||
+        status === '401' ||
+        status === 403 ||
+        status === '403'
+      ) {
+        console.log('Node locked, navigating to unlock page')
+        navigate(WALLET_UNLOCK_PATH)
+        return true
+      }
+
+      return false
+    },
+    [getNodeInfo, navigate]
+  )
+
   const waitForNodeStopped = useCallback(
     (timeoutMs = 15000): Promise<void> =>
       new Promise((resolve, reject) => {
@@ -546,23 +588,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         await dispatch(setSettingsAsync(formattedNode))
 
         // Check if node is unlocked via API (same logic as root route)
-        const nodeInfoRes = await withTimeout(
-          getNodeInfo(),
-          15000,
-          'Checking node status'
-        )
-        if (nodeInfoRes.isSuccess) {
-          console.log('Node unlocked, navigating to dashboard')
-          navigate(ROOT_PATH)
-        } else if (
-          nodeInfoRes.error &&
-          typeof nodeInfoRes.error === 'object' &&
-          'status' in nodeInfoRes.error &&
-          (nodeInfoRes.error as { status?: number }).status === 400
-        ) {
-          navigate(WALLET_SETUP_PATH)
-        } else {
-          console.log('Node locked, navigating to unlock page')
+        const didNavigate = await navigateFromNodeStatus()
+        if (!didNavigate) {
           navigate(WALLET_UNLOCK_PATH)
         }
         return
@@ -615,11 +642,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
       await dispatch(setSettingsAsync(formattedNode))
 
-      if (
+      const isLocalNode =
         normalizeNodeUrl(node.node_url)?.startsWith('http://127.0.0.1:') &&
-        node.datapath !== '' &&
-        runningNodeAccount !== node.name
-      ) {
+        node.datapath !== ''
+
+      if (isLocalNode && runningNodeAccount !== node.name) {
         toast.info(t('toolbar.nodes.startingLocalNode'), {
           autoClose: 2000,
           position: 'bottom-right',
@@ -906,23 +933,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       }
 
       // Check if node is unlocked or locked via API (same logic as root route)
-      const nodeInfoRes = await withTimeout(
-        getNodeInfo(),
-        15000,
-        'Checking node status'
-      )
-      if (nodeInfoRes.isSuccess) {
-        console.log('Node unlocked, navigating to dashboard')
-        navigate(ROOT_PATH)
-      } else if (
-        nodeInfoRes.error &&
-        typeof nodeInfoRes.error === 'object' &&
-        'status' in nodeInfoRes.error &&
-        (nodeInfoRes.error as { status?: number }).status === 400
-      ) {
-        navigate(WALLET_SETUP_PATH)
-      } else {
-        console.log('Node locked, navigating to unlock page')
+      const didNavigate = await navigateFromNodeStatus()
+      if (!didNavigate) {
         navigate(WALLET_UNLOCK_PATH)
       }
     } catch (error) {

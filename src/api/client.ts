@@ -59,6 +59,7 @@ export const getKaleidoClient = async (
       apiKey: authToken,
       baseUrl,
       nodeUrl,
+      timeout: 60,
     })
 
     // Create wrapper instance

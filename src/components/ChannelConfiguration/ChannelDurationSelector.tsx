@@ -1,28 +1,31 @@
-import React from 'react'
-import { Control, Controller } from 'react-hook-form'
+import { Control, Controller, FieldPath, FieldValues } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
-interface ChannelDurationSelectorProps {
+interface ChannelDurationSelectorProps<
+  TFieldValues extends FieldValues = FieldValues,
+> {
   value: number
   onChange: (value: number) => void
   maxExpiryBlocks?: number
-  control?: Control<any>
-  fieldName?: string
+  control?: Control<TFieldValues>
+  fieldName?: FieldPath<TFieldValues>
   containerClassName?: string
   theme?: 'light' | 'dark'
 }
 
-export const ChannelDurationSelector: React.FC<
-  ChannelDurationSelectorProps
-> = ({
+export const ChannelDurationSelector = <
+  TFieldValues extends FieldValues = FieldValues,
+>({
   value,
   onChange,
   maxExpiryBlocks,
   control,
-  fieldName = 'channelExpireBlocks',
+  fieldName,
   containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
-}) => {
+}: ChannelDurationSelectorProps<TFieldValues>) => {
   const { t } = useTranslation()
+  const controllerFieldName = (fieldName ??
+    'channelExpireBlocks') as FieldPath<TFieldValues>
 
   const getChannelExpiryOptions = () => {
     const options = [
@@ -85,7 +88,7 @@ export const ChannelDurationSelector: React.FC<
       {control ? (
         <Controller
           control={control}
-          name={fieldName}
+          name={controllerFieldName}
           render={({ field }) => (
             <PillButtons
               currentValue={field.value}

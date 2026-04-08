@@ -422,6 +422,15 @@ pub fn insert_channel_order(
     created_at: String,
 ) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
+    let updated = conn.execute(
+        "UPDATE ChannelOrders SET created_at = ?3, status = ?4, payload = ?5 WHERE account_id = ?1 AND order_id = ?2",
+        rusqlite::params![account_id, order_id, created_at, status, payload],
+    )?;
+
+    if updated > 0 {
+        return Ok(updated);
+    }
+
     conn.execute(
         "INSERT INTO ChannelOrders (account_id, order_id, created_at, status, payload) VALUES (?1, ?2, ?3, ?4, ?5)",
         rusqlite::params![account_id, order_id, created_at, status, payload],

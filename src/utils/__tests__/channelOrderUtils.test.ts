@@ -4,6 +4,7 @@ import {
   buildChannelOrderPayload,
   validateChannelParams,
   formatRtkQueryError,
+  getChannelOrderAccessToken,
   getChannelOrderFailureStatus,
   getChannelOrderPaymentSnapshot,
   getChannelOrderTerminalStatus,
@@ -440,6 +441,16 @@ describe('getChannelOrderPaymentSnapshot', () => {
     })
   })
 
+  it('detects payment states regardless of casing', () => {
+    const order: ChannelOrderStatusLike = {
+      payment: {
+        bolt11: { state: 'paid' },
+      },
+    }
+
+    expect(getChannelOrderPaymentSnapshot(order).paymentReceived).toBe(true)
+  })
+
   it('reports no received payment when still waiting', () => {
     const order: ChannelOrderStatusLike = {
       payment: {
@@ -454,6 +465,27 @@ describe('getChannelOrderPaymentSnapshot', () => {
       paymentMethod: null,
       paymentReceived: false,
     })
+  })
+})
+
+describe('getChannelOrderAccessToken', () => {
+  it('prefers access_token when both token fields are present', () => {
+    expect(
+      getChannelOrderAccessToken({
+        access_token: 'access-token',
+        token: 'legacy-token',
+      })
+    ).toBe('access-token')
+  })
+
+  it('falls back to token when access_token is missing', () => {
+    expect(getChannelOrderAccessToken({ token: 'legacy-token' })).toBe(
+      'legacy-token'
+    )
+  })
+
+  it('returns null when no order token is available', () => {
+    expect(getChannelOrderAccessToken({})).toBeNull()
   })
 })
 
@@ -502,6 +534,15 @@ describe('getChannelOrderTerminalStatus', () => {
     expect(
       getChannelOrderTerminalStatus({ order_state: 'COMPLETED' }, NOW)
     ).toBe('success')
+  })
+
+  it('maps completed state aliases to success', () => {
+    expect(getChannelOrderTerminalStatus({ status: 'completed' }, NOW)).toBe(
+      'success'
+    )
+    expect(getChannelOrderTerminalStatus({ state: 'succeeded' }, NOW)).toBe(
+      'success'
+    )
   })
 
   it('maps failed orders through the shared failure classifier', () => {
