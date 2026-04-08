@@ -138,7 +138,7 @@ export const unlockNodeWithRetry = async ({
   getNodeInfo,
   invalidPasswordMessage,
   isCancelled,
-  maxRetries = 20,
+  maxRetries = 240,
   maxRetriesMessage,
   onLongUnlock,
   unlockLabel = 'Wallet unlock',
@@ -227,6 +227,7 @@ export const unlockNodeWithRetry = async ({
         (typeof maybeError.status === 'string' &&
           (maybeError.status === 'FETCH_ERROR' ||
             maybeError.status === 'TIMEOUT_ERROR')) ||
+        isTimeoutError(errorMessage) ||
         isNodeChangingStateError(errorMessage) ||
         isNodeChangingStateError(message)
       ) {
