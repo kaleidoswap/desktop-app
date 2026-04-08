@@ -605,7 +605,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
             {(() => {
               const faucetKey =
-                networkInfo.network === Network.Signet
+                networkInfo.network === Network.Signet ||
+                networkInfo.network === Network.SignetCustom
                   ? 'signet'
                   : networkInfo.network === Network.Regtest
                     ? 'regtest'

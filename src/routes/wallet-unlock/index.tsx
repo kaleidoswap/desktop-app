@@ -35,7 +35,7 @@ interface Fields {
   password: string
 }
 
-const MAX_UNLOCK_RETRIES = 20
+const MAX_UNLOCK_RETRIES = 240
 
 export const Component = () => {
   const { t } = useTranslation()

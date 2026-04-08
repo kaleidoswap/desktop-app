@@ -9,6 +9,7 @@ export const Network = {
   Mainnet: 'mainnet',
   Regtest: 'regtest',
   Signet: 'signet',
+  SignetCustom: 'signetcustom',
   Testnet: 'testnet',
 } as const
 export type Network = (typeof Network)[keyof typeof Network]

@@ -300,6 +300,17 @@ impl NodeProcess {
             err
         })?;
 
+        if was_running
+            && self.is_running_for_account(&account_name)
+            && self.get_daemon_port() == Some(daemon_port)
+        {
+            println!(
+                "Node for account {} is already running on daemon port {}; reusing existing process.",
+                account_name, daemon_port
+            );
+            return Ok(daemon_port);
+        }
+
         if !Self::is_port_available(daemon_port) {
             let err = format!("Port {} is already in use. Please make sure no other node is running or try a different port.", daemon_port);
             println!("{}", err);

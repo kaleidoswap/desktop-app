@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type {
   Lsps1GetOrderRequest,
@@ -17,7 +17,7 @@ interface UseChannelOrderPaymentMonitorOptions {
   enabled: boolean
   getOrder: (
     args: Lsps1GetOrderRequest
-  ) => Promise<{ data?: Lsps1GetOrderResponse }>
+  ) => Promise<{ data?: Lsps1GetOrderResponse; error?: unknown }>
   onTerminalState?: (
     status: ChannelOrderTerminalStatus,
     order: Lsps1GetOrderResponse
@@ -52,9 +52,30 @@ export const useChannelOrderPaymentMonitor = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [paymentMethod, setPaymentMethod] =
     useState<ChannelOrderPaymentMethod | null>(null)
+  const getOrderRef = useRef(getOrder)
+  const onTerminalStateRef = useRef(onTerminalState)
+  const orderPayloadRef = useRef(orderPayload)
+  const paymentReceivedRef = useRef(paymentReceived)
+
+  useEffect(() => {
+    getOrderRef.current = getOrder
+  }, [getOrder])
+
+  useEffect(() => {
+    onTerminalStateRef.current = onTerminalState
+  }, [onTerminalState])
+
+  useEffect(() => {
+    orderPayloadRef.current = orderPayload
+  }, [orderPayload])
+
+  useEffect(() => {
+    paymentReceivedRef.current = paymentReceived
+  }, [paymentReceived])
 
   const markPaymentReceived = useCallback(
     (method?: ChannelOrderPaymentMethod | null) => {
+      paymentReceivedRef.current = true
       setPaymentReceived(true)
       setIsProcessingPayment(true)
       if (method) {
@@ -65,6 +86,7 @@ export const useChannelOrderPaymentMonitor = ({
   )
 
   const reset = useCallback(() => {
+    paymentReceivedRef.current = false
     setPaymentStatusState(null)
     setPaymentReceived(false)
     setIsProcessingPayment(false)
@@ -86,56 +108,95 @@ export const useChannelOrderPaymentMonitor = ({
       return
     }
 
-    const intervalId = window.setInterval(async () => {
-      const orderResponse = await getOrder({
-        access_token: accessToken,
-        order_id: orderId,
-      })
-      const orderData = orderResponse.data
+    let cancelled = false
+    let timeoutId: number | undefined
 
-      if (!orderData) {
+    const persistOrder = async (orderData: Lsps1GetOrderResponse) => {
+      if (!orderPayloadRef.current) {
         return
       }
 
-      const paymentSnapshot = getChannelOrderPaymentSnapshot(orderData)
+      try {
+        await persistChannelOrder({
+          fallbackAccessToken: accessToken,
+          order: orderData,
+          orderId,
+          orderPayload: orderPayloadRef.current,
+        })
+      } catch (error) {
+        console.error('Error saving order to database:', error)
+      }
+    }
 
-      if (paymentSnapshot.paymentReceived && !paymentReceived) {
-        markPaymentReceived(paymentSnapshot.paymentMethod)
+    const scheduleNextPoll = () => {
+      timeoutId = window.setTimeout(pollOrder, pollIntervalMs)
+    }
 
-        if (orderPayload) {
-          try {
-            await persistChannelOrder({
-              fallbackAccessToken: accessToken,
-              order: orderData,
-              orderId,
-              orderPayload,
-            })
-          } catch (error) {
-            console.error('Error saving order to database:', error)
-          }
+    const pollOrder = async () => {
+      if (cancelled) {
+        return
+      }
+
+      let reachedTerminalState = false
+
+      try {
+        const orderResponse = await getOrderRef.current({
+          access_token: accessToken,
+          order_id: orderId,
+        })
+
+        if (orderResponse.error) {
+          console.error('Error polling channel order:', orderResponse.error)
+          return
+        }
+
+        const orderData = orderResponse.data
+
+        if (!orderData) {
+          return
+        }
+
+        const paymentSnapshot = getChannelOrderPaymentSnapshot(orderData)
+
+        if (
+          paymentSnapshot.paymentReceived &&
+          !paymentReceivedRef.current
+        ) {
+          markPaymentReceived(paymentSnapshot.paymentMethod)
+          await persistOrder(orderData)
+        }
+
+        const terminalStatus = getChannelOrderTerminalStatus(orderData)
+        if (!terminalStatus) {
+          return
+        }
+
+        reachedTerminalState = true
+        await persistOrder(orderData)
+        setPaymentStatus(terminalStatus)
+        onTerminalStateRef.current?.(terminalStatus, orderData)
+      } catch (error) {
+        console.error('Error polling channel order:', error)
+      } finally {
+        if (!cancelled && !reachedTerminalState) {
+          scheduleNextPoll()
         }
       }
+    }
 
-      const terminalStatus = getChannelOrderTerminalStatus(orderData)
-      if (!terminalStatus) {
-        return
+    pollOrder()
+
+    return () => {
+      cancelled = true
+      if (timeoutId) {
+        window.clearTimeout(timeoutId)
       }
-
-      window.clearInterval(intervalId)
-      setPaymentStatus(terminalStatus)
-      onTerminalState?.(terminalStatus, orderData)
-    }, pollIntervalMs)
-
-    return () => window.clearInterval(intervalId)
+    }
   }, [
     accessToken,
     enabled,
-    getOrder,
     markPaymentReceived,
-    onTerminalState,
     orderId,
-    orderPayload,
-    paymentReceived,
     pollIntervalMs,
     setPaymentStatus,
   ])

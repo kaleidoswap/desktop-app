@@ -396,6 +396,7 @@ export function useDcaScheduler() {
   }, [isNodeReady])
 
   // ── Load orders from DB for the active account (with localStorage migration) ──
+  // Only load when the node is unlocked to avoid "No account selected" errors.
   useEffect(() => {
     const loadOrders = async () => {
       hydratedAccountRef.current = null
@@ -406,7 +407,7 @@ export function useDcaScheduler() {
         logger.error('dca_set_orders reset failed', err)
       )
 
-      if (!accountName) {
+      if (!accountName || !isNodeReady) {
         isHydratingOrdersRef.current = false
         return
       }
@@ -452,7 +453,7 @@ export function useDcaScheduler() {
     }
 
     loadOrders()
-  }, [accountName, dispatch])
+  }, [accountName, isNodeReady, dispatch])
 
   // ── Mirror orders → DB on every change ──────────────────────────────────
   const prevOrderIdsRef = useRef<Set<string>>(new Set())

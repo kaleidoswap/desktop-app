@@ -88,12 +88,6 @@ export const getMainNavItems = (t: TFunction) => [
     to: TRADE_DCA_PATH,
   },
   {
-    icon: <Target className="w-5 h-5" />,
-    label: t('navigation.limitOrders', 'Limit Orders'),
-    matchPath: TRADE_LIMIT_PATH,
-    to: TRADE_LIMIT_PATH,
-  },
-  {
     icon: <Activity className="w-5 h-5" />,
     label: t('navigation.channels'),
     matchPath: CHANNELS_PATH,

@@ -32,6 +32,7 @@ import {
   AssetInfo,
   LspOptions,
   buildChannelOrderPayload,
+  getChannelOrderAccessToken,
   validateChannelParams,
   formatRtkQueryError,
 } from '../../utils/channelOrderUtils'
@@ -664,8 +665,12 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           throw new Error(t('buyChannel.orderIdMissing'))
         }
 
+        const orderAccessToken = getChannelOrderAccessToken(
+          channelResponse.data
+        )
+
         setOrderId(orderId)
-        setAccessToken(channelResponse.data?.access_token || null)
+        setAccessToken(orderAccessToken)
         setOrderPayload(payload)
         setOrder(channelResponse.data as Lsps1CreateOrderResponse)
         setStep(2)

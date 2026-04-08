@@ -1,6 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import type { ChannelOrderStatusLike } from './channelOrderUtils'
+import {
+  getChannelOrderAccessToken,
+  type ChannelOrderStatusLike,
+} from './channelOrderUtils'
 
 interface PersistChannelOrderParams {
   fallbackAccessToken?: string | null
@@ -22,7 +25,7 @@ export const persistChannelOrder = async ({
       ...(typeof orderPayload === 'object' && orderPayload !== null
         ? orderPayload
         : {}),
-      access_token: order?.access_token ?? fallbackAccessToken,
+      access_token: getChannelOrderAccessToken(order) ?? fallbackAccessToken,
     }),
     status: order?.order_state || 'paid',
   })

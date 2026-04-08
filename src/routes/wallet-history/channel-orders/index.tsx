@@ -661,7 +661,7 @@ export const Component = () => {
       for (const order of orders) {
         try {
           const payload = JSON.parse(order.payload || '{}')
-          const accessToken = payload.access_token
+          const accessToken = payload.access_token || payload.token
           if (!accessToken) {
             continue
           }
