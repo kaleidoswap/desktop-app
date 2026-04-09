@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use serde_json::Value;
 use std::env;
 use std::fs;

@@ -23,7 +23,7 @@ pub struct NodeLogsResponse {
 }
 
 fn main() {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
