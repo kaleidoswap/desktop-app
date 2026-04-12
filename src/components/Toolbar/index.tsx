@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { ask } from '@tauri-apps/plugin-dialog'
 import { Trash2, Edit, X, Server, Cloud, AlertTriangle } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -17,7 +16,7 @@ import { buildLocalNodeUrl, normalizeNodeUrl } from '../../api/client'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
-import { BitcoinNetwork } from '../../constants'
+import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
 import {
   nodeSettingsActions,
   setSettingsAsync,
@@ -193,7 +192,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs px-2 py-0.5 rounded-full bg-surface-base text-content-secondary">
-                {account.network}
+                {getNetworkDisplayName(account.network)}
               </span>
               <span className={`flex items-center ${nodeColor} text-sm`}>
                 <NodeIcon className="w-3 h-3 mr-1" />
@@ -671,7 +670,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             .map(([port]) => port)
 
           if (unavailablePorts.length > 0) {
-            // Get running node ports to check if they're our own nodes
+            // Try to stop our own nodes first
             const runningNodePorts = await invokeWithTimeout<{
               [port: string]: string
             }>(
@@ -685,184 +684,85 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             )
 
             if (ourConflictingPorts.length > 0) {
-              // If ports are used by our nodes, try to stop them
-              toast.info(t('toolbar.nodes.stoppingExisting'), {
-                autoClose: false,
-                toastId: 'stopping-nodes',
-              })
-
+              toast.info(t('toolbar.nodes.stoppingExisting'), { autoClose: 2000 })
               for (const port of ourConflictingPorts) {
                 const nodeAccount = runningNodePorts[port]
                 try {
                   const stoppedPromise = waitForNodeStopped()
                   try {
-                    await invokeWithTimeout(
-                      'stop_node_by_account',
-                      { accountName: nodeAccount },
-                      5000,
-                      `Stopping node for account ${nodeAccount}`
-                    )
+                    await invokeWithTimeout('stop_node_by_account', { accountName: nodeAccount }, 5000, `Stopping node for account ${nodeAccount}`)
                   } catch (error) {
                     void stoppedPromise.catch(() => undefined)
                     throw error
                   }
                   await stoppedPromise
                 } catch (error) {
-                  console.error(`Failed to stop node on port ${port}:`, error)
-                  throw new Error(
-                    `Failed to stop existing node on port ${port}`,
-                    { cause: error }
-                  )
+                  console.warn(`Could not stop node on port ${port}:`, error)
                 }
               }
-
-              toast.update('stopping-nodes', {
-                autoClose: 2000,
-                render: t('toolbar.nodes.existingStopped'),
-                type: 'success',
-              })
-
-              // Recheck port availability after stopping our nodes
-              const recheckPorts = await invokeWithTimeout<{
-                [port: string]: boolean
-              }>(
-                'check_ports_available',
-                { ports },
-                10000,
-                'Re-checking port availability'
-              )
-              const stillUnavailablePorts = Object.entries(recheckPorts)
-                .filter(([_, isAvailable]) => !isAvailable)
-                .map(([port]) => port)
-
-              if (stillUnavailablePorts.length > 0) {
-                // Try to find alternative ports
-                const suggestedPorts = await invokeWithTimeout<{
-                  daemon: number
-                  ldk: number
-                }>(
-                  'find_available_ports',
-                  {
-                    base_daemon_port: parseInt(node.daemon_listening_port),
-                    base_ldk_port: parseInt(node.ldk_peer_listening_port),
-                  },
-                  10000,
-                  'Finding available ports'
-                )
-
-                throw new Error(
-                  `Ports ${stillUnavailablePorts.join(', ')} are still in use by other processes. ` +
-                    'Suggested alternative ports:\n' +
-                    `- Daemon port: ${suggestedPorts.daemon}\n` +
-                    `- LDK peer port: ${suggestedPorts.ldk}`
-                )
-              }
             } else {
-              // Ports may be held by a stale node from a previous session.
-              // Try stop_node before giving up.
-              toast.info(t('toolbar.nodes.stoppingExisting'), {
-                autoClose: false,
-                toastId: 'stopping-nodes',
-              })
+              // Try stopping any stale node
               try {
                 const stoppedPromise = waitForNodeStopped()
                 try {
-                  await invokeWithTimeout(
-                    'stop_node',
-                    undefined,
-                    5000,
-                    'Stopping stale node process'
-                  )
+                  await invokeWithTimeout('stop_node', undefined, 5000, 'Stopping stale node')
                 } catch (error) {
                   void stoppedPromise.catch(() => undefined)
-                  throw error
                 }
                 await stoppedPromise
-              } catch (stopError) {
-                console.warn('Could not stop stale node:', stopError)
+              } catch {
+                // Ignore
               }
-              toast.dismiss('stopping-nodes')
+            }
 
-              const recheckAfterStop = await invokeWithTimeout<{
-                [port: string]: boolean
-              }>(
-                'check_ports_available',
-                { ports },
+            // After stopping, find available ports automatically
+            const recheckPorts = await invokeWithTimeout<{ [port: string]: boolean }>(
+              'check_ports_available', { ports }, 10000, 'Re-checking ports'
+            )
+            const stillUnavailable = Object.entries(recheckPorts)
+              .filter(([_, isAvailable]) => !isAvailable)
+              .map(([port]) => port)
+
+            if (stillUnavailable.length > 0) {
+              const availablePorts = await invokeWithTimeout<{ daemon: number; ldk: number }>(
+                'find_available_ports',
+                {
+                  baseDaemonPort: parseInt(node.daemon_listening_port),
+                  baseLdkPort: parseInt(node.ldk_peer_listening_port),
+                },
                 10000,
-                'Re-checking ports after stop'
+                'Finding available ports'
               )
-              const stillUnavailable = Object.entries(recheckAfterStop)
-                .filter(([_, isAvailable]) => !isAvailable)
-                .map(([port]) => port)
+              node.daemon_listening_port = String(availablePorts.daemon)
+              node.ldk_peer_listening_port = String(availablePorts.ldk)
+              node.node_url = `http://localhost:${availablePorts.daemon}`
 
-              if (stillUnavailable.length > 0) {
-                const conflicting = stillUnavailable.join(', ')
-                const userWantsKill = await ask(
-                  t('toolbar.nodes.killProcessPrompt', {
-                    ports: conflicting,
-                  }),
-                  {
-                    title: t('toolbar.nodes.portConflictTitle'),
-                    kind: 'warning',
-                    okLabel: t('toolbar.nodes.killProcessConfirm'),
-                    cancelLabel: t('common.cancel'),
-                  }
-                )
+              // Update account in DB with new ports
+              await invoke('update_account', {
+                name: node.name,
+                network: node.network,
+                datapath: node.datapath,
+                rpcConnectionUrl: node.rpc_connection_url,
+                nodeUrl: node.node_url,
+                indexerUrl: node.indexer_url,
+                proxyEndpoint: node.proxy_endpoint,
+                defaultLspUrl: node.default_lsp_url,
+                makerUrls: Array.isArray(node.maker_urls) ? node.maker_urls.join(',') : node.maker_urls,
+                defaultMakerUrl: node.default_maker_url,
+                daemonListeningPort: node.daemon_listening_port,
+                ldkPeerListeningPort: node.ldk_peer_listening_port,
+                bearerToken: null,
+                language: node.language || 'en',
+              })
 
-                if (userWantsKill) {
-                  toast.info(t('toolbar.nodes.killingProcesses'), {
-                    autoClose: false,
-                    toastId: 'killing-processes',
-                  })
-                  const portsToKill = stillUnavailable.map(Number)
-                  await invoke('kill_processes_on_ports', {
-                    ports: portsToKill,
-                  })
-                  toast.dismiss('killing-processes')
-
-                  const finalCheck = await invokeWithTimeout<{
-                    [port: string]: boolean
-                  }>(
-                    'check_ports_available',
-                    { ports },
-                    10000,
-                    'Re-checking ports after kill'
-                  )
-                  const finalUnavailable = Object.entries(finalCheck)
-                    .filter(([_, isAvailable]) => !isAvailable)
-                    .map(([port]) => port)
-
-                  if (finalUnavailable.length > 0) {
-                    throw new Error(
-                      `Ports ${finalUnavailable.join(', ')} are still in use after killing processes. ` +
-                        'Please choose different ports.'
-                    )
-                  }
-                } else {
-                  const suggestedPorts = await invokeWithTimeout<{
-                    daemon: number
-                    ldk: number
-                  }>(
-                    'find_available_ports',
-                    {
-                      base_daemon_port: parseInt(node.daemon_listening_port),
-                      base_ldk_port: parseInt(node.ldk_peer_listening_port),
-                    },
-                    10000,
-                    'Finding available ports'
-                  )
-                  throw new Error(
-                    `Ports ${conflicting} are in use by other applications. ` +
-                      'Suggested alternative ports:\n' +
-                      `- Daemon port: ${suggestedPorts.daemon}\n` +
-                      `- LDK peer port: ${suggestedPorts.ldk}`
-                  )
-                }
-              }
+              toast.info(
+                `Ports auto-updated: daemon ${availablePorts.daemon}, peer ${availablePorts.ldk}`,
+                { autoClose: 3000 }
+              )
             }
           }
 
-          // Start the node with the checked ports
+          // Start the node with the resolved ports
           await invokeWithTimeout(
             'start_node',
             {
@@ -1305,7 +1205,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             <h3 className="text-xl font-semibold text-white">{account.name}</h3>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="bg-surface-base px-3 py-1 rounded-full text-sm text-content-secondary">
-                {account.network}
+                {getNetworkDisplayName(account.network)}
               </span>
               <span
                 className={`flex items-center ${nodeColor} text-sm font-medium`}

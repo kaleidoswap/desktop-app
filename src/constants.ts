@@ -15,6 +15,14 @@ export type BitcoinNetwork =
   | 'Mainnet'
   | 'Signet'
   | 'SignetCustom'
+
+const NETWORK_DISPLAY_NAMES: Record<string, string> = {
+  SignetCustom: 'Mutinynet',
+}
+
+export const getNetworkDisplayName = (network: string): string =>
+  NETWORK_DISPLAY_NAMES[network] ?? network
+
 export type RegtestConnectionType = 'local' | 'bitfinex'
 
 // Error constants

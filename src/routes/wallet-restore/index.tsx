@@ -209,9 +209,9 @@ export const Component = () => {
     defaultValues: {
       backup_path: '',
       name: t('walletRestore.defaultAccountName'),
-      network: 'Regtest' as BitcoinNetwork,
+      network: 'SignetCustom' as BitcoinNetwork,
       password: '',
-      ...NETWORK_DEFAULTS['Regtest'],
+      ...NETWORK_DEFAULTS['SignetCustom'],
     },
   })
 

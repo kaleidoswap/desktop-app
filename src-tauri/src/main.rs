@@ -7,10 +7,13 @@ use tauri::{Emitter, Listener, Manager, Window};
 mod crypto;
 mod db;
 mod dca;
+mod docker_node;
+mod node_backend;
 mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
+use docker_node::{DockerNodeManager, DockerSpawnConfig, DockerEnvironment};
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -27,6 +30,7 @@ fn main() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
+    let docker_manager = Arc::new(Mutex::new(DockerNodeManager::new()));
     let dca_scheduler = Arc::new(DcaScheduler::new());
 
     tauri::Builder::default()
@@ -39,6 +43,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Arc::clone(&node_process))
+        .manage(Arc::clone(&docker_manager))
         .manage(Arc::clone(&dca_scheduler))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
@@ -51,10 +56,12 @@ fn main() {
         })
         .setup({
             let node_process = Arc::clone(&node_process);
+            let docker_manager = Arc::clone(&docker_manager);
             let dca_scheduler = Arc::clone(&dca_scheduler);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    node_process.lock().unwrap().set_window(main_window);
+                    node_process.lock().unwrap().set_window(main_window.clone());
+                    docker_manager.lock().unwrap().set_window(main_window);
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
                 // DCA scheduler is started lazily via dca_start_scheduler
@@ -124,6 +131,7 @@ fn main() {
             get_decrypted_mnemonic,
             // New command
             is_local_node_supported,
+            get_local_node_capabilities,
             get_markdown_content,
             // DCA commands
             dca_start_scheduler,
@@ -137,6 +145,12 @@ fn main() {
             limit_get_orders,
             limit_upsert_order,
             limit_delete_order,
+            // Docker node commands
+            is_docker_available,
+            list_docker_environments,
+            create_docker_environment,
+            start_docker_node,
+            stop_docker_node,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -286,7 +300,6 @@ fn stop_node(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Result<
         node_process.stop();
         Ok(())
     } else {
-        // Return an error or just Ok(()) – depends on your UI needs
         Err("RGB Lightning Node is not running.".to_string())
     }
 }
@@ -449,11 +462,9 @@ fn get_node_logs(
     let all_logs = node_process.get_logs();
     let total = all_logs.len() as u32;
 
-    // Calculate start and end indices for pagination
     let start = ((page - 1) * page_size) as usize;
     let end = std::cmp::min(start + page_size as usize, all_logs.len());
 
-    // Get the paginated logs
     let logs = if start < all_logs.len() {
         all_logs[start..end].to_vec()
     } else {
@@ -677,7 +688,17 @@ fn delete_channel_order(
 
 #[tauri::command]
 fn is_local_node_supported() -> bool {
+    // Local node is supported if native binary OR Docker is available
     rgb_node::NodeProcess::is_local_node_supported()
+        || DockerNodeManager::is_docker_available()
+}
+
+#[tauri::command]
+fn get_local_node_capabilities() -> HashMap<String, bool> {
+    let mut caps = HashMap::new();
+    caps.insert("native".to_string(), rgb_node::NodeProcess::is_local_node_supported());
+    caps.insert("docker".to_string(), DockerNodeManager::is_docker_available());
+    caps
 }
 
 #[tauri::command]
@@ -834,4 +855,49 @@ fn get_decrypted_mnemonic(
     })?;
 
     Ok(mnemonic)
+}
+
+// ---------------------------------------------------------------------------
+// Docker node management commands
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn is_docker_available() -> bool {
+    DockerNodeManager::is_docker_available()
+}
+
+#[tauri::command]
+fn list_docker_environments() -> Vec<DockerEnvironment> {
+    DockerNodeManager::list_environments(None)
+}
+
+#[tauri::command]
+fn create_docker_environment(config: DockerSpawnConfig) -> Result<DockerEnvironment, String> {
+    DockerNodeManager::create_environment(&config, None)
+}
+
+#[tauri::command]
+async fn start_docker_node(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+    env_name: String,
+    node_index: Option<u16>,
+) -> Result<u16, String> {
+    println!("Starting Docker node for environment: {}", env_name);
+    let docker_manager = Arc::clone(&*docker_manager);
+    let idx = node_index.unwrap_or(0);
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let dm = docker_manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+        dm.start(&env_name, idx, None)
+    })
+    .await
+    .map_err(|e| format!("Failed to join Docker startup task: {}", e))?
+}
+
+#[tauri::command]
+fn stop_docker_node(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+) -> Result<(), String> {
+    let dm = docker_manager.lock().unwrap();
+    dm.stop()
 }

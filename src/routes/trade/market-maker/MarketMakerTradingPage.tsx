@@ -990,7 +990,7 @@ export const Component = () => {
         }
 
         const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        const maxTradableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
+        const maxTradableAmount = Math.max(0, maxHtlcLimit - RGB_HTLC_MIN_SAT)
         setMaxOutboundHtlcSat(maxTradableAmount)
         return maxTradableAmount
       } else {
