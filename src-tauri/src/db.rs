@@ -605,9 +605,7 @@ pub fn get_encrypted_mnemonic(
 pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     let mut stmt = conn.prepare("SELECT value FROM AppSettings WHERE key = ?")?;
-    let result = stmt
-        .query_row([key], |row| row.get(0))
-        .optional()?;
+    let result = stmt.query_row([key], |row| row.get(0)).optional()?;
     Ok(result)
 }
 

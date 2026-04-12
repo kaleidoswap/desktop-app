@@ -13,7 +13,7 @@ mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
-use docker_node::{DockerNodeManager, DockerSpawnConfig, DockerEnvironment};
+use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -689,15 +689,20 @@ fn delete_channel_order(
 #[tauri::command]
 fn is_local_node_supported() -> bool {
     // Local node is supported if native binary OR Docker is available
-    rgb_node::NodeProcess::is_local_node_supported()
-        || DockerNodeManager::is_docker_available()
+    rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
 }
 
 #[tauri::command]
 fn get_local_node_capabilities() -> HashMap<String, bool> {
     let mut caps = HashMap::new();
-    caps.insert("native".to_string(), rgb_node::NodeProcess::is_local_node_supported());
-    caps.insert("docker".to_string(), DockerNodeManager::is_docker_available());
+    caps.insert(
+        "native".to_string(),
+        rgb_node::NodeProcess::is_local_node_supported(),
+    );
+    caps.insert(
+        "docker".to_string(),
+        DockerNodeManager::is_docker_available(),
+    );
     caps
 }
 
@@ -887,7 +892,9 @@ async fn start_docker_node(
     let idx = node_index.unwrap_or(0);
 
     tauri::async_runtime::spawn_blocking(move || {
-        let dm = docker_manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+        let dm = docker_manager
+            .lock()
+            .map_err(|e| format!("Lock error: {}", e))?;
         dm.start(&env_name, idx, None)
     })
     .await

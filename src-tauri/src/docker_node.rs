@@ -160,10 +160,7 @@ impl DockerNodeManager {
     }
 
     pub fn get_current_environment(&self) -> Option<String> {
-        self.current_environment
-            .lock()
-            .ok()
-            .and_then(|g| g.clone())
+        self.current_environment.lock().ok().and_then(|g| g.clone())
     }
 
     pub fn get_daemon_port(&self) -> Option<u16> {
@@ -203,9 +200,7 @@ impl DockerNodeManager {
 
     /// List all Docker environments under the base directory
     pub fn list_environments(base_dir: Option<&Path>) -> Vec<DockerEnvironment> {
-        let base = base_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(default_base_dir);
+        let base = base_dir.map(PathBuf::from).unwrap_or_else(default_base_dir);
 
         if !base.exists() {
             return Vec::new();
@@ -241,7 +236,8 @@ impl DockerNodeManager {
                             let mut idx = 1;
                             loop {
                                 let svc_name = format!("rgb_node_{}", idx);
-                                if let Some(svc) = services.get(&serde_yaml::Value::String(svc_name))
+                                if let Some(svc) =
+                                    services.get(&serde_yaml::Value::String(svc_name))
                                 {
                                     // Extract daemon port from ports list
                                     if let Some(ports) =
@@ -252,8 +248,7 @@ impl DockerNodeManager {
                                         {
                                             let parts: Vec<&str> = first_port.split(':').collect();
                                             if parts.len() >= 2 {
-                                                if let Ok(p) =
-                                                    parts[parts.len() - 2].parse::<u16>()
+                                                if let Ok(p) = parts[parts.len() - 2].parse::<u16>()
                                                 {
                                                     daemon_ports.push(p);
                                                 }
@@ -264,8 +259,7 @@ impl DockerNodeManager {
                                         {
                                             let parts: Vec<&str> = second_port.split(':').collect();
                                             if parts.len() >= 2 {
-                                                if let Ok(p) =
-                                                    parts[parts.len() - 2].parse::<u16>()
+                                                if let Ok(p) = parts[parts.len() - 2].parse::<u16>()
                                                 {
                                                     peer_ports.push(p);
                                                 }
@@ -329,9 +323,7 @@ impl DockerNodeManager {
         config: &DockerSpawnConfig,
         base_dir: Option<&Path>,
     ) -> Result<DockerEnvironment, String> {
-        let base = base_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(default_base_dir);
+        let base = base_dir.map(PathBuf::from).unwrap_or_else(default_base_dir);
         let env_dir = base.join(&config.name);
 
         // Create directory
@@ -454,10 +446,7 @@ impl DockerNodeManager {
                 Value::String("interval".into()),
                 Value::String("10s".into()),
             );
-            healthcheck.insert(
-                Value::String("timeout".into()),
-                Value::String("10s".into()),
-            );
+            healthcheck.insert(Value::String("timeout".into()), Value::String("10s".into()));
             healthcheck.insert(Value::String("retries".into()), Value::Number(3.into()));
             healthcheck.insert(
                 Value::String("start_period".into()),
@@ -549,9 +538,7 @@ impl DockerNodeManager {
             thread::sleep(Duration::from_secs(1));
         }
 
-        let base = base_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(default_base_dir);
+        let base = base_dir.map(PathBuf::from).unwrap_or_else(default_base_dir);
         let env_dir = base.join(env_name);
         let compose_path = env_dir.join(COMPOSE_FILE);
 
@@ -696,9 +683,7 @@ impl DockerNodeManager {
 
     /// Stop and remove containers
     pub fn down(env_name: &str, base_dir: Option<&Path>) -> Result<(), String> {
-        let base = base_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(default_base_dir);
+        let base = base_dir.map(PathBuf::from).unwrap_or_else(default_base_dir);
         let env_dir = base.join(env_name);
 
         if !env_dir.join(COMPOSE_FILE).exists() {
@@ -719,9 +704,7 @@ impl DockerNodeManager {
         tail: u16,
         base_dir: Option<&Path>,
     ) -> Result<Vec<String>, String> {
-        let base = base_dir
-            .map(PathBuf::from)
-            .unwrap_or_else(default_base_dir);
+        let base = base_dir.map(PathBuf::from).unwrap_or_else(default_base_dir);
         let env_dir = base.join(env_name);
 
         let output = Self::run_compose(&env_dir, &["logs", "--tail", &tail.to_string()])?;
@@ -852,7 +835,10 @@ impl DockerNodeManager {
 
             if !container_running {
                 // Container stopped or crashed
-                let current_state = state.read().map(|s| s.clone()).unwrap_or(NodeState::Stopped);
+                let current_state = state
+                    .read()
+                    .map(|s| s.clone())
+                    .unwrap_or(NodeState::Stopped);
                 if matches!(current_state, NodeState::Starting | NodeState::Running) {
                     println!("Docker monitor: container stopped unexpectedly");
                     let failed_state =
@@ -922,7 +908,9 @@ impl DockerNodeManager {
             }
 
             // Fetch latest logs periodically
-            if let Ok(output) = Self::run_compose(compose_dir, &["logs", "--tail", "5", "--no-log-prefix"]) {
+            if let Ok(output) =
+                Self::run_compose(compose_dir, &["logs", "--tail", "5", "--no-log-prefix"])
+            {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 if let Ok(mut logs_guard) = logs.lock() {
                     for line in stdout.lines() {
