@@ -52,7 +52,9 @@ export const Component = () => {
   // Docker / local node mode
   const [isNativeSupported, setIsNativeSupported] = useState(true)
   const [isDockerAvailable, setIsDockerAvailable] = useState(false)
-  const [localNodeMode, setLocalNodeMode] = useState<'native' | 'docker' | null>(null)
+  const [localNodeMode, setLocalNodeMode] = useState<
+    'native' | 'docker' | null
+  >(null)
 
   const handleLanguageChange = (languageCode: string) => {
     dispatch(setLanguage(languageCode))
@@ -63,7 +65,9 @@ export const Component = () => {
   useEffect(() => {
     const checkCapabilities = async () => {
       try {
-        const caps = await invoke<Record<string, boolean>>('get_local_node_capabilities')
+        const caps = await invoke<Record<string, boolean>>(
+          'get_local_node_capabilities'
+        )
         const native = caps.native ?? false
         const docker = caps.docker ?? false
         setIsNativeSupported(native)
@@ -315,8 +319,12 @@ export const Component = () => {
                           type="button"
                         >
                           <div className="flex items-center gap-3 mb-2">
-                            <Server className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`} />
-                            <span className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}>
+                            <Server
+                              className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
+                            >
                               Native Binary
                             </span>
                           </div>
@@ -334,13 +342,18 @@ export const Component = () => {
                           type="button"
                         >
                           <div className="flex items-center gap-3 mb-2">
-                            <Container className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`} />
-                            <span className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}>
+                            <Container
+                              className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                            >
                               Docker Container
                             </span>
                           </div>
                           <p className="text-xs text-content-secondary">
-                            Run the node in a Docker container. Works on all platforms.
+                            Run the node in a Docker container. Works on all
+                            platforms.
                           </p>
                         </button>
                       </div>
@@ -357,14 +370,19 @@ export const Component = () => {
                           title={t('walletSetup.createWalletTitle')}
                         />
                         <WalletAction
-                          description={t('walletSetup.restoreWalletDescription')}
-                          icon={<ArrowLeftRight className="w-6 h-6 text-white" />}
-                          onClick={() => navigateToWalletInit(WALLET_RESTORE_PATH)}
+                          description={t(
+                            'walletSetup.restoreWalletDescription'
+                          )}
+                          icon={
+                            <ArrowLeftRight className="w-6 h-6 text-white" />
+                          }
+                          onClick={() =>
+                            navigateToWalletInit(WALLET_RESTORE_PATH)
+                          }
                           title={t('walletSetup.restoreWalletTitle')}
                         />
                       </div>
                     )}
-
                   </>
                 ) : (
                   <>

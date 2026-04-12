@@ -1214,7 +1214,12 @@ export const WithdrawModalContent: React.FC = () => {
       console.error('Withdrawal error:', error)
 
       // Check if this is a UTXO-related error and handle with CreateUTXOModal
-      const wasHandled = handleApiError(error, 'issuance', 0, handleConfirmedSubmit)
+      const wasHandled = handleApiError(
+        error,
+        'issuance',
+        0,
+        handleConfirmedSubmit
+      )
       if (wasHandled) {
         setIsConfirming(false)
         setShowConfirmation(false)

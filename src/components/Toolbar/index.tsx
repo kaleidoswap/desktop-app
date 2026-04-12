@@ -684,13 +684,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             )
 
             if (ourConflictingPorts.length > 0) {
-              toast.info(t('toolbar.nodes.stoppingExisting'), { autoClose: 2000 })
+              toast.info(t('toolbar.nodes.stoppingExisting'), {
+                autoClose: 2000,
+              })
               for (const port of ourConflictingPorts) {
                 const nodeAccount = runningNodePorts[port]
                 try {
                   const stoppedPromise = waitForNodeStopped()
                   try {
-                    await invokeWithTimeout('stop_node_by_account', { accountName: nodeAccount }, 5000, `Stopping node for account ${nodeAccount}`)
+                    await invokeWithTimeout(
+                      'stop_node_by_account',
+                      { accountName: nodeAccount },
+                      5000,
+                      `Stopping node for account ${nodeAccount}`
+                    )
                   } catch (error) {
                     void stoppedPromise.catch(() => undefined)
                     throw error
@@ -705,7 +712,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
               try {
                 const stoppedPromise = waitForNodeStopped()
                 try {
-                  await invokeWithTimeout('stop_node', undefined, 5000, 'Stopping stale node')
+                  await invokeWithTimeout(
+                    'stop_node',
+                    undefined,
+                    5000,
+                    'Stopping stale node'
+                  )
                 } catch (error) {
                   void stoppedPromise.catch(() => undefined)
                 }
@@ -716,15 +728,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             }
 
             // After stopping, find available ports automatically
-            const recheckPorts = await invokeWithTimeout<{ [port: string]: boolean }>(
-              'check_ports_available', { ports }, 10000, 'Re-checking ports'
-            )
+            const recheckPorts = await invokeWithTimeout<{
+              [port: string]: boolean
+            }>('check_ports_available', { ports }, 10000, 'Re-checking ports')
             const stillUnavailable = Object.entries(recheckPorts)
               .filter(([_, isAvailable]) => !isAvailable)
               .map(([port]) => port)
 
             if (stillUnavailable.length > 0) {
-              const availablePorts = await invokeWithTimeout<{ daemon: number; ldk: number }>(
+              const availablePorts = await invokeWithTimeout<{
+                daemon: number
+                ldk: number
+              }>(
                 'find_available_ports',
                 {
                   baseDaemonPort: parseInt(node.daemon_listening_port),
@@ -747,7 +762,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                 indexerUrl: node.indexer_url,
                 proxyEndpoint: node.proxy_endpoint,
                 defaultLspUrl: node.default_lsp_url,
-                makerUrls: Array.isArray(node.maker_urls) ? node.maker_urls.join(',') : node.maker_urls,
+                makerUrls: Array.isArray(node.maker_urls)
+                  ? node.maker_urls.join(',')
+                  : node.maker_urls,
                 defaultMakerUrl: node.default_maker_url,
                 daemonListeningPort: node.daemon_listening_port,
                 ldkPeerListeningPort: node.ldk_peer_listening_port,
