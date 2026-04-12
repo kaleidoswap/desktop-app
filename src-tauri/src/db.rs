@@ -602,6 +602,7 @@ pub fn get_encrypted_mnemonic(
 // App Settings (key-value store)
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     let mut stmt = conn.prepare("SELECT value FROM AppSettings WHERE key = ?")?;
@@ -609,6 +610,7 @@ pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
     Ok(result)
 }
 
+#[allow(dead_code)]
 pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
     conn.execute(

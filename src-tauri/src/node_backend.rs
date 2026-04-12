@@ -1,16 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
 pub enum NodeBackendType {
+    #[default]
     Native,
     Docker,
-}
-
-impl Default for NodeBackendType {
-    fn default() -> Self {
-        NodeBackendType::Native
-    }
 }
 
 impl std::fmt::Display for NodeBackendType {

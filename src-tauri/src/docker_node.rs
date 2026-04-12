@@ -806,6 +806,7 @@ impl DockerNodeManager {
     }
 
     /// Monitoring loop — runs in a separate thread
+    #[allow(clippy::too_many_arguments)]
     fn monitor_loop(
         rx: Receiver<ControlMessage>,
         compose_dir: &Path,
@@ -873,36 +874,34 @@ impl DockerNodeManager {
             }
 
             // Check HTTP readiness
-            if !became_ready {
-                if Self::probe_http(daemon_port) {
-                    became_ready = true;
-                    println!("Docker monitor: node HTTP ready on port {}", daemon_port);
+            if !became_ready && Self::probe_http(daemon_port) {
+                became_ready = true;
+                println!("Docker monitor: node HTTP ready on port {}", daemon_port);
 
-                    if let Ok(mut s) = state.write() {
-                        *s = NodeState::Running;
-                    }
+                if let Ok(mut s) = state.write() {
+                    *s = NodeState::Running;
+                }
 
-                    if let Ok(wg) = window.lock() {
-                        if let Some(w) = wg.as_ref() {
-                            let _ = w.emit("node-state-changed", NodeState::Running);
-                            let env_name = current_env
-                                .lock()
-                                .ok()
-                                .and_then(|g| g.clone())
-                                .unwrap_or_default();
-                            let _ = w.emit("node-started", env_name.clone());
-                        }
+                if let Ok(wg) = window.lock() {
+                    if let Some(w) = wg.as_ref() {
+                        let _ = w.emit("node-state-changed", NodeState::Running);
+                        let env_name = current_env
+                            .lock()
+                            .ok()
+                            .and_then(|g| g.clone())
+                            .unwrap_or_default();
+                        let _ = w.emit("node-started", env_name.clone());
                     }
-                    if let Ok(ag) = app_handle.lock() {
-                        if let Some(a) = ag.as_ref() {
-                            let _ = a.emit("node-state-changed", NodeState::Running);
-                            let env_name = current_env
-                                .lock()
-                                .ok()
-                                .and_then(|g| g.clone())
-                                .unwrap_or_default();
-                            let _ = a.emit("node-started", env_name);
-                        }
+                }
+                if let Ok(ag) = app_handle.lock() {
+                    if let Some(a) = ag.as_ref() {
+                        let _ = a.emit("node-state-changed", NodeState::Running);
+                        let env_name = current_env
+                            .lock()
+                            .ok()
+                            .and_then(|g| g.clone())
+                            .unwrap_or_default();
+                        let _ = a.emit("node-started", env_name);
                     }
                 }
             }
