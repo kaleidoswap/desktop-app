@@ -2955,5 +2955,43 @@
       "invalidAmount": "Please enter a valid amount",
       "insufficientBalance": "Insufficient balance"
     }
+  },
+  "guide": {
+    "title": "Getting Started",
+    "subtitle": "Learn how to trade RGB assets on Lightning in 4 simple steps",
+    "steps": {
+      "deposit": {
+        "title": "Deposit Bitcoin",
+        "description": "First, you need some on-chain Bitcoin in your wallet. Click the Deposit button on the dashboard to get your wallet address, then send BTC to it. This is the fuel for everything — you'll use it to open channels and buy assets.",
+        "tip": "On testnet, you can get free coins from a faucet. On mainnet, send BTC from any wallet or exchange."
+      },
+      "marketMaker": {
+        "title": "Visit the Market Maker",
+        "description": "The Market Maker is where you browse and buy RGB assets. It connects you with liquidity providers (makers) who offer assets like stablecoins and tokens. Think of it as a shop where you pay BTC and receive an asset in return.",
+        "tip": "The maker will open a Lightning channel with you and deliver the asset inside it — all in one step."
+      },
+      "buyChannel": {
+        "title": "Buy an Asset Channel",
+        "description": "Pick the asset you want, choose the amount, and confirm the order. The maker will open a Lightning channel funded with your chosen asset. You pay the BTC cost plus channel fees, and the asset gets delivered into your new channel.",
+        "tip": "Channel capacity determines how much you can trade. Larger channels give you more liquidity for swaps."
+      },
+      "waitAndTrade": {
+        "title": "Wait for Confirmation & Trade",
+        "description": "After the channel order is placed, wait for the on-chain transaction to confirm (usually a few blocks). Once confirmed, your channel is live and the asset appears in your dashboard. You can now swap it instantly on Lightning!",
+        "tip": "Lightning swaps are instant and cheap. You can buy more, sell, or swap between assets — all without waiting for on-chain confirmations."
+      }
+    },
+    "actions": {
+      "next": "Next Step",
+      "back": "Previous",
+      "finish": "Start Trading",
+      "depositBtc": "Deposit Bitcoin",
+      "goToMarketMaker": "Go to Market Maker",
+      "browseAssets": "Browse Assets",
+      "viewChannels": "View Channels",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "stepLabel": "Step {{current}} of {{total}}",
+    "proTip": "Pro Tip"
   }
 }

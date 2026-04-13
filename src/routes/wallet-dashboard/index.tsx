@@ -20,6 +20,7 @@ import {
   Download,
   Upload,
   History,
+  BookOpen,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -28,6 +29,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
+  GUIDE_PATH,
   ORDER_CHANNEL_PATH,
   TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
@@ -336,8 +338,8 @@ export const Component = () => {
               </div>
             </div>
 
-            {/* Actions — compact 4-button row */}
-            <div className="relative z-10 grid grid-cols-4 gap-2">
+            {/* Actions — compact 5-button row */}
+            <div className="relative z-10 grid grid-cols-5 gap-2">
               <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
                 onClick={() =>
@@ -388,6 +390,13 @@ export const Component = () => {
                     ? t('dashboard.refreshing')
                     : t('dashboard.refresh')}
                 </span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-cyan/15 hover:bg-cyan/25 border border-cyan/30 hover:border-cyan/50 text-cyan text-xs font-semibold transition-all overflow-hidden"
+                onClick={() => navigate(GUIDE_PATH)}
+              >
+                <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{t('guide.title')}</span>
               </button>
             </div>
           </div>

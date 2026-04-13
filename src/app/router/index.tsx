@@ -27,6 +27,7 @@ import {
   WALLET_HISTORY_ASSETS_PATH,
   WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   CREATEUTXOS_PATH,
+  GUIDE_PATH,
 } from './paths'
 
 export const router = createBrowserRouter([
@@ -129,6 +130,10 @@ export const router = createBrowserRouter([
       {
         lazy: () => import('../../routes/order-new-channel'),
         path: ORDER_CHANNEL_PATH,
+      },
+      {
+        lazy: () => import('../../routes/guide'),
+        path: GUIDE_PATH,
       },
     ],
     element: <RootRoute />,
