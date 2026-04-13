@@ -82,7 +82,17 @@ export const Component = () => {
         }
       } catch (error) {
         console.error('Failed to check local node capabilities:', error)
-        setIsLocalNodeSupported(false)
+        // Fallback: check the older is_local_node_supported command
+        try {
+          const supported = await invoke<boolean>('is_local_node_supported')
+          setIsLocalNodeSupported(supported)
+          if (supported) {
+            setIsNativeSupported(true)
+            setLocalNodeMode('native')
+          }
+        } catch {
+          setIsLocalNodeSupported(false)
+        }
       }
     }
 
@@ -359,8 +369,9 @@ export const Component = () => {
                       </div>
                     )}
 
-                    {/* Create/Restore wallet actions (shown when mode is selected) */}
-                    {localNodeMode && (
+                    {/* Create/Restore wallet actions (shown when mode is selected, or when only one backend is available) */}
+                    {(localNodeMode ||
+                      !(isNativeSupported && isDockerAvailable)) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <WalletAction
                           description={t('walletSetup.createWalletDescription')}
