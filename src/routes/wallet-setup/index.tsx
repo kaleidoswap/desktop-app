@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   Cloud,
   Server,
+  Container,
   ArrowRight,
   Zap,
   ArrowLeft,
@@ -48,25 +49,44 @@ export const Component = () => {
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [isLocalNodeSupported, setIsLocalNodeSupported] = useState(true)
 
+  // Docker / local node mode
+  const [isNativeSupported, setIsNativeSupported] = useState(true)
+  const [isDockerAvailable, setIsDockerAvailable] = useState(false)
+  const [localNodeMode, setLocalNodeMode] = useState<
+    'native' | 'docker' | null
+  >(null)
+
   const handleLanguageChange = (languageCode: string) => {
     dispatch(setLanguage(languageCode))
     i18n.changeLanguage(languageCode)
   }
 
-  // Check if local node is supported on this platform
+  // Check local node capabilities (native binary + Docker)
   useEffect(() => {
-    const checkLocalNodeSupport = async () => {
+    const checkCapabilities = async () => {
       try {
-        const supported = await invoke<boolean>('is_local_node_supported')
-        setIsLocalNodeSupported(supported)
+        const caps = await invoke<Record<string, boolean>>(
+          'get_local_node_capabilities'
+        )
+        const native = caps.native ?? false
+        const docker = caps.docker ?? false
+        setIsNativeSupported(native)
+        setIsDockerAvailable(docker)
+        setIsLocalNodeSupported(native || docker)
+
+        // If only one option, auto-select it
+        if (docker && !native) {
+          setLocalNodeMode('docker')
+        } else if (native && !docker) {
+          setLocalNodeMode('native')
+        }
       } catch (error) {
-        console.error('Failed to check local node support:', error)
-        // If we can't check, assume it's not supported to be safe
+        console.error('Failed to check local node capabilities:', error)
         setIsLocalNodeSupported(false)
       }
     }
 
-    checkLocalNodeSupport()
+    checkCapabilities()
   }, [])
 
   // Handle transitions
@@ -91,6 +111,15 @@ export const Component = () => {
           content.classList.add('fade-in')
         }
       }, 250)
+    }
+  }
+
+  const navigateToWalletInit = (path: string) => {
+    if (localNodeMode === 'docker') {
+      // Docker env will be auto-created in wallet-init based on account name
+      navigate(`${path}?mode=docker`)
+    } else {
+      navigate(path)
     }
   }
 
@@ -247,7 +276,10 @@ export const Component = () => {
                       <Button
                         className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={() => handleNodeTypeChange(null)}
+                        onClick={() => {
+                          setLocalNodeMode(null)
+                          handleNodeTypeChange(null)
+                        }}
                         size="sm"
                         variant="outline"
                       >
@@ -273,24 +305,84 @@ export const Component = () => {
                         {t('walletSetup.setupLocalSubtitle')}
                       </p>
                     </div>
-                    {/* TODO: Add local node warning after mainnet launch */}
-                    {/* <LocalNodeWarning /> */}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <WalletAction
-                        description={t('walletSetup.createWalletDescription')}
-                        icon={<Wallet className="w-6 h-6 text-white" />}
-                        onClick={() => navigate(WALLET_INIT_PATH)}
-                        primary
-                        title={t('walletSetup.createWalletTitle')}
-                      />
-                      <WalletAction
-                        description={t('walletSetup.restoreWalletDescription')}
-                        icon={<ArrowLeftRight className="w-6 h-6 text-white" />}
-                        onClick={() => navigate(WALLET_RESTORE_PATH)}
-                        title={t('walletSetup.restoreWalletTitle')}
-                      />
-                    </div>
+                    {/* Node mode sub-choice (only if both options available) */}
+                    {isNativeSupported && isDockerAvailable && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <button
+                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                            localNodeMode === 'native'
+                              ? 'border-cyan bg-cyan/10 shadow-lg shadow-cyan/10'
+                              : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
+                          }`}
+                          onClick={() => setLocalNodeMode('native')}
+                          type="button"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <Server
+                              className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
+                            >
+                              Native Binary
+                            </span>
+                          </div>
+                          <p className="text-xs text-content-secondary">
+                            Run the node as a local process. No Docker required.
+                          </p>
+                        </button>
+                        <button
+                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                            localNodeMode === 'docker'
+                              ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                              : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
+                          }`}
+                          onClick={() => setLocalNodeMode('docker')}
+                          type="button"
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <Container
+                              className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                            >
+                              Docker Container
+                            </span>
+                          </div>
+                          <p className="text-xs text-content-secondary">
+                            Run the node in a Docker container. Works on all
+                            platforms.
+                          </p>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Create/Restore wallet actions (shown when mode is selected) */}
+                    {localNodeMode && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <WalletAction
+                          description={t('walletSetup.createWalletDescription')}
+                          icon={<Wallet className="w-6 h-6 text-white" />}
+                          onClick={() => navigateToWalletInit(WALLET_INIT_PATH)}
+                          primary
+                          title={t('walletSetup.createWalletTitle')}
+                        />
+                        <WalletAction
+                          description={t(
+                            'walletSetup.restoreWalletDescription'
+                          )}
+                          icon={
+                            <ArrowLeftRight className="w-6 h-6 text-white" />
+                          }
+                          onClick={() =>
+                            navigateToWalletInit(WALLET_RESTORE_PATH)
+                          }
+                          title={t('walletSetup.restoreWalletTitle')}
+                        />
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>

@@ -61,8 +61,8 @@ importers:
         specifier: ^8.2.1
         version: 8.2.1
       kaleido-sdk:
-        specifier: 0.1.0
-        version: 0.1.0
+        specifier: ^0.1.5
+        version: 0.1.6
       lucide-react:
         specifier: ^0.575.0
         version: 0.575.0(react@18.3.1)
@@ -2351,8 +2351,8 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
-  kaleido-sdk@0.1.0:
-    resolution: {integrity: sha512-a/yfpShtJbt5B9qB5uavcCyW9Sc7BKZFbCatkPu3RddT8Xe3dSNPgTcC1TmYRpdUtc2OgbpKP6RmIOlRUnmLiA==}
+  kaleido-sdk@0.1.6:
+    resolution: {integrity: sha512-H3dLm1yz8knqY80vP+8JapUd3m/rV2QFcVg21r1LAUz23NDkwva9RtNnOIjkyODt2+/R+Dxi4y4zXT43ROcu5Q==}
     engines: {node: '>=18.0.0'}
 
   keyv@4.5.4:
@@ -5913,7 +5913,7 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  kaleido-sdk@0.1.0:
+  kaleido-sdk@0.1.6:
     dependencies:
       openapi-fetch: 0.15.2
 

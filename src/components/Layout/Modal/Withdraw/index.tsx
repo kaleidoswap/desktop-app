@@ -6,6 +6,8 @@ import { toast } from 'react-toastify'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
 import { useSettings } from '../../../../hooks/useSettings'
+import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
+import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
 import { BTC_ASSET_ID } from '../../../../constants'
 import {
   parseAssetAmountWithPrecision,
@@ -84,6 +86,9 @@ export const WithdrawModalContent: React.FC = () => {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(null)
   const [paymentHash, setPaymentHash] = useState<string | null>(null)
   const [isPollingStatus, setIsPollingStatus] = useState(false)
+
+  const { showUtxoModal, setShowUtxoModal, utxoModalProps, handleApiError } =
+    useUtxoErrorHandler()
 
   const [sendBtc] = nodeApi.useSendBtcMutation()
   const [sendRgb] = nodeApi.useSendRgbMutation()
@@ -1208,6 +1213,19 @@ export const WithdrawModalContent: React.FC = () => {
     } catch (error: any) {
       console.error('Withdrawal error:', error)
 
+      // Check if this is a UTXO-related error and handle with CreateUTXOModal
+      const wasHandled = handleApiError(
+        error,
+        'issuance',
+        0,
+        handleConfirmedSubmit
+      )
+      if (wasHandled) {
+        setIsConfirming(false)
+        setShowConfirmation(false)
+        return
+      }
+
       // Extract more detailed error information
       let errorMessage = t('withdrawModal.main.errors.withdrawalFailedDefault')
 
@@ -1264,6 +1282,7 @@ export const WithdrawModalContent: React.FC = () => {
     transportEndpoint,
     dispatch,
     t,
+    handleApiError,
   ])
 
   // Effect to fetch fee estimations when necessary
@@ -1414,6 +1433,14 @@ export const WithdrawModalContent: React.FC = () => {
           </div>
         )}
       </div>
+      <CreateUTXOModal
+        error={utxoModalProps.error}
+        isOpen={showUtxoModal}
+        onClose={() => setShowUtxoModal(false)}
+        onSuccess={() => setShowUtxoModal(false)}
+        operationType="issuance"
+        retryFunction={utxoModalProps.retryFunction}
+      />
     </>
   )
 }

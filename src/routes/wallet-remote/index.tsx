@@ -293,32 +293,20 @@ export const Component = () => {
     setConnectionStep('testing')
     setConnectionError(null)
 
-    // Check if account with the same name already exists
+    // Auto-generate a unique account name if one already exists
     try {
-      const accountExists = await invoke('check_account_exists', {
-        name: data.name,
-      })
-      if (accountExists) {
-        setConnectionError({
-          details: t('walletRemote.accountExistsMessage'),
-          message: t('walletRemote.accountExists'),
-          type: 'account',
-        })
-        toast.error(t('walletRemote.accountExistsToast'))
-        setIsConnecting(false)
-        setConnectionStep('idle')
-        return
+      let finalName = data.name
+      let suffix = 1
+      while (await invoke('check_account_exists', { name: finalName })) {
+        finalName = `${data.name}-${suffix}`
+        suffix++
+      }
+      if (finalName !== data.name) {
+        data.name = finalName
+        form.setValue('name', finalName)
       }
     } catch (error) {
-      setConnectionError({
-        details: t('walletRemote.failedCheckAccountExistsMessage'),
-        message: t('walletRemote.failedCheckAccountExists'),
-        type: 'account',
-      })
-      toast.error(t('walletRemote.failedCheckAccountExistsToast'))
-      setIsConnecting(false)
-      setConnectionStep('idle')
-      return
+      // If check fails, proceed with the original name — insert will catch real conflicts
     }
 
     // First, test the connection before saving anything
@@ -733,6 +721,7 @@ export const Component = () => {
                       />
                     </div>
                   )}
+
                   <FormField
                     error={form.formState.errors.password?.message}
                     htmlFor="password"

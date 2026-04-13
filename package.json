@@ -38,7 +38,7 @@
     "decimal.js": "^10.6.0",
     "i18next": "^25.10.10",
     "i18next-browser-languagedetector": "^8.2.1",
-    "kaleido-sdk": "0.1.0",
+    "kaleido-sdk": "^0.1.5",
     "lucide-react": "^0.575.0",
     "minidenticons": "^4.2.1",
     "qrcode.react": "^3.2.0",

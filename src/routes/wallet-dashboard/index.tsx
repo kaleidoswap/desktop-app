@@ -40,7 +40,7 @@ import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { PeerManagementModal } from '../../components/PeerManagementModal'
 import { Button, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
-import { BitcoinNetwork } from '../../constants'
+import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
@@ -285,7 +285,7 @@ export const Component = () => {
                       <span
                         className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isMainnet ? 'bg-status-success' : network ? 'bg-amber-400 animate-pulse' : 'bg-content-tertiary'}`}
                       />
-                      {network || '—'}
+                      {network ? getNetworkDisplayName(network) : '—'}
                       {!isMainnet && network && (
                         <AlertTriangle className="w-3 h-3" />
                       )}
