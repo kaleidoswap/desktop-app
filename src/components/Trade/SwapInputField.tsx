@@ -183,6 +183,12 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                 className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
                 disabled={disabled}
                 onChange={handleAmountChange}
+                onKeyDown={(e) => {
+                  // Prevent backspace on empty input from navigating back in history
+                  if (e.key === 'Backspace' && (!value || value === '0')) {
+                    e.preventDefault()
+                  }
+                }}
                 placeholder={t('trade.swapInput.placeholder')}
                 readOnly={readOnly}
                 type="text"

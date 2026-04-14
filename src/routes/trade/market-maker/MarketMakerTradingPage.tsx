@@ -472,13 +472,16 @@ export const Component = () => {
   // Update the quote response effect to handle connection errors
   useEffect(() => {
     if (!quoteResponse) {
+      // Skip entire null handler in reverse quote mode — the reverse quote
+      // CustomEvent handler manages hasValidQuote, rfq_id, etc. independently.
+      // Without this, the null handler races with the reverse handler and
+      // clears rfq_id/hasValidQuote right after the reverse handler sets them.
+      if (lastQuoteDirectionRef.current === 'to') return
+
       // Quote was cleared or not found
       try {
         window.requestAnimationFrame(() => {
-          // Skip clearing "to" when user is editing it (reverse quote mode)
-          if (lastQuoteDirectionRef.current !== 'to') {
-            form.setValue('to', '')
-          }
+          form.setValue('to', '')
           form.setValue('rfq_id', '')
           setHasValidQuote(false)
           setQuoteExpiresAt(null)
@@ -542,6 +545,11 @@ export const Component = () => {
       quoteResponse.timestamp !== lastQuoteResponseRef.current.timestamp
 
     if (isNewQuote) {
+      // Skip processing forward quotes when in reverse mode — the reverse
+      // handler manages all state. Processing forward quotes here would
+      // overwrite rfq_id and fees with values from the wrong direction.
+      if (lastQuoteDirectionRef.current === 'to') return
+
       lastQuoteResponseRef.current = quoteResponse
 
       // Clear any pending error message timeout since we got a quote
@@ -3032,25 +3040,25 @@ export const Component = () => {
 
   const handleToAmountChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
-      // Only trigger reverse quotes for real user input, not programmatic setValue from forward quotes
-      if (!event.isTrusted) return
-
       const baseHandler = createToAmountChangeHandler(
         form,
         getAssetPrecisionWrapper,
         maxToAmount
       )
-      const quoteHandler = createToAmountChangeQuoteHandler(requestReverseQuote)
 
-      const value = event.target.value
-      if (value && value !== '0') {
-        lastQuoteDirectionRef.current = 'to'
-      } else {
-        lastQuoteDirectionRef.current = 'from'
-        lastReverseQuoteRef.current = null
-      }
+      // Always stay in 'to' direction while user interacts with the to field.
+      // Only reset to 'from' when user explicitly types in the from field.
+      lastQuoteDirectionRef.current = 'to'
+
       baseHandler(event)
-      quoteHandler(event)
+
+      // Only request a reverse quote if there's a meaningful value
+      const value = event.target.value.replace(/[^\d.]/g, '')
+      if (value && parseFloat(value) > 0) {
+        const quoteHandler =
+          createToAmountChangeQuoteHandler(requestReverseQuote)
+        quoteHandler(event)
+      }
     },
     [form, getAssetPrecisionWrapper, maxToAmount, requestReverseQuote]
   )
