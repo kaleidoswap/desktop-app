@@ -537,12 +537,12 @@ export const Component = () => {
         // Create Docker environment with available ports and network
         await invoke('create_docker_environment', {
           config: {
-            name: envName,
-            count: 1,
-            network: network.toLowerCase(),
             base_daemon_port: finalDaemonPort,
             base_peer_port: finalPeerPort,
+            count: 1,
             disable_authentication: true,
+            name: envName,
+            network: network.toLowerCase(),
           },
         })
 
@@ -1153,35 +1153,35 @@ export const Component = () => {
       case 'password':
         if (isInitializing) {
           const phaseTitle: Record<typeof initPhase, string> = {
-            'starting-node': 'Starting Node Process',
-            'waiting-ready': 'Waiting for Node',
-            'initializing-wallet': 'Initializing Wallet',
-            'unlocking-wallet': 'Unlocking Wallet',
             idle: 'Starting Local Node',
+            'initializing-wallet': 'Initializing Wallet',
+            'starting-node': 'Starting Node Process',
+            'unlocking-wallet': 'Unlocking Wallet',
+            'waiting-ready': 'Waiting for Node',
           }
           const phaseSubtitle: Record<typeof initPhase, string> = {
-            'starting-node': 'Spawning the node process and binding to ports',
-            'waiting-ready':
-              'Node process started — waiting for HTTP server to respond',
+            idle: '',
             'initializing-wallet':
               'Generating your 24-word mnemonic seed phrase',
+            'starting-node': 'Spawning the node process and binding to ports',
             'unlocking-wallet': 'Sending unlock request to the node',
-            idle: '',
+            'waiting-ready':
+              'Node process started — waiting for HTTP server to respond',
           }
           const phaseIcon: Record<typeof initPhase, JSX.Element> = {
-            'starting-node': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'waiting-ready': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
+            idle: <Zap className="w-8 h-8 text-primary animate-pulse" />,
             'initializing-wallet': (
               <Key className="w-8 h-8 text-primary animate-pulse" />
+            ),
+            'starting-node': (
+              <Zap className="w-8 h-8 text-primary animate-pulse" />
             ),
             'unlocking-wallet': (
               <Key className="w-8 h-8 text-primary animate-pulse" />
             ),
-            idle: <Zap className="w-8 h-8 text-primary animate-pulse" />,
+            'waiting-ready': (
+              <Zap className="w-8 h-8 text-primary animate-pulse" />
+            ),
           }
           return renderStepLayout(
             phaseTitle[initPhase],
@@ -1380,7 +1380,7 @@ const NodeStartupProgress = ({
           const isCompleted = i < currentPhaseIndex
           const isCurrent = i === currentPhaseIndex
           return (
-            <div key={p.id} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={p.id}>
               {i > 0 && (
                 <div
                   className={`h-px w-10 transition-colors ${

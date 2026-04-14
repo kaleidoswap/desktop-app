@@ -85,7 +85,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
     | { separator: string }
 
   const infoRows: InfoRow[] = [
-    { label: 'Status', value: channel.status, mono: false },
+    { label: 'Status', mono: false, value: channel.status },
     {
       label: 'Capacity',
       value: `${formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)} ${bitcoinUnit}`,
@@ -112,16 +112,16 @@ const InfoModal: React.FC<InfoModalProps> = ({
     },
     { separator: 'Identifiers' },
     {
-      label: 'Channel ID',
-      value: channel.channel_id,
-      mono: true,
       copyable: true,
+      label: 'Channel ID',
+      mono: true,
+      value: channel.channel_id,
     },
     {
-      label: 'Funding TX',
-      value: channel.funding_txid,
-      mono: true,
       copyable: true,
+      label: 'Funding TX',
+      mono: true,
+      value: channel.funding_txid,
     },
     {
       label: 'Short Channel ID',
@@ -129,10 +129,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
         channel.short_channel_id?.toString() || t('channelCard.infoModal.na'),
     },
     {
-      label: 'Peer Pubkey',
-      value: channel.peer_pubkey,
-      mono: true,
       copyable: true,
+      label: 'Peer Pubkey',
+      mono: true,
+      value: channel.peer_pubkey,
     },
   ]
 
@@ -140,10 +140,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
     infoRows.push(
       { separator: 'RGB Asset' },
       {
-        label: 'Asset ID',
-        value: channel.asset_id,
-        mono: true,
         copyable: true,
+        label: 'Asset ID',
+        mono: true,
+        value: channel.asset_id,
       },
       {
         label: 'Asset Local',

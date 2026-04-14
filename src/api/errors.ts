@@ -136,9 +136,9 @@ export function categorizeError(
   ) {
     return {
       category: ErrorCategory.UTXO,
+      isRetryable: false,
       message,
       originalError: error,
-      isRetryable: false,
       statusCode,
     }
   }
@@ -151,9 +151,9 @@ export function categorizeError(
   ) {
     return {
       category: ErrorCategory.NODE_STATE,
+      isRetryable: true,
       message,
       originalError: error,
-      isRetryable: true,
       statusCode,
     }
   }
@@ -164,54 +164,54 @@ export function categorizeError(
       case statusCode === 401:
         return {
           category: ErrorCategory.AUTHENTICATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 403:
         return {
           category: ErrorCategory.AUTHORIZATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 404:
         return {
           category: ErrorCategory.NOT_FOUND,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 422:
         return {
           category: ErrorCategory.VALIDATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 429:
         return {
           category: ErrorCategory.RATE_LIMIT,
+          isRetryable: true,
           message,
           originalError: error,
-          isRetryable: true,
           statusCode,
         }
 
       case statusCode >= 500:
         return {
           category: ErrorCategory.SERVER,
+          isRetryable: true,
           message,
           originalError: error,
-          isRetryable: true,
           statusCode,
         }
     }
@@ -227,9 +227,9 @@ export function categorizeError(
   ) {
     return {
       category: ErrorCategory.NETWORK,
+      isRetryable: true,
       message,
       originalError: error,
-      isRetryable: true,
       statusCode,
     }
   }
@@ -237,9 +237,9 @@ export function categorizeError(
   // Default: unknown error
   return {
     category: ErrorCategory.UNKNOWN,
+    isRetryable: false,
     message,
     originalError: error,
-    isRetryable: false,
     statusCode,
   }
 }
@@ -251,12 +251,12 @@ export function transformSdkError(error: unknown): FetchBaseQueryError {
   const categorized = categorizeError(error)
 
   return {
-    status: categorized.statusCode || 500,
     data: {
-      error: categorized.message,
       category: categorized.category,
       code: categorized.code,
+      error: categorized.message,
     } as ApiErrorResponse,
+    status: categorized.statusCode || 500,
   }
 }
 

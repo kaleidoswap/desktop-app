@@ -515,7 +515,7 @@ export function useDcaScheduler() {
         return
       }
       queuedOrderIdsRef.current.add(orderId)
-      executionQueueRef.current.push({ orderId, currentPrice })
+      executionQueueRef.current.push({ currentPrice, orderId })
       void runQueueRef.current?.()
     }
 
@@ -592,9 +592,9 @@ export function useDcaScheduler() {
         const quoteResp = await withTimeout(
           getQuoteRef.current({
             from_asset: {
+              amount: rawFromAmount,
               asset_id: usdtAsset.asset_id,
               layer: 'RGB_LN',
-              amount: rawFromAmount,
             },
             to_asset: {
               asset_id: 'BTC',
@@ -847,6 +847,6 @@ export function useDcaScheduler() {
     }
     // dispatch is stable — effect runs once on mount.
     // All other deps are accessed via refs updated in separate effects above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [dispatch])
 }

@@ -47,54 +47,54 @@ export const Component = () => {
     navigate(WALLET_DASHBOARD_PATH)
     // Small delay to let the dashboard mount before dispatching modal
     setTimeout(() => {
-      dispatch(uiSliceActions.setModal({ type: 'deposit', assetId: undefined }))
+      dispatch(uiSliceActions.setModal({ assetId: undefined, type: 'deposit' }))
     }, 100)
   }
 
   const steps: StepConfig[] = [
     {
-      key: 'deposit',
-      icon: Download,
-      accentIcon: Bitcoin,
-      ctaKey: 'guide.actions.depositBtc',
-      ctaAction: openDepositModal,
-      gradient: 'from-amber-500/20 to-orange-500/10',
       accentColor: 'text-amber-400',
+      accentIcon: Bitcoin,
+      ctaAction: openDepositModal,
+      ctaKey: 'guide.actions.depositBtc',
+      gradient: 'from-amber-500/20 to-orange-500/10',
+      icon: Download,
+      key: 'deposit',
     },
     {
-      key: 'marketMaker',
-      icon: Store,
-      accentIcon: Zap,
-      ctaKey: 'guide.actions.goToMarketMaker',
-      ctaAction: () => navigate(TRADE_MARKET_MAKER_PATH),
-      gradient: 'from-cyan/20 to-blue-500/10',
       accentColor: 'text-cyan',
-    },
-    {
-      key: 'buyChannel',
-      icon: ShoppingCart,
       accentIcon: Zap,
-      ctaKey: 'guide.actions.browseAssets',
       ctaAction: () => navigate(TRADE_MARKET_MAKER_PATH),
-      gradient: 'from-purple-500/20 to-pink-500/10',
-      accentColor: 'text-purple-400',
+      ctaKey: 'guide.actions.goToMarketMaker',
+      gradient: 'from-cyan/20 to-blue-500/10',
+      icon: Store,
+      key: 'marketMaker',
     },
     {
-      key: 'waitAndTrade',
-      icon: Clock,
-      accentIcon: Rocket,
-      ctaKey: 'guide.actions.viewChannels',
-      ctaAction: () => navigate(CHANNELS_PATH),
-      gradient: 'from-emerald-500/20 to-green-500/10',
+      accentColor: 'text-purple-400',
+      accentIcon: Zap,
+      ctaAction: () => navigate(TRADE_MARKET_MAKER_PATH),
+      ctaKey: 'guide.actions.browseAssets',
+      gradient: 'from-purple-500/20 to-pink-500/10',
+      icon: ShoppingCart,
+      key: 'buyChannel',
+    },
+    {
       accentColor: 'text-emerald-400',
+      accentIcon: Rocket,
+      ctaAction: () => navigate(CHANNELS_PATH),
+      ctaKey: 'guide.actions.viewChannels',
+      gradient: 'from-emerald-500/20 to-green-500/10',
+      icon: Clock,
+      key: 'waitAndTrade',
     },
   ]
 
   const currentStep = steps[step - 1]
 
   const stepperSteps = steps.map((s, i) => ({
-    label: t(`guide.steps.${s.key}.title`),
     completed: i + 1 < step,
+    label: t(`guide.steps.${s.key}.title`),
   }))
 
   const handleNext = () => {

@@ -126,8 +126,8 @@ export const Component: React.FC = () => {
       defaultValues: {
         bearerToken: nodeSettings.bearer_token || '',
         bitcoinUnit,
-        fiatCurrency,
         defaultMakerUrl: nodeSettings.default_maker_url || '',
+        fiatCurrency,
         indexerUrl: nodeSettings.indexer_url || '',
         language: language || 'en',
         lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
@@ -246,8 +246,8 @@ export const Component: React.FC = () => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
-      fiatCurrency,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
+      fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
       lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
@@ -466,8 +466,8 @@ export const Component: React.FC = () => {
     reset({
       bearerToken: nodeSettings.bearer_token || '',
       bitcoinUnit,
-      fiatCurrency,
       defaultMakerUrl: nodeSettings.default_maker_url || '',
+      fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
       lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
@@ -649,25 +649,25 @@ export const Component: React.FC = () => {
                         </label>
                         <div className="flex rounded-lg overflow-hidden border border-border-default w-fit">
                           <button
-                            type="button"
-                            onClick={() => dispatch(setTheme('dark'))}
                             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
                               theme === 'dark'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
                             }`}
+                            onClick={() => dispatch(setTheme('dark'))}
+                            type="button"
                           >
                             <Moon className="w-4 h-4" />
                             {t('settings.themeDark')}
                           </button>
                           <button
-                            type="button"
-                            onClick={() => dispatch(setTheme('light'))}
                             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
                               theme === 'light'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
                             }`}
+                            onClick={() => dispatch(setTheme('light'))}
+                            type="button"
                           >
                             <Sun className="w-4 h-4" />
                             {t('settings.themeLight')}

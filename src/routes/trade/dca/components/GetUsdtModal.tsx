@@ -136,10 +136,10 @@ export function GetUsdtModal({
 
       const assetAmount = Math.round(amountUsdt * Math.pow(10, precision))
       await openChannel({
-        peer_pubkey_and_opt_addr: connectionUrl,
-        capacity_sat: satNum,
-        asset_id: usdtAsset.asset_id,
         asset_amount: assetAmount,
+        asset_id: usdtAsset.asset_id,
+        capacity_sat: satNum,
+        peer_pubkey_and_opt_addr: connectionUrl,
       }).unwrap()
 
       setOnChainState('success')
@@ -159,16 +159,16 @@ export function GetUsdtModal({
   if (showBuyModal) {
     return (
       <BuyChannelModal
+        defaultTotalAssetAmount="250"
         isOpen={true}
         onClose={() => setShowBuyModal(false)}
         onSuccess={() => {
           setShowBuyModal(false)
           onSuccess()
         }}
-        defaultTotalAssetAmount="250"
         preselectedAsset={
           usdtAsset?.asset_id
-            ? { assetId: usdtAsset.asset_id, amount: 100 }
+            ? { amount: 100, assetId: usdtAsset.asset_id }
             : undefined
         }
       />
@@ -313,20 +313,20 @@ export function GetUsdtModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      step="any"
-                      min="0"
-                      max={spendableUsdt}
-                      value={usdtAmount}
-                      onChange={(e) => setUsdtAmount(e.target.value)}
-                      placeholder="0.00"
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
-                      }
                       className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
                                  text-sm text-content-primary placeholder:text-content-secondary/60
                                  focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
                                  disabled:opacity-50"
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
+                      max={spendableUsdt}
+                      min="0"
+                      onChange={(e) => setUsdtAmount(e.target.value)}
+                      placeholder="0.00"
+                      step="any"
+                      type="number"
+                      value={usdtAmount}
                     />
                     <span className="text-xs text-content-secondary font-medium flex-shrink-0">
                       USDT
@@ -335,13 +335,13 @@ export function GetUsdtModal({
                       className="px-2 py-1.5 rounded-lg border border-border-subtle bg-surface-overlay
                                  text-xs text-content-secondary hover:text-content-primary hover:border-border-default
                                  transition-colors flex-shrink-0 disabled:opacity-50"
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
                       onClick={() =>
                         setUsdtAmount(
                           spendableUsdt.toFixed(6).replace(/\.?0+$/, '') || '0'
                         )
-                      }
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
                       }
                     >
                       {t('dca.getUsdt.useAll', 'Use all')}
@@ -372,19 +372,19 @@ export function GetUsdtModal({
                   </div>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      step="1000"
-                      min={lspMinSat}
-                      max={lspMaxSat}
-                      value={capacitySat}
-                      onChange={(e) => setCapacitySat(e.target.value)}
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
-                      }
                       className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
                                  text-sm text-content-primary placeholder:text-content-secondary/60
                                  focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
                                  disabled:opacity-50"
+                      disabled={
+                        onChainState === 'loading' || onChainState === 'success'
+                      }
+                      max={lspMaxSat}
+                      min={lspMinSat}
+                      onChange={(e) => setCapacitySat(e.target.value)}
+                      step="1000"
+                      type="number"
+                      value={capacitySat}
                     />
                     <span className="text-xs text-content-secondary font-medium flex-shrink-0">
                       sats
@@ -395,8 +395,8 @@ export function GetUsdtModal({
                       'dca.getUsdt.capacityRange',
                       'Min {{min}} – max {{max}} sats',
                       {
-                        min: formatSats(lspMinSat),
                         max: formatSats(lspMaxSat),
+                        min: formatSats(lspMinSat),
                       }
                     )}
                     {satNum > 0 && isSatValid && (
@@ -436,8 +436,8 @@ export function GetUsdtModal({
                     className="px-3 py-1.5 rounded-lg bg-status-success/15 text-status-success border border-status-success/30
                                hover:bg-status-success/25 font-medium text-xs transition-all active:scale-[0.97]
                                disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
-                    onClick={handleOpenChannel}
                     disabled={!canSubmit}
+                    onClick={handleOpenChannel}
                   >
                     {onChainState === 'loading' && (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

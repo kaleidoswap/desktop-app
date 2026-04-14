@@ -754,22 +754,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
               // Update account in DB with new ports
               await invoke('update_account', {
-                name: node.name,
-                network: node.network,
                 datapath: node.datapath,
-                rpcConnectionUrl: node.rpc_connection_url,
-                nodeUrl: node.node_url,
-                indexerUrl: node.indexer_url,
-                proxyEndpoint: node.proxy_endpoint,
                 defaultLspUrl: node.default_lsp_url,
+                daemonListeningPort: node.daemon_listening_port,
+                defaultMakerUrl: node.default_maker_url,
+                bearerToken: null,
+                indexerUrl: node.indexer_url,
+                language: node.language || 'en',
+                name: node.name,
+                ldkPeerListeningPort: node.ldk_peer_listening_port,
+                network: node.network,
                 makerUrls: Array.isArray(node.maker_urls)
                   ? node.maker_urls.join(',')
                   : node.maker_urls,
-                defaultMakerUrl: node.default_maker_url,
-                daemonListeningPort: node.daemon_listening_port,
-                ldkPeerListeningPort: node.ldk_peer_listening_port,
-                bearerToken: null,
-                language: node.language || 'en',
+                nodeUrl: node.node_url,
+                proxyEndpoint: node.proxy_endpoint,
+                rpcConnectionUrl: node.rpc_connection_url,
               })
 
               toast.info(

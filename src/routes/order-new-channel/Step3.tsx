@@ -350,26 +350,26 @@ export const Step3: React.FC<StepProps> = ({
 
   return (
     <div className="w-full relative">
-      <div ref={contentRef} className="max-w-5xl mx-auto space-y-5 relative">
+      <div className="max-w-5xl mx-auto space-y-5 relative" ref={contentRef}>
         <div className="grid gap-2.5 md:grid-cols-3">
           {[
             {
+              complete: true,
               label: t('orderChannel.step1.connectLsp'),
               state: t('orderChannel.step1.completed'),
               value: '01',
-              complete: true,
             },
             {
+              complete: true,
               label: t('orderChannel.step2.step2Label'),
               state: t('orderChannel.step1.completed'),
               value: '02',
-              complete: true,
             },
             {
+              complete: false,
               label: t('orderChannel.step3.step3Label'),
               state: t('orderChannel.step1.currentStep'),
               value: '03',
-              complete: false,
             },
           ].map((step) => (
             <div

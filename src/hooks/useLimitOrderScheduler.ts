@@ -400,9 +400,9 @@ export function useLimitOrderScheduler() {
         const quoteResp = await withTimeout(
           getQuoteRef.current({
             from_asset: {
+              amount: fromAmountRaw,
               asset_id: fromAssetId,
               layer: fromLayer,
-              amount: fromAmountRaw,
             },
             to_asset: {
               asset_id: toAssetId,
@@ -614,9 +614,9 @@ export function useLimitOrderScheduler() {
         const quoteResp = await withTimeout(
           getQuoteRef.current({
             from_asset: {
+              amount: minAmount,
               asset_id: quoteAssetId,
               layer: quoteLayer,
-              amount: minAmount,
             },
             to_asset: {
               asset_id: baseAssetId,
@@ -719,6 +719,6 @@ export function useLimitOrderScheduler() {
       queuedOrderIdsRef.current.clear()
       logger.info('LimitOrder: scheduler stopped')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [dispatch])
 }

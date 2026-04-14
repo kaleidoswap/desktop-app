@@ -4,7 +4,7 @@ vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }))
 vi.mock('../../../../utils/logger', () => ({
-  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+  logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
   normalizePairs: vi.fn((pairs: any[]) => pairs),
@@ -12,8 +12,8 @@ vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
 vi.mock('i18next', () => ({ default: { language: 'en' } }))
 vi.mock('../../../../app/hubs/websocketService', () => ({
   webSocketService: {
-    requestQuote: vi.fn(),
     isConnectionReadyForCommunication: vi.fn(() => true),
+    requestQuote: vi.fn(),
   },
 }))
 

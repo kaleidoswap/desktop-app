@@ -37,6 +37,9 @@ const nodeSlice = createSlice({
     clearLogs: (state) => {
       state.logs = []
     },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload
+    },
     setLifecycleState: (state, action: PayloadAction<BackendNodeState>) => {
       state.lifecycle = action.payload
       state.isRunning =
@@ -52,9 +55,6 @@ const nodeSlice = createSlice({
       }
 
       state.error = null
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
