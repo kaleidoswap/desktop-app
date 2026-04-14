@@ -77,7 +77,7 @@ describe('setLifecycleState', () => {
 
   it('sets Stopped → isRunning=false, isLoading=false', () => {
     const state = nodeReducer(
-      { ...initialState, isRunning: true, isLoading: true },
+      { ...initialState, isLoading: true, isRunning: true },
       setLifecycleState({ status: 'Stopped' })
     )
     expect(state.isRunning).toBe(false)
@@ -87,7 +87,7 @@ describe('setLifecycleState', () => {
   it('sets Failed → captures error message', () => {
     const state = nodeReducer(
       initialState,
-      setLifecycleState({ status: 'Failed', message: 'boom' })
+      setLifecycleState({ message: 'boom', status: 'Failed' })
     )
     expect(state.error).toBe('boom')
     expect(state.isRunning).toBe(false)

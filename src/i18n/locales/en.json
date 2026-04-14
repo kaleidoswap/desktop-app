@@ -352,6 +352,7 @@
     "backendDocker": "Docker Container",
     "backendDockerDescription": "Run the node in a Docker container. Works on all platforms.",
     "backendUnavailable": "Not available",
+    "recommended": "Recommended",
     "noBackendAvailable": "No backend detected",
     "noBackendHint": "Install and start Docker Desktop to run a local node on this platform.",
     "backToOptions": "Back to Connection Options",

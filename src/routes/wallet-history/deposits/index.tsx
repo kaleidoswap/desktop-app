@@ -147,18 +147,18 @@ export const Component: React.FC = () => {
       .map((payment: any) => {
         const assetInfo = resolveAssetInfo(payment.asset_id, listAssetsData)
         return {
-          satAmount: ((payment.amt_msat ?? 0) / 1000).toString(),
+          payeePublicKey: payment.payee_pubkey,
           rgbAmount: assetInfo
             ? (payment.asset_amount ?? 0).toString()
             : undefined,
-          rgbAssetLabel: assetInfo?.label,
           rgbAssetId: assetInfo?.fullId,
+          rgbAssetLabel: assetInfo?.label,
           rgbAssetPrecision: assetInfo?.precision,
+          satAmount: ((payment.amt_msat ?? 0) / 1000).toString(),
+          status: payment.status,
+          timestamp: payment.created_at,
           txId: payment.payment_hash ?? '',
           type: 'off-chain' as const,
-          timestamp: payment.created_at,
-          status: payment.status,
-          payeePublicKey: payment.payee_pubkey,
         }
       }) || []
 

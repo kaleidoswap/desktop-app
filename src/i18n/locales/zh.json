@@ -353,6 +353,7 @@
     "backendDocker": "Docker 容器",
     "backendDockerDescription": "在 Docker 容器中运行节点。适用于所有平台。",
     "backendUnavailable": "不可用",
+    "recommended": "推荐",
     "noBackendAvailable": "未检测到后端",
     "noBackendHint": "安装并启动 Docker Desktop 以在此平台上运行本地节点。",
     "backToOptions": "返回连接选项",

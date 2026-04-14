@@ -5,8 +5,8 @@ import { unlockNodeWithRetry } from '../nodeUnlock'
 describe('unlockNodeWithRetry', () => {
   it('treats prefixed already-unlocked API errors as success', async () => {
     const unlock = vi.fn().mockRejectedValue({
-      status: 500,
       data: { error: 'API Error (500): Node has already been unlocked' },
+      status: 500,
     })
     const getNodeInfo = vi.fn().mockResolvedValue({ isSuccess: true })
 

@@ -104,9 +104,9 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           <div className="flex items-center gap-0.5">
             {[
               {
+                color: 'text-primary hover:bg-primary/15',
                 icon: <Download className="w-3.5 h-3.5" />,
                 label: 'Deposit',
-                color: 'text-primary hover:bg-primary/15',
                 onClick: () =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -116,9 +116,9 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
               {
+                color: 'text-emerald-300 hover:bg-emerald-900/30',
                 icon: <Upload className="w-3.5 h-3.5" />,
                 label: 'Withdraw',
-                color: 'text-emerald-300 hover:bg-emerald-900/30',
                 onClick: () =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -128,16 +128,16 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
               {
+                color: 'text-secondary hover:bg-secondary/15',
                 icon: <History className="w-3.5 h-3.5" />,
                 label: 'History',
-                color: 'text-secondary hover:bg-secondary/15',
                 onClick: () =>
                   navigate(
                     `${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`
                   ),
               },
             ].map(({ icon, label, color, onClick }) => (
-              <div key={label} className="relative group/btn">
+              <div className="relative group/btn" key={label}>
                 <button
                   className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
                   onClick={onClick}

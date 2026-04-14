@@ -2045,6 +2045,7 @@
     "backendDocker": "Docker Container",
     "backendDockerDescription": "Node in einem Docker-Container ausführen. Funktioniert auf allen Plattformen.",
     "backendUnavailable": "Nicht verfügbar",
+    "recommended": "Empfohlen",
     "noBackendAvailable": "Kein Backend erkannt",
     "noBackendHint": "Installiere und starte Docker Desktop, um einen lokalen Node auf dieser Plattform auszuführen.",
     "backToOptions": "Zurück zu den Verbindungsoptionen",

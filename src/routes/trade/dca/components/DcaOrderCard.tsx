@@ -242,8 +242,8 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
                 <button
                   aria-label="Execute now"
                   className="h-7 px-2 rounded-lg text-content-secondary hover:text-primary hover:bg-primary/10 transition-colors inline-flex items-center gap-1 border border-border-subtle/70 text-xs font-medium"
-                  title="Execute now"
                   onClick={() => executeOrderManually(order.id)}
+                  title="Execute now"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">
@@ -255,8 +255,8 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
                 <button
                   aria-label="Pause"
                   className="h-7 w-7 rounded-lg text-content-secondary hover:text-status-warning hover:bg-status-warning/10 transition-colors border border-border-subtle/70 inline-flex items-center justify-center"
-                  title={t('dca.actions.pause', 'Pause')}
                   onClick={() => dispatch(pauseOrder(order.id))}
+                  title={t('dca.actions.pause', 'Pause')}
                 >
                   <Pause className="w-3.5 h-3.5" />
                 </button>
@@ -264,8 +264,8 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
                 <button
                   aria-label="Resume"
                   className="h-7 w-7 rounded-lg text-content-secondary hover:text-status-success hover:bg-status-success/10 transition-colors border border-border-subtle/70 inline-flex items-center justify-center"
-                  title={t('dca.actions.resume', 'Resume')}
                   onClick={() => dispatch(resumeOrder(order.id))}
+                  title={t('dca.actions.resume', 'Resume')}
                 >
                   <Play className="w-3.5 h-3.5" />
                 </button>
@@ -273,8 +273,8 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
               <button
                 aria-label="Cancel"
                 className="h-7 w-7 rounded-lg text-content-secondary hover:text-status-danger hover:bg-status-danger/10 transition-colors border border-border-subtle/70 inline-flex items-center justify-center"
-                title={t('dca.actions.cancel', 'Cancel')}
                 onClick={() => dispatch(cancelOrder(order.id))}
+                title={t('dca.actions.cancel', 'Cancel')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -283,8 +283,8 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
             <button
               aria-label="Delete"
               className="h-7 w-7 rounded-lg text-content-secondary hover:text-status-danger hover:bg-status-danger/10 transition-colors border border-border-subtle/70 inline-flex items-center justify-center"
-              title="Delete permanently"
               onClick={() => dispatch(deleteOrder(order.id))}
+              title="Delete permanently"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

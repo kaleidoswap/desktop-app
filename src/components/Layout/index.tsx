@@ -304,9 +304,9 @@ const UserProfile = ({
     selectBackupFolder,
   } = useBackup({
     nodeSettings: nodeSettingsData || {
-      rpc_connection_url: '',
       indexer_url: '',
       proxy_endpoint: '',
+      rpc_connection_url: '',
     },
   })
 

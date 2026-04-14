@@ -34,5 +34,5 @@ export const useBitcoinPrice = (): UseBitcoinPriceResult => {
     }).format(fiatValue)}`
   }
 
-  return { btcPrice, fiatCurrency, isLoading, formatFiat }
+  return { btcPrice, fiatCurrency, formatFiat, isLoading }
 }

@@ -350,7 +350,7 @@ export const Component = () => {
                         </p>
                       </button>
                       <button
-                        className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
                           !isDockerAvailable
                             ? 'border-border-default/20 bg-surface-elevated/10 opacity-50 cursor-not-allowed'
                             : localNodeMode === 'docker'
@@ -361,6 +361,11 @@ export const Component = () => {
                         onClick={() => setLocalNodeMode('docker')}
                         type="button"
                       >
+                        <div className="absolute top-2 right-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                            {t('walletSetup.recommended')}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-3 mb-2">
                           <Container
                             className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}

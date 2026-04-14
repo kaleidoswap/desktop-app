@@ -1,14 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 
 vi.mock('react-toastify', () => ({
-  toast: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+  toast: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 vi.mock('../../../../utils/logger', () => ({
-  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+  logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
-  normalizePairs: vi.fn((pairs: any[]) => pairs),
   TradingPair: {},
+  normalizePairs: vi.fn((pairs: any[]) => pairs),
 }))
 vi.mock('i18next', () => ({ default: { language: 'en' } }))
 
@@ -38,27 +38,27 @@ const makePair = (
   quoteAssetId: string,
   overrides: Partial<TradingPair> = {}
 ): TradingPair => ({
-  id: `${baseAsset}-${quoteAsset}`,
   base: {
-    ticker: baseAsset,
+    endpoints: [],
     name: baseAsset,
     precision: 8,
     protocol_ids: { RGB: baseAssetId },
-    endpoints: [],
+    ticker: baseAsset,
   },
+  base_asset: baseAsset,
+  base_asset_id: baseAssetId,
+  id: `${baseAsset}-${quoteAsset}`,
+  is_active: true,
   quote: {
-    ticker: quoteAsset,
+    endpoints: [],
     name: quoteAsset,
     precision: 8,
     protocol_ids: { RGB: quoteAssetId },
-    endpoints: [],
+    ticker: quoteAsset,
   },
-  base_asset: baseAsset,
   quote_asset: quoteAsset,
-  base_asset_id: baseAssetId,
   quote_asset_id: quoteAssetId,
   routes: [],
-  is_active: true,
   ...overrides,
 })
 
@@ -70,18 +70,18 @@ const makeChannel = (
   inbound = 0
 ) => ({
   asset_id: assetId ?? undefined,
-  ready,
-  outbound_balance_msat: outbound,
   inbound_balance_msat: inbound,
+  outbound_balance_msat: outbound,
+  ready,
 })
 
 /** Build a minimal SDK Asset object */
 const makeAsset = (ticker: string, rgbId?: string) => ({
-  ticker,
+  is_active: true,
   name: ticker,
   precision: 8,
   protocol_ids: rgbId ? { RGB: rgbId } : undefined,
-  is_active: true,
+  ticker,
 })
 
 const BTC_USDT = makePair('BTC', 'BTC', 'USDT', 'rgb:usdt-id')

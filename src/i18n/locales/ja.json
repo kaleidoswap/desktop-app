@@ -2051,6 +2051,7 @@
     "backendDocker": "Dockerコンテナ",
     "backendDockerDescription": "Dockerコンテナでノードを実行します。すべてのプラットフォームで動作します。",
     "backendUnavailable": "利用不可",
+    "recommended": "推奨",
     "noBackendAvailable": "バックエンドが検出されません",
     "noBackendHint": "このプラットフォームでローカルノードを実行するには、Docker Desktopをインストールして起動してください。",
     "backToOptions": "接続オプションに戻る",

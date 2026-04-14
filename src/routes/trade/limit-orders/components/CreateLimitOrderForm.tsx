@@ -48,8 +48,8 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
     activePairs.forEach((p) => {
       const baseId = getAssetId(p.base)
       const quoteId = getAssetId(p.quote)
-      map.set(baseId, { ...p.base, id: baseId, assetData: p.base })
-      map.set(quoteId, { ...p.quote, id: quoteId, assetData: p.quote })
+      map.set(baseId, { ...p.base, assetData: p.base, id: baseId })
+      map.set(quoteId, { ...p.quote, assetData: p.quote, id: quoteId })
     })
     return Array.from(map.values())
   }, [activePairs])
@@ -127,7 +127,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
   // Asset options formatting
   const fromAssetOptions = useMemo(
     () =>
-      allAssets.map((a) => ({ ticker: a.ticker, value: a.id, assetId: a.id })),
+      allAssets.map((a) => ({ assetId: a.id, ticker: a.ticker, value: a.id })),
     [allAssets]
   )
 
@@ -146,7 +146,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
     )
     return allAssets
       .filter((a) => validToIds.has(a.id))
-      .map((a) => ({ ticker: a.ticker, value: a.id, assetId: a.id }))
+      .map((a) => ({ assetId: a.id, ticker: a.ticker, value: a.id }))
   }, [activePairs, fromAsset, allAssets, fromAssetOptions])
 
   // Compute available balances
@@ -218,9 +218,9 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         ...a,
         asset_id: a.asset_id,
         is_active: true,
+        name: a.name || '',
         precision: a.precision || 8,
         ticker: a.ticker || '',
-        name: a.name || '',
       })) || [],
     [assetsData]
   )

@@ -2051,6 +2051,7 @@
     "backendDocker": "Conteneur Docker",
     "backendDockerDescription": "Exécuter le nœud dans un conteneur Docker. Fonctionne sur toutes les plateformes.",
     "backendUnavailable": "Non disponible",
+    "recommended": "Recommandé",
     "noBackendAvailable": "Aucun backend détecté",
     "noBackendHint": "Installez et démarrez Docker Desktop pour exécuter un nœud local sur cette plateforme.",
     "backToOptions": "Retour aux options de connexion",
