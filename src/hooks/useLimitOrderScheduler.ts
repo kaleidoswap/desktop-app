@@ -722,6 +722,5 @@ export function useLimitOrderScheduler() {
       queuedOrderIdsRef.current.clear()
       logger.info('LimitOrder: scheduler stopped')
     }
-     
   }, [dispatch])
 }

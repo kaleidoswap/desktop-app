@@ -2026,7 +2026,8 @@
     },
     "status": {
       "open": "Abierto",
-      "pending": "Pendiente"
+      "pending": "Pendiente",
+      "offline": "Desconectado"
     },
     "labels": {
       "capacity": "Capacidad",

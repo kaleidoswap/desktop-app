@@ -70,9 +70,11 @@ import {
 } from './formUtils'
 import {
   createQuoteRequestHandler,
+  createReverseQuoteRequestHandler,
   startQuoteRequestTimer,
   stopQuoteRequestTimer,
   createAmountChangeQuoteHandler,
+  createToAmountChangeQuoteHandler,
   debouncedQuoteRequest,
   clearDebouncedQuoteRequest,
 } from './quoteUtils'
@@ -155,8 +157,10 @@ export const Component = () => {
   const [max_outbound_htlc_sat, setMaxOutboundHtlcSat] = useState(0)
 
   const [isToAmountLoading, setIsToAmountLoading] = useState(true)
+  const [isFromAmountLoading, setIsFromAmountLoading] = useState(false)
   const [isPriceLoading, setIsPriceLoading] = useState(true)
   const [isQuoteLoading, setIsQuoteLoading] = useState(false)
+  const lastQuoteDirectionRef = useRef<'from' | 'to'>('from')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [fees, setFees] = useState({
@@ -388,6 +392,7 @@ export const Component = () => {
 
   // Create a ref to track the quote response
   const lastQuoteResponseRef = useRef<any>(null)
+  const lastReverseQuoteRef = useRef<any>(null)
   const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
 
   // Update quote request handler with loading state setters
@@ -413,6 +418,31 @@ export const Component = () => {
       hasValidQuote,
       maxFromAmount,
       minFromAmount,
+      t,
+    ]
+  )
+
+  // Reverse quote request handler (for setting to_amount to get from_amount)
+  const requestReverseQuote = useMemo(
+    () =>
+      createReverseQuoteRequestHandler(
+        form,
+        parseAssetAmount,
+        assets,
+        tradablePairs,
+        setIsQuoteLoading,
+        setIsFromAmountLoading,
+        () => hasValidQuote,
+        maxToAmount,
+        t
+      ),
+    [
+      form,
+      parseAssetAmount,
+      assets,
+      tradablePairs,
+      hasValidQuote,
+      maxToAmount,
       t,
     ]
   )
@@ -758,6 +788,72 @@ export const Component = () => {
     },
     [assets, bitcoinUnit]
   )
+
+  // Reverse quote listener — receives quote responses via custom event (no Redux subscription overhead)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (lastQuoteDirectionRef.current !== 'to') return
+      const quote = (e as CustomEvent).detail
+
+      const fromAsset = form.getValues().fromAsset
+      const toAsset = form.getValues().toAsset
+      if (
+        !fromAsset ||
+        !toAsset ||
+        quote.from_asset?.ticker !== fromAsset ||
+        quote.to_asset?.ticker !== toAsset
+      )
+        return
+
+      if (
+        lastReverseQuoteRef.current &&
+        quote.timestamp === lastReverseQuoteRef.current.timestamp
+      )
+        return
+
+      lastReverseQuoteRef.current = quote
+
+      const fromTickerForUI = quote.from_asset.ticker
+      let displayFromAmount = quote.from_asset.amount
+      if (fromTickerForUI === 'BTC') {
+        displayFromAmount = Math.round(displayFromAmount / MSATS_PER_SAT)
+      }
+      const formattedFromAmount = formatAmount(
+        displayFromAmount,
+        fromTickerForUI
+      )
+      form.setValue('from', formattedFromAmount)
+      setDebouncedFromAmount(formattedFromAmount)
+      setIsFromAmountLoading(false)
+      setIsQuoteLoading(false)
+
+      setHasValidQuote(true)
+      setQuoteExpiresAt(quote.expires_at || null)
+
+      if (quote.price) {
+        setCurrentPrice(quote.price)
+      }
+      if (quote.rfq_id) {
+        form.setValue('rfq_id', quote.rfq_id)
+      }
+      if (quote.from_asset?.asset_id) {
+        form.setValue('fromAssetId', quote.from_asset.asset_id)
+      }
+      if (quote.to_asset?.asset_id) {
+        form.setValue('toAssetId', quote.to_asset.asset_id)
+      }
+
+      setErrorMessage((prev) => {
+        if (prev && prev.includes('awaiting confirmation')) return prev
+        return null
+      })
+    }
+
+    window.addEventListener('kaleidoswap-quote-response', handler)
+    return () =>
+      window.removeEventListener('kaleidoswap-quote-response', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formatAmount, form])
 
   // Handle quote errors immediately to reset loading states
   useEffect(() => {
@@ -2917,6 +3013,8 @@ export const Component = () => {
       )
       const quoteHandler = createAmountChangeQuoteHandler(requestQuote)
 
+      lastQuoteDirectionRef.current = 'from'
+      lastReverseQuoteRef.current = null
       baseHandler(event)
       setDebouncedFromAmount(event.target.value || '')
       quoteHandler(event)
@@ -2926,17 +3024,27 @@ export const Component = () => {
 
   const handleToAmountChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
+      // Only trigger reverse quotes for real user input, not programmatic setValue from forward quotes
+      if (!event.isTrusted) return
+
       const baseHandler = createToAmountChangeHandler(
         form,
         getAssetPrecisionWrapper,
         maxToAmount
       )
-      const quoteHandler = createAmountChangeQuoteHandler(requestQuote)
+      const quoteHandler = createToAmountChangeQuoteHandler(requestReverseQuote)
 
+      const value = event.target.value
+      if (value && value !== '0') {
+        lastQuoteDirectionRef.current = 'to'
+      } else {
+        lastQuoteDirectionRef.current = 'from'
+        lastReverseQuoteRef.current = null
+      }
       baseHandler(event)
       quoteHandler(event)
     },
-    [form, getAssetPrecisionWrapper, maxToAmount, requestQuote]
+    [form, getAssetPrecisionWrapper, maxToAmount, requestReverseQuote]
   )
 
   // Simplified loading state based on validation phase
@@ -3244,6 +3352,7 @@ export const Component = () => {
                   isPriceLoading={isPriceLoading}
                   isQuoteLoading={isQuoteLoading}
                   isSwapInProgress={isSwapInProgress}
+                  isFromAmountLoading={isFromAmountLoading}
                   isToAmountLoading={isToAmountLoading}
                   isUsingOnchainBalance={isUsingOnchainBalance}
                   maxFromAmount={maxFromAmount}

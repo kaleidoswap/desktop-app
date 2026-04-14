@@ -146,6 +146,7 @@ fn main() {
             limit_upsert_order,
             limit_delete_order,
             // Docker node commands
+            check_docker_environment,
             is_docker_available,
             list_docker_environments,
             create_docker_environment,
@@ -638,7 +639,55 @@ fn kill_process_on_port(port: u16) -> bool {
     }
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn kill_process_on_port(port: u16) -> bool {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    // Use netstat to find the PID listening on the port
+    let output = Command::new("netstat")
+        .args(["-ano", "-p", "TCP"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+
+    match output {
+        Ok(out) => {
+            let output_str = String::from_utf8_lossy(&out.stdout);
+            let mut any_killed = false;
+
+            for line in output_str.lines() {
+                // Match lines like "  TCP    0.0.0.0:3001    0.0.0.0:0    LISTENING    12345"
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 5 && parts[3] == "LISTENING" {
+                    if let Some(addr) = parts[1].rsplit(':').next() {
+                        if addr == port.to_string() {
+                            if let Ok(pid) = parts[4].parse::<u32>() {
+                                println!("Killing process {} on port {}", pid, port);
+                                let kill_result = Command::new("taskkill")
+                                    .args(["/PID", &pid.to_string(), "/F"])
+                                    .creation_flags(CREATE_NO_WINDOW)
+                                    .output();
+                                if let Ok(kill_out) = kill_result {
+                                    if kill_out.status.success() {
+                                        any_killed = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            any_killed
+        }
+        Err(e) => {
+            eprintln!("Failed to run netstat for port {}: {}", port, e);
+            false
+        }
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 fn kill_process_on_port(_port: u16) -> bool {
     false
 }
@@ -707,10 +756,44 @@ fn get_local_node_capabilities() -> HashMap<String, bool> {
 }
 
 #[tauri::command]
-async fn get_markdown_content(file_path: String) -> Result<String, String> {
-    let content = tokio::fs::read_to_string(file_path)
+async fn get_markdown_content(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
+    use std::path::PathBuf;
+
+    // Resolve the file path: if it's a relative path starting with "../docs/",
+    // resolve it against the resource directory (for bundled builds) or the
+    // Cargo manifest directory (for dev builds).
+    let resolved_path = if file_path.starts_with("../docs/") {
+        let filename = file_path.strip_prefix("../docs/").unwrap_or(&file_path);
+
+        if cfg!(debug_assertions) {
+            // Dev mode: resolve relative to the Cargo manifest dir
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("docs")
+                .join(filename)
+        } else {
+            // Production: resolve from the bundled resource directory
+            let resource_dir = app
+                .path()
+                .resource_dir()
+                .map_err(|e| format!("Failed to get resource directory: {}", e))?;
+
+            // Tauri bundles "../docs" as "_up_/docs" on macOS/Linux
+            let candidate = resource_dir.join("_up_").join("docs").join(filename);
+            if candidate.exists() {
+                candidate
+            } else {
+                // Fallback: try "docs" directly (Windows layout)
+                resource_dir.join("docs").join(filename)
+            }
+        }
+    } else {
+        PathBuf::from(&file_path)
+    };
+
+    let content = tokio::fs::read_to_string(&resolved_path)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Failed to read {}: {}", resolved_path.display(), e))?;
     Ok(content)
 }
 
@@ -865,6 +948,11 @@ fn get_decrypted_mnemonic(
 // ---------------------------------------------------------------------------
 // Docker node management commands
 // ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn check_docker_environment(account_name: String) -> Option<DockerEnvironment> {
+    DockerNodeManager::check_environment_exists(&account_name)
+}
 
 #[tauri::command]
 fn is_docker_available() -> bool {

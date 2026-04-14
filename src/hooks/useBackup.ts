@@ -172,15 +172,18 @@ export const useBackup = ({
   }
 
   const handleBackupCompletion = (pathToBackup: string) => {
-    const directoryPath = pathToBackup.substring(
-      0,
-      pathToBackup.lastIndexOf('/')
+    const lastSep = Math.max(
+      pathToBackup.lastIndexOf('/'),
+      pathToBackup.lastIndexOf('\\')
     )
+    const directoryPath =
+      lastSep >= 0 ? pathToBackup.substring(0, lastSep) : pathToBackup
+    const sep = pathToBackup.includes('\\') ? '\\' : '/'
     const timestamp = new Date()
       .toLocaleString()
       .replace(/[/, ]/g, '_')
       .replace(/:/g, '')
-    const newBackupPath = `${directoryPath}/backup_${timestamp}.enc`
+    const newBackupPath = `${directoryPath}${sep}backup_${timestamp}.enc`
 
     reset({ backupPath: newBackupPath, nodePassword: '' })
     setShowBackupModal(false)
@@ -190,11 +193,12 @@ export const useBackup = ({
   const selectBackupFolder = async () => {
     const selected = await open({ directory: true, multiple: false })
     if (typeof selected === 'string') {
+      const sep = selected.includes('\\') ? '\\' : '/'
       const timestamp = new Date()
         .toLocaleString()
         .replace(/[/, ]/g, '_')
         .replace(/:/g, '')
-      setValue('backupPath', `${selected}/backup_${timestamp}.enc`)
+      setValue('backupPath', `${selected}${sep}backup_${timestamp}.enc`)
     }
   }
 

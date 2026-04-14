@@ -203,9 +203,43 @@ impl NodeProcess {
         Ok(())
     }
 
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    fn kill_process_tree(pid: u32) -> Result<(), String> {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        println!("Attempting to kill process tree for PID: {}", pid);
+
+        // taskkill /T kills the process and all child processes, /F forces termination
+        let result = Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output();
+
+        match result {
+            Ok(output) => {
+                if output.status.success() {
+                    println!("Successfully killed process tree for PID: {}", pid);
+                    Ok(())
+                } else {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    // Process already exited is not an error
+                    if stderr.contains("not found") {
+                        Ok(())
+                    } else {
+                        Err(format!(
+                            "Failed to kill process tree for PID {}: {}",
+                            pid, stderr
+                        ))
+                    }
+                }
+            }
+            Err(e) => Err(format!("Failed to run taskkill for PID {}: {}", pid, e)),
+        }
+    }
+
+    #[cfg(not(any(unix, windows)))]
     fn kill_process_tree(_pid: u32) -> Result<(), String> {
-        // Windows process tree cleanup handled differently
         Ok(())
     }
 
@@ -1172,6 +1206,13 @@ impl NodeProcess {
                 }
                 Ok(())
             });
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            command.creation_flags(CREATE_NO_WINDOW);
         }
 
         let child = command.spawn();

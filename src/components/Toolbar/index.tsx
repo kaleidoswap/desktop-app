@@ -849,6 +849,90 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         }
       }
 
+      // Check if this might be a Docker-managed node (localhost URL, no datapath)
+      const isDockerCandidate =
+        !isLocalNode &&
+        node.datapath === '' &&
+        normalizeNodeUrl(node.node_url)?.startsWith('http://127.0.0.1:')
+
+      if (isDockerCandidate) {
+        try {
+          const dockerEnv = await invokeWithTimeout<{
+            name: string
+            daemon_ports: number[]
+          } | null>(
+            'check_docker_environment',
+            { accountName: node.name },
+            5000,
+            'Checking Docker environment'
+          )
+
+          if (dockerEnv) {
+            toast.info(
+              t('toolbar.nodes.startingDockerNode', {
+                defaultValue: 'Starting Docker node...',
+              }),
+              { autoClose: 3000, position: 'bottom-right' }
+            )
+
+            const dockerPort = await invokeWithTimeout<number>(
+              'start_docker_node',
+              { envName: dockerEnv.name },
+              90000,
+              'Starting Docker node'
+            )
+
+            await waitForNodeReady({
+              daemonPort: dockerPort,
+              timeoutMs: 90000,
+            })
+
+            // Decide destination from node API status
+            let destination:
+              | typeof ROOT_PATH
+              | typeof WALLET_UNLOCK_PATH
+              | typeof WALLET_SETUP_PATH = WALLET_UNLOCK_PATH
+
+            for (let attempt = 0; attempt < 8; attempt++) {
+              const nodeInfoRes = await withTimeout(
+                getNodeInfo(),
+                5000,
+                'Checking node status after Docker start'
+              )
+
+              if (nodeInfoRes.isSuccess) {
+                destination = ROOT_PATH
+                break
+              }
+
+              const status =
+                nodeInfoRes.error &&
+                typeof nodeInfoRes.error === 'object' &&
+                'status' in nodeInfoRes.error
+                  ? (nodeInfoRes.error as { status?: number | string }).status
+                  : undefined
+
+              if (status === 400) {
+                destination = WALLET_SETUP_PATH
+                break
+              }
+              if (status === 401 || status === 403) {
+                destination = WALLET_UNLOCK_PATH
+                break
+              }
+
+              await sleep(750)
+            }
+
+            navigate(destination)
+            return
+          }
+        } catch (error) {
+          console.warn('Docker auto-start check failed:', error)
+          // Fall through to normal remote node handling
+        }
+      }
+
       // Check if node is unlocked or locked via API (same logic as root route)
       const didNavigate = await navigateFromNodeStatus()
       if (!didNavigate) {

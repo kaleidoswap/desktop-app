@@ -18,6 +18,7 @@ import { toast } from 'react-toastify'
 
 import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
+import { normalizeNodeUrl } from '../../api/client'
 import { Layout } from '../../components/Layout'
 import {
   Alert,
@@ -61,6 +62,8 @@ export const Component = () => {
   const [isConnectionDetailsOpen, setIsConnectionDetailsOpen] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(true)
   const [redirectToRoot, setRedirectToRoot] = useState(false)
+  const [dockerEnvName, setDockerEnvName] = useState<string | null>(null)
+  const [isStartingDocker, setIsStartingDocker] = useState(false)
 
   useEffect(() => {
     const checkNodeStatus = async () => {
@@ -83,10 +86,51 @@ export const Component = () => {
       } catch (error: any) {
         // FETCH_ERROR (connection refused) and timeout both just mean "node is
         // locked / not ready" — show the form, no toast needed.
-        if (
-          error?.status !== 'FETCH_ERROR' &&
-          !error?.message?.includes('timed out')
-        ) {
+        const isNetworkError =
+          error?.status === 'FETCH_ERROR' ||
+          error?.message?.includes('Load failed') ||
+          error?.message?.includes('Failed to fetch')
+        const isTimeout = error?.message?.includes('timed out')
+
+        if (isNetworkError) {
+          // Check if this is a Docker-managed node we can auto-start
+          const isDockerCandidate =
+            nodeSettings.datapath === '' &&
+            normalizeNodeUrl(nodeSettings.node_url)?.startsWith(
+              'http://127.0.0.1:'
+            )
+
+          if (isDockerCandidate) {
+            try {
+              const dockerEnv = await invoke<{
+                name: string
+                daemon_ports: number[]
+              } | null>('check_docker_environment', {
+                accountName: nodeSettings.name,
+              })
+              if (dockerEnv) {
+                setDockerEnvName(dockerEnv.name)
+                setErrors([
+                  t('walletUnlock.dockerNodeStopped', {
+                    defaultValue:
+                      'The Docker node is not running. You can restart it to continue.',
+                  }),
+                ])
+                return
+              }
+            } catch {
+              // Docker check failed — fall through to generic error
+            }
+          }
+
+          // Node is unreachable — show a warning on the form
+          setErrors([
+            t('walletUnlock.nodeUnreachable', {
+              defaultValue:
+                'Cannot connect to the node. Please verify the node is running and the connection URL is correct.',
+            }),
+          ])
+        } else if (!isTimeout) {
           toast.error(
             t('walletUnlock.failedCheckStatus', {
               error: error.message || t('walletUnlock.unknownError'),
@@ -137,6 +181,26 @@ export const Component = () => {
     setUnlockStatusMessage(null)
 
     try {
+      // Quick reachability check before starting the retry loop.
+      // If the node is completely unreachable, fail fast with a clear message
+      // instead of retrying for minutes.
+      try {
+        await withTimeout(nodeInfo(), 8000, 'Node reachability check')
+      } catch (preCheckError: any) {
+        const isNetworkError =
+          preCheckError?.status === 'FETCH_ERROR' ||
+          preCheckError?.message?.includes('Load failed') ||
+          preCheckError?.message?.includes('Failed to fetch')
+        if (isNetworkError) {
+          const message = t('walletUnlock.nodeUnreachable', {
+            defaultValue:
+              'Cannot connect to the node. Please verify the node is running and the connection URL is correct.',
+          })
+          throw new Error(message, { cause: preCheckError })
+        }
+        // Non-network errors (403 locked, 401, etc.) are fine — proceed to unlock
+      }
+
       const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
       const outcome = await unlockNodeWithRetry({
         getNodeInfo: () => nodeInfo(),
@@ -232,6 +296,55 @@ export const Component = () => {
       autoClose: 3000,
       position: 'bottom-right',
     })
+  }
+
+  const handleStartDocker = async () => {
+    if (!dockerEnvName) return
+    setIsStartingDocker(true)
+    setErrors([])
+
+    try {
+      toast.info(
+        t('walletUnlock.startingDockerNode', {
+          defaultValue: 'Starting Docker node...',
+        }),
+        { autoClose: 3000, position: 'bottom-right' }
+      )
+
+      const dockerPort = await invoke<number>('start_docker_node', {
+        envName: dockerEnvName,
+      })
+
+      await withTimeout(
+        (async () => {
+          // Poll until the node HTTP endpoint responds
+          const { waitForNodeReady } = await import('../../utils/nodeState')
+          await waitForNodeReady({ daemonPort: dockerPort, timeoutMs: 90000 })
+        })(),
+        90000,
+        'Docker node startup'
+      )
+
+      setDockerEnvName(null)
+
+      // Re-check node status
+      const nodeInfoRes = await withTimeout(
+        nodeInfo(),
+        10000,
+        'Node status check after Docker start'
+      )
+      if (nodeInfoRes.isSuccess) {
+        setRedirectToRoot(true)
+      }
+      // If not success, the form is now visible for password entry
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to start Docker node'
+      setErrors([message])
+      toast.error(message, { autoClose: 5000, position: 'top-right' })
+    } finally {
+      setIsStartingDocker(false)
+    }
   }
 
   const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
@@ -455,20 +568,51 @@ export const Component = () => {
                     {errors.length > 0 && (
                       <Alert
                         icon={<AlertCircle className="w-4 h-4" />}
-                        title={t('common.error')}
-                        variant="error"
+                        title={
+                          dockerEnvName
+                            ? t('walletUnlock.dockerNodeStoppedTitle', {
+                                defaultValue: 'Docker Node Stopped',
+                              })
+                            : t('common.error')
+                        }
+                        variant={dockerEnvName ? 'warning' : 'error'}
                       >
                         <ul className="text-xs space-y-1">
                           {errors.map((error, index) => (
                             <li key={index}>{error}</li>
                           ))}
                         </ul>
+                        {dockerEnvName && (
+                          <Button
+                            className="mt-3 w-full"
+                            disabled={isStartingDocker}
+                            icon={
+                              isStartingDocker ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Server className="w-4 h-4" />
+                              )
+                            }
+                            onClick={handleStartDocker}
+                            size="sm"
+                            type="button"
+                            variant="primary"
+                          >
+                            {isStartingDocker
+                              ? t('walletUnlock.startingDockerNode', {
+                                  defaultValue: 'Starting Docker node...',
+                                })
+                              : t('walletUnlock.startDockerNode', {
+                                  defaultValue: 'Start Docker Node',
+                                })}
+                          </Button>
+                        )}
                       </Alert>
                     )}
 
                     <Button
                       className="w-full"
-                      disabled={isUnlocking}
+                      disabled={isUnlocking || isStartingDocker}
                       icon={<Shield className="w-4 h-4" />}
                       size="lg"
                       type="submit"

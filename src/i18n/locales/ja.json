@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "オープン",
-      "pending": "保留中"
+      "pending": "保留中",
+      "offline": "オフライン"
     },
     "labels": {
       "capacity": "容量",

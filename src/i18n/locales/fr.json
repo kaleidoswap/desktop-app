@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "Ouvert",
-      "pending": "En attente"
+      "pending": "En attente",
+      "offline": "Hors ligne"
     },
     "labels": {
       "capacity": "Capacité",

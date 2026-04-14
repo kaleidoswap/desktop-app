@@ -189,13 +189,69 @@ impl DockerNodeManager {
 
     /// Check if Docker is installed and available in PATH
     pub fn is_docker_available() -> bool {
-        Command::new("docker")
-            .arg("info")
+        let mut cmd = Command::new("docker");
+        cmd.arg("info")
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+            .stderr(std::process::Stdio::null());
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        cmd.status().map(|s| s.success()).unwrap_or(false)
+    }
+
+    /// Format an account name into a Docker environment name.
+    /// Mirrors the frontend `formatAccountName` logic: lowercase, replace
+    /// non-alphanumeric with hyphens, collapse consecutive hyphens, strip
+    /// leading/trailing hyphens, then prefix with `kaleidoswap-`.
+    fn format_env_name(account_name: &str) -> String {
+        let mut formatted = String::new();
+        for ch in account_name.to_lowercase().chars() {
+            if ch.is_ascii_alphanumeric() {
+                formatted.push(ch);
+            } else {
+                formatted.push('-');
+            }
+        }
+        // Collapse consecutive hyphens
+        let collapsed = formatted
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("-");
+        format!("kaleidoswap-{}", collapsed)
+    }
+
+    /// Check if a Docker environment exists for the given account name
+    /// and has persistent volume data. Returns the environment info if found.
+    pub fn check_environment_exists(account_name: &str) -> Option<DockerEnvironment> {
+        let env_name = Self::format_env_name(account_name);
+        let base = default_base_dir();
+        let env_dir = base.join(&env_name);
+        let compose_path = env_dir.join(COMPOSE_FILE);
+
+        if !compose_path.exists() {
+            return None;
+        }
+
+        // Check if volumes directory has data (node was previously used)
+        let volumes_dir = env_dir.join("volumes");
+        let has_data = volumes_dir.exists()
+            && std::fs::read_dir(&volumes_dir)
+                .map(|mut entries| entries.next().is_some())
+                .unwrap_or(false);
+
+        if !has_data {
+            return None;
+        }
+
+        // Parse the environment info from the compose file
+        let envs = Self::list_environments(Some(&base));
+        envs.into_iter().find(|e| e.name == env_name)
     }
 
     /// List all Docker environments under the base directory
@@ -493,11 +549,19 @@ impl DockerNodeManager {
     // ------------------------------------------------------------------
 
     fn run_compose(compose_dir: &Path, args: &[&str]) -> Result<std::process::Output, String> {
-        Command::new("docker")
-            .args(["compose", "--file", COMPOSE_FILE])
+        let mut cmd = Command::new("docker");
+        cmd.args(["compose", "--file", COMPOSE_FILE])
             .args(args)
-            .current_dir(compose_dir)
-            .output()
+            .current_dir(compose_dir);
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        cmd.output()
             .map_err(|e| format!("Failed to run docker compose: {}", e))
     }
 

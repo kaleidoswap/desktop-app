@@ -4,7 +4,7 @@ import {
   ChevronDown,
   LogOut,
   Moon,
-  Sun,
+  // Sun, // temporarily unused — light mode disabled
   Undo,
   Save,
   Shield,
@@ -50,7 +50,7 @@ import {
   setFiatCurrency,
   setLanguage,
   setNodeConnectionString,
-  setTheme,
+  // setTheme, // temporarily unused — light mode disabled
 } from '../../slices/settings/settings.slice'
 import {
   CURRENCY_LABELS,
@@ -78,7 +78,7 @@ export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, theme } =
+  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language } =
     useSelector((state: RootState) => state.settings)
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
@@ -642,35 +642,19 @@ export const Component: React.FC = () => {
                         )}
                       />
 
-                      {/* Theme Toggle */}
-                      <div className="group transition-all duration-300 hover:translate-x-1">
+                      {/* Theme Toggle — light mode temporarily disabled */}
+                      <div className="group transition-all duration-300 hover:translate-x-1 opacity-50 pointer-events-none">
                         <label className="block text-sm font-semibold text-content-secondary mb-2">
                           {t('settings.theme')}
                         </label>
                         <div className="flex rounded-lg overflow-hidden border border-border-default w-fit">
                           <button
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                              theme === 'dark'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
-                            }`}
-                            onClick={() => dispatch(setTheme('dark'))}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground"
+                            disabled
                             type="button"
                           >
                             <Moon className="w-4 h-4" />
                             {t('settings.themeDark')}
-                          </button>
-                          <button
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                              theme === 'light'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-surface-overlay text-content-secondary hover:text-content-primary'
-                            }`}
-                            onClick={() => dispatch(setTheme('light'))}
-                            type="button"
-                          >
-                            <Sun className="w-4 h-4" />
-                            {t('settings.themeLight')}
                           </button>
                         </div>
                       </div>

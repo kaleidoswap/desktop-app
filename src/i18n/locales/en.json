@@ -1975,7 +1975,8 @@
     },
     "status": {
       "open": "Open",
-      "pending": "Pending"
+      "pending": "Pending",
+      "offline": "Offline"
     },
     "labels": {
       "capacity": "Capacity",

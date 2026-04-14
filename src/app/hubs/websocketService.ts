@@ -823,6 +823,12 @@ class WebSocketService {
                 `WebSocketService: Received valid quote: with ID: ${quote.rfq_id} - ${fromAmount} ${fromAssetDisplay} -> ${toAmount} ${toAssetDisplay}`
               )
               this.dispatch(updateQuote(quote))
+              // Emit event for reverse quote handling (avoids Redux state bloat)
+              window.dispatchEvent(
+                new CustomEvent('kaleidoswap-quote-response', {
+                  detail: quote,
+                })
+              )
             } else {
               logger.error(
                 'WebSocketService: Malformed quote response - missing required fields:',
@@ -1240,13 +1246,15 @@ class WebSocketService {
    *
    * @param fromAsset The asset to swap from
    * @param toAsset The asset to swap to
-   * @param fromAmount The amount to swap
+   * @param amount The amount to swap
+   * @param direction Whether the amount is the 'from' amount or 'to' amount (default: 'from')
    * @returns A promise that resolves to true if the quote request was sent successfully
    */
   public async requestQuote(
     fromAsset: string,
     toAsset: string,
-    fromAmount: number
+    amount: number,
+    direction: 'from' | 'to' = 'from'
   ): Promise<boolean> {
     // Check if connection is ready for communication
     if (!this.isConnectionReadyForCommunication()) {
@@ -1266,21 +1274,22 @@ class WebSocketService {
     }
 
     logger.debug(
-      `WebSocketService: Requesting quote for ${fromAmount} ${fromAsset} -> ${toAsset}`
+      `WebSocketService: Requesting ${direction === 'to' ? 'reverse ' : ''}quote for ${amount} ${direction === 'to' ? toAsset : fromAsset} -> ${direction === 'to' ? fromAsset : toAsset}`
     )
 
     // Track this request for error handling
-    this.lastQuoteRequest = { fromAmount, fromAsset, toAsset }
+    this.lastQuoteRequest = {
+      fromAmount: direction === 'from' ? amount : 0,
+      fromAsset,
+      toAsset,
+    }
 
-    return this.queueMessage(
-      'quote_request',
-      {
-        from_amount: fromAmount,
-        from_asset: fromAsset,
-        to_asset: toAsset,
-      },
-      4
-    ) // Higher priority than normal messages but lower than connection management
+    const payload =
+      direction === 'to'
+        ? { to_amount: amount, from_asset: fromAsset, to_asset: toAsset }
+        : { from_amount: amount, from_asset: fromAsset, to_asset: toAsset }
+
+    return this.queueMessage('quote_request', payload, 4) // Higher priority than normal messages but lower than connection management
   }
 
   /**

@@ -15,9 +15,9 @@ export const OrderChannelFormSchema = z.object({
     .max(MAX_CHANNEL_CAPACITY, 'Maximum amount is 100000000 satoshis'),
   channelExpireBlocks: z.number().gte(0),
   // LSP-side asset amount for receiving
-clientAssetAmount: z.number().gte(0).optional(),
-  
-clientBalanceSat: z.number().gte(0), 
+  clientAssetAmount: z.number().gte(0).optional(),
+
+  clientBalanceSat: z.number().gte(0),
   lspAssetAmount: z.number().gte(0).optional(),
   rfqId: z.string().optional(),
 })
@@ -35,10 +35,10 @@ export const initialState: SliceState = {
     request: {
       assetId: '',
       capacitySat: MIN_CHANNEL_CAPACITY,
-      channelExpireBlocks: 4320, 
+      channelExpireBlocks: 4320,
       clientAssetAmount: 0,
       // 1 month
-clientBalanceSat: 0,
+      clientBalanceSat: 0,
       lspAssetAmount: 0,
       rfqId: '',
     },

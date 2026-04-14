@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "Offen",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "offline": "Offline"
     },
     "labels": {
       "capacity": "Kapazität",

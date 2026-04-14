@@ -219,11 +219,16 @@ export function categorizeError(
 
   // Check for network errors
   const errorStr = String(error).toLowerCase()
+  const messageLower = message.toLowerCase()
   if (
     errorStr.includes('network') ||
     errorStr.includes('fetch') ||
     errorStr.includes('timeout') ||
-    errorStr.includes('connection')
+    errorStr.includes('connection') ||
+    messageLower.includes('load failed') || // WebKit (Tauri macOS/iOS webview)
+    messageLower.includes('failed to fetch') || // Chromium (WebView2 on Windows)
+    messageLower.includes('networkerror') || // Firefox
+    messageLower.includes('network request failed') // React Native / other runtimes
   ) {
     return {
       category: ErrorCategory.NETWORK,
@@ -249,6 +254,15 @@ export function categorizeError(
  */
 export function transformSdkError(error: unknown): FetchBaseQueryError {
   const categorized = categorizeError(error)
+
+  // Network errors (connection refused, unreachable host, etc.) should use
+  // RTK Query's string-status format so callers can check `status === 'FETCH_ERROR'`.
+  if (categorized.category === ErrorCategory.NETWORK) {
+    return {
+      error: categorized.message,
+      status: 'FETCH_ERROR',
+    }
+  }
 
   return {
     data: {

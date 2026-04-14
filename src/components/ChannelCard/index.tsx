@@ -325,10 +325,10 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 : t('channelCard.status.pending')}
             </span>
 
-            {/* Usable badge */}
-            {!isUsable && (
+            {/* Usable badge - only show "Offline" for confirmed channels whose peer went offline */}
+            {isReady && !isUsable && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-800/30">
-                Offline
+                {t('channelCard.status.offline')}
               </span>
             )}
 

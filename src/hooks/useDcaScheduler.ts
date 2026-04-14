@@ -850,6 +850,5 @@ export function useDcaScheduler() {
     }
     // dispatch is stable — effect runs once on mount.
     // All other deps are accessed via refs updated in separate effects above.
-     
   }, [dispatch])
 }

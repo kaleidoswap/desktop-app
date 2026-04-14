@@ -174,7 +174,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         ? preselectedAsset.amount.toString()
         : '',
       clientBalanceSat: defaultClientBalanceSat || '20000',
-      totalAssetAmount: defaultTotalAssetAmount || '0',
+      totalAssetAmount: defaultTotalAssetAmount || '',
     },
   })
 
@@ -188,13 +188,18 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       )
       if (defaultTotalAssetAmount) {
         setValue('totalAssetAmount', defaultTotalAssetAmount)
+      } else if (assetMap[preselectedAsset.assetId]) {
+        const info = assetMap[preselectedAsset.assetId]
+        const maxCapacity =
+          info.max_channel_amount / Math.pow(10, info.precision)
+        setValue('totalAssetAmount', maxCapacity.toString())
       }
       setChannelType('asset')
     } else if (!isOpen) {
       setChannelType(preselectedAsset ? 'asset' : 'btc')
       setShowCustomInput(false)
     }
-  }, [defaultTotalAssetAmount, preselectedAsset, isOpen, setValue])
+  }, [assetMap, defaultTotalAssetAmount, preselectedAsset, isOpen, setValue])
 
   // Calculate available liquidity
   const channels =
@@ -337,7 +342,11 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
   // Set default total asset amount to max capacity when asset is selected
   useEffect(() => {
-    if (assetId && assetMap[assetId] && totalAssetAmount === '0') {
+    if (
+      assetId &&
+      assetMap[assetId] &&
+      (!totalAssetAmount || totalAssetAmount === '0')
+    ) {
       const maxCapacity =
         assetMap[assetId].max_channel_amount /
         Math.pow(10, assetMap[assetId].precision)

@@ -314,15 +314,12 @@ export const nodeApi = createApi({
     }),
 
     // ============================================================================
-// Utility Methods
-// ============================================================================
-signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
+    // Utility Methods
+    // ============================================================================
+    signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
       queryFn: queryFn((w, args) => w.signMessage(args)),
     }),
 
-    
-    
-    
     taker: builder.mutation<void, TakerRequest>({
       queryFn: queryFn((w, args) => w.taker(args)),
     }),

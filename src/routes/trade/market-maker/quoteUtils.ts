@@ -209,14 +209,17 @@ export const createQuoteRequestHandler = (
 
 /**
  * Helper function to actually send the quote request
+ *
+ * @param direction 'from' sends from_amount, 'to' sends to_amount (reverse quote)
  */
 const sendQuoteRequest = async (
   fromAssetTicker: string,
   toAssetTicker: string,
-  fromAmount: number, // This fromAmount is in standard units (e.g., sats for BTC, base units for RGB)
+  amount: number, // Amount in standard units (e.g., sats for BTC, base units for RGB)
   assets: NiaAsset[],
   tradingPairs: TradingPair[],
-  t?: TFunction
+  t?: TFunction,
+  direction: 'from' | 'to' = 'from'
 ) => {
   // We use asset tickers in the UI, but need to send asset IDs to the websocket
   // Get the actual asset IDs to send in the request
@@ -235,22 +238,23 @@ const sendQuoteRequest = async (
   // Update tracking variables for request rate limiting
   const requestTime = Date.now() // Capture current time before updating lastQuoteRequestTime
   lastQuoteRequestTime = requestTime
-  // Key based on tickers and the original fromAmount (e.g., in sats for BTC)
-  lastRequestedQuoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}`
+  // Key based on tickers, amount, and direction
+  lastRequestedQuoteKey = `${fromAssetTicker}/${toAssetTicker}/${amount}/${direction}`
 
   // Determine the amount to send in the request.
-  // If fromAsset is BTC, multiply by 1000 to convert to millisats for the backend.
-  // Otherwise, use the fromAmount as is (which is in base units for RGB assets).
-  let amountForRequest = fromAmount
-  if (fromAssetTicker === 'BTC') {
-    amountForRequest = fromAmount * 1000
+  // Convert to millisats for BTC depending on direction.
+  let amountForRequest = amount
+  const amountAssetTicker =
+    direction === 'from' ? fromAssetTicker : toAssetTicker
+  if (amountAssetTicker === 'BTC') {
+    amountForRequest = amount * 1000
   }
 
   try {
     // Only log if assets are different to avoid spam during swapping
     if (fromAssetTicker !== toAssetTicker) {
       logger.debug(
-        `Requesting quote: ${fromDisplayTicker} -> ${toDisplayTicker}, Amount: ${amountForRequest}`
+        `Requesting ${direction === 'to' ? 'reverse ' : ''}quote: ${fromDisplayTicker} -> ${toDisplayTicker}, Amount: ${amountForRequest}`
       )
     }
 
@@ -259,7 +263,8 @@ const sendQuoteRequest = async (
     const success = await webSocketService.requestQuote(
       fromAssetId,
       toAssetId,
-      amountForRequest
+      amountForRequest,
+      direction
     )
 
     if (!success) {
@@ -295,6 +300,129 @@ const sendQuoteRequest = async (
         toastId: 'quote-request-exception',
       })
       lastQuoteErrorToastTime = Date.now()
+    }
+  }
+}
+
+/**
+ * Creates a function to handle requesting reverse quotes (setting to_amount to get from_amount)
+ * Mirrors createQuoteRequestHandler but reads the 'to' field and sends direction='to'
+ */
+export const createReverseQuoteRequestHandler = (
+  form: UseFormReturn<Fields>,
+  parseAssetAmount: (
+    amount: string | undefined | null,
+    asset: string
+  ) => number,
+  assets: NiaAsset[],
+  tradingPairs: TradingPair[],
+  setIsQuoteLoading?: (loading: boolean) => void,
+  setIsFromAmountLoading?: (loading: boolean) => void,
+  hasValidQuote?: () => boolean,
+  _maxToAmount?: number,
+  t?: TFunction
+) => {
+  return async () => {
+    if (!tradingPairs || tradingPairs.length === 0) {
+      logger.debug(
+        'Trading pairs not yet loaded, skipping reverse quote request'
+      )
+      return
+    }
+
+    const fromAssetTicker = form.getValues().fromAsset
+    const toAssetTicker = form.getValues().toAsset
+    const toAmountStr = form.getValues().to
+
+    if (!fromAssetTicker || !toAssetTicker) {
+      return
+    }
+
+    if (fromAssetTicker === toAssetTicker) {
+      return
+    }
+
+    if (!toAmountStr || toAmountStr === '0') {
+      form.setValue('from', '')
+      return
+    }
+
+    const toAmount = parseAssetAmount(toAmountStr, toAssetTicker)
+    if (toAmount <= 0) {
+      return
+    }
+
+    const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
+
+    if (!currentlyHasValidQuote) {
+      if (setIsQuoteLoading) {
+        setIsQuoteLoading(true)
+      }
+      if (setIsFromAmountLoading) {
+        setIsFromAmountLoading(true)
+      }
+    }
+
+    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/to:${toAmount}`
+
+    if (quoteKey === lastRequestedQuoteKey) {
+      const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
+      if (timeSinceLastRequest < QUOTE_REQUEST_RATE_LIMIT_MS) {
+        return
+      }
+    }
+
+    sendQuoteRequest(
+      fromAssetTicker,
+      toAssetTicker,
+      toAmount,
+      assets,
+      tradingPairs,
+      t,
+      'to'
+    ).catch((error) => {
+      logger.error('Error in async reverse quote request:', error)
+    })
+  }
+}
+
+/**
+ * Creates a debounced handler for to_amount changes that triggers reverse quotes
+ */
+export const createToAmountChangeQuoteHandler = (
+  requestReverseQuote: () => Promise<void>,
+  setIsQuoteLoading?: (loading: boolean) => void,
+  setIsFromAmountLoading?: (loading: boolean) => void,
+  hasValidQuote?: () => boolean
+) => {
+  let debounceTimer: any = null
+
+  return (e: ChangeEvent<HTMLInputElement>) => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+    }
+
+    const value = e.target.value
+    if (value && value !== '0') {
+      const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
+
+      if (!currentlyHasValidQuote) {
+        if (setIsQuoteLoading) {
+          setIsQuoteLoading(true)
+        }
+        if (setIsFromAmountLoading) {
+          setIsFromAmountLoading(true)
+        }
+      }
+
+      debounceTimer = setTimeout(requestReverseQuote, QUOTE_REQUEST_DEBOUNCE_MS)
+    } else {
+      if (setIsQuoteLoading) {
+        setIsQuoteLoading(false)
+      }
+      if (setIsFromAmountLoading) {
+        setIsFromAmountLoading(false)
+      }
     }
   }
 }
