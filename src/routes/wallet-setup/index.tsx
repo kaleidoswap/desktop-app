@@ -47,11 +47,10 @@ export const Component = () => {
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
-  const [isLocalNodeSupported, setIsLocalNodeSupported] = useState(true)
-
   // Docker / local node mode
-  const [isNativeSupported, setIsNativeSupported] = useState(true)
+  const [isNativeSupported, setIsNativeSupported] = useState(false)
   const [isDockerAvailable, setIsDockerAvailable] = useState(false)
+  const [capabilitiesLoaded, setCapabilitiesLoaded] = useState(false)
   const [localNodeMode, setLocalNodeMode] = useState<
     'native' | 'docker' | null
   >(null)
@@ -72,28 +71,37 @@ export const Component = () => {
         const docker = caps.docker ?? false
         setIsNativeSupported(native)
         setIsDockerAvailable(docker)
-        setIsLocalNodeSupported(native || docker)
 
         // If only one option, auto-select it
-        if (docker && !native) {
-          setLocalNodeMode('docker')
-        } else if (native && !docker) {
+        if (native && !docker) {
           setLocalNodeMode('native')
+        } else if (docker && !native) {
+          setLocalNodeMode('docker')
         }
+        // When both available, leave null so user picks
       } catch (error) {
         console.error('Failed to check local node capabilities:', error)
-        // Fallback: check the older is_local_node_supported command
+        // Fallback: check each backend separately
         try {
           const supported = await invoke<boolean>('is_local_node_supported')
-          setIsLocalNodeSupported(supported)
           if (supported) {
             setIsNativeSupported(true)
             setLocalNodeMode('native')
           }
         } catch {
-          setIsLocalNodeSupported(false)
+          // Native not available
+        }
+        try {
+          const docker = await invoke<boolean>('is_docker_available')
+          if (docker) {
+            setIsDockerAvailable(true)
+            if (!localNodeMode) setLocalNodeMode('docker')
+          }
+        } catch {
+          // Docker command not available
         }
       }
+      setCapabilitiesLoaded(true)
     }
 
     checkCapabilities()
@@ -250,33 +258,25 @@ export const Component = () => {
                         <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse delay-75" />
                       </div>
                     </div>
-                    <div
-                      className={`grid gap-6 ${isLocalNodeSupported ? 'grid-cols-1 md:grid-cols-2' : 'max-w-md mx-auto'}`}
-                    >
-                      <NodeOption
-                        description={t('walletSetup.remoteNodeDescription')}
-                        icon={<Cloud className="w-6 h-6" />}
-                        onClick={() => handleNodeTypeChange('remote')}
-                        recommended={true}
-                        title={t('walletSetup.remoteNodeTitle')}
-                      />
-                      {isLocalNodeSupported && (
+                    {!capabilitiesLoaded ? (
+                      <div className="flex justify-center py-12">
+                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                        <NodeOption
+                          description={t('walletSetup.remoteNodeDescription')}
+                          icon={<Cloud className="w-6 h-6" />}
+                          onClick={() => handleNodeTypeChange('remote')}
+                          recommended={true}
+                          title={t('walletSetup.remoteNodeTitle')}
+                        />
                         <NodeOption
                           description={t('walletSetup.localNodeDescription')}
                           icon={<Server className="w-6 h-6" />}
                           onClick={() => handleNodeTypeChange('local')}
                           title={t('walletSetup.localNodeTitle')}
                         />
-                      )}
-                    </div>
-                    {!isLocalNodeSupported && (
-                      <div className="mt-8 text-center fade-in">
-                        <div className="inline-flex items-center space-x-2 px-4 py-3 bg-surface-elevated/40 border border-primary/20 rounded-xl">
-                          <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" />
-                          <p className="text-content-secondary text-sm">
-                            {t('walletSetup.localNodeNotSupported')}
-                          </p>
-                        </div>
                       </div>
                     )}
                   </>
@@ -316,62 +316,86 @@ export const Component = () => {
                       </p>
                     </div>
 
-                    {/* Node mode sub-choice (only if both options available) */}
-                    {isNativeSupported && isDockerAvailable && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <button
-                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                            localNodeMode === 'native'
+                    {/* Backend selection — always visible so user knows which backend will run */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                      <button
+                        className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                          !isNativeSupported
+                            ? 'border-border-default/20 bg-surface-elevated/10 opacity-50 cursor-not-allowed'
+                            : localNodeMode === 'native'
                               ? 'border-cyan bg-cyan/10 shadow-lg shadow-cyan/10'
                               : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
-                          }`}
-                          onClick={() => setLocalNodeMode('native')}
-                          type="button"
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <Server
-                              className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
-                            />
-                            <span
-                              className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
-                            >
-                              Native Binary
+                        }`}
+                        disabled={!isNativeSupported}
+                        onClick={() => setLocalNodeMode('native')}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <Server
+                            className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
+                          />
+                          <span
+                            className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
+                          >
+                            {t('walletSetup.backendNative')}
+                          </span>
+                          {!isNativeSupported && (
+                            <span className="text-xs text-content-tertiary ml-auto">
+                              {t('walletSetup.backendUnavailable')}
                             </span>
-                          </div>
-                          <p className="text-xs text-content-secondary">
-                            Run the node as a local process. No Docker required.
-                          </p>
-                        </button>
-                        <button
-                          className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                            localNodeMode === 'docker'
+                          )}
+                        </div>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.backendNativeDescription')}
+                        </p>
+                      </button>
+                      <button
+                        className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                          !isDockerAvailable
+                            ? 'border-border-default/20 bg-surface-elevated/10 opacity-50 cursor-not-allowed'
+                            : localNodeMode === 'docker'
                               ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
                               : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
-                          }`}
-                          onClick={() => setLocalNodeMode('docker')}
-                          type="button"
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <Container
-                              className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
-                            />
-                            <span
-                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
-                            >
-                              Docker Container
+                        }`}
+                        disabled={!isDockerAvailable}
+                        onClick={() => setLocalNodeMode('docker')}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <Container
+                            className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
+                          />
+                          <span
+                            className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                          >
+                            {t('walletSetup.backendDocker')}
+                          </span>
+                          {!isDockerAvailable && (
+                            <span className="text-xs text-content-tertiary ml-auto">
+                              {t('walletSetup.backendUnavailable')}
                             </span>
-                          </div>
-                          <p className="text-xs text-content-secondary">
-                            Run the node in a Docker container. Works on all
-                            platforms.
-                          </p>
-                        </button>
+                          )}
+                        </div>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.backendDockerDescription')}
+                        </p>
+                      </button>
+                    </div>
+
+                    {/* Message when no backend is available */}
+                    {!isNativeSupported && !isDockerAvailable && (
+                      <div className="mb-8 p-4 rounded-xl bg-status-warning/10 border border-status-warning/30">
+                        <p className="text-sm text-status-warning font-medium mb-1">
+                          {t('walletSetup.noBackendAvailable')}
+                        </p>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.noBackendHint')}
+                        </p>
                       </div>
                     )}
 
-                    {/* Create/Restore wallet actions (shown when mode is selected, or when only one backend is available) */}
-                    {(localNodeMode ||
-                      !(isNativeSupported && isDockerAvailable)) && (
+                    {/* Create/Restore wallet actions (shown when a backend mode is selected) */}
+                    {localNodeMode && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <WalletAction
                           description={t('walletSetup.createWalletDescription')}
