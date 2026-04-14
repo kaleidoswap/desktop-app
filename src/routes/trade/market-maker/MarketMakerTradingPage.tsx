@@ -475,7 +475,10 @@ export const Component = () => {
       // Quote was cleared or not found
       try {
         window.requestAnimationFrame(() => {
-          form.setValue('to', '')
+          // Skip clearing "to" when user is editing it (reverse quote mode)
+          if (lastQuoteDirectionRef.current !== 'to') {
+            form.setValue('to', '')
+          }
           form.setValue('rfq_id', '')
           setHasValidQuote(false)
           setQuoteExpiresAt(null)
@@ -558,7 +561,9 @@ export const Component = () => {
           logger.warn('Received stale quote, requesting fresh quote')
           setHasValidQuote(false)
           setQuoteExpiresAt(null)
-          form.setValue('to', '')
+          if (lastQuoteDirectionRef.current !== 'to') {
+            form.setValue('to', '')
+          }
           form.setValue('rfq_id', '')
           // Request a fresh quote
           debouncedQuoteRequest(requestQuote)
@@ -643,7 +648,10 @@ export const Component = () => {
           formattedToAmount = formatAmount(displayToAmount, toTickerForUI)
         }
 
-        form.setValue('to', formattedToAmount)
+        // Skip setting "to" when user is editing it (reverse quote mode)
+        if (lastQuoteDirectionRef.current !== 'to') {
+          form.setValue('to', formattedToAmount)
+        }
 
         // Important: Save the RFQ ID and asset IDs from the quote to use when executing the swap
         if (quoteResponse.rfq_id) {

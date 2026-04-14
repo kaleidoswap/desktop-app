@@ -369,7 +369,7 @@ export const MarketMakerFormPanel = ({
                   }
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
-                  isLoading={isToAmountLoading}
+                  isLoading={isToAmountLoading && !form.getValues().to}
                   label={t('tradeMarketMaker.form.youReceive')}
                   maxAmount={maxToAmount}
                   onAmountChange={onToAmountChange}
