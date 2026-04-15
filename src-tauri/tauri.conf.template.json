@@ -1,0 +1,97 @@
+{
+  "build": {
+    "beforeBuildCommand": "pnpm build",
+    "beforeDevCommand": "pnpm dev",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/128x128.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/icon.icns",
+      "icons/logo.ico"
+    ],
+    "targets": "all",
+    "resources": [
+      "../docs",
+      "../bin/rgb-lightning-node"
+    ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "macOS": {
+      "hardenedRuntime": true,
+      "entitlements": "./Entitlements.plist",
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "nsis": null,
+      "wix": {
+        "language": "en-US"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "productName": "KaleidoSwap",
+  "mainBinaryName": "KaleidoSwap",
+  "version": "0.3.2",
+  "identifier": "com.kaleidoswap.dev",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU0NUFFMkE5QzVERkVDQ0UKUldUTzdOL0ZxZUphVkoybHMxY3JjUVJhd2ZsM2drNGhEb0IrTDg1TVdyRGdaTkt2RG51Tk82UlkK",
+      "endpoints": [
+        "https://github.com/kaleidoswap/desktop-app/releases/latest/download/latest.json"
+      ],
+      "dangerousInsecureTransportProtocol": false
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "center": true,
+        "decorations": true,
+        "focus": true,
+        "fullscreen": false,
+        "height": 800,
+        "label": "main",
+        "minHeight": 600,
+        "minWidth": 800,
+        "resizable": true,
+        "title": "KaleidoSwap",
+        "visible": false,
+        "width": 1200,
+        "useHttpsScheme": true
+      },
+      {
+        "alwaysOnTop": false,
+        "center": true,
+        "decorations": false,
+        "focus": false,
+        "height": 600,
+        "label": "splashscreen",
+        "skipTaskbar": true,
+        "url": "splashscreen.html",
+        "width": 600,
+        "useHttpsScheme": true,
+        "visible": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://raw.githubusercontent.com; connect-src ipc: http://ipc.localhost 'self' http://localhost:* http://127.0.0.1:* https://* http://* ws://localhost:* wss://* ws://*;"
+    }
+  }
+}

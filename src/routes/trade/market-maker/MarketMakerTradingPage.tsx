@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { getKaleidoClient } from '../../../api/client'
 import { webSocketService } from '../../../app/hubs/websocketService'
@@ -852,7 +852,7 @@ export const Component = () => {
     window.addEventListener('kaleidoswap-quote-response', handler)
     return () =>
       window.removeEventListener('kaleidoswap-quote-response', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [formatAmount, form])
 
   // Handle quote errors immediately to reset loading states
@@ -3349,10 +3349,10 @@ export const Component = () => {
                   hasChannels={hasChannels}
                   hasTradablePairs={hasTradablePairs}
                   hasValidQuote={hasValidQuote}
+                  isFromAmountLoading={isFromAmountLoading}
                   isPriceLoading={isPriceLoading}
                   isQuoteLoading={isQuoteLoading}
                   isSwapInProgress={isSwapInProgress}
-                  isFromAmountLoading={isFromAmountLoading}
                   isToAmountLoading={isToAmountLoading}
                   isUsingOnchainBalance={isUsingOnchainBalance}
                   maxFromAmount={maxFromAmount}

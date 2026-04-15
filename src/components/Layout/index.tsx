@@ -15,7 +15,7 @@ import {
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { toast, ToastContainer } from 'react-toastify'
+import { Toaster } from '@/components/ui/shadcn/sonner'
 
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
@@ -36,7 +36,6 @@ import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
 import { SupportModal } from '../SupportModal'
 
-import 'react-toastify/dist/ReactToastify.min.css'
 import {
   getMainNavItems,
   getChannelMenuItems,
@@ -52,7 +51,6 @@ import { openUrl } from '@tauri-apps/plugin-opener'
 import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
 
 interface Props {
   className?: string
@@ -463,9 +461,6 @@ export const Layout = (props: Props) => {
   const channelMenuRef = useRef(null)
   const transactionMenuRef = useRef(null)
   const supportMenuRef = useRef(null)
-  const toastAutoDismissTimers = useRef<
-    Record<string, ReturnType<typeof setTimeout>>
-  >({})
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -509,43 +504,6 @@ export const Layout = (props: Props) => {
       skip: isRetrying || !shouldPoll,
     }
   )
-
-  useEffect(() => {
-    const clearToastTimer = (toastId: string) => {
-      const timer = toastAutoDismissTimers.current[toastId]
-
-      if (timer) {
-        clearTimeout(timer)
-        delete toastAutoDismissTimers.current[toastId]
-      }
-    }
-
-    const unsubscribe = toast.onChange((item) => {
-      const toastId = String(item.id)
-
-      if (item.status === 'removed') {
-        clearToastTimer(toastId)
-        return
-      }
-
-      if (item.isLoading) {
-        clearToastTimer(toastId)
-        return
-      }
-
-      clearToastTimer(toastId)
-      toastAutoDismissTimers.current[toastId] = setTimeout(() => {
-        toast.dismiss(item.id)
-        clearToastTimer(toastId)
-      }, DEFAULT_TOAST_AUTO_CLOSE_MS)
-    })
-
-    return () => {
-      unsubscribe()
-      Object.values(toastAutoDismissTimers.current).forEach(clearTimeout)
-      toastAutoDismissTimers.current = {}
-    }
-  }, [])
 
   const handleLogout = async () => {
     try {
@@ -1142,17 +1100,11 @@ export const Layout = (props: Props) => {
         onConfirm={handleLogout}
       />
 
-      <ToastContainer
-        autoClose={5000}
-        closeOnClick={false}
-        draggable={false}
-        hideProgressBar={false}
-        newestOnTop={false}
-        pauseOnFocusLoss={false}
-        pauseOnHover={false}
+      <Toaster
+        closeButton
         position="bottom-right"
-        rtl={false}
-        theme="dark"
+        richColors
+        toastOptions={{ duration: 5000 }}
       />
 
       {/* Add LayoutModal for deposit/withdraw functionality */}

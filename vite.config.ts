@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { execSync } from 'child_process'
 import { fileURLToPath } from 'url'
+import path from 'path'
 
 // Get git information at build time
 const getGitInfo = () => {
@@ -63,6 +64,7 @@ export default defineConfig(async () => {
     },
     resolve: {
       alias: {
+        '@': path.resolve(__dirname, './src'),
         'vite-plugin-node-polyfills/shims/process':
           fileURLToPath(
             new URL(

@@ -2,7 +2,7 @@ import { Copy, RefreshCw, Wallet, Info } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { twJoin } from 'tailwind-merge'
 import { z } from 'zod'
 
@@ -22,8 +22,6 @@ import {
   TNewChannelForm,
 } from '../../slices/channel/channel.slice'
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
-
-import 'react-toastify/dist/ReactToastify.css'
 
 interface Props {
   onBack: VoidFunction

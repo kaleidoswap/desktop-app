@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { ArrowUpDown } from 'lucide-react'
 
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'

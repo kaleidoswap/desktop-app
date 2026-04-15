@@ -1,6 +1,6 @@
 import { Copy, Minus } from 'lucide-react'
 import { ReactNode } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { twMerge } from 'tailwind-merge'
 
 import { formatDate } from '../../../helpers/date'

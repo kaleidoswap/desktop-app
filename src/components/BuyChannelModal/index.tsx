@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
 import { useSettings } from '../../hooks/useSettings'

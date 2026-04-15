@@ -2,7 +2,7 @@ import { Coins, Search, RefreshCw, Copy, ArrowDownRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { Button, Card, LoadingPlaceholder, Badge } from '../../../components/ui'
 import {

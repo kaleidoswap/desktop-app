@@ -27,7 +27,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'

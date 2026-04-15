@@ -2,7 +2,7 @@ import { Info } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
@@ -23,7 +23,6 @@ import { Step1 } from './Step1'
 import { Step2 } from './Step2'
 import { Step3 } from './Step3'
 import { Step4 } from './Step4'
-import 'react-toastify/dist/ReactToastify.css'
 
 export const Component = () => {
   const { t } = useTranslation()

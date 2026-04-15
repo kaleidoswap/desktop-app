@@ -1,6 +1,6 @@
 import { Copy } from 'lucide-react'
 import React, { ReactNode } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 interface InfoCardProps {
   icon: ReactNode

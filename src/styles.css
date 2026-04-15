@@ -29,6 +29,9 @@
     --color-status-danger: 248 113 113;
     --color-status-warning: 245 158 11;
     --color-status-info: 56 189 248;
+
+    /* ── shadcn/ui radius token (consumed by border-radius scale) ── */
+    --radius: 0.75rem;
   }
 
   /* ── Design tokens: light ── */

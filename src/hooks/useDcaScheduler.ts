@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { store } from '../app/store'
 import { useAppDispatch, useAppSelector } from '../app/store/hooks'

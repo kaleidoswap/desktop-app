@@ -1,6 +1,6 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { TFunction } from 'i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import {
   TradingPair,
@@ -318,12 +318,6 @@ export const createSwapExecutor = (
         {
           autoClose: 5000,
           closeButton: true,
-          closeOnClick: false,
-          draggable: false,
-          isLoading: false,
-          onClick: (e) => e.stopPropagation(),
-          pauseOnFocusLoss: false,
-          pauseOnHover: true,
         }
       )
 

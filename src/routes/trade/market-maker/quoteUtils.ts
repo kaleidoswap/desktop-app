@@ -1,7 +1,7 @@
 import { TFunction } from 'i18next'
 import { ChangeEvent } from 'react'
 import { UseFormReturn } from 'react-hook-form'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { webSocketService } from '../../../app/hubs/websocketService'
 import { TradingPair } from '../../../slices/makerApi/makerApi.slice'

@@ -1,7 +1,7 @@
 import { X, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
 

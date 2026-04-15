@@ -2,7 +2,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { exists } from '@tauri-apps/plugin-fs'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { parseRpcUrl } from '../helpers/utils'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'

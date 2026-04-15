@@ -9,7 +9,7 @@ import {
 import React, { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { twJoin } from 'tailwind-merge'
 
 import { webSocketService } from '../../app/hubs/websocketService'

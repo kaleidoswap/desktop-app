@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { Wallet, Target, CalendarClock, ArrowRight } from 'lucide-react'
 
 import { useAppDispatch } from '../../../../app/store/hooks'

@@ -1,6 +1,6 @@
 import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'

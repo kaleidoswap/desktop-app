@@ -14,7 +14,7 @@ import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'

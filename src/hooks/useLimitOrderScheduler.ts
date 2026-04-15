@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useEffect, useRef } from 'react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 import { store } from '../app/store'

@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'

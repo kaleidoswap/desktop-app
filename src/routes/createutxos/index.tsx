@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { Button, Card } from '../../components/ui'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'

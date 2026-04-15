@@ -2,7 +2,7 @@ import { Users, Plus, Loader, X, Link as LinkIcon, Unlink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 

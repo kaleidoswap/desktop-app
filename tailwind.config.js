@@ -3,9 +3,14 @@
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
   theme: {
     extend: {
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
       colors: {
         // ── Semantic tokens (CSS-variable backed, support opacity modifiers) ──
         surface: {
@@ -31,7 +36,37 @@ export default {
           tertiary: 'rgb(var(--color-content-tertiary) / <alpha-value>)',
           inverse: 'rgb(var(--color-content-inverse) / <alpha-value>)',
         },
+        // ── shadcn/ui semantic aliases — map to existing design tokens ──
+        // Shadcn-generated components use bg-card / bg-muted / bg-accent /
+        // text-muted-foreground / border-input / destructive etc.
+        // We alias these onto the existing CSS variables so no new token
+        // layer is introduced and dark/light themes flow through unchanged.
+        background: 'rgb(var(--color-surface-raised) / <alpha-value>)',
+        foreground: 'rgb(var(--color-content-primary) / <alpha-value>)',
+        card: {
+          DEFAULT: 'rgb(var(--color-surface-overlay) / <alpha-value>)',
+          foreground: 'rgb(var(--color-content-primary) / <alpha-value>)',
+        },
+        popover: {
+          DEFAULT: 'rgb(var(--color-surface-overlay) / <alpha-value>)',
+          foreground: 'rgb(var(--color-content-primary) / <alpha-value>)',
+        },
+        muted: {
+          DEFAULT: 'rgb(var(--color-surface-elevated) / <alpha-value>)',
+          foreground: 'rgb(var(--color-content-secondary) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--color-surface-high) / <alpha-value>)',
+          foreground: 'rgb(var(--color-content-primary) / <alpha-value>)',
+        },
+        destructive: {
+          DEFAULT: 'rgb(var(--color-status-danger) / <alpha-value>)',
+          foreground: 'rgb(var(--color-content-inverse) / <alpha-value>)',
+        },
+        input: 'rgb(var(--color-border-default) / <alpha-value>)',
+        ring: 'rgb(var(--color-primary) / <alpha-value>)',
         border: {
+          DEFAULT: 'rgb(var(--color-border-default) / <alpha-value>)',
           subtle: 'rgb(var(--color-border-subtle) / <alpha-value>)',
           default: 'rgb(var(--color-border-default) / <alpha-value>)',
           strong: 'rgb(var(--color-border-strong) / <alpha-value>)',
@@ -174,8 +209,18 @@ export default {
         'slideInRight': 'slideInRight 0.5s ease-out forwards',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'scaleIn': 'scaleIn 0.3s ease-out forwards',
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
       },
       keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },

@@ -4,7 +4,7 @@ import { Trash2, Edit, X, Server, Cloud, AlertTriangle } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import {
   ROOT_PATH,
@@ -754,19 +754,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
               // Update account in DB with new ports
               await invoke('update_account', {
+                bearerToken: null,
+                daemonListeningPort: node.daemon_listening_port,
                 datapath: node.datapath,
                 defaultLspUrl: node.default_lsp_url,
-                daemonListeningPort: node.daemon_listening_port,
                 defaultMakerUrl: node.default_maker_url,
-                bearerToken: null,
                 indexerUrl: node.indexer_url,
                 language: node.language || 'en',
-                name: node.name,
                 ldkPeerListeningPort: node.ldk_peer_listening_port,
-                network: node.network,
                 makerUrls: Array.isArray(node.maker_urls)
                   ? node.maker_urls.join(',')
                   : node.maker_urls,
+                name: node.name,
+                network: node.network,
                 nodeUrl: node.node_url,
                 proxyEndpoint: node.proxy_endpoint,
                 rpcConnectionUrl: node.rpc_connection_url,

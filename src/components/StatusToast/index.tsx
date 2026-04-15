@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import React, { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useSettings } from '../../hooks/useSettings'
 import { useAssetIcon } from '../../helpers/utils'

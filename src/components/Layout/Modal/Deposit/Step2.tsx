@@ -14,7 +14,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react'
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useSettings } from '../../../../hooks/useSettings'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'

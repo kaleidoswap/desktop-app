@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import * as z from 'zod'
 
 import { useAppDispatch } from '../../app/store/hooks'
@@ -35,8 +35,6 @@ import { AssetInfo, LspOptions } from '../../utils/channelOrderUtils'
 
 import bitcoinLogo from '../../assets/bitcoin-logo.svg'
 import rgbIcon from '../../assets/rgb-symbol-color.svg'
-
-import 'react-toastify/dist/ReactToastify.css'
 
 interface Props {
   onNext: (data: TChannelRequestForm) => void

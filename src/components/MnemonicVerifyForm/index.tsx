@@ -1,7 +1,7 @@
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { SubmitHandler, UseFormReturn } from 'react-hook-form'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import wordlistRaw from '../../assets/bip39-english.txt?raw'
 import { Button } from '../ui/Button'

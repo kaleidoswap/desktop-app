@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // Mock modules with side effects before importing the module under test
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }))
 vi.mock('../../../../utils/logger', () => ({

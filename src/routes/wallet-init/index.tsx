@@ -19,7 +19,7 @@ import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'

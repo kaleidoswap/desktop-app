@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 
-vi.mock('react-toastify', () => ({
+vi.mock('@/lib/toast', () => ({
   toast: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 vi.mock('../../../../utils/logger', () => ({

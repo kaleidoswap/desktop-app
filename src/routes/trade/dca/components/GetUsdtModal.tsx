@@ -9,7 +9,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useAppDispatch } from '../../../../app/store/hooks'
 import { BuyChannelModal } from '../../../../components/BuyChannelModal'

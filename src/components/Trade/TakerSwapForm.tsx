@@ -2,7 +2,7 @@ import { RefreshCw, Wallet, Info } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { useSettings } from '../../hooks/useSettings'
 import { getAssetPrecision } from '../../helpers/number'

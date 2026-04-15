@@ -1,5 +1,5 @@
 import { Dispatch } from '@reduxjs/toolkit'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 
 import { i18n } from '../../i18n'
 import {
@@ -1286,7 +1286,7 @@ class WebSocketService {
 
     const payload =
       direction === 'to'
-        ? { to_amount: amount, from_asset: fromAsset, to_asset: toAsset }
+        ? { from_asset: fromAsset, to_amount: amount, to_asset: toAsset }
         : { from_amount: amount, from_asset: fromAsset, to_asset: toAsset }
 
     return this.queueMessage('quote_request', payload, 4) // Higher priority than normal messages but lower than connection management

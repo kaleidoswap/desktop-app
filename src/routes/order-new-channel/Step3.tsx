@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import { ArrowLeft } from 'lucide-react'
 
-import 'react-toastify/dist/ReactToastify.css'
 import {
   PaymentSection,
   WalletFundsCard,

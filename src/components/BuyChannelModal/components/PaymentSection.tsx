@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { Copy, QrCode } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
+import { toast } from '@/lib/toast'
 import type { ReactNode } from 'react'
 
 import { formatNumberWithCommas } from '../../../helpers/number'
