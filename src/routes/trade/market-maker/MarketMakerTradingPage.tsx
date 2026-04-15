@@ -711,17 +711,17 @@ export const Component = () => {
   const [getInfo] = makerApi.endpoints.get_info.useLazyQuery()
 
   // Function to get SDK client for maker API calls
-  const state = useAppSelector((state) => state)
+  const nodeSettings = useAppSelector((state) => state.nodeSettings)
   const getClient = useCallback(async () => {
-    return await getKaleidoClient(state)
-  }, [state])
+    return await getKaleidoClient({ nodeSettings })
+  }, [nodeSettings])
 
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
     {
       pollingInterval: 30000,
       refetchOnFocus: false,
-      refetchOnMountOrArgChange: true,
+      refetchOnMountOrArgChange: false,
       refetchOnReconnect: false,
     }
   )
@@ -2008,48 +2008,41 @@ export const Component = () => {
       setupRunningRef.current = true
 
       try {
-        // Phase 1: Get node info and channels first
-
-        // Always fetch BTC balance and LSP info for potential onchain trading
-        logger.info('💰 Fetching BTC balance and LSP info...')
+        // Phase 1: Fetch all independent data in parallel
+        logger.info('🚀 Fetching balance, LSP info, node info, and channels in parallel...')
         setLoadingPhase('validating-balance')
 
-        const balanceResponse = await btcBalance()
+        const [balanceResponse, lspInfoResult, nodeInfoResponse, channelsResponse] =
+          await Promise.all([
+            btcBalance(),
+            getInfo().catch((error: any) => {
+              if (error?.status === 'TIMEOUT_ERROR') {
+                logger.warn(
+                  '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
+                )
+              } else {
+                logger.warn(
+                  '⚠️ Failed to fetch LSP info, continuing without channel limits:',
+                  error
+                )
+              }
+              return null
+            }),
+            nodeInfo(),
+            listChannels(),
+          ])
+
+        const lspInfoResponse: any =
+          lspInfoResult && 'error' in lspInfoResult && lspInfoResult.error
+            ? (logger.warn('⚠️ LSP info fetch failed, continuing without channel limits'), null)
+            : lspInfoResult
 
         if (!('data' in balanceResponse) || !balanceResponse.data) {
           logger.error('❌ Failed to get balance data')
           throw new Error('Failed to get balance information')
         }
 
-        let lspInfoResponse: any = null
-        try {
-          lspInfoResponse = await getInfo()
-          if (lspInfoResponse.error) {
-            logger.warn(
-              '⚠️ LSP info fetch failed, continuing without channel limits'
-            )
-          }
-        } catch (error: any) {
-          if (error?.status === 'TIMEOUT_ERROR') {
-            logger.warn(
-              '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
-            )
-          } else {
-            logger.warn(
-              '⚠️ Failed to fetch LSP info, continuing without channel limits:',
-              error
-            )
-          }
-        }
-
-        logger.info('🔗 Phase 1: Checking channels and node info')
         setLoadingPhase('validating-channels')
-
-        // Get node info and channels in parallel
-        const [nodeInfoResponse, channelsResponse] = await Promise.all([
-          nodeInfo(),
-          listChannels(),
-        ])
 
         // Validate node info
         if (!('data' in nodeInfoResponse) || !nodeInfoResponse.data) {
