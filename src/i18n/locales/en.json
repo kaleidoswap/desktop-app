@@ -2107,13 +2107,18 @@
         "rgbNote": "Note: 3,000 sats are required for RGB asset transfers.",
         "noChannels": "Warning: No active Lightning channels found. Lightning deposits are unavailable.",
         "exceeds": "Amount exceeds maximum available: {{amount}} {{asset}}",
-        "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount"
+        "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount",
+        "btcPlaceholder": "Enter amount (optional)"
+      },
+      "bip21": {
+        "badge": "Unified BIP21"
       },
       "actions": {
         "copy": "Copy to clipboard",
         "generateAddress": "Generate new address",
         "generateAddressCta": "Generate Address",
-        "generateInvoice": "Generate Invoice"
+        "generateInvoice": "Generate Invoice",
+        "regenerate": "Generate New Addresses"
       },
       "labels": {
         "lnInvoice": "LN Invoice",

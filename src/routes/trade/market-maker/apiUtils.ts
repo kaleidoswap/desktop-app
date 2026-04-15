@@ -10,7 +10,7 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
 
   if (typeof error === 'string') return error
 
-  // Check for timeout error
+  // Check for timeout/network errors (including CORS failures which appear as Load failed)
   if (error.status === 'TIMEOUT_ERROR' || error.status === 'FETCH_ERROR') {
     if (
       error.status === 'TIMEOUT_ERROR' ||
@@ -18,7 +18,30 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
     ) {
       return 'Request timed out. The maker server is taking too long to respond. Please check your connection and try again.'
     }
+    const errorStr = error.error || ''
+    if (
+      errorStr.includes('Load failed') ||
+      errorStr.includes('Failed to fetch') ||
+      errorStr.includes('NetworkError')
+    ) {
+      return 'The quote may have expired or the amounts are invalid. Please get a fresh quote and try again.'
+    }
     return 'Network error. Please check your connection and try again.'
+  }
+
+  // Handle HTTP status errors with specific messages
+  if (typeof error.status === 'number') {
+    if (error.status === 400) {
+      const detail =
+        error.data && typeof error.data === 'object' && 'detail' in error.data
+          ? (error.data as any).detail
+          : null
+      if (detail) {
+        logger.error(`[Swap] Server rejected request (400): ${detail}`)
+        return `Swap rejected: ${detail}`
+      }
+      return 'Swap request was rejected. The quote may have expired or the amounts may be invalid. Please try again.'
+    }
   }
 
   const errorData = error.data

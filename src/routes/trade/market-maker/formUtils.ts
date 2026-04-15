@@ -109,14 +109,20 @@ export const createFromAmountChangeHandler = (
 export const createToAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
-  _maxAmount?: number
+  maxAmount?: number
 ) => {
   return (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target
     const toAsset = form.getValues().toAsset
     const precision = getAssetPrecision(toAsset)
 
-    // First, remove any non-numeric characters except decimal point
+    // Allow empty value (user clearing the field)
+    if (!value || value.trim() === '') {
+      form.setValue('to', '', { shouldValidate: true })
+      return
+    }
+
+    // Remove any non-numeric characters except decimal point
     let cleanValue = value.replace(/[^\d.]/g, '')
 
     // Ensure only one decimal point
@@ -130,27 +136,46 @@ export const createToAmountChangeHandler = (
     // Split into integer and decimal parts
     const parts = cleanValue.split('.')
     const integerPart = parts[0]
-    let decimalPart = parts[1] || ''
+    let decimalPart = parts[1]
 
-    // Limit decimal places to asset precision
-    if (decimalPart.length > precision) {
-      decimalPart = decimalPart.slice(0, precision)
+    // Limit decimal places to asset precision (but allow typing decimal point)
+    if (decimalPart !== undefined && precision > 0) {
+      if (decimalPart.length > precision) {
+        decimalPart = decimalPart.slice(0, precision)
+      }
+      cleanValue = integerPart + '.' + decimalPart
+    } else if (decimalPart !== undefined && precision === 0) {
+      // No decimals allowed for this asset
+      cleanValue = integerPart
+    } else {
+      cleanValue = integerPart
     }
 
-    // Reconstruct the value
-    cleanValue = integerPart + (decimalPart ? '.' + decimalPart : '')
+    // Preserve trailing decimal point while typing
+    if (value.endsWith('.') && precision > 0 && !cleanValue.includes('.')) {
+      cleanValue += '.'
+    }
 
-    // Convert to number for comparison and validation
     const numericValue = parseFloat(cleanValue) || 0
 
-    // Prevent negative values explicitly
     if (numericValue < 0) {
       cleanValue = '0'
     }
 
-    // Format the value with proper number formatting (no clamping — warnings shown separately)
-    const formattedValue = formatNumberInput(cleanValue, precision)
+    // Clamp to max amount if set (maxAmount is in base units, convert to display)
+    if (maxAmount !== undefined && maxAmount > 0) {
+      const maxInDisplayUnits = maxAmount / Math.pow(10, precision)
+      if (numericValue > maxInDisplayUnits) {
+        const formattedMax = formatNumberInput(
+          maxInDisplayUnits.toFixed(precision),
+          precision
+        )
+        form.setValue('to', formattedMax, { shouldValidate: true })
+        return
+      }
+    }
 
+    const formattedValue = formatNumberInput(cleanValue, precision)
     form.setValue('to', formattedValue, { shouldValidate: true })
   }
 }

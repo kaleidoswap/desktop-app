@@ -319,14 +319,11 @@ export const createReverseQuoteRequestHandler = (
   setIsQuoteLoading?: (loading: boolean) => void,
   setIsFromAmountLoading?: (loading: boolean) => void,
   hasValidQuote?: () => boolean,
-  _maxToAmount?: number,
+  maxToAmount?: number,
   t?: TFunction
 ) => {
   return async () => {
     if (!tradingPairs || tradingPairs.length === 0) {
-      logger.debug(
-        'Trading pairs not yet loaded, skipping reverse quote request'
-      )
       return
     }
 
@@ -334,11 +331,11 @@ export const createReverseQuoteRequestHandler = (
     const toAssetTicker = form.getValues().toAsset
     const toAmountStr = form.getValues().to
 
-    if (!fromAssetTicker || !toAssetTicker) {
-      return
-    }
-
-    if (fromAssetTicker === toAssetTicker) {
+    if (
+      !fromAssetTicker ||
+      !toAssetTicker ||
+      fromAssetTicker === toAssetTicker
+    ) {
       return
     }
 
@@ -349,6 +346,20 @@ export const createReverseQuoteRequestHandler = (
 
     const toAmount = parseAssetAmount(toAmountStr, toAssetTicker)
     if (toAmount <= 0) {
+      return
+    }
+
+    // Validate against max receive amount (balance/channel limit)
+    if (
+      maxToAmount !== undefined &&
+      maxToAmount > 0 &&
+      toAmount > maxToAmount
+    ) {
+      logger.debug(
+        `[ReverseQuote] to_amount (${toAmount}) exceeds max (${maxToAmount}), skipping`
+      )
+      if (setIsQuoteLoading) setIsQuoteLoading(false)
+      if (setIsFromAmountLoading) setIsFromAmountLoading(false)
       return
     }
 
@@ -372,6 +383,9 @@ export const createReverseQuoteRequestHandler = (
       }
     }
 
+    logger.debug(
+      `[ReverseQuote] Sending: ${fromAssetTicker}->${toAssetTicker}, to_amount=${toAmount}`
+    )
     sendQuoteRequest(
       fromAssetTicker,
       toAssetTicker,
@@ -381,49 +395,8 @@ export const createReverseQuoteRequestHandler = (
       t,
       'to'
     ).catch((error) => {
-      logger.error('Error in async reverse quote request:', error)
+      logger.error('[ReverseQuote] Error in request:', error)
     })
-  }
-}
-
-/**
- * Creates a debounced handler for to_amount changes that triggers reverse quotes
- */
-export const createToAmountChangeQuoteHandler = (
-  requestReverseQuote: () => Promise<void>,
-  setIsQuoteLoading?: (loading: boolean) => void,
-  setIsFromAmountLoading?: (loading: boolean) => void,
-  hasValidQuote?: () => boolean
-) => {
-  let debounceTimer: any = null
-
-  return (e: ChangeEvent<HTMLInputElement>) => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-    }
-
-    const value = e.target.value
-    if (value && value !== '0') {
-      const currentlyHasValidQuote = hasValidQuote ? hasValidQuote() : false
-
-      if (!currentlyHasValidQuote) {
-        if (setIsQuoteLoading) {
-          setIsQuoteLoading(true)
-        }
-        if (setIsFromAmountLoading) {
-          setIsFromAmountLoading(true)
-        }
-      }
-
-      debounceTimer = setTimeout(requestReverseQuote, QUOTE_REQUEST_DEBOUNCE_MS)
-    } else {
-      if (setIsQuoteLoading) {
-        setIsQuoteLoading(false)
-      }
-      if (setIsFromAmountLoading) {
-        setIsFromAmountLoading(false)
-      }
-    }
   }
 }
 

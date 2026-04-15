@@ -7,7 +7,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { getKaleidoClient } from '../../../api/client'
-import { webSocketService } from '../../../app/hubs/websocketService'
+import {
+  onQuoteResponse,
+  webSocketService,
+} from '../../../app/hubs/websocketService'
 import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
 import { useSettings } from '../../../hooks/useSettings'
@@ -74,7 +77,6 @@ import {
   startQuoteRequestTimer,
   stopQuoteRequestTimer,
   createAmountChangeQuoteHandler,
-  createToAmountChangeQuoteHandler,
   debouncedQuoteRequest,
   clearDebouncedQuoteRequest,
 } from './quoteUtils'
@@ -393,6 +395,7 @@ export const Component = () => {
   // Create a ref to track the quote response
   const lastQuoteResponseRef = useRef<any>(null)
   const lastReverseQuoteRef = useRef<any>(null)
+  const reverseQuoteTimerRef = useRef<any>(null)
   const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
 
   // Update quote request handler with loading state setters
@@ -472,6 +475,10 @@ export const Component = () => {
   // Update the quote response effect to handle connection errors
   useEffect(() => {
     if (!quoteResponse) {
+      // In reverse mode, the callback handles all state — skip the null handler
+      // to prevent it from clearing rfq_id/hasValidQuote set by the reverse handler.
+      if (lastQuoteDirectionRef.current === 'to') return
+
       // Quote was cleared or not found
       try {
         window.requestAnimationFrame(() => {
@@ -560,10 +567,13 @@ export const Component = () => {
           setQuoteExpiresAt(null)
           form.setValue('to', '')
           form.setValue('rfq_id', '')
-          // Request a fresh quote
           debouncedQuoteRequest(requestQuote)
           return
         }
+
+        // Skip forward quote processing when in reverse mode — the reverse
+        // callback handles setting the from field, rfq_id, fees, etc.
+        if (lastQuoteDirectionRef.current === 'to') return
 
         setQuoteResponseTimestamp(now)
         setIsToAmountLoading(false)
@@ -789,11 +799,22 @@ export const Component = () => {
     [assets, bitcoinUnit]
   )
 
-  // Reverse quote listener — receives quote responses via custom event (no Redux subscription overhead)
+  // Reverse quote listener — uses module-level callback (zero overhead when not in reverse mode).
+  // This processes the quote response and populates the "from" field when direction is 'to'.
+  // Uses refs to avoid stale closure issues — the effect runs once and reads current values via refs.
+  const formatAmountRef = useRef(formatAmount)
+  formatAmountRef.current = formatAmount
+
   useEffect(() => {
-    const handler = (e: Event) => {
-      if (lastQuoteDirectionRef.current !== 'to') return
-      const quote = (e as CustomEvent).detail
+    onQuoteResponse((quote: any, requestDirection: 'from' | 'to') => {
+      // Only process responses that originated from a reverse (to_amount) request.
+      // Forward quote responses are handled by the Redux selector + effect.
+      if (requestDirection !== 'to' || lastQuoteDirectionRef.current !== 'to')
+        return
+
+      logger.debug(
+        `[ReverseQuote] Processing: ${quote.from_asset?.ticker}->${quote.to_asset?.ticker}, rfq_id=${quote.rfq_id}`
+      )
 
       const fromAsset = form.getValues().fromAsset
       const toAsset = form.getValues().toAsset
@@ -802,58 +823,60 @@ export const Component = () => {
         !toAsset ||
         quote.from_asset?.ticker !== fromAsset ||
         quote.to_asset?.ticker !== toAsset
-      )
+      ) {
+        logger.debug(
+          `[ReverseQuote] Pair mismatch: form=${fromAsset}->${toAsset}, quote=${quote.from_asset?.ticker}->${quote.to_asset?.ticker}`
+        )
         return
+      }
 
       if (
         lastReverseQuoteRef.current &&
-        quote.timestamp === lastReverseQuoteRef.current.timestamp
-      )
-        return
+        quote.rfq_id === lastReverseQuoteRef.current.rfq_id
+      ) {
+        return // Same quote already processed
+      }
 
       lastReverseQuoteRef.current = quote
 
-      const fromTickerForUI = quote.from_asset.ticker
+      // Format and set the "from" field (the output in reverse mode)
+      const fromTicker = quote.from_asset.ticker
       let displayFromAmount = quote.from_asset.amount
-      if (fromTickerForUI === 'BTC') {
+      if (fromTicker === 'BTC') {
         displayFromAmount = Math.round(displayFromAmount / MSATS_PER_SAT)
       }
-      const formattedFromAmount = formatAmount(
-        displayFromAmount,
-        fromTickerForUI
+      const formatted = formatAmountRef.current(displayFromAmount, fromTicker)
+      logger.debug(
+        `[ReverseQuote] Setting from=${formatted}, rfq_id=${quote.rfq_id}`
       )
-      form.setValue('from', formattedFromAmount)
-      setDebouncedFromAmount(formattedFromAmount)
+      form.setValue('from', formatted)
+      setDebouncedFromAmount(formatted)
       setIsFromAmountLoading(false)
       setIsQuoteLoading(false)
 
       setHasValidQuote(true)
       setQuoteExpiresAt(quote.expires_at || null)
 
-      if (quote.price) {
-        setCurrentPrice(quote.price)
-      }
-      if (quote.rfq_id) {
-        form.setValue('rfq_id', quote.rfq_id)
-      }
-      if (quote.from_asset?.asset_id) {
+      if (quote.price) setCurrentPrice(quote.price)
+      if (quote.rfq_id) form.setValue('rfq_id', quote.rfq_id)
+      if (quote.from_asset?.asset_id)
         form.setValue('fromAssetId', quote.from_asset.asset_id)
-      }
-      if (quote.to_asset?.asset_id) {
+      if (quote.to_asset?.asset_id)
         form.setValue('toAssetId', quote.to_asset.asset_id)
-      }
 
       setErrorMessage((prev) => {
         if (prev && prev.includes('awaiting confirmation')) return prev
         return null
       })
+    })
+    return () => {
+      onQuoteResponse(null)
+      if (reverseQuoteTimerRef.current) {
+        clearTimeout(reverseQuoteTimerRef.current)
+      }
     }
-
-    window.addEventListener('kaleidoswap-quote-response', handler)
-    return () =>
-      window.removeEventListener('kaleidoswap-quote-response', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formatAmount, form])
+  }, [])
 
   // Handle quote errors immediately to reset loading states
   useEffect(() => {
@@ -3032,17 +3055,26 @@ export const Component = () => {
         getAssetPrecisionWrapper,
         maxToAmount
       )
-      const quoteHandler = createToAmountChangeQuoteHandler(requestReverseQuote)
-
-      const value = event.target.value
-      if (value && value !== '0') {
-        lastQuoteDirectionRef.current = 'to'
-      } else {
-        lastQuoteDirectionRef.current = 'from'
-        lastReverseQuoteRef.current = null
-      }
       baseHandler(event)
-      quoteHandler(event)
+
+      // Cancel any pending reverse quote request
+      if (reverseQuoteTimerRef.current) {
+        clearTimeout(reverseQuoteTimerRef.current)
+        reverseQuoteTimerRef.current = null
+      }
+
+      const value = event.target.value.replace(/[^\d.]/g, '')
+      if (value && parseFloat(value) > 0) {
+        lastQuoteDirectionRef.current = 'to'
+        setIsFromAmountLoading(true)
+        reverseQuoteTimerRef.current = setTimeout(() => {
+          requestReverseQuote()
+          reverseQuoteTimerRef.current = null
+        }, 500)
+      } else {
+        setIsFromAmountLoading(false)
+        setIsQuoteLoading(false)
+      }
     },
     [form, getAssetPrecisionWrapper, maxToAmount, requestReverseQuote]
   )

@@ -50,6 +50,16 @@ interface ConnectionStability {
  * Centralized WebSocket service that manages a single connection to the maker
  * and handles subscription management, heartbeat, reconnection, etc.
  */
+// Reverse quote callback — avoids global event coupling between WS service and trade page.
+let _onQuoteResponseCallback:
+  | ((quote: any, direction: 'from' | 'to') => void)
+  | null = null
+export const onQuoteResponse = (
+  cb: ((quote: any, direction: 'from' | 'to') => void) | null
+): void => {
+  _onQuoteResponseCallback = cb
+}
+
 class WebSocketService {
   private static instance: WebSocketService
   private socket: WebSocket | null = null
@@ -105,6 +115,7 @@ class WebSocketService {
 
   // Track last quote request for error handling
   private lastQuoteRequest: {
+    direction: 'from' | 'to'
     fromAsset: string
     toAsset: string
     fromAmount: number
@@ -823,12 +834,10 @@ class WebSocketService {
                 `WebSocketService: Received valid quote: with ID: ${quote.rfq_id} - ${fromAmount} ${fromAssetDisplay} -> ${toAmount} ${toAssetDisplay}`
               )
               this.dispatch(updateQuote(quote))
-              // Emit event for reverse quote handling (avoids Redux state bloat)
-              window.dispatchEvent(
-                new CustomEvent('kaleidoswap-quote-response', {
-                  detail: quote,
-                })
-              )
+              // Notify reverse quote callback — only fires for reverse (to_amount) responses
+              if (this.lastQuoteRequest?.direction === 'to') {
+                _onQuoteResponseCallback?.(quote, 'to')
+              }
             } else {
               logger.error(
                 'WebSocketService: Malformed quote response - missing required fields:',
@@ -1277,8 +1286,9 @@ class WebSocketService {
       `WebSocketService: Requesting ${direction === 'to' ? 'reverse ' : ''}quote for ${amount} ${direction === 'to' ? toAsset : fromAsset} -> ${direction === 'to' ? fromAsset : toAsset}`
     )
 
-    // Track this request for error handling
+    // Track this request for error handling and direction filtering
     this.lastQuoteRequest = {
+      direction,
       fromAmount: direction === 'from' ? amount : 0,
       fromAsset,
       toAsset,

@@ -191,6 +191,18 @@ export const createSwapExecutor = (
       let toAmount = parseAssetAmount(data.to, data.toAsset)
       let fromAmount = parseAssetAmount(data.from, data.fromAsset)
 
+      // Validate amounts before sending
+      if (!fromAmount || fromAmount <= 0) {
+        throw new Error(
+          'Send amount is not set. Please wait for the quote to populate both amounts before swapping.'
+        )
+      }
+      if (!toAmount || toAmount <= 0) {
+        throw new Error(
+          'Receive amount is not set. Please wait for the quote to populate both amounts before swapping.'
+        )
+      }
+
       // Multiply by 1000 if the asset is BTC
       if (data.fromAsset.toLowerCase() === 'btc') {
         fromAmount *= 1000
@@ -200,7 +212,9 @@ export const createSwapExecutor = (
       }
       const rfq_id = data.rfq_id
       if (!rfq_id) {
-        throw new Error('Invalid RFQ ID')
+        throw new Error(
+          'No valid quote available. Please wait for a quote before swapping.'
+        )
       }
       const payload = {
         from_amount: fromAmount,
@@ -211,11 +225,16 @@ export const createSwapExecutor = (
       }
       logger.debug('Swap payload:', payload)
 
+      logger.debug(
+        `[Swap] Initiating swap: rfq_id=${rfq_id}, from=${fromAmount} ${data.fromAsset}, to=${toAmount} ${data.toAsset}`
+      )
       const initSwapResponse = await initSwap(payload)
       if ('error' in initSwapResponse) {
+        logger.error('[Swap] Init error object:', initSwapResponse.error)
         const errorMessage = handleApiError(
           initSwapResponse.error as FetchBaseQueryError
         )
+        logger.error(`[Swap] Init failed: ${errorMessage}`)
         setErrorMessage(errorMessage)
         throw new Error(errorMessage)
       }
@@ -305,9 +324,19 @@ export const createSwapExecutor = (
     } catch (error) {
       logger.error('Error executing swap', error)
 
-      // Extract error message
-      errorMessage =
+      // Extract error message — replace unhelpful browser errors with user-friendly text
+      const rawMessage =
         error instanceof Error ? error.message : 'An unknown error occurred'
+      if (
+        rawMessage === 'Load failed' ||
+        rawMessage === 'Failed to fetch' ||
+        rawMessage === 'NetworkError when attempting to fetch resource.'
+      ) {
+        errorMessage =
+          'The quote may have expired or the amounts are invalid. Please get a fresh quote and try again.'
+      } else {
+        errorMessage = rawMessage
+      }
       setErrorMessage(errorMessage)
 
       // Clear any existing toasts first
