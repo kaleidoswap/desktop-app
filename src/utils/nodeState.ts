@@ -329,3 +329,39 @@ export const waitForNodeReady = async (
     })()
   })
 }
+
+export const waitForDockerNodeReady = async (options: {
+  timeoutMs?: number
+  pollIntervalMs?: number
+  daemonPort: string | number
+}): Promise<number> => {
+  const { timeoutMs = 90000, pollIntervalMs = 2000, daemonPort } = options
+  const startedAt = Date.now()
+  let lastError: string | null = null
+
+  const sleep = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const status = await invoke<number>('probe_node_http', {
+        daemonPort: Number(daemonPort),
+      })
+
+      if (status > 0) {
+        return status
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error)
+    }
+
+    await sleep(pollIntervalMs)
+  }
+
+  throw new Error(
+    `Timeout waiting for Docker node to become ready on port ${daemonPort}${
+      lastError ? `. Last probe error: ${lastError}` : ''
+    }`
+  )
+}

@@ -7,12 +7,16 @@ export type BackendNodeState =
   | { status: 'Stopping' }
   | { status: 'Failed'; message: string }
 
+export type NodeReachability = 'unknown' | 'reachable' | 'unreachable'
+
 interface NodeState {
   lifecycle: BackendNodeState
   isRunning: boolean
   logs: string[]
   isLoading: boolean
   error: string | null
+  reachability: NodeReachability
+  reachabilityError: string | null
 }
 
 const initialState: NodeState = {
@@ -21,6 +25,8 @@ const initialState: NodeState = {
   isRunning: false,
   lifecycle: { status: 'Stopped' },
   logs: [],
+  reachability: 'unknown',
+  reachabilityError: null,
 }
 
 const nodeSlice = createSlice({
@@ -59,6 +65,16 @@ const nodeSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
     },
+    setNodeReachability: (
+      state,
+      action: PayloadAction<{
+        error?: string | null
+        status: NodeReachability
+      }>
+    ) => {
+      state.reachability = action.payload.status
+      state.reachabilityError = action.payload.error ?? null
+    },
     setNodeRunning: (state, action: PayloadAction<boolean>) => {
       state.isRunning = action.payload
     },
@@ -72,5 +88,6 @@ export const {
   setLoading,
   setError,
   setLifecycleState,
+  setNodeReachability,
 } = nodeSlice.actions
 export const nodeReducer = nodeSlice.reducer

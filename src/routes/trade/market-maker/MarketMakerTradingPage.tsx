@@ -3381,10 +3381,10 @@ export const Component = () => {
                   hasChannels={hasChannels}
                   hasTradablePairs={hasTradablePairs}
                   hasValidQuote={hasValidQuote}
+                  isFromAmountLoading={isFromAmountLoading}
                   isPriceLoading={isPriceLoading}
                   isQuoteLoading={isQuoteLoading}
                   isSwapInProgress={isSwapInProgress}
-                  isFromAmountLoading={isFromAmountLoading}
                   isToAmountLoading={isToAmountLoading}
                   isUsingOnchainBalance={isUsingOnchainBalance}
                   maxFromAmount={maxFromAmount}

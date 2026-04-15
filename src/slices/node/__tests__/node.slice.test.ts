@@ -6,6 +6,7 @@ import {
   setLifecycleState,
   setError,
   setLoading,
+  setNodeReachability,
   setNodeRunning,
 } from '../node.slice'
 
@@ -144,5 +145,32 @@ describe('setNodeRunning', () => {
       nodeReducer({ ...initialState, isRunning: true }, setNodeRunning(false))
         .isRunning
     ).toBe(false)
+  })
+})
+
+// ─── setNodeReachability ────────────────────────────────────────────────────
+
+describe('setNodeReachability', () => {
+  it('sets reachable and clears the reachability error', () => {
+    const state = nodeReducer(
+      { ...initialState, reachabilityError: 'offline' },
+      setNodeReachability({ status: 'reachable' })
+    )
+
+    expect(state.reachability).toBe('reachable')
+    expect(state.reachabilityError).toBeNull()
+  })
+
+  it('sets unreachable with the latest error', () => {
+    const state = nodeReducer(
+      initialState,
+      setNodeReachability({
+        error: 'Failed to fetch',
+        status: 'unreachable',
+      })
+    )
+
+    expect(state.reachability).toBe('unreachable')
+    expect(state.reachabilityError).toBe('Failed to fetch')
   })
 })

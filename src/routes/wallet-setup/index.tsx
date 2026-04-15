@@ -72,13 +72,12 @@ export const Component = () => {
         setIsNativeSupported(native)
         setIsDockerAvailable(docker)
 
-        // If only one option, auto-select it
-        if (native && !docker) {
-          setLocalNodeMode('native')
-        } else if (docker && !native) {
+        // Prefer Docker when present so local setup can proceed immediately.
+        if (docker) {
           setLocalNodeMode('docker')
+        } else if (native) {
+          setLocalNodeMode('native')
         }
-        // When both available, leave null so user picks
       } catch (error) {
         console.error('Failed to check local node capabilities:', error)
         // Fallback: check each backend separately
@@ -95,7 +94,7 @@ export const Component = () => {
           const docker = await invoke<boolean>('is_docker_available')
           if (docker) {
             setIsDockerAvailable(true)
-            if (!localNodeMode) setLocalNodeMode('docker')
+            setLocalNodeMode((mode) => mode ?? 'docker')
           }
         } catch {
           // Docker command not available
@@ -122,6 +121,13 @@ export const Component = () => {
       // Short delay for transition
       setTimeout(() => {
         setNodeType(type)
+        if (type === 'local' && !localNodeMode) {
+          if (isDockerAvailable) {
+            setLocalNodeMode('docker')
+          } else if (isNativeSupported) {
+            setLocalNodeMode('native')
+          }
+        }
         setIsTransitioning(false)
 
         if (content) {
@@ -287,7 +293,6 @@ export const Component = () => {
                         className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
                         onClick={() => {
-                          setLocalNodeMode(null)
                           handleNodeTypeChange(null)
                         }}
                         size="sm"
@@ -361,25 +366,27 @@ export const Component = () => {
                         onClick={() => setLocalNodeMode('docker')}
                         type="button"
                       >
-                        <div className="absolute top-2 right-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                            {t('walletSetup.recommended')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <Container
-                            className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
-                          />
-                          <span
-                            className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
-                          >
-                            {t('walletSetup.backendDocker')}
-                          </span>
-                          {!isDockerAvailable && (
-                            <span className="text-xs text-content-tertiary ml-auto">
-                              {t('walletSetup.backendUnavailable')}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <Container
+                              className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                            >
+                              {t('walletSetup.backendDocker')}
                             </span>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!isDockerAvailable && (
+                              <span className="text-xs text-content-tertiary">
+                                {t('walletSetup.backendUnavailable')}
+                              </span>
+                            )}
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              {t('walletSetup.recommended')}
+                            </span>
+                          </div>
                         </div>
                         <p className="text-xs text-content-secondary">
                           {t('walletSetup.backendDockerDescription')}

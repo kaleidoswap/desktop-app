@@ -143,7 +143,14 @@ export const Component = () => {
       }
     }
     checkNodeStatus()
-  }, [])
+  }, [
+    navigate,
+    nodeInfo,
+    nodeSettings.datapath,
+    nodeSettings.name,
+    nodeSettings.node_url,
+    t,
+  ])
 
   useEffect(() => {
     if (nodeLifecycle.status === 'Failed') {
@@ -157,6 +164,7 @@ export const Component = () => {
     if (
       isUnlocking &&
       nodeLifecycle.status === 'Stopped' &&
+      nodeSettings.datapath !== '' &&
       !isCancelledRef.current
     ) {
       const message = t('walletUnlock.nodeStoppedUnexpectedly', {
@@ -167,7 +175,7 @@ export const Component = () => {
       setErrors([message])
       setIsUnlocking(false)
     }
-  }, [isUnlocking, nodeLifecycle, t])
+  }, [isUnlocking, nodeLifecycle, nodeSettings.datapath, t])
 
   const unlockForm = useForm<Fields>({
     defaultValues: { password: '' },
@@ -255,6 +263,9 @@ export const Component = () => {
         })
       }
 
+      setUnlockError(null)
+      setUnlockStatusMessage(null)
+      setErrors([])
       setRedirectToRoot(true)
     } catch (error) {
       if (isCancelledRef.current) {
@@ -318,8 +329,12 @@ export const Component = () => {
       await withTimeout(
         (async () => {
           // Poll until the node HTTP endpoint responds
-          const { waitForNodeReady } = await import('../../utils/nodeState')
-          await waitForNodeReady({ daemonPort: dockerPort, timeoutMs: 90000 })
+          const { waitForDockerNodeReady } =
+            await import('../../utils/nodeState')
+          await waitForDockerNodeReady({
+            daemonPort: dockerPort,
+            timeoutMs: 90000,
+          })
         })(),
         90000,
         'Docker node startup'

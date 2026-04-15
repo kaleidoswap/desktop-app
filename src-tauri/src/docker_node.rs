@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -187,9 +188,88 @@ impl DockerNodeManager {
     // Docker availability & environment discovery
     // ------------------------------------------------------------------
 
-    /// Check if Docker is installed and available in PATH
+    /// Well-known directories where Docker binaries live.
+    /// Bundled macOS / Linux apps inherit a minimal PATH (often just
+    /// `/usr/bin:/bin:/usr/sbin:/sbin`) that excludes these.
+    fn docker_search_dirs() -> Vec<PathBuf> {
+        let mut dirs = vec![
+            PathBuf::from("/Applications/Docker.app/Contents/Resources/bin"),
+            PathBuf::from("/usr/local/bin"),
+            PathBuf::from("/opt/homebrew/bin"),
+        ];
+
+        if let Some(home_dir) = dirs::home_dir() {
+            dirs.push(home_dir.join(".docker/bin"));
+        }
+
+        if let Some(current_path) = std::env::var_os("PATH") {
+            dirs.extend(std::env::split_paths(&current_path));
+        }
+
+        dirs
+    }
+
+    /// Build an enriched PATH that includes well-known Docker directories.
+    /// Used as the child-process PATH so that helpers like
+    /// `docker-credential-desktop` are also reachable.
+    fn enriched_path() -> OsString {
+        let current = std::env::var_os("PATH").unwrap_or_default();
+        let mut parts: Vec<PathBuf> = Vec::new();
+
+        for dir in Self::docker_search_dirs() {
+            if dir.is_dir() && !parts.iter().any(|existing| existing == &dir) {
+                parts.push(dir);
+            }
+        }
+
+        std::env::join_paths(parts).unwrap_or(current)
+    }
+
+    /// Resolve the full path to the `docker` binary.
+    /// `Command::new("docker")` uses the *current* process PATH to find
+    /// the binary, which in a bundled app is too narrow.  We probe
+    /// well-known directories ourselves so the binary is found even when
+    /// `/usr/local/bin` is not in PATH.
+    fn resolve_docker_bin() -> OsString {
+        for dir in Self::docker_search_dirs() {
+            let candidate = dir.join("docker");
+            if candidate.exists() {
+                return candidate.into_os_string();
+            }
+        }
+        // Fallback: hope it is on the inherited PATH (works in dev builds).
+        OsString::from("docker")
+    }
+
+    /// Create a `Command` for the docker binary.
+    /// - Resolves the binary via well-known paths (so the *binary itself*
+    ///   is found even with a minimal PATH).
+    /// - Sets an enriched PATH on the child process so that Docker's own
+    ///   helpers (`docker-credential-desktop`, etc.) are also reachable.
+    fn docker_command() -> Command {
+        let mut cmd = Command::new(Self::resolve_docker_bin());
+        cmd.env("PATH", Self::enriched_path());
+        cmd
+    }
+
+    fn format_compose_error(action: &str, stderr: &str) -> String {
+        let mut message = format!("docker compose {} failed: {}", action, stderr);
+
+        if stderr.contains("docker-credential-desktop")
+            && stderr.contains("executable file not found")
+        {
+            message.push_str(&format!(
+                "\nDocker credential helper was not found. PATH used for Docker commands: {}",
+                Self::enriched_path().to_string_lossy()
+            ));
+        }
+
+        message
+    }
+
+    /// Check if Docker is installed and available
     pub fn is_docker_available() -> bool {
-        let mut cmd = Command::new("docker");
+        let mut cmd = Self::docker_command();
         cmd.arg("info")
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
@@ -549,7 +629,7 @@ impl DockerNodeManager {
     // ------------------------------------------------------------------
 
     fn run_compose(compose_dir: &Path, args: &[&str]) -> Result<std::process::Output, String> {
-        let mut cmd = Command::new("docker");
+        let mut cmd = Self::docker_command();
         cmd.args(["compose", "--file", COMPOSE_FILE])
             .args(args)
             .current_dir(compose_dir);
@@ -644,7 +724,7 @@ impl DockerNodeManager {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            let err = format!("docker compose up failed: {}", stderr);
+            let err = Self::format_compose_error("up", &stderr);
             self.set_state(NodeState::Failed(err.clone()));
             return Err(err);
         }

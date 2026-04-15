@@ -1,3 +1,4 @@
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import Decimal from 'decimal.js'
@@ -11,6 +12,7 @@ import {
   HelpCircle,
   User,
   Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,6 +26,7 @@ import logoFull from '../../assets/logo-full.svg'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { setNodeReachability } from '../../slices/node/node.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
@@ -31,6 +34,7 @@ import { BackupModal } from '../BackupModal'
 import { useBackup } from '../../hooks/useBackup'
 import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { useLimitOrderScheduler } from '../../hooks/useLimitOrderScheduler'
+import { useNodeReachabilityMonitor } from '../../hooks/useNodeReachabilityMonitor'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -53,6 +57,43 @@ import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
+
+const getNodeErrorMessage = (error: unknown) => {
+  if (!error) return 'Unknown node connection error'
+  if (typeof error === 'string') return error
+
+  if (typeof error === 'object' && error !== null) {
+    if ('error' in error && typeof error.error === 'string') {
+      return error.error
+    }
+
+    if ('data' in error) {
+      const data = error.data
+      if (typeof data === 'string') return data
+      if (typeof data === 'object' && data !== null && 'error' in data) {
+        return String(data.error)
+      }
+    }
+  }
+
+  return String(error)
+}
+
+const isNodeReachabilityError = (error: FetchBaseQueryError) => {
+  if (error.status === 'FETCH_ERROR' || error.status === 'TIMEOUT_ERROR') {
+    return true
+  }
+
+  const message = getNodeErrorMessage(error).toLowerCase()
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('load failed') ||
+    message.includes('network') ||
+    message.includes('timeout') ||
+    message.includes('connection refused') ||
+    message.includes('connection reset')
+  )
+}
 
 interface Props {
   className?: string
@@ -291,6 +332,10 @@ const UserProfile = ({
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+  const nodeReachability = useAppSelector((state) => state.node.reachability)
+  const isNodeReachable =
+    nodeReachability === 'reachable' ||
+    (nodeReachability === 'unknown' && nodeInfo.isSuccess)
 
   const {
     showBackupModal,
@@ -348,7 +393,7 @@ const UserProfile = ({
             <div
               className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-base
               transition-all duration-300
-              ${nodeInfo.isSuccess ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
+              ${isNodeReachable ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
             ></div>
           </div>
 
@@ -359,7 +404,7 @@ const UserProfile = ({
                   {accountName || t('userProfile.myWallet')}
                 </span>
                 <span className="text-xs text-content-secondary group-hover:text-content-secondary transition-colors duration-300">
-                  {nodeInfo.isSuccess
+                  {isNodeReachable
                     ? t('userProfile.connected')
                     : t('userProfile.disconnected')}
                 </span>
@@ -403,10 +448,10 @@ const UserProfile = ({
                 </div>
                 <div className="text-xs text-content-secondary flex items-center space-x-1">
                   <div
-                    className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green animate-pulse' : 'bg-red'}`}
+                    className={`w-2 h-2 rounded-full ${isNodeReachable ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
                   <span>
-                    {nodeInfo.isSuccess
+                    {isNodeReachable
                       ? t('userProfile.connected')
                       : t('userProfile.disconnected')}
                   </span>
@@ -457,6 +502,8 @@ export const Layout = (props: Props) => {
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
   const [isTransactionMenuOpen, setIsTransactionMenuOpen] = useState(false)
   const [isSupportMenuOpen, setIsSupportMenuOpen] = useState(false)
+  const [isRetryingNodeConnection, setIsRetryingNodeConnection] =
+    useState(false)
 
   const [showSupportModal, setShowSupportModal] = useState(false)
 
@@ -470,6 +517,7 @@ export const Layout = (props: Props) => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
 
   // Get translated menu items
   const MAIN_NAV_ITEMS = getMainNavItems(t)
@@ -496,11 +544,25 @@ export const Layout = (props: Props) => {
 
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
-  const shouldPoll = nodeInfo.isSuccess
+  const nodeReachability = useAppSelector((state) => state.node.reachability)
+  const nodeReachabilityError = useAppSelector(
+    (state) => state.node.reachabilityError
+  )
+  const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+  const isNodeReachable =
+    nodeReachability === 'reachable' ||
+    (nodeReachability === 'unknown' && nodeInfo.isSuccess)
+  const isNodeUnreachable = nodeReachability === 'unreachable'
+  const shouldPoll = isNodeReachable
   const isNodeActive =
     nodeLifecycle.status === 'Running' ||
     nodeLifecycle.status === 'Starting' ||
     nodeLifecycle.status === 'Stopping'
+
+  useNodeReachabilityMonitor({
+    accountKey: nodeSettingsData?.name,
+    skip: shouldHideNavbar || !nodeSettingsData?.name,
+  })
 
   const { data, isFetching, error } = nodeApi.useListTransactionsQuery(
     undefined,
@@ -649,7 +711,7 @@ export const Layout = (props: Props) => {
     }
 
     checkDeposits()
-  }, [data, error, shouldPoll, lastDeposit, isFetching, addNotification])
+  }, [data, error, shouldPoll, lastDeposit, isFetching, addNotification, t])
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -694,8 +756,6 @@ export const Layout = (props: Props) => {
     }
   }, [])
 
-  const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
-
   const handleTransactionAction = (type: string) => {
     dispatch(
       uiSliceActions.setModal({
@@ -703,6 +763,36 @@ export const Layout = (props: Props) => {
         type: type as ModalActionType,
       })
     )
+  }
+
+  const handleRetryNodeConnection = async () => {
+    setIsRetryingNodeConnection(true)
+    try {
+      const result = await dispatch(
+        nodeApi.endpoints.nodeInfo.initiate(undefined, {
+          forceRefetch: true,
+          subscribe: false,
+        })
+      )
+
+      if ('error' in result && result.error) {
+        const error = result.error as FetchBaseQueryError
+
+        if (isNodeReachabilityError(error)) {
+          dispatch(
+            setNodeReachability({
+              error: getNodeErrorMessage(error),
+              status: 'unreachable',
+            })
+          )
+          return
+        }
+      }
+
+      dispatch(setNodeReachability({ status: 'reachable' }))
+    } finally {
+      setIsRetryingNodeConnection(false)
+    }
   }
 
   const handleKeepRunningInBackground = async () => {
@@ -796,6 +886,66 @@ export const Layout = (props: Props) => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!shouldHideNavbar && isNodeUnreachable && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4">
+          <div className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-red-300" />
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-white">
+                  {t('nodeReachability.blockingTitle', {
+                    defaultValue: 'Node is offline',
+                  })}
+                </h3>
+                <p className="text-content-secondary mt-2">
+                  {t('nodeReachability.blockingMessage', {
+                    defaultValue:
+                      'KaleidoSwap cannot be used while the node is unreachable. Keep your local Docker/native node running or check the remote node URL, then retry the connection.',
+                  })}
+                </p>
+
+                {nodeReachabilityError && (
+                  <p className="mt-4 text-xs text-red-300 break-words bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                    {nodeReachabilityError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <button
+                    className="px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    disabled={isRetryingNodeConnection}
+                    onClick={handleRetryNodeConnection}
+                  >
+                    {isRetryingNodeConnection ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    <span>
+                      {t('nodeReachability.retry', {
+                        defaultValue: 'Retry connection',
+                      })}
+                    </span>
+                  </button>
+
+                  <button
+                    className="px-4 py-3 rounded-lg bg-surface-overlay text-content-secondary font-medium"
+                    onClick={() => navigate(WALLET_SETUP_PATH)}
+                  >
+                    {t('nodeReachability.changeNode', {
+                      defaultValue: 'Change node',
+                    })}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
