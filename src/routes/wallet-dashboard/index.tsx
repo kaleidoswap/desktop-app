@@ -202,9 +202,10 @@ export const Component = () => {
   )
 
   const isLoading =
-    btcBalanceResponse.isLoading || listChannelsResponse.isLoading
+    (btcBalanceResponse.isLoading && !btcBalanceResponse.data) ||
+    (listChannelsResponse.isLoading && !listChannelsResponse.data)
 
-  const isAssetsLoading = assetsResponse.isLoading || assetsResponse.isFetching
+  const isAssetsLoading = assetsResponse.isLoading && !assetsResponse.data
 
   const liquidityTotal = totalInboundLiquidity + totalOutboundLiquidity
   const outboundPct =
