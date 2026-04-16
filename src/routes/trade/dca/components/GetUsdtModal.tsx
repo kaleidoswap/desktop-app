@@ -191,19 +191,16 @@ export function GetUsdtModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
+      <div className="w-full max-w-2xl bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-status-success/10 text-status-success">
-              <Zap className="w-4 h-4" />
-            </div>
-            <h2 className="text-sm font-semibold text-content-primary">
+        <div className="flex items-start justify-between px-5 py-4 border-b border-border-subtle/50">
+          <div>
+            <h2 className="text-2xl font-bold text-white">
               {t('dca.getUsdt.title', 'Get USDT on Lightning')}
             </h2>
           </div>
           <button
-            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
+            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors mt-1"
             onClick={onClose}
           >
             <X className="w-4 h-4" />
@@ -211,242 +208,223 @@ export function GetUsdtModal({
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
-          {/* Option A: Buy via LSP */}
-          <div className="border border-border-subtle rounded-xl p-4 space-y-3 bg-surface-raised">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary flex-shrink-0 mt-0.5">
-                <Zap className="w-4 h-4" />
+        <div className="p-5">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Option A: Buy via LSP */}
+            <div className="bg-surface-overlay/80 border border-border-default/50 rounded-xl p-6 flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-content-primary">
+                    {t('dca.getUsdt.buyTitle', 'Buy via Kaleido LSP')}
+                  </p>
+                  <p className="text-sm text-content-secondary mt-3 leading-relaxed">
+                    {t(
+                      'dca.getUsdt.buyDesc',
+                      'Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.'
+                    )}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-content-primary">
-                  {t('dca.getUsdt.buyTitle', 'Buy via Kaleido LSP')}
-                </p>
-                <p className="text-xs text-content-secondary mt-0.5 leading-relaxed">
-                  {t(
-                    'dca.getUsdt.buyDesc',
-                    'Pay BTC and receive inbound USDT Lightning liquidity. Choose the channel capacity to set your max BTC receive limit.'
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end">
               <button
-                className="px-3 py-1.5 rounded-lg bg-primary/15 text-primary border border-primary/30
-                           hover:bg-primary/25 font-medium text-xs transition-all active:scale-[0.97]"
+                className="mt-auto w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors"
                 onClick={() => setShowBuyModal(true)}
               >
                 {t('dca.getUsdt.buyButton', 'Buy USDT Channel')}
               </button>
             </div>
-          </div>
 
-          {/* Option B: Open with on-chain USDT */}
-          <div
-            className={`border rounded-xl p-4 space-y-3 bg-surface-raised ${
-              hasOnChain ? 'border-border-subtle' : 'border-border-subtle/50'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className={`p-2 rounded-lg flex-shrink-0 mt-0.5 ${
-                  hasOnChain
-                    ? 'bg-status-success/10 text-status-success'
-                    : 'bg-surface-overlay text-content-secondary'
-                }`}
-              >
-                <Package className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-content-primary">
-                  {t('dca.getUsdt.onChainTitle', 'Open with On-Chain USDT')}
-                </p>
-                <div className="text-xs mt-1.5">
-                  {hasOnChain ? (
-                    <span className="text-content-secondary">
-                      {t(
-                        'dca.getUsdt.onChainBalance',
-                        'On-chain balance: {{amount}} USDT',
-                        {
-                          amount: spendableUsdt.toLocaleString('en-US', {
-                            maximumFractionDigits: 2,
-                          }),
-                        }
-                      )}
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-content-secondary">
-                        {t(
-                          'dca.getUsdt.noOnChain',
-                          'No on-chain USDT available'
-                        )}
-                      </span>
-                      <button
-                        className="text-primary hover:text-primary-emphasis hover:underline font-semibold"
-                        onClick={() => {
-                          onClose()
-                          if (usdtAsset?.asset_id) {
-                            dispatch(
-                              uiSliceActions.setModal({
-                                assetId: usdtAsset.asset_id,
-                                type: 'deposit',
-                              })
-                            )
-                          }
-                        }}
-                      >
-                        {t('dca.getUsdt.depositAction', 'Deposit USDT')}
-                      </button>
-                    </div>
-                  )}
+            {/* Option B: Open with on-chain USDT */}
+            <div className="bg-surface-overlay/80 border border-border-default/50 rounded-xl p-6 flex flex-col gap-4">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                  <Package className="w-6 h-6" />
                 </div>
-              </div>
-            </div>
-
-            {hasOnChain && (
-              <>
-                {/* USDT amount row */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-content-secondary uppercase tracking-wide">
-                    {t('dca.getUsdt.usdtAmountLabel', 'USDT amount')}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
-                                 text-sm text-content-primary placeholder:text-content-secondary/60
-                                 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
-                                 disabled:opacity-50"
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
-                      }
-                      max={spendableUsdt}
-                      min="0"
-                      onChange={(e) => setUsdtAmount(e.target.value)}
-                      placeholder="0.00"
-                      step="any"
-                      type="number"
-                      value={usdtAmount}
-                    />
-                    <span className="text-xs text-content-secondary font-medium flex-shrink-0">
-                      USDT
-                    </span>
-                    <button
-                      className="px-2 py-1.5 rounded-lg border border-border-subtle bg-surface-overlay
-                                 text-xs text-content-secondary hover:text-content-primary hover:border-border-default
-                                 transition-colors flex-shrink-0 disabled:opacity-50"
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
-                      }
-                      onClick={() =>
-                        setUsdtAmount(
-                          spendableUsdt.toFixed(6).replace(/\.?0+$/, '') || '0'
-                        )
-                      }
-                    >
-                      {t('dca.getUsdt.useAll', 'Use all')}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Capacity row */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-[11px] font-medium text-content-secondary uppercase tracking-wide">
-                      {t('dca.getUsdt.capacityLabel', 'Channel capacity')}
-                    </label>
-                    <span className="group relative">
-                      <Info className="w-3 h-3 text-content-secondary cursor-help" />
-                      <span
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2
-                                       bg-surface-elevated border border-border-subtle rounded-lg text-[11px]
-                                       text-content-secondary leading-relaxed shadow-lg z-10
-                                       invisible group-hover:visible whitespace-normal"
-                      >
-                        {t(
-                          'dca.getUsdt.capacityHint',
-                          'BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.'
-                        )}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      className="flex-1 bg-surface-overlay border border-border-subtle rounded-lg px-3 py-1.5
-                                 text-sm text-content-primary placeholder:text-content-secondary/60
-                                 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
-                                 disabled:opacity-50"
-                      disabled={
-                        onChainState === 'loading' || onChainState === 'success'
-                      }
-                      max={lspMaxSat}
-                      min={lspMinSat}
-                      onChange={(e) => setCapacitySat(e.target.value)}
-                      step="1000"
-                      type="number"
-                      value={capacitySat}
-                    />
-                    <span className="text-xs text-content-secondary font-medium flex-shrink-0">
-                      sats
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-content-secondary">
-                    {t(
-                      'dca.getUsdt.capacityRange',
-                      'Min {{min}} – max {{max}} sats',
-                      {
-                        max: formatSats(lspMaxSat),
-                        min: formatSats(lspMinSat),
-                      }
-                    )}
-                    {satNum > 0 && isSatValid && (
-                      <span className="ml-2 text-content-secondary">
-                        {'· '}
-                        {t(
-                          'dca.getUsdt.maxReceive',
-                          'max receive ≈ {{sats}} sats BTC',
+                <div>
+                  <p className="text-base font-semibold text-content-primary">
+                    {t('dca.getUsdt.onChainTitle', 'Open with On-Chain USDT')}
+                  </p>
+                  <p className="text-sm text-content-secondary mt-3">
+                    {hasOnChain
+                      ? t(
+                          'dca.getUsdt.onChainBalance',
+                          'On-chain balance: {{amount}} USDT',
                           {
-                            sats: formatSats(satNum),
+                            amount: spendableUsdt.toLocaleString('en-US', {
+                              maximumFractionDigits: 2,
+                            }),
                           }
+                        )
+                      : t(
+                          'dca.getUsdt.noOnChain',
+                          'No on-chain USDT available.'
                         )}
-                      </span>
-                    )}
                   </p>
                 </div>
+              </div>
 
-                {onChainState === 'error' && onChainError && (
-                  <div className="flex items-start gap-2 p-2.5 bg-status-danger/10 border border-status-danger/20 rounded-lg text-xs text-status-danger">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                    <span className="break-all">{onChainError}</span>
+              {!hasOnChain && (
+                <button
+                  className="mt-auto w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-transparent border border-white/30 hover:border-white/50 hover:bg-white/5 px-4 text-sm font-semibold text-white transition-colors"
+                  onClick={() => {
+                    onClose()
+                    if (usdtAsset?.asset_id) {
+                      dispatch(
+                        uiSliceActions.setModal({
+                          assetId: usdtAsset.asset_id,
+                          type: 'deposit',
+                        })
+                      )
+                    }
+                  }}
+                >
+                  {t('dca.getUsdt.depositAction', 'Deposit USDT')}
+                </button>
+              )}
+
+              {hasOnChain && (
+                <>
+                  {/* USDT amount row */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-content-secondary uppercase tracking-wider">
+                      {t('dca.getUsdt.usdtAmountLabel', 'USDT amount')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="flex-1 bg-surface-overlay border border-white/10 rounded-xl px-3 py-2
+                                 text-sm text-white placeholder:text-white/30
+                                 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
+                                 disabled:opacity-50"
+                        disabled={
+                          onChainState === 'loading' ||
+                          onChainState === 'success'
+                        }
+                        max={spendableUsdt}
+                        min="0"
+                        onChange={(e) => setUsdtAmount(e.target.value)}
+                        placeholder="0.00"
+                        step="any"
+                        type="number"
+                        value={usdtAmount}
+                      />
+                      <span className="text-xs text-content-secondary font-medium flex-shrink-0">
+                        USDT
+                      </span>
+                      <button
+                        className="px-2.5 py-2 rounded-xl bg-transparent border border-white/30 hover:border-white/50 hover:bg-white/5
+                                 text-xs text-white font-semibold transition-colors flex-shrink-0 disabled:opacity-50"
+                        disabled={
+                          onChainState === 'loading' ||
+                          onChainState === 'success'
+                        }
+                        onClick={() =>
+                          setUsdtAmount(
+                            spendableUsdt.toFixed(6).replace(/\.?0+$/, '') ||
+                              '0'
+                          )
+                        }
+                      >
+                        {t('dca.getUsdt.useAll', 'Use all')}
+                      </button>
+                    </div>
                   </div>
-                )}
 
-                {onChainState === 'success' && (
-                  <div className="flex items-center gap-2 p-2.5 bg-status-success/10 border border-status-success/20 rounded-lg text-xs text-status-success">
-                    <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    {t(
-                      'dca.getUsdt.channelOpened',
-                      'USDT channel opening initiated'
-                    )}
+                  {/* Capacity row */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-[11px] font-semibold text-content-secondary uppercase tracking-wider">
+                        {t('dca.getUsdt.capacityLabel', 'Channel capacity')}
+                      </label>
+                      <span className="group relative">
+                        <Info className="w-3 h-3 text-content-secondary cursor-help" />
+                        <span
+                          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-52 p-2
+                                       bg-surface-elevated border border-white/15 rounded-lg text-[11px]
+                                       text-content-secondary leading-relaxed shadow-lg z-10
+                                       invisible group-hover:visible whitespace-normal"
+                        >
+                          {t(
+                            'dca.getUsdt.capacityHint',
+                            'BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.'
+                          )}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="flex-1 bg-surface-overlay border border-white/10 rounded-xl px-3 py-2
+                                 text-sm text-white placeholder:text-white/30
+                                 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20
+                                 disabled:opacity-50"
+                        disabled={
+                          onChainState === 'loading' ||
+                          onChainState === 'success'
+                        }
+                        max={lspMaxSat}
+                        min={lspMinSat}
+                        onChange={(e) => setCapacitySat(e.target.value)}
+                        step="1000"
+                        type="number"
+                        value={capacitySat}
+                      />
+                      <span className="text-xs text-content-secondary font-medium flex-shrink-0">
+                        sats
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-content-secondary">
+                      {t(
+                        'dca.getUsdt.capacityRange',
+                        'Min {{min}} – max {{max}} sats',
+                        {
+                          max: formatSats(lspMaxSat),
+                          min: formatSats(lspMinSat),
+                        }
+                      )}
+                      {satNum > 0 && isSatValid && (
+                        <span className="ml-2">
+                          {'· '}
+                          {t(
+                            'dca.getUsdt.maxReceive',
+                            'max receive ≈ {{sats}} sats BTC',
+                            { sats: formatSats(satNum) }
+                          )}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                )}
 
-                <div className="flex justify-end">
+                  {onChainState === 'error' && onChainError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <span className="break-all">{onChainError}</span>
+                    </div>
+                  )}
+
+                  {onChainState === 'success' && (
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary">
+                      <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                      {t(
+                        'dca.getUsdt.channelOpened',
+                        'USDT channel opening initiated'
+                      )}
+                    </div>
+                  )}
+
                   <button
-                    className="px-3 py-1.5 rounded-lg bg-status-success/15 text-status-success border border-status-success/30
-                               hover:bg-status-success/25 font-medium text-xs transition-all active:scale-[0.97]
-                               disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                    className="mt-auto w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!canSubmit}
                     onClick={handleOpenChannel}
                   >
                     {onChainState === 'loading' && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     )}
                     {t('dca.getUsdt.openButton', 'Open USDT Channel')}
                   </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

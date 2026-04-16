@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "ノードの読み込みエラー: {{error}}",
-      "title": "あなたのノード",
+      "title": "あなたのアカウント",
       "exitEditMode": "編集モードを終了",
       "enterEditMode": "編集モードに入る",
       "editNodes": "ノードを編集",
@@ -2748,7 +2748,7 @@
       "balanceNeededTitle": "残高をさらに用意してください",
       "availableLabel": "利用可能",
       "capacityFee": "容量手数料",
-      "continue": "続行 ->",
+      "continue": "続行",
       "durationFee": "期間手数料",
       "expiresLabel": "有効期限",
       "lightningInvoice": "Lightningインボイス",

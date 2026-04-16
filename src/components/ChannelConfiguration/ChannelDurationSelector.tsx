@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react'
 import { Control, Controller, FieldPath, FieldValues } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
@@ -21,7 +22,7 @@ export const ChannelDurationSelector = <
   maxExpiryBlocks,
   control,
   fieldName,
-  containerClassName = 'bg-surface-overlay/50 p-4 rounded-xl border border-border-default/50',
+  containerClassName = 'bg-surface-overlay/80 border border-border-default/50 rounded-xl p-4',
 }: ChannelDurationSelectorProps<TFieldValues>) => {
   const { t } = useTranslation()
   const controllerFieldName = (fieldName ??
@@ -60,7 +61,7 @@ export const ChannelDurationSelector = <
           <button
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
               isSelected
-                ? 'bg-gradient-to-r from-orange-500 to-yellow-600 text-white shadow-md shadow-orange-500/30'
+                ? 'bg-primary/20 text-primary border border-primary/40'
                 : 'bg-surface-overlay/60 text-content-secondary hover:bg-surface-high/70 hover:text-content-primary border border-border-default/50'
             }`}
             key={opt.value}
@@ -76,15 +77,10 @@ export const ChannelDurationSelector = <
 
   return (
     <div className={containerClassName}>
-      <label className="block text-sm font-medium text-content-secondary mb-3">
+      <h3 className="text-lg font-semibold text-content-primary mb-3 flex items-center gap-2">
+        <Clock className="w-5 h-5 text-primary" />
         {t('channelConfiguration.duration.label')}
-        <span className="ml-2 text-content-secondary hover:text-content-secondary cursor-help relative group">
-          ⓘ
-          <span className="invisible group-hover:visible absolute left-0 bg-surface-base text-white text-sm rounded py-1 px-2 w-80 shadow-lg z-50 top-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            {t('channelConfiguration.duration.tooltipInfo')}
-          </span>
-        </span>
-      </label>
+      </h3>
       {control ? (
         <Controller
           control={control}

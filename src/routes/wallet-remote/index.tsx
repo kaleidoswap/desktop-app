@@ -17,7 +17,6 @@ import { RegtestConnectionSelector } from '../../components/RegtestConnectionSel
 import { TermsWarningModal } from '../../components/TermsWarningModal'
 import {
   Button,
-  Card,
   Alert,
   SetupLayout,
   SetupSection,
@@ -554,7 +553,6 @@ export const Component = () => {
           icon={<Cloud />}
           maxWidth="3xl"
           onBack={() => navigate(WALLET_SETUP_PATH)}
-          subtitle={t('walletRemote.subtitle')}
           title={t('walletRemote.title')}
         >
           {connectionError && (
@@ -653,229 +651,222 @@ export const Component = () => {
               {t('walletRemote.configureRemoteNode')}
             </p>
 
-            <Card className="p-6 bg-surface-elevated/40 border border-white/5">
-              <form
-                className="space-y-4"
-                onSubmit={form.handleSubmit(onSubmit)}
-              >
-                <SetupSection>
-                  <FormField
-                    description={t('walletRemote.accountNameDescription')}
-                    error={form.formState.errors.name?.message}
-                    htmlFor="name"
-                    label={t('walletRemote.accountName')}
-                  >
-                    <Input
-                      id="name"
-                      placeholder={t('walletRemote.accountNamePlaceholder')}
-                      {...form.register('name', {
-                        required: t('walletRemote.accountNameRequired'),
-                      })}
-                      error={!!form.formState.errors.name}
-                    />
-                  </FormField>
-                  <FormField
-                    description={nodeUrlDescription}
-                    error={form.formState.errors.node_url?.message}
-                    htmlFor="node_url"
-                    label={t('walletRemote.nodeUrl')}
-                  >
-                    <Input
-                      id="node_url"
-                      placeholder={nodeUrlPlaceholder}
-                      {...form.register('node_url', {
-                        required: t('walletRemote.nodeUrlRequired'),
-                        validate: (value) => {
-                          // Check for common URL formatting issues
-                          if (value.includes('//nodeinfo')) {
-                            return t('walletRemote.nodeUrlInvalidFormat')
-                          }
-                          if (value.match(/\/\/+$/)) {
-                            return t('walletRemote.nodeUrlTrailingSlash')
-                          }
-                          if (!value.match(/^https?:\/\//)) {
-                            return t('walletRemote.nodeUrlProtocol')
-                          }
-                          return true
-                        },
-                      })}
-                      error={!!form.formState.errors.node_url}
-                    />
-                    {form.watch('node_url') &&
-                      form.watch('node_url').endsWith('/')}
-                  </FormField>
-
-                  <NetworkSelector
-                    className="mb-4"
-                    onChange={(network) => form.setValue('network', network)}
-                    selectedNetwork={selectedNetwork}
+            <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <SetupSection>
+                <FormField
+                  description={t('walletRemote.accountNameDescription')}
+                  error={form.formState.errors.name?.message}
+                  htmlFor="name"
+                  label={t('walletRemote.accountName')}
+                >
+                  <Input
+                    id="name"
+                    placeholder={t('walletRemote.accountNamePlaceholder')}
+                    {...form.register('name', {
+                      required: t('walletRemote.accountNameRequired'),
+                    })}
+                    error={!!form.formState.errors.name}
                   />
-
-                  {selectedNetwork === 'Regtest' && (
-                    <div className="mb-6 p-4 bg-surface-elevated/20 border border-blue-500/20 rounded-xl">
-                      <RegtestConnectionSelector
-                        onChange={(type) =>
-                          form.setValue('regtestConnectionType', type)
+                </FormField>
+                <FormField
+                  description={nodeUrlDescription}
+                  error={form.formState.errors.node_url?.message}
+                  htmlFor="node_url"
+                  label={t('walletRemote.nodeUrl')}
+                >
+                  <Input
+                    id="node_url"
+                    placeholder={nodeUrlPlaceholder}
+                    {...form.register('node_url', {
+                      required: t('walletRemote.nodeUrlRequired'),
+                      validate: (value) => {
+                        // Check for common URL formatting issues
+                        if (value.includes('//nodeinfo')) {
+                          return t('walletRemote.nodeUrlInvalidFormat')
                         }
-                        selectedType={regtestConnectionType}
-                      />
-                    </div>
-                  )}
+                        if (value.match(/\/\/+$/)) {
+                          return t('walletRemote.nodeUrlTrailingSlash')
+                        }
+                        if (!value.match(/^https?:\/\//)) {
+                          return t('walletRemote.nodeUrlProtocol')
+                        }
+                        return true
+                      },
+                    })}
+                    error={!!form.formState.errors.node_url}
+                  />
+                  {form.watch('node_url') &&
+                    form.watch('node_url').endsWith('/')}
+                </FormField>
 
-                  <FormField
-                    error={form.formState.errors.password?.message}
-                    htmlFor="password"
-                    label={t('walletRemote.password')}
-                  >
-                    <PasswordInput
-                      id="password"
-                      isVisible={isPasswordVisible}
-                      onToggleVisibility={() =>
-                        setIsPasswordVisible(!isPasswordVisible)
-                      }
-                      placeholder={t('walletRemote.passwordPlaceholder')}
-                      {...form.register('password', {
-                        required: t('walletRemote.passwordRequired'),
-                      })}
-                      error={!!form.formState.errors.password}
+                <NetworkSelector
+                  className="mb-4"
+                  onChange={(network) => form.setValue('network', network)}
+                  selectedNetwork={selectedNetwork}
+                />
+
+                {selectedNetwork === 'Regtest' && (
+                  <RegtestConnectionSelector
+                    onChange={(type) =>
+                      form.setValue('regtestConnectionType', type)
+                    }
+                    selectedType={regtestConnectionType}
+                  />
+                )}
+
+                <FormField
+                  error={form.formState.errors.password?.message}
+                  htmlFor="password"
+                  label={t('walletRemote.password')}
+                >
+                  <PasswordInput
+                    id="password"
+                    isVisible={isPasswordVisible}
+                    onToggleVisibility={() =>
+                      setIsPasswordVisible(!isPasswordVisible)
+                    }
+                    placeholder={t('walletRemote.passwordPlaceholder')}
+                    {...form.register('password', {
+                      required: t('walletRemote.passwordRequired'),
+                    })}
+                    error={!!form.formState.errors.password}
+                  />
+                </FormField>
+              </SetupSection>
+
+              <AdvancedSettings>
+                <NetworkSettings form={form} />
+
+                <div className="p-2.5 bg-surface-elevated/40 rounded-lg border border-border-default/30 mt-4">
+                  <div className="flex items-center mb-2.5">
+                    <input
+                      className="w-3.5 h-3.5 text-primary bg-surface-elevated border-border-default rounded focus:ring-cyan"
+                      id="useAuth"
+                      type="checkbox"
+                      {...form.register('useAuth')}
                     />
-                  </FormField>
-                </SetupSection>
-
-                <AdvancedSettings>
-                  <NetworkSettings form={form} />
-
-                  <div className="p-2.5 bg-surface-elevated/40 rounded-lg border border-border-default/30 mt-4">
-                    <div className="flex items-center mb-2.5">
-                      <input
-                        className="w-3.5 h-3.5 text-primary bg-surface-elevated border-border-default rounded focus:ring-cyan"
-                        id="useAuth"
-                        type="checkbox"
-                        {...form.register('useAuth')}
-                      />
-                      <label
-                        className="ml-2 text-xs font-medium text-content-secondary"
-                        htmlFor="useAuth"
-                      >
-                        {t('walletRemote.useAuthToken')}
-                      </label>
-                    </div>
-
-                    {form.watch('useAuth') && (
-                      <FormField
-                        error={form.formState.errors.authToken?.message}
-                        htmlFor="authToken"
-                        label={t('walletRemote.authToken')}
-                      >
-                        <Input
-                          id="authToken"
-                          {...form.register('authToken', {
-                            required: form.watch('useAuth')
-                              ? t('walletRemote.authTokenRequired')
-                              : false,
-                          })}
-                          error={!!form.formState.errors.authToken}
-                        />
-                      </FormField>
-                    )}
+                    <label
+                      className="ml-2 text-xs font-medium text-content-secondary"
+                      htmlFor="useAuth"
+                    >
+                      {t('walletRemote.useAuthToken')}
+                    </label>
                   </div>
-                </AdvancedSettings>
 
-                {/* Progress Indicator */}
-                {isConnecting && (
-                  <div className="pt-3 pb-2">
-                    <div className="flex items-center gap-3 p-3 bg-surface-elevated/30 border border-blue-500/20 rounded-lg">
-                      <Spinner size="sm" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-white">
-                          {connectionStep === 'testing' &&
-                            t('walletRemote.processingStep1')}
-                          {connectionStep === 'creating' &&
-                            t('walletRemote.processingStep2')}
-                          {connectionStep === 'finalizing' &&
-                            t('walletRemote.processingStep3')}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="flex gap-1">
-                            <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
-                            />
-                            <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-cyan' : connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
-                            />
-                            <div
-                              className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-cyan' : 'bg-surface-elevated'}`}
-                            />
-                          </div>
-                          <span className="text-xs text-content-secondary">
-                            {connectionStep === 'testing' && '1/3'}
-                            {connectionStep === 'creating' && '2/3'}
-                            {connectionStep === 'finalizing' && '3/3'}
-                          </span>
+                  {form.watch('useAuth') && (
+                    <FormField
+                      error={form.formState.errors.authToken?.message}
+                      htmlFor="authToken"
+                      label={t('walletRemote.authToken')}
+                    >
+                      <Input
+                        id="authToken"
+                        {...form.register('authToken', {
+                          required: form.watch('useAuth')
+                            ? t('walletRemote.authTokenRequired')
+                            : false,
+                        })}
+                        error={!!form.formState.errors.authToken}
+                      />
+                    </FormField>
+                  )}
+                </div>
+              </AdvancedSettings>
+
+              {/* Progress Indicator */}
+              {isConnecting && (
+                <div className="pt-3 pb-2">
+                  <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-lg">
+                    <Spinner size="sm" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white">
+                        {connectionStep === 'testing' &&
+                          t('walletRemote.processingStep1')}
+                        {connectionStep === 'creating' &&
+                          t('walletRemote.processingStep2')}
+                        {connectionStep === 'finalizing' &&
+                          t('walletRemote.processingStep3')}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="flex gap-1">
+                          <div
+                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'testing' ? 'bg-primary' : 'bg-surface-elevated'}`}
+                          />
+                          <div
+                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'creating' ? 'bg-primary' : connectionStep === 'finalizing' ? 'bg-primary' : 'bg-surface-elevated'}`}
+                          />
+                          <div
+                            className={`w-2 h-2 rounded-full transition-colors ${connectionStep === 'finalizing' ? 'bg-primary' : 'bg-surface-elevated'}`}
+                          />
                         </div>
+                        <span className="text-xs text-content-secondary">
+                          {connectionStep === 'testing' && '1/3'}
+                          {connectionStep === 'creating' && '2/3'}
+                          {connectionStep === 'finalizing' && '3/3'}
+                        </span>
                       </div>
                     </div>
                   </div>
-                )}
-
-                <div className="pt-3 space-y-3">
-                  {/* Test Connection Button */}
-                  <Button
-                    className="w-full"
-                    disabled={isTestingConnection || isConnecting}
-                    icon={
-                      isTestingConnection ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4" />
-                      )
-                    }
-                    iconPosition="left"
-                    onClick={testConnection}
-                    size="lg"
-                    type="button"
-                    variant="secondary"
-                  >
-                    {isTestingConnection
-                      ? t('walletRemote.testingConnection')
-                      : t('walletRemote.testConnection')}
-                  </Button>
-
-                  {/* Main Submit Button */}
-                  <Button
-                    className="w-full"
-                    disabled={isConnecting || isTestingConnection}
-                    icon={
-                      isConnecting ? (
-                        <Spinner size="sm" />
-                      ) : (
-                        <ArrowRight className="w-4 h-4" />
-                      )
-                    }
-                    iconPosition="right"
-                    size="lg"
-                    type="submit"
-                    variant="primary"
-                  >
-                    {isConnecting
-                      ? connectionStep === 'testing'
-                        ? t('walletRemote.testingConnection')
-                        : connectionStep === 'creating'
-                          ? t('walletRemote.creatingAccount')
-                          : connectionStep === 'finalizing'
-                            ? t('walletRemote.finalizingSetup')
-                            : t('walletRemote.processing')
-                      : t('walletRemote.testConnectionAndCreate')}
-                  </Button>
-
-                  {connectionSuccess && (
-                    <p className="text-xs text-center text-green-400">
-                      {t('walletRemote.connectionVerified')}
-                    </p>
-                  )}
                 </div>
-              </form>
-            </Card>
+              )}
+
+              <div className="pt-3 space-y-3">
+                {/* Test Connection Button */}
+                <Button
+                  className="w-full"
+                  disabled={isTestingConnection || isConnecting}
+                  icon={
+                    isTestingConnection ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4" />
+                    )
+                  }
+                  iconPosition="left"
+                  onClick={testConnection}
+                  size="lg"
+                  type="button"
+                  variant="outline"
+                >
+                  {isTestingConnection
+                    ? t('walletRemote.testingConnection')
+                    : t('walletRemote.testConnection')}
+                </Button>
+
+                {/* Main Submit Button */}
+                <Button
+                  className="w-full"
+                  disabled={isConnecting || isTestingConnection}
+                  icon={
+                    isConnecting ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <ArrowRight className="w-4 h-4" />
+                    )
+                  }
+                  iconPosition="right"
+                  size="lg"
+                  type="submit"
+                  variant="primary"
+                >
+                  {isConnecting
+                    ? connectionStep === 'testing'
+                      ? t('walletRemote.testingConnection')
+                      : connectionStep === 'creating'
+                        ? t('walletRemote.creatingAccount')
+                        : connectionStep === 'finalizing'
+                          ? t('walletRemote.finalizingSetup')
+                          : t('walletRemote.processing')
+                    : t('walletRemote.testConnectionAndCreate')}
+                </Button>
+
+                {connectionSuccess && (
+                  <p className="text-xs text-center text-green-400">
+                    {t('walletRemote.connectionVerified')}
+                  </p>
+                )}
+              </div>
+            </form>
           </div>
         </SetupLayout>
       </Layout>

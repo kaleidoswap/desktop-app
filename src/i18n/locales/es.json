@@ -1350,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "Error al cargar nodos: {{error}}",
-      "title": "Tus Nodos",
+      "title": "Tus Cuentas",
       "exitEditMode": "Salir del Modo Edición",
       "enterEditMode": "Entrar en Modo Edición",
       "editNodes": "Editar Nodos",
@@ -2748,7 +2748,7 @@
       "balanceNeededTitle": "Se necesita más saldo",
       "availableLabel": "Disponible",
       "capacityFee": "Comisión de capacidad",
-      "continue": "Continuar ->",
+      "continue": "Continuar",
       "durationFee": "Comisión de duración",
       "expiresLabel": "Caduca",
       "lightningInvoice": "Factura Lightning",

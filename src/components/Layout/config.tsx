@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import React from 'react'
 
+import { DcaBagIcon } from '../icons/DcaBagIcon'
+
 import {
   TRADE_PATH,
   TRADE_MARKET_MAKER_PATH,
@@ -42,7 +44,6 @@ import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
 } from '../../app/router/paths'
-import { DcaBagIcon } from '../icons/DcaBagIcon'
 
 // Define types for navigation items
 export interface NavItem {
@@ -82,7 +83,7 @@ export const getMainNavItems = (t: TFunction) => [
     to: WALLET_HISTORY_PATH,
   },
   {
-    icon: <DcaBagIcon className="h-6 w-6" />,
+    icon: <DcaBagIcon className="h-5 w-5" />,
     label: t('navigation.dca', 'DCA'),
     matchPath: TRADE_DCA_PATH,
     to: TRADE_DCA_PATH,
@@ -91,6 +92,18 @@ export const getMainNavItems = (t: TFunction) => [
     icon: <Activity className="w-5 h-5" />,
     label: t('navigation.channels'),
     matchPath: CHANNELS_PATH,
+    subMenu: [
+      {
+        icon: <Plus className="w-4 h-4" />,
+        label: t('channels.createNewChannel'),
+        to: CREATE_NEW_CHANNEL_PATH,
+      },
+      {
+        icon: <ShoppingCart className="w-4 h-4" />,
+        label: t('channels.buyAChannel'),
+        to: ORDER_CHANNEL_PATH,
+      },
+    ],
     to: CHANNELS_PATH,
   },
 ]

@@ -19,23 +19,6 @@ import {
   WALLET_HISTORY_WITHDRAWALS_PATH,
 } from '../../app/router/paths'
 
-const getIndicatorColor = (color: string) => {
-  switch (color) {
-    case 'amber':
-      return 'from-amber-500 to-yellow-500'
-    case 'green':
-      return 'from-green-500 to-emerald-500'
-    case 'red':
-      return 'from-red-500 to-rose-500'
-    case 'blue':
-      return 'from-blue-500 to-cyan-500'
-    case 'purple':
-      return 'from-purple-500 to-pink-500'
-    default:
-      return 'from-slate-500 to-slate-600'
-  }
-}
-
 const getIconBgColor = (color: string) => {
   switch (color) {
     case 'amber':
@@ -110,9 +93,9 @@ export const Component = () => {
           return (
             <Link
               className={twJoin(
-                'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center',
+                'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center transition-colors duration-200',
                 isActive
-                  ? 'text-white'
+                  ? 'text-primary'
                   : 'text-content-secondary hover:text-white'
               )}
               key={tab.path}
@@ -121,19 +104,14 @@ export const Component = () => {
               <div
                 className={twJoin(
                   'p-1.5 rounded-md',
-                  isActive ? getIconBgColor(tab.color) : 'bg-transparent'
+                  isActive ? 'bg-primary/10 text-primary' : 'bg-transparent'
                 )}
               >
                 {tab.icon}
               </div>
               <span>{tab.label}</span>
               {isActive && (
-                <div
-                  className={twJoin(
-                    'absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r',
-                    getIndicatorColor(tab.color)
-                  )}
-                />
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
               )}
             </Link>
           )
@@ -171,10 +149,10 @@ export const Component = () => {
               return (
                 <Link
                   className={twJoin(
-                    'flex items-center gap-2 px-4 py-3 font-medium',
+                    'flex items-center gap-2 px-4 py-3 font-medium transition-colors duration-200',
                     isActive
-                      ? 'bg-surface-high text-white'
-                      : 'text-content-secondary hover:bg-surface-high/50 hover:text-white'
+                      ? 'text-primary'
+                      : 'text-content-secondary hover:text-white'
                   )}
                   key={tab.path}
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -183,7 +161,7 @@ export const Component = () => {
                   <div
                     className={twJoin(
                       'p-1.5 rounded-md',
-                      isActive ? getIconBgColor(tab.color) : 'bg-transparent'
+                      isActive ? 'bg-primary/10 text-primary' : 'bg-transparent'
                     )}
                   >
                     {tab.icon}

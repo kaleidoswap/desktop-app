@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { Users, CheckCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Info } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +9,7 @@ import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { isValidPubkeyAndAddress } from '../../helpers/address'
-import { KaleidoswapBoxIcon } from '../../icons/KaleidoswapBox'
+import kaleidoswapPictogram from '../../assets/logo.svg'
 import {
   NewChannelFormSchema,
   TNewChannelForm,
@@ -18,15 +18,25 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface Props {
   onNext: VoidFunction
+  onBack: VoidFunction
   formData: TNewChannelForm
   onFormUpdate: (updates: Partial<TNewChannelForm>) => void
+  formError?: string | null
+  infoMessage?: string
 }
 
 interface FormFields {
   pubKeyAndAddress: string
 }
 
-export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
+export const Step1 = ({
+  onNext,
+  onBack,
+  formData,
+  onFormUpdate,
+  formError,
+  infoMessage,
+}: Props) => {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
@@ -241,7 +251,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mb-10">
+      <div className="text-center mt-16 mb-10">
         <h3 className="text-3xl font-bold text-white mb-4">
           {t('createChannel.step1.title')}
         </h3>
@@ -250,10 +260,23 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
         </p>
       </div>
 
+      {infoMessage && (
+        <div className="flex items-center gap-2 text-sm text-amber-200 mb-4 p-3 bg-amber-400/10 border border-amber-400/25 rounded-lg">
+          <Info className="h-4 w-4 text-amber-400 flex-shrink-0" />
+          <p>{infoMessage}</p>
+        </div>
+      )}
+
+      {formError && (
+        <div className="flex items-center gap-2 text-sm text-red-400 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
+          <p>{formError}</p>
+        </div>
+      )}
+
       {/* Connected Peers Section */}
       <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-blue-500" />
           <h4 className="text-lg font-semibold text-white">
             {t('createChannel.step1.connectedPeers')}
           </h4>
@@ -364,12 +387,16 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
 
         <div className="flex justify-center space-x-6">
           <button
-            className="flex items-center space-x-2 p-4 rounded-lg border border-border-default hover:border-blue-500 transition-colors"
+            className="flex items-center space-x-2 p-4 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
             disabled={isLoading}
             onClick={fetchLspInfo}
             type="button"
           >
-            <KaleidoswapBoxIcon />
+            <img
+              alt="KaleidoSwap"
+              className="w-10 h-10"
+              src={kaleidoswapPictogram}
+            />
           </button>
         </div>
 
@@ -384,7 +411,13 @@ export const Step1 = ({ onNext, formData, onFormUpdate }: Props) => {
       </div>
 
       <div className="mt-8 flex justify-between">
-        <div></div>
+        <button
+          className="px-4 py-2 rounded-xl bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-sm font-semibold transition-colors"
+          onClick={onBack}
+          type="button"
+        >
+          {t('createChannel.goBack', 'Go Back')}
+        </button>
         <Button
           disabled={!formData.pubKeyAndAddress && !selectedFromConnected}
           isLoading={isLoading}
