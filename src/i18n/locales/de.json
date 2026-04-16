@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "Fehler beim Laden der Nodes: {{error}}",
-      "title": "Deine Nodes",
+      "title": "Deine Konten",
       "exitEditMode": "Bearbeitungsmodus beenden",
       "enterEditMode": "Bearbeitungsmodus aktivieren",
       "editNodes": "Nodes bearbeiten",
@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "Offen",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "offline": "Offline"
     },
     "labels": {
       "capacity": "Kapazität",
@@ -2040,6 +2041,14 @@
     "localNodeTitle": "Lokaler Node",
     "localNodeDescription": "Betreibe einen Node auf deinem Rechner. Ideal für Entwickler und Tests.",
     "localNodeNotSupported": "Lokale Nodes werden unter Windows nicht unterstützt. Verwende stattdessen eine Remote-Verbindung.",
+    "backendNative": "Native Binary",
+    "backendNativeDescription": "Node als lokalen Prozess ausführen. Kein Docker erforderlich.",
+    "backendDocker": "Docker Container",
+    "backendDockerDescription": "Node in einem Docker-Container ausführen. Funktioniert auf allen Plattformen.",
+    "backendUnavailable": "Nicht verfügbar",
+    "recommended": "Empfohlen",
+    "noBackendAvailable": "Kein Backend erkannt",
+    "noBackendHint": "Installiere und starte Docker Desktop, um einen lokalen Node auf dieser Plattform auszuführen.",
     "backToOptions": "Zurück zu den Verbindungsoptionen",
     "setupLocalTitle": "Lokalen Node einrichten",
     "setupLocalSubtitle": "Wähle eine Option, um deinen lokalen RGB-Lightning-Node zu starten",
@@ -2733,7 +2742,7 @@
       "balanceNeededTitle": "Mehr Guthaben erforderlich",
       "availableLabel": "Verfügbar",
       "capacityFee": "Kapazitätsgebühr",
-      "continue": "Weiter ->",
+      "continue": "Weiter",
       "durationFee": "Laufzeitgebühr",
       "expiresLabel": "Läuft ab",
       "lightningInvoice": "Lightning-Rechnung",

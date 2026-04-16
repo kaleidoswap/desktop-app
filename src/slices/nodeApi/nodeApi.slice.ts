@@ -293,16 +293,8 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.restore(args)),
     }),
 
-    unlock: builder.mutation<void, UnlockRequest>({
-      queryFn: queryFn((w, args) => w.unlockWallet(args)),
-    }),
-
     rgbInvoice: builder.mutation<RgbInvoiceResponse, RgbInvoiceInput>({
       queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
-    }),
-
-    shutdown: builder.mutation<void, void>({
-      queryFn: queryFn((w, _: void) => w.shutdown()),
     }),
 
     sendBtc: builder.mutation<void, SendBtcInput>({
@@ -317,6 +309,10 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.sendRgb(args)),
     }),
 
+    shutdown: builder.mutation<void, void>({
+      queryFn: queryFn((w, _: void) => w.shutdown()),
+    }),
+
     // ============================================================================
     // Utility Methods
     // ============================================================================
@@ -326,6 +322,10 @@ export const nodeApi = createApi({
 
     taker: builder.mutation<void, TakerRequest>({
       queryFn: queryFn((w, args) => w.taker(args)),
+    }),
+
+    unlock: builder.mutation<void, UnlockRequest>({
+      queryFn: queryFn((w, args) => w.unlockWallet(args)),
     }),
 
     whitelistTrade: builder.mutation<void, WhitelistTradeRequest>({

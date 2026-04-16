@@ -33,14 +33,7 @@ const getInitialFiatCurrency = (): FiatCurrency => {
 }
 
 const getInitialTheme = (): Theme => {
-  try {
-    const stored = localStorage.getItem('kaleidoswap_theme') as Theme | null
-    if (stored === 'dark' || stored === 'light') return stored
-    if (window.matchMedia('(prefers-color-scheme: light)').matches)
-      return 'light'
-  } catch {
-    // Silently fail if localStorage / matchMedia not available
-  }
+  // Light mode temporarily disabled until styling is fixed
   return 'dark'
 }
 

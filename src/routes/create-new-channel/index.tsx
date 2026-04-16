@@ -1,4 +1,4 @@
-import { AlertTriangle, Wallet, Info } from 'lucide-react'
+import { AlertTriangle, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -239,7 +239,7 @@ export const Component = () => {
 
   return (
     <>
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
+      <div className="container mx-auto px-4 py-6 max-w-3xl text-white">
         {/* Step Progress Indicator */}
         {!insufficientBalance && (
           <div className="flex justify-between mb-4">
@@ -372,12 +372,13 @@ export const Component = () => {
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-sm rounded-xl border border-border-default/50 shadow-lg py-4 px-4">
-            {formError && <FormError message={formError} />}
-
+          <div>
             {step === 1 && (
               <Step1
                 formData={formData}
+                formError={formError}
+                infoMessage={t('createChannel.infoMessage')}
+                onBack={() => navigate(CHANNELS_PATH)}
                 onFormUpdate={handleFormUpdate}
                 onNext={() => setStep(2)}
               />
@@ -413,12 +414,6 @@ export const Component = () => {
             )}
           </div>
         )}
-
-        {/* Info Section */}
-        <div className="flex items-center space-x-2 text-sm text-content-secondary mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
-          <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
-          <p>{t('createChannel.infoMessage')}</p>
-        </div>
       </div>
 
       {/* UTXO Modal for handling UTXO-related errors */}

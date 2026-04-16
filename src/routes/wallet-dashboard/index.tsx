@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowLeftRight,
-  AlertTriangle,
   Info,
   Plus,
   Loader as LoaderIcon,
@@ -40,7 +39,7 @@ import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { PeerManagementModal } from '../../components/PeerManagementModal'
 import { Button, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
-import { BitcoinNetwork } from '../../constants'
+import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
@@ -262,49 +261,32 @@ export const Component = () => {
         <div className="lg:col-span-7 flex flex-col gap-5 min-h-0">
           {/* Balance Card */}
           <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl p-6 group">
+            {/* Refresh icon — top right */}
+            <button
+              className="absolute top-4 right-4 z-20 p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-surface-elevated transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={isRefreshing}
+              onClick={refreshData}
+              title={
+                isRefreshing
+                  ? t('dashboard.refreshing')
+                  : t('dashboard.refresh')
+              }
+            >
+              {isRefreshing ? (
+                <LoaderIcon className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+            </button>
             <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
 
             {/* Total balance */}
             <div className="relative z-10 mb-5">
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5">
                 <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
                   {t('dashboard.totalBalance')}
                 </p>
-                <div className="flex items-center gap-2">
-                  <div className="relative group/warn">
-                    <span
-                      className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border cursor-default ${
-                        isMainnet
-                          ? 'text-status-success bg-status-success/10 border-status-success/20'
-                          : network
-                            ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                            : 'text-content-tertiary bg-surface-elevated border-border-default/40'
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isMainnet ? 'bg-status-success' : network ? 'bg-amber-400 animate-pulse' : 'bg-content-tertiary'}`}
-                      />
-                      {network || '—'}
-                      {!isMainnet && network && (
-                        <AlertTriangle className="w-3 h-3" />
-                      )}
-                    </span>
-                    {!isMainnet && network && (
-                      <div className="absolute right-0 top-7 w-52 bg-surface-elevated text-content-primary text-xs rounded-xl py-2.5 px-3 opacity-0 group-hover/warn:opacity-100 transition-opacity pointer-events-none border border-amber-500/30 shadow-lg z-30">
-                        <p className="font-semibold text-amber-400 mb-1">
-                          {t('dashboard.testnetWarning')}
-                        </p>
-                        <p className="text-content-tertiary leading-relaxed">
-                          {t('dashboard.testnetWarningDesc')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs font-mono text-content-tertiary">
-                    #{networkInfoResponse.data?.height || '—'}
-                  </span>
-                </div>
               </div>
               <div className="flex items-baseline gap-2.5 mb-1.5">
                 <span className="text-4xl font-bold text-content-primary leading-none">
@@ -336,8 +318,8 @@ export const Component = () => {
               </div>
             </div>
 
-            {/* Actions — compact 4-button row */}
-            <div className="relative z-10 grid grid-cols-4 gap-2">
+            {/* Actions — compact 3-button row */}
+            <div className="relative z-10 grid grid-cols-3 gap-2">
               <button
                 className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
                 onClick={() =>
@@ -353,14 +335,14 @@ export const Component = () => {
                 <span className="truncate">{t('dashboard.deposit')}</span>
               </button>
               <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-danger/15 hover:bg-status-danger/25 border border-status-danger/30 hover:border-status-danger/50 text-status-danger text-xs font-semibold transition-all overflow-hidden"
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50 text-violet-400 text-xs font-semibold transition-all overflow-hidden"
                 onClick={() => navigate(TRADE_PATH)}
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.swap', 'Swap')}</span>
               </button>
               <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-emerald-900/35 hover:bg-emerald-900/50 border border-emerald-700/50 hover:border-emerald-600/70 text-emerald-300 text-xs font-semibold transition-all overflow-hidden"
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-xs font-semibold transition-all overflow-hidden"
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -372,22 +354,6 @@ export const Component = () => {
               >
                 <Upload className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.withdraw')}</span>
-              </button>
-              <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-surface-elevated/60 hover:bg-surface-elevated border border-border-default/40 hover:border-border-default text-content-secondary hover:text-content-primary text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-                disabled={isRefreshing}
-                onClick={refreshData}
-              >
-                {isRefreshing ? (
-                  <LoaderIcon className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-                ) : (
-                  <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
-                )}
-                <span className="truncate">
-                  {isRefreshing
-                    ? t('dashboard.refreshing')
-                    : t('dashboard.refresh')}
-                </span>
               </button>
             </div>
           </div>
@@ -419,7 +385,7 @@ export const Component = () => {
             </div>
 
             {/* Column headers */}
-            <div className="grid grid-cols-4 gap-2 text-[11px] font-semibold uppercase tracking-wider text-content-tertiary border-b border-border-default/30">
+            <div className="grid grid-cols-4 gap-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 border-b border-border-default/30">
               <div className="px-4 py-2.5">{t('dashboard.asset')}</div>
               <div className="px-4 py-2.5">
                 {t('dashboard.offChainBalance')}
@@ -465,7 +431,7 @@ export const Component = () => {
                 <div className="flex items-center gap-0.5">
                   {[
                     {
-                      color: 'text-primary hover:bg-primary/15',
+                      color: 'text-white hover:bg-white/10',
                       icon: <Download className="w-3.5 h-3.5" />,
                       label: t('dashboard.deposit'),
                       onClick: () =>
@@ -477,7 +443,7 @@ export const Component = () => {
                         ),
                     },
                     {
-                      color: 'text-emerald-300 hover:bg-emerald-900/30',
+                      color: 'text-white hover:bg-white/10',
                       icon: <Upload className="w-3.5 h-3.5" />,
                       label: t('dashboard.withdraw'),
                       onClick: () =>
@@ -489,7 +455,7 @@ export const Component = () => {
                         ),
                     },
                     {
-                      color: 'text-secondary hover:bg-secondary/15',
+                      color: 'text-white hover:bg-white/10',
                       icon: <History className="w-3.5 h-3.5" />,
                       label: t('dashboard.history'),
                       onClick: () => navigate(WALLET_HISTORY_DEPOSITS_PATH),
@@ -779,7 +745,7 @@ export const Component = () => {
             <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-border-default/40">
               {/* Primary: Manage */}
               <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-xs font-semibold transition-colors flex-shrink-0"
                 onClick={() => navigate(CHANNELS_PATH)}
               >
                 <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
@@ -806,7 +772,7 @@ export const Component = () => {
               ].map(({ icon, label, onClick }) => (
                 <div className="relative group/act" key={label}>
                   <button
-                    className="p-1.5 rounded-lg hover:bg-surface-elevated text-content-tertiary hover:text-content-primary transition-colors"
+                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors"
                     onClick={onClick}
                     title={label}
                   >

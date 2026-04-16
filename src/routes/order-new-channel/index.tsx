@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
@@ -330,12 +329,6 @@ export const Component = () => {
           paymentStatus={paymentStatus || 'error'}
         />
       )}
-
-      {/* Info Section */}
-      <div className="flex items-center space-x-2 text-sm text-content-secondary mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
-        <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
-        <p>{t('orderChannel.infoMessage')}</p>
-      </div>
     </div>
   )
 }

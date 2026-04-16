@@ -348,6 +348,14 @@
     "localNodeTitle": "Nodo Local",
     "localNodeDescription": "Ejecuta un nodo en tu máquina local. Ideal para desarrolladores y entornos de prueba.",
     "localNodeNotSupported": "El nodo local no es compatible con Windows. Usa una conexión de nodo remoto en su lugar.",
+    "backendNative": "Binario nativo",
+    "backendNativeDescription": "Ejecutar el nodo como un proceso local. No requiere Docker.",
+    "backendDocker": "Contenedor Docker",
+    "backendDockerDescription": "Ejecutar el nodo en un contenedor Docker. Funciona en todas las plataformas.",
+    "backendUnavailable": "No disponible",
+    "recommended": "Recomendado",
+    "noBackendAvailable": "No se detectó ningún backend",
+    "noBackendHint": "Instala e inicia Docker Desktop para ejecutar un nodo local en esta plataforma.",
     "backToOptions": "Volver a Opciones de Conexión",
     "setupLocalTitle": "Configurar Nodo Local",
     "setupLocalSubtitle": "Elige una opción para comenzar con tu nodo RGB Lightning local",
@@ -1342,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "Error al cargar nodos: {{error}}",
-      "title": "Tus Nodos",
+      "title": "Tus Cuentas",
       "exitEditMode": "Salir del Modo Edición",
       "enterEditMode": "Entrar en Modo Edición",
       "editNodes": "Editar Nodos",
@@ -2018,7 +2026,8 @@
     },
     "status": {
       "open": "Abierto",
-      "pending": "Pendiente"
+      "pending": "Pendiente",
+      "offline": "Desconectado"
     },
     "labels": {
       "capacity": "Capacidad",
@@ -2739,7 +2748,7 @@
       "balanceNeededTitle": "Se necesita más saldo",
       "availableLabel": "Disponible",
       "capacityFee": "Comisión de capacidad",
-      "continue": "Continuar ->",
+      "continue": "Continuar",
       "durationFee": "Comisión de duración",
       "expiresLabel": "Caduca",
       "lightningInvoice": "Factura Lightning",

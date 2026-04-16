@@ -1,5 +1,5 @@
 import { Plus, Loader, Zap, Wallet, Paintbrush } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
@@ -97,6 +97,10 @@ export const UTXOManagementModal = ({
       summary,
     }
   }, [unspentsData])
+
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'colorable' | 'colored' | 'normal'
+  >('all')
 
   const handleCreateUTXOs = () => {
     onClose()
@@ -211,7 +215,7 @@ export const UTXOManagementModal = ({
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20"
       onClick={handleBackdropClick}
     >
-      <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-2xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+      <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-4xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">
             {t('utxoManagement.title')}
@@ -228,14 +232,14 @@ export const UTXOManagementModal = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {summaryCards.map((card) => (
             <div
-              className="bg-surface-overlay/50 rounded-xl border border-border-default p-4"
+              className="bg-surface-overlay/50 rounded-xl border border-border-default p-4 flex flex-col"
               key={card.key}
             >
               <div className="flex items-center gap-2 mb-2">
                 {card.icon}
                 <h3 className="text-lg font-medium text-white">{card.title}</h3>
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 flex-1">
                 {card.bullets.map((bullet) => (
                   <div
                     className="flex items-center gap-2 text-sm text-content-secondary"
@@ -246,11 +250,15 @@ export const UTXOManagementModal = ({
                   </div>
                 ))}
               </div>
-              <div className="text-2xl font-bold text-white mt-3">
-                {formatBitcoinAmount(card.total, bitcoinUnit)} {bitcoinUnit}
-              </div>
-              <div className="text-sm text-content-secondary mt-1">
-                {t('utxoManagement.summary.countLabel', { count: card.count })}
+              <div className="mt-4 pt-3 border-t border-border-default/50">
+                <div className="text-2xl font-bold text-white">
+                  {formatBitcoinAmount(card.total, bitcoinUnit)} {bitcoinUnit}
+                </div>
+                <div className="text-sm text-content-secondary mt-0.5">
+                  {t('utxoManagement.summary.countLabel', {
+                    count: card.count,
+                  })}
+                </div>
               </div>
             </div>
           ))}
@@ -270,63 +278,88 @@ export const UTXOManagementModal = ({
             <Loader className="w-6 h-6 animate-spin text-blue-500" />
           </div>
         ) : unspentsData?.unspents && unspentsData.unspents.length > 0 ? (
-          <div className="space-y-6">
-            {/* Colorable UTXOs Section */}
-            {colorableUtxos.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-green-500" />
-                  {t('utxoManagement.sections.colorable')}
-                </h3>
-                <div className="space-y-3">
-                  {colorableUtxos.map((unspent: any, index: number) => (
-                    <UTXOCard
-                      index={index}
-                      key={unspent.utxo?.outpoint || index}
-                      unspent={unspent}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+          <div>
+            {/* Filter chips */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              {(
+                [
+                  {
+                    count:
+                      colorableUtxos.length +
+                      coloredUtxos.length +
+                      normalUtxos.length,
+                    icon: null,
+                    key: 'all',
+                    label: 'All',
+                  },
+                  {
+                    count: colorableUtxos.length,
+                    icon: <Zap className="w-3.5 h-3.5" />,
+                    key: 'colorable',
+                    label: t('utxoManagement.sections.colorable'),
+                  },
+                  {
+                    count: coloredUtxos.length,
+                    icon: <Paintbrush className="w-3.5 h-3.5" />,
+                    key: 'colored',
+                    label: t('utxoManagement.sections.colored'),
+                  },
+                  {
+                    count: normalUtxos.length,
+                    icon: <Wallet className="w-3.5 h-3.5" />,
+                    key: 'normal',
+                    label: t('utxoManagement.sections.normal'),
+                  },
+                ] as const
+              ).map(({ key, label, count, icon }) => (
+                <button
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border
+                    ${
+                      activeFilter === key
+                        ? 'bg-white/15 border-white/30 text-white'
+                        : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
+                    }`}
+                  key={key}
+                  onClick={() => setActiveFilter(key)}
+                >
+                  {icon}
+                  {label}
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full ${activeFilter === key ? 'bg-white/20' : 'bg-white/10'}`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              ))}
+            </div>
 
-            {/* Colored UTXOs Section */}
-            {coloredUtxos.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
-                  <Paintbrush className="w-5 h-5 text-purple-500" />
-                  {t('utxoManagement.sections.colored')}
-                </h3>
-                <div className="space-y-3">
-                  {coloredUtxos.map((unspent: any, index: number) => (
-                    <UTXOCard
-                      index={index}
-                      key={unspent.utxo?.outpoint || index}
-                      unspent={unspent}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Normal UTXOs Section */}
-            {normalUtxos.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-blue-500" />
-                  {t('utxoManagement.sections.normal')}
-                </h3>
-                <div className="space-y-3">
-                  {normalUtxos.map((unspent: any, index: number) => (
-                    <UTXOCard
-                      index={index}
-                      key={unspent.utxo?.outpoint || index}
-                      unspent={unspent}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Filtered UTXO list */}
+            <div className="space-y-3">
+              {(activeFilter === 'all' || activeFilter === 'colorable') &&
+                colorableUtxos.map((unspent: any, index: number) => (
+                  <UTXOCard
+                    index={index}
+                    key={unspent.utxo?.outpoint || index}
+                    unspent={unspent}
+                  />
+                ))}
+              {(activeFilter === 'all' || activeFilter === 'colored') &&
+                coloredUtxos.map((unspent: any, index: number) => (
+                  <UTXOCard
+                    index={index}
+                    key={unspent.utxo?.outpoint || index}
+                    unspent={unspent}
+                  />
+                ))}
+              {(activeFilter === 'all' || activeFilter === 'normal') &&
+                normalUtxos.map((unspent: any, index: number) => (
+                  <UTXOCard
+                    index={index}
+                    key={unspent.utxo?.outpoint || index}
+                    unspent={unspent}
+                  />
+                ))}
+            </div>
           </div>
         ) : (
           <div className="text-center py-8 text-content-secondary">

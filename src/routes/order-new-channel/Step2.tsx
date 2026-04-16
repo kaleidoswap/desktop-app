@@ -47,9 +47,9 @@ const FormFieldsSchema = z.object({
   assetId: z.string().optional().default(''),
   capacitySat: z.string(),
   channelExpireBlocks: z.number(),
+  clientAssetAmount: z.string().optional().default('0'),
   clientBalanceSat: z.string(),
   lspAssetAmount: z.string().optional().default(''),
-  clientAssetAmount: z.string().optional().default('0'),
 })
 
 type FormFields = z.infer<typeof FormFieldsSchema>
@@ -84,9 +84,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         assetId: '',
         capacitySat: '100000',
         channelExpireBlocks: 12960,
+        clientAssetAmount: '0',
         clientBalanceSat: '20000',
         lspAssetAmount: '',
-        clientAssetAmount: '0',
       },
       resolver: zodResolver(FormFieldsSchema),
     })
@@ -364,11 +364,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
         assetId: data.assetId || '',
         capacitySat: parseInt(finalCapacitySat.replace(/[^0-9]/g, ''), 10),
         channelExpireBlocks: data.channelExpireBlocks,
+        clientAssetAmount: parsedClientAssetAmount || undefined,
         clientBalanceSat: parseInt(
           finalClientBalanceSat.replace(/[^0-9]/g, ''),
           10
         ),
-        clientAssetAmount: parsedClientAssetAmount || undefined,
         lspAssetAmount: parsedLspAssetAmount,
         rfqId: rfqId || undefined,
       }
@@ -574,7 +574,6 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               {/* Channel type toggle */}
               <div className="flex gap-1.5 p-1 bg-surface-overlay rounded-xl">
                 <button
-                  type="button"
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
                     !addAsset
                       ? 'bg-amber-400/20 text-amber-400 border border-amber-400/50'
@@ -586,23 +585,24 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                     setValue('lspAssetAmount', '')
                     setValue('clientAssetAmount', '0')
                   }}
+                  type="button"
                 >
-                  <img src={bitcoinLogo} alt="BTC" className="w-4 h-4" />
+                  <img alt="BTC" className="w-4 h-4" src={bitcoinLogo} />
                   BTC Only
                 </button>
                 <button
-                  type="button"
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all ${
                     addAsset
                       ? 'bg-purple-400/20 text-purple-300 border border-purple-400/50'
                       : 'text-content-secondary hover:text-content-primary'
                   }`}
-                  onClick={() => setAddAsset(true)}
                   disabled={Object.keys(assetMap).length === 0}
+                  onClick={() => setAddAsset(true)}
+                  type="button"
                 >
-                  <img src={bitcoinLogo} alt="BTC" className="w-4 h-4" />
+                  <img alt="BTC" className="w-4 h-4" src={bitcoinLogo} />
                   BTC +
-                  <img src={rgbIcon} alt="RGB" className="w-4 h-4" />
+                  <img alt="RGB" className="w-4 h-4" src={rgbIcon} />
                   RGB Asset
                 </button>
               </div>
@@ -635,13 +635,12 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                   <div className="flex flex-wrap gap-2">
                     {filteredPresets.map((preset) => (
                       <button
-                        key={preset}
-                        type="button"
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                           currentCapacity === preset && !isCustomCapacity
                             ? 'bg-amber-400/20 text-amber-400 border border-amber-400/50'
                             : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-amber-400/30 hover:text-content-primary'
                         }`}
+                        key={preset}
                         onClick={() => {
                           setValue('capacitySat', preset.toString())
                           setShowCustomInput(false)
@@ -652,27 +651,29 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                             )
                           }
                         }}
+                        type="button"
                       >
                         {formatPreset(preset)} sats
                       </button>
                     ))}
                     <button
-                      type="button"
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         isCustomCapacity || showCustomInput
                           ? 'bg-amber-400/20 text-amber-400 border border-amber-400/50'
                           : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-amber-400/30 hover:text-content-primary'
                       }`}
                       onClick={() => setShowCustomInput((v) => !v)}
+                      type="button"
                     >
                       Custom
                     </button>
                   </div>
                   {(isCustomCapacity || showCustomInput) && (
                     <input
-                      type="number"
                       autoFocus
-                      value={capacitySat}
+                      className="mt-3 w-full px-3 py-2 bg-background shadow-inner rounded-xl border border-border-default focus:border-amber-400 text-white text-sm outline-none animate-fadeInUp"
+                      max={effectiveMaxCapacity}
+                      min={effectiveMinCapacity}
                       onChange={(e) => {
                         setValue('capacitySat', e.target.value)
                         const newCap = parseInt(e.target.value, 10) || 0
@@ -683,10 +684,9 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                           )
                         }
                       }}
-                      min={effectiveMinCapacity}
-                      max={effectiveMaxCapacity}
                       placeholder="Custom capacity (sats)"
-                      className="mt-3 w-full px-3 py-2 bg-background shadow-inner rounded-xl border border-border-default focus:border-amber-400 text-white text-sm outline-none animate-fadeInUp"
+                      type="number"
+                      value={capacitySat}
                     />
                   )}
                 </div>
@@ -694,26 +694,26 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                 <div className="pt-4">
                   {/* BTC Liquidity slider (bar + slider merged) */}
                   <LiquiditySlider
-                    value={btcOut}
-                    min={lspOptions?.min_initial_client_balance_sat || 0}
+                    inboundColor="bg-blue-400/50"
+                    inboundLabel={`${btcIn.toLocaleString('de-DE')} sats`}
+                    inputFocusClass="focus:border-amber-400"
+                    inputHint="Type the exact BTC amount you want available to send once the channel is live."
+                    inputTextClass="text-amber-400"
                     max={Math.min(
                       currentCapacity,
                       lspOptions?.max_initial_client_balance_sat ||
                         currentCapacity
                     )}
-                    step={currentCapacity >= 1000000 ? 10000 : 1000}
-                    outboundLabel={`${btcOut.toLocaleString('de-DE')} sats`}
-                    inboundLabel={`${btcIn.toLocaleString('de-DE')} sats`}
-                    outboundColor="bg-amber-400"
-                    inboundColor="bg-blue-400/50"
-                    thumbBorderClass="border-amber-400"
-                    unit="sats"
-                    inputTextClass="text-amber-400"
-                    inputFocusClass="focus:border-amber-400"
-                    inputHint="Type the exact BTC amount you want available to send once the channel is live."
+                    min={lspOptions?.min_initial_client_balance_sat || 0}
                     onChange={(val) =>
                       setValue('clientBalanceSat', Math.round(val).toString())
                     }
+                    outboundColor="bg-amber-400"
+                    outboundLabel={`${btcOut.toLocaleString('de-DE')} sats`}
+                    step={currentCapacity >= 1000000 ? 10000 : 1000}
+                    thumbBorderClass="border-amber-400"
+                    unit="sats"
+                    value={btcOut}
                   />
                 </div>
               </LiquidityCard>
@@ -777,14 +777,13 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                         <div className="flex flex-wrap gap-2">
                           {assetPresetsCalc.map((preset) => (
                             <button
-                              key={preset}
-                              type="button"
                               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                                 Math.abs(lspAsset - preset) < 0.001 &&
                                 !showCustomAssetCapacity
                                   ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'
                                   : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-cyan-400/30 hover:text-content-primary'
                               }`}
+                              key={preset}
                               onClick={() => {
                                 setShowCustomAssetCapacity(false)
                                 setValue('lspAssetAmount', preset.toString())
@@ -794,6 +793,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                                     preset.toString()
                                   )
                               }}
+                              type="button"
                             >
                               {preset >= 1000
                                 ? `${formatNumberWithCommas(preset.toString())}`
@@ -804,7 +804,6 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                             </button>
                           ))}
                           <button
-                            type="button"
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                               showCustomAssetCapacity || isCustomAssetTotal
                                 ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'
@@ -813,6 +812,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                             onClick={() =>
                               setShowCustomAssetCapacity((v) => !v)
                             }
+                            type="button"
                           >
                             Custom
                           </button>
@@ -820,26 +820,10 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                         {(showCustomAssetCapacity || isCustomAssetTotal) && (
                           <>
                             <input
-                              type="number"
                               autoFocus
-                              value={lspAssetAmount}
-                              onChange={(e) => {
-                                const raw = parseFloat(e.target.value)
-                                if (!isNaN(raw) && raw > assetMax) {
-                                  const capped = assetMax.toString()
-                                  setValue('lspAssetAmount', capped)
-                                  if (clientAsset > assetMax)
-                                    setValue('clientAssetAmount', capped)
-                                } else {
-                                  setValue('lspAssetAmount', e.target.value)
-                                  const newTotal = raw || 0
-                                  if (clientAsset > newTotal)
-                                    setValue(
-                                      'clientAssetAmount',
-                                      e.target.value
-                                    )
-                                }
-                              }}
+                              className="mt-3 w-full px-3 py-2 bg-background shadow-inner rounded-xl border border-border-default focus:border-cyan-400 text-white text-sm outline-none animate-fadeInUp"
+                              max={assetMax}
+                              min={assetMin}
                               onBlur={(e) => {
                                 const val = parseFloat(e.target.value)
                                 if (!isNaN(val) && val > 0) {
@@ -860,11 +844,27 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                                   }
                                 }
                               }}
-                              min={assetMin}
-                              max={assetMax}
-                              step="any"
+                              onChange={(e) => {
+                                const raw = parseFloat(e.target.value)
+                                if (!isNaN(raw) && raw > assetMax) {
+                                  const capped = assetMax.toString()
+                                  setValue('lspAssetAmount', capped)
+                                  if (clientAsset > assetMax)
+                                    setValue('clientAssetAmount', capped)
+                                } else {
+                                  setValue('lspAssetAmount', e.target.value)
+                                  const newTotal = raw || 0
+                                  if (clientAsset > newTotal)
+                                    setValue(
+                                      'clientAssetAmount',
+                                      e.target.value
+                                    )
+                                }
+                              }}
                               placeholder={`Custom (${assetInfo.ticker})`}
-                              className="mt-3 w-full px-3 py-2 bg-background shadow-inner rounded-xl border border-border-default focus:border-cyan-400 text-white text-sm outline-none animate-fadeInUp"
+                              step="any"
+                              type="number"
+                              value={lspAssetAmount}
                             />
                             <p className="mt-1.5 text-[10px] text-content-tertiary">
                               Min: {assetMin} {assetInfo.ticker} · Max:{' '}
@@ -877,32 +877,32 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                       <div className="pt-4">
                         {/* Asset liquidity slider (bar + slider merged) */}
                         <LiquiditySlider
-                          value={clientAsset}
-                          min={0}
+                          inboundColor="bg-sky-400/35"
+                          inboundLabel={`${Math.max(0, lspAsset - clientAsset).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
+                          inputFocusClass="focus:border-cyan-400"
+                          inputHint={`Type the exact ${assetInfo.ticker} amount you want available immediately after funding.`}
+                          inputLabel="Available to send now"
+                          inputTextClass="text-cyan-300"
                           max={Math.min(
                             lspAsset || assetMax,
                             clientAssetMax || Infinity
                           )}
-                          step={assetMax >= 1000 ? 10 : 1 / assetFactor}
-                          outboundLabel={`${clientAsset.toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
-                          inboundLabel={`${Math.max(0, lspAsset - clientAsset).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
-                          outboundColor="bg-cyan-400"
-                          inboundColor="bg-sky-400/35"
-                          thumbBorderClass="border-cyan-300"
-                          unit={assetInfo.ticker}
-                          inputTextClass="text-cyan-300"
-                          inputFocusClass="focus:border-cyan-400"
-                          inputLabel="Available to send now"
-                          inputHint={`Type the exact ${assetInfo.ticker} amount you want available immediately after funding.`}
+                          maxLabel={`Max: ${Math.min(lspAsset || assetMax, clientAssetMax || Infinity).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
+                          min={0}
                           minLabel={
                             clientAssetMin > 0
                               ? `Min: ${clientAssetMin} ${assetInfo.ticker}`
                               : undefined
                           }
-                          maxLabel={`Max: ${Math.min(lspAsset || assetMax, clientAssetMax || Infinity).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
                           onChange={(val) =>
                             setValue('clientAssetAmount', val.toString())
                           }
+                          outboundColor="bg-cyan-400"
+                          outboundLabel={`${clientAsset.toFixed(assetInfo.precision > 0 ? 2 : 0)} ${assetInfo.ticker}`}
+                          step={assetMax >= 1000 ? 10 : 1 / assetFactor}
+                          thumbBorderClass="border-cyan-300"
+                          unit={assetInfo.ticker}
+                          value={clientAsset}
                         />
                       </div>
 
@@ -933,7 +933,6 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               {/* Fee breakdown */}
               {(fees || isLoadingFees) && (
                 <FeeBreakdownDisplay
-                  containerClassName="bg-surface-overlay/30 border border-border-subtle rounded-xl p-4"
                   additionalCosts={[
                     ...(quote &&
                     clientAssetAmount &&
@@ -949,6 +948,7 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                         ]
                       : []),
                   ]}
+                  containerClassName="bg-surface-overlay/30 border border-border-subtle rounded-xl p-4"
                   fees={fees}
                   isLoading={isLoadingFees}
                 />

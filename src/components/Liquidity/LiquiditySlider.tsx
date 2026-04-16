@@ -69,22 +69,13 @@ export function LiquiditySlider({
             <div className="mt-2 flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <input
-                  type="number"
-                  min={min}
+                  className={twJoin(
+                    'h-10 w-full rounded-xl border border-border-default bg-background px-3 pr-14 text-left text-sm font-semibold outline-none transition-colors',
+                    inputFocusClass,
+                    inputTextClass
+                  )}
                   max={safeMax}
-                  step="any"
-                  value={isFocused.current ? inputText : clamped}
-                  onFocus={() => {
-                    isFocused.current = true
-                    setInputText(clamped.toString())
-                  }}
-                  onChange={(e) => {
-                    setInputText(e.target.value)
-                    const val = parseFloat(e.target.value)
-                    if (!isNaN(val)) {
-                      onChange(Math.min(safeMax, Math.max(min, val)))
-                    }
-                  }}
+                  min={min}
                   onBlur={(e) => {
                     isFocused.current = false
                     const val = parseFloat(e.target.value)
@@ -96,20 +87,29 @@ export function LiquiditySlider({
                       setInputText(clamped.toString())
                     }
                   }}
-                  className={twJoin(
-                    'h-10 w-full rounded-xl border border-border-default bg-background px-3 pr-14 text-left text-sm font-semibold outline-none transition-colors',
-                    inputFocusClass,
-                    inputTextClass
-                  )}
+                  onChange={(e) => {
+                    setInputText(e.target.value)
+                    const val = parseFloat(e.target.value)
+                    if (!isNaN(val)) {
+                      onChange(Math.min(safeMax, Math.max(min, val)))
+                    }
+                  }}
+                  onFocus={() => {
+                    isFocused.current = true
+                    setInputText(clamped.toString())
+                  }}
+                  step="any"
+                  type="number"
+                  value={isFocused.current ? inputText : clamped}
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-tertiary">
                   {unit}
                 </span>
               </div>
               <button
-                type="button"
                 className="rounded-lg border border-border-default/60 bg-surface-overlay/60 px-2 py-1 text-[11px] font-semibold text-content-secondary transition-colors hover:border-border-default hover:text-content-primary"
                 onClick={() => onChange(safeMax)}
+                type="button"
               >
                 Max
               </button>
@@ -173,14 +173,14 @@ export function LiquiditySlider({
           />
 
           <input
-            type="range"
-            min={min}
-            max={safeMax}
-            step={step}
-            value={clamped}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
             className="relative z-20 h-8 w-full cursor-pointer opacity-0"
-            style={{ appearance: 'none', WebkitAppearance: 'none' }}
+            max={safeMax}
+            min={min}
+            onChange={(e) => onChange(parseFloat(e.target.value))}
+            step={step}
+            style={{ WebkitAppearance: 'none', appearance: 'none' }}
+            type="range"
+            value={clamped}
           />
         </div>
 

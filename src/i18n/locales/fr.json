@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "Erreur lors du chargement des nœuds : {{error}}",
-      "title": "Vos nœuds",
+      "title": "Vos comptes",
       "exitEditMode": "Quitter le mode édition",
       "enterEditMode": "Activer le mode édition",
       "editNodes": "Modifier les nœuds",
@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "Ouvert",
-      "pending": "En attente"
+      "pending": "En attente",
+      "offline": "Hors ligne"
     },
     "labels": {
       "capacity": "Capacité",
@@ -2046,6 +2047,14 @@
     "localNodeTitle": "Nœud local",
     "localNodeDescription": "Exécutez un nœud sur votre machine locale. Idéal pour les développeurs et l'environnement de test.",
     "localNodeNotSupported": "Le nœud local n'est pas disponible sous Windows. Utilisez plutôt un nœud distant.",
+    "backendNative": "Binaire natif",
+    "backendNativeDescription": "Exécuter le nœud en tant que processus local. Docker non requis.",
+    "backendDocker": "Conteneur Docker",
+    "backendDockerDescription": "Exécuter le nœud dans un conteneur Docker. Fonctionne sur toutes les plateformes.",
+    "backendUnavailable": "Non disponible",
+    "recommended": "Recommandé",
+    "noBackendAvailable": "Aucun backend détecté",
+    "noBackendHint": "Installez et démarrez Docker Desktop pour exécuter un nœud local sur cette plateforme.",
     "backToOptions": "Retour aux options de connexion",
     "setupLocalTitle": "Configurer un nœud local",
     "setupLocalSubtitle": "Choisissez une option pour démarrer votre nœud RGB Lightning local",
@@ -2739,7 +2748,7 @@
       "balanceNeededTitle": "Solde supplémentaire requis",
       "availableLabel": "Disponible",
       "capacityFee": "Frais de capacité",
-      "continue": "Continuer ->",
+      "continue": "Continuer",
       "durationFee": "Frais de durée",
       "expiresLabel": "Expire",
       "lightningInvoice": "Facture Lightning",

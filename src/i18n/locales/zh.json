@@ -348,6 +348,14 @@
     "localNodeTitle": "本地节点",
     "localNodeDescription": "在本地机器上运行节点。适合开发者和测试环境。",
     "localNodeNotSupported": "Windows 不支持本地节点。请使用远程节点连接。",
+    "backendNative": "原生二进制",
+    "backendNativeDescription": "以本地进程运行节点。无需 Docker。",
+    "backendDocker": "Docker 容器",
+    "backendDockerDescription": "在 Docker 容器中运行节点。适用于所有平台。",
+    "backendUnavailable": "不可用",
+    "recommended": "推荐",
+    "noBackendAvailable": "未检测到后端",
+    "noBackendHint": "安装并启动 Docker Desktop 以在此平台上运行本地节点。",
     "backToOptions": "返回连接选项",
     "setupLocalTitle": "设置本地节点",
     "setupLocalSubtitle": "选择一个选项以开始使用您的本地 RGB Lightning 节点",
@@ -1342,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "加载节点时出错：{{error}}",
-      "title": "您的节点",
+      "title": "您的账户",
       "exitEditMode": "退出编辑模式",
       "enterEditMode": "进入编辑模式",
       "editNodes": "编辑节点",
@@ -2018,7 +2026,8 @@
     },
     "status": {
       "open": "打开",
-      "pending": "待处理"
+      "pending": "待处理",
+      "offline": "离线"
     },
     "labels": {
       "capacity": "容量",
@@ -2730,7 +2739,7 @@
       "balanceNeededTitle": "需要更多余额",
       "availableLabel": "可用",
       "capacityFee": "容量费用",
-      "continue": "继续 ->",
+      "continue": "继续",
       "durationFee": "时长费用",
       "expiresLabel": "到期时间",
       "lightningInvoice": "Lightning 发票",

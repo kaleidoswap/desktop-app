@@ -52,7 +52,7 @@ export const UnlockingProgress = ({
           {errorMessage ? (
             <XCircle className="w-8 h-8" />
           ) : (
-            <Shield className="w-8 h-8 animate-pulse" />
+            <Shield className="w-8 h-8" />
           )}
         </div>
         <h2 className="text-2xl font-bold text-content-primary">

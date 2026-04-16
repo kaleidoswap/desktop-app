@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   HardDriveDownload,
   Target,
+  TrendingUp,
 } from 'lucide-react'
 import React from 'react'
 
@@ -42,7 +43,6 @@ import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
 } from '../../app/router/paths'
-import { DcaBagIcon } from '../icons/DcaBagIcon'
 
 // Define types for navigation items
 export interface NavItem {
@@ -82,7 +82,7 @@ export const getMainNavItems = (t: TFunction) => [
     to: WALLET_HISTORY_PATH,
   },
   {
-    icon: <DcaBagIcon className="h-6 w-6" />,
+    icon: <TrendingUp className="h-6 w-6" />,
     label: t('navigation.dca', 'DCA'),
     matchPath: TRADE_DCA_PATH,
     to: TRADE_DCA_PATH,
@@ -223,7 +223,7 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.settings'),
   },
   [TRADE_DCA_PATH]: {
-    icon: <DcaBagIcon className="h-9 w-9" />,
+    icon: <TrendingUp className="h-9 w-9" />,
     title: t('navigation.dca', 'DCA'),
   },
   [TRADE_LIMIT_PATH]: {

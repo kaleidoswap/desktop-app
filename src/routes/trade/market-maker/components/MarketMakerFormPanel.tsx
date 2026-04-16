@@ -52,6 +52,7 @@ interface MarketMakerFormPanelProps {
   hasChannels: boolean
   hasTradablePairs: boolean
   hasValidQuote: boolean
+  isFromAmountLoading: boolean
   isPriceLoading: boolean
   isQuoteLoading: boolean
   isSwapInProgress: boolean
@@ -99,6 +100,7 @@ export const MarketMakerFormPanel = ({
   hasChannels,
   hasTradablePairs,
   hasValidQuote,
+  isFromAmountLoading,
   isPriceLoading,
   isQuoteLoading,
   isSwapInProgress,
@@ -310,6 +312,7 @@ export const MarketMakerFormPanel = ({
                   }
                   formatAmount={formatAmount}
                   getDisplayAsset={displayAsset}
+                  isLoading={isFromAmountLoading}
                   label={t('tradeMarketMaker.form.youSend')}
                   maxAmount={maxFromAmount}
                   maxHtlcAmount={maxOutboundHtlcSat}
@@ -372,7 +375,6 @@ export const MarketMakerFormPanel = ({
                   onAmountChange={onToAmountChange}
                   onAssetChange={(value) => onAssetChange('toAsset', value)}
                   onRefresh={onMakerChange}
-                  readOnly={true}
                   useEnhancedSelector={true}
                   value={form.getValues().to || ''}
                 />

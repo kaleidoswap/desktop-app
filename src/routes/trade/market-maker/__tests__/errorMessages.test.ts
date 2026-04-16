@@ -5,7 +5,7 @@ vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
   normalizePairs: vi.fn((pairs: any[]) => pairs),
 }))
 vi.mock('../../../../utils/logger', () => ({
-  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+  logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 
 import {
@@ -106,10 +106,10 @@ describe('parseAmountValidationError', () => {
 
 describe('getValidationError', () => {
   const defaults = {
-    toAmount: 0,
-    maxToAmount: 1_000_000,
-    toAsset: 'USDT',
     assets: [],
+    maxToAmount: 1_000_000,
+    toAmount: 0,
+    toAsset: 'USDT',
   }
 
   it('returns null while quote is loading', () => {

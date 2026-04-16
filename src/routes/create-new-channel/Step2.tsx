@@ -336,7 +336,7 @@ export const Step2 = ({
 
   return (
     <form className="max-w-3xl mx-auto" onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mb-10">
+      <div className="text-center mt-16 mb-10">
         <h3 className="text-3xl font-bold text-white mb-4">
           {t('createChannel.step2.title')}
         </h3>

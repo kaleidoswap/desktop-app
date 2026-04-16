@@ -220,11 +220,11 @@ export function CreateDcaForm({ currentBtcPrice, onCreated }: Props) {
                          : 'border-border-subtle focus:border-primary/50 focus:ring-primary/20'
                      }`}
           min="0"
+          onChange={(e) => setAmountUsdt(e.target.value)}
           placeholder="50"
           step="any"
           type="number"
           value={amountUsdt}
-          onChange={(e) => setAmountUsdt(e.target.value)}
         />
         {estimatedSats != null && estimatedSats > 0 && (
           <div className="bg-surface-overlay/50 border border-border-subtle rounded-lg p-2 text-xs">

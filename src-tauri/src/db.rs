@@ -137,6 +137,16 @@ pub fn init() {
         (),
     )
     .unwrap();
+
+    // Add AppSettings table for key-value config (e.g. node backend type)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS 'AppSettings' (
+            'key' TEXT PRIMARY KEY NOT NULL,
+            'value' TEXT NOT NULL
+        );",
+        (),
+    )
+    .unwrap();
 }
 
 // Create the database file.
@@ -586,4 +596,26 @@ pub fn get_encrypted_mnemonic(
         .optional()?;
 
     Ok(result.flatten())
+}
+
+// ---------------------------------------------------------------------------
+// App Settings (key-value store)
+// ---------------------------------------------------------------------------
+
+#[allow(dead_code)]
+pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let mut stmt = conn.prepare("SELECT value FROM AppSettings WHERE key = ?")?;
+    let result = stmt.query_row([key], |row| row.get(0)).optional()?;
+    Ok(result)
+}
+
+#[allow(dead_code)]
+pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "INSERT INTO AppSettings (key, value) VALUES (?1, ?2)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        rusqlite::params![key, value],
+    )
 }

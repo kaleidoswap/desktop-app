@@ -11,23 +11,23 @@ describe('setModal', () => {
   it('sets a deposit modal', () => {
     const state = reducer(
       initialState,
-      uiSliceActions.setModal({ type: 'deposit', assetId: 'rgb:abc' })
+      uiSliceActions.setModal({ assetId: 'rgb:abc', type: 'deposit' })
     )
-    expect(state.modal).toEqual({ type: 'deposit', assetId: 'rgb:abc' })
+    expect(state.modal).toEqual({ assetId: 'rgb:abc', type: 'deposit' })
   })
 
   it('sets a withdraw modal', () => {
     const state = reducer(
       initialState,
-      uiSliceActions.setModal({ type: 'withdraw', assetId: undefined })
+      uiSliceActions.setModal({ assetId: undefined, type: 'withdraw' })
     )
-    expect(state.modal).toEqual({ type: 'withdraw', assetId: undefined })
+    expect(state.modal).toEqual({ assetId: undefined, type: 'withdraw' })
   })
 
   it('closes modal by setting type none', () => {
     const withModal = reducer(
       initialState,
-      uiSliceActions.setModal({ type: 'deposit', assetId: 'rgb:abc' })
+      uiSliceActions.setModal({ assetId: 'rgb:abc', type: 'deposit' })
     )
     const closed = reducer(withModal, uiSliceActions.setModal({ type: 'none' }))
     expect(closed.modal.type).toBe('none')
@@ -39,11 +39,11 @@ describe('setModal', () => {
 describe('uiSliceSeletors.modal', () => {
   it('returns the current modal from state', () => {
     const rootState = {
-      ui: { modal: { type: 'deposit' as const, assetId: 'rgb:xyz' } },
+      ui: { modal: { assetId: 'rgb:xyz', type: 'deposit' as const } },
     }
     expect(uiSliceSeletors.modal(rootState)).toEqual({
-      type: 'deposit',
       assetId: 'rgb:xyz',
+      type: 'deposit',
     })
   })
 
