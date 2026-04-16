@@ -17,7 +17,7 @@ import { toast } from 'react-toastify'
 import { RootState } from '../../app/store'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
-import { KaleidoswapBoxIcon } from '../../icons/KaleidoswapBox'
+import kaleidoswapPictogram from '../../assets/logo.svg'
 import { makerApi } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -446,7 +446,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 mb-3">
+          <h2 className="text-3xl font-bold text-white mb-3">
             {t('orderChannel.step1.title')}
           </h2>
           <p className="text-content-secondary text-lg">
@@ -457,21 +457,21 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         {/* Progress Steps */}
         <div className="flex justify-between items-center mb-8 px-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/50">
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg shadow-primary/50">
               1
             </div>
             <div className="ml-3">
               <p className="font-semibold text-white">
                 {t('orderChannel.step1.connectLsp')}
               </p>
-              <p className="text-xs text-blue-400">
+              <p className="text-xs text-primary">
                 {t('orderChannel.step1.currentStep')}
               </p>
             </div>
           </div>
           <div className="flex-1 mx-4 mt-2">
             <div className="h-1.5 bg-surface-high/50 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-500"></div>
+              <div className="h-full bg-primary w-0 transition-all duration-500"></div>
             </div>
           </div>
           <div className="flex items-center opacity-40">
@@ -511,21 +511,21 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
             className={`mb-6 p-5 rounded-xl border-2 transition-all duration-300 ${
               isAlreadyConnected
                 ? 'bg-green-900/20 border-green-600/50 shadow-lg shadow-green-900/20'
-                : 'bg-blue-900/20 border-blue-600/50 shadow-lg shadow-blue-900/20'
+                : 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/10'
             }`}
           >
             <div className="flex items-center gap-4">
               {isAlreadyConnected ? (
                 <CheckCircle className="w-8 h-8 text-green-400 flex-shrink-0" />
               ) : isLoading ? (
-                <Loader2 className="w-8 h-8 text-blue-400 flex-shrink-0 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary flex-shrink-0 animate-spin" />
               ) : (
-                <AlertCircle className="w-8 h-8 text-blue-400 flex-shrink-0" />
+                <AlertCircle className="w-8 h-8 text-primary flex-shrink-0" />
               )}
               <div className="flex-1">
                 <h3
                   className={`text-lg font-semibold ${
-                    isAlreadyConnected ? 'text-green-300' : 'text-blue-300'
+                    isAlreadyConnected ? 'text-green-300' : 'text-primary'
                   }`}
                 >
                   {isAlreadyConnected
@@ -534,9 +534,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                 </h3>
                 <p
                   className={`text-sm mt-1 ${
-                    isAlreadyConnected
-                      ? 'text-green-200/80'
-                      : 'text-blue-200/80'
+                    isAlreadyConnected ? 'text-green-200/80' : 'text-primary/80'
                   }`}
                 >
                   {isAlreadyConnected
@@ -549,11 +547,11 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         )}
 
         {/* Info Card */}
-        <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-700/30 p-6 rounded-xl mb-6 backdrop-blur-sm">
+        <div className="border border-white/30 p-6 rounded-xl mb-6">
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-blue-400"
+                className="w-6 h-6 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -570,20 +568,23 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               <h3 className="text-lg font-semibold text-white mb-2">
                 {t('orderChannel.step1.howItWorks')}
               </h3>
-              <div className="space-y-2 text-blue-100/90">
+              <div className="space-y-2 text-content-secondary">
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold mt-0.5">1.</span>
+                  <span className="text-primary font-bold mt-0.5">1.</span>
                   <span>{t('orderChannel.step1.step1Description')}</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold mt-0.5">2.</span>
+                  <span className="text-primary font-bold mt-0.5">2.</span>
                   <span>{t('orderChannel.step1.step2Description')}</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold mt-0.5">3.</span>
+                  <span className="text-primary font-bold mt-0.5">3.</span>
                   <span>{t('orderChannel.step1.step3Description')}</span>
                 </p>
               </div>
+              <p className="mt-4 text-sm text-content-secondary border-t border-white/10 pt-4">
+                {t('orderChannel.infoMessage')}
+              </p>
             </div>
           </div>
         </div>
@@ -593,14 +594,14 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <label className="text-lg font-semibold text-white flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-400" />
+                <Globe className="w-5 h-5 text-primary" />
                 {t('orderChannel.step1.lspServerUrl')}
               </label>
             </div>
             <div className="space-y-3">
               <div className="relative">
                 <input
-                  className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none transition-all"
+                  className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all"
                   onChange={(e) => handleDefaultLspUrlChange(e)}
                   placeholder={t('orderChannel.step1.lspUrlPlaceholder')}
                   value={tempLspUrl}
@@ -608,7 +609,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
               </div>
 
               <button
-                className={`w-full bg-primary hover:bg-primary-emphasis text-[#12131C] px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+                className={`w-full bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
                   isLoading || !tempLspUrl.trim()
                     ? 'opacity-50 cursor-not-allowed'
                     : ''
@@ -637,7 +638,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
             {/* Kaleidoswap LSP Button */}
             <div className="mt-4 pt-4 border-t border-border-default/50">
               <button
-                className={`w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 p-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 p-4 rounded-lg transition-all duration-200 focus:outline-none ${
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 disabled={isLoading}
@@ -645,8 +646,12 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                 title={t('orderChannel.step1.useDefaultKaleidoLsp')}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <KaleidoswapBoxIcon />
-                  <span className="text-sm font-medium text-content-secondary">
+                  <img
+                    alt="KaleidoSwap"
+                    className="w-10 h-10"
+                    src={kaleidoswapPictogram}
+                  />
+                  <span className="text-sm font-medium text-white">
                     {t('orderChannel.step1.useDefaultKaleidoLsp')}
                   </span>
                 </div>
@@ -657,12 +662,12 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           {/* LSP Connection String */}
           <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
             <label className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Link className="w-5 h-5 text-purple-400" />
+              <Link className="w-5 h-5 text-primary" />
               {t('orderChannel.step1.connectionStringLabel')}
             </label>
             <div className="relative">
               <textarea
-                className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all h-32 resize-none font-mono text-sm"
+                className="w-full bg-surface-base/50 text-white px-4 py-3 pr-12 rounded-lg border border-border-default focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all h-32 resize-none font-mono text-sm"
                 placeholder={t(
                   'orderChannel.step1.connectionStringPlaceholder'
                 )}
@@ -703,12 +708,12 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           <button
             className={`
               group px-10 py-4 rounded-xl text-lg font-bold
-              transition-all duration-300 transform
-              focus:ring-4 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none 
+              transition-all duration-300
+              focus:ring-4 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none
               flex items-center justify-center gap-3 min-w-[280px]
-              ${getButtonState().disabled ? 'cursor-not-allowed' : 'hover:scale-105 active:scale-95'}
+              ${getButtonState().disabled ? 'cursor-not-allowed' : ''}
               ${getButtonState().className}
-              ${!getButtonState().disabled && !isLoading ? 'shadow-lg hover:shadow-xl' : ''}
+              ${!getButtonState().disabled && !isLoading ? 'shadow-lg' : ''}
             `}
             disabled={getButtonState().disabled}
             onClick={handleNext}

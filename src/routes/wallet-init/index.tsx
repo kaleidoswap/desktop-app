@@ -1,6 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { ask } from '@tauri-apps/plugin-dialog'
 import {
   AlertCircle,
   ArrowLeft,
@@ -19,7 +18,7 @@ import {
 import { useState, useEffect, useRef } from 'react'
 import { SubmitHandler, UseFormReturn, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
@@ -41,13 +40,13 @@ import {
   Button,
   Card,
   Alert,
-  SetupSection,
   FormField,
   Input,
   AdvancedSettings,
   NetworkSettings,
 } from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
+import kaleidoswapPictogram from '../../assets/logo.svg'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { buildLocalNodeUrl } from '../../api/client'
@@ -118,6 +117,8 @@ type SetupStep =
 
 export const Component = () => {
   const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
+  const isDockerMode = searchParams.get('mode') === 'docker'
   const [currentStep, setCurrentStep] = useState<SetupStep>('terms')
   const [redirectToRoot, setRedirectToRoot] = useState(false)
   const [mnemonic, setMnemonic] = useState<string[]>([])
@@ -165,8 +166,8 @@ export const Component = () => {
     defaultValues: {
       bearer_token: '',
       name: generateRandomName(),
-      network: 'Regtest',
-      ...NETWORK_DEFAULTS['Regtest'],
+      network: 'SignetCustom',
+      ...NETWORK_DEFAULTS['SignetCustom'],
     },
   })
 
@@ -300,6 +301,8 @@ export const Component = () => {
   }
 
   const getDatapath = (accountName: string): string => {
+    // Docker mode doesn't need a local datapath — data lives in Docker volumes
+    if (isDockerMode) return ''
     return `kaleidoswap-${formatAccountName(accountName)}`
   }
 
@@ -441,16 +444,18 @@ export const Component = () => {
     network: BitcoinNetwork,
     datapath: string
   ): Promise<void> => {
-    const daemonPort = nodeSetupForm.getValues('daemon_listening_port')
-    const ldkPort = nodeSetupForm.getValues('ldk_peer_listening_port')
+    let daemonPort = nodeSetupForm.getValues('daemon_listening_port')
+    let ldkPort = nodeSetupForm.getValues('ldk_peer_listening_port')
     const ports = [daemonPort, ldkPort]
 
     try {
-      // Check port availability
-      const portCheck = await checkPortAvailability(ports)
+      // Auto-resolve port conflicts by finding available ports
+      const portCheck = isDockerMode
+        ? { available: true, conflictingPorts: [] as string[] }
+        : await checkPortAvailability(ports)
 
       if (!portCheck.available) {
-        // If ports are in use by our own nodes, try to stop them gracefully
+        // Try to stop our own nodes first
         const runningNodePorts = await invoke<{ [port: string]: string }>(
           'get_running_node_ports'
         )
@@ -460,104 +465,134 @@ export const Component = () => {
 
         if (ourConflictingPorts.length > 0) {
           toast.info(t('walletInit.passwordStep.stoppingExistingNodes'), {
-            autoClose: false,
-            toastId: 'stopping-nodes',
+            autoClose: 2000,
           })
-
           for (const port of ourConflictingPorts) {
             const nodeAccount = runningNodePorts[port]
             try {
               await invoke('stop_node_by_account', { accountName: nodeAccount })
-              await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait for cleanup
+              await new Promise((resolve) => setTimeout(resolve, 2000))
             } catch (error) {
-              console.error(`Failed to stop node on port ${port}:`, error)
-              throw new Error(`Failed to stop existing node on port ${port}`, {
-                cause: error,
-              })
+              console.warn(`Could not stop node on port ${port}:`, error)
             }
           }
-
-          toast.update('stopping-nodes', {
-            autoClose: 2000,
-            render: t('walletInit.passwordStep.existingNodesStopped'),
-            type: 'success',
-          })
-
-          // Recheck port availability after stopping our nodes
-          const recheckPorts = await checkPortAvailability(ports)
-          if (!recheckPorts.available) {
-            throw new Error(
-              `Ports ${recheckPorts.conflictingPorts.join(', ')} are still in use by other processes. ` +
-                'Please choose different ports or stop the conflicting processes.'
-            )
-          }
         } else {
-          // Ports may be held by a stale node from a previous session.
-          // Try stop_node before giving up.
-          toast.info(t('walletInit.passwordStep.stoppingExistingNodes'), {
-            autoClose: false,
-            toastId: 'stopping-nodes',
-          })
+          // Try stopping any stale node
           try {
             await invoke('stop_node')
             await new Promise((resolve) => setTimeout(resolve, 2000))
-          } catch (stopError) {
-            console.warn('Could not stop stale node:', stopError)
+          } catch {
+            // Ignore — may not be running
           }
-          toast.dismiss('stopping-nodes')
+        }
 
-          const recheckAfterStop = await checkPortAvailability(ports)
-          if (!recheckAfterStop.available) {
-            const conflicting = recheckAfterStop.conflictingPorts.join(', ')
-            const userWantsKill = await ask(
-              t('walletInit.errors.killProcessPrompt', {
-                ports: conflicting,
-              }),
-              {
-                title: t('walletInit.errors.portConflictTitle'),
-                kind: 'warning',
-                okLabel: t('walletInit.errors.killProcessConfirm'),
-                cancelLabel: t('common.cancel'),
-              }
-            )
-
-            if (userWantsKill) {
-              toast.info(t('walletInit.errors.killingProcesses'), {
-                autoClose: false,
-                toastId: 'killing-processes',
-              })
-              const portsToKill = recheckAfterStop.conflictingPorts.map(Number)
-              await invoke('kill_processes_on_ports', { ports: portsToKill })
-              toast.dismiss('killing-processes')
-
-              const finalCheck = await checkPortAvailability(ports)
-              if (!finalCheck.available) {
-                throw new Error(
-                  `Ports ${finalCheck.conflictingPorts.join(', ')} are still in use after killing processes. ` +
-                    'Please choose different ports.'
-                )
-              }
-            } else {
-              throw new Error(
-                `Ports ${conflicting} are in use by other applications. ` +
-                  'Please choose different ports or stop the conflicting applications.'
-              )
+        // After stopping, find available ports automatically
+        const recheckPorts = await checkPortAvailability(ports)
+        if (!recheckPorts.available) {
+          const availablePorts = await invoke<{ daemon: number; ldk: number }>(
+            'find_available_ports',
+            {
+              baseDaemonPort: parseInt(daemonPort) || 3001,
+              baseLdkPort: parseInt(ldkPort) || 9735,
             }
-          }
+          )
+          daemonPort = String(availablePorts.daemon)
+          ldkPort = String(availablePorts.ldk)
+          nodeSetupForm.setValue('daemon_listening_port', daemonPort)
+          nodeSetupForm.setValue('ldk_peer_listening_port', ldkPort)
+          toast.info(
+            `Ports auto-updated: daemon ${availablePorts.daemon}, peer ${availablePorts.ldk}`,
+            { autoClose: 3000 }
+          )
         }
       }
 
       // Start the node
-      await invoke('start_node', {
-        accountName,
-        daemonListeningPort: daemonPort,
-        datapath,
-        ldkPeerListeningPort: ldkPort,
-        network,
-      })
+      if (isDockerMode) {
+        // Docker mode: auto-create environment from account name + form params
+        const envName = `kaleidoswap-${accountName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')}`
+        const network = nodeSetupForm.getValues('network')
 
-      setInitPhase('waiting-ready')
-      await waitForNodeReady({ daemonPort })
+        // Find available ports — auto-resolve conflicts instead of erroring
+        let finalDaemonPort = parseInt(daemonPort) || 3001
+        let finalPeerPort = parseInt(ldkPort) || 9735
+        const availablePorts = await invoke<{ daemon: number; ldk: number }>(
+          'find_available_ports',
+          {
+            baseDaemonPort: finalDaemonPort,
+            baseLdkPort: finalPeerPort,
+          }
+        )
+        finalDaemonPort = availablePorts.daemon
+        finalPeerPort = availablePorts.ldk
+
+        // Update form with the actual ports being used
+        nodeSetupForm.setValue('daemon_listening_port', String(finalDaemonPort))
+        nodeSetupForm.setValue('ldk_peer_listening_port', String(finalPeerPort))
+
+        // Create Docker environment with available ports and network
+        await invoke('create_docker_environment', {
+          config: {
+            base_daemon_port: finalDaemonPort,
+            base_peer_port: finalPeerPort,
+            count: 1,
+            disable_authentication: true,
+            name: envName,
+            network: network.toLowerCase(),
+          },
+        })
+
+        // Start the Docker container
+        const dockerPort = await invoke<number>('start_docker_node', {
+          envName,
+        })
+        const dockerDaemonPort = String(dockerPort)
+        // Update form with the actual Docker port
+        nodeSetupForm.setValue('daemon_listening_port', dockerDaemonPort)
+
+        setInitPhase('waiting-ready')
+        // Docker readiness: poll HTTP directly (don't use waitForNodeReady which
+        // checks native NodeProcess state and would see "Stopped")
+        const maxWait = 90000
+        const pollInterval = 2000
+        const startTime = Date.now()
+        let dockerReady = false
+        while (Date.now() - startTime < maxWait) {
+          if (isCancelledRef.current) throw new Error('CANCELLED')
+          try {
+            const status = await invoke<number>('probe_node_http', {
+              daemonPort: dockerPort,
+            })
+            // 200 = unlocked, 403 = locked but running — both mean node is ready
+            if (status === 200 || status === 403) {
+              dockerReady = true
+              break
+            }
+          } catch {
+            // Not ready yet
+          }
+          await new Promise((r) => setTimeout(r, pollInterval))
+        }
+        if (!dockerReady) {
+          throw new Error('Docker node did not become ready within 90 seconds')
+        }
+      } else {
+        // Native binary mode
+        await invoke('start_node', {
+          accountName,
+          daemonListeningPort: daemonPort,
+          datapath,
+          ldkPeerListeningPort: ldkPort,
+          network,
+        })
+
+        setInitPhase('waiting-ready')
+        await waitForNodeReady({ daemonPort })
+      }
 
       if (isCancelledRef.current) throw new Error('CANCELLED')
     } catch (error) {
@@ -758,10 +793,18 @@ export const Component = () => {
       cleanupStartupListeners()
       setInitPhase('initializing-wallet')
 
+      // Rebuild settings to pick up actual port (Docker may have changed it)
+      const finalNodeSettings = buildNodeSettings(
+        accountName,
+        network,
+        datapath
+      )
+      await dispatch(setSettingsAsync(finalNodeSettings))
+
       // Rest of the initialization process
       try {
         console.log(
-          `[init] step 3 target node URL: ${pendingNodeSettings.node_url}`
+          `[init] step 3 target node URL: ${finalNodeSettings.node_url}`
         )
         console.log('[init] step 3: POST /init')
         const mnemonic = await initializeNode(data.password)
@@ -980,7 +1023,7 @@ export const Component = () => {
     const renderStepLayout = (
       title: string,
       subtitle: string,
-      icon: React.ReactNode,
+      _icon: React.ReactNode,
       content: React.ReactNode,
       onBack?: () => void
     ) => (
@@ -992,25 +1035,12 @@ export const Component = () => {
             <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-secondary/4 blur-2xl" />
           </div>
           <div className="relative flex-1 flex flex-col items-center justify-center p-8 gap-6">
-            {/* Icon ring */}
-            <div className="relative w-24 h-24 shrink-0">
-              <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
-              <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
-                  {icon}
-                </div>
-              </div>
-            </div>
-            {/* Title + subtitle */}
-            <div className="text-center space-y-2">
-              <h2 className="text-lg font-bold text-content-primary leading-snug">
-                {title}
-              </h2>
-              <p className="text-xs text-content-secondary leading-relaxed">
-                {subtitle}
-              </p>
-            </div>
+            {/* Pictogram */}
+            <img
+              alt="KaleidoSwap"
+              className="w-16 h-16"
+              src={kaleidoswapPictogram}
+            />
             {/* Step progress */}
             <div className="w-full space-y-1.5">
               {WALLET_INIT_STEPS.map((step, idx) => {
@@ -1118,35 +1148,33 @@ export const Component = () => {
       case 'password':
         if (isInitializing) {
           const phaseTitle: Record<typeof initPhase, string> = {
-            'starting-node': 'Starting Node Process',
-            'waiting-ready': 'Waiting for Node',
-            'initializing-wallet': 'Initializing Wallet',
-            'unlocking-wallet': 'Unlocking Wallet',
             idle: 'Starting Local Node',
+            'initializing-wallet': 'Initializing Wallet',
+            'starting-node': 'Starting Node Process',
+            'unlocking-wallet': 'Unlocking Wallet',
+            'waiting-ready': 'Waiting for Node',
           }
           const phaseSubtitle: Record<typeof initPhase, string> = {
-            'starting-node': 'Spawning the node process and binding to ports',
-            'waiting-ready':
-              'Node process started — waiting for HTTP server to respond',
+            idle: '',
             'initializing-wallet':
               'Generating your 24-word mnemonic seed phrase',
+            'starting-node': 'Spawning the node process and binding to ports',
             'unlocking-wallet': 'Sending unlock request to the node',
-            idle: '',
+            'waiting-ready':
+              'Node process started — waiting for HTTP server to respond',
           }
+          const PulsingIcon = ({ icon: Icon }: { icon: React.ElementType }) => (
+            <div className="relative flex items-center justify-center">
+              <span className="absolute inline-flex w-full h-full rounded-full bg-primary/40 animate-ping" />
+              <Icon className="w-10 h-10 text-primary relative z-10" />
+            </div>
+          )
           const phaseIcon: Record<typeof initPhase, JSX.Element> = {
-            'starting-node': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'waiting-ready': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'initializing-wallet': (
-              <Key className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'unlocking-wallet': (
-              <Key className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            idle: <Zap className="w-8 h-8 text-primary animate-pulse" />,
+            idle: <PulsingIcon icon={Zap} />,
+            'initializing-wallet': <PulsingIcon icon={Key} />,
+            'starting-node': <PulsingIcon icon={Zap} />,
+            'unlocking-wallet': <PulsingIcon icon={Key} />,
+            'waiting-ready': <PulsingIcon icon={Zap} />,
           }
           return renderStepLayout(
             phaseTitle[initPhase],
@@ -1345,7 +1373,7 @@ const NodeStartupProgress = ({
           const isCompleted = i < currentPhaseIndex
           const isCurrent = i === currentPhaseIndex
           return (
-            <div key={p.id} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={p.id}>
               {i > 0 && (
                 <div
                   className={`h-px w-10 transition-colors ${
@@ -1675,7 +1703,7 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
             </Alert>
           )}
 
-          <SetupSection>
+          <div className="space-y-4">
             <FormField
               description={t('walletInit.setupStep.accountNameDescription')}
               error={form.formState.errors.name?.message}
@@ -1711,7 +1739,7 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
               onChange={(network) => form.setValue('network', network)}
               selectedNetwork={selectedNetwork}
             />
-          </SetupSection>
+          </div>
 
           <AdvancedSettings>
             <NetworkSettings form={form} />

@@ -174,7 +174,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         ? preselectedAsset.amount.toString()
         : '',
       clientBalanceSat: defaultClientBalanceSat || '20000',
-      totalAssetAmount: defaultTotalAssetAmount || '0',
+      totalAssetAmount: defaultTotalAssetAmount || '',
     },
   })
 
@@ -188,13 +188,18 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       )
       if (defaultTotalAssetAmount) {
         setValue('totalAssetAmount', defaultTotalAssetAmount)
+      } else if (assetMap[preselectedAsset.assetId]) {
+        const info = assetMap[preselectedAsset.assetId]
+        const maxCapacity =
+          info.max_channel_amount / Math.pow(10, info.precision)
+        setValue('totalAssetAmount', maxCapacity.toString())
       }
       setChannelType('asset')
     } else if (!isOpen) {
       setChannelType(preselectedAsset ? 'asset' : 'btc')
       setShowCustomInput(false)
     }
-  }, [defaultTotalAssetAmount, preselectedAsset, isOpen, setValue])
+  }, [assetMap, defaultTotalAssetAmount, preselectedAsset, isOpen, setValue])
 
   // Calculate available liquidity
   const channels =
@@ -337,7 +342,11 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
   // Set default total asset amount to max capacity when asset is selected
   useEffect(() => {
-    if (assetId && assetMap[assetId] && totalAssetAmount === '0') {
+    if (
+      assetId &&
+      assetMap[assetId] &&
+      (!totalAssetAmount || totalAssetAmount === '0')
+    ) {
       const maxCapacity =
         assetMap[assetId].max_channel_amount /
         Math.pow(10, assetMap[assetId].precision)
@@ -806,7 +815,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         onClick={handleClose}
       />
       <div
-        className={`relative bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl border border-border-subtle/50 shadow-2xl w-full ${
+        className={`relative bg-surface-base rounded-2xl border border-border-subtle/50 shadow-2xl w-full ${
           step === 2 ? 'max-w-6xl' : 'max-w-2xl'
         } max-h-full overflow-y-auto flex flex-col`}
         ref={modalShellRef}
@@ -818,9 +827,9 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         )}
 
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-gray-900 to-gray-950 border-b border-border-subtle/50 p-6 flex items-center justify-between z-10 shrink-0">
+        <div className="sticky top-0 bg-surface-base border-b border-border-subtle/50 p-6 flex items-center justify-between z-10 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            <h2 className="text-2xl font-bold text-white">
               {step === 1
                 ? channelType === 'asset'
                   ? t('components.buyChannelModal.openAssetLightningChannel')
@@ -993,7 +1002,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   <button
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
                       channelType === 'asset'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        ? 'bg-gradient-to-r from-orange-400/25 to-red-600/25 text-orange-300 border border-orange-400/50'
                         : 'text-content-secondary hover:text-content-primary'
                     }`}
                     onClick={() => {
@@ -1083,8 +1092,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                       <button
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                           currentCapacity === preset && !showCustomInput
-                            ? 'bg-primary/20 text-primary border-primary/50'
-                            : 'bg-surface-overlay text-content-secondary border-transparent hover:border-border-default hover:text-content-primary'
+                            ? 'bg-white/20 text-white border-white/40'
+                            : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/25'
                         }`}
                         key={preset}
                         onClick={() => {
@@ -1107,8 +1116,8 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     <button
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                         showCustomInput || isCustomCapacity
-                          ? 'bg-primary/20 text-primary border-primary/50'
-                          : 'bg-surface-overlay text-content-secondary border-transparent hover:border-border-default hover:text-content-primary'
+                          ? 'bg-white/20 text-white border-white/40'
+                          : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/25'
                       }`}
                       onClick={() => setShowCustomInput(true)}
                       type="button"
@@ -1178,11 +1187,11 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     <div className="flex flex-wrap gap-2">
                       {assetPresetsCalc.map((preset) => (
                         <button
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                             Math.abs(usdtTotal - preset) < 0.001 &&
                             !showCustomAssetCapacity
-                              ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'
-                              : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-cyan-400/30 hover:text-content-primary'
+                              ? 'bg-white/20 text-white border-white/40'
+                              : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/25'
                           }`}
                           key={preset}
                           onClick={() => {
@@ -1202,10 +1211,10 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                         </button>
                       ))}
                       <button
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
                           showCustomAssetCapacity || isCustomAssetTotal
-                            ? 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'
-                            : 'bg-surface-overlay text-content-secondary border border-border-subtle hover:border-cyan-400/30 hover:text-content-primary'
+                            ? 'bg-white/20 text-white border-white/40'
+                            : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/25'
                         }`}
                         onClick={() => setShowCustomAssetCapacity((v) => !v)}
                         type="button"
@@ -1276,9 +1285,9 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               )}
 
               {/* Confirmation notice */}
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-surface-overlay/30 border border-border-subtle">
-                <Clock className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <p className="text-yellow-200/80 text-xs">
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-400/10 border border-amber-400/25">
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-amber-200 text-xs">
                   Channel requires ~6 on-chain confirmations (~1 hour). Your
                   liquidity will be ready to trade once confirmed.
                 </p>
@@ -1318,7 +1327,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               {/* Actions */}
               <div className="flex gap-3 pt-1">
                 <button
-                  className="flex-1 px-4 py-2.5 bg-surface-high hover:bg-surface-elevated text-white rounded-xl font-medium transition-colors text-sm"
+                  className="flex-1 px-4 py-2.5 bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white rounded-xl font-semibold transition-colors text-sm"
                   onClick={handleClose}
                   type="button"
                 >

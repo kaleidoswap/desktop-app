@@ -308,7 +308,7 @@
     "description": "View your transaction history, including deposits, payments, withdrawals, and swaps.",
     "bitcoin": "Bitcoin",
     "deposits": "Deposits",
-    "paymentsWithdrawals": "Payments & Withdrawals",
+    "paymentsWithdrawals": "Withdrawals",
     "swaps": "Swaps",
     "assets": "Assets",
     "channelOrders": "Channel Orders"
@@ -347,6 +347,14 @@
     "localNodeTitle": "Local Node",
     "localNodeDescription": "Run a node on your local machine. Ideal for developers and testing environments.",
     "localNodeNotSupported": "Local node is not supported on Windows. Use a remote node connection instead.",
+    "backendNative": "Native Binary",
+    "backendNativeDescription": "Run the node as a local process. No Docker required.",
+    "backendDocker": "Docker Container",
+    "backendDockerDescription": "Run the node in a Docker container. Works on all platforms.",
+    "backendUnavailable": "Not available",
+    "recommended": "Recommended",
+    "noBackendAvailable": "No backend detected",
+    "noBackendHint": "Install and start Docker Desktop to run a local node on this platform.",
     "backToOptions": "Back to Connection Options",
     "setupLocalTitle": "Set Up Local Node",
     "setupLocalSubtitle": "Choose an option to get started with your local RGB Lightning node",
@@ -369,6 +377,7 @@
   "createChannel": {
     "checkingBalance": "Checking balance...",
     "retry": "Retry",
+    "goBack": "Go Back",
     "stepPeerConnection": "Peer Connection",
     "stepChannelSettings": "Channel Settings",
     "stepReviewConfirm": "Review & Confirm",
@@ -1349,7 +1358,7 @@
     },
     "main": {
       "errorLoading": "Error loading nodes: {{error}}",
-      "title": "Your Nodes",
+      "title": "Your Accounts",
       "exitEditMode": "Exit Edit Mode",
       "enterEditMode": "Enter Edit Mode",
       "editNodes": "Edit Nodes",
@@ -1464,6 +1473,7 @@
       "lspFetchSuccess": "LSP information fetched successfully",
       "lspUrlMissing": "Failed to get LSP connection URL",
       "lspFetchFailed": "Failed to fetch LSP information",
+      "infoMessage": "Open a channel with a market maker to start trading RGB assets instantly.",
       "timeout": "Request timed out. The LSP server is not responding. Please check the URL and try again.",
       "networkError": "Network error. Please check your connection and the LSP URL.",
       "waitForConnectionUrl": "Please wait for LSP connection URL to be fetched",
@@ -1967,7 +1977,8 @@
     },
     "status": {
       "open": "Open",
-      "pending": "Pending"
+      "pending": "Pending",
+      "offline": "Offline"
     },
     "labels": {
       "capacity": "Capacity",
@@ -2021,6 +2032,9 @@
       "colorable": "Colorable UTXOs",
       "colored": "Colored UTXOs",
       "normal": "Normal UTXOs"
+    },
+    "filter": {
+      "all": "All"
     },
     "empty": "No UTXOs found. Create some to get started."
   },
@@ -2098,13 +2112,18 @@
         "rgbNote": "Note: 3,000 sats are required for RGB asset transfers.",
         "noChannels": "Warning: No active Lightning channels found. Lightning deposits are unavailable.",
         "exceeds": "Amount exceeds maximum available: {{amount}} {{asset}}",
-        "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount"
+        "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount",
+        "btcPlaceholder": "Enter amount (optional)"
+      },
+      "bip21": {
+        "badge": "Unified BIP21"
       },
       "actions": {
         "copy": "Copy to clipboard",
         "generateAddress": "Generate new address",
         "generateAddressCta": "Generate Address",
-        "generateInvoice": "Generate Invoice"
+        "generateInvoice": "Generate Invoice",
+        "regenerate": "Generate New Addresses"
       },
       "labels": {
         "lnInvoice": "LN Invoice",
@@ -2658,7 +2677,7 @@
       "availableLabel": "Available",
       "capacityFee": "Capacity fee",
       "discount": "Discount",
-      "continue": "Continue ->",
+      "continue": "Continue",
       "confirmationTime": "Confirmation Time:",
       "durationFee": "Duration fee",
       "expiresLabel": "Expires",
@@ -2709,7 +2728,7 @@
       "completePayment": "Complete Payment",
       "orderStatus": "Order Status",
       "reviewAndConfirm": "Review and confirm or customize your purchase",
-      "configureChannel": "Configure your channel and asset parameters",
+      "configureChannel": "Configure your channel and asset parameters.",
       "payForChannel": "Pay for your channel to complete the order",
       "orderCompleted": "Channel order completed successfully!",
       "orderStatusSubtitle": "Order status",
@@ -2877,7 +2896,7 @@
       "buyButton": "Buy USDT Channel",
       "onChainTitle": "Open with On-Chain USDT",
       "onChainBalance": "On-chain balance: {{amount}} USDT",
-      "noOnChain": "No on-chain USDT available",
+      "noOnChain": "No on-chain USDT available.",
       "useAll": "Use all",
       "usdtAmountLabel": "USDT amount",
       "capacityLabel": "Channel capacity",

@@ -48,24 +48,27 @@
 
 ## Features 🚀
 
-- **Asset Trading and Swapping**: Connect to market makers over the Lightning Network to trade BTC and RGB assets.
+- **Asset Trading and Swapping**: Connect to market makers over the Lightning Network to trade BTC and RGB assets with support for reverse quotes.
 - **DCA Automation**: Create recurring or price-target DCA orders that buy BTC using your USDT Lightning balance.
+- **Limit Orders**: Set limit orders with persistent scheduling and automatic execution.
 - **Channel Management**: Open, close, and manage Lightning channels with optional RGB assets.
 - **Deposits & Withdrawals**: Handle on-chain and LN transactions for both Bitcoin and RGB assets.
 - **Channel Requests**: Request channels from Lightning Service Providers (LSPs) with configurable capacity and included assets.
 - **Transaction History**: View deposits, withdrawals, and swap history.
-- **Local and Remote Node Support**: Run a local RGB Lightning node from the app or connect to a remote node.
+- **Local, Docker, and Remote Node Support**: Run a local RGB Lightning node natively, via Docker, or connect to a remote node.
+- **Node Health Monitoring**: Continuous reachability checks with automatic reconnection and clear status indicators.
 - **Tray and Background Operation**: Keep the app running in the background while the local node stays active.
 - **Multi-language UI**: Use the app in multiple supported languages through the built-in i18n system.
 - **Node Backup**: Secure node data backups directly from the settings.
 
 ## Supported Networks
 
+- **Mainnet** (experimental)
 - **Regtest**
 - **Signet**
 - **Testnet3**
 
-> **Note**: These networks are recommended for testing and development. Avoid using real funds on mainnet until further notice.
+> **Note**: Mainnet support is experimental. Test networks are recommended for testing and development. Use real funds at your own risk.
 
 ## Installation 🛠️
 
@@ -168,7 +171,8 @@ gpg: Good signature from "Walter Maffione <your-email>"
 
 1. **Launch** Kaleidoswap.
 2. **Choose your node mode** during setup:
-   - Run a local instance of [rgb-lightning-node](https://github.com/RGB-Tools/rgb-lightning-node) managed by the app, or
+   - Run a local instance of [rgb-lightning-node](https://github.com/RGB-Tools/rgb-lightning-node) managed by the app (native binary),
+   - Run the node via **Docker** (automatic image pull and container management), or
    - Connect to an existing remote node.
 3. **Review connection settings** in the app when needed:
    - Node URL
@@ -200,6 +204,7 @@ gpg: Good signature from "Walter Maffione <your-email>"
 ### Deposits and Withdrawals
 
 - Perform Bitcoin or RGB asset deposits/withdrawals either on-chain or via Lightning.
+- Use BIP21 deposit URIs for convenient on-chain Bitcoin deposits.
 - Monitor your transaction history to verify operations.
 
 ### Backup

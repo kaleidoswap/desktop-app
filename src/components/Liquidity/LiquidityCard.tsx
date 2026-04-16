@@ -28,29 +28,29 @@ const toneClasses: Record<
     glow: 'from-amber-400/35 via-amber-300/10 to-transparent',
     icon: 'bg-amber-400/12 text-amber-300 ring-1 ring-amber-400/20',
   },
-  emerald: {
-    border:
-      'border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.12),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
-    glow: 'from-emerald-400/35 via-emerald-300/10 to-transparent',
-    icon: 'bg-emerald-400/12 text-emerald-300 ring-1 ring-emerald-400/20',
-  },
-  violet: {
-    border:
-      'border-violet-400/20 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
-    glow: 'from-violet-400/35 via-violet-300/10 to-transparent',
-    icon: 'bg-violet-400/12 text-violet-300 ring-1 ring-violet-400/20',
-  },
   cyan: {
     border:
       'border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
     glow: 'from-cyan-400/35 via-sky-300/10 to-transparent',
     icon: 'bg-cyan-400/12 text-cyan-300 ring-1 ring-cyan-400/20',
   },
+  emerald: {
+    border:
+      'border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.12),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
+    glow: 'from-emerald-400/35 via-emerald-300/10 to-transparent',
+    icon: 'bg-emerald-400/12 text-emerald-300 ring-1 ring-emerald-400/20',
+  },
   neutral: {
     border:
       'border-border-subtle bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
     glow: 'from-primary/20 via-primary/5 to-transparent',
     icon: 'bg-surface-overlay text-content-primary ring-1 ring-border-subtle',
+  },
+  violet: {
+    border:
+      'border-violet-400/20 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))]',
+    glow: 'from-violet-400/35 via-violet-300/10 to-transparent',
+    icon: 'bg-violet-400/12 text-violet-300 ring-1 ring-violet-400/20',
   },
 }
 

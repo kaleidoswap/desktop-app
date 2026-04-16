@@ -25,7 +25,6 @@ import { NetworkSelector } from '../../components/NetworkSelector'
 import { Spinner } from '../../components/Spinner'
 import {
   Button,
-  Card,
   Alert,
   FormField,
   Input,
@@ -209,9 +208,9 @@ export const Component = () => {
     defaultValues: {
       backup_path: '',
       name: t('walletRestore.defaultAccountName'),
-      network: 'Regtest' as BitcoinNetwork,
+      network: 'SignetCustom' as BitcoinNetwork,
       password: '',
-      ...NETWORK_DEFAULTS['Regtest'],
+      ...NETWORK_DEFAULTS['SignetCustom'],
     },
   })
 
@@ -520,125 +519,121 @@ export const Component = () => {
               {currentStep === 'backup-selection' && (
                 <div className="max-w-2xl mx-auto">
                   <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <Card className="p-6 mb-6">
-                      <div className="space-y-6">
-                        {additionalErrors.length > 0 && (
-                          <Alert
-                            icon={<AlertCircle className="w-5 h-5" />}
-                            title={t('common.error')}
-                            variant="error"
-                          >
-                            <ul className="text-sm space-y-1">
-                              {additionalErrors.map((error, index) => (
-                                <li
-                                  className="flex items-center gap-2"
-                                  key={index}
-                                >
-                                  <span>•</span> {error}
-                                </li>
-                              ))}
-                            </ul>
-                          </Alert>
-                        )}
-
-                        <FormField
-                          description={t(
-                            'walletRestore.accountNameDescription'
-                          )}
-                          error={form.formState.errors.name?.message}
-                          htmlFor="name"
-                          label={t('walletRestore.accountName')}
+                    <div className="space-y-6">
+                      {additionalErrors.length > 0 && (
+                        <Alert
+                          icon={<AlertCircle className="w-5 h-5" />}
+                          title={t('common.error')}
+                          variant="error"
                         >
-                          <Input
-                            id="name"
-                            placeholder={t(
-                              'walletRestore.accountNamePlaceholder'
-                            )}
-                            {...form.register('name', {
-                              required: t('walletRestore.accountNameRequired'),
-                            })}
-                            error={!!form.formState.errors.name}
-                          />
-                        </FormField>
+                          <ul className="text-sm space-y-1">
+                            {additionalErrors.map((error, index) => (
+                              <li
+                                className="flex items-center gap-2"
+                                key={index}
+                              >
+                                <span>•</span> {error}
+                              </li>
+                            ))}
+                          </ul>
+                        </Alert>
+                      )}
 
-                        <NetworkSelector
-                          className="mb-2"
-                          onChange={(network) =>
-                            form.setValue('network', network)
-                          }
-                          selectedNetwork={form.watch('network')}
+                      <FormField
+                        description={t('walletRestore.accountNameDescription')}
+                        error={form.formState.errors.name?.message}
+                        htmlFor="name"
+                        label={t('walletRestore.accountName')}
+                      >
+                        <Input
+                          id="name"
+                          placeholder={t(
+                            'walletRestore.accountNamePlaceholder'
+                          )}
+                          {...form.register('name', {
+                            required: t('walletRestore.accountNameRequired'),
+                          })}
+                          error={!!form.formState.errors.name}
                         />
+                      </FormField>
 
-                        <FormField
-                          description={t('walletRestore.backupFileDescription')}
-                          error={form.formState.errors.backup_path?.message}
-                          htmlFor="backup_path"
-                          label={t('walletRestore.backupFile')}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Input
-                              error={!!form.formState.errors.backup_path}
-                              id="backup_path"
-                              placeholder={t(
-                                'walletRestore.backupFilePlaceholder'
-                              )}
-                              readOnly
-                              value={form.watch('backup_path')}
-                            />
-                            <Button
-                              className="flex-shrink-0"
-                              onClick={handleSelectBackupFile}
-                              type="button"
-                              variant="outline"
-                            >
-                              <Folder className="w-5 h-5" />
-                            </Button>
-                          </div>
-                        </FormField>
+                      <NetworkSelector
+                        className="mb-2"
+                        onChange={(network) =>
+                          form.setValue('network', network)
+                        }
+                        selectedNetwork={form.watch('network')}
+                      />
 
-                        <FormField
-                          description={t('walletRestore.passwordDescription')}
-                          error={form.formState.errors.password?.message}
-                          htmlFor="password"
-                          label={t('walletRestore.password')}
-                        >
-                          <PasswordInput
-                            id="password"
-                            isVisible={isPasswordVisible}
-                            onToggleVisibility={() =>
-                              setIsPasswordVisible(!isPasswordVisible)
-                            }
-                            placeholder={t('walletRestore.passwordPlaceholder')}
-                            {...form.register('password', {
-                              required: t('walletRestore.passwordRequired'),
-                            })}
-                            error={!!form.formState.errors.password}
+                      <FormField
+                        description={t('walletRestore.backupFileDescription')}
+                        error={form.formState.errors.backup_path?.message}
+                        htmlFor="backup_path"
+                        label={t('walletRestore.backupFile')}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Input
+                            error={!!form.formState.errors.backup_path}
+                            id="backup_path"
+                            placeholder={t(
+                              'walletRestore.backupFilePlaceholder'
+                            )}
+                            readOnly
+                            value={form.watch('backup_path')}
                           />
-                        </FormField>
+                          <Button
+                            className="flex-shrink-0"
+                            onClick={handleSelectBackupFile}
+                            type="button"
+                            variant="outline"
+                          >
+                            <Folder className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </FormField>
 
-                        <AdvancedSettings>
-                          <NetworkSettings form={form} />
-                        </AdvancedSettings>
-                      </div>
+                      <FormField
+                        description={t('walletRestore.passwordDescription')}
+                        error={form.formState.errors.password?.message}
+                        htmlFor="password"
+                        label={t('walletRestore.password')}
+                      >
+                        <PasswordInput
+                          id="password"
+                          isVisible={isPasswordVisible}
+                          onToggleVisibility={() =>
+                            setIsPasswordVisible(!isPasswordVisible)
+                          }
+                          placeholder={t('walletRestore.passwordPlaceholder')}
+                          {...form.register('password', {
+                            required: t('walletRestore.passwordRequired'),
+                          })}
+                          error={!!form.formState.errors.password}
+                        />
+                      </FormField>
 
-                      <div className="pt-6">
-                        <Button
-                          className="w-full"
-                          disabled={isStartingNode || isSubmitting.current}
-                          size="lg"
-                          type="submit"
-                        >
-                          {isStartingNode ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <Spinner size="sm" />
-                              {t('walletRestore.restoring')}
-                            </span>
-                          ) : (
-                            t('walletRestore.restoreWallet')
-                          )}
-                        </Button>
-                      </div>
-                    </Card>
+                      <AdvancedSettings>
+                        <NetworkSettings form={form} />
+                      </AdvancedSettings>
+                    </div>
+
+                    <div className="pt-6">
+                      <Button
+                        className="w-full"
+                        disabled={isStartingNode || isSubmitting.current}
+                        size="lg"
+                        type="submit"
+                      >
+                        {isStartingNode ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Spinner size="sm" />
+                            {t('walletRestore.restoring')}
+                          </span>
+                        ) : (
+                          t('walletRestore.restoreWallet')
+                        )}
+                      </Button>
+                    </div>
                   </form>
                 </div>
               )}

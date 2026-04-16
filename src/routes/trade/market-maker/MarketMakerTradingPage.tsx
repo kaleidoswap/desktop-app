@@ -7,7 +7,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { getKaleidoClient } from '../../../api/client'
-import { webSocketService } from '../../../app/hubs/websocketService'
+import {
+  onQuoteResponse,
+  webSocketService,
+} from '../../../app/hubs/websocketService'
 import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
 import { useSettings } from '../../../hooks/useSettings'
@@ -70,6 +73,7 @@ import {
 } from './formUtils'
 import {
   createQuoteRequestHandler,
+  createReverseQuoteRequestHandler,
   startQuoteRequestTimer,
   stopQuoteRequestTimer,
   createAmountChangeQuoteHandler,
@@ -155,8 +159,10 @@ export const Component = () => {
   const [max_outbound_htlc_sat, setMaxOutboundHtlcSat] = useState(0)
 
   const [isToAmountLoading, setIsToAmountLoading] = useState(true)
+  const [isFromAmountLoading, setIsFromAmountLoading] = useState(false)
   const [isPriceLoading, setIsPriceLoading] = useState(true)
   const [isQuoteLoading, setIsQuoteLoading] = useState(false)
+  const lastQuoteDirectionRef = useRef<'from' | 'to'>('from')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [fees, setFees] = useState({
@@ -388,6 +394,8 @@ export const Component = () => {
 
   // Create a ref to track the quote response
   const lastQuoteResponseRef = useRef<any>(null)
+  const lastReverseQuoteRef = useRef<any>(null)
+  const reverseQuoteTimerRef = useRef<any>(null)
   const [quoteResponseTimestamp, setQuoteResponseTimestamp] = useState(0)
 
   // Update quote request handler with loading state setters
@@ -417,6 +425,31 @@ export const Component = () => {
     ]
   )
 
+  // Reverse quote request handler (for setting to_amount to get from_amount)
+  const requestReverseQuote = useMemo(
+    () =>
+      createReverseQuoteRequestHandler(
+        form,
+        parseAssetAmount,
+        assets,
+        tradablePairs,
+        setIsQuoteLoading,
+        setIsFromAmountLoading,
+        () => hasValidQuote,
+        maxToAmount,
+        t
+      ),
+    [
+      form,
+      parseAssetAmount,
+      assets,
+      tradablePairs,
+      hasValidQuote,
+      maxToAmount,
+      t,
+    ]
+  )
+
   // Replace the quoteResponse selector with a simpler version that only uses the latest quote
   const quoteResponse = useAppSelector((state) => {
     const fromAsset = form.getValues().fromAsset
@@ -442,6 +475,10 @@ export const Component = () => {
   // Update the quote response effect to handle connection errors
   useEffect(() => {
     if (!quoteResponse) {
+      // In reverse mode, the callback handles all state — skip the null handler
+      // to prevent it from clearing rfq_id/hasValidQuote set by the reverse handler.
+      if (lastQuoteDirectionRef.current === 'to') return
+
       // Quote was cleared or not found
       try {
         window.requestAnimationFrame(() => {
@@ -530,10 +567,13 @@ export const Component = () => {
           setQuoteExpiresAt(null)
           form.setValue('to', '')
           form.setValue('rfq_id', '')
-          // Request a fresh quote
           debouncedQuoteRequest(requestQuote)
           return
         }
+
+        // Skip forward quote processing when in reverse mode — the reverse
+        // callback handles setting the from field, rfq_id, fees, etc.
+        if (lastQuoteDirectionRef.current === 'to') return
 
         setQuoteResponseTimestamp(now)
         setIsToAmountLoading(false)
@@ -671,17 +711,17 @@ export const Component = () => {
   const [getInfo] = makerApi.endpoints.get_info.useLazyQuery()
 
   // Function to get SDK client for maker API calls
-  const state = useAppSelector((state) => state)
+  const nodeSettings = useAppSelector((state) => state.nodeSettings)
   const getClient = useCallback(async () => {
-    return await getKaleidoClient(state)
-  }, [state])
+    return await getKaleidoClient({ nodeSettings })
+  }, [nodeSettings])
 
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
     undefined,
     {
       pollingInterval: 30000,
       refetchOnFocus: false,
-      refetchOnMountOrArgChange: true,
+      refetchOnMountOrArgChange: false,
       refetchOnReconnect: false,
     }
   )
@@ -758,6 +798,85 @@ export const Component = () => {
     },
     [assets, bitcoinUnit]
   )
+
+  // Reverse quote listener — uses module-level callback (zero overhead when not in reverse mode).
+  // This processes the quote response and populates the "from" field when direction is 'to'.
+  // Uses refs to avoid stale closure issues — the effect runs once and reads current values via refs.
+  const formatAmountRef = useRef(formatAmount)
+  formatAmountRef.current = formatAmount
+
+  useEffect(() => {
+    onQuoteResponse((quote: any, requestDirection: 'from' | 'to') => {
+      // Only process responses that originated from a reverse (to_amount) request.
+      // Forward quote responses are handled by the Redux selector + effect.
+      if (requestDirection !== 'to' || lastQuoteDirectionRef.current !== 'to')
+        return
+
+      logger.debug(
+        `[ReverseQuote] Processing: ${quote.from_asset?.ticker}->${quote.to_asset?.ticker}, rfq_id=${quote.rfq_id}`
+      )
+
+      const fromAsset = form.getValues().fromAsset
+      const toAsset = form.getValues().toAsset
+      if (
+        !fromAsset ||
+        !toAsset ||
+        quote.from_asset?.ticker !== fromAsset ||
+        quote.to_asset?.ticker !== toAsset
+      ) {
+        logger.debug(
+          `[ReverseQuote] Pair mismatch: form=${fromAsset}->${toAsset}, quote=${quote.from_asset?.ticker}->${quote.to_asset?.ticker}`
+        )
+        return
+      }
+
+      if (
+        lastReverseQuoteRef.current &&
+        quote.rfq_id === lastReverseQuoteRef.current.rfq_id
+      ) {
+        return // Same quote already processed
+      }
+
+      lastReverseQuoteRef.current = quote
+
+      // Format and set the "from" field (the output in reverse mode)
+      const fromTicker = quote.from_asset.ticker
+      let displayFromAmount = quote.from_asset.amount
+      if (fromTicker === 'BTC') {
+        displayFromAmount = Math.round(displayFromAmount / MSATS_PER_SAT)
+      }
+      const formatted = formatAmountRef.current(displayFromAmount, fromTicker)
+      logger.debug(
+        `[ReverseQuote] Setting from=${formatted}, rfq_id=${quote.rfq_id}`
+      )
+      form.setValue('from', formatted)
+      setDebouncedFromAmount(formatted)
+      setIsFromAmountLoading(false)
+      setIsQuoteLoading(false)
+
+      setHasValidQuote(true)
+      setQuoteExpiresAt(quote.expires_at || null)
+
+      if (quote.price) setCurrentPrice(quote.price)
+      if (quote.rfq_id) form.setValue('rfq_id', quote.rfq_id)
+      if (quote.from_asset?.asset_id)
+        form.setValue('fromAssetId', quote.from_asset.asset_id)
+      if (quote.to_asset?.asset_id)
+        form.setValue('toAssetId', quote.to_asset.asset_id)
+
+      setErrorMessage((prev) => {
+        if (prev && prev.includes('awaiting confirmation')) return prev
+        return null
+      })
+    })
+    return () => {
+      onQuoteResponse(null)
+      if (reverseQuoteTimerRef.current) {
+        clearTimeout(reverseQuoteTimerRef.current)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Handle quote errors immediately to reset loading states
   useEffect(() => {
@@ -990,7 +1109,7 @@ export const Component = () => {
         }
 
         const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        const maxTradableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
+        const maxTradableAmount = Math.max(0, maxHtlcLimit - RGB_HTLC_MIN_SAT)
         setMaxOutboundHtlcSat(maxTradableAmount)
         return maxTradableAmount
       } else {
@@ -1889,48 +2008,50 @@ export const Component = () => {
       setupRunningRef.current = true
 
       try {
-        // Phase 1: Get node info and channels first
-
-        // Always fetch BTC balance and LSP info for potential onchain trading
-        logger.info('💰 Fetching BTC balance and LSP info...')
+        // Phase 1: Fetch all independent data in parallel
+        logger.info(
+          '🚀 Fetching balance, LSP info, node info, and channels in parallel...'
+        )
         setLoadingPhase('validating-balance')
 
-        const balanceResponse = await btcBalance()
+        const [
+          balanceResponse,
+          lspInfoResult,
+          nodeInfoResponse,
+          channelsResponse,
+        ] = await Promise.all([
+          btcBalance(),
+          getInfo().catch((error: any) => {
+            if (error?.status === 'TIMEOUT_ERROR') {
+              logger.warn(
+                '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
+              )
+            } else {
+              logger.warn(
+                '⚠️ Failed to fetch LSP info, continuing without channel limits:',
+                error
+              )
+            }
+            return null
+          }),
+          nodeInfo(),
+          listChannels(),
+        ])
+
+        const lspInfoResponse: any =
+          lspInfoResult && 'error' in lspInfoResult && lspInfoResult.error
+            ? (logger.warn(
+                '⚠️ LSP info fetch failed, continuing without channel limits'
+              ),
+              null)
+            : lspInfoResult
 
         if (!('data' in balanceResponse) || !balanceResponse.data) {
           logger.error('❌ Failed to get balance data')
           throw new Error('Failed to get balance information')
         }
 
-        let lspInfoResponse: any = null
-        try {
-          lspInfoResponse = await getInfo()
-          if (lspInfoResponse.error) {
-            logger.warn(
-              '⚠️ LSP info fetch failed, continuing without channel limits'
-            )
-          }
-        } catch (error: any) {
-          if (error?.status === 'TIMEOUT_ERROR') {
-            logger.warn(
-              '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
-            )
-          } else {
-            logger.warn(
-              '⚠️ Failed to fetch LSP info, continuing without channel limits:',
-              error
-            )
-          }
-        }
-
-        logger.info('🔗 Phase 1: Checking channels and node info')
         setLoadingPhase('validating-channels')
-
-        // Get node info and channels in parallel
-        const [nodeInfoResponse, channelsResponse] = await Promise.all([
-          nodeInfo(),
-          listChannels(),
-        ])
 
         // Validate node info
         if (!('data' in nodeInfoResponse) || !nodeInfoResponse.data) {
@@ -2917,6 +3038,8 @@ export const Component = () => {
       )
       const quoteHandler = createAmountChangeQuoteHandler(requestQuote)
 
+      lastQuoteDirectionRef.current = 'from'
+      lastReverseQuoteRef.current = null
       baseHandler(event)
       setDebouncedFromAmount(event.target.value || '')
       quoteHandler(event)
@@ -2926,17 +3049,36 @@ export const Component = () => {
 
   const handleToAmountChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
+      // Only trigger reverse quotes for real user input, not programmatic setValue from forward quotes
+      if (!event.isTrusted) return
+
       const baseHandler = createToAmountChangeHandler(
         form,
         getAssetPrecisionWrapper,
         maxToAmount
       )
-      const quoteHandler = createAmountChangeQuoteHandler(requestQuote)
-
       baseHandler(event)
-      quoteHandler(event)
+
+      // Cancel any pending reverse quote request
+      if (reverseQuoteTimerRef.current) {
+        clearTimeout(reverseQuoteTimerRef.current)
+        reverseQuoteTimerRef.current = null
+      }
+
+      const value = event.target.value.replace(/[^\d.]/g, '')
+      if (value && parseFloat(value) > 0) {
+        lastQuoteDirectionRef.current = 'to'
+        setIsFromAmountLoading(true)
+        reverseQuoteTimerRef.current = setTimeout(() => {
+          requestReverseQuote()
+          reverseQuoteTimerRef.current = null
+        }, 500)
+      } else {
+        setIsFromAmountLoading(false)
+        setIsQuoteLoading(false)
+      }
     },
-    [form, getAssetPrecisionWrapper, maxToAmount, requestQuote]
+    [form, getAssetPrecisionWrapper, maxToAmount, requestReverseQuote]
   )
 
   // Simplified loading state based on validation phase
@@ -3241,6 +3383,7 @@ export const Component = () => {
                   hasChannels={hasChannels}
                   hasTradablePairs={hasTradablePairs}
                   hasValidQuote={hasValidQuote}
+                  isFromAmountLoading={isFromAmountLoading}
                   isPriceLoading={isPriceLoading}
                   isQuoteLoading={isQuoteLoading}
                   isSwapInProgress={isSwapInProgress}

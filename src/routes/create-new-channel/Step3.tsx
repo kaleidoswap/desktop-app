@@ -131,7 +131,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mb-6">
+      <div className="text-center mt-16 mb-10">
         <h3 className="text-3xl font-bold text-white mb-2">
           {t('createChannel.step3.title')}
         </h3>

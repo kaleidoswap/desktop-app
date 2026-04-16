@@ -136,9 +136,9 @@ export function categorizeError(
   ) {
     return {
       category: ErrorCategory.UTXO,
+      isRetryable: false,
       message,
       originalError: error,
-      isRetryable: false,
       statusCode,
     }
   }
@@ -151,9 +151,9 @@ export function categorizeError(
   ) {
     return {
       category: ErrorCategory.NODE_STATE,
+      isRetryable: true,
       message,
       originalError: error,
-      isRetryable: true,
       statusCode,
     }
   }
@@ -164,54 +164,54 @@ export function categorizeError(
       case statusCode === 401:
         return {
           category: ErrorCategory.AUTHENTICATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 403:
         return {
           category: ErrorCategory.AUTHORIZATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 404:
         return {
           category: ErrorCategory.NOT_FOUND,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 422:
         return {
           category: ErrorCategory.VALIDATION,
+          isRetryable: false,
           message,
           originalError: error,
-          isRetryable: false,
           statusCode,
         }
 
       case statusCode === 429:
         return {
           category: ErrorCategory.RATE_LIMIT,
+          isRetryable: true,
           message,
           originalError: error,
-          isRetryable: true,
           statusCode,
         }
 
       case statusCode >= 500:
         return {
           category: ErrorCategory.SERVER,
+          isRetryable: true,
           message,
           originalError: error,
-          isRetryable: true,
           statusCode,
         }
     }
@@ -219,17 +219,22 @@ export function categorizeError(
 
   // Check for network errors
   const errorStr = String(error).toLowerCase()
+  const messageLower = message.toLowerCase()
   if (
     errorStr.includes('network') ||
     errorStr.includes('fetch') ||
     errorStr.includes('timeout') ||
-    errorStr.includes('connection')
+    errorStr.includes('connection') ||
+    messageLower.includes('load failed') || // WebKit (Tauri macOS/iOS webview)
+    messageLower.includes('failed to fetch') || // Chromium (WebView2 on Windows)
+    messageLower.includes('networkerror') || // Firefox
+    messageLower.includes('network request failed') // React Native / other runtimes
   ) {
     return {
       category: ErrorCategory.NETWORK,
+      isRetryable: true,
       message,
       originalError: error,
-      isRetryable: true,
       statusCode,
     }
   }
@@ -237,9 +242,9 @@ export function categorizeError(
   // Default: unknown error
   return {
     category: ErrorCategory.UNKNOWN,
+    isRetryable: false,
     message,
     originalError: error,
-    isRetryable: false,
     statusCode,
   }
 }
@@ -250,13 +255,22 @@ export function categorizeError(
 export function transformSdkError(error: unknown): FetchBaseQueryError {
   const categorized = categorizeError(error)
 
-  return {
-    status: categorized.statusCode || 500,
-    data: {
+  // Network errors (connection refused, unreachable host, etc.) should use
+  // RTK Query's string-status format so callers can check `status === 'FETCH_ERROR'`.
+  if (categorized.category === ErrorCategory.NETWORK) {
+    return {
       error: categorized.message,
+      status: 'FETCH_ERROR',
+    }
+  }
+
+  return {
+    data: {
       category: categorized.category,
       code: categorized.code,
+      error: categorized.message,
     } as ApiErrorResponse,
+    status: categorized.statusCode || 500,
   }
 }
 

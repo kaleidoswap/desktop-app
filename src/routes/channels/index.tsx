@@ -3,7 +3,6 @@ import {
   Zap,
   ArrowUpRight,
   ArrowDownRight,
-  Info,
   PlusCircle,
   AlertCircle,
   Layers,
@@ -341,15 +340,31 @@ export const Component: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-b from-surface-base to-surface-base py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
+    <div className="w-full text-white px-4 py-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold">{t('channels.pageTitle')}</h1>
-          <p className="text-content-secondary text-sm mt-1">
-            {lastUpdated
-              ? t('channels.lastUpdated', { time: formatTimeAgo(lastUpdated) })
-              : t('channels.loadingData')}
-          </p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <p className="text-content-secondary text-sm">
+              {lastUpdated
+                ? t('channels.lastUpdated', {
+                    time: formatTimeAgo(lastUpdated),
+                  })
+                : t('channels.loadingData')}
+            </p>
+            <button
+              className="p-0.5 rounded text-content-secondary hover:text-content-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={isLoading}
+              onClick={() => void refreshData()}
+              title={
+                isLoading ? t('channels.refreshing') : t('channels.refresh')
+              }
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+              />
+            </button>
+          </div>
         </div>
         <div className="flex gap-3">
           <button
@@ -365,20 +380,6 @@ export const Component: React.FC = () => {
           >
             <ShoppingCart className="mr-2 h-4 w-4" />
             {t('channels.buyChannel')}
-          </button>
-          <button
-            className={`px-4 py-2.5 rounded-lg border border-border-default bg-surface-overlay hover:bg-surface-high transition text-content-primary font-medium flex items-center ${
-              isLoading ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
-            disabled={isLoading}
-            onClick={() => {
-              void refreshData()
-            }}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-            />
-            {isLoading ? t('channels.refreshing') : t('channels.refresh')}
           </button>
         </div>
       </div>
@@ -412,39 +413,54 @@ export const Component: React.FC = () => {
 
           <div className="flex items-center space-x-2">
             {/* Channel type tabs */}
-            <div className="bg-surface-base/80 rounded-lg p-1 flex shadow-inner">
+            <div className="flex gap-1 rounded-xl bg-surface-overlay/50 p-1">
               <button
-                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   activeTab === 'all'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'text-content-secondary hover:bg-surface-overlay'
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'text-content-secondary hover:text-white border border-transparent'
                 }`}
                 onClick={() => setActiveTab('all')}
               >
-                <Zap className="h-3.5 w-3.5 mr-1.5" />
-                {t('channels.all')} ({channels.length})
+                <Zap className="h-3.5 w-3.5" />
+                {t('channels.all')}
+                <span
+                  className={`text-xs ${activeTab === 'all' ? 'text-primary' : 'text-white/60'}`}
+                >
+                  ({channels.length})
+                </span>
               </button>
               <button
-                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   activeTab === 'bitcoin'
-                    ? 'bg-yellow-500 text-surface-base shadow-md'
-                    : 'text-content-secondary hover:bg-surface-overlay'
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'text-content-secondary hover:text-white border border-transparent'
                 }`}
                 onClick={() => setActiveTab('bitcoin')}
               >
-                <Bolt className="h-3.5 w-3.5 mr-1.5" />
-                {t('channels.bitcoin')} ({bitcoinChannels.length})
+                <Bolt className="h-3.5 w-3.5" />
+                {t('channels.bitcoin')}
+                <span
+                  className={`text-xs ${activeTab === 'bitcoin' ? 'text-primary' : 'text-white/60'}`}
+                >
+                  ({bitcoinChannels.length})
+                </span>
               </button>
               <button
-                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-all ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   activeTab === 'rgb'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-content-secondary hover:bg-surface-overlay'
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'text-content-secondary hover:text-white border border-transparent'
                 }`}
                 onClick={() => setActiveTab('rgb')}
               >
-                <Layers className="h-3.5 w-3.5 mr-1.5" />
-                {t('channels.rgb')} ({rgbChannels.length})
+                <Layers className="h-3.5 w-3.5" />
+                {t('channels.rgb')}
+                <span
+                  className={`text-xs ${activeTab === 'rgb' ? 'text-primary' : 'text-white/60'}`}
+                >
+                  ({rgbChannels.length})
+                </span>
               </button>
             </div>
           </div>
@@ -623,11 +639,6 @@ export const Component: React.FC = () => {
             )}
           </div>
         )}
-      </div>
-
-      <div className="flex items-center space-x-2 text-sm text-content-secondary mt-6 p-4 bg-blue-900/20 border border-blue-800/30 rounded-lg">
-        <Info className="h-5 w-5 text-blue-400 flex-shrink-0" />
-        <p>{t('channels.liquidityInfo')}</p>
       </div>
     </div>
   )

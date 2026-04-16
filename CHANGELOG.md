@@ -1,6 +1,10 @@
-## [Version 0.4.0] - 2026-04-08
+## [Version 0.4.0] - 2026-04-15
 
 ### 🚀 Features
+- **Docker Node Backend**: Run the RGB Lightning Node via Docker directly from the app — automatic image pull, container lifecycle management, and health monitoring with no manual setup required
+- **Node Reachability Monitoring**: Continuous background health checks with automatic reconnection and clear status indicators when the node becomes unreachable
+- **Reverse Quote Support**: Accept quotes from the maker side, enabling two-way RFQ trading
+- **BIP21 Deposit URIs**: Generate BIP21-compliant deposit URIs for easier on-chain Bitcoin deposits
 - **Limit Orders**: Added limit order trading with Tauri-backed persistence, form validation, and scheduler integration
 - **Dollar-Cost Averaging (DCA)**: Added automated BTC buying with scheduled and price-target execution modes using USDT Lightning balance
 - **Redesigned Buy Channel Flow**: Reworked the channel purchase and order flow with richer payment states, improved summaries, wallet funding guidance, and order restart handling
@@ -10,6 +14,7 @@
 - **Expanded Internationalization**: Broadened multi-language coverage across trading, wallet history, setup, and channel management flows
 
 ### 🔧 Improvements
+- **Backend Selection UX**: Always show backend selection (native/Docker/remote) during local node setup for clearer onboarding; Docker backend is prioritized when available
 - **Trading Page Refactor**: Extracted market-maker and limit-orders into separate view components for better maintainability
 - **Channel Order Payment Monitoring**: Improved channel order payment tracking, persistence, and duration selector
 - **DCA and Limit Order Scheduler Gating**: Schedulers now only run when the node is unlocked, preventing errors on locked nodes
@@ -19,8 +24,12 @@
 - **Shared Liquidity Components**: Extracted reusable liquidity, quote, and order-summary UI primitives used across channel purchase and trading flows
 - **Tooling and CI Checks**: Standardized frontend format, lint, type-check, and PR verification commands for more consistent local and CI validation
 - **SDK Migration**: Migrated to kaleido-sdk v0.1.0
+- **Code Formatting**: Reordered object properties and cleaned up code formatting across multiple components and hooks
 
 ### 🐛 Bug Fixes
+- **Light Mode Disabled**: Disabled light mode to prevent UI inconsistencies; dark mode is now the only supported theme
+- **Issues #95 and #96**: Resolved reported bugs related to wallet and UI behavior
+- **Wallet Actions Visibility**: Fixed wallet actions not showing when only the native backend is available
 - **Unlock Timeout Extended**: Increased unlock retry timeout from ~3 minutes to ~1 hour so slow-syncing nodes no longer hit false "maximum attempts reached" errors
 - **Unlock Timeout Error Handling**: Fixed missing timeout error detection in the unlock retry loop that could cause premature failures
 - **Node Readiness and Unlock Handling**: Fixed cases where node startup or unlock could appear stalled without surfacing useful progress or retry behavior
@@ -28,10 +37,13 @@
 - **Update Detection**: Improved update checks to avoid surfacing non-newer releases as available updates
 - **Channel and Trading State Refresh**: Reduced stale UI states around channel availability, payment progress, and trading readiness
 - **CoinGecko Parsing**: Hardened CoinGecko price data parsing to handle unexpected responses
+- **Duplicate State Fix**: Removed duplicate `bearer_token` property in nodeSettings initial state
 
 ### 🏗️ Infrastructure
 - **Dependency Updates**: Refreshed frontend and Tauri-related dependencies and aligned project scripts with the current toolchain
 - **Security Fixes**: Updated rustls-webpki (0.103.9 → 0.103.10) and tar (0.4.44 → 0.4.45) to patch known vulnerabilities
+- **CI: macOS DMG Bundle**: Added DMG bundle target to macOS builds
+- **CI: Linux Tray Support**: Added `libappindicator3-dev` dependency for Linux tray icon support
 - **Test Coverage**: Added unit tests for channel order utilities
 - **Code Cleanup**: Removed dead code and unused layout configuration across desktop app flows
 - **Build and Release Readiness**: Updated documentation and project configuration to match the current Tauri 2 and pnpm-based workflow

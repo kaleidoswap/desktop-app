@@ -85,7 +85,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
     | { separator: string }
 
   const infoRows: InfoRow[] = [
-    { label: 'Status', value: channel.status, mono: false },
+    { label: 'Status', mono: false, value: channel.status },
     {
       label: 'Capacity',
       value: `${formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)} ${bitcoinUnit}`,
@@ -112,16 +112,16 @@ const InfoModal: React.FC<InfoModalProps> = ({
     },
     { separator: 'Identifiers' },
     {
-      label: 'Channel ID',
-      value: channel.channel_id,
-      mono: true,
       copyable: true,
+      label: 'Channel ID',
+      mono: true,
+      value: channel.channel_id,
     },
     {
-      label: 'Funding TX',
-      value: channel.funding_txid,
-      mono: true,
       copyable: true,
+      label: 'Funding TX',
+      mono: true,
+      value: channel.funding_txid,
     },
     {
       label: 'Short Channel ID',
@@ -129,10 +129,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
         channel.short_channel_id?.toString() || t('channelCard.infoModal.na'),
     },
     {
-      label: 'Peer Pubkey',
-      value: channel.peer_pubkey,
-      mono: true,
       copyable: true,
+      label: 'Peer Pubkey',
+      mono: true,
+      value: channel.peer_pubkey,
     },
   ]
 
@@ -140,10 +140,10 @@ const InfoModal: React.FC<InfoModalProps> = ({
     infoRows.push(
       { separator: 'RGB Asset' },
       {
-        label: 'Asset ID',
-        value: channel.asset_id,
-        mono: true,
         copyable: true,
+        label: 'Asset ID',
+        mono: true,
+        value: channel.asset_id,
       },
       {
         label: 'Asset Local',
@@ -325,10 +325,10 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 : t('channelCard.status.pending')}
             </span>
 
-            {/* Usable badge */}
-            {!isUsable && (
+            {/* Usable badge - only show "Offline" for confirmed channels whose peer went offline */}
+            {isReady && !isUsable && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-800/30">
-                Offline
+                {t('channelCard.status.offline')}
               </span>
             )}
 

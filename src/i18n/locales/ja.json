@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "ノードの読み込みエラー: {{error}}",
-      "title": "あなたのノード",
+      "title": "あなたのアカウント",
       "exitEditMode": "編集モードを終了",
       "enterEditMode": "編集モードに入る",
       "editNodes": "ノードを編集",
@@ -1371,7 +1371,8 @@
     },
     "status": {
       "open": "オープン",
-      "pending": "保留中"
+      "pending": "保留中",
+      "offline": "オフライン"
     },
     "labels": {
       "capacity": "容量",
@@ -2046,6 +2047,14 @@
     "localNodeTitle": "ローカルノード",
     "localNodeDescription": "ローカルマシンでノードを実行します。開発者とテスト環境に最適です。",
     "localNodeNotSupported": "Windowsではローカルノードはサポートされていません。代わりにリモートノード接続を使用してください。",
+    "backendNative": "ネイティブバイナリ",
+    "backendNativeDescription": "ノードをローカルプロセスとして実行します。Dockerは不要です。",
+    "backendDocker": "Dockerコンテナ",
+    "backendDockerDescription": "Dockerコンテナでノードを実行します。すべてのプラットフォームで動作します。",
+    "backendUnavailable": "利用不可",
+    "recommended": "推奨",
+    "noBackendAvailable": "バックエンドが検出されません",
+    "noBackendHint": "このプラットフォームでローカルノードを実行するには、Docker Desktopをインストールして起動してください。",
     "backToOptions": "接続オプションに戻る",
     "setupLocalTitle": "ローカルノードをセットアップ",
     "setupLocalSubtitle": "ローカルRGB Lightningノードの開始オプションを選択してください",
@@ -2739,7 +2748,7 @@
       "balanceNeededTitle": "残高をさらに用意してください",
       "availableLabel": "利用可能",
       "capacityFee": "容量手数料",
-      "continue": "続行 ->",
+      "continue": "続行",
       "durationFee": "期間手数料",
       "expiresLabel": "有効期限",
       "lightningInvoice": "Lightningインボイス",

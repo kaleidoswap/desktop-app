@@ -348,6 +348,14 @@
     "localNodeTitle": "Nodo Locale",
     "localNodeDescription": "Esegui un nodo sulla tua macchina locale. Ideale per sviluppatori e ambienti di test.",
     "localNodeNotSupported": "Il nodo locale non è supportato su Windows. Utilizza invece una connessione a nodo remoto.",
+    "backendNative": "Binario nativo",
+    "backendNativeDescription": "Esegui il nodo come processo locale. Docker non richiesto.",
+    "backendDocker": "Container Docker",
+    "backendDockerDescription": "Esegui il nodo in un container Docker. Funziona su tutte le piattaforme.",
+    "backendUnavailable": "Non disponibile",
+    "recommended": "Consigliato",
+    "noBackendAvailable": "Nessun backend rilevato",
+    "noBackendHint": "Installa e avvia Docker Desktop per eseguire un nodo locale su questa piattaforma.",
     "backToOptions": "Torna alle Opzioni di Connessione",
     "setupLocalTitle": "Configura Nodo Locale",
     "setupLocalSubtitle": "Scegli un'opzione per iniziare con il tuo nodo RGB Lightning locale",
@@ -1342,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "Errore durante il caricamento dei nodi: {{error}}",
-      "title": "I Tuoi Nodi",
+      "title": "I Tuoi Account",
       "exitEditMode": "Esci dalla Modalità Modifica",
       "enterEditMode": "Entra in Modalità Modifica",
       "editNodes": "Modifica Nodi",
@@ -2018,7 +2026,8 @@
     },
     "status": {
       "open": "Aperto",
-      "pending": "In Attesa"
+      "pending": "In Attesa",
+      "offline": "Non in linea"
     },
     "labels": {
       "capacity": "Capacità",
@@ -2711,7 +2720,7 @@
       "availableRoutes": "Percorsi disponibili",
       "capacityFee": "Commissione di capacità",
       "discount": "Sconto",
-      "continue": "Continua ->",
+      "continue": "Continua",
       "confirmationTime": "Tempo di Conferma:",
       "durationFee": "Commissione di durata",
       "expiresLabel": "Scade",

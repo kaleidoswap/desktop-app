@@ -7,10 +7,13 @@ use tauri::{Emitter, Listener, Manager, Window};
 mod crypto;
 mod db;
 mod dca;
+mod docker_node;
+mod node_backend;
 mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
+use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -27,6 +30,7 @@ fn main() {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
+    let docker_manager = Arc::new(Mutex::new(DockerNodeManager::new()));
     let dca_scheduler = Arc::new(DcaScheduler::new());
 
     tauri::Builder::default()
@@ -39,6 +43,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(Arc::clone(&node_process))
+        .manage(Arc::clone(&docker_manager))
         .manage(Arc::clone(&dca_scheduler))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
@@ -51,10 +56,12 @@ fn main() {
         })
         .setup({
             let node_process = Arc::clone(&node_process);
+            let docker_manager = Arc::clone(&docker_manager);
             let dca_scheduler = Arc::clone(&dca_scheduler);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    node_process.lock().unwrap().set_window(main_window);
+                    node_process.lock().unwrap().set_window(main_window.clone());
+                    docker_manager.lock().unwrap().set_window(main_window);
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
                 // DCA scheduler is started lazily via dca_start_scheduler
@@ -124,6 +131,7 @@ fn main() {
             get_decrypted_mnemonic,
             // New command
             is_local_node_supported,
+            get_local_node_capabilities,
             get_markdown_content,
             // DCA commands
             dca_start_scheduler,
@@ -137,6 +145,13 @@ fn main() {
             limit_get_orders,
             limit_upsert_order,
             limit_delete_order,
+            // Docker node commands
+            check_docker_environment,
+            is_docker_available,
+            list_docker_environments,
+            create_docker_environment,
+            start_docker_node,
+            stop_docker_node,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -286,7 +301,6 @@ fn stop_node(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Result<
         node_process.stop();
         Ok(())
     } else {
-        // Return an error or just Ok(()) – depends on your UI needs
         Err("RGB Lightning Node is not running.".to_string())
     }
 }
@@ -449,11 +463,9 @@ fn get_node_logs(
     let all_logs = node_process.get_logs();
     let total = all_logs.len() as u32;
 
-    // Calculate start and end indices for pagination
     let start = ((page - 1) * page_size) as usize;
     let end = std::cmp::min(start + page_size as usize, all_logs.len());
 
-    // Get the paginated logs
     let logs = if start < all_logs.len() {
         all_logs[start..end].to_vec()
     } else {
@@ -627,7 +639,55 @@ fn kill_process_on_port(port: u16) -> bool {
     }
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+fn kill_process_on_port(port: u16) -> bool {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    // Use netstat to find the PID listening on the port
+    let output = Command::new("netstat")
+        .args(["-ano", "-p", "TCP"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+
+    match output {
+        Ok(out) => {
+            let output_str = String::from_utf8_lossy(&out.stdout);
+            let mut any_killed = false;
+
+            for line in output_str.lines() {
+                // Match lines like "  TCP    0.0.0.0:3001    0.0.0.0:0    LISTENING    12345"
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 5 && parts[3] == "LISTENING" {
+                    if let Some(addr) = parts[1].rsplit(':').next() {
+                        if addr == port.to_string() {
+                            if let Ok(pid) = parts[4].parse::<u32>() {
+                                println!("Killing process {} on port {}", pid, port);
+                                let kill_result = Command::new("taskkill")
+                                    .args(["/PID", &pid.to_string(), "/F"])
+                                    .creation_flags(CREATE_NO_WINDOW)
+                                    .output();
+                                if let Ok(kill_out) = kill_result {
+                                    if kill_out.status.success() {
+                                        any_killed = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            any_killed
+        }
+        Err(e) => {
+            eprintln!("Failed to run netstat for port {}: {}", port, e);
+            false
+        }
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 fn kill_process_on_port(_port: u16) -> bool {
     false
 }
@@ -677,14 +737,63 @@ fn delete_channel_order(
 
 #[tauri::command]
 fn is_local_node_supported() -> bool {
-    rgb_node::NodeProcess::is_local_node_supported()
+    // Local node is supported if native binary OR Docker is available
+    rgb_node::NodeProcess::is_local_node_supported() || DockerNodeManager::is_docker_available()
 }
 
 #[tauri::command]
-async fn get_markdown_content(file_path: String) -> Result<String, String> {
-    let content = tokio::fs::read_to_string(file_path)
+fn get_local_node_capabilities() -> HashMap<String, bool> {
+    let mut caps = HashMap::new();
+    caps.insert(
+        "native".to_string(),
+        rgb_node::NodeProcess::is_local_node_supported(),
+    );
+    caps.insert(
+        "docker".to_string(),
+        DockerNodeManager::is_docker_available(),
+    );
+    caps
+}
+
+#[tauri::command]
+async fn get_markdown_content(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
+    use std::path::PathBuf;
+
+    // Resolve the file path: if it's a relative path starting with "../docs/",
+    // resolve it against the resource directory (for bundled builds) or the
+    // Cargo manifest directory (for dev builds).
+    let resolved_path = if file_path.starts_with("../docs/") {
+        let filename = file_path.strip_prefix("../docs/").unwrap_or(&file_path);
+
+        if cfg!(debug_assertions) {
+            // Dev mode: resolve relative to the Cargo manifest dir
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("docs")
+                .join(filename)
+        } else {
+            // Production: resolve from the bundled resource directory
+            let resource_dir = app
+                .path()
+                .resource_dir()
+                .map_err(|e| format!("Failed to get resource directory: {}", e))?;
+
+            // Tauri bundles "../docs" as "_up_/docs" on macOS/Linux
+            let candidate = resource_dir.join("_up_").join("docs").join(filename);
+            if candidate.exists() {
+                candidate
+            } else {
+                // Fallback: try "docs" directly (Windows layout)
+                resource_dir.join("docs").join(filename)
+            }
+        }
+    } else {
+        PathBuf::from(&file_path)
+    };
+
+    let content = tokio::fs::read_to_string(&resolved_path)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Failed to read {}: {}", resolved_path.display(), e))?;
     Ok(content)
 }
 
@@ -834,4 +943,56 @@ fn get_decrypted_mnemonic(
     })?;
 
     Ok(mnemonic)
+}
+
+// ---------------------------------------------------------------------------
+// Docker node management commands
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn check_docker_environment(account_name: String) -> Option<DockerEnvironment> {
+    DockerNodeManager::check_environment_exists(&account_name)
+}
+
+#[tauri::command]
+fn is_docker_available() -> bool {
+    DockerNodeManager::is_docker_available()
+}
+
+#[tauri::command]
+fn list_docker_environments() -> Vec<DockerEnvironment> {
+    DockerNodeManager::list_environments(None)
+}
+
+#[tauri::command]
+fn create_docker_environment(config: DockerSpawnConfig) -> Result<DockerEnvironment, String> {
+    DockerNodeManager::create_environment(&config, None)
+}
+
+#[tauri::command]
+async fn start_docker_node(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+    env_name: String,
+    node_index: Option<u16>,
+) -> Result<u16, String> {
+    println!("Starting Docker node for environment: {}", env_name);
+    let docker_manager = Arc::clone(&*docker_manager);
+    let idx = node_index.unwrap_or(0);
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let dm = docker_manager
+            .lock()
+            .map_err(|e| format!("Lock error: {}", e))?;
+        dm.start(&env_name, idx, None)
+    })
+    .await
+    .map_err(|e| format!("Failed to join Docker startup task: {}", e))?
+}
+
+#[tauri::command]
+fn stop_docker_node(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+) -> Result<(), String> {
+    let dm = docker_manager.lock().unwrap();
+    dm.stop()
 }

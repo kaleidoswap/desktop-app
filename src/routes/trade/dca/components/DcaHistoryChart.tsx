@@ -6,7 +6,7 @@ interface Props {
 
 const W = 560
 const H = 140
-const PAD = { top: 12, right: 16, bottom: 28, left: 52 }
+const PAD = { bottom: 28, left: 52, right: 16, top: 12 }
 
 function formatSats(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
@@ -60,7 +60,7 @@ export function DcaHistoryChart({ executions }: Props) {
 
   // X axis: first & last date
   const formatDate = (ts: number) =>
-    new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    new Date(ts).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
 
   return (
     <div className="space-y-1">

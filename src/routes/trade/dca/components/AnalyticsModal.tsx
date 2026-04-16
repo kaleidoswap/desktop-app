@@ -66,28 +66,28 @@ export function AnalyticsModal({
               },
               {
                 label: t('dca.activeOrders', 'Active Orders'),
-                value: String(activeOrdersCount),
                 sub: `${activeScheduled} ${t('dca.type.scheduled', 'Scheduled')} · ${activePriceTarget} ${t('dca.type.priceTarget', 'Target')}`,
+                value: String(activeOrdersCount),
               },
               {
                 label: t('dca.metrics.totalBuys', 'Total Buys'),
-                value: String(totalBuys),
                 sub: totalBuys > 0 ? 'executed successfully' : undefined,
                 tone: 'text-status-success',
+                value: String(totalBuys),
               },
               {
                 label: t('dca.metrics.accumulated', 'Accumulated'),
-                value: totalSats > 0 ? `${formatSats(totalSats)} sats` : '—',
                 sub:
                   totalFeeSats > 0
                     ? `fees ${formatSats(totalFeeSats)} sats`
                     : undefined,
                 tone: totalSats > 0 ? 'text-primary' : 'text-content-primary',
+                value: totalSats > 0 ? `${formatSats(totalSats)} sats` : '—',
               },
             ].map((item) => (
               <div
-                key={item.label}
                 className="rounded-2xl border border-border-subtle/70 bg-surface-base/35 px-4 py-4"
+                key={item.label}
               >
                 <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
                   {item.label}

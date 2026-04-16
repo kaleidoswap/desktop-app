@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from 'vitest'
 
 // Mock modules with side effects before importing the module under test
 vi.mock('react-toastify', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn() },
 }))
 vi.mock('../../../../utils/logger', () => ({
-  logger: { error: vi.fn(), info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
+  logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
 vi.mock('../../../../slices/makerApi/makerApi.slice', () => ({
   getAssetId: vi.fn((asset: any) => asset.ticker),

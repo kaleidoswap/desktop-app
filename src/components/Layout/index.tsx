@@ -1,3 +1,4 @@
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import Decimal from 'decimal.js'
@@ -11,6 +12,7 @@ import {
   HelpCircle,
   User,
   Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,11 +21,11 @@ import { toast, ToastContainer } from 'react-toastify'
 
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
-import logo from '../../assets/logo.svg'
 import logoFull from '../../assets/logo-full.svg'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { setNodeReachability } from '../../slices/node/node.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
@@ -31,6 +33,7 @@ import { BackupModal } from '../BackupModal'
 import { useBackup } from '../../hooks/useBackup'
 import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { useLimitOrderScheduler } from '../../hooks/useLimitOrderScheduler'
+import { useNodeReachabilityMonitor } from '../../hooks/useNodeReachabilityMonitor'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -53,6 +56,43 @@ import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
+
+const getNodeErrorMessage = (error: unknown) => {
+  if (!error) return 'Unknown node connection error'
+  if (typeof error === 'string') return error
+
+  if (typeof error === 'object' && error !== null) {
+    if ('error' in error && typeof error.error === 'string') {
+      return error.error
+    }
+
+    if ('data' in error) {
+      const data = error.data
+      if (typeof data === 'string') return data
+      if (typeof data === 'object' && data !== null && 'error' in data) {
+        return String(data.error)
+      }
+    }
+  }
+
+  return String(error)
+}
+
+const isNodeReachabilityError = (error: FetchBaseQueryError) => {
+  if (error.status === 'FETCH_ERROR' || error.status === 'TIMEOUT_ERROR') {
+    return true
+  }
+
+  const message = getNodeErrorMessage(error).toLowerCase()
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('load failed') ||
+    message.includes('network') ||
+    message.includes('timeout') ||
+    message.includes('connection refused') ||
+    message.includes('connection reset')
+  )
+}
 
 interface Props {
   className?: string
@@ -90,12 +130,23 @@ interface UserProfileProps {
 // NavItem component for sidebar
 const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
   const { t } = useTranslation()
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
 
   // Check if this is the Trade section and if we have a trading mode in the URL
   const hasSubMenu = item.subMenu && item.subMenu.length > 0
+
+  // Auto-open submenu when the parent nav item is active
+  const isParentActive = location.pathname.startsWith(item.to)
+  const [isSubMenuOpen, setIsSubMenuOpen] = useState(
+    isParentActive && hasSubMenu
+  )
+
+  useEffect(() => {
+    if (isParentActive && hasSubMenu) {
+      setIsSubMenuOpen(true)
+    }
+  }, [isParentActive, hasSubMenu])
 
   const handleClick = (e: React.MouseEvent) => {
     // If sidebar is collapsed and this is the Trade item, navigate directly to Market Maker page
@@ -116,9 +167,8 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
       return
     }
 
-    // Normal behavior for expanded sidebar
+    // For items with a submenu: toggle submenu but still allow navigation to the parent route
     if (hasSubMenu) {
-      e.preventDefault()
       setIsSubMenuOpen(!isSubMenuOpen)
     }
   }
@@ -140,7 +190,7 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
           flex items-center py-3.5 px-4 rounded-xl transition-all duration-300
           ${
             isActive
-              ? 'bg-primary/10 text-white font-semibold border-l-2 border-cyan'
+              ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
               : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:shadow-md'
           }
           ${isCollapsed ? 'justify-center' : hasSubMenu ? 'justify-between' : 'justify-start space-x-4'}
@@ -291,6 +341,10 @@ const UserProfile = ({
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+  const nodeReachability = useAppSelector((state) => state.node.reachability)
+  const isNodeReachable =
+    nodeReachability === 'reachable' ||
+    (nodeReachability === 'unknown' && nodeInfo.isSuccess)
 
   const {
     showBackupModal,
@@ -304,9 +358,9 @@ const UserProfile = ({
     selectBackupFolder,
   } = useBackup({
     nodeSettings: nodeSettingsData || {
-      rpc_connection_url: '',
       indexer_url: '',
       proxy_endpoint: '',
+      rpc_connection_url: '',
     },
   })
 
@@ -348,7 +402,7 @@ const UserProfile = ({
             <div
               className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-base
               transition-all duration-300
-              ${nodeInfo.isSuccess ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
+              ${isNodeReachable ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
             ></div>
           </div>
 
@@ -359,7 +413,7 @@ const UserProfile = ({
                   {accountName || t('userProfile.myWallet')}
                 </span>
                 <span className="text-xs text-content-secondary group-hover:text-content-secondary transition-colors duration-300">
-                  {nodeInfo.isSuccess
+                  {isNodeReachable
                     ? t('userProfile.connected')
                     : t('userProfile.disconnected')}
                 </span>
@@ -403,10 +457,10 @@ const UserProfile = ({
                 </div>
                 <div className="text-xs text-content-secondary flex items-center space-x-1">
                   <div
-                    className={`w-2 h-2 rounded-full ${nodeInfo.isSuccess ? 'bg-green animate-pulse' : 'bg-red'}`}
+                    className={`w-2 h-2 rounded-full ${isNodeReachable ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
                   <span>
-                    {nodeInfo.isSuccess
+                    {isNodeReachable
                       ? t('userProfile.connected')
                       : t('userProfile.disconnected')}
                   </span>
@@ -457,6 +511,8 @@ export const Layout = (props: Props) => {
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
   const [isTransactionMenuOpen, setIsTransactionMenuOpen] = useState(false)
   const [isSupportMenuOpen, setIsSupportMenuOpen] = useState(false)
+  const [isRetryingNodeConnection, setIsRetryingNodeConnection] =
+    useState(false)
 
   const [showSupportModal, setShowSupportModal] = useState(false)
 
@@ -470,6 +526,7 @@ export const Layout = (props: Props) => {
   const location = useLocation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
 
   // Get translated menu items
   const MAIN_NAV_ITEMS = getMainNavItems(t)
@@ -496,11 +553,25 @@ export const Layout = (props: Props) => {
 
   const nodeInfo = nodeApi.endpoints.nodeInfo.useQueryState()
   const nodeLifecycle = useAppSelector((state) => state.node.lifecycle)
-  const shouldPoll = nodeInfo.isSuccess
+  const nodeReachability = useAppSelector((state) => state.node.reachability)
+  const nodeReachabilityError = useAppSelector(
+    (state) => state.node.reachabilityError
+  )
+  const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+  const isNodeReachable =
+    nodeReachability === 'reachable' ||
+    (nodeReachability === 'unknown' && nodeInfo.isSuccess)
+  const isNodeUnreachable = nodeReachability === 'unreachable'
+  const shouldPoll = isNodeReachable
   const isNodeActive =
     nodeLifecycle.status === 'Running' ||
     nodeLifecycle.status === 'Starting' ||
     nodeLifecycle.status === 'Stopping'
+
+  useNodeReachabilityMonitor({
+    accountKey: nodeSettingsData?.name,
+    skip: shouldHideNavbar || !nodeSettingsData?.name,
+  })
 
   const { data, isFetching, error } = nodeApi.useListTransactionsQuery(
     undefined,
@@ -649,7 +720,7 @@ export const Layout = (props: Props) => {
     }
 
     checkDeposits()
-  }, [data, error, shouldPoll, lastDeposit, isFetching, addNotification])
+  }, [data, error, shouldPoll, lastDeposit, isFetching, addNotification, t])
 
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -694,8 +765,6 @@ export const Layout = (props: Props) => {
     }
   }, [])
 
-  const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
-
   const handleTransactionAction = (type: string) => {
     dispatch(
       uiSliceActions.setModal({
@@ -703,6 +772,36 @@ export const Layout = (props: Props) => {
         type: type as ModalActionType,
       })
     )
+  }
+
+  const handleRetryNodeConnection = async () => {
+    setIsRetryingNodeConnection(true)
+    try {
+      const result = await dispatch(
+        nodeApi.endpoints.nodeInfo.initiate(undefined, {
+          forceRefetch: true,
+          subscribe: false,
+        })
+      )
+
+      if ('error' in result && result.error) {
+        const error = result.error as FetchBaseQueryError
+
+        if (isNodeReachabilityError(error)) {
+          dispatch(
+            setNodeReachability({
+              error: getNodeErrorMessage(error),
+              status: 'unreachable',
+            })
+          )
+          return
+        }
+      }
+
+      dispatch(setNodeReachability({ status: 'reachable' }))
+    } finally {
+      setIsRetryingNodeConnection(false)
+    }
   }
 
   const handleKeepRunningInBackground = async () => {
@@ -801,6 +900,66 @@ export const Layout = (props: Props) => {
         </div>
       )}
 
+      {!shouldHideNavbar && isNodeUnreachable && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4">
+          <div className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-red-300" />
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-white">
+                  {t('nodeReachability.blockingTitle', {
+                    defaultValue: 'Node is offline',
+                  })}
+                </h3>
+                <p className="text-content-secondary mt-2">
+                  {t('nodeReachability.blockingMessage', {
+                    defaultValue:
+                      'KaleidoSwap cannot be used while the node is unreachable. Keep your local Docker/native node running or check the remote node URL, then retry the connection.',
+                  })}
+                </p>
+
+                {nodeReachabilityError && (
+                  <p className="mt-4 text-xs text-red-300 break-words bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                    {nodeReachabilityError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <button
+                    className="px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    disabled={isRetryingNodeConnection}
+                    onClick={handleRetryNodeConnection}
+                  >
+                    {isRetryingNodeConnection ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                    <span>
+                      {t('nodeReachability.retry', {
+                        defaultValue: 'Retry connection',
+                      })}
+                    </span>
+                  </button>
+
+                  <button
+                    className="px-4 py-3 rounded-lg bg-surface-overlay text-content-secondary font-medium"
+                    onClick={() => navigate(WALLET_SETUP_PATH)}
+                  >
+                    {t('nodeReachability.changeNode', {
+                      defaultValue: 'Change node',
+                    })}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!shouldHideNavbar ? (
         <div className="min-h-screen flex m-0 p-0">
           {/* Sidebar Navigation */}
@@ -810,22 +969,25 @@ export const Layout = (props: Props) => {
                         ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}
           >
             {/* Logo and collapse button */}
-            <div className="flex items-center justify-between py-5 px-4 border-b border-divider/20 bg-surface-base">
-              <img
-                alt="KaleidoSwap"
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95
-                          ${isSidebarCollapsed ? 'w-10 h-10' : 'h-10 w-auto'}`}
-                onClick={() => {
-                  navigate(WALLET_SETUP_PATH)
-                }}
-                src={isSidebarCollapsed ? logo : logoFull}
-              />
+            <div
+              className={`flex items-center bg-surface-base py-5 px-4 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
+            >
+              {!isSidebarCollapsed && (
+                <img
+                  alt="KaleidoSwap"
+                  className="h-10 w-auto cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+                  onClick={() => {
+                    navigate(WALLET_SETUP_PATH)
+                  }}
+                  src={logoFull}
+                />
+              )}
 
               <button
-                className="p-2 rounded-lg text-content-secondary hover:text-primary
+                className="p-3 rounded-xl text-content-secondary hover:text-primary
                            hover:bg-surface-overlay/50 transition-all duration-300
                            transform hover:scale-110 active:scale-95
-                           ring-1 ring-transparent hover:ring-primary/20 flex-shrink-0"
+                           ring-1 ring-divider/10 hover:ring-primary/30 flex-shrink-0"
                 onClick={() => {
                   const next = !isSidebarCollapsed
                   setIsSidebarCollapsed(next)
@@ -855,87 +1017,37 @@ export const Layout = (props: Props) => {
                   )
                 })}
               </div>
-
-              {/* Quick action buttons */}
-              {!isSidebarCollapsed && (
-                <>
-                  <div className="mb-8">
-                    <h3 className="px-4 text-xs font-bold text-content-tertiary uppercase tracking-wider mb-4">
-                      {t('actions.quickActions')}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        className="flex items-center justify-center space-x-2
-                                   bg-gradient-to-br from-surface-overlay to-surface-overlay/80 hover:from-cyan/20 hover:to-cyan/5
-                                   text-white rounded-xl py-3 px-3 transition-all duration-300
-                                   border border-primary/20 hover:border-primary/40 group
-                                   shadow-lg shadow-primary/5 hover:shadow-xl hover:shadow-primary/10
-                                   transform hover:scale-[1.02] active:scale-[0.98]"
-                        onClick={() => handleTransactionAction('deposit')}
-                      >
-                        <div
-                          className="p-1.5 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20
-                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-primary/20"
-                        >
-                          <ArrowDownLeft className="w-4 h-4" />
-                        </div>
-                        <span className="font-semibold text-sm group-hover:text-primary transition-colors duration-300">
-                          {t('actions.deposit')}
-                        </span>
-                      </button>
-                      <button
-                        className="flex items-center justify-center space-x-2
-                                   bg-gradient-to-br from-surface-overlay to-surface-overlay/80 hover:from-purple/20 hover:to-purple/5
-                                   text-white rounded-xl py-3 px-3 transition-all duration-300
-                                   border border-purple/20 hover:border-purple/40 group
-                                   shadow-lg shadow-purple/5 hover:shadow-xl hover:shadow-purple/10
-                                   transform hover:scale-[1.02] active:scale-[0.98]"
-                        onClick={() => handleTransactionAction('withdraw')}
-                      >
-                        <div
-                          className="p-1.5 rounded-full bg-purple/10 text-purple group-hover:bg-purple/20
-                                      transition-all duration-300 group-hover:scale-110 shadow-lg shadow-purple/20"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </div>
-                        <span className="font-semibold text-sm group-hover:text-purple transition-colors duration-300">
-                          {t('actions.withdraw')}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Channel management section */}
-                  <div className="mb-6">
-                    <h3 className="px-4 text-xs font-bold text-content-tertiary uppercase tracking-wider mb-4">
-                      {t('navigation.channels')}
-                    </h3>
-                    <div className="space-y-1.5">
-                      {CHANNEL_MENU_ITEMS.map((item) => (
-                        <NavLink
-                          className={({ isActive }) => `
-                              flex items-center space-x-4 px-4 py-3 rounded-xl text-sm group
-                              ${
-                                isActive
-                                  ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
-                                  : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:translate-x-1'
-                              }
-                              transition-all duration-300 transform active:scale-[0.98]
-                            `}
-                          key={item.to}
-                          to={item.to}
-                        >
-                          <div className="transition-transform duration-300 group-hover:scale-110">
-                            {item.icon}
-                          </div>
-                          <span className="font-medium">{item.label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
+
+            {/* Quick action buttons */}
+            {!isSidebarCollapsed && (
+              <div className="px-4 pb-6 bg-surface-base">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl
+                               bg-status-success/15 hover:bg-status-success/25
+                               border border-status-success/30 text-status-success
+                               font-semibold text-sm transition-all duration-200
+                               transform hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => handleTransactionAction('deposit')}
+                  >
+                    <ArrowDownLeft className="w-4 h-4 flex-shrink-0" />
+                    {t('actions.deposit')}
+                  </button>
+                  <button
+                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl
+                               bg-violet-500/15 hover:bg-violet-500/25
+                               border border-violet-500/30 text-violet-400
+                               font-semibold text-sm transition-all duration-200
+                               transform hover:scale-[1.02] active:scale-[0.98]"
+                    onClick={() => handleTransactionAction('withdraw')}
+                  >
+                    <ArrowUpRight className="w-4 h-4 flex-shrink-0" />
+                    {t('actions.withdraw')}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* User profile section */}
             <div className="p-4 border-t border-divider/20 bg-surface-base">

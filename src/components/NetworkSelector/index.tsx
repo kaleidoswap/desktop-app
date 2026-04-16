@@ -1,7 +1,7 @@
 import { ChevronDown, Check } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
-import { BitcoinNetwork } from '../../constants'
+import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 
 interface NetworkSelectorProps {
@@ -55,7 +55,7 @@ export const NetworkSelector = ({
 
   return (
     <div className={`${className} relative`} ref={dropdownRef}>
-      <label className="block text-sm font-medium mb-2 text-content-secondary">
+      <label className="block text-sm font-medium mb-2 text-white">
         Network
       </label>
 
@@ -77,7 +77,7 @@ export const NetworkSelector = ({
           <span
             className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium ${getNetworkBadgeColor(selectedNetwork)}`}
           >
-            {selectedNetwork}
+            {getNetworkDisplayName(selectedNetwork)}
           </span>
         </div>
         <ChevronDown
@@ -100,7 +100,7 @@ export const NetworkSelector = ({
                 className={`flex items-center justify-between w-full px-4 py-3 text-left 
                   hover:bg-surface-elevated/60 transition-colors duration-150
                   ${selectedNetwork === network ? 'bg-surface-elevated/40' : ''}`}
-                key={network}
+                key={getNetworkDisplayName(network)}
                 onClick={() => {
                   onChange(network as BitcoinNetwork)
                   setIsOpen(false)
@@ -112,7 +112,7 @@ export const NetworkSelector = ({
                   <span
                     className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium ${getNetworkBadgeColor(network)}`}
                   >
-                    {network}
+                    {getNetworkDisplayName(network)}
                   </span>
                 </div>
                 {selectedNetwork === network && (

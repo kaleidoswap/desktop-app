@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   Cloud,
   Server,
+  Container,
   ArrowRight,
   Zap,
   ArrowLeft,
@@ -46,27 +47,63 @@ export const Component = () => {
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
-  const [isLocalNodeSupported, setIsLocalNodeSupported] = useState(true)
+  // Docker / local node mode
+  const [isNativeSupported, setIsNativeSupported] = useState(false)
+  const [isDockerAvailable, setIsDockerAvailable] = useState(false)
+  const [capabilitiesLoaded, setCapabilitiesLoaded] = useState(false)
+  const [localNodeMode, setLocalNodeMode] = useState<
+    'native' | 'docker' | null
+  >(null)
 
   const handleLanguageChange = (languageCode: string) => {
     dispatch(setLanguage(languageCode))
     i18n.changeLanguage(languageCode)
   }
 
-  // Check if local node is supported on this platform
+  // Check local node capabilities (native binary + Docker)
   useEffect(() => {
-    const checkLocalNodeSupport = async () => {
+    const checkCapabilities = async () => {
       try {
-        const supported = await invoke<boolean>('is_local_node_supported')
-        setIsLocalNodeSupported(supported)
+        const caps = await invoke<Record<string, boolean>>(
+          'get_local_node_capabilities'
+        )
+        const native = caps.native ?? false
+        const docker = caps.docker ?? false
+        setIsNativeSupported(native)
+        setIsDockerAvailable(docker)
+
+        // Prefer Docker when present so local setup can proceed immediately.
+        if (docker) {
+          setLocalNodeMode('docker')
+        } else if (native) {
+          setLocalNodeMode('native')
+        }
       } catch (error) {
-        console.error('Failed to check local node support:', error)
-        // If we can't check, assume it's not supported to be safe
-        setIsLocalNodeSupported(false)
+        console.error('Failed to check local node capabilities:', error)
+        // Fallback: check each backend separately
+        try {
+          const supported = await invoke<boolean>('is_local_node_supported')
+          if (supported) {
+            setIsNativeSupported(true)
+            setLocalNodeMode('native')
+          }
+        } catch {
+          // Native not available
+        }
+        try {
+          const docker = await invoke<boolean>('is_docker_available')
+          if (docker) {
+            setIsDockerAvailable(true)
+            setLocalNodeMode((mode) => mode ?? 'docker')
+          }
+        } catch {
+          // Docker command not available
+        }
       }
+      setCapabilitiesLoaded(true)
     }
 
-    checkLocalNodeSupport()
+    checkCapabilities()
   }, [])
 
   // Handle transitions
@@ -84,6 +121,13 @@ export const Component = () => {
       // Short delay for transition
       setTimeout(() => {
         setNodeType(type)
+        if (type === 'local' && !localNodeMode) {
+          if (isDockerAvailable) {
+            setLocalNodeMode('docker')
+          } else if (isNativeSupported) {
+            setLocalNodeMode('native')
+          }
+        }
         setIsTransitioning(false)
 
         if (content) {
@@ -91,6 +135,15 @@ export const Component = () => {
           content.classList.add('fade-in')
         }
       }, 250)
+    }
+  }
+
+  const navigateToWalletInit = (path: string) => {
+    if (localNodeMode === 'docker') {
+      // Docker env will be auto-created in wallet-init based on account name
+      navigate(`${path}?mode=docker`)
+    } else {
+      navigate(path)
     }
   }
 
@@ -199,7 +252,7 @@ export const Component = () => {
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
-                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
+                      <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-400 to-violet-500 bg-clip-text text-transparent tracking-tight py-2">
                         {t('walletSetup.connectTitle')}
                       </h1>
                       <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
@@ -211,33 +264,25 @@ export const Component = () => {
                         <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse delay-75" />
                       </div>
                     </div>
-                    <div
-                      className={`grid gap-6 ${isLocalNodeSupported ? 'grid-cols-1 md:grid-cols-2' : 'max-w-md mx-auto'}`}
-                    >
-                      <NodeOption
-                        description={t('walletSetup.remoteNodeDescription')}
-                        icon={<Cloud className="w-6 h-6" />}
-                        onClick={() => handleNodeTypeChange('remote')}
-                        recommended={true}
-                        title={t('walletSetup.remoteNodeTitle')}
-                      />
-                      {isLocalNodeSupported && (
+                    {!capabilitiesLoaded ? (
+                      <div className="flex justify-center py-12">
+                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                        <NodeOption
+                          description={t('walletSetup.remoteNodeDescription')}
+                          icon={<Cloud className="w-6 h-6" />}
+                          onClick={() => handleNodeTypeChange('remote')}
+                          recommended={true}
+                          title={t('walletSetup.remoteNodeTitle')}
+                        />
                         <NodeOption
                           description={t('walletSetup.localNodeDescription')}
                           icon={<Server className="w-6 h-6" />}
                           onClick={() => handleNodeTypeChange('local')}
                           title={t('walletSetup.localNodeTitle')}
                         />
-                      )}
-                    </div>
-                    {!isLocalNodeSupported && (
-                      <div className="mt-8 text-center fade-in">
-                        <div className="inline-flex items-center space-x-2 px-4 py-3 bg-surface-elevated/40 border border-primary/20 rounded-xl">
-                          <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse" />
-                          <p className="text-content-secondary text-sm">
-                            {t('walletSetup.localNodeNotSupported')}
-                          </p>
-                        </div>
                       </div>
                     )}
                   </>
@@ -247,7 +292,9 @@ export const Component = () => {
                       <Button
                         className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
                         icon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={() => handleNodeTypeChange(null)}
+                        onClick={() => {
+                          handleNodeTypeChange(null)
+                        }}
                         size="sm"
                         variant="outline"
                       >
@@ -273,24 +320,116 @@ export const Component = () => {
                         {t('walletSetup.setupLocalSubtitle')}
                       </p>
                     </div>
-                    {/* TODO: Add local node warning after mainnet launch */}
-                    {/* <LocalNodeWarning /> */}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <WalletAction
-                        description={t('walletSetup.createWalletDescription')}
-                        icon={<Wallet className="w-6 h-6 text-white" />}
-                        onClick={() => navigate(WALLET_INIT_PATH)}
-                        primary
-                        title={t('walletSetup.createWalletTitle')}
-                      />
-                      <WalletAction
-                        description={t('walletSetup.restoreWalletDescription')}
-                        icon={<ArrowLeftRight className="w-6 h-6 text-white" />}
-                        onClick={() => navigate(WALLET_RESTORE_PATH)}
-                        title={t('walletSetup.restoreWalletTitle')}
-                      />
+                    {/* Backend selection — always visible so user knows which backend will run */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                      <button
+                        className={`p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                          !isNativeSupported
+                            ? 'border-border-default/20 bg-surface-elevated/10 opacity-50 cursor-not-allowed'
+                            : localNodeMode === 'native'
+                              ? 'border-cyan bg-cyan/10 shadow-lg shadow-cyan/10'
+                              : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
+                        }`}
+                        disabled={!isNativeSupported}
+                        onClick={() => setLocalNodeMode('native')}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <Server
+                            className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
+                          />
+                          <span
+                            className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
+                          >
+                            {t('walletSetup.backendNative')}
+                          </span>
+                          {!isNativeSupported && (
+                            <span className="text-xs text-content-tertiary ml-auto">
+                              {t('walletSetup.backendUnavailable')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.backendNativeDescription')}
+                        </p>
+                      </button>
+                      <button
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                          !isDockerAvailable
+                            ? 'border-border-default/20 bg-surface-elevated/10 opacity-50 cursor-not-allowed'
+                            : localNodeMode === 'docker'
+                              ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                              : 'border-border-default/40 bg-surface-elevated/20 hover:border-border-default/60'
+                        }`}
+                        disabled={!isDockerAvailable}
+                        onClick={() => setLocalNodeMode('docker')}
+                        type="button"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <Container
+                              className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
+                            />
+                            <span
+                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                            >
+                              {t('walletSetup.backendDocker')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {!isDockerAvailable && (
+                              <span className="text-xs text-content-tertiary">
+                                {t('walletSetup.backendUnavailable')}
+                              </span>
+                            )}
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                              {t('walletSetup.recommended')}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.backendDockerDescription')}
+                        </p>
+                      </button>
                     </div>
+
+                    {/* Message when no backend is available */}
+                    {!isNativeSupported && !isDockerAvailable && (
+                      <div className="mb-8 p-4 rounded-xl bg-status-warning/10 border border-status-warning/30">
+                        <p className="text-sm text-status-warning font-medium mb-1">
+                          {t('walletSetup.noBackendAvailable')}
+                        </p>
+                        <p className="text-xs text-content-secondary">
+                          {t('walletSetup.noBackendHint')}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Create/Restore wallet actions (shown when a backend mode is selected) */}
+                    {localNodeMode && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <WalletAction
+                          description={t('walletSetup.createWalletDescription')}
+                          icon={<Wallet className="w-6 h-6 text-white" />}
+                          onClick={() => navigateToWalletInit(WALLET_INIT_PATH)}
+                          primary
+                          title={t('walletSetup.createWalletTitle')}
+                        />
+                        <WalletAction
+                          description={t(
+                            'walletSetup.restoreWalletDescription'
+                          )}
+                          icon={
+                            <ArrowLeftRight className="w-6 h-6 text-white" />
+                          }
+                          onClick={() =>
+                            navigateToWalletInit(WALLET_RESTORE_PATH)
+                          }
+                          title={t('walletSetup.restoreWalletTitle')}
+                        />
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>

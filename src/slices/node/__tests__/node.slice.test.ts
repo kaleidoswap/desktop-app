@@ -6,6 +6,7 @@ import {
   setLifecycleState,
   setError,
   setLoading,
+  setNodeReachability,
   setNodeRunning,
 } from '../node.slice'
 
@@ -77,7 +78,7 @@ describe('setLifecycleState', () => {
 
   it('sets Stopped → isRunning=false, isLoading=false', () => {
     const state = nodeReducer(
-      { ...initialState, isRunning: true, isLoading: true },
+      { ...initialState, isLoading: true, isRunning: true },
       setLifecycleState({ status: 'Stopped' })
     )
     expect(state.isRunning).toBe(false)
@@ -87,7 +88,7 @@ describe('setLifecycleState', () => {
   it('sets Failed → captures error message', () => {
     const state = nodeReducer(
       initialState,
-      setLifecycleState({ status: 'Failed', message: 'boom' })
+      setLifecycleState({ message: 'boom', status: 'Failed' })
     )
     expect(state.error).toBe('boom')
     expect(state.isRunning).toBe(false)
@@ -144,5 +145,32 @@ describe('setNodeRunning', () => {
       nodeReducer({ ...initialState, isRunning: true }, setNodeRunning(false))
         .isRunning
     ).toBe(false)
+  })
+})
+
+// ─── setNodeReachability ────────────────────────────────────────────────────
+
+describe('setNodeReachability', () => {
+  it('sets reachable and clears the reachability error', () => {
+    const state = nodeReducer(
+      { ...initialState, reachabilityError: 'offline' },
+      setNodeReachability({ status: 'reachable' })
+    )
+
+    expect(state.reachability).toBe('reachable')
+    expect(state.reachabilityError).toBeNull()
+  })
+
+  it('sets unreachable with the latest error', () => {
+    const state = nodeReducer(
+      initialState,
+      setNodeReachability({
+        error: 'Failed to fetch',
+        status: 'unreachable',
+      })
+    )
+
+    expect(state.reachability).toBe('unreachable')
+    expect(state.reachabilityError).toBe('Failed to fetch')
   })
 })

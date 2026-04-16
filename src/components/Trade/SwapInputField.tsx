@@ -94,13 +94,6 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       onAmountChange(e)
       return
     }
-    if (
-      maxAmount !== undefined &&
-      !isNaN(parsedValue) &&
-      parsedValue > maxAmount
-    ) {
-      e.target.value = formatAmount(maxAmount, asset)
-    }
     onAmountChange(e)
   }
 
@@ -168,7 +161,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       <div className="px-4 py-3 flex items-center gap-3">
         {/* Amount */}
         <div className="flex-1 min-w-0">
-          {isLoadingState && (!readOnly || !value) ? (
+          {isLoadingState && !value ? (
             <div
               className={`px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 h-14 flex items-center gap-2 ${amountAnimationClass}`}
             >
@@ -183,6 +176,11 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                 className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
                 disabled={disabled}
                 onChange={handleAmountChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Backspace' && !value) {
+                    e.preventDefault()
+                  }
+                }}
                 placeholder={t('trade.swapInput.placeholder')}
                 readOnly={readOnly}
                 type="text"

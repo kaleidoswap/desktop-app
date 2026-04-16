@@ -413,8 +413,8 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                 (btcBalanceData?.vanilla?.spendable !== undefined &&
                   numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
               }
-              isLoading={isLoading}
               icon={!isLoading ? <Zap size={18} /> : undefined}
+              isLoading={isLoading}
               onClick={handleCreateUTXOs}
               variant="primary"
             >

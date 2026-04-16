@@ -4,19 +4,19 @@ export const SUPPORTED_CURRENCIES = ['usd', 'eur', 'gbp', 'jpy', 'chf'] as const
 export type FiatCurrency = (typeof SUPPORTED_CURRENCIES)[number]
 
 export const CURRENCY_SYMBOLS: Record<FiatCurrency, string> = {
-  usd: '$',
+  chf: 'CHF ',
   eur: '€',
   gbp: '£',
   jpy: '¥',
-  chf: 'CHF ',
+  usd: '$',
 }
 
 export const CURRENCY_LABELS: Record<FiatCurrency, string> = {
-  usd: 'USD',
+  chf: 'CHF',
   eur: 'EUR',
   gbp: 'GBP',
   jpy: 'JPY',
-  chf: 'CHF',
+  usd: 'USD',
 }
 
 interface CoinGeckoPriceResponse {
@@ -24,17 +24,17 @@ interface CoinGeckoPriceResponse {
 }
 
 export const priceApi = createApi({
-  reducerPath: 'priceApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://api.coingecko.com/api/v3',
   }),
   endpoints: (builder) => ({
     getBitcoinPrice: builder.query<CoinGeckoPriceResponse, FiatCurrency>({
+      keepUnusedDataFor: 300,
       query: (currency) =>
-        `/simple/price?ids=bitcoin&vs_currencies=${currency}`,
-      keepUnusedDataFor: 300, // cache for 5 minutes
+        `/simple/price?ids=bitcoin&vs_currencies=${currency}`, // cache for 5 minutes
     }),
   }),
+  reducerPath: 'priceApi',
 })
 
 export const { useGetBitcoinPriceQuery } = priceApi

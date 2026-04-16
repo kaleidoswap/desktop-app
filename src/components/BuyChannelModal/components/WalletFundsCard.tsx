@@ -53,8 +53,8 @@ export const WalletFundsCard = ({
             <div className="grid gap-3 sm:grid-cols-2">
               {balances.map((balance) => (
                 <div
-                  key={balance.label}
                   className="rounded-2xl border border-border-subtle bg-surface-base/45 px-4 py-3"
+                  key={balance.label}
                 >
                   <p className="text-[11px] uppercase tracking-[0.26em] text-content-tertiary">
                     {balance.label}
