@@ -1329,10 +1329,10 @@ export const WithdrawModalContent: React.FC = () => {
     <>
       <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
         <div className="mb-4 text-center">
-          <div className="w-10 h-10 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 border border-primary/30 flex items-center justify-center mb-3">
+          <div className="w-10 h-10 mx-auto rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mb-3">
             <Zap className="w-5 h-5 text-primary" />
           </div>
-          <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1">
+          <h3 className="text-xl font-bold text-primary mb-1">
             {showConfirmation
               ? t('withdrawModal.main.title.confirm')
               : t('withdrawModal.main.title.form')}

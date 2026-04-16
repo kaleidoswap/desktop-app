@@ -29,19 +29,18 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
     return 'Network error. Please check your connection and try again.'
   }
 
-  // Handle HTTP status errors with specific messages
-  if (typeof error.status === 'number') {
-    if (error.status === 400) {
-      const detail =
-        error.data && typeof error.data === 'object' && 'detail' in error.data
-          ? (error.data as any).detail
-          : null
-      if (detail) {
-        logger.error(`[Swap] Server rejected request (400): ${detail}`)
-        return `Swap rejected: ${detail}`
-      }
-      return 'Swap request was rejected. The quote may have expired or the amounts may be invalid. Please try again.'
-    }
+  // For 400 with a detail object: log and strip status code prefix, then return
+  if (
+    typeof error.status === 'number' &&
+    error.status === 400 &&
+    error.data &&
+    typeof error.data === 'object' &&
+    'detail' in error.data
+  ) {
+    const detail = (error.data as any).detail as string
+    logger.error(`[Swap] Server rejected request (400): ${detail}`)
+    const match = detail.match(/\d{3}:\s*(.+)/)
+    return match ? match[1].trim() : detail
   }
 
   const errorData = error.data

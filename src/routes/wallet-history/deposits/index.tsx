@@ -446,7 +446,6 @@ export const Component: React.FC = () => {
           >
             <option value="all">{t('deposits.allStatuses')}</option>
             <option value="Completed">{t('deposits.completed')}</option>
-            <option value="Succeeded">{t('deposits.succeeded')}</option>
             <option value="Pending">{t('deposits.pending')}</option>
             <option value="Failed">{t('deposits.failed')}</option>
           </select>

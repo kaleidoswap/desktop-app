@@ -40,13 +40,13 @@ import {
   Button,
   Card,
   Alert,
-  SetupSection,
   FormField,
   Input,
   AdvancedSettings,
   NetworkSettings,
 } from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
+import kaleidoswapPictogram from '../../assets/logo.svg'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { buildLocalNodeUrl } from '../../api/client'
@@ -1023,7 +1023,7 @@ export const Component = () => {
     const renderStepLayout = (
       title: string,
       subtitle: string,
-      icon: React.ReactNode,
+      _icon: React.ReactNode,
       content: React.ReactNode,
       onBack?: () => void
     ) => (
@@ -1035,25 +1035,12 @@ export const Component = () => {
             <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-secondary/4 blur-2xl" />
           </div>
           <div className="relative flex-1 flex flex-col items-center justify-center p-8 gap-6">
-            {/* Icon ring */}
-            <div className="relative w-24 h-24 shrink-0">
-              <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
-              <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
-                  {icon}
-                </div>
-              </div>
-            </div>
-            {/* Title + subtitle */}
-            <div className="text-center space-y-2">
-              <h2 className="text-lg font-bold text-content-primary leading-snug">
-                {title}
-              </h2>
-              <p className="text-xs text-content-secondary leading-relaxed">
-                {subtitle}
-              </p>
-            </div>
+            {/* Pictogram */}
+            <img
+              alt="KaleidoSwap"
+              className="w-16 h-16"
+              src={kaleidoswapPictogram}
+            />
             {/* Step progress */}
             <div className="w-full space-y-1.5">
               {WALLET_INIT_STEPS.map((step, idx) => {
@@ -1176,20 +1163,18 @@ export const Component = () => {
             'waiting-ready':
               'Node process started — waiting for HTTP server to respond',
           }
+          const PulsingIcon = ({ icon: Icon }: { icon: React.ElementType }) => (
+            <div className="relative flex items-center justify-center">
+              <span className="absolute inline-flex w-full h-full rounded-full bg-primary/40 animate-ping" />
+              <Icon className="w-10 h-10 text-primary relative z-10" />
+            </div>
+          )
           const phaseIcon: Record<typeof initPhase, JSX.Element> = {
-            idle: <Zap className="w-8 h-8 text-primary animate-pulse" />,
-            'initializing-wallet': (
-              <Key className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'starting-node': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'unlocking-wallet': (
-              <Key className="w-8 h-8 text-primary animate-pulse" />
-            ),
-            'waiting-ready': (
-              <Zap className="w-8 h-8 text-primary animate-pulse" />
-            ),
+            idle: <PulsingIcon icon={Zap} />,
+            'initializing-wallet': <PulsingIcon icon={Key} />,
+            'starting-node': <PulsingIcon icon={Zap} />,
+            'unlocking-wallet': <PulsingIcon icon={Key} />,
+            'waiting-ready': <PulsingIcon icon={Zap} />,
           }
           return renderStepLayout(
             phaseTitle[initPhase],
@@ -1718,7 +1703,7 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
             </Alert>
           )}
 
-          <SetupSection>
+          <div className="space-y-4">
             <FormField
               description={t('walletInit.setupStep.accountNameDescription')}
               error={form.formState.errors.name?.message}
@@ -1754,7 +1739,7 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
               onChange={(network) => form.setValue('network', network)}
               selectedNetwork={selectedNetwork}
             />
-          </SetupSection>
+          </div>
 
           <AdvancedSettings>
             <NetworkSettings form={form} />

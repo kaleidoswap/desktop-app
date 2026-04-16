@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "Erreur lors du chargement des nœuds : {{error}}",
-      "title": "Vos nœuds",
+      "title": "Vos comptes",
       "exitEditMode": "Quitter le mode édition",
       "enterEditMode": "Activer le mode édition",
       "editNodes": "Modifier les nœuds",
@@ -2748,7 +2748,7 @@
       "balanceNeededTitle": "Solde supplémentaire requis",
       "availableLabel": "Disponible",
       "capacityFee": "Frais de capacité",
-      "continue": "Continuer ->",
+      "continue": "Continuer",
       "durationFee": "Frais de durée",
       "expiresLabel": "Expire",
       "lightningInvoice": "Facture Lightning",

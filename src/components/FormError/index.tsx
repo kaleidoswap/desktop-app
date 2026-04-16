@@ -14,7 +14,7 @@ export const FormError = ({
   }
 
   return (
-    <div className="mt-4 rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+    <div className="mt-4 mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4">
       <p className="mb-2 text-red-500">{message}</p>
       {errors && Object.entries(errors).length > 0 && (
         <ul className="list-inside list-disc">

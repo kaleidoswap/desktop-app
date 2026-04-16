@@ -22,7 +22,7 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
   isLoading = false,
   showGrandTotal = false,
   additionalCosts = [],
-  containerClassName = 'bg-surface-elevated border border-border-default rounded-xl p-4',
+  containerClassName = 'bg-surface-overlay/80 border border-border-default/50 rounded-xl p-4',
 }) => {
   const { t } = useTranslation()
 

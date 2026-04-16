@@ -55,7 +55,7 @@ export const NetworkSelector = ({
 
   return (
     <div className={`${className} relative`} ref={dropdownRef}>
-      <label className="block text-sm font-medium mb-2 text-content-secondary">
+      <label className="block text-sm font-medium mb-2 text-white">
         Network
       </label>
 

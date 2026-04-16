@@ -1350,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "加载节点时出错：{{error}}",
-      "title": "您的节点",
+      "title": "您的账户",
       "exitEditMode": "退出编辑模式",
       "enterEditMode": "进入编辑模式",
       "editNodes": "编辑节点",
@@ -2739,7 +2739,7 @@
       "balanceNeededTitle": "需要更多余额",
       "availableLabel": "可用",
       "capacityFee": "容量费用",
-      "continue": "继续 ->",
+      "continue": "继续",
       "durationFee": "时长费用",
       "expiresLabel": "到期时间",
       "lightningInvoice": "Lightning 发票",

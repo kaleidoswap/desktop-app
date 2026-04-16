@@ -227,8 +227,8 @@ export const Step1 = ({ onNext }: Props) => {
 
         {/* Continue Button */}
         <button
-          className="w-full py-2.5 px-4 bg-gradient-to-r from-primary to-secondary hover:opacity-90
-                   text-white rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
+          className="w-full py-2.5 px-4 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900
+                   rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
                    flex items-center justify-center gap-2 text-sm"
           onClick={handleSubmit}
         >

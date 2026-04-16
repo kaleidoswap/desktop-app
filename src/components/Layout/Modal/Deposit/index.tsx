@@ -22,7 +22,7 @@ export const DepositModalContent = () => {
         <div className="mb-4">
           <div className="h-1.5 w-full bg-surface-overlay rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
+              className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -31,7 +31,7 @@ export const DepositModalContent = () => {
               className={
                 step === 1
                   ? 'text-primary font-semibold'
-                  : 'text-content-secondary line-through opacity-60'
+                  : 'text-content-tertiary'
               }
             >
               {t('depositModal.progress.selectAsset')}

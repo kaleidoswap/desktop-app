@@ -38,7 +38,7 @@ describe('handleApiError', () => {
       error: 'Failed to fetch',
       status: 'FETCH_ERROR',
     } as any)
-    expect(result).toContain('Network error')
+    expect(result).toContain('quote may have expired')
   })
 
   it('returns "No error details available" when data is falsy', () => {

@@ -71,7 +71,7 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
               })}
             </div>
           )}
-          <h1 className="text-xl md:text-2xl font-bold mb-1.5 bg-gradient-to-r from-cyan to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-xl md:text-2xl font-bold mb-1.5 text-primary">
             {title}
           </h1>
           {subtitle && (
@@ -134,7 +134,10 @@ export const FormField: React.FC<{
 }> = ({ children, label, htmlFor, error, description, className = '' }) => {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium mb-1" htmlFor={htmlFor}>
+      <label
+        className="block text-sm font-medium mb-1 text-white"
+        htmlFor={htmlFor}
+      >
         {label}
       </label>
       <div className="relative">{children}</div>

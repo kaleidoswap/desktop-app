@@ -1350,7 +1350,7 @@
     },
     "main": {
       "errorLoading": "Errore durante il caricamento dei nodi: {{error}}",
-      "title": "I Tuoi Nodi",
+      "title": "I Tuoi Account",
       "exitEditMode": "Esci dalla Modalità Modifica",
       "enterEditMode": "Entra in Modalità Modifica",
       "editNodes": "Modifica Nodi",
@@ -2720,7 +2720,7 @@
       "availableRoutes": "Percorsi disponibili",
       "capacityFee": "Commissione di capacità",
       "discount": "Sconto",
-      "continue": "Continua ->",
+      "continue": "Continua",
       "confirmationTime": "Tempo di Conferma:",
       "durationFee": "Commissione di durata",
       "expiresLabel": "Scade",

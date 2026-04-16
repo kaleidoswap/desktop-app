@@ -638,7 +638,7 @@ export const Component = () => {
                   </form>
                 </>
               ) : (
-                <div className="flex flex-col flex-1 pb-8">
+                <div className="flex flex-col flex-1 pb-8 items-center justify-center">
                   <UnlockingProgress
                     errorMessage={unlockError || undefined}
                     infoMessage={unlockStatusMessage || undefined}

@@ -104,7 +104,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           <div className="flex items-center gap-0.5">
             {[
               {
-                color: 'text-primary hover:bg-primary/15',
+                color: 'text-white hover:bg-white/10',
                 icon: <Download className="w-3.5 h-3.5" />,
                 label: 'Deposit',
                 onClick: () =>
@@ -116,7 +116,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
               {
-                color: 'text-emerald-300 hover:bg-emerald-900/30',
+                color: 'text-white hover:bg-white/10',
                 icon: <Upload className="w-3.5 h-3.5" />,
                 label: 'Withdraw',
                 onClick: () =>
@@ -128,7 +128,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
               {
-                color: 'text-secondary hover:bg-secondary/15',
+                color: 'text-white hover:bg-white/10',
                 icon: <History className="w-3.5 h-3.5" />,
                 label: 'History',
                 onClick: () =>

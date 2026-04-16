@@ -67,7 +67,7 @@ export const PasswordSetupForm = ({
         >
           {/* Password Field */}
           <div className="transition-all duration-300">
-            <label className="block text-sm font-medium text-content-secondary mb-1.5 transition-opacity duration-300">
+            <label className="block text-sm font-medium text-white mb-1.5 transition-opacity duration-300">
               {t('components.passwordSetupForm.createPasswordLabel')}
             </label>
             <div className="relative group">
@@ -129,7 +129,7 @@ export const PasswordSetupForm = ({
 
           {/* Confirm Password Field */}
           <div className="transition-all duration-300">
-            <label className="block text-sm font-medium text-content-secondary mb-1.5 transition-opacity duration-300">
+            <label className="block text-sm font-medium text-white mb-1.5 transition-opacity duration-300">
               {t('components.passwordSetupForm.confirmPasswordLabel')}
             </label>
             <div className="relative group">

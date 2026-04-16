@@ -61,7 +61,11 @@ pre-commit:
 	pnpm run lint:fix
 	@echo "==> Formatting Rust code..."
 	cargo fmt --manifest-path src-tauri/Cargo.toml
-	@echo "==> Done! All formatting and lint fixes applied."
+	@echo "==> Type-checking frontend..."
+	pnpm run type-check
+	@echo "==> Running frontend tests..."
+	pnpm run test
+	@echo "==> Done! All formatting, lint, type-check and tests passed."
 
 check-pr: pre-commit
 	@echo "==> Type-checking frontend..."
@@ -164,7 +168,7 @@ help:
 	@echo "  make build       - Alias for 'make debug'"
 	@echo "  make build-app   - Build the Tauri desktop app"
 	@echo "  make build-app-windows - Build the Tauri desktop app for Windows"
-	@echo "  make pre-commit    - Format and pre-commit frontend (Prettier + ESLint) and backend (cargo fmt)"
+	@echo "  make pre-commit    - Format, lint, type-check and test frontend + format Rust backend"
 	@echo "  make check-pr    - Run pre-commit, type-check, clippy, build, and tests"
 	@echo "  make run         - Update repo, compile in release mode and run the program"
 	@echo "  make run-debug   - Update repo, compile in debug mode and run the program"

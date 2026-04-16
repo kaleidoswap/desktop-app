@@ -695,7 +695,7 @@
     },
     "main": {
       "errorLoading": "Fehler beim Laden der Nodes: {{error}}",
-      "title": "Deine Nodes",
+      "title": "Deine Konten",
       "exitEditMode": "Bearbeitungsmodus beenden",
       "enterEditMode": "Bearbeitungsmodus aktivieren",
       "editNodes": "Nodes bearbeiten",
@@ -2742,7 +2742,7 @@
       "balanceNeededTitle": "Mehr Guthaben erforderlich",
       "availableLabel": "Verfügbar",
       "capacityFee": "Kapazitätsgebühr",
-      "continue": "Weiter ->",
+      "continue": "Weiter",
       "durationFee": "Laufzeitgebühr",
       "expiresLabel": "Läuft ab",
       "lightningInvoice": "Lightning-Rechnung",

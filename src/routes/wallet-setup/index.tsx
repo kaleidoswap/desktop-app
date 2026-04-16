@@ -252,7 +252,7 @@ export const Component = () => {
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
                       </div>
-                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
+                      <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-400 to-violet-500 bg-clip-text text-transparent tracking-tight py-2">
                         {t('walletSetup.connectTitle')}
                       </h1>
                       <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">

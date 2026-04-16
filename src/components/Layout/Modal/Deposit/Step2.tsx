@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Copy,
   Loader,
+  RefreshCw,
   Wallet,
   Zap,
   Link as ChainIcon,
@@ -610,16 +611,14 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
           ${
             network === type
-              ? 'bg-primary/10 border-primary text-primary'
-              : 'border-border-default hover:border-primary/50 text-content-secondary hover:text-primary/80'
+              ? 'bg-violet-500/15 border-violet-500 text-violet-400'
+              : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
           }
         `}
         disabled={isDisabled}
         onClick={() => !isDisabled && setNetwork(type)}
       >
-        <Icon
-          className={`w-5 h-5 ${network === type ? 'animate-pulse' : ''}`}
-        />
+        <Icon className="w-5 h-5" />
         <span className="font-medium text-sm">{label}</span>
         {isDisabled && (
           <span className="text-xs text-content-tertiary">
@@ -664,9 +663,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       )
     }
   }, [invoiceStatus, onNext])
-
-  // Determine if BTC unified view has data ready
-  const btcReady = isBtc && (onchainAddress || lnInvoiceStr)
 
   const addressLabel =
     network === 'lightning'
@@ -747,7 +743,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
 
         {/* Network info and faucet suggestion */}
         {networkInfo && (
-          <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
+          <div className="p-3 bg-black/30 rounded-xl border border-white/15">
             {(() => {
               const faucetKey =
                 networkInfo.network === Network.Signet ||
@@ -764,25 +760,26 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               return (
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/20 text-xs font-medium">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/15 text-white text-xs font-medium">
                       {networkInfo.network}
                     </span>
-                    <span className="text-primary text-xs">
+                    <span className="text-white/70 text-xs">
                       {t('depositModal.step2.networkInfo.using', {
                         network: networkInfo.network,
                       })}
                     </span>
                   </div>
 
-                  <div className="text-xs text-primary mt-1">
+                  <div className="text-xs text-white/60 mt-1">
                     <p className="mb-1.5">
                       {t(
                         `depositModal.step2.networkInfo.description.${faucetKey}`
                       )}
                     </p>
                     <button
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/20
-                          hover:bg-primary/30 text-primary rounded-lg transition-colors text-xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent
+                          hover:bg-white/5 border border-white/30 hover:border-white/50
+                          text-white rounded-lg transition-colors text-xs font-semibold"
                       onClick={() => {
                         openUrl(link)
                       }}
@@ -875,13 +872,40 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
             </div>
 
-            {/* BTC Unified QR + Addresses */}
-            {loading && !btcReady ? (
-              <div className="flex justify-center py-8">
-                <Loader className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : btcReady ? (
-              <div className="space-y-3 animate-fadeIn">
+            {!address ? (
+              <button
+                className="w-full py-2.5 px-6 bg-status-success/15 hover:bg-status-success/25 disabled:opacity-50
+                     border border-status-success/30 text-status-success
+                     rounded-xl font-semibold transition-all duration-200
+                     flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+                disabled={
+                  loading ||
+                  (network === 'lightning' &&
+                    maxDepositAmount > 0 &&
+                    amount &&
+                    parseAmount(
+                      amount,
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                    ) > maxDepositAmount) ||
+                  (network === 'lightning' && maxDepositAmount === 0)
+                }
+                onClick={generateAddress}
+              >
+                {loading ? (
+                  <Loader className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>
+                      {network === 'lightning'
+                        ? t('depositModal.step2.actions.generateInvoice')
+                        : t('depositModal.step2.actions.generateAddressCta')}
+                    </span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="space-y-4 animate-fadeIn">
                 {/* Payment Status */}
                 {invoiceStatus && (
                   <div
@@ -996,13 +1020,15 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   disabled={loading}
                   onClick={handleRegenerateBtc}
                 >
-                  <Loader
-                    className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-                  />
+                  {loading ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
                   <span>{t('depositModal.step2.actions.regenerate')}</span>
                 </button>
               </div>
-            ) : null}
+            )}
           </>
         )}
 

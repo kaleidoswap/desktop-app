@@ -308,7 +308,7 @@
     "description": "View your transaction history, including deposits, payments, withdrawals, and swaps.",
     "bitcoin": "Bitcoin",
     "deposits": "Deposits",
-    "paymentsWithdrawals": "Payments & Withdrawals",
+    "paymentsWithdrawals": "Withdrawals",
     "swaps": "Swaps",
     "assets": "Assets",
     "channelOrders": "Channel Orders"
@@ -377,6 +377,7 @@
   "createChannel": {
     "checkingBalance": "Checking balance...",
     "retry": "Retry",
+    "goBack": "Go Back",
     "stepPeerConnection": "Peer Connection",
     "stepChannelSettings": "Channel Settings",
     "stepReviewConfirm": "Review & Confirm",
@@ -1357,7 +1358,7 @@
     },
     "main": {
       "errorLoading": "Error loading nodes: {{error}}",
-      "title": "Your Nodes",
+      "title": "Your Accounts",
       "exitEditMode": "Exit Edit Mode",
       "enterEditMode": "Enter Edit Mode",
       "editNodes": "Edit Nodes",
@@ -1472,6 +1473,7 @@
       "lspFetchSuccess": "LSP information fetched successfully",
       "lspUrlMissing": "Failed to get LSP connection URL",
       "lspFetchFailed": "Failed to fetch LSP information",
+      "infoMessage": "Open a channel with a market maker to start trading RGB assets instantly.",
       "timeout": "Request timed out. The LSP server is not responding. Please check the URL and try again.",
       "networkError": "Network error. Please check your connection and the LSP URL.",
       "waitForConnectionUrl": "Please wait for LSP connection URL to be fetched",
@@ -2030,6 +2032,9 @@
       "colorable": "Colorable UTXOs",
       "colored": "Colored UTXOs",
       "normal": "Normal UTXOs"
+    },
+    "filter": {
+      "all": "All"
     },
     "empty": "No UTXOs found. Create some to get started."
   },
@@ -2672,7 +2677,7 @@
       "availableLabel": "Available",
       "capacityFee": "Capacity fee",
       "discount": "Discount",
-      "continue": "Continue ->",
+      "continue": "Continue",
       "confirmationTime": "Confirmation Time:",
       "durationFee": "Duration fee",
       "expiresLabel": "Expires",
@@ -2723,7 +2728,7 @@
       "completePayment": "Complete Payment",
       "orderStatus": "Order Status",
       "reviewAndConfirm": "Review and confirm or customize your purchase",
-      "configureChannel": "Configure your channel and asset parameters",
+      "configureChannel": "Configure your channel and asset parameters.",
       "payForChannel": "Pay for your channel to complete the order",
       "orderCompleted": "Channel order completed successfully!",
       "orderStatusSubtitle": "Order status",
@@ -2891,7 +2896,7 @@
       "buyButton": "Buy USDT Channel",
       "onChainTitle": "Open with On-Chain USDT",
       "onChainBalance": "On-chain balance: {{amount}} USDT",
-      "noOnChain": "No on-chain USDT available",
+      "noOnChain": "No on-chain USDT available.",
       "useAll": "Use all",
       "usdtAmountLabel": "USDT amount",
       "capacityLabel": "Channel capacity",
