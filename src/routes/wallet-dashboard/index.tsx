@@ -204,6 +204,8 @@ export const Component = () => {
   const isLoading =
     btcBalanceResponse.isLoading || listChannelsResponse.isLoading
 
+  const isAssetsLoading = assetsResponse.isLoading || assetsResponse.isFetching
+
   const liquidityTotal = totalInboundLiquidity + totalOutboundLiquidity
   const outboundPct =
     liquidityTotal > 0 ? (totalOutboundLiquidity / liquidityTotal) * 100 : 50
@@ -514,7 +516,27 @@ export const Component = () => {
 
             {/* RGB asset rows — scrollable */}
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-              {niaAssets.length === 0 ? (
+              {isAssetsLoading ? (
+                <div className="space-y-0">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      className="grid grid-cols-4 gap-2 items-center border-b border-border-default/20 px-4 py-3"
+                      key={i}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-surface-elevated/50 animate-pulse flex-shrink-0" />
+                        <LoadingPlaceholder width="w-16" />
+                      </div>
+                      <LoadingPlaceholder />
+                      <LoadingPlaceholder />
+                      <div className="flex justify-center gap-1">
+                        <div className="w-6 h-6 rounded-lg bg-surface-elevated/50 animate-pulse" />
+                        <div className="w-6 h-6 rounded-lg bg-surface-elevated/50 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : niaAssets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-content-tertiary">
                   <Database className="w-10 h-10 mb-3 opacity-40" />
                   <p className="text-sm font-medium">No RGB assets found.</p>
@@ -529,6 +551,7 @@ export const Component = () => {
                     incomingBalance={
                       (assetBalances[asset.asset_id || ''] || {}).incoming || 0
                     }
+                    isLoading={!(asset.asset_id in assetBalances)}
                     key={asset.asset_id}
                     offChainBalance={
                       (assetBalances[asset.asset_id || ''] || {}).offChain || 0
