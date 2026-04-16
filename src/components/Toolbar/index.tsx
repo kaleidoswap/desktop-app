@@ -869,7 +869,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
           if (dockerEnv) {
             // If the Docker containers are already running and reachable, just navigate — don't restart
-            const alreadyRunning = await navigateFromNodeStatus(5000).catch(() => false)
+            const alreadyRunning = await navigateFromNodeStatus(5000).catch(
+              () => false
+            )
             if (alreadyRunning) return
 
             toast.info(

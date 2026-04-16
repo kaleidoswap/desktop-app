@@ -2009,32 +2009,41 @@ export const Component = () => {
 
       try {
         // Phase 1: Fetch all independent data in parallel
-        logger.info('🚀 Fetching balance, LSP info, node info, and channels in parallel...')
+        logger.info(
+          '🚀 Fetching balance, LSP info, node info, and channels in parallel...'
+        )
         setLoadingPhase('validating-balance')
 
-        const [balanceResponse, lspInfoResult, nodeInfoResponse, channelsResponse] =
-          await Promise.all([
-            btcBalance(),
-            getInfo().catch((error: any) => {
-              if (error?.status === 'TIMEOUT_ERROR') {
-                logger.warn(
-                  '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
-                )
-              } else {
-                logger.warn(
-                  '⚠️ Failed to fetch LSP info, continuing without channel limits:',
-                  error
-                )
-              }
-              return null
-            }),
-            nodeInfo(),
-            listChannels(),
-          ])
+        const [
+          balanceResponse,
+          lspInfoResult,
+          nodeInfoResponse,
+          channelsResponse,
+        ] = await Promise.all([
+          btcBalance(),
+          getInfo().catch((error: any) => {
+            if (error?.status === 'TIMEOUT_ERROR') {
+              logger.warn(
+                '⚠️ LSP info request timed out - maker server not responding. Continuing without channel limits.'
+              )
+            } else {
+              logger.warn(
+                '⚠️ Failed to fetch LSP info, continuing without channel limits:',
+                error
+              )
+            }
+            return null
+          }),
+          nodeInfo(),
+          listChannels(),
+        ])
 
         const lspInfoResponse: any =
           lspInfoResult && 'error' in lspInfoResult && lspInfoResult.error
-            ? (logger.warn('⚠️ LSP info fetch failed, continuing without channel limits'), null)
+            ? (logger.warn(
+                '⚠️ LSP info fetch failed, continuing without channel limits'
+              ),
+              null)
             : lspInfoResult
 
         if (!('data' in balanceResponse) || !balanceResponse.data) {
