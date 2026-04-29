@@ -16,7 +16,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
 
   if (!decodedInvoice) return null
 
-  const hasAsset = decodedInvoice.asset_id && decodedInvoice.asset_amount
+  const hasAsset = Boolean(decodedInvoice.asset_id)
+  const hasAssetAmount = Boolean(decodedInvoice.asset_amount)
 
   const assetInfo = hasAsset
     ? assets.data?.nia.find(
@@ -27,7 +28,7 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
     assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
 
   const formattedAssetAmount =
-    hasAsset && decodedInvoice.asset_amount
+    hasAssetAmount && decodedInvoice.asset_amount
       ? formatAssetAmountWithPrecision(
           decodedInvoice.asset_amount,
           ticker,
@@ -70,8 +71,8 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
     (decodedInvoice.amt_msat ?? 0) > maxLightningCapacity
 
   const isAssetBalanceExceeded =
-    hasAsset && assetInfo
-      ? decodedInvoice.asset_amount! >
+    hasAssetAmount && assetInfo
+      ? (decodedInvoice.asset_amount ?? 0) >
         (assetInfo.balance.offchain_outbound || 0)
       : false
 
@@ -100,7 +101,13 @@ const LightningInvoiceDetails: React.FC<LightningInvoiceDetailsProps> = ({
                 {t('withdrawModal.details.lightning.assetAmountLabel')}
               </span>
               <span className="text-white font-bold">
-                {formattedAssetAmount} {ticker}
+                {hasAssetAmount ? (
+                  <>
+                    {formattedAssetAmount} {ticker}
+                  </>
+                ) : (
+                  t('withdrawModal.details.lightning.assetAmountNotSpecified')
+                )}
               </span>
             </div>
             {assetInfo && (

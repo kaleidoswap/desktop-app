@@ -2501,7 +2501,8 @@
         "noRgbAssets": "Avviso: Nessun asset RGB disponibile da inviare."
       },
       "info": {
-        "zeroAmountInvoice": "Questa è una fattura a importo zero. Inserisci qui sotto l'importo che vuoi pagare."
+        "zeroAmountInvoice": "Questa è una fattura a importo zero. Inserisci qui sotto l'importo che vuoi pagare.",
+        "assetAmountRequired": "Questa fattura non specifica l'importo in {{ticker}}. Inserisci quanto vuoi inviare."
       }
     },
     "details": {
@@ -2509,6 +2510,7 @@
         "title": "Dettagli Fattura Lightning",
         "assetLabel": "Attivo:",
         "assetAmountLabel": "Importo Asset:",
+        "assetAmountNotSpecified": "Non specificato dalla fattura",
         "lightningBalanceLabel": "Tuo Saldo Lightning:",
         "btcAmountLabel": "Importo BTC:",
         "amountLabel": "Importo:",

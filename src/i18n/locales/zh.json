@@ -2498,7 +2498,8 @@
         "noRgbAssets": "警告：没有可用于发送的 RGB 资产。"
       },
       "info": {
-        "zeroAmountInvoice": "这是一张零金额发票。请在下方输入你要支付的金额。"
+        "zeroAmountInvoice": "这是一张零金额发票。请在下方输入你要支付的金额。",
+        "assetAmountRequired": "该发票未指定 {{ticker}} 金额。请输入您要发送的数量。"
       }
     },
     "details": {
@@ -2506,6 +2507,7 @@
         "title": "Lightning 发票详情",
         "assetLabel": "资产：",
         "assetAmountLabel": "资产金额：",
+        "assetAmountNotSpecified": "发票未指定",
         "lightningBalanceLabel": "您的 Lightning 余额：",
         "btcAmountLabel": "BTC 金额：",
         "amountLabel": "金额：",

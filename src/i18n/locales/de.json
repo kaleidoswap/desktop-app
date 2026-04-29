@@ -1846,7 +1846,8 @@
         "noRgbAssets": "Warnung: Keine RGB-Assets zum Senden verfügbar."
       },
       "info": {
-        "zeroAmountInvoice": "Dies ist eine Nullbetrags-Rechnung. Bitte geben Sie unten den Betrag ein, den Sie zahlen möchten."
+        "zeroAmountInvoice": "Dies ist eine Nullbetrags-Rechnung. Bitte geben Sie unten den Betrag ein, den Sie zahlen möchten.",
+        "assetAmountRequired": "Diese Rechnung gibt den {{ticker}}-Betrag nicht an. Bitte geben Sie ein, wie viel Sie senden möchten."
       }
     },
     "details": {
@@ -1854,6 +1855,7 @@
         "title": "Lightning-Rechnungsdetails",
         "assetLabel": "Asset:",
         "assetAmountLabel": "Asset-Betrag:",
+        "assetAmountNotSpecified": "Nicht in der Rechnung angegeben",
         "lightningBalanceLabel": "Ihr Lightning-Guthaben:",
         "btcAmountLabel": "BTC-Betrag:",
         "amountLabel": "Betrag:",

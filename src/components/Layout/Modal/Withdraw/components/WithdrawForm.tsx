@@ -576,7 +576,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
         addressType === 'lightning-address' ||
         (addressType === 'lightning' &&
           decodedInvoice &&
-          (!decodedInvoice.amt_msat || decodedInvoice.amt_msat === 0))) && (
+          (!decodedInvoice.amt_msat ||
+            decodedInvoice.amt_msat === 0 ||
+            (decodedInvoice.asset_id && !decodedInvoice.asset_amount)))) && (
         <>
           {/* Asset Selector - Only for rgb invoices without asset_id specified or lightning-address */}
           {((addressType === 'rgb' && !decodedRgbInvoice?.asset_id) ||
@@ -724,7 +726,10 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             addressType === 'rgb' ||
             (addressType === 'lightning' &&
               decodedInvoice &&
-              (!decodedInvoice.amt_msat || decodedInvoice.amt_msat === 0))) && (
+              (!decodedInvoice.amt_msat ||
+                decodedInvoice.amt_msat === 0 ||
+                (decodedInvoice.asset_id &&
+                  !decodedInvoice.asset_amount)))) && (
             <div className="space-y-1">
               <Controller
                 control={control}
