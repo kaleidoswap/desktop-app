@@ -1852,7 +1852,8 @@
         "noRgbAssets": "Avertissement : Aucun actif RGB disponible à envoyer."
       },
       "info": {
-        "zeroAmountInvoice": "Il s'agit d'une facture à montant zéro. Veuillez saisir ci-dessous le montant que vous souhaitez payer."
+        "zeroAmountInvoice": "Il s'agit d'une facture à montant zéro. Veuillez saisir ci-dessous le montant que vous souhaitez payer.",
+        "assetAmountRequired": "Cette facture ne précise pas le montant en {{ticker}}. Veuillez saisir le montant que vous souhaitez envoyer."
       }
     },
     "details": {
@@ -1860,6 +1861,7 @@
         "title": "Détails de la facture Lightning",
         "assetLabel": "Actif :",
         "assetAmountLabel": "Montant de l'actif :",
+        "assetAmountNotSpecified": "Non précisé par la facture",
         "lightningBalanceLabel": "Votre solde Lightning :",
         "btcAmountLabel": "Montant BTC :",
         "amountLabel": "Montant :",

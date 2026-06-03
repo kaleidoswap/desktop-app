@@ -28,9 +28,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const decodedInvoice = pendingData?.decodedInvoice
   const isLightningPayment = pendingData?.network === 'lightning'
   const isRgbLightningPayment =
-    isLightningPayment &&
-    decodedInvoice?.asset_amount &&
-    decodedInvoice?.asset_id
+    isLightningPayment && Boolean(decodedInvoice?.asset_id)
   const hasRegularBtcAmount =
     isLightningPayment && decodedInvoice?.amt_msat && !decodedInvoice?.asset_id
 
@@ -306,24 +304,28 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             )}
 
             {/* Asset Amount (if RGB Lightning) */}
-            {isLightningPayment &&
-              decodedInvoice?.asset_amount &&
-              decodedInvoice?.asset_id && (
-                <div className="flex justify-between py-2">
-                  <span className="text-content-secondary text-sm">
-                    {t('withdrawModal.confirmation.labels.assetAmount')}
-                  </span>
-                  <span className="text-white text-sm font-medium">
-                    {getAssetAmount(
-                      decodedInvoice.asset_amount,
-                      decodedInvoice.asset_id
-                    )}{' '}
-                    {availableAssets.find(
-                      (a: AssetOption) => a.value === decodedInvoice?.asset_id
-                    )?.label || t('withdrawModal.main.labels.unknownAsset')}
-                  </span>
-                </div>
-              )}
+            {isRgbLightningPayment && decodedInvoice?.asset_id && (
+              <div className="flex justify-between py-2">
+                <span className="text-content-secondary text-sm">
+                  {t('withdrawModal.confirmation.labels.assetAmount')}
+                </span>
+                <span className="text-white text-sm font-medium">
+                  {decodedInvoice.asset_amount
+                    ? `${getAssetAmount(decodedInvoice.asset_amount, decodedInvoice.asset_id)} ${
+                        availableAssets.find(
+                          (a: AssetOption) =>
+                            a.value === decodedInvoice?.asset_id
+                        )?.label || t('withdrawModal.main.labels.unknownAsset')
+                      }`
+                    : `${formatNumberWithCommas(String(pendingData?.amount ?? '0'))} ${
+                        availableAssets.find(
+                          (a: AssetOption) =>
+                            a.value === decodedInvoice?.asset_id
+                        )?.label || t('withdrawModal.main.labels.unknownAsset')
+                      }`}
+                </span>
+              </div>
+            )}
 
             {/* Fee (for BTC only) */}
             {pendingData?.asset_id === BTC_ASSET_ID &&

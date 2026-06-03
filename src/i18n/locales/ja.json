@@ -1852,7 +1852,8 @@
         "noRgbAssets": "警告: 送信可能なRGBアセットがありません。"
       },
       "info": {
-        "zeroAmountInvoice": "これはゼロ金額インボイスです。下に支払いたい金額を入力してください。"
+        "zeroAmountInvoice": "これはゼロ金額インボイスです。下に支払いたい金額を入力してください。",
+        "assetAmountRequired": "このインボイスには{{ticker}}の金額が指定されていません。送信する金額を入力してください。"
       }
     },
     "details": {
@@ -1860,6 +1861,7 @@
         "title": "Lightningインボイス詳細",
         "assetLabel": "アセット:",
         "assetAmountLabel": "アセット量:",
+        "assetAmountNotSpecified": "インボイスに未指定",
         "lightningBalanceLabel": "あなたのLightning残高:",
         "btcAmountLabel": "BTC量:",
         "amountLabel": "金額:",

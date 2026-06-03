@@ -448,16 +448,20 @@ export const WithdrawModalContent: React.FC = () => {
           setValue('network', 'lightning')
 
           // Validate invoice amount against balance and capacity
-          if (decoded.asset_id && decoded.asset_amount) {
-            // Invoice specifies an RGB asset
+          if (decoded.asset_id) {
+            // Invoice specifies an RGB asset (asset_amount may be null for open-amount invoices)
             setValue('asset_id', decoded.asset_id) // Set asset_id for potential display/validation
+            // Reset amount so the user enters it for open-amount asset invoices
+            if (!decoded.asset_amount) {
+              setValue('amount', '')
+            }
             await fetchAssetBalance(decoded.asset_id, 'offchain_outbound')
 
             // Get max local asset amount for this asset from channels
             const maxAssetAmount = maxAssetCapacities[decoded.asset_id] || 0
 
-            // Check asset amount against channel capacity
-            if (decoded.asset_amount > maxAssetAmount) {
+            // Check asset amount against channel capacity (only when invoice fixes the amount)
+            if (decoded.asset_amount && decoded.asset_amount > maxAssetAmount) {
               setValidationMessage({
                 message: t('withdrawModal.main.errors.invoiceAssetCapacity', {
                   asset: decoded.asset_id.substring(0, 8),
@@ -482,6 +486,22 @@ export const WithdrawModalContent: React.FC = () => {
                   type: 'error',
                 })
               }
+            }
+
+            // Inform the user when they need to enter the asset amount themselves
+            if (!decoded.asset_amount) {
+              const assetInfo = (assets.data?.nia || []).find(
+                (a: any) => a.asset_id === decoded.asset_id
+              )
+              const ticker =
+                assetInfo?.ticker ||
+                t('withdrawModal.main.labels.assetFallback')
+              setValidationMessage({
+                message: t('withdrawModal.main.info.assetAmountRequired', {
+                  ticker,
+                }),
+                type: 'info',
+              })
             }
           }
           // If this is a regular BTC invoice with an amount
@@ -724,8 +744,16 @@ export const WithdrawModalContent: React.FC = () => {
 
     // For lightning payments, need to use a limit based on invoice or capacity
     if (addressType === 'lightning') {
+      // RGB asset payment over Lightning: min is one base unit of the asset
+      if (decodedInvoice?.asset_id && assetId !== BTC_ASSET_ID) {
+        const assetInfo = (assets.data?.nia || []).find(
+          (a: any) => a.asset_id === assetId
+        )
+        const precision = assetInfo?.precision ?? 0
+        return precision > 0 ? 1 / Math.pow(10, precision) : 1
+      }
       if (decodedInvoice?.amt_msat) {
-        // If invoice has an amount, use that as the min
+        // BTC Lightning invoice with amount: use that as the min
         return msatToSat(decodedInvoice.amt_msat)
       }
       // Return a reasonable min for lightning (1 sat)
@@ -734,7 +762,13 @@ export const WithdrawModalContent: React.FC = () => {
 
     // For other assets or address types, use 1 as minimum
     return 1
-  }, [addressType, assetId, decodedInvoice, maxLightningCapacity]) // Add missing dependency
+  }, [
+    addressType,
+    assetId,
+    decodedInvoice,
+    maxLightningCapacity,
+    assets.data?.nia,
+  ]) // Add missing dependency
 
   const getMinAmountMessage = useCallback(() => {
     if (assetId === BTC_ASSET_ID) {
@@ -858,9 +892,24 @@ export const WithdrawModalContent: React.FC = () => {
         formattedData.decodedInvoice = decodedInvoice
 
         if (decodedInvoice.asset_id && decodedInvoice.asset_amount) {
-          // RGB Lightning Invoice with asset
+          // RGB Lightning Invoice with fixed asset amount
           formattedData.asset_id = decodedInvoice.asset_id
           formattedData.amount = decodedInvoice.asset_amount
+        } else if (decodedInvoice.asset_id && !decodedInvoice.asset_amount) {
+          // RGB Lightning Invoice without a fixed asset amount —
+          // user provides the asset amount via the form (display units)
+          formattedData.asset_id = decodedInvoice.asset_id
+          const cleanAmount = String(formattedData.amount ?? '').replace(
+            /,/g,
+            ''
+          )
+          const amountValue = Number(cleanAmount)
+          if (!cleanAmount || isNaN(amountValue) || amountValue <= 0) {
+            toast.error(t('withdrawModal.main.errors.zeroAmountRequired'), {
+              autoClose: 5000,
+            })
+            return
+          }
         } else if ((decodedInvoice?.amt_msat || 0) > 0) {
           // Standard BTC Lightning invoice - convert using helpers
           const amountSats = msatToSat(decodedInvoice.amt_msat || 0)
@@ -952,13 +1001,31 @@ export const WithdrawModalContent: React.FC = () => {
             invoice: pendingData.address,
           }
 
-          // If zero-amount invoice, add the amount from user input
+          // RGB Lightning invoice without a fixed asset amount: pass
+          // asset_id + asset_amount (in raw base units) to the node.
           if (
+            pendingData.decodedInvoice?.asset_id &&
+            !pendingData.decodedInvoice.asset_amount
+          ) {
+            const assetInfo = (assets.data?.nia || []).find(
+              (a: any) => a.asset_id === pendingData.decodedInvoice!.asset_id
+            )
+            const ticker =
+              assetInfo?.ticker || t('withdrawModal.main.labels.unknownAsset')
+            const rawAssetAmount = parseAssetAmountWithPrecision(
+              String(pendingData.amount ?? ''),
+              ticker,
+              bitcoinUnit,
+              assets.data?.nia
+            )
+            paymentParams.asset_id = pendingData.decodedInvoice.asset_id
+            paymentParams.asset_amount = Math.floor(rawAssetAmount)
+          } else if (
             pendingData.decodedInvoice &&
             (!pendingData.decodedInvoice.amt_msat ||
               pendingData.decodedInvoice.amt_msat === 0)
           ) {
-            // Convert user-entered amount to msat
+            // Zero-amount BTC invoice: convert user-entered amount to msat
             const userAmount = Number(pendingData.amount)
             if (bitcoinUnit === 'SAT') {
               paymentParams.amt_msat = userAmount * 1000

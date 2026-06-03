@@ -2459,7 +2459,8 @@
         "noRgbAssets": "Warning: No RGB assets available to send."
       },
       "info": {
-        "zeroAmountInvoice": "This is a zero-amount invoice. Please enter the amount you want to pay below."
+        "zeroAmountInvoice": "This is a zero-amount invoice. Please enter the amount you want to pay below.",
+        "assetAmountRequired": "This invoice does not specify the {{ticker}} amount. Please enter how much you want to send."
       }
     },
     "details": {
@@ -2467,6 +2468,7 @@
         "title": "Lightning Invoice Details",
         "assetLabel": "Asset:",
         "assetAmountLabel": "Asset Amount:",
+        "assetAmountNotSpecified": "Not specified by invoice",
         "lightningBalanceLabel": "Your Lightning Balance:",
         "btcAmountLabel": "BTC Amount:",
         "amountLabel": "Amount:",
