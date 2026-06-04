@@ -2,22 +2,54 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
-use tauri::{Emitter, Listener, Manager, Window};
+use tauri::{AppHandle, Emitter, Listener, Manager, State, Window};
 
 mod crypto;
 mod db;
 mod dca;
 mod docker_node;
+mod mind;
 mod node_backend;
 mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
 use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
+use mind::MindProcess;
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
 pub(crate) struct CurrentAccount(pub(crate) RwLock<Option<db::Account>>);
+
+// ── KaleidoMind sidecar commands ─────────────────────────────────────────
+// Thin pipe to apps/provider. The frontend builds protocol.ts Command objects
+// and sends them via `mind_send`; sidecar events arrive on the `mind-event`
+// Tauri event (see mind.rs).
+
+#[tauri::command]
+fn mind_start(app: AppHandle, mind: State<Arc<MindProcess>>) -> Result<(), String> {
+    mind.ensure_started(&app)
+}
+
+#[tauri::command]
+fn mind_send(
+    app: AppHandle,
+    mind: State<Arc<MindProcess>>,
+    payload: serde_json::Value,
+) -> Result<(), String> {
+    mind.send(&app, &payload)
+}
+
+#[tauri::command]
+fn mind_stop(mind: State<Arc<MindProcess>>) -> Result<(), String> {
+    mind.stop();
+    Ok(())
+}
+
+#[tauri::command]
+fn mind_is_running(mind: State<Arc<MindProcess>>) -> bool {
+    mind.is_running()
+}
 
 #[derive(serde::Serialize)]
 pub struct NodeLogsResponse {
@@ -32,6 +64,7 @@ fn main() {
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
     let docker_manager = Arc::new(Mutex::new(DockerNodeManager::new()));
     let dca_scheduler = Arc::new(DcaScheduler::new());
+    let mind_process = Arc::new(MindProcess::new());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -45,6 +78,7 @@ fn main() {
         .manage(Arc::clone(&node_process))
         .manage(Arc::clone(&docker_manager))
         .manage(Arc::clone(&dca_scheduler))
+        .manage(Arc::clone(&mind_process))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -152,6 +186,11 @@ fn main() {
             create_docker_environment,
             start_docker_node,
             stop_docker_node,
+            // KaleidoMind sidecar commands
+            mind_start,
+            mind_send,
+            mind_stop,
+            mind_is_running,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
