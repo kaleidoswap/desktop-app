@@ -33,13 +33,23 @@
     "settings": "Einstellungen",
     "marketMaker": "Market-Maker",
     "manualSwaps": "Manuelle Swaps",
-    "nostrP2P": "Nostr-P2P",
+    "nostrP2P": "Nostr P2P",
     "helpSupport": "Hilfe & Support",
     "getHelpSupport": "Hilfe & Support erhalten",
     "menu": "Menu",
     "expandSidebar": "Expand sidebar",
     "dca": "DCA",
-    "limitOrders": "Limit-Orders"
+    "limitOrders": "Limit-Orders",
+    "node": "Node",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "Übersicht",
+    "liquidity": "Liquidität",
+    "pairing": "Kopplung",
+    "models": "Modelle",
+    "skills": "Fähigkeiten",
+    "chat": "Chat",
+    "activate": "{{name}} aktivieren"
   },
   "channels": {
     "buyChannel": "Kanal kaufen",
@@ -96,7 +106,10 @@
     "connected": "Verbunden",
     "disconnected": "Getrennt",
     "logout": "Abmelden",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "noNode": "Kein Node verbunden",
+    "tapToConnect": "Zum Verbinden tippen",
+    "connectNode": "Node verbinden"
   },
   "settings": {
     "title": "Einstellungen",
@@ -1977,7 +1990,9 @@
     "testnetWarningDesc": "Sie befinden sich in einem Testnetzwerk. Gelder sind nicht echt und haben keinen monetären Wert.",
     "swap": "Swap",
     "btcPrice": "BTC-Preis",
-    "priceUnavailable": "Preis nicht verfügbar"
+    "priceUnavailable": "Preis nicht verfügbar",
+    "activateMindTitle": "KaleidoMind hinzufügen",
+    "activateMindDesc": "Führe ein lokales KI-Gehirn neben deinem Node aus — Chat, Modelle und Telefon-Kopplung."
   },
   "peerManagement": {
     "title": "Peers",
@@ -2034,8 +2049,8 @@
   },
   "walletSetup": {
     "getHelpSupport": "Hilfe & Support erhalten",
-    "connectTitle": "Mit dem RGB-Lightning-Netzwerk verbinden",
-    "connectSubtitle": "Wähle die gewünschte Verbindungsart",
+    "connectTitle": "Willkommen bei KaleidoSwap",
+    "connectSubtitle": "Wähle, wie du starten möchtest — verbinde einen RGB-Lightning-Node, starte das lokale KI-Gehirn oder beides.",
     "remoteNodeTitle": "Entfernter Node",
     "remoteNodeDescription": "Verbinde dich mit einem gehosteten oder selbst gehosteten Node. Empfohlen für die meisten Nutzer.",
     "localNodeTitle": "Lokaler Node",
@@ -2066,7 +2081,8 @@
     "remoteNodePrerequisitesMessage": "Sie benötigen eine laufende rgb-lightning-node-Instanz zum Verbinden. Folgen Sie unserer Einrichtungsanleitung, um zu beginnen.",
     "viewSetupGuide": "Einrichtungsanleitung ansehen",
     "getStarted": "Erste Schritte",
-    "recommended": "Empfohlen"
+    "mindOnlyHint": "Führe ein lokales KI-Gehirn auf diesem Desktop aus — kein Node erforderlich. Du kannst jederzeit später einen Node verbinden.",
+    "openMind": "KaleidoMind öffnen"
   },
   "createChannel": {
     "checkingBalance": "Saldo wird geprüft...",
@@ -3016,5 +3032,21 @@
       "invalidAmount": "Bitte geben Sie einen gültigen Betrag ein",
       "insufficientBalance": "Unzureichendes Guthaben"
     }
+  },
+  "launcher": {
+    "modes": {
+      "both": {
+        "title": "Node + Mind"
+      },
+      "node": {
+        "title": "Nur Node"
+      },
+      "mind": {
+        "title": "Nur Mind"
+      }
+    }
+  },
+  "liquidity": {
+    "sell": "Verkaufen"
   }
 }

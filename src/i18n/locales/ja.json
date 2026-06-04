@@ -39,7 +39,17 @@
     "menu": "Menu",
     "expandSidebar": "Expand sidebar",
     "dca": "DCA",
-    "limitOrders": "指値注文"
+    "limitOrders": "指値注文",
+    "node": "ノード",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "概要",
+    "liquidity": "流動性",
+    "pairing": "ペアリング",
+    "models": "モデル",
+    "skills": "スキル",
+    "chat": "チャット",
+    "activate": "{{name}} を有効化"
   },
   "channels": {
     "buyChannel": "チャネルを購入",
@@ -96,7 +106,10 @@
     "connected": "接続済み",
     "disconnected": "未接続",
     "logout": "ログアウト",
-    "settings": "設定"
+    "settings": "設定",
+    "noNode": "ノード未接続",
+    "tapToConnect": "タップして接続",
+    "connectNode": "ノードを接続"
   },
   "settings": {
     "title": "設定",
@@ -1983,7 +1996,9 @@
     "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。",
     "swap": "Swap",
     "btcPrice": "BTC価格",
-    "priceUnavailable": "価格を利用できません"
+    "priceUnavailable": "価格を利用できません",
+    "activateMindTitle": "KaleidoMind を追加",
+    "activateMindDesc": "ノードと並行してローカル AI ブレインを実行 — チャット、モデル、電話ペアリング。"
   },
   "peerManagement": {
     "title": "ピア",
@@ -2040,8 +2055,8 @@
   },
   "walletSetup": {
     "getHelpSupport": "ヘルプ&サポートを利用",
-    "connectTitle": "RGB Lightning Networkに接続",
-    "connectSubtitle": "ネットワークへの接続方法を選択してください",
+    "connectTitle": "KaleidoSwap へようこそ",
+    "connectSubtitle": "始め方を選んでください — RGB Lightning ノードに接続、ローカル AI ブレインを実行、またはその両方。",
     "remoteNodeTitle": "リモートノード",
     "remoteNodeDescription": "ホストされたノードまたは自己ホスト型インスタンスに接続します。ほとんどのユーザーと高度なセットアップに推奨されます。",
     "localNodeTitle": "ローカルノード",
@@ -2072,7 +2087,8 @@
     "remoteNodePrerequisitesMessage": "接続するには実行中のrgb-lightning-nodeインスタンスが必要です。始めるにはセットアップガイドに従ってください。",
     "viewSetupGuide": "セットアップガイドを見る",
     "getStarted": "始める",
-    "recommended": "推奨"
+    "mindOnlyHint": "このデスクトップでローカル AI ブレインを実行 — ノードは不要です。いつでも後でノードを接続できます。",
+    "openMind": "KaleidoMind を開く"
   },
   "createChannel": {
     "checkingBalance": "残高を確認中...",
@@ -3022,5 +3038,21 @@
       "invalidAmount": "有効な数量を入力してください",
       "insufficientBalance": "残高不足"
     }
+  },
+  "launcher": {
+    "modes": {
+      "both": {
+        "title": "ノード + Mind"
+      },
+      "node": {
+        "title": "ノードのみ"
+      },
+      "mind": {
+        "title": "Mind のみ"
+      }
+    }
+  },
+  "liquidity": {
+    "sell": "売却"
   }
 }

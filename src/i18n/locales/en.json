@@ -25,10 +25,44 @@
     "info": "Info",
     "comingSoon": "Coming soon"
   },
+  "launcher": {
+    "title": "Welcome to KaleidoSwap",
+    "subtitle": "Choose how you want to use it. You can change later.",
+    "default": "Default",
+    "yourAccounts": "Your accounts",
+    "setUpNode": "Set up your node",
+    "newNode": "Set up a new node",
+    "openMind": "Open KaleidoMind",
+    "modes": {
+      "both": {
+        "title": "Node + Mind",
+        "desc": "Run the wallet/node and the local AI brain together."
+      },
+      "node": {
+        "title": "Only Node",
+        "desc": "Just the RGB Lightning node, channels and swaps."
+      },
+      "mind": {
+        "title": "Only Mind",
+        "desc": "Just the local AI brain. No node required."
+      }
+    }
+  },
   "navigation": {
+    "node": "Node",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "Overview",
+    "activate": "Activate {{name}}",
     "dashboard": "Dashboard",
     "trade": "Trade",
     "history": "History",
+    "liquidity": "Liquidity",
+    "brain": "Brain",
+    "pairing": "Pairing",
+    "models": "Models",
+    "skills": "Skills",
+    "chat": "Chat",
     "channels": "Channels",
     "settings": "Settings",
     "marketMaker": "Market Maker",
@@ -95,6 +129,9 @@
     "myWallet": "My Wallet",
     "connected": "Connected",
     "disconnected": "Disconnected",
+    "noNode": "No node connected",
+    "tapToConnect": "Tap to connect",
+    "connectNode": "Connect a node",
     "logout": "Logout",
     "settings": "Settings"
   },
@@ -103,6 +140,8 @@
     "subtitle": "Manage your node and application preferences",
     "applicationSettings": "Application Settings",
     "generalSettings": "General Settings",
+    "capabilities": "Capabilities",
+    "capabilitiesDescription": "Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.",
     "language": "Language",
     "bitcoinUnit": "Bitcoin Unit",
     "bitcoinUnitSat": "Satoshi (SAT)",
@@ -340,8 +379,10 @@
   },
   "walletSetup": {
     "getHelpSupport": "Get Help & Support",
-    "connectTitle": "Connect to RGB Lightning Network",
-    "connectSubtitle": "Choose your preferred way to connect to the network",
+    "connectTitle": "Welcome to KaleidoSwap",
+    "connectSubtitle": "Choose how you want to get started — connect an RGB Lightning node, run the local AI brain, or both.",
+    "mindOnlyHint": "Run a local AI brain on this desktop — no node required. You can connect a node any time later.",
+    "openMind": "Open KaleidoMind",
     "remoteNodeTitle": "Remote Node",
     "remoteNodeDescription": "Connect to a hosted node or self-hosted instance. Recommended for most users and advanced setups.",
     "localNodeTitle": "Local Node",
