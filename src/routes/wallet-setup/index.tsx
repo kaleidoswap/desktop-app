@@ -10,8 +10,10 @@ import {
   ArrowLeft,
   HelpCircle,
   Languages,
+  Boxes,
+  Brain,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
@@ -20,6 +22,7 @@ import {
   WALLET_INIT_PATH,
   WALLET_REMOTE_PATH,
   WALLET_RESTORE_PATH,
+  KALEIDO_MIND_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
 import { AppVersion } from '../../components/AppVersion'
@@ -34,8 +37,38 @@ import {
   IconWrapper,
 } from '../../components/wallet-setup'
 import { LANGUAGES } from '../../i18n/config'
-import { setLanguage } from '../../slices/settings/settings.slice'
+import {
+  setLanguage,
+  setAppMode,
+  type AppMode,
+} from '../../slices/settings/settings.slice'
 import type { RootState } from '../../app/store'
+
+const MODE_OPTIONS: {
+  mode: AppMode
+  icon: React.ReactNode
+  labelKey: string
+  label: string
+}[] = [
+  {
+    icon: <Boxes className="w-4 h-4" />,
+    label: 'Node + Mind',
+    labelKey: 'launcher.modes.both.title',
+    mode: 'both',
+  },
+  {
+    icon: <Server className="w-4 h-4" />,
+    label: 'Only Node',
+    labelKey: 'launcher.modes.node.title',
+    mode: 'node',
+  },
+  {
+    icon: <Brain className="w-4 h-4" />,
+    label: 'Only Mind',
+    labelKey: 'launcher.modes.mind.title',
+    mode: 'mind',
+  },
+]
 
 export const Component = () => {
   const { t, i18n } = useTranslation()
@@ -45,6 +78,9 @@ export const Component = () => {
     (state: RootState) => state.settings.language
   )
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
+  // Which capabilities the user wants. 'both' (Node + Mind) is the default;
+  // 'mind' skips node setup entirely and opens KaleidoMind.
+  const [selectedMode, setSelectedMode] = useState<AppMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   // Docker / local node mode
@@ -136,6 +172,11 @@ export const Component = () => {
         }
       }, 250)
     }
+  }
+
+  const openMindOnly = () => {
+    dispatch(setAppMode('mind'))
+    navigate(KALEIDO_MIND_PATH)
   }
 
   const navigateToWalletInit = (path: string) => {
@@ -264,7 +305,54 @@ export const Component = () => {
                         <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse delay-75" />
                       </div>
                     </div>
-                    {!capabilitiesLoaded ? (
+
+                    {/* Mode selector — Node + Mind (default) / Only Node / Only Mind */}
+                    <div className="flex justify-center mb-8 slide-in">
+                      <div className="inline-flex flex-wrap justify-center gap-1 rounded-2xl border border-primary/20 bg-surface-elevated/40 p-1 backdrop-blur-xl">
+                        {MODE_OPTIONS.map((m) => {
+                          const active = selectedMode === m.mode
+                          return (
+                            <button
+                              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                                active
+                                  ? 'bg-primary/15 text-primary shadow-lg shadow-primary/10'
+                                  : 'text-content-secondary hover:text-white'
+                              }`}
+                              key={m.mode}
+                              onClick={() => setSelectedMode(m.mode)}
+                              type="button"
+                            >
+                              {m.icon}
+                              <span>
+                                {t(m.labelKey, { defaultValue: m.label })}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {selectedMode === 'mind' ? (
+                      <div className="flex flex-col items-center gap-5 py-6 slide-in">
+                        <p className="max-w-md text-center text-content-secondary">
+                          {t('walletSetup.mindOnlyHint', {
+                            defaultValue:
+                              'Run a local AI brain on this desktop — no node required. You can connect a node any time later.',
+                          })}
+                        </p>
+                        <Button
+                          icon={<ArrowRight className="w-5 h-5 ml-1" />}
+                          iconPosition="right"
+                          onClick={openMindOnly}
+                          size="lg"
+                          variant="primary"
+                        >
+                          {t('walletSetup.openMind', {
+                            defaultValue: 'Open KaleidoMind',
+                          })}
+                        </Button>
+                      </div>
+                    ) : !capabilitiesLoaded ? (
                       <div className="flex justify-center py-12">
                         <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                       </div>
@@ -273,14 +361,20 @@ export const Component = () => {
                         <NodeOption
                           description={t('walletSetup.remoteNodeDescription')}
                           icon={<Cloud className="w-6 h-6" />}
-                          onClick={() => handleNodeTypeChange('remote')}
+                          onClick={() => {
+                            dispatch(setAppMode(selectedMode))
+                            handleNodeTypeChange('remote')
+                          }}
                           recommended={true}
                           title={t('walletSetup.remoteNodeTitle')}
                         />
                         <NodeOption
                           description={t('walletSetup.localNodeDescription')}
                           icon={<Server className="w-6 h-6" />}
-                          onClick={() => handleNodeTypeChange('local')}
+                          onClick={() => {
+                            dispatch(setAppMode(selectedMode))
+                            handleNodeTypeChange('local')
+                          }}
                           title={t('walletSetup.localNodeTitle')}
                         />
                       </div>

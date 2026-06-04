@@ -16,7 +16,10 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
+import {
+  WALLET_DASHBOARD_PATH,
+  WALLET_SETUP_PATH,
+} from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 import { normalizeNodeUrl } from '../../api/client'
 import { Layout } from '../../components/Layout'
@@ -366,7 +369,7 @@ export const Component = () => {
   const accountName = nodeSettings.name || 'Your Wallet'
 
   if (redirectToRoot) {
-    return <Navigate replace to={ROOT_PATH} />
+    return <Navigate replace to={WALLET_DASHBOARD_PATH} />
   }
 
   return (

@@ -3,6 +3,7 @@ import {
   FileText,
   HelpCircle,
   MessageCircle,
+  MessageSquare,
   Github,
   Plus,
   ShoppingCart,
@@ -17,6 +18,14 @@ import {
   HardDriveDownload,
   Target,
   Brain,
+  Droplets,
+  Tag,
+  QrCode,
+  Cpu,
+  Sparkles,
+  ArrowLeftRight,
+  Radio,
+  LayoutDashboard,
 } from 'lucide-react'
 import React from 'react'
 
@@ -26,6 +35,7 @@ import {
   TRADE_PATH,
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
+  TRADE_NOSTR_P2P_PATH,
   TRADE_DCA_PATH,
   TRADE_LIMIT_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
@@ -45,6 +55,10 @@ import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
   KALEIDO_MIND_PATH,
+  KALEIDO_MIND_PAIRING_PATH,
+  KALEIDO_MIND_MODELS_PATH,
+  KALEIDO_MIND_SKILLS_PATH,
+  KALEIDO_MIND_CHAT_PATH,
 } from '../../app/router/paths'
 
 // Define types for navigation items
@@ -64,62 +78,137 @@ export interface NavItem {
   }[]
 }
 
-// Define main navigation items with icons
-export const getMainNavItems = (t: TFunction) => [
+// A labeled group of nav items shown as a category in the sidebar.
+export interface NavSection {
+  key: 'node' | 'mind'
+  label: string
+  items: NavItem[]
+}
+
+// Sidebar navigation, grouped into the two co-equal sections: Node and Mind.
+export const getNavSections = (t: TFunction): NavSection[] => [
   {
-    icon: <Home className="w-5 h-5" />,
-    label: t('navigation.dashboard'),
-    matchPath: WALLET_DASHBOARD_PATH,
-    to: WALLET_DASHBOARD_PATH,
-  },
-  {
-    icon: <Zap className="w-5 h-5" />,
-    label: t('navigation.trade'),
-    matchPath: TRADE_PATH,
-    to: TRADE_MARKET_MAKER_PATH,
-  },
-  {
-    icon: <Clock className="w-5 h-5" />,
-    label: t('navigation.history'),
-    matchPath: WALLET_HISTORY_PATH,
-    to: WALLET_HISTORY_PATH,
-  },
-  {
-    icon: <DcaBagIcon className="h-5 w-5" />,
-    label: t('navigation.dca', 'DCA'),
-    matchPath: TRADE_DCA_PATH,
-    to: TRADE_DCA_PATH,
-  },
-  {
-    icon: <Activity className="w-5 h-5" />,
-    label: t('navigation.channels'),
-    matchPath: CHANNELS_PATH,
-    subMenu: [
+    items: [
       {
-        icon: <Plus className="w-4 h-4" />,
-        label: t('channels.createNewChannel'),
-        to: CREATE_NEW_CHANNEL_PATH,
+        icon: <Home className="w-5 h-5" />,
+        label: t('navigation.dashboard'),
+        to: WALLET_DASHBOARD_PATH,
       },
       {
-        icon: <ShoppingCart className="w-4 h-4" />,
-        label: t('channels.buyAChannel'),
-        to: ORDER_CHANNEL_PATH,
+        icon: <Zap className="w-5 h-5" />,
+        label: t('navigation.trade'),
+        matchPath: TRADE_PATH,
+        subMenu: [
+          {
+            icon: <Store className="w-4 h-4" />,
+            label: t('navigation.marketMaker'),
+            to: TRADE_MARKET_MAKER_PATH,
+          },
+          {
+            icon: <ArrowLeftRight className="w-4 h-4" />,
+            label: t('navigation.manualSwaps'),
+            to: TRADE_MANUAL_PATH,
+          },
+          {
+            icon: <Radio className="w-4 h-4" />,
+            label: t('navigation.nostrP2P', 'Nostr P2P'),
+            to: TRADE_NOSTR_P2P_PATH,
+          },
+          {
+            icon: <DcaBagIcon className="h-4 w-4" />,
+            label: t('navigation.dca', 'DCA'),
+            to: TRADE_DCA_PATH,
+          },
+          {
+            icon: <Target className="w-4 h-4" />,
+            label: t('navigation.limitOrders', 'Limit Orders'),
+            to: TRADE_LIMIT_PATH,
+          },
+        ],
+        to: TRADE_MARKET_MAKER_PATH,
+      },
+      {
+        icon: <Clock className="w-5 h-5" />,
+        label: t('navigation.history'),
+        matchPath: WALLET_HISTORY_PATH,
+        to: WALLET_HISTORY_PATH,
+      },
+      {
+        icon: <Droplets className="w-5 h-5" />,
+        label: t('navigation.liquidity', 'Liquidity'),
+        matchPath: CHANNELS_PATH,
+        subMenu: [
+          {
+            icon: <Activity className="w-4 h-4" />,
+            label: t('channels.manageChannels'),
+            to: CHANNELS_PATH,
+          },
+          {
+            icon: <Plus className="w-4 h-4" />,
+            label: t('channels.createNewChannel'),
+            to: CREATE_NEW_CHANNEL_PATH,
+          },
+          {
+            icon: <ShoppingCart className="w-4 h-4" />,
+            label: t('channels.buyAChannel'),
+            to: ORDER_CHANNEL_PATH,
+          },
+          {
+            disabled: true,
+            icon: <Tag className="w-4 h-4" />,
+            label: t('liquidity.sell', 'Sell'),
+          },
+        ],
+        to: CHANNELS_PATH,
       },
     ],
-    to: CHANNELS_PATH,
+    key: 'node',
+    label: t('navigation.node', 'Node'),
   },
   {
-    icon: <Brain className="w-5 h-5" />,
-    label: t('navigation.kaleidoMind', 'KaleidoMind'),
-    matchPath: KALEIDO_MIND_PATH,
-    to: KALEIDO_MIND_PATH,
+    items: [
+      {
+        icon: <Brain className="w-5 h-5" />,
+        label: t('navigation.kaleidoMind', 'KaleidoMind'),
+        matchPath: KALEIDO_MIND_PATH,
+        subMenu: [
+          {
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            label: t('navigation.overview', 'Overview'),
+            to: KALEIDO_MIND_PATH,
+          },
+          {
+            icon: <QrCode className="w-4 h-4" />,
+            label: t('navigation.pairing', 'Pairing'),
+            to: KALEIDO_MIND_PAIRING_PATH,
+          },
+          {
+            icon: <Cpu className="w-4 h-4" />,
+            label: t('navigation.models', 'Models'),
+            to: KALEIDO_MIND_MODELS_PATH,
+          },
+          {
+            icon: <Sparkles className="w-4 h-4" />,
+            label: t('navigation.skills', 'Skills'),
+            to: KALEIDO_MIND_SKILLS_PATH,
+          },
+          {
+            icon: <MessageSquare className="w-4 h-4" />,
+            label: t('navigation.chat', 'Chat'),
+            to: KALEIDO_MIND_CHAT_PATH,
+          },
+        ],
+        to: KALEIDO_MIND_PATH,
+      },
+    ],
+    key: 'mind',
+    label: t('navigation.mind', 'Mind'),
   },
 ]
 
-// Keep the old export for backward compatibility (will be deprecated)
-export const MAIN_NAV_ITEMS = getMainNavItems(
-  ((key: string) => key.split('.').pop() || key) as any
-)
+// Flattened nav items — used for page-title resolution in the header.
+export const getMainNavItems = (t: TFunction): NavItem[] =>
+  getNavSections(t).flatMap((section) => section.items)
 
 // Channel menu items
 export const getChannelMenuItems = (t: TFunction) => [

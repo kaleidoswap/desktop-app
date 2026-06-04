@@ -13,13 +13,20 @@ import {
   User,
   Loader2,
   RefreshCw,
+  Plus,
+  Server,
+  Brain,
 } from 'lucide-react'
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { toast, ToastContainer } from 'react-toastify'
 
-import { WALLET_SETUP_PATH } from '../../app/router/paths'
+import {
+  ROOT_PATH,
+  WALLET_SETUP_PATH,
+  KALEIDO_MIND_PATH,
+} from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
@@ -27,6 +34,11 @@ import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setNodeReachability } from '../../slices/node/node.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import {
+  setAppMode,
+  isNodeEnabled,
+  isMindEnabled,
+} from '../../slices/settings/settings.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AppVersion } from '../AppVersion'
 import { BackupModal } from '../BackupModal'
@@ -41,6 +53,7 @@ import { SupportModal } from '../SupportModal'
 
 import 'react-toastify/dist/ReactToastify.min.css'
 import {
+  getNavSections,
   getMainNavItems,
   getChannelMenuItems,
   getTransactionMenuItems,
@@ -115,7 +128,7 @@ interface DropdownMenuProps {
 
 // Define types for NavItem component props
 interface NavItemProps {
-  item: NavItem & { to: string }
+  item: NavItem
   isCollapsed: boolean
   isActive: boolean
 }
@@ -128,48 +141,28 @@ interface UserProfileProps {
 }
 
 // NavItem component for sidebar
-const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
+const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Check if this is the Trade section and if we have a trading mode in the URL
   const hasSubMenu = item.subMenu && item.subMenu.length > 0
 
   // Auto-open submenu when the parent nav item is active
-  const isParentActive = location.pathname.startsWith(item.to)
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState(
-    isParentActive && hasSubMenu
-  )
+  const [isSubMenuOpen, setIsSubMenuOpen] = useState(isActive && hasSubMenu)
 
   useEffect(() => {
-    if (isParentActive && hasSubMenu) {
+    if (isActive && hasSubMenu) {
       setIsSubMenuOpen(true)
     }
-  }, [isParentActive, hasSubMenu])
+  }, [isActive, hasSubMenu])
 
-  const handleClick = (e: React.MouseEvent) => {
-    // If sidebar is collapsed and this is the Trade item, navigate directly to Market Maker page
-    if (
-      isCollapsed &&
-      item.label === 'Trade' &&
-      item.subMenu &&
-      item.subMenu.length > 0
-    ) {
-      e.preventDefault()
-      // Find the Market Maker submenu item and navigate to its path
-      const marketMakerItem = item.subMenu.find(
-        (subItem) => subItem.label === 'Market Maker'
-      )
-      if (marketMakerItem && marketMakerItem.to) {
-        navigate(marketMakerItem.to)
-      }
-      return
-    }
-
-    // For items with a submenu: toggle submenu but still allow navigation to the parent route
+  const handleClick = () => {
+    // When collapsed, let the NavLink navigate to the item's default route.
+    if (isCollapsed) return
+    // For items with a submenu: toggle it (navigation to parent still happens).
     if (hasSubMenu) {
-      setIsSubMenuOpen(!isSubMenuOpen)
+      setIsSubMenuOpen((open) => !open)
     }
   }
 
@@ -186,8 +179,8 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
       title={isCollapsed ? item.label : undefined}
     >
       <NavLink
-        className={({ isActive }) => `
-          flex items-center py-3.5 px-4 rounded-xl transition-all duration-300
+        className={`
+          flex items-center py-3 px-4 rounded-xl transition-all duration-300
           ${
             isActive
               ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
@@ -197,7 +190,7 @@ const SidebarNavItem = ({ item, isCollapsed }: NavItemProps) => {
           transform hover:translate-x-1 active:scale-[0.98]
         `}
         onClick={handleClick}
-        to={item.to}
+        to={item.to ?? '#'}
       >
         <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
           <div className="transition-transform duration-300 group-hover:scale-110">
@@ -345,6 +338,22 @@ const UserProfile = ({
   const isNodeReachable =
     nodeReachability === 'reachable' ||
     (nodeReachability === 'unknown' && nodeInfo.isSuccess)
+  // A node is "configured" once an account exists; without one the app is
+  // running KaleidoMind-only and the bar invites connecting a node.
+  const hasNode = !!nodeSettingsData?.name
+  const nameText = hasNode
+    ? accountName || t('userProfile.myWallet')
+    : t('userProfile.noNode', { defaultValue: 'No node connected' })
+  const statusText = hasNode
+    ? isNodeReachable
+      ? t('userProfile.connected')
+      : t('userProfile.disconnected')
+    : t('userProfile.tapToConnect', { defaultValue: 'Tap to connect' })
+  const statusDotClass = !hasNode
+    ? 'bg-content-tertiary'
+    : isNodeReachable
+      ? 'bg-green shadow-lg shadow-green/50 animate-pulse'
+      : 'bg-red shadow-lg shadow-red/50'
 
   const {
     showBackupModal,
@@ -401,8 +410,7 @@ const UserProfile = ({
             </div>
             <div
               className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-base
-              transition-all duration-300
-              ${isNodeReachable ? 'bg-green shadow-lg shadow-green/50 animate-pulse' : 'bg-red shadow-lg shadow-red/50'}`}
+              transition-all duration-300 ${statusDotClass}`}
             ></div>
           </div>
 
@@ -410,12 +418,10 @@ const UserProfile = ({
             <>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-white group-hover:text-primary transition-colors duration-300">
-                  {accountName || t('userProfile.myWallet')}
+                  {nameText}
                 </span>
                 <span className="text-xs text-content-secondary group-hover:text-content-secondary transition-colors duration-300">
-                  {isNodeReachable
-                    ? t('userProfile.connected')
-                    : t('userProfile.disconnected')}
+                  {statusText}
                 </span>
               </div>
               <ChevronRight
@@ -440,7 +446,7 @@ const UserProfile = ({
 
       {isOpen && (
         <div
-          className="absolute bottom-full left-0 mb-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
+          className="absolute top-full left-0 mt-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
                       rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
         >
           <div className="p-3 border-b border-divider/20 bg-gradient-to-br from-surface-overlay/50 to-transparent">
@@ -452,22 +458,39 @@ const UserProfile = ({
                 <User className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-sm font-medium text-white">
-                  {accountName || t('userProfile.myWallet')}
-                </div>
+                <div className="text-sm font-medium text-white">{nameText}</div>
                 <div className="text-xs text-content-secondary flex items-center space-x-1">
                   <div
-                    className={`w-2 h-2 rounded-full ${isNodeReachable ? 'bg-green animate-pulse' : 'bg-red'}`}
+                    className={`w-2 h-2 rounded-full ${!hasNode ? 'bg-content-tertiary' : isNodeReachable ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
-                  <span>
-                    {isNodeReachable
-                      ? t('userProfile.connected')
-                      : t('userProfile.disconnected')}
-                  </span>
+                  <span>{statusText}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {!hasNode && (
+            <div className="py-1 border-b border-divider/20">
+              <div
+                className="px-4 py-3 flex items-center space-x-3 cursor-pointer
+                          hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent
+                          transition-all duration-200 group"
+                onClick={() => {
+                  setIsOpen(false)
+                  navigate(ROOT_PATH)
+                }}
+              >
+                <div className="text-primary transition-transform duration-200 group-hover:scale-110">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium group-hover:text-white">
+                  {t('userProfile.connectNode', {
+                    defaultValue: 'Connect a node',
+                  })}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="py-1">
             {USER_MENU_ITEMS.map((item) => (
@@ -527,9 +550,21 @@ export const Layout = (props: Props) => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
+  // KaleidoMind does not depend on the node, so the node-offline overlay must
+  // never block it — a node-less or "KaleidoMind only" user can keep using it.
+  const isMindRoute = location.pathname.startsWith(KALEIDO_MIND_PATH)
 
   // Get translated menu items
+  const NAV_SECTIONS = getNavSections(t)
   const MAIN_NAV_ITEMS = getMainNavItems(t)
+  const isItemActive = (item: NavItem) => {
+    const path = location.pathname
+    if (item.matchPath) {
+      return path === item.matchPath || path.startsWith(`${item.matchPath}/`)
+    }
+    if (item.to && path === item.to) return true
+    return !!item.subMenu?.some((sub) => sub.to && path === sub.to)
+  }
   const CHANNEL_MENU_ITEMS = getChannelMenuItems(t)
   const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(t)
   const SUPPORT_RESOURCES = getSupportResources(t)
@@ -558,6 +593,9 @@ export const Layout = (props: Props) => {
     (state) => state.node.reachabilityError
   )
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
+  const appMode = useAppSelector((state) => state.settings.appMode)
+  const nodeSectionEnabled = isNodeEnabled(appMode)
+  const mindSectionEnabled = isMindEnabled(appMode)
   const isNodeReachable =
     nodeReachability === 'reachable' ||
     (nodeReachability === 'unknown' && nodeInfo.isSuccess)
@@ -572,6 +610,16 @@ export const Layout = (props: Props) => {
     accountKey: nodeSettingsData?.name,
     skip: shouldHideNavbar || !nodeSettingsData?.name,
   })
+
+  // In "Only Node" mode the KaleidoMind sidecar isn't reachable, so make sure
+  // its process (and any loaded model) is stopped to free resources.
+  useEffect(() => {
+    if (!mindSectionEnabled) {
+      invoke('mind_stop').catch(() => {
+        /* sidecar not running — nothing to stop */
+      })
+    }
+  }, [mindSectionEnabled])
 
   const { data, isFetching, error } = nodeApi.useListTransactionsQuery(
     undefined,
@@ -900,7 +948,7 @@ export const Layout = (props: Props) => {
         </div>
       )}
 
-      {!shouldHideNavbar && isNodeUnreachable && (
+      {!shouldHideNavbar && isNodeUnreachable && !isMindRoute && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4">
           <div className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6">
             <div className="flex items-start gap-4">
@@ -977,7 +1025,7 @@ export const Layout = (props: Props) => {
                   alt="KaleidoSwap"
                   className="h-10 w-auto cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
                   onClick={() => {
-                    navigate(WALLET_SETUP_PATH)
+                    navigate(ROOT_PATH)
                   }}
                   src={logoFull}
                 />
@@ -1002,25 +1050,94 @@ export const Layout = (props: Props) => {
               </button>
             </div>
 
-            {/* Main navigation */}
-            <div className="flex-1 overflow-y-auto pt-6 px-4">
-              <div className={`space-y-2 ${isSidebarCollapsed ? '' : 'mb-8'}`}>
-                {MAIN_NAV_ITEMS.map((item) => {
-                  const isActive = location.pathname.startsWith(item.to)
-                  return (
-                    <SidebarNavItem
-                      isActive={isActive}
-                      isCollapsed={isSidebarCollapsed}
-                      item={item}
-                      key={item.to}
-                    />
-                  )
-                })}
-              </div>
+            {/* Account / node status bar — at the top of the sidebar */}
+            <div className="px-4 pb-3 mb-1 border-b border-divider/20 bg-surface-base">
+              <UserProfile
+                isCollapsed={isSidebarCollapsed}
+                onLogout={() => setShowLogoutModal(true)}
+                onSupportClick={() => setShowSupportModal(true)}
+              />
             </div>
 
-            {/* Quick action buttons */}
-            {!isSidebarCollapsed && (
+            {/* Main navigation — grouped into Node / Mind categories */}
+            <div className="flex-1 overflow-y-auto pt-4 px-4">
+              {NAV_SECTIONS.map((section, sectionIndex) => {
+                const sectionEnabled =
+                  section.key === 'node'
+                    ? nodeSectionEnabled
+                    : mindSectionEnabled
+                const activate = () => {
+                  if (section.key === 'mind') {
+                    // Mind needs no setup — enable it and jump straight in.
+                    dispatch(setAppMode('both'))
+                    navigate(KALEIDO_MIND_PATH)
+                  } else {
+                    // Node needs onboarding — send the user to the welcome.
+                    navigate(ROOT_PATH)
+                  }
+                }
+                const ActivateIcon = section.key === 'node' ? Server : Brain
+                return (
+                  <div
+                    className={sectionIndex > 0 ? 'mt-6' : ''}
+                    key={section.label}
+                  >
+                    {isSidebarCollapsed ? (
+                      sectionIndex > 0 && (
+                        <div className="my-3 mx-2 border-t border-divider/20" />
+                      )
+                    ) : (
+                      <div className="px-4 mb-2 text-[0.68rem] font-bold uppercase tracking-wider text-content-tertiary">
+                        {section.label}
+                      </div>
+                    )}
+                    {sectionEnabled ? (
+                      <div className="space-y-1.5">
+                        {section.items.map((item) => (
+                          <SidebarNavItem
+                            isActive={isItemActive(item)}
+                            isCollapsed={isSidebarCollapsed}
+                            item={item}
+                            key={item.to ?? item.label}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        className={`group flex w-full items-center rounded-xl border border-dashed border-border-strong py-3 px-4 text-content-secondary transition-all duration-300 hover:border-primary/40 hover:text-white hover:bg-surface-overlay/60
+                          ${isSidebarCollapsed ? 'justify-center' : 'justify-start space-x-3'}`}
+                        onClick={activate}
+                        title={
+                          isSidebarCollapsed
+                            ? t('navigation.activate', {
+                                defaultValue: 'Activate {{name}}',
+                                name: section.label,
+                              })
+                            : undefined
+                        }
+                        type="button"
+                      >
+                        <ActivateIcon className="w-5 h-5 flex-shrink-0" />
+                        {!isSidebarCollapsed && (
+                          <span className="text-sm font-semibold">
+                            {t('navigation.activate', {
+                              defaultValue: 'Activate {{name}}',
+                              name: section.label,
+                            })}
+                          </span>
+                        )}
+                        {!isSidebarCollapsed && (
+                          <Plus className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Quick action buttons — node-only, hidden in KaleidoMind-only mode */}
+            {!isSidebarCollapsed && Boolean(nodeSettingsData?.name) && (
               <div className="px-4 pb-6 bg-surface-base">
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -1049,15 +1166,6 @@ export const Layout = (props: Props) => {
               </div>
             )}
 
-            {/* User profile section */}
-            <div className="p-4 border-t border-divider/20 bg-surface-base">
-              <UserProfile
-                isCollapsed={isSidebarCollapsed}
-                onLogout={() => setShowLogoutModal(true)}
-                onSupportClick={() => setShowSupportModal(true)}
-              />
-            </div>
-
             {/* App version info */}
             <div className="px-4 pb-4 relative bg-surface-base">
               <AppVersion
@@ -1082,7 +1190,7 @@ export const Layout = (props: Props) => {
                   {(() => {
                     // Get the current page icon and title
                     const mainNavItem = MAIN_NAV_ITEMS.find((item) =>
-                      location.pathname.startsWith(item.to)
+                      isItemActive(item)
                     )
 
                     const pageConfig = PAGE_CONFIG[location.pathname]
