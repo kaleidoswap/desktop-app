@@ -61,3 +61,5 @@ export const CREATE_NEW_CHANNEL_PATH = makePath(['create-new-channel'])
 export const ORDER_CHANNEL_PATH = makePath(['order-new-channel'])
 
 export const CREATEUTXOS_PATH = makePath(['createutxos'])
+
+export const KALEIDO_MIND_PATH = makePath(['kaleido-mind'])

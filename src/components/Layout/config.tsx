@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   HardDriveDownload,
   Target,
+  Brain,
 } from 'lucide-react'
 import React from 'react'
 
@@ -43,6 +44,7 @@ import {
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
+  KALEIDO_MIND_PATH,
 } from '../../app/router/paths'
 
 // Define types for navigation items
@@ -105,6 +107,12 @@ export const getMainNavItems = (t: TFunction) => [
       },
     ],
     to: CHANNELS_PATH,
+  },
+  {
+    icon: <Brain className="w-5 h-5" />,
+    label: t('navigation.kaleidoMind', 'KaleidoMind'),
+    matchPath: KALEIDO_MIND_PATH,
+    to: KALEIDO_MIND_PATH,
   },
 ]
 

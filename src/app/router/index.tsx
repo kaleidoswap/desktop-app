@@ -27,6 +27,7 @@ import {
   WALLET_HISTORY_ASSETS_PATH,
   WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   CREATEUTXOS_PATH,
+  KALEIDO_MIND_PATH,
 } from './paths'
 
 export const router = createBrowserRouter([
@@ -121,6 +122,10 @@ export const router = createBrowserRouter([
       {
         lazy: () => import('../../routes/createutxos'),
         path: CREATEUTXOS_PATH,
+      },
+      {
+        lazy: () => import('../../routes/kaleido-mind'),
+        path: KALEIDO_MIND_PATH,
       },
       {
         lazy: () => import('../../routes/channels'),
