@@ -3,7 +3,7 @@
 
 import { Check, Copy, Users } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { MindCard, useMindContext } from './shared'
 
@@ -11,6 +11,21 @@ export const Component: React.FC = () => {
   const mind = useMindContext()
   const { status } = mind
   const providerOn = status?.on === true
+
+  // Structured pairing payload the phone parses (services/PairingService.ts).
+  // The phone also accepts a bare public key, but the structured form carries
+  // the device name + active model so the pairing UI is informative.
+  const qrValue = useMemo(() => {
+    if (!status?.publicKey) return ''
+    return JSON.stringify({
+      issued_at: Math.floor(Date.now() / 1000),
+      model: status.activeModelName ?? '',
+      name: 'KaleidoSwap Desktop',
+      publicKey: status.publicKey,
+      type: 'kaleido-mind-pair',
+      v: 1,
+    })
+  }, [status?.publicKey, status?.activeModelName])
 
   const [copied, setCopied] = useState(false)
   const copyKey = async () => {
@@ -33,7 +48,7 @@ export const Component: React.FC = () => {
       {providerOn && status?.publicKey ? (
         <div className="flex flex-col items-center gap-3">
           <div className="rounded-lg bg-white p-3">
-            <QRCodeSVG size={196} value={status.publicKey} />
+            <QRCodeSVG level="M" size={196} value={qrValue} />
           </div>
           <button
             className="flex items-center gap-2 rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800"
