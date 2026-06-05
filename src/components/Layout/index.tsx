@@ -831,6 +831,7 @@ export const Layout = (props: Props) => {
     setShowCloseConfirmModal(false)
 
     try {
+      await invoke('nwc_stop_service').catch(() => undefined)
       await invoke('shutdown_node_and_quit')
     } finally {
       setIsHandlingCloseAction(false)

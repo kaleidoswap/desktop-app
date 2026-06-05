@@ -263,6 +263,13 @@ export const Component = () => {
         })
       }
 
+      // Start the NWC wallet service now that the node is unlocked and we have
+      // the password (needed to derive the service key from the mnemonic).
+      // Best-effort: a failure here must not block the unlock flow.
+      invoke('nwc_start_service', { password: data.password }).catch((err) => {
+        console.warn('nwc_start_service failed', err)
+      })
+
       setUnlockError(null)
       setUnlockStatusMessage(null)
       setErrors([])
