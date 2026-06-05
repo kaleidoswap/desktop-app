@@ -50,7 +50,7 @@ pub const SUPPORTED_METHODS: [&str; 7] = [
 /// NWC envelope/encryption/auth but expose RGB + node features beyond standard
 /// NIP-47. Each is a thin authenticated proxy to a fixed RLN endpoint; the
 /// client controls only the request body, never the path.
-pub const RLN_METHODS: [&str; 8] = [
+pub const RLN_METHODS: [&str; 11] = [
     "rln_node_info",
     "rln_list_assets",
     "rln_asset_balance",
@@ -59,6 +59,9 @@ pub const RLN_METHODS: [&str; 8] = [
     "rln_send_asset",
     "rln_list_channels",
     "rln_get_address",
+    "rln_decode_ln_invoice",
+    "rln_send_btc",
+    "rln_list_payments",
 ];
 
 /// How long to poll RLN for a payment preimage before giving up (seconds).
@@ -607,7 +610,12 @@ async fn dispatch_rln(
     match method {
         "rln_node_info" => rln_get::<serde_json::Value>(ctx, "/nodeinfo").await,
         "rln_list_channels" => rln_get::<serde_json::Value>(ctx, "/listchannels").await,
+        "rln_list_payments" => rln_get::<serde_json::Value>(ctx, "/listpayments").await,
         "rln_get_address" => rln_post::<serde_json::Value>(ctx, "/address", obj()).await,
+        "rln_decode_ln_invoice" => {
+            rln_post::<serde_json::Value>(ctx, "/decodelninvoice", obj()).await
+        }
+        "rln_send_btc" => rln_post::<serde_json::Value>(ctx, "/sendbtc", obj()).await,
         "rln_list_assets" => {
             // RLN requires `filter_asset_schemas`; default to all schemas.
             let mut body = obj();
