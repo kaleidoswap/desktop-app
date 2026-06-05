@@ -885,38 +885,26 @@ fn nwc_service_npub(nwc: tauri::State<'_, Arc<NwcManager>>) -> Option<String> {
     nwc.service_npub()
 }
 
-/// Start the NWC service for the current account. Derives the service keypair
-/// from the account mnemonic (requires the unlock password) and points the
-/// RLN bridge at the account's node URL. Called by the frontend after unlock.
+/// Start the NWC service for the current account. The service identity is a
+/// random Nostr key generated + persisted per account (independent of the
+/// wallet seed), so no password is required and it works for every account
+/// type. Points the RLN bridge at the account's node URL.
 #[tauri::command]
 async fn nwc_start_service(
     nwc: tauri::State<'_, Arc<NwcManager>>,
     state: tauri::State<'_, CurrentAccount>,
-    password: String,
 ) -> Result<(), String> {
-    let (account_id, network, node_url, account_name) = {
+    let (account_id, network, node_url) = {
         let current = state.0.read().unwrap();
         let account = current
             .as_ref()
             .ok_or_else(|| "No account is currently selected.".to_string())?;
-        (
-            account.id,
-            account.network.clone(),
-            account.node_url.clone(),
-            account.name.clone(),
-        )
+        (account.id, account.network.clone(), account.node_url.clone())
     };
-
-    let (encrypted, salt, nonce) = db::get_encrypted_mnemonic(&account_name)
-        .map_err(|e| format!("Failed to retrieve encrypted mnemonic: {e}"))?
-        .ok_or_else(|| "No mnemonic stored for this account.".to_string())?;
-    let mnemonic = crypto::decrypt_mnemonic(&encrypted, &password, &salt, &nonce)
-        .map_err(|e| format!("Failed to decrypt mnemonic: {e}"))?;
 
     nwc.start(nwc::StartConfig {
         account_id,
         network,
-        mnemonic,
         node_url,
         relays: Vec::new(),
     })

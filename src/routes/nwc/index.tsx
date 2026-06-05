@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { QRCodeSVG } from 'qrcode.react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 
 import { Alert, Badge, Button, Card, Input, Modal } from '../../components/ui'
@@ -77,9 +77,9 @@ export const Component = () => {
 
   // Manual start (needed when the node was already unlocked at app launch, so
   // the unlock screen — the usual auto-start trigger — was bypassed).
-  const [startPassword, setStartPassword] = useState('')
   const [starting, setStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
+  const autoStartedRef = useRef(false)
 
   // Add-connection modal state
   const [showAdd, setShowAdd] = useState(false)
@@ -124,13 +124,11 @@ export const Component = () => {
     }
   }, [])
 
-  const handleStart = async () => {
-    if (!startPassword) return
+  const handleStart = useCallback(async () => {
     setStarting(true)
     setStartError(null)
     try {
-      await invoke('nwc_start_service', { password: startPassword })
-      setStartPassword('')
+      await invoke('nwc_start_service')
       await refresh()
     } catch (err) {
       setStartError(
@@ -139,7 +137,16 @@ export const Component = () => {
     } finally {
       setStarting(false)
     }
-  }
+  }, [refresh])
+
+  // Auto-start once when the page loads and the service isn't running yet
+  // (the node is unlocked if we're rendering this page).
+  useEffect(() => {
+    if (!loading && !running && !autoStartedRef.current) {
+      autoStartedRef.current = true
+      handleStart()
+    }
+  }, [loading, running, handleStart])
 
   const toggleMethod = (id: string) => {
     setMethods((prev) =>
@@ -233,26 +240,15 @@ export const Component = () => {
         <Card title="Service not running">
           <div className="space-y-3">
             <p className="text-content-secondary text-sm">
-              The NWC service starts automatically when you unlock your wallet.
-              If the wallet was already unlocked when the app launched, start it
-              here — your password is needed to derive the service key.
+              The NWC service starts automatically when your wallet is unlocked.
+              If it isn’t running, start it here.
             </p>
-            <Input
-              onChange={(e) => setStartPassword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleStart()
-              }}
-              placeholder="Wallet password"
-              type="password"
-              value={startPassword}
-            />
             {startError && (
               <Alert title="Could not start" variant="error">
                 {startError}
               </Alert>
             )}
             <Button
-              disabled={!startPassword}
               isLoading={starting}
               onClick={handleStart}
               variant="primary"

@@ -822,3 +822,17 @@ pub fn reset_expired_nwc_budgets(now: i64) -> Result<usize, rusqlite::Error> {
         rusqlite::params![now],
     )
 }
+
+/// The NWC wallet-service secret key (hex) for an account. This is a random
+/// Nostr identity independent of the wallet seed, generated once and reused so
+/// connection URIs stay valid across restarts. Stored in AppSettings.
+pub fn get_nwc_service_secret(account_id: i32) -> Result<Option<String>, rusqlite::Error> {
+    get_app_setting(&format!("nwc_service_secret_{account_id}"))
+}
+
+pub fn set_nwc_service_secret(
+    account_id: i32,
+    secret_hex: &str,
+) -> Result<usize, rusqlite::Error> {
+    set_app_setting(&format!("nwc_service_secret_{account_id}"), secret_hex)
+}

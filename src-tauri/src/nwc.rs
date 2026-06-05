@@ -7,17 +7,16 @@
 //!   4. executes them against the embedded RGB Lightning Node over HTTP, and
 //!   5. publishes encrypted responses (kind 23195).
 //!
-//! The service keypair is derived from the account mnemonic via NIP-06 (on a
-//! dedicated account index so it does not collide with the user's social Nostr
-//! identity), so it is deterministic and recoverable. Each connected app gets
-//! its own randomly generated client secret (handed out in the
-//! `nostr+walletconnect://` URI) which the service authorizes individually with
-//! per-connection method allowlists + spend budget.
+//! The service keypair is a random Nostr identity generated once per account
+//! and persisted (independent of the wallet seed, so it works for every account
+//! type — including remote-node accounts with no stored mnemonic). Each
+//! connected app gets its own randomly generated client secret (handed out in
+//! the `nostr+walletconnect://` URI) which the service authorizes individually
+//! with per-connection method allowlists + spend budget.
 //!
 //! Scope (v1): BTC Lightning only — standard NIP-47 has no notion of RGB
 //! assets. RGB-asset support is a possible future `kaleido_*` extension.
 
-use nostr::nips::nip06::FromMnemonic;
 use nostr::nips::{nip04, nip47};
 use nostr::JsonUtil;
 use nostr_sdk::prelude::*;
@@ -35,10 +34,6 @@ pub const DEFAULT_RELAYS: [&str; 3] = [
     "wss://nos.lol",
     "wss://relay.primal.net",
 ];
-
-/// NIP-06 account index for the wallet-service key. Distinct from account 0
-/// (the conventional social identity) so the two keys never collide.
-const NWC_NIP06_ACCOUNT: u32 = 19; // arbitrary, stable
 
 /// Methods this service implements (advertised in the info event / get_info).
 pub const SUPPORTED_METHODS: [&str; 7] = [
@@ -66,8 +61,6 @@ pub struct StartConfig {
     pub account_id: i32,
     /// Network label for `get_info` responses (e.g. "regtest", "signet").
     pub network: String,
-    /// Decrypted BIP-39 mnemonic — used only to derive the service keypair.
-    pub mnemonic: String,
     /// Base URL of the embedded RLN, e.g. `http://127.0.0.1:3001`.
     pub node_url: String,
     /// Relays the service connects to / advertises. Empty → [`DEFAULT_RELAYS`].
@@ -133,13 +126,22 @@ impl NwcManager {
             return Ok(());
         }
 
-        // Derive the service keypair from the mnemonic (NIP-06, dedicated account).
-        let keys = Keys::from_mnemonic_with_account(
-            cfg.mnemonic.clone(),
-            None,
-            Some(NWC_NIP06_ACCOUNT),
-        )
-        .map_err(|e| format!("Failed to derive NWC service key: {e}"))?;
+        // Load (or generate + persist) the service keypair. It's a random Nostr
+        // identity independent of the wallet seed, so this works for every
+        // account type — including remote-node accounts with no stored mnemonic.
+        let keys = match db::get_nwc_service_secret(cfg.account_id) {
+            Ok(Some(hex)) => Keys::parse(&hex)
+                .map_err(|e| format!("Stored NWC service key is invalid: {e}"))?,
+            _ => {
+                let generated = Keys::generate();
+                db::set_nwc_service_secret(
+                    cfg.account_id,
+                    &generated.secret_key().to_secret_hex(),
+                )
+                .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
+                generated
+            }
+        };
         let service_pubkey = keys.public_key();
 
         let relays: Vec<String> = if cfg.relays.is_empty() {
