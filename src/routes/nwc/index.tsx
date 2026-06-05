@@ -35,6 +35,7 @@ interface NwcActivity {
 
 /** All methods the Rust service implements. */
 const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
+  // Standard NIP-47 (Bitcoin Lightning)
   { id: 'get_info', label: 'Get node info', payment: false },
   { id: 'get_balance', label: 'Get balance', payment: false },
   { id: 'make_invoice', label: 'Create invoices', payment: false },
@@ -42,6 +43,19 @@ const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
   { id: 'list_transactions', label: 'List transactions', payment: false },
   { id: 'pay_invoice', label: 'Pay invoices', payment: true },
   { id: 'pay_keysend', label: 'Send keysend', payment: true },
+  // KaleidoSwap RLN extensions (RGB + node)
+  { id: 'rln_node_info', label: 'RLN node info', payment: false },
+  { id: 'rln_list_assets', label: 'List RGB assets', payment: false },
+  { id: 'rln_asset_balance', label: 'RGB asset balance', payment: false },
+  { id: 'rln_rgb_invoice', label: 'Create RGB invoices', payment: false },
+  {
+    id: 'rln_decode_rgb_invoice',
+    label: 'Decode RGB invoices',
+    payment: false,
+  },
+  { id: 'rln_send_asset', label: 'Send RGB assets', payment: true },
+  { id: 'rln_list_channels', label: 'List channels', payment: false },
+  { id: 'rln_get_address', label: 'Get on-chain address', payment: false },
 ]
 
 const DEFAULT_METHODS = [

@@ -35,7 +35,7 @@ pub const DEFAULT_RELAYS: [&str; 3] = [
     "wss://relay.primal.net",
 ];
 
-/// Methods this service implements (advertised in the info event / get_info).
+/// Standard NIP-47 methods this service implements.
 pub const SUPPORTED_METHODS: [&str; 7] = [
     "get_info",
     "get_balance",
@@ -44,6 +44,21 @@ pub const SUPPORTED_METHODS: [&str; 7] = [
     "list_transactions",
     "pay_invoice",
     "pay_keysend",
+];
+
+/// KaleidoSwap RLN extension methods (namespaced `rln_`). These ride the same
+/// NWC envelope/encryption/auth but expose RGB + node features beyond standard
+/// NIP-47. Each is a thin authenticated proxy to a fixed RLN endpoint; the
+/// client controls only the request body, never the path.
+pub const RLN_METHODS: [&str; 8] = [
+    "rln_node_info",
+    "rln_list_assets",
+    "rln_asset_balance",
+    "rln_rgb_invoice",
+    "rln_decode_rgb_invoice",
+    "rln_send_asset",
+    "rln_list_channels",
+    "rln_get_address",
 ];
 
 /// How long to poll RLN for a payment preimage before giving up (seconds).
@@ -160,11 +175,14 @@ impl NwcManager {
         }
         client.connect().await;
 
-        // Advertise capabilities (kind 13194).
-        let info_builder = EventBuilder::new(
-            Kind::WalletConnectInfo,
-            SUPPORTED_METHODS.join(" "),
-        );
+        // Advertise capabilities (kind 13194) — standard + rln_ extensions.
+        let advertised: Vec<&str> = SUPPORTED_METHODS
+            .iter()
+            .chain(RLN_METHODS.iter())
+            .copied()
+            .collect();
+        let info_builder =
+            EventBuilder::new(Kind::WalletConnectInfo, advertised.join(" "));
         if let Err(e) = client.send_event_builder(info_builder).await {
             log::warn!("[NWC] failed to publish info event: {e}");
         }
@@ -326,7 +344,8 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
         None => return,
     };
 
-    // Decrypt + parse the request.
+    // Decrypt the request and read its method (parsed generically so we can
+    // handle both standard NIP-47 and namespaced `rln_` extension methods).
     let decrypted = match nip04::decrypt(ctx.keys.secret_key(), &client_pubkey, &event.content) {
         Ok(d) => d,
         Err(e) => {
@@ -334,25 +353,29 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
             return;
         }
     };
-    let request = match nip47::Request::from_json(&decrypted) {
-        Ok(r) => r,
+    let value: serde_json::Value = match serde_json::from_str(&decrypted) {
+        Ok(v) => v,
         Err(e) => {
-            log::warn!("[NWC] failed to parse request: {e}");
+            log::warn!("[NWC] failed to parse request JSON: {e}");
+            return;
+        }
+    };
+    let method_str = match value.get("method").and_then(|m| m.as_str()) {
+        Some(m) => m.to_string(),
+        None => {
+            log::warn!("[NWC] request missing method");
             return;
         }
     };
 
-    let method = request.method;
-    let method_str = method.as_str().to_string();
-
     // Enforce the per-connection method allowlist.
     let allowed: Vec<String> = serde_json::from_str(&connection.methods_json).unwrap_or_default();
     if !allowed.iter().any(|m| m == &method_str) {
-        let _ = respond(
+        let _ = respond_json(
             &ctx,
             &event,
             &client_pubkey,
-            method,
+            &method_str,
             Err(err(
                 nip47::ErrorCode::Restricted,
                 format!("Method '{method_str}' not permitted for this connection"),
@@ -362,28 +385,52 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
         return;
     }
 
-    // Dispatch.
-    let result = dispatch(&ctx, &connection, request).await;
-
-    // Bookkeeping: record spend on successful payments, else just touch.
     let now = now_secs();
     let _ = db::touch_nwc_connection(&client_hex, now);
 
-    // Emit an activity event for the UI.
+    if method_str.starts_with("rln_") {
+        // KaleidoSwap RLN extension method.
+        let params = value.get("params").cloned().unwrap_or(serde_json::Value::Null);
+        let result = dispatch_rln(&ctx, &method_str, params).await;
+        emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
+        let _ = respond_json(&ctx, &event, &client_pubkey, &method_str, result).await;
+    } else {
+        // Standard NIP-47 method.
+        let request = match nip47::Request::from_value(value) {
+            Ok(r) => r,
+            Err(e) => {
+                let _ = respond_json(
+                    &ctx,
+                    &event,
+                    &client_pubkey,
+                    &method_str,
+                    Err(err(nip47::ErrorCode::Other, format!("Invalid request: {e}"))),
+                )
+                .await;
+                return;
+            }
+        };
+        let method = request.method;
+        let result = dispatch(&ctx, &connection, request).await;
+        emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
+        let _ = respond(&ctx, &event, &client_pubkey, method, result).await;
+    }
+}
+
+/// Emit a `nwc:activity` event for the UI feed.
+fn emit_activity(ctx: &ServiceCtx, connection: &db::NwcConnection, method: &str, ok: bool, now: i64) {
     if let Some(app) = &ctx.app_handle {
         let _ = app.emit(
             "nwc:activity",
             serde_json::json!({
                 "connection_id": connection.id,
                 "connection_name": connection.name,
-                "method": method_str,
-                "ok": result.is_ok(),
+                "method": method,
+                "ok": ok,
                 "timestamp": now,
             }),
         );
     }
-
-    let _ = respond(&ctx, &event, &client_pubkey, method, result).await;
 }
 
 /// Route a parsed request to the RLN bridge, enforcing budget for payments.
@@ -456,6 +503,82 @@ async fn respond(
         .await
         .map_err(|e| format!("Failed to publish response: {e}"))?;
     Ok(())
+}
+
+/// Encrypt and publish a raw-JSON NIP-47 response (kind 23195). Used for the
+/// `rln_` extension methods (and allowlist rejections), whose `result_type` is
+/// an arbitrary method string the typed [`nip47::Response`] can't represent.
+async fn respond_json(
+    ctx: &ServiceCtx,
+    request_event: &Event,
+    client_pubkey: &PublicKey,
+    result_type: &str,
+    result: Result<serde_json::Value, nip47::NIP47Error>,
+) -> Result<(), String> {
+    let body = match result {
+        Ok(value) => serde_json::json!({ "result_type": result_type, "result": value }),
+        Err(e) => serde_json::json!({
+            "result_type": result_type,
+            "error": serde_json::to_value(&e).unwrap_or(serde_json::Value::Null),
+        }),
+    };
+
+    let content = nip04::encrypt(ctx.keys.secret_key(), client_pubkey, body.to_string())
+        .map_err(|e| format!("Failed to encrypt response: {e}"))?;
+
+    let builder = EventBuilder::new(Kind::WalletConnectResponse, content).tags([
+        Tag::public_key(*client_pubkey),
+        Tag::event(request_event.id),
+    ]);
+
+    ctx.client
+        .send_event_builder(builder)
+        .await
+        .map_err(|e| format!("Failed to publish response: {e}"))?;
+    Ok(())
+}
+
+/// Dispatch an `rln_` extension method to its fixed RLN endpoint, forwarding the
+/// raw JSON body and returning the raw JSON response. The path is server-chosen
+/// per method; the client only controls the body.
+async fn dispatch_rln(
+    ctx: &ServiceCtx,
+    method: &str,
+    params: serde_json::Value,
+) -> Result<serde_json::Value, nip47::NIP47Error> {
+    let obj = || {
+        if params.is_object() {
+            params.clone()
+        } else {
+            serde_json::json!({})
+        }
+    };
+    match method {
+        "rln_node_info" => rln_get::<serde_json::Value>(ctx, "/nodeinfo").await,
+        "rln_list_channels" => rln_get::<serde_json::Value>(ctx, "/listchannels").await,
+        "rln_get_address" => rln_post::<serde_json::Value>(ctx, "/address", obj()).await,
+        "rln_list_assets" => {
+            // RLN requires `filter_asset_schemas`; default to all schemas.
+            let mut body = obj();
+            if body.get("filter_asset_schemas").is_none() {
+                body["filter_asset_schemas"] =
+                    serde_json::json!(["Nia", "Uda", "Cfa", "Ifa"]);
+            }
+            rln_post::<serde_json::Value>(ctx, "/listassets", body).await
+        }
+        "rln_asset_balance" => {
+            rln_post::<serde_json::Value>(ctx, "/assetbalance", obj()).await
+        }
+        "rln_rgb_invoice" => rln_post::<serde_json::Value>(ctx, "/rgbinvoice", obj()).await,
+        "rln_decode_rgb_invoice" => {
+            rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
+        }
+        "rln_send_asset" => rln_post::<serde_json::Value>(ctx, "/sendrgb", obj()).await,
+        _ => Err(err(
+            nip47::ErrorCode::NotImplemented,
+            format!("Unknown method '{method}'"),
+        )),
+    }
 }
 
 // ---------------------------------------------------------------------------
