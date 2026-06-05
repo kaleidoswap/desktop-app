@@ -2,18 +2,13 @@ import { useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { twJoin } from 'tailwind-merge'
 
-import {
-  WALLET_DASHBOARD_PATH,
-  SETTINGS_PATH,
-  NWC_PATH,
-} from '../../app/router/paths'
+import { WALLET_DASHBOARD_PATH, SETTINGS_PATH } from '../../app/router/paths'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { ArrowDownIcon } from '../../icons/ArrowDown'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 const ITEMS = [
   { label: 'Wallet Dashboard', to: WALLET_DASHBOARD_PATH },
-  { label: 'App Connections (NWC)', to: NWC_PATH },
   { label: 'Settings', to: SETTINGS_PATH },
 ]
 
