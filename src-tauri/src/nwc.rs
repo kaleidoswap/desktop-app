@@ -17,7 +17,7 @@
 //! Scope (v1): BTC Lightning only — standard NIP-47 has no notion of RGB
 //! assets. RGB-asset support is a possible future `kaleido_*` extension.
 
-use nostr::nips::{nip04, nip47};
+use nostr::nips::{nip04, nip44, nip47};
 use nostr::JsonUtil;
 use nostr_sdk::prelude::*;
 use serde::de::DeserializeOwned;
@@ -181,8 +181,11 @@ impl NwcManager {
             .chain(RLN_METHODS.iter())
             .copied()
             .collect();
-        let info_builder =
-            EventBuilder::new(Kind::WalletConnectInfo, advertised.join(" "));
+        let info_builder = EventBuilder::new(Kind::WalletConnectInfo, advertised.join(" "))
+            .tag(Tag::custom(
+                TagKind::custom("encryption"),
+                ["nip44_v2 nip04"],
+            ));
         if let Err(e) = client.send_event_builder(info_builder).await {
             log::warn!("[NWC] failed to publish info event: {e}");
         }
@@ -344,9 +347,9 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
         None => return,
     };
 
-    // Decrypt the request and read its method (parsed generically so we can
-    // handle both standard NIP-47 and namespaced `rln_` extension methods).
-    let decrypted = match nip04::decrypt(ctx.keys.secret_key(), &client_pubkey, &event.content) {
+    // Decrypt the request (NIP-44 or NIP-04, auto-detected) and read its method
+    // (parsed generically so we handle both standard NIP-47 and `rln_` methods).
+    let (decrypted, enc) = match decrypt_content(&ctx.keys, &client_pubkey, &event.content) {
         Ok(d) => d,
         Err(e) => {
             log::warn!("[NWC] failed to decrypt request: {e}");
@@ -380,6 +383,7 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
                 nip47::ErrorCode::Restricted,
                 format!("Method '{method_str}' not permitted for this connection"),
             )),
+            enc,
         )
         .await;
         return;
@@ -393,7 +397,7 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
         let params = value.get("params").cloned().unwrap_or(serde_json::Value::Null);
         let result = dispatch_rln(&ctx, &method_str, params).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
-        let _ = respond_json(&ctx, &event, &client_pubkey, &method_str, result).await;
+        let _ = respond_json(&ctx, &event, &client_pubkey, &method_str, result, enc).await;
     } else {
         // Standard NIP-47 method.
         let request = match nip47::Request::from_value(value) {
@@ -405,6 +409,7 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
                     &client_pubkey,
                     &method_str,
                     Err(err(nip47::ErrorCode::Other, format!("Invalid request: {e}"))),
+                    enc,
                 )
                 .await;
                 return;
@@ -413,7 +418,53 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
         let method = request.method;
         let result = dispatch(&ctx, &connection, request).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
-        let _ = respond(&ctx, &event, &client_pubkey, method, result).await;
+        let _ = respond(&ctx, &event, &client_pubkey, method, result, enc).await;
+    }
+}
+
+/// The encryption scheme used for a request — responses mirror it so both
+/// legacy NIP-04 clients and modern NIP-44 clients are supported transparently.
+#[derive(Clone, Copy)]
+enum Enc {
+    Nip04,
+    Nip44,
+}
+
+/// Decrypt a request, detecting NIP-04 vs NIP-44. NIP-04 ciphertext carries a
+/// `?iv=` marker; NIP-44 does not (we still fall back to NIP-04 on failure).
+fn decrypt_content(
+    keys: &Keys,
+    peer: &PublicKey,
+    content: &str,
+) -> Result<(String, Enc), String> {
+    if content.contains("?iv=") {
+        return nip04::decrypt(keys.secret_key(), peer, content)
+            .map(|p| (p, Enc::Nip04))
+            .map_err(|e| e.to_string());
+    }
+    match nip44::decrypt(keys.secret_key(), peer, content) {
+        Ok(p) => Ok((p, Enc::Nip44)),
+        Err(_) => nip04::decrypt(keys.secret_key(), peer, content)
+            .map(|p| (p, Enc::Nip04))
+            .map_err(|e| e.to_string()),
+    }
+}
+
+/// Encrypt a response using the same scheme the client used for the request.
+fn encrypt_content(
+    keys: &Keys,
+    peer: &PublicKey,
+    plaintext: &str,
+    enc: Enc,
+) -> Result<String, String> {
+    match enc {
+        Enc::Nip04 => {
+            nip04::encrypt(keys.secret_key(), peer, plaintext).map_err(|e| e.to_string())
+        }
+        Enc::Nip44 => {
+            nip44::encrypt(keys.secret_key(), peer, plaintext, nip44::Version::V2)
+                .map_err(|e| e.to_string())
+        }
     }
 }
 
@@ -476,6 +527,7 @@ async fn respond(
     client_pubkey: &PublicKey,
     method: nip47::Method,
     result: Result<nip47::ResponseResult, nip47::NIP47Error>,
+    enc: Enc,
 ) -> Result<(), String> {
     let response = match result {
         Ok(r) => nip47::Response {
@@ -490,8 +542,7 @@ async fn respond(
         },
     };
 
-    let content = nip04::encrypt(ctx.keys.secret_key(), client_pubkey, response.as_json())
-        .map_err(|e| format!("Failed to encrypt response: {e}"))?;
+    let content = encrypt_content(&ctx.keys, client_pubkey, &response.as_json(), enc)?;
 
     let builder = EventBuilder::new(Kind::WalletConnectResponse, content).tags([
         Tag::public_key(*client_pubkey),
@@ -514,6 +565,7 @@ async fn respond_json(
     client_pubkey: &PublicKey,
     result_type: &str,
     result: Result<serde_json::Value, nip47::NIP47Error>,
+    enc: Enc,
 ) -> Result<(), String> {
     let body = match result {
         Ok(value) => serde_json::json!({ "result_type": result_type, "result": value }),
@@ -523,8 +575,7 @@ async fn respond_json(
         }),
     };
 
-    let content = nip04::encrypt(ctx.keys.secret_key(), client_pubkey, body.to_string())
-        .map_err(|e| format!("Failed to encrypt response: {e}"))?;
+    let content = encrypt_content(&ctx.keys, client_pubkey, &body.to_string(), enc)?;
 
     let builder = EventBuilder::new(Kind::WalletConnectResponse, content).tags([
         Tag::public_key(*client_pubkey),
