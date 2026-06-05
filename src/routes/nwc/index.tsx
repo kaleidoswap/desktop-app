@@ -75,6 +75,12 @@ export const Component = () => {
   const [loading, setLoading] = useState(true)
   const [activity, setActivity] = useState<NwcActivity[]>([])
 
+  // Manual start (needed when the node was already unlocked at app launch, so
+  // the unlock screen — the usual auto-start trigger — was bypassed).
+  const [startPassword, setStartPassword] = useState('')
+  const [starting, setStarting] = useState(false)
+  const [startError, setStartError] = useState<string | null>(null)
+
   // Add-connection modal state
   const [showAdd, setShowAdd] = useState(false)
   const [name, setName] = useState('')
@@ -117,6 +123,23 @@ export const Component = () => {
       unlistenPromise.then((unlisten) => unlisten())
     }
   }, [])
+
+  const handleStart = async () => {
+    if (!startPassword) return
+    setStarting(true)
+    setStartError(null)
+    try {
+      await invoke('nwc_start_service', { password: startPassword })
+      setStartPassword('')
+      await refresh()
+    } catch (err) {
+      setStartError(
+        typeof err === 'string' ? err : 'Failed to start the NWC service'
+      )
+    } finally {
+      setStarting(false)
+    }
+  }
 
   const toggleMethod = (id: string) => {
     setMethods((prev) =>
@@ -207,10 +230,37 @@ export const Component = () => {
       </div>
 
       {!running && !loading && (
-        <Alert title="Service not running" variant="warning">
-          The NWC service starts automatically when you unlock your wallet.
-          Unlock the wallet to create and serve app connections.
-        </Alert>
+        <Card title="Service not running">
+          <div className="space-y-3">
+            <p className="text-content-secondary text-sm">
+              The NWC service starts automatically when you unlock your wallet.
+              If the wallet was already unlocked when the app launched, start it
+              here — your password is needed to derive the service key.
+            </p>
+            <Input
+              onChange={(e) => setStartPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleStart()
+              }}
+              placeholder="Wallet password"
+              type="password"
+              value={startPassword}
+            />
+            {startError && (
+              <Alert title="Could not start" variant="error">
+                {startError}
+              </Alert>
+            )}
+            <Button
+              disabled={!startPassword}
+              isLoading={starting}
+              onClick={handleStart}
+              variant="primary"
+            >
+              Start service
+            </Button>
+          </div>
+        </Card>
       )}
 
       <Card
