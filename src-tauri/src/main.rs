@@ -9,10 +9,12 @@ mod db;
 mod dca;
 mod docker_node;
 mod node_backend;
+mod nwc;
 mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
+use nwc::NwcManager;
 use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
 use rgb_node::{NodeProcess, NodeState};
 
@@ -32,6 +34,7 @@ fn main() {
     let node_process = Arc::new(Mutex::new(NodeProcess::new()));
     let docker_manager = Arc::new(Mutex::new(DockerNodeManager::new()));
     let dca_scheduler = Arc::new(DcaScheduler::new());
+    let nwc_manager = Arc::new(NwcManager::new());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -45,6 +48,7 @@ fn main() {
         .manage(Arc::clone(&node_process))
         .manage(Arc::clone(&docker_manager))
         .manage(Arc::clone(&dca_scheduler))
+        .manage(Arc::clone(&nwc_manager))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -58,12 +62,16 @@ fn main() {
             let node_process = Arc::clone(&node_process);
             let docker_manager = Arc::clone(&docker_manager);
             let dca_scheduler = Arc::clone(&dca_scheduler);
+            let nwc_manager = Arc::clone(&nwc_manager);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
                     node_process.lock().unwrap().set_window(main_window.clone());
                     docker_manager.lock().unwrap().set_window(main_window);
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
+                nwc_manager.set_app_handle(app.handle().clone());
+                // NWC service is started lazily via nwc_start_service
+                // when the frontend detects the node is unlocked.
                 // DCA scheduler is started lazily via dca_start_scheduler
                 // when the frontend detects the node is unlocked.
                 db::init();
@@ -141,6 +149,15 @@ fn main() {
             dca_get_orders,
             dca_upsert_order,
             dca_delete_order,
+            // NWC commands
+            nwc_get_status,
+            nwc_service_npub,
+            nwc_start_service,
+            nwc_stop_service,
+            nwc_create_connection,
+            nwc_list_connections,
+            nwc_set_connection_enabled,
+            nwc_revoke_connection,
             // LimitOrder commands
             limit_get_orders,
             limit_upsert_order,
@@ -850,6 +867,123 @@ fn dca_delete_order(
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
     db::delete_dca_order(account.id, order_id).map_err(|e| e.to_string())
+}
+
+// ---------------------------------------------------------------------------
+// NWC (Nostr Wallet Connect) commands
+// ---------------------------------------------------------------------------
+
+/// Report whether the NWC service is currently running.
+#[tauri::command]
+fn nwc_get_status(nwc: tauri::State<'_, Arc<NwcManager>>) -> bool {
+    nwc.is_running()
+}
+
+/// The bech32 npub of the running NWC service (None if not running).
+#[tauri::command]
+fn nwc_service_npub(nwc: tauri::State<'_, Arc<NwcManager>>) -> Option<String> {
+    nwc.service_npub()
+}
+
+/// Start the NWC service for the current account. Derives the service keypair
+/// from the account mnemonic (requires the unlock password) and points the
+/// RLN bridge at the account's node URL. Called by the frontend after unlock.
+#[tauri::command]
+async fn nwc_start_service(
+    nwc: tauri::State<'_, Arc<NwcManager>>,
+    state: tauri::State<'_, CurrentAccount>,
+    password: String,
+) -> Result<(), String> {
+    let (account_id, network, node_url, account_name) = {
+        let current = state.0.read().unwrap();
+        let account = current
+            .as_ref()
+            .ok_or_else(|| "No account is currently selected.".to_string())?;
+        (
+            account.id,
+            account.network.clone(),
+            account.node_url.clone(),
+            account.name.clone(),
+        )
+    };
+
+    let (encrypted, salt, nonce) = db::get_encrypted_mnemonic(&account_name)
+        .map_err(|e| format!("Failed to retrieve encrypted mnemonic: {e}"))?
+        .ok_or_else(|| "No mnemonic stored for this account.".to_string())?;
+    let mnemonic = crypto::decrypt_mnemonic(&encrypted, &password, &salt, &nonce)
+        .map_err(|e| format!("Failed to decrypt mnemonic: {e}"))?;
+
+    nwc.start(nwc::StartConfig {
+        account_id,
+        network,
+        mnemonic,
+        node_url,
+        relays: Vec::new(),
+    })
+    .await
+}
+
+/// Stop the NWC service (called on lock / quit).
+#[tauri::command]
+async fn nwc_stop_service(nwc: tauri::State<'_, Arc<NwcManager>>) -> Result<(), String> {
+    nwc.stop().await;
+    Ok(())
+}
+
+/// Create a new app connection and return its `nostr+walletconnect://` URI.
+#[tauri::command]
+fn nwc_create_connection(
+    nwc: tauri::State<'_, Arc<NwcManager>>,
+    state: tauri::State<'_, CurrentAccount>,
+    name: String,
+    methods: Vec<String>,
+    budget_msat: Option<i64>,
+) -> Result<String, String> {
+    let account_id = state
+        .0
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|a| a.id)
+        .ok_or_else(|| "No account is currently selected.".to_string())?;
+    nwc.create_connection(account_id, &name, &methods, budget_msat)
+}
+
+/// List the current account's NWC connections.
+#[tauri::command]
+fn nwc_list_connections(
+    state: tauri::State<CurrentAccount>,
+) -> Result<Vec<db::NwcConnection>, String> {
+    let account_id = state
+        .0
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|a| a.id)
+        .ok_or_else(|| "No account is currently selected.".to_string())?;
+    db::get_nwc_connections(account_id).map_err(|e| e.to_string())
+}
+
+/// Enable or disable a connection without deleting it.
+#[tauri::command]
+fn nwc_set_connection_enabled(id: i32, enabled: bool) -> Result<usize, String> {
+    db::set_nwc_connection_enabled(id, enabled).map_err(|e| e.to_string())
+}
+
+/// Revoke (delete) a connection.
+#[tauri::command]
+fn nwc_revoke_connection(
+    state: tauri::State<CurrentAccount>,
+    id: i32,
+) -> Result<usize, String> {
+    let account_id = state
+        .0
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|a| a.id)
+        .ok_or_else(|| "No account is currently selected.".to_string())?;
+    db::delete_nwc_connection(account_id, id).map_err(|e| e.to_string())
 }
 
 /// Start the DCA scheduler (called when node becomes unlocked).

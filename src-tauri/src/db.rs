@@ -35,6 +35,36 @@ pub struct ChannelOrder {
     pub payload: String,
 }
 
+/// A Nostr Wallet Connect (NIP-47) app connection.
+///
+/// Each connected app gets its own randomly generated `client_secret` (the key
+/// handed out inside the `nostr+walletconnect://` URI). The service authorizes
+/// incoming requests by `client_pubkey` and enforces the per-connection
+/// `methods` allowlist and optional spend `budget_msat`.
+#[derive(Debug, Serialize, Clone)]
+pub struct NwcConnection {
+    pub id: i32,
+    pub account_id: i32,
+    pub name: String,
+    /// x-only hex public key derived from `client_secret`; identifies the app.
+    pub client_pubkey: String,
+    /// hex secret key handed to the app via the connection URI.
+    pub client_secret: String,
+    /// JSON array of relay URLs this connection uses.
+    pub relays_json: String,
+    /// JSON array of permitted NIP-47 method names.
+    pub methods_json: String,
+    /// Optional spend budget in millisatoshis (None = unlimited).
+    pub budget_msat: Option<i64>,
+    /// Millisatoshis spent against the current budget window.
+    pub spent_msat: i64,
+    /// Optional unix timestamp at which `spent_msat` resets to 0.
+    pub budget_renews_at: Option<i64>,
+    pub enabled: bool,
+    pub created_at: i64,
+    pub last_used_at: Option<i64>,
+}
+
 // Check if a database file exists, and create one if it does not.
 pub fn init() {
     // Create database file if it doesn't exist
@@ -143,6 +173,29 @@ pub fn init() {
         "CREATE TABLE IF NOT EXISTS 'AppSettings' (
             'key' TEXT PRIMARY KEY NOT NULL,
             'value' TEXT NOT NULL
+        );",
+        (),
+    )
+    .unwrap();
+
+    // Add NwcConnections table (Nostr Wallet Connect app connections)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS 'NwcConnections' (
+            'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+            'account_id' INTEGER NOT NULL,
+            'name' TEXT NOT NULL,
+            'client_pubkey' TEXT NOT NULL,
+            'client_secret' TEXT NOT NULL,
+            'relays_json' TEXT NOT NULL,
+            'methods_json' TEXT NOT NULL,
+            'budget_msat' INTEGER,
+            'spent_msat' INTEGER NOT NULL DEFAULT 0,
+            'budget_renews_at' INTEGER,
+            'enabled' INTEGER NOT NULL DEFAULT 1,
+            'created_at' INTEGER NOT NULL,
+            'last_used_at' INTEGER,
+            UNIQUE(account_id, client_pubkey),
+            FOREIGN KEY(account_id) REFERENCES Accounts(id) ON DELETE CASCADE
         );",
         (),
     )
@@ -617,5 +670,155 @@ pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error>
         "INSERT INTO AppSettings (key, value) VALUES (?1, ?2)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
         rusqlite::params![key, value],
+    )
+}
+
+// ---------------------------------------------------------------------------
+// NWC connections (Nostr Wallet Connect)
+// ---------------------------------------------------------------------------
+
+const NWC_COLUMNS: &str = "id, account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at, last_used_at";
+
+fn row_to_nwc_connection(row: &rusqlite::Row) -> Result<NwcConnection, rusqlite::Error> {
+    Ok(NwcConnection {
+        id: row.get(0)?,
+        account_id: row.get(1)?,
+        name: row.get(2)?,
+        client_pubkey: row.get(3)?,
+        client_secret: row.get(4)?,
+        relays_json: row.get(5)?,
+        methods_json: row.get(6)?,
+        budget_msat: row.get(7)?,
+        spent_msat: row.get(8)?,
+        budget_renews_at: row.get(9)?,
+        enabled: row.get::<_, i64>(10)? != 0,
+        created_at: row.get(11)?,
+        last_used_at: row.get(12)?,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn insert_nwc_connection(
+    account_id: i32,
+    name: &str,
+    client_pubkey: &str,
+    client_secret: &str,
+    relays_json: &str,
+    methods_json: &str,
+    budget_msat: Option<i64>,
+    budget_renews_at: Option<i64>,
+    created_at: i64,
+) -> Result<i64, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "INSERT INTO NwcConnections
+            (account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, 1, ?9)",
+        rusqlite::params![
+            account_id,
+            name,
+            client_pubkey,
+            client_secret,
+            relays_json,
+            methods_json,
+            budget_msat,
+            budget_renews_at,
+            created_at
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_nwc_connections(account_id: i32) -> Result<Vec<NwcConnection>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let sql = format!(
+        "SELECT {} FROM NwcConnections WHERE account_id = ?1 ORDER BY created_at DESC",
+        NWC_COLUMNS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map([account_id], row_to_nwc_connection)?
+        .map(|r| r.unwrap())
+        .collect();
+    Ok(rows)
+}
+
+/// All enabled connections across every account, used to bootstrap the service.
+#[allow(dead_code)]
+pub fn get_all_enabled_nwc_connections() -> Result<Vec<NwcConnection>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let sql = format!(
+        "SELECT {} FROM NwcConnections WHERE enabled = 1",
+        NWC_COLUMNS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map([], row_to_nwc_connection)?
+        .map(|r| r.unwrap())
+        .collect();
+    Ok(rows)
+}
+
+pub fn get_enabled_nwc_connections_for_account(
+    account_id: i32,
+) -> Result<Vec<NwcConnection>, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    let sql = format!(
+        "SELECT {} FROM NwcConnections WHERE account_id = ?1 AND enabled = 1",
+        NWC_COLUMNS
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map([account_id], row_to_nwc_connection)?
+        .map(|r| r.unwrap())
+        .collect();
+    Ok(rows)
+}
+
+pub fn set_nwc_connection_enabled(id: i32, enabled: bool) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "UPDATE NwcConnections SET enabled = ?1 WHERE id = ?2",
+        rusqlite::params![enabled as i64, id],
+    )
+}
+
+pub fn delete_nwc_connection(account_id: i32, id: i32) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "DELETE FROM NwcConnections WHERE id = ?1 AND account_id = ?2",
+        rusqlite::params![id, account_id],
+    )
+}
+
+/// Record spend against a connection's budget and bump `last_used_at`.
+pub fn add_nwc_spend(
+    client_pubkey: &str,
+    amount_msat: i64,
+    now: i64,
+) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "UPDATE NwcConnections SET spent_msat = spent_msat + ?1, last_used_at = ?2 WHERE client_pubkey = ?3",
+        rusqlite::params![amount_msat, now, client_pubkey],
+    )
+}
+
+/// Touch `last_used_at` without recording spend (non-payment requests).
+pub fn touch_nwc_connection(client_pubkey: &str, now: i64) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "UPDATE NwcConnections SET last_used_at = ?1 WHERE client_pubkey = ?2",
+        rusqlite::params![now, client_pubkey],
+    )
+}
+
+/// Reset spent budget windows that have elapsed.
+pub fn reset_expired_nwc_budgets(now: i64) -> Result<usize, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    conn.execute(
+        "UPDATE NwcConnections SET spent_msat = 0, budget_renews_at = NULL
+         WHERE budget_renews_at IS NOT NULL AND budget_renews_at <= ?1",
+        rusqlite::params![now],
     )
 }
