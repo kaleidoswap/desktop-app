@@ -14,8 +14,8 @@ mod rgb_node;
 mod tray;
 
 use dca::{DcaOrderInfo, DcaScheduler};
-use nwc::NwcManager;
 use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
+use nwc::NwcManager;
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -899,7 +899,11 @@ async fn nwc_start_service(
         let account = current
             .as_ref()
             .ok_or_else(|| "No account is currently selected.".to_string())?;
-        (account.id, account.network.clone(), account.node_url.clone())
+        (
+            account.id,
+            account.network.clone(),
+            account.node_url.clone(),
+        )
     };
 
     nwc.start(nwc::StartConfig {
@@ -960,10 +964,7 @@ fn nwc_set_connection_enabled(id: i32, enabled: bool) -> Result<usize, String> {
 
 /// Revoke (delete) a connection.
 #[tauri::command]
-fn nwc_revoke_connection(
-    state: tauri::State<CurrentAccount>,
-    id: i32,
-) -> Result<usize, String> {
+fn nwc_revoke_connection(state: tauri::State<CurrentAccount>, id: i32) -> Result<usize, String> {
     let account_id = state
         .0
         .read()

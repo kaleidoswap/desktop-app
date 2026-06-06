@@ -148,15 +148,13 @@ impl NwcManager {
         // identity independent of the wallet seed, so this works for every
         // account type — including remote-node accounts with no stored mnemonic.
         let keys = match db::get_nwc_service_secret(cfg.account_id) {
-            Ok(Some(hex)) => Keys::parse(&hex)
-                .map_err(|e| format!("Stored NWC service key is invalid: {e}"))?,
+            Ok(Some(hex)) => {
+                Keys::parse(&hex).map_err(|e| format!("Stored NWC service key is invalid: {e}"))?
+            }
             _ => {
                 let generated = Keys::generate();
-                db::set_nwc_service_secret(
-                    cfg.account_id,
-                    &generated.secret_key().to_secret_hex(),
-                )
-                .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
+                db::set_nwc_service_secret(cfg.account_id, &generated.secret_key().to_secret_hex())
+                    .map_err(|e| format!("Failed to persist NWC service key: {e}"))?;
                 generated
             }
         };
@@ -184,11 +182,9 @@ impl NwcManager {
             .chain(RLN_METHODS.iter())
             .copied()
             .collect();
-        let info_builder = EventBuilder::new(Kind::WalletConnectInfo, advertised.join(" "))
-            .tag(Tag::custom(
-                TagKind::custom("encryption"),
-                ["nip44_v2 nip04"],
-            ));
+        let info_builder = EventBuilder::new(Kind::WalletConnectInfo, advertised.join(" ")).tag(
+            Tag::custom(TagKind::custom("encryption"), ["nip44_v2 nip04"]),
+        );
         if let Err(e) = client.send_event_builder(info_builder).await {
             log::warn!("[NWC] failed to publish info event: {e}");
         }
@@ -344,7 +340,10 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
             return;
         }
     };
-    let connection = match connections.into_iter().find(|c| c.client_pubkey == client_hex) {
+    let connection = match connections
+        .into_iter()
+        .find(|c| c.client_pubkey == client_hex)
+    {
         Some(c) => c,
         // Unknown author → silently ignore (don't leak that the service exists).
         None => return,
@@ -397,7 +396,10 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
 
     if method_str.starts_with("rln_") {
         // KaleidoSwap RLN extension method.
-        let params = value.get("params").cloned().unwrap_or(serde_json::Value::Null);
+        let params = value
+            .get("params")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null);
         let result = dispatch_rln(&ctx, &method_str, params).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
         let _ = respond_json(&ctx, &event, &client_pubkey, &method_str, result, enc).await;
@@ -411,7 +413,10 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
                     &event,
                     &client_pubkey,
                     &method_str,
-                    Err(err(nip47::ErrorCode::Other, format!("Invalid request: {e}"))),
+                    Err(err(
+                        nip47::ErrorCode::Other,
+                        format!("Invalid request: {e}"),
+                    )),
                     enc,
                 )
                 .await;
@@ -435,11 +440,7 @@ enum Enc {
 
 /// Decrypt a request, detecting NIP-04 vs NIP-44. NIP-04 ciphertext carries a
 /// `?iv=` marker; NIP-44 does not (we still fall back to NIP-04 on failure).
-fn decrypt_content(
-    keys: &Keys,
-    peer: &PublicKey,
-    content: &str,
-) -> Result<(String, Enc), String> {
+fn decrypt_content(keys: &Keys, peer: &PublicKey, content: &str) -> Result<(String, Enc), String> {
     if content.contains("?iv=") {
         return nip04::decrypt(keys.secret_key(), peer, content)
             .map(|p| (p, Enc::Nip04))
@@ -461,18 +462,20 @@ fn encrypt_content(
     enc: Enc,
 ) -> Result<String, String> {
     match enc {
-        Enc::Nip04 => {
-            nip04::encrypt(keys.secret_key(), peer, plaintext).map_err(|e| e.to_string())
-        }
-        Enc::Nip44 => {
-            nip44::encrypt(keys.secret_key(), peer, plaintext, nip44::Version::V2)
-                .map_err(|e| e.to_string())
-        }
+        Enc::Nip04 => nip04::encrypt(keys.secret_key(), peer, plaintext).map_err(|e| e.to_string()),
+        Enc::Nip44 => nip44::encrypt(keys.secret_key(), peer, plaintext, nip44::Version::V2)
+            .map_err(|e| e.to_string()),
     }
 }
 
 /// Emit a `nwc:activity` event for the UI feed.
-fn emit_activity(ctx: &ServiceCtx, connection: &db::NwcConnection, method: &str, ok: bool, now: i64) {
+fn emit_activity(
+    ctx: &ServiceCtx,
+    connection: &db::NwcConnection,
+    method: &str,
+    ok: bool,
+    now: i64,
+) {
     if let Some(app) = &ctx.app_handle {
         let _ = app.emit(
             "nwc:activity",
@@ -620,14 +623,11 @@ async fn dispatch_rln(
             // RLN requires `filter_asset_schemas`; default to all schemas.
             let mut body = obj();
             if body.get("filter_asset_schemas").is_none() {
-                body["filter_asset_schemas"] =
-                    serde_json::json!(["Nia", "Uda", "Cfa", "Ifa"]);
+                body["filter_asset_schemas"] = serde_json::json!(["Nia", "Uda", "Cfa", "Ifa"]);
             }
             rln_post::<serde_json::Value>(ctx, "/listassets", body).await
         }
-        "rln_asset_balance" => {
-            rln_post::<serde_json::Value>(ctx, "/assetbalance", obj()).await
-        }
+        "rln_asset_balance" => rln_post::<serde_json::Value>(ctx, "/assetbalance", obj()).await,
         "rln_rgb_invoice" => rln_post::<serde_json::Value>(ctx, "/rgbinvoice", obj()).await,
         "rln_decode_rgb_invoice" => {
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
@@ -650,13 +650,12 @@ async fn rln_post<T: DeserializeOwned>(
     body: serde_json::Value,
 ) -> Result<T, nip47::NIP47Error> {
     let url = format!("{}{}", ctx.node_url, path);
-    let resp = ctx
-        .http
-        .post(&url)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| err(nip47::ErrorCode::Internal, format!("RLN request failed: {e}")))?;
+    let resp = ctx.http.post(&url).json(&body).send().await.map_err(|e| {
+        err(
+            nip47::ErrorCode::Internal,
+            format!("RLN request failed: {e}"),
+        )
+    })?;
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
@@ -670,14 +669,17 @@ async fn rln_post<T: DeserializeOwned>(
         .map_err(|e| err(nip47::ErrorCode::Internal, format!("RLN decode error: {e}")))
 }
 
-async fn rln_get<T: DeserializeOwned>(ctx: &ServiceCtx, path: &str) -> Result<T, nip47::NIP47Error> {
+async fn rln_get<T: DeserializeOwned>(
+    ctx: &ServiceCtx,
+    path: &str,
+) -> Result<T, nip47::NIP47Error> {
     let url = format!("{}{}", ctx.node_url, path);
-    let resp = ctx
-        .http
-        .get(&url)
-        .send()
-        .await
-        .map_err(|e| err(nip47::ErrorCode::Internal, format!("RLN request failed: {e}")))?;
+    let resp = ctx.http.get(&url).send().await.map_err(|e| {
+        err(
+            nip47::ErrorCode::Internal,
+            format!("RLN request failed: {e}"),
+        )
+    })?;
     if !resp.status().is_success() {
         let status = resp.status();
         return Err(err(
@@ -777,8 +779,8 @@ async fn rln_get_info(ctx: &ServiceCtx) -> Result<nip47::GetInfoResponse, nip47:
 }
 
 async fn rln_get_balance(ctx: &ServiceCtx) -> Result<nip47::GetBalanceResponse, nip47::NIP47Error> {
-    let bal: RlnBtcBalance = rln_post(ctx, "/btcbalance", serde_json::json!({"skip_sync": false}))
-        .await?;
+    let bal: RlnBtcBalance =
+        rln_post(ctx, "/btcbalance", serde_json::json!({"skip_sync": false})).await?;
     // NWC balance is in millisatoshis; RLN reports spendable sats.
     Ok(nip47::GetBalanceResponse {
         balance: bal.vanilla.spendable.saturating_mul(1000),
@@ -809,16 +811,17 @@ async fn rln_make_invoice(
 }
 
 async fn rln_decode_invoice(ctx: &ServiceCtx, invoice: &str) -> RlnDecodeInvoiceResp {
-    rln_post(ctx, "/decodelninvoice", serde_json::json!({ "invoice": invoice }))
-        .await
-        .unwrap_or_default()
+    rln_post(
+        ctx,
+        "/decodelninvoice",
+        serde_json::json!({ "invoice": invoice }),
+    )
+    .await
+    .unwrap_or_default()
 }
 
 /// Shared budget gate for payment methods.
-fn check_budget(
-    connection: &db::NwcConnection,
-    amount_msat: u64,
-) -> Result<(), nip47::NIP47Error> {
+fn check_budget(connection: &db::NwcConnection, amount_msat: u64) -> Result<(), nip47::NIP47Error> {
     if let Some(budget) = connection.budget_msat {
         let remaining = budget.saturating_sub(connection.spent_msat);
         if (amount_msat as i64) > remaining {
