@@ -1014,7 +1014,7 @@ async fn rln_list_transactions(
         .collect();
 
     // Newest first, then apply offset/limit.
-    items.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    items.sort_by_key(|i| std::cmp::Reverse(i.created_at));
     let offset = p.offset.unwrap_or(0) as usize;
     if offset < items.len() {
         items = items.split_off(offset);
