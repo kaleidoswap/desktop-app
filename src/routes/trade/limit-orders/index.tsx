@@ -1,7 +1,12 @@
-import { Navigate } from 'react-router-dom'
+import { TradeNav } from '../../../components/Trade'
 
-import { TRADE_MARKET_MAKER_PATH } from '../../../app/router/paths'
+import { LimitOrdersView } from './LimitOrdersView'
 
 export const Component = () => (
-  <Navigate replace to={`${TRADE_MARKET_MAKER_PATH}?tab=limit-orders`} />
+  <div className="w-full min-h-full">
+    <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+      <TradeNav />
+    </div>
+    <LimitOrdersView />
+  </div>
 )

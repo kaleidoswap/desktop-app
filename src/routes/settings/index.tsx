@@ -46,10 +46,12 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForNodeReady } from '../../utils/nodeState'
 import {
+  setAppMode,
   setBitcoinUnit,
   setFiatCurrency,
   setLanguage,
   setNodeConnectionString,
+  type AppMode,
   // setTheme, // temporarily unused — light mode disabled
 } from '../../slices/settings/settings.slice'
 import {
@@ -78,8 +80,30 @@ export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language } =
+  const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, appMode } =
     useSelector((state: RootState) => state.settings)
+
+  const APP_MODE_OPTIONS: {
+    mode: AppMode
+    labelKey: string
+    fallback: string
+  }[] = [
+    {
+      fallback: 'Node + Mind',
+      labelKey: 'launcher.modes.both.title',
+      mode: 'both',
+    },
+    {
+      fallback: 'Only Node',
+      labelKey: 'launcher.modes.node.title',
+      mode: 'node',
+    },
+    {
+      fallback: 'Only Mind',
+      labelKey: 'launcher.modes.mind.title',
+      mode: 'mind',
+    },
+  ]
   const currentAccount = useAppSelector((state) => state.nodeSettings.data)
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
 
@@ -586,6 +610,37 @@ export const Component: React.FC = () => {
                       {t('settings.generalSettings')}
                     </h4>
                     <div className="space-y-6">
+                      {/* App mode / capabilities */}
+                      <div className="group transition-all duration-300 hover:translate-x-1">
+                        <label className="block text-sm font-semibold text-content-secondary mb-2">
+                          {t('settings.capabilities', {
+                            defaultValue: 'Capabilities',
+                          })}
+                        </label>
+                        <p className="text-xs text-content-tertiary mb-2">
+                          {t('settings.capabilitiesDescription', {
+                            defaultValue:
+                              'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
+                          })}
+                        </p>
+                        <div className="flex flex-wrap rounded-lg overflow-hidden border border-border-default w-fit">
+                          {APP_MODE_OPTIONS.map((opt) => (
+                            <button
+                              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                                appMode === opt.mode
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-surface-high/40 text-content-secondary hover:text-white'
+                              }`}
+                              key={opt.mode}
+                              onClick={() => dispatch(setAppMode(opt.mode))}
+                              type="button"
+                            >
+                              {t(opt.labelKey, { defaultValue: opt.fallback })}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Bitcoin Unit */}
                       <Controller
                         control={control}

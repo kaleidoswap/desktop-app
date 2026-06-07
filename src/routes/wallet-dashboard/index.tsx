@@ -19,6 +19,8 @@ import {
   Download,
   Upload,
   History,
+  Brain,
+  ArrowRight,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,8 +32,10 @@ import {
   ORDER_CHANNEL_PATH,
   TRADE_PATH,
   WALLET_HISTORY_DEPOSITS_PATH,
+  KALEIDO_MIND_PATH,
 } from '../../app/router/paths'
-import { useAppDispatch } from '../../app/store/hooks'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
+import { setAppMode, isMindEnabled } from '../../slices/settings/settings.slice'
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'
 import { AssetRow } from '../../components/AssetRow'
@@ -80,6 +84,12 @@ export const Component = () => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const appMode = useAppSelector((state) => state.settings.appMode)
+  const mindActive = isMindEnabled(appMode)
+  const activateMind = () => {
+    dispatch(setAppMode('both'))
+    navigate(KALEIDO_MIND_PATH)
+  }
   const [assets, assetsResponse] = nodeApi.endpoints.listAssets.useLazyQuery()
   const [btcBalance, btcBalanceResponse] =
     nodeApi.endpoints.btcBalance.useLazyQuery()
@@ -250,6 +260,33 @@ export const Component = () => {
       )}
       {showPeerModal && (
         <PeerManagementModal onClose={() => setShowPeerModal(false)} />
+      )}
+
+      {/* KaleidoMind not active in this mode — offer a way to activate it */}
+      {!mindActive && (
+        <button
+          className="group mb-5 flex w-full items-center gap-4 rounded-2xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
+          onClick={activateMind}
+          type="button"
+        >
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-purple/15 text-purple">
+            <Brain className="h-6 w-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-white">
+              {t('dashboard.activateMindTitle', {
+                defaultValue: 'Add KaleidoMind',
+              })}
+            </div>
+            <div className="text-xs text-content-secondary">
+              {t('dashboard.activateMindDesc', {
+                defaultValue:
+                  'Run a local AI brain alongside your node — chat, models and phone pairing.',
+              })}
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 flex-shrink-0 text-purple transition-transform duration-300 group-hover:translate-x-1" />
+        </button>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">

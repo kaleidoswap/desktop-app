@@ -39,7 +39,17 @@
     "menu": "Menu",
     "expandSidebar": "Expand sidebar",
     "dca": "DCA",
-    "limitOrders": "Ordres Limites"
+    "limitOrders": "Ordres Limites",
+    "node": "Nœud",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "Aperçu",
+    "liquidity": "Liquidité",
+    "pairing": "Appairage",
+    "models": "Modèles",
+    "skills": "Compétences",
+    "chat": "Chat",
+    "activate": "Activer {{name}}"
   },
   "channels": {
     "buyChannel": "Acheter un canal",
@@ -96,7 +106,10 @@
     "connected": "Connecté",
     "disconnected": "Déconnecté",
     "logout": "Se déconnecter",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "noNode": "Aucun nœud connecté",
+    "tapToConnect": "Touchez pour connecter",
+    "connectNode": "Connecter un nœud"
   },
   "settings": {
     "title": "Paramètres",
@@ -1985,7 +1998,9 @@
     "testnetWarningDesc": "Vous êtes sur un réseau de test. Les fonds ne sont pas réels et les transactions n'ont aucune valeur monétaire.",
     "swap": "Swap",
     "btcPrice": "Prix du BTC",
-    "priceUnavailable": "Prix indisponible"
+    "priceUnavailable": "Prix indisponible",
+    "activateMindTitle": "Ajouter KaleidoMind",
+    "activateMindDesc": "Lancez un cerveau IA local en parallèle de votre nœud — chat, modèles et appairage du téléphone."
   },
   "peerManagement": {
     "title": "Pairs",
@@ -2042,8 +2057,8 @@
   },
   "walletSetup": {
     "getHelpSupport": "Obtenir de l'aide et du support",
-    "connectTitle": "Connexion au réseau RGB Lightning",
-    "connectSubtitle": "Choisissez votre manière préférée de vous connecter au réseau",
+    "connectTitle": "Bienvenue sur KaleidoSwap",
+    "connectSubtitle": "Choisissez comment démarrer — connectez un nœud RGB Lightning, lancez le cerveau IA local, ou les deux.",
     "remoteNodeTitle": "Nœud distant",
     "remoteNodeDescription": "Connectez-vous à un nœud hébergé ou auto-hébergé. Recommandé pour la plupart des utilisateurs et configurations avancées.",
     "localNodeTitle": "Nœud local",
@@ -2074,7 +2089,8 @@
     "remoteNodePrerequisitesMessage": "Vous aurez besoin d'une instance rgb-lightning-node en cours d'exécution pour vous connecter. Suivez notre guide de configuration pour commencer.",
     "viewSetupGuide": "Voir le guide de configuration",
     "getStarted": "Commencer",
-    "recommended": "Recommandé"
+    "mindOnlyHint": "Lancez un cerveau IA local sur ce bureau — aucun nœud requis. Vous pourrez connecter un nœud plus tard.",
+    "openMind": "Ouvrir KaleidoMind"
   },
   "createChannel": {
     "checkingBalance": "Vérification du solde...",
@@ -3024,5 +3040,21 @@
       "invalidAmount": "Veuillez entrer un montant valide",
       "insufficientBalance": "Solde insuffisant"
     }
+  },
+  "launcher": {
+    "modes": {
+      "both": {
+        "title": "Nœud + Mind"
+      },
+      "node": {
+        "title": "Nœud uniquement"
+      },
+      "mind": {
+        "title": "Mind uniquement"
+      }
+    }
+  },
+  "liquidity": {
+    "sell": "Vendre"
   }
 }

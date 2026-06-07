@@ -33,13 +33,23 @@
     "settings": "设置",
     "marketMaker": "做市商",
     "manualSwaps": "手动交换",
-    "nostrP2P": "Nostr 点对点",
+    "nostrP2P": "Nostr P2P",
     "helpSupport": "帮助与支持",
     "getHelpSupport": "获取帮助与支持",
     "menu": "Menu",
     "expandSidebar": "Expand sidebar",
     "dca": "DCA",
-    "limitOrders": "限价订单"
+    "limitOrders": "限价订单",
+    "node": "节点",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "概览",
+    "liquidity": "流动性",
+    "pairing": "配对",
+    "models": "模型",
+    "skills": "技能",
+    "chat": "聊天",
+    "activate": "启用 {{name}}"
   },
   "channels": {
     "pageTitle": "闪电钱包仪表板",
@@ -96,7 +106,10 @@
     "connected": "已连接",
     "disconnected": "未连接",
     "logout": "退出登录",
-    "settings": "设置"
+    "settings": "设置",
+    "noNode": "未连接节点",
+    "tapToConnect": "点击连接",
+    "connectNode": "连接节点"
   },
   "settings": {
     "title": "设置",
@@ -284,7 +297,9 @@
     "testnetWarningDesc": "您在测试网络上。资金不是真实的，交易没有货币价值。",
     "swap": "Swap",
     "btcPrice": "BTC 价格",
-    "priceUnavailable": "价格不可用"
+    "priceUnavailable": "价格不可用",
+    "activateMindTitle": "添加 KaleidoMind",
+    "activateMindDesc": "在节点旁运行本地 AI 大脑 — 聊天、模型和手机配对。"
   },
   "peerManagement": {
     "title": "对等节点",
@@ -341,8 +356,8 @@
   },
   "walletSetup": {
     "getHelpSupport": "获取帮助与支持",
-    "connectTitle": "连接到 RGB Lightning Network",
-    "connectSubtitle": "选择您喜欢的方式连接到网络",
+    "connectTitle": "欢迎使用 KaleidoSwap",
+    "connectSubtitle": "选择您的开始方式 — 连接 RGB 闪电节点、运行本地 AI 大脑，或两者兼用。",
     "remoteNodeTitle": "远程节点",
     "remoteNodeDescription": "连接到托管节点或自托管实例。推荐用于大多数用户和高级设置。",
     "localNodeTitle": "本地节点",
@@ -373,7 +388,8 @@
     "remoteNodePrerequisitesMessage": "您需要运行中的 rgb-lightning-node 实例才能连接。请按照我们的设置指南开始。",
     "viewSetupGuide": "查看设置指南",
     "getStarted": "开始使用",
-    "recommended": "推荐"
+    "mindOnlyHint": "在此桌面运行本地 AI 大脑 — 无需节点。您可以随时连接节点。",
+    "openMind": "打开 KaleidoMind"
   },
   "createChannel": {
     "checkingBalance": "检查余额中...",
@@ -3015,5 +3031,21 @@
       "invalidAmount": "请输入有效的数量",
       "insufficientBalance": "余额不足"
     }
+  },
+  "launcher": {
+    "modes": {
+      "both": {
+        "title": "节点 + Mind"
+      },
+      "node": {
+        "title": "仅节点"
+      },
+      "mind": {
+        "title": "仅 Mind"
+      }
+    }
+  },
+  "liquidity": {
+    "sell": "出售"
   }
 }

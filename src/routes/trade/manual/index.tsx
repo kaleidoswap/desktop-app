@@ -16,7 +16,11 @@ import { toast } from 'react-toastify'
 import { useSettings } from '../../../hooks/useSettings'
 import { Loader } from '../../../components/Loader'
 // import { StatusToast } from '../../../components/StatusToast'
-import { NoChannelsMessage, ManualSwapForm } from '../../../components/Trade'
+import {
+  NoChannelsMessage,
+  ManualSwapForm,
+  TradeNav,
+} from '../../../components/Trade'
 import { TakerSwapForm } from '../../../components/Trade/TakerSwapForm'
 import {
   nodeApi,
@@ -472,18 +476,23 @@ export const Component = () => {
   )
 
   return (
-    <div className="container mx-auto w-full flex flex-col items-center justify-center py-6">
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader />
-        </div>
-      ) : !hasValidChannelsForTrading ? (
-        renderNoChannelsMessage()
-      ) : (
-        renderSwapForm()
-      )}
+    <div className="w-full">
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <TradeNav />
+      </div>
+      <div className="container mx-auto w-full flex flex-col items-center justify-center py-2">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader />
+          </div>
+        ) : !hasValidChannelsForTrading ? (
+          renderNoChannelsMessage()
+        ) : (
+          renderSwapForm()
+        )}
 
-      {/* {!isLoading && assets.length > 0 && <StatusToast assets={assets} />} */}
+        {/* {!isLoading && assets.length > 0 && <StatusToast assets={assets} />} */}
+      </div>
     </div>
   )
 }

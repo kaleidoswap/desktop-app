@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import {
-  ROOT_PATH,
+  WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
   WALLET_UNLOCK_PATH,
 } from '../../app/router/paths'
@@ -426,7 +426,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
       if (nodeInfoRes.isSuccess) {
         console.log('Node unlocked, navigating to dashboard')
-        navigate(ROOT_PATH)
+        navigate(WALLET_DASHBOARD_PATH)
         return true
       }
 
@@ -772,7 +772,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
           // - locked: unlock
           // - uninitialized: setup
           let destination:
-            | typeof ROOT_PATH
+            | typeof WALLET_DASHBOARD_PATH
             | typeof WALLET_UNLOCK_PATH
             | typeof WALLET_SETUP_PATH = WALLET_UNLOCK_PATH
 
@@ -784,7 +784,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             )
 
             if (nodeInfoRes.isSuccess) {
-              destination = ROOT_PATH
+              destination = WALLET_DASHBOARD_PATH
               break
             }
 
@@ -864,7 +864,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
             // Decide destination from node API status
             let destination:
-              | typeof ROOT_PATH
+              | typeof WALLET_DASHBOARD_PATH
               | typeof WALLET_UNLOCK_PATH
               | typeof WALLET_SETUP_PATH = WALLET_UNLOCK_PATH
 
@@ -876,7 +876,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
               )
 
               if (nodeInfoRes.isSuccess) {
-                destination = ROOT_PATH
+                destination = WALLET_DASHBOARD_PATH
                 break
               }
 

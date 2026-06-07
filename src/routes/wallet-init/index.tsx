@@ -21,7 +21,10 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { ROOT_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
+import {
+  WALLET_DASHBOARD_PATH,
+  WALLET_SETUP_PATH,
+} from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
 import { MnemonicDisplay } from '../../components/MnemonicDisplay'
@@ -1293,7 +1296,7 @@ export const Component = () => {
   }
 
   if (redirectToRoot) {
-    return <Navigate replace to={ROOT_PATH} />
+    return <Navigate replace to={WALLET_DASHBOARD_PATH} />
   }
 
   return (

@@ -95,6 +95,7 @@ const AssetSelect: React.FC<AssetSelectProps> = ({
 )
 
 export { Header } from './Header'
+export { TradeNav } from './TradeNav'
 export { SizeButtons } from './SizeButtons'
 export { SwapInputField } from './SwapInputField'
 export { ExchangeRateSection } from './ExchangeRateSection'

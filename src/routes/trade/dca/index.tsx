@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 
 import { DcaBagIcon } from '../../../components/icons/DcaBagIcon'
+import { TradeNav } from '../../../components/Trade'
 
 import { useAppSelector } from '../../../app/store/hooks'
 import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
@@ -224,6 +225,10 @@ export const Component = () => {
 
   return (
     <>
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <TradeNav />
+      </div>
+
       {/* ── Create order modal ──────────────────────────────────────────── */}
       {showModal && (
         <CreateOrderModal
