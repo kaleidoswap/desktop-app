@@ -15,6 +15,7 @@
 //!   1. `$KALEIDO_MIND_CMD` (+ optional `$KALEIDO_MIND_ARGS`, space-separated)
 //!   2. `node <dir>/dist/index.js`        if that build exists
 //!   3. `pnpm start` with cwd = `<dir>`    (runs `tsx src/index.ts`)
+//!
 //! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` or a sibling-path guess.
 
 use std::io::{BufRead, BufReader, Write};
@@ -158,7 +159,9 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
                 .ok()
                 .map(|a| a.split_whitespace().map(String::from).collect())
                 .unwrap_or_default();
-            let cwd = std::env::var("KALEIDO_MIND_PROVIDER_DIR").ok().map(PathBuf::from);
+            let cwd = std::env::var("KALEIDO_MIND_PROVIDER_DIR")
+                .ok()
+                .map(PathBuf::from);
             return Ok((cmd, args, cwd));
         }
     }
@@ -192,14 +195,15 @@ fn resolve_provider_dir() -> Option<PathBuf> {
     let rel = ["apps", "provider"];
     let cwd = std::env::current_dir().ok()?;
     // Candidate roots: cwd, parent, grandparent — each + ../kaleido-mind.
-    for base in [Some(cwd.clone()), cwd.parent().map(PathBuf::from), cwd.parent().and_then(|p| p.parent()).map(PathBuf::from)]
-        .into_iter()
-        .flatten()
+    for base in [
+        Some(cwd.clone()),
+        cwd.parent().map(PathBuf::from),
+        cwd.parent().and_then(|p| p.parent()).map(PathBuf::from),
+    ]
+    .into_iter()
+    .flatten()
     {
-        let candidate = base
-            .join("kaleido-mind")
-            .join(rel[0])
-            .join(rel[1]);
+        let candidate = base.join("kaleido-mind").join(rel[0]).join(rel[1]);
         if candidate.join("package.json").exists() {
             return Some(candidate);
         }
