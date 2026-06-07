@@ -446,6 +446,7 @@ export const Component: React.FC = () => {
       const lockResponse = await lock().unwrap()
 
       if (lockResponse !== undefined && lockResponse !== null) {
+        await invoke('nwc_stop_service').catch(() => undefined)
         await invoke('stop_node')
         dispatch(nodeSettingsActions.resetNodeSettings())
         toast.success('Logout successful')

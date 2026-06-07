@@ -33,6 +33,7 @@ import { BackupModal } from '../BackupModal'
 import { useBackup } from '../../hooks/useBackup'
 import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { useLimitOrderScheduler } from '../../hooks/useLimitOrderScheduler'
+import { useNwcAutostart } from '../../hooks/useNwcAutostart'
 import { useNodeReachabilityMonitor } from '../../hooks/useNodeReachabilityMonitor'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
@@ -539,6 +540,7 @@ export const Layout = (props: Props) => {
 
   useDcaScheduler()
   useLimitOrderScheduler()
+  useNwcAutostart()
   useNodeLifecycleEvents()
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -831,6 +833,7 @@ export const Layout = (props: Props) => {
     setShowCloseConfirmModal(false)
 
     try {
+      await invoke('nwc_stop_service').catch(() => undefined)
       await invoke('shutdown_node_and_quit')
     } finally {
       setIsHandlingCloseAction(false)

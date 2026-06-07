@@ -9,6 +9,7 @@ import {
   WALLET_INIT_PATH,
   ROOT_PATH,
   SETTINGS_PATH,
+  NWC_PATH,
   TRADE_PATH,
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
       {
         lazy: () => import('../../routes/settings'),
         path: SETTINGS_PATH,
+      },
+      {
+        lazy: () => import('../../routes/nwc'),
+        path: NWC_PATH,
       },
       {
         lazy: () => import('../../routes/wallet-dashboard'),

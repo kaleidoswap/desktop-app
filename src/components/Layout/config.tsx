@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   HardDriveDownload,
   Target,
+  Link as LinkIcon,
 } from 'lucide-react'
 import React from 'react'
 
@@ -40,6 +41,7 @@ import {
   WALLET_INIT_PATH,
   WALLET_DASHBOARD_PATH,
   SETTINGS_PATH,
+  NWC_PATH,
   CHANNELS_PATH,
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
@@ -170,6 +172,11 @@ export const getUserMenuItems = (t: TFunction) => [
     to: SETTINGS_PATH,
   },
   {
+    icon: <LinkIcon className="w-4 h-4" />,
+    label: t('navigation.nwc', 'App Connections (NWC)'),
+    to: NWC_PATH,
+  },
+  {
     action: 'backup',
     icon: <HardDriveDownload className="w-4 h-4" />,
     label: t('settings.backupWallet'),
@@ -226,6 +233,10 @@ export const getPageConfig = (t: TFunction) => ({
   [CREATE_NEW_CHANNEL_PATH]: {
     icon: <Plus className="w-5 h-5" />,
     title: t('channels.createNewChannel'),
+  },
+  [NWC_PATH]: {
+    icon: <LinkIcon className="w-5 h-5" />,
+    title: t('navigation.nwc', 'App Connections (NWC)'),
   },
   [ORDER_CHANNEL_PATH]: {
     icon: <ShoppingCart className="w-5 h-5" />,

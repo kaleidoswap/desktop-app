@@ -30,6 +30,8 @@ export const WALLET_DASHBOARD_PATH = makePath(['wallet-dashboard'])
 
 export const SETTINGS_PATH = makePath(['settings'])
 
+export const NWC_PATH = makePath(['nwc'])
+
 export const WALLET_HISTORY_PATH = makePath(['wallet-history'])
 
 export const WALLET_HISTORY_DEPOSITS_PATH = makePath([
