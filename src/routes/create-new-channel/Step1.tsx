@@ -164,12 +164,13 @@ export const Step1 = ({
         throw new Error(t('createChannel.step1.errorNetworkUnavailable'))
       }
 
-      // Normalize network name to match NETWORK_DEFAULTS keys
-      const network = networkInfo.network
-        .toLowerCase()
-        .replace(/^\w/, (c: string) => c.toUpperCase())
+      // Match the node's network to a NETWORK_DEFAULTS key case-insensitively
+      // (e.g. "SignetCustom"/"signetcustom" both resolve to the "SignetCustom" key)
+      const network = Object.keys(NETWORK_DEFAULTS).find(
+        (key) => key.toLowerCase() === String(networkInfo.network).toLowerCase()
+      )
 
-      if (!NETWORK_DEFAULTS[network]) {
+      if (!network) {
         throw new Error(
           t('createChannel.step1.errorUnsupportedNetwork', {
             network: networkInfo.network,
