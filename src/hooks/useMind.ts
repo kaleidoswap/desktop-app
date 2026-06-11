@@ -13,6 +13,7 @@ import {
   type MindEvent,
   type ProviderLoadingEvent,
   type ProviderStatusEvent,
+  type ToolConfirmRequestEvent,
 } from '../api/mind'
 
 export interface UseMindResult {
@@ -23,6 +24,8 @@ export interface UseMindResult {
   loading: ProviderLoadingEvent | null
   logs: string[]
   ready: boolean
+  /** A spend awaiting the user's approval (null when none). */
+  pendingConfirm: ToolConfirmRequestEvent | null
   // actions
   refresh: () => Promise<void>
   startProvider: (modelId: string) => Promise<void>
@@ -31,6 +34,8 @@ export interface UseMindResult {
   cancelDownload: (modelId: string) => Promise<void>
   deleteModel: (modelId: string) => Promise<void>
   chat: (prompt: string) => Promise<string>
+  /** Approve or decline the pending spend. */
+  respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
 
 const MAX_LOGS = 100
@@ -42,6 +47,10 @@ export function useMind(): UseMindResult {
   const [downloads, setDownloads] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState<ProviderLoadingEvent | null>(null)
   const [logs, setLogs] = useState<string[]>([])
+  const [pendingConfirm, setPendingConfirm] =
+    useState<ToolConfirmRequestEvent | null>(null)
+  // Auto-clear the confirm card when the sidecar's timeout declines it.
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refreshInstalled = useCallback(async () => {
     try {
@@ -104,6 +113,14 @@ export function useMind(): UseMindResult {
           })
           void refreshInstalledRef.current()
           break
+        case 'tool_confirm_request':
+          setPendingConfirm(e)
+          if (confirmTimer.current) clearTimeout(confirmTimer.current)
+          confirmTimer.current = setTimeout(
+            () => setPendingConfirm(null),
+            e.timeoutMs
+          )
+          break
         case 'peer_connected':
         case 'peer_disconnected':
           // status event usually follows; nothing to do here
@@ -159,6 +176,18 @@ export function useMind(): UseMindResult {
     return res.text
   }, [])
 
+  const respondConfirm = useCallback(
+    async (approved: boolean, reason?: string) => {
+      const pending = pendingConfirm
+      setPendingConfirm(null)
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      if (pending) {
+        await mindClient.confirmTool(pending.confirmId, approved, reason)
+      }
+    },
+    [pendingConfirm]
+  )
+
   return {
     cancelDownload,
     catalog,
@@ -169,8 +198,10 @@ export function useMind(): UseMindResult {
     installed,
     loading,
     logs,
+    pendingConfirm,
     ready: status?.on === true && !loading,
     refresh,
+    respondConfirm,
     startProvider,
     status,
     stopProvider,

@@ -71,10 +71,23 @@ export interface ProviderLoadingEvent {
   message?: string
 }
 
+/**
+ * The agent wants to run a confirmation-gated tool (a spend). Show the call
+ * and answer with confirmTool() within timeoutMs, or the sidecar declines it
+ * (fail closed).
+ */
+export interface ToolConfirmRequestEvent {
+  type: 'tool_confirm_request'
+  confirmId: string
+  call: { name: string; arguments: Record<string, unknown> }
+  timeoutMs: number
+}
+
 export type MindEvent =
   | { type: 'ready'; version: string }
   | ProviderStatusEvent
   | ProviderLoadingEvent
+  | ToolConfirmRequestEvent
   | { type: 'pubkey'; value: string }
   | { type: 'peer_connected'; peer: PeerInfo }
   | { type: 'peer_disconnected'; shortKey: string }
@@ -224,7 +237,12 @@ class MindClient {
     return this.request<ProviderStatusEvent>({ cmd: 'stop' })
   }
   chat(prompt: string) {
-    return this.request<ChatResult>({ cmd: 'chat', prompt }, 180_000)
+    // Generous: an agentic run may pause up to 120s on a tool confirmation.
+    return this.request<ChatResult>({ cmd: 'chat', prompt }, 300_000)
+  }
+  /** Answer a tool_confirm_request (approve/decline a pending spend). */
+  confirmTool(confirmId: string, approved: boolean, reason?: string) {
+    return this.send({ approved, cmd: 'tool_confirm', confirmId, reason })
   }
 }
 

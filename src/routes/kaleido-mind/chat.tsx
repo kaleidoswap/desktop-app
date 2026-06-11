@@ -1,9 +1,17 @@
 // Chat — talk to the local brain. Routes through skills + connected MCP tools.
 
-import { Brain, Loader2, Send } from 'lucide-react'
+import { Brain, Loader2, Send, ShieldAlert } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 
 import { useMindContext, useMindChat } from './shared'
+
+/** Compact human form of a pending tool call's arguments. */
+function describeArgs(args: Record<string, unknown>): string {
+  const parts = Object.entries(args)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+  return parts.join('\n')
+}
 
 export const Component: React.FC = () => {
   const mind = useMindContext()
@@ -80,6 +88,36 @@ export const Component: React.FC = () => {
           </div>
         )}
       </div>
+      {mind.pendingConfirm && (
+        <div className="mb-3 rounded-xl border border-amber-600/60 bg-amber-950/30 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-semibold text-amber-200">
+              Approve this action?
+            </span>
+          </div>
+          <p className="mb-1 font-mono text-sm text-white">
+            {mind.pendingConfirm.call.name.replace(/_/g, ' ')}
+          </p>
+          <pre className="mb-3 whitespace-pre-wrap font-mono text-xs text-gray-300">
+            {describeArgs(mind.pendingConfirm.call.arguments)}
+          </pre>
+          <div className="flex gap-2">
+            <button
+              className="flex-1 rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800"
+              onClick={() => void mind.respondConfirm(false, 'declined')}
+            >
+              Decline
+            </button>
+            <button
+              className="flex-1 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-gray-950 hover:bg-amber-400"
+              onClick={() => void mind.respondConfirm(true)}
+            >
+              Approve
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <input
           className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-violet-500 focus:outline-none disabled:opacity-50"
