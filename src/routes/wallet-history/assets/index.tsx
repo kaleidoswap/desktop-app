@@ -12,7 +12,11 @@ import {
   renderStatusBadge,
 } from '../../../components/ui/Table'
 import { formatDate } from '../../../helpers/date'
-import { nodeApi, Transfer } from '../../../slices/nodeApi/nodeApi.slice'
+import {
+  nodeApi,
+  Transfer,
+  TransferKind,
+} from '../../../slices/nodeApi/nodeApi.slice'
 import { getAssignmentAmount } from '../../../utils/rgbUtils'
 
 export const Component = () => {
@@ -109,14 +113,14 @@ export const Component = () => {
 
   const getKindLabel = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
-      case 'Send':
+      case TransferKind.Send:
         return 'Sent'
-      case 'ReceiveBlind':
-      case 'ReceiveWitness':
+      case TransferKind.ReceiveBlind:
+      case TransferKind.ReceiveWitness:
         return 'Received'
-      case 'Issuance':
+      case TransferKind.Issuance:
         return 'Issuance'
-      case 'Inflation':
+      case TransferKind.Inflation:
         return 'Inflation'
       default:
         return kind || 'Unknown'
@@ -125,14 +129,14 @@ export const Component = () => {
 
   const getKindColor = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
-      case 'Send':
+      case TransferKind.Send:
         return 'text-red-500'
-      case 'ReceiveBlind':
-      case 'ReceiveWitness':
+      case TransferKind.ReceiveBlind:
+      case TransferKind.ReceiveWitness:
         return 'text-green-500'
-      case 'Issuance':
+      case TransferKind.Issuance:
         return 'text-blue-500'
-      case 'Inflation':
+      case TransferKind.Inflation:
         return 'text-purple-500'
       default:
         return 'text-content-secondary'
@@ -141,14 +145,14 @@ export const Component = () => {
 
   const getKindBadgeVariant = (kind: Transfer['kind'] | undefined) => {
     switch (kind) {
-      case 'Send':
+      case TransferKind.Send:
         return 'danger'
-      case 'ReceiveBlind':
-      case 'ReceiveWitness':
+      case TransferKind.ReceiveBlind:
+      case TransferKind.ReceiveWitness:
         return 'success'
-      case 'Issuance':
+      case TransferKind.Issuance:
         return 'info'
-      case 'Inflation':
+      case TransferKind.Inflation:
         return 'warning'
       default:
         return 'default'
@@ -418,7 +422,7 @@ export const Component = () => {
                     <span
                       className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
                     >
-                      {transfer.kind === 'Send' ? '-' : '+'}
+                      {transfer.kind === TransferKind.Send ? '-' : '+'}
                       {formatAmount(
                         transfer.requested_assignment
                           ? getAssignmentAmount(transfer.requested_assignment)
@@ -562,7 +566,7 @@ export const Component = () => {
                       <span
                         className={`text-xs ${getKindColor(transfer.kind)}`}
                       >
-                        {transfer.kind === 'Send' ? '-' : '+'}
+                        {transfer.kind === TransferKind.Send ? '-' : '+'}
                         {formatAmount(
                           transfer.requested_assignment
                             ? getAssignmentAmount(transfer.requested_assignment)

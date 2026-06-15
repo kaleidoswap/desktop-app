@@ -71,7 +71,7 @@ export type {
   Transfer,
 } from './types'
 
-export { SwapStatus } from './types'
+export { SwapStatus, TransferKind } from './types'
 
 export type {
   MakerExecuteRequest,

@@ -1,6 +1,6 @@
-import type { NetworkInfoResponse } from 'kaleido-sdk'
 import type {
   RlnClient,
+  NetworkInfoResponse,
   AddressResponse,
   AssetBalanceRequest,
   AssetBalanceResponse,
@@ -73,7 +73,8 @@ export type OpenChannelInput = Omit<
 >
 export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync'>>
 export type SendBtcInput = Omit<SendBtcRequest, 'skip_sync'>
-export type SendRgbInput = Omit<SendRgbRequest, 'skip_sync'>
+// SendRgbRequest no longer carries skip_sync as of kaleido-sdk 0.1.8.
+export type SendRgbInput = SendRgbRequest
 export type RgbInvoiceInput = Omit<RgbInvoiceRequest, 'min_confirmations'>
 
 export class NodeApiWrapper {
@@ -183,7 +184,7 @@ export class NodeApiWrapper {
   }
 
   async sendRgb(request: SendRgbInput): Promise<ApiResult<SendRgbResponse>> {
-    return this.execute(() => this.client.sendRgb(ensureSkipSync(request)))
+    return this.execute(() => this.client.sendRgb(request))
   }
 
   async listTransfers(

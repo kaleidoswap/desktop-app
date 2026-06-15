@@ -1,8 +1,12 @@
+import { TransferKind } from 'kaleido-sdk/rln'
+
 export type {
   Channel,
   AssetNIA as NiaAsset,
   AssetNIA as Asset,
 } from 'kaleido-sdk/rln'
+
+export { TransferKind }
 
 // Stub types for backwards compatibility (not in SDK)
 export const Network = {
@@ -66,7 +70,7 @@ export enum SwapStatus {
 
 export interface Transfer {
   status?: string
-  kind?: 'Send' | 'ReceiveBlind' | 'ReceiveWitness' | 'Issuance' | 'Inflation'
+  kind?: TransferKind
   requested_assignment?: Assignment | null
   txid?: string | null
   idx?: number
