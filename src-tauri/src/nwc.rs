@@ -50,11 +50,12 @@ pub const SUPPORTED_METHODS: [&str; 7] = [
 /// NWC envelope/encryption/auth but expose RGB + node features beyond standard
 /// NIP-47. Each is a thin authenticated proxy to a fixed RLN endpoint; the
 /// client controls only the request body, never the path.
-pub const RLN_METHODS: [&str; 11] = [
+pub const RLN_METHODS: [&str; 12] = [
     "rln_node_info",
     "rln_list_assets",
     "rln_asset_balance",
     "rln_rgb_invoice",
+    "rln_ln_invoice",
     "rln_decode_rgb_invoice",
     "rln_send_asset",
     "rln_list_channels",
@@ -394,6 +395,18 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
     let now = now_secs();
     let _ = db::touch_nwc_connection(&client_hex, now);
 
+    if method_str == "get_info" {
+        // Answer get_info with raw JSON so we can advertise this connection's
+        // actual allowlist — including the `rln_*` methods. The typed
+        // `nip47::GetInfoResponse` (used by the standard path below) drops
+        // custom method strings, which would hide RGB capability from clients
+        // that detect RLN via `methods` (e.g. the rate wallet's NwcRgbAdapter).
+        let result = rln_get_info_json(&ctx, &connection).await;
+        emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
+        let _ = respond_json(&ctx, &event, &client_pubkey, "get_info", result, enc).await;
+        return;
+    }
+
     if method_str.starts_with("rln_") {
         // KaleidoSwap RLN extension method.
         let params = value
@@ -629,6 +642,9 @@ async fn dispatch_rln(
         }
         "rln_asset_balance" => rln_post::<serde_json::Value>(ctx, "/assetbalance", obj()).await,
         "rln_rgb_invoice" => rln_post::<serde_json::Value>(ctx, "/rgbinvoice", obj()).await,
+        // Lightning invoice. /lninvoice accepts an optional `asset_id` + `asset_amount`
+        // to mint an RGB-over-Lightning invoice (the client supplies amt_msat etc).
+        "rln_ln_invoice" => rln_post::<serde_json::Value>(ctx, "/lninvoice", obj()).await,
         "rln_decode_rgb_invoice" => {
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
         }
@@ -759,6 +775,28 @@ struct RlnDecodeInvoiceResp {
 }
 
 // --- method implementations ---
+
+/// Raw-JSON `get_info` that reports the connection's actual method allowlist
+/// (standard NIP-47 + any enabled `rln_*` extensions). Emitted instead of the
+/// typed [`rln_get_info`] so custom `rln_*` strings survive — clients use these
+/// to detect RGB Lightning Node capability.
+async fn rln_get_info_json(
+    ctx: &ServiceCtx,
+    connection: &db::NwcConnection,
+) -> Result<serde_json::Value, nip47::NIP47Error> {
+    let info: RlnNodeInfo = rln_get(ctx, "/nodeinfo").await?;
+    let methods: Vec<String> = serde_json::from_str(&connection.methods_json).unwrap_or_default();
+    Ok(serde_json::json!({
+        "alias": null,
+        "color": null,
+        "pubkey": info.pubkey,
+        "network": ctx.network,
+        "block_height": null,
+        "block_hash": null,
+        "methods": methods,
+        "notifications": [],
+    }))
+}
 
 async fn rln_get_info(ctx: &ServiceCtx) -> Result<nip47::GetInfoResponse, nip47::NIP47Error> {
     let info: RlnNodeInfo = rln_get(ctx, "/nodeinfo").await?;

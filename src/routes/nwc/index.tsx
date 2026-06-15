@@ -49,6 +49,11 @@ const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
   { id: 'rln_asset_balance', label: 'RGB asset balance', payment: false },
   { id: 'rln_rgb_invoice', label: 'Create RGB invoices', payment: false },
   {
+    id: 'rln_ln_invoice',
+    label: 'Create RGB Lightning invoices',
+    payment: false,
+  },
+  {
     id: 'rln_decode_rgb_invoice',
     label: 'Decode RGB invoices',
     payment: false,
@@ -65,6 +70,18 @@ const DEFAULT_METHODS = [
   'lookup_invoice',
   'list_transactions',
   'pay_invoice',
+  // RGB extensions — enabled by default so wallets (e.g. rate) can detect the
+  // node as an RGB Lightning Node and list/transact assets without the user
+  // having to hand-pick these.
+  'rln_node_info',
+  'rln_list_assets',
+  'rln_asset_balance',
+  'rln_rgb_invoice',
+  'rln_ln_invoice',
+  'rln_decode_rgb_invoice',
+  'rln_send_asset',
+  'rln_list_channels',
+  'rln_get_address',
 ]
 
 const SATS_PER_BTC = 100_000_000
