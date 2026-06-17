@@ -41,6 +41,23 @@ export function ensureSkipSync<T extends Partial<SkipSyncRequest>>(
 }
 
 /**
+ * Ensure a RefreshRequest carries its required fields.
+ *
+ * RLN 0.7.1 made `filter` required on /refreshtransfers (kaleido-sdk 0.1.10+).
+ * An empty filter refreshes all pending transfers, matching the prior
+ * filter-less behavior.
+ */
+export function ensureRefreshDefaults(
+  request: Partial<RefreshRequest>
+): RefreshRequest {
+  return {
+    filter: [],
+    skip_sync: DEFAULT_SKIP_SYNC,
+    ...request,
+  }
+}
+
+/**
  * Request options for node API calls
  */
 export interface NodeRequestOptions {
