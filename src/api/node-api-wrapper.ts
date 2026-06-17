@@ -57,7 +57,7 @@ import type {
   TakerRequest as WhitelistTradeRequest,
 } from 'kaleido-sdk/rln'
 
-import { ensureSkipSync } from './request-defaults'
+import { ensureRefreshDefaults, ensureSkipSync } from './request-defaults'
 import { transformSdkError } from './errors'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
@@ -71,7 +71,7 @@ export type OpenChannelInput = Omit<
   OpenChannelRequest,
   'public' | 'push_msat' | 'with_anchors'
 >
-export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync'>>
+export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync' | 'filter'>>
 export type SendBtcInput = Omit<SendBtcRequest, 'skip_sync'>
 // SendRgbRequest no longer carries skip_sync as of kaleido-sdk 0.1.8.
 export type SendRgbInput = SendRgbRequest
@@ -195,7 +195,7 @@ export class NodeApiWrapper {
 
   async refreshTransfers(request?: RefreshInput): Promise<ApiResult<void>> {
     return this.execute(() =>
-      this.client.refreshTransfers(ensureSkipSync(request || {}))
+      this.client.refreshTransfers(ensureRefreshDefaults(request || {}))
     )
   }
 
