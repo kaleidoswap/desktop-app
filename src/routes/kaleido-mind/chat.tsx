@@ -2,8 +2,60 @@
 
 import { Brain, Loader2, Send, ShieldAlert } from 'lucide-react'
 import React, { useRef, useState } from 'react'
+import ReactMarkdown, { type Components } from 'react-markdown'
 
 import { useMindContext, useMindChat } from './shared'
+
+/**
+ * Render the agent's Markdown (bold, lists, IDs) instead of raw `**text**`.
+ * Styled for the dark assistant bubble; long hex ids/code wrap instead of
+ * blowing out the bubble width.
+ */
+const MD_COMPONENTS: Components = {
+  a: ({ node: _node, ...p }) => (
+    <a
+      className="text-primary underline underline-offset-2 hover:text-primary-emphasis"
+      rel="noreferrer"
+      target="_blank"
+      {...p}
+    />
+  ),
+  code: ({ node: _node, ...p }) => (
+    <code
+      className="break-all rounded bg-surface-base px-1 py-0.5 font-mono text-[0.82em] text-content-secondary"
+      {...p}
+    />
+  ),
+  em: ({ node: _node, ...p }) => (
+    <em className="italic text-content-secondary" {...p} />
+  ),
+  h1: ({ node: _node, ...p }) => (
+    <p className="mb-1 text-sm font-semibold text-content-primary" {...p} />
+  ),
+  h2: ({ node: _node, ...p }) => (
+    <p className="mb-1 text-sm font-semibold text-content-primary" {...p} />
+  ),
+  h3: ({ node: _node, ...p }) => (
+    <p className="mb-1 text-sm font-semibold text-content-primary" {...p} />
+  ),
+  li: ({ node: _node, ...p }) => <li className="leading-relaxed" {...p} />,
+  ol: ({ node: _node, ...p }) => (
+    <ol className="mb-2 list-decimal space-y-1 pl-4 last:mb-0" {...p} />
+  ),
+  p: ({ node: _node, ...p }) => (
+    <p className="mb-2 leading-relaxed last:mb-0" {...p} />
+  ),
+  strong: ({ node: _node, ...p }) => (
+    <strong className="font-semibold text-content-primary" {...p} />
+  ),
+  ul: ({ node: _node, ...p }) => (
+    <ul className="mb-2 list-disc space-y-1 pl-4 last:mb-0" {...p} />
+  ),
+}
+
+const MarkdownText: React.FC<{ text: string }> = ({ text }) => (
+  <ReactMarkdown components={MD_COMPONENTS}>{text}</ReactMarkdown>
+)
 
 /** Compact human form of a pending tool call's arguments. */
 function describeArgs(args: Record<string, unknown>): string {
@@ -53,6 +105,14 @@ function summarizeConfirm(
   return null
 }
 
+/** Starter prompts shown on the empty chat — one tap to try the agent. */
+const SUGGESTIONS = [
+  'What can you do?',
+  "What's my balance?",
+  'Do I have channels?',
+  'Buy 100 USDT',
+]
+
 export const Component: React.FC = () => {
   const mind = useMindContext()
   const providerOn = mind.status?.on === true
@@ -62,12 +122,19 @@ export const Component: React.FC = () => {
   const [sending, setSending] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
-  const send = async () => {
-    const prompt = input.trim()
-    if (!prompt || sending) return
+  const scrollToEnd = () =>
+    setTimeout(
+      () => listRef.current?.scrollTo(0, listRef.current.scrollHeight),
+      50
+    )
+
+  const send = async (override?: string) => {
+    const prompt = (override ?? input).trim()
+    if (!prompt || sending || !providerOn) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: prompt }])
     setSending(true)
+    scrollToEnd()
     try {
       const reply = await mind.chat(prompt)
       setMessages((m) => [...m, { role: 'assistant', text: reply }])
@@ -81,55 +148,107 @@ export const Component: React.FC = () => {
       ])
     } finally {
       setSending(false)
-      setTimeout(
-        () => listRef.current?.scrollTo(0, listRef.current.scrollHeight),
-        50
-      )
+      scrollToEnd()
     }
   }
 
   return (
-    <section className="flex min-h-[360px] flex-1 flex-col rounded-xl border border-gray-800 bg-gray-900/40 p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Brain className="h-5 w-5 text-gray-300" />
-        <h2 className="font-semibold text-white">Chat</h2>
-        {!providerOn && (
-          <span className="text-xs text-gray-500">— start a model to chat</span>
-        )}
-      </div>
-      <div className="mb-3 flex-1 space-y-3 overflow-y-auto pr-1" ref={listRef}>
-        {messages.length === 0 && (
-          <p className="text-sm text-gray-600">
-            Ask the agent anything — it routes through skills and the connected
-            MCP tools.
+    <section className="flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 border-b border-divider/15 px-5 py-3.5">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+          <Brain className="h-[1.05rem] w-[1.05rem] text-primary" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold leading-tight text-content-primary">
+            Chat
+          </h2>
+          <p className="truncate text-xs leading-tight text-content-tertiary">
+            {providerOn
+              ? 'Ask about balances, channels, swaps…'
+              : 'Start a model to chat'}
           </p>
-        )}
-        {messages.map((m, i) => (
-          <div
-            className={m.role === 'user' ? 'text-right' : 'text-left'}
-            key={i}
-          >
-            <span
-              className={`inline-block max-w-[80%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
-                m.role === 'user'
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-gray-800 text-gray-100'
-              }`}
-            >
-              {m.text}
-            </span>
+        </div>
+        <span
+          className={`ml-auto inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
+            providerOn
+              ? 'bg-primary/15 text-primary'
+              : 'bg-surface-overlay text-content-tertiary'
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              providerOn ? 'animate-pulse bg-primary' : 'bg-content-tertiary'
+            }`}
+          />
+          {providerOn ? 'Online' : 'Offline'}
+        </span>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4" ref={listRef}>
+        {messages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+              <Brain className="h-7 w-7 text-primary" />
+            </div>
+            <p className="text-base font-semibold text-content-primary">
+              How can I help?
+            </p>
+            <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
+              Your local AI brain for Bitcoin, Lightning &amp; RGB — read
+              balances and channels, or run a swap, right from chat.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  className="rounded-full border border-border-default bg-surface-overlay/50 px-3.5 py-1.5 text-xs font-medium text-content-secondary transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-content-primary disabled:opacity-40 disabled:hover:translate-y-0"
+                  disabled={!providerOn || sending}
+                  key={s}
+                  onClick={() => void send(s)}
+                  type="button"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
-        ))}
+        ) : (
+          messages.map((m, i) =>
+            m.role === 'user' ? (
+              <div className="flex justify-end" key={i}>
+                <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
+                  {m.text}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2.5" key={i}>
+                <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                  <Brain className="h-4 w-4 text-primary" />
+                </div>
+                <div className="max-w-[80%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
+                  <MarkdownText text={m.text} />
+                </div>
+              </div>
+            )
+          )
+        )}
         {sending && (
-          <div className="text-left">
-            <span className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-300">
-              <Loader2 className="h-4 w-4 animate-spin" /> thinking…
-            </span>
+          <div className="flex items-start gap-2.5">
+            <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+              <Brain className="h-4 w-4 text-primary" />
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm text-content-tertiary">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />{' '}
+              thinking…
+            </div>
           </div>
         )}
       </div>
+
+      {/* Spend confirmation */}
       {mind.pendingConfirm && (
-        <div className="mb-3 rounded-xl border border-amber-600/60 bg-amber-950/30 p-4">
+        <div className="mx-4 mb-3 rounded-xl border border-amber-600/60 bg-amber-950/30 p-4">
           <div className="mb-2 flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-400" />
             <span className="text-sm font-semibold text-amber-200">
@@ -193,24 +312,28 @@ export const Component: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="flex items-center gap-2">
-        <input
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-600 focus:border-violet-500 focus:outline-none disabled:opacity-50"
-          disabled={!providerOn || sending}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder={
-            providerOn ? 'Message KaleidoMind…' : 'Start a model first'
-          }
-          value={input}
-        />
-        <button
-          className="flex items-center justify-center rounded-lg bg-violet-600 p-2.5 text-white hover:bg-violet-500 disabled:opacity-40"
-          disabled={!providerOn || sending || !input.trim()}
-          onClick={send}
-        >
-          <Send className="h-4 w-4" />
-        </button>
+      <div className="border-t border-divider/15 px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-border-default bg-surface-overlay/40 py-1.5 pl-3 pr-1.5 transition-colors focus-within:border-primary/50">
+          <input
+            className="flex-1 bg-transparent py-1.5 text-sm text-content-primary placeholder-content-tertiary focus:outline-none disabled:opacity-50"
+            disabled={!providerOn || sending}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && send()}
+            placeholder={
+              providerOn ? 'Message KaleidoMind…' : 'Start a model first'
+            }
+            value={input}
+          />
+          <button
+            aria-label="Send message"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-40"
+            disabled={!providerOn || sending || !input.trim()}
+            onClick={() => send()}
+            type="button"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </section>
   )
