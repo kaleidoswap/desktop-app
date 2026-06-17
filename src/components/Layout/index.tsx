@@ -596,7 +596,12 @@ export const Layout = (props: Props) => {
   )
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
   const appMode = useAppSelector((state) => state.settings.appMode)
-  const nodeSectionEnabled = isNodeEnabled(appMode)
+  // A configured node (local OR remote) must always surface its section.
+  // appMode alone isn't enough: a node connected after a "KaleidoMind only"
+  // onboarding (appMode 'mind') would otherwise stay hidden behind the
+  // "Activate Node" affordance even though it's live — so also enable the
+  // section whenever a node account exists.
+  const nodeSectionEnabled = isNodeEnabled(appMode) || !!nodeSettingsData?.name
   const mindSectionEnabled = isMindEnabled(appMode)
   const isNodeReachable =
     nodeReachability === 'reachable' ||
