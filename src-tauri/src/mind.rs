@@ -75,6 +75,21 @@ impl MindProcess {
             cmd.current_dir(dir);
         }
 
+        // Point the sidecar at kaleido-mcp so the agent gets real tools.
+        // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
+        // narrates tool calls ("I'll check your balance…") it can never execute.
+        // The MCP server reads RLN_NODE_URL (default http://localhost:3001) +
+        // KALEIDOSWAP_API_URL + WDK_SEED from the inherited env.
+        match resolve_mcp_path() {
+            Some(mcp) => {
+                log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
+                cmd.env("KALEIDO_MCP_PATH", mcp);
+            }
+            None => log::warn!(
+                "[mind] kaleido-mcp not found — chat runs tool-less; set KALEIDO_MCP_PATH"
+            ),
+        }
+
         let mut child = cmd
             .spawn()
             .map_err(|e| format!("failed to spawn KaleidoMind sidecar ({}): {}", program, e))?;
@@ -205,6 +220,34 @@ fn resolve_provider_dir() -> Option<PathBuf> {
     {
         let candidate = base.join("kaleido-mind").join(rel[0]).join(rel[1]);
         if candidate.join("package.json").exists() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
+/// Resolve the kaleido-mcp entry (`dist/index.js`) the sidecar connects as its
+/// tool source. `$KALEIDO_MCP_PATH` override first, then sibling-path guesses
+/// (`../kaleido-mcp/dist/index.js`) relative to the cwd — mirrors
+/// [`resolve_provider_dir`]. Returns `None` if no built MCP is found.
+fn resolve_mcp_path() -> Option<PathBuf> {
+    if let Ok(p) = std::env::var("KALEIDO_MCP_PATH") {
+        let pb = PathBuf::from(p.trim());
+        if pb.exists() {
+            return Some(pb);
+        }
+    }
+    let cwd = std::env::current_dir().ok()?;
+    for base in [
+        Some(cwd.clone()),
+        cwd.parent().map(PathBuf::from),
+        cwd.parent().and_then(|p| p.parent()).map(PathBuf::from),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let candidate = base.join("kaleido-mcp").join("dist").join("index.js");
+        if candidate.exists() {
             return Some(candidate);
         }
     }
