@@ -9,7 +9,6 @@ import type {
   FailTransfersRequest,
   RefreshRequest,
   SendBtcRequest,
-  SendRgbRequest,
 } from 'kaleido-sdk/rln'
 
 /**
@@ -18,11 +17,13 @@ import type {
 export const DEFAULT_SKIP_SYNC = false
 
 /**
- * Request types that require skip_sync field
+ * Request types that require skip_sync field.
+ *
+ * Note: SendRgbRequest dropped its skip_sync field in kaleido-sdk 0.1.8, so it
+ * is no longer part of this union — sendRgb is sent without skip_sync.
  */
 export type SkipSyncRequest =
   | SendBtcRequest
-  | SendRgbRequest
   | CreateUtxosRequest
   | RefreshRequest
   | FailTransfersRequest

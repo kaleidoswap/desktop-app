@@ -13,6 +13,46 @@ function describeArgs(args: Record<string, unknown>): string {
   return parts.join('\n')
 }
 
+/** Format a sats value (number or numeric string) → "12,345 sats", else null. */
+function fmtSats(n: unknown): string | null {
+  const v = typeof n === 'number' ? n : Number(n)
+  return Number.isFinite(v) ? `${v.toLocaleString('en-US')} sats` : null
+}
+
+interface ConfirmSummary {
+  title: string
+  rows: { label: string; value: string }[]
+  note?: string
+}
+
+/**
+ * Human-readable summary for known spend tools so the confirm card shows real
+ * terms (what you pay, what you get) instead of raw JSON args. Returns null for
+ * unknown tools → caller falls back to describeArgs.
+ */
+function summarizeConfirm(
+  name: string,
+  args: Record<string, unknown>
+): ConfirmSummary | null {
+  if (name === 'kaleidoswap_lsp_create_asset_channel') {
+    const asset = String(args.asset ?? 'asset')
+    const amount = String(args.asset_amount ?? '')
+    const rows: { label: string; value: string }[] = []
+    const total = fmtSats(args.total_sat)
+    const price = fmtSats(args.btc_amount_sat)
+    const fee = fmtSats(args.channel_fee_sat)
+    if (total) rows.push({ label: 'You pay', value: total })
+    if (price) rows.push({ label: 'Asset price', value: price })
+    if (fee) rows.push({ label: 'Channel fee', value: fee })
+    return {
+      note: `Opens a new Lightning channel pre-loaded with ${amount} ${asset}. The channel opens after you pay.`,
+      rows,
+      title: `Buy ${amount} ${asset}`.trim(),
+    }
+  }
+  return null
+}
+
 export const Component: React.FC = () => {
   const mind = useMindContext()
   const providerOn = mind.status?.on === true
@@ -96,12 +136,47 @@ export const Component: React.FC = () => {
               Approve this action?
             </span>
           </div>
-          <p className="mb-1 font-mono text-sm text-white">
-            {mind.pendingConfirm.call.name.replace(/_/g, ' ')}
-          </p>
-          <pre className="mb-3 whitespace-pre-wrap font-mono text-xs text-gray-300">
-            {describeArgs(mind.pendingConfirm.call.arguments)}
-          </pre>
+          {(() => {
+            const { name, arguments: args } = mind.pendingConfirm.call
+            const summary = summarizeConfirm(name, args)
+            if (summary) {
+              return (
+                <>
+                  <p className="mb-2 text-base font-semibold text-white">
+                    {summary.title}
+                  </p>
+                  {summary.rows.length > 0 && (
+                    <div className="mb-2 space-y-1">
+                      {summary.rows.map((r) => (
+                        <div
+                          className="flex justify-between gap-4 text-sm"
+                          key={r.label}
+                        >
+                          <span className="text-amber-200/80">{r.label}</span>
+                          <span className="font-mono text-white">
+                            {r.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {summary.note && (
+                    <p className="mb-3 text-xs text-gray-400">{summary.note}</p>
+                  )}
+                </>
+              )
+            }
+            return (
+              <>
+                <p className="mb-1 font-mono text-sm text-white">
+                  {name.replace(/_/g, ' ')}
+                </p>
+                <pre className="mb-3 whitespace-pre-wrap font-mono text-xs text-gray-300">
+                  {describeArgs(args)}
+                </pre>
+              </>
+            )
+          })()}
           <div className="flex gap-2">
             <button
               className="flex-1 rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-200 hover:bg-gray-800"
