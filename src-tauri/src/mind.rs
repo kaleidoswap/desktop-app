@@ -23,7 +23,7 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 pub const MIND_EVENT: &str = "mind-event";
 
@@ -88,6 +88,23 @@ impl MindProcess {
             None => log::warn!(
                 "[mind] kaleido-mcp not found — chat runs tool-less; set KALEIDO_MCP_PATH"
             ),
+        }
+
+        // Point the MCP server at the ACTIVE node so balances/channels work for
+        // remote nodes too — not just the localhost:3001 default. The current
+        // account's node_url is the RLN node HTTP API the rest of the app uses.
+        if let Some(url) = app
+            .try_state::<crate::CurrentAccount>()
+            .and_then(|acc| {
+                acc.0
+                    .read()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|a| a.node_url.clone()))
+            })
+            .filter(|u| !u.trim().is_empty())
+        {
+            log::info!("[mind] RLN_NODE_URL={}", url);
+            cmd.env("RLN_NODE_URL", url);
         }
 
         let mut child = cmd
@@ -187,8 +204,15 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
 
     let dist_entry = dir.join("dist").join("index.js");
     if dist_entry.exists() {
+        // Prefer a Node runtime BUNDLED with the app (KALEIDO_NODE_BIN, set from
+        // the resource dir in main.rs) so a packaged build doesn't depend on the
+        // user having Node installed; fall back to `node` on PATH for dev.
+        let node = std::env::var("KALEIDO_NODE_BIN")
+            .ok()
+            .filter(|p| !p.trim().is_empty())
+            .unwrap_or_else(|| "node".to_string());
         return Ok((
-            "node".to_string(),
+            node,
             vec![dist_entry.to_string_lossy().to_string()],
             Some(dir),
         ));
