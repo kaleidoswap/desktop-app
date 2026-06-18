@@ -1,6 +1,13 @@
 // Chat — talk to the local brain. Routes through skills + connected MCP tools.
 
-import { Brain, Loader2, Send, ShieldAlert } from 'lucide-react'
+import {
+  Brain,
+  ChevronRight,
+  Loader2,
+  Send,
+  ShieldAlert,
+  Sparkles,
+} from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 
@@ -56,6 +63,35 @@ const MD_COMPONENTS: Components = {
 const MarkdownText: React.FC<{ text: string }> = ({ text }) => (
   <ReactMarkdown components={MD_COMPONENTS}>{text}</ReactMarkdown>
 )
+
+/**
+ * Collapsible view of the model's `<think>` reasoning for an assistant turn.
+ * Hidden by default — click to expand and see how the brain reasoned (which
+ * tools it considered, etc.).
+ */
+const ThinkingDisclosure: React.FC<{ text: string }> = ({ text }) => {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mb-2">
+      <button
+        className="inline-flex items-center gap-1 rounded-md py-0.5 text-[0.7rem] font-medium text-content-tertiary transition-colors hover:text-content-secondary"
+        onClick={() => setOpen((o) => !o)}
+        type="button"
+      >
+        <ChevronRight
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
+        />
+        <Sparkles className="h-3 w-3" />
+        {open ? 'Hide thinking' : 'Show thinking'}
+      </button>
+      {open && (
+        <div className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-divider/10 bg-surface-base/60 px-3 py-2 font-mono text-[0.72rem] leading-relaxed text-content-tertiary">
+          {text}
+        </div>
+      )}
+    </div>
+  )
+}
 
 /** Compact human form of a pending tool call's arguments. */
 function describeArgs(args: Record<string, unknown>): string {
@@ -137,7 +173,10 @@ export const Component: React.FC = () => {
     scrollToEnd()
     try {
       const reply = await mind.chat(prompt)
-      setMessages((m) => [...m, { role: 'assistant', text: reply }])
+      setMessages((m) => [
+        ...m,
+        { role: 'assistant', text: reply.text, thinking: reply.thinking },
+      ])
     } catch (e) {
       setMessages((m) => [
         ...m,
@@ -227,6 +266,7 @@ export const Component: React.FC = () => {
                   <Brain className="h-4 w-4 text-primary" />
                 </div>
                 <div className="max-w-[80%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
+                  {m.thinking && <ThinkingDisclosure text={m.thinking} />}
                   <MarkdownText text={m.text} />
                 </div>
               </div>

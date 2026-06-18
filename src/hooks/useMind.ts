@@ -33,7 +33,7 @@ export interface UseMindResult {
   downloadModel: (modelId: string) => Promise<void>
   cancelDownload: (modelId: string) => Promise<void>
   deleteModel: (modelId: string) => Promise<void>
-  chat: (prompt: string) => Promise<string>
+  chat: (prompt: string) => Promise<{ text: string; thinking?: string }>
   /** Approve or decline the pending spend. */
   respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
@@ -173,7 +173,7 @@ export function useMind(): UseMindResult {
 
   const chat = useCallback(async (prompt: string) => {
     const res = await mindClient.chat(prompt)
-    return res.text
+    return { text: res.text, thinking: res.thinking }
   }, [])
 
   const respondConfirm = useCallback(

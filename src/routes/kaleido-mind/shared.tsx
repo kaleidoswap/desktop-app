@@ -13,6 +13,8 @@ import type { UseMindResult } from '../../hooks/useMind'
 export interface ChatMsg {
   role: 'user' | 'assistant'
   text: string
+  /** The model's `<think>` reasoning for an assistant turn, shown collapsed. */
+  thinking?: string
 }
 
 // Chat state is owned by the layout so the conversation survives navigating

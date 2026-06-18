@@ -100,6 +100,8 @@ export type MindEvent =
 
 export interface ChatResult {
   text: string
+  /** The model's `<think>` reasoning for this turn, if any (shown collapsed in chat). */
+  thinking?: string
   latencyMs: number
   tokensPerSecond: number
 }
