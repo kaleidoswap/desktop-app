@@ -26,6 +26,30 @@ export interface ProviderStatusEvent {
   peers: PeerInfo[]
   tokensPerSecond: number | null
   startedAt: number | null
+  inferenceDevice?: 'gpu' | 'cpu' | 'mock' | null
+}
+
+export interface CapabilityInfo {
+  skills: Array<{
+    name: string
+    description: string
+    enabled: boolean
+    tools: string[]
+  }>
+  tools: Array<{
+    name: string
+    description: string
+    requiresConfirmation: boolean
+  }>
+  mcpConnected: boolean
+  mcpServers: Array<{
+    id: string
+    name: string
+    url: string
+    connected: boolean
+    toolCount: number
+    error?: string
+  }>
 }
 
 export interface InstalledModel {
@@ -93,6 +117,7 @@ export type MindEvent =
   | { type: 'peer_disconnected'; shortKey: string }
   | { type: 'download_progress'; progress: DownloadProgress }
   | { type: 'download_completed'; modelId: string }
+  | { type: 'capabilities_changed'; capabilities: CapabilityInfo }
   | { type: 'log'; level: 'debug' | 'info' | 'warn' | 'error'; message: string }
   | { type: 'response'; id: string; ok: true; data?: unknown }
   | { type: 'response'; id: string; ok: false; error: string }
@@ -225,6 +250,14 @@ class MindClient {
   downloadModel(modelId: string) {
     return this.send({ cmd: 'download_model', modelId })
   }
+  addHuggingFaceModel(repo: string, file: string, displayName?: string) {
+    return this.request<CatalogModel>({
+      cmd: 'add_huggingface_model',
+      displayName,
+      file,
+      repo,
+    })
+  }
   cancelDownload(modelId: string) {
     return this.send({ cmd: 'cancel_download', modelId })
   }
@@ -241,6 +274,29 @@ class MindClient {
   chat(prompt: string) {
     // Generous: an agentic run may pause up to 120s on a tool confirmation.
     return this.request<ChatResult>({ cmd: 'chat', prompt }, 300_000)
+  }
+  listCapabilities() {
+    return this.request<CapabilityInfo>({ cmd: 'list_capabilities' })
+  }
+  setSkillEnabled(name: string, enabled: boolean) {
+    return this.request<CapabilityInfo>({
+      cmd: 'set_skill_enabled',
+      enabled,
+      name,
+    })
+  }
+  addMcpServer(name: string, url: string) {
+    return this.request<CapabilityInfo>({
+      cmd: 'add_mcp_server',
+      name,
+      url,
+    })
+  }
+  removeMcpServer(id: string) {
+    return this.request<CapabilityInfo>({
+      cmd: 'remove_mcp_server',
+      serverId: id,
+    })
   }
   /** Answer a tool_confirm_request (approve/decline a pending spend). */
   confirmTool(confirmId: string, approved: boolean, reason?: string) {

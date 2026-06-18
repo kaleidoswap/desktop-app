@@ -1,8 +1,8 @@
 // Models — browse the catalog, download/delete models, and start/stop the brain
 // on a given model.
 
-import { Cpu, Download, Play, Square, Trash2, X } from 'lucide-react'
-import React, { useMemo } from 'react'
+import { Cpu, Download, Plus, Play, Square, Trash2, X } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
 
 import { MindCard, gb, useMindContext } from './shared'
 
@@ -10,6 +10,11 @@ export const Component: React.FC = () => {
   const mind = useMindContext()
   const { status } = mind
   const providerOn = status?.on === true
+  const [showCustom, setShowCustom] = useState(false)
+  const [repo, setRepo] = useState('')
+  const [file, setFile] = useState('')
+  const [name, setName] = useState('')
+  const [customError, setCustomError] = useState('')
 
   const installedIds = useMemo(
     () => new Set(mind.installed.map((m) => m.id)),
@@ -21,7 +26,64 @@ export const Component: React.FC = () => {
       <div className="mb-3 flex items-center gap-2">
         <Cpu className="h-5 w-5 text-gray-300" />
         <h2 className="font-semibold text-white">Models</h2>
+        <button
+          className="ml-auto flex items-center gap-1 rounded-md border border-gray-700 px-2.5 py-1 text-xs text-gray-200 hover:bg-gray-800"
+          onClick={() => setShowCustom((v) => !v)}
+          type="button"
+        >
+          <Plus className="h-3.5 w-3.5" /> Hugging Face
+        </button>
       </div>
+      {showCustom && (
+        <form
+          className="mb-4 grid gap-2 rounded-lg border border-violet-800/50 bg-violet-950/20 p-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setCustomError('')
+            void mind
+              .addHuggingFaceModel(repo, file, name || undefined)
+              .then(() => {
+                setRepo('')
+                setFile('')
+                setName('')
+                setShowCustom(false)
+              })
+              .catch((err) =>
+                setCustomError(err instanceof Error ? err.message : String(err))
+              )
+          }}
+        >
+          <p className="text-xs text-gray-400">
+            Download any top-level GGUF from a public Hugging Face repository.
+          </p>
+          <input
+            className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white"
+            onChange={(e) => setRepo(e.target.value)}
+            placeholder="owner/repository"
+            value={repo}
+          />
+          <input
+            className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white"
+            onChange={(e) => setFile(e.target.value)}
+            placeholder="model.Q4_K_M.gguf"
+            value={file}
+          />
+          <input
+            className="rounded-md border border-gray-700 bg-gray-950 px-3 py-2 text-sm text-white"
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Display name (optional)"
+            value={name}
+          />
+          {customError && <p className="text-xs text-red-400">{customError}</p>}
+          <button
+            className="rounded-md bg-violet-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+            disabled={!repo.trim() || !file.trim()}
+            type="submit"
+          >
+            Add &amp; download
+          </button>
+        </form>
+      )}
       <div className="flex flex-col gap-2">
         {mind.catalog.length === 0 && (
           <p className="text-sm text-gray-500">Loading catalog…</p>

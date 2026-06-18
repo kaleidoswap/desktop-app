@@ -3,7 +3,7 @@
 // active sub-page (Brain / Pairing / Models / Skills / Chat) in the Outlet.
 
 import { Brain, Loader2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { useMind } from '../../hooks/useMind'
@@ -16,8 +16,24 @@ export const Component: React.FC = () => {
   const providerOn = status?.on === true
 
   // Chat state lives here so it persists across the Mind sub-tabs.
-  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    try {
+      const parsed = JSON.parse(
+        localStorage.getItem('kaleido-mind.chat-history.v1') ?? '[]'
+      )
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
   const [input, setInput] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem(
+      'kaleido-mind.chat-history.v1',
+      JSON.stringify(messages.slice(-100))
+    )
+  }, [messages])
 
   return (
     <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 overflow-y-auto p-6">

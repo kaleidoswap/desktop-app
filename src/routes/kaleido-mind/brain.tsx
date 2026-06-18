@@ -46,7 +46,17 @@ export const Component: React.FC = () => {
       {
         icon: <Cpu className="h-4 w-4" />,
         label: 'Active model',
-        value: providerOn ? (status?.activeModelName ?? 'Running') : '—',
+        value: providerOn
+          ? `${status?.activeModelName ?? 'Running'} · ${
+              status?.inferenceDevice === 'gpu'
+                ? 'Metal/GPU'
+                : status?.inferenceDevice === 'cpu'
+                  ? 'CPU'
+                  : status?.inferenceDevice === 'mock'
+                    ? 'Mock'
+                    : 'detecting'
+            }`
+          : '—',
       },
       {
         icon: <Gauge className="h-4 w-4" />,
