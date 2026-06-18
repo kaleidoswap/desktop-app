@@ -29,7 +29,8 @@ use tauri::{AppHandle, Emitter};
 use crate::db;
 
 /// Default relays used when a connection / service doesn't specify its own.
-pub const DEFAULT_RELAYS: [&str; 3] = [
+pub const DEFAULT_RELAYS: [&str; 4] = [
+    "wss://relay.kaleidoswap.com",
     "wss://relay.damus.io",
     "wss://nos.lol",
     "wss://relay.primal.net",
