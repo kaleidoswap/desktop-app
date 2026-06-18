@@ -23,7 +23,7 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 pub const MIND_EVENT: &str = "mind-event";
 
@@ -88,6 +88,23 @@ impl MindProcess {
             None => log::warn!(
                 "[mind] kaleido-mcp not found — chat runs tool-less; set KALEIDO_MCP_PATH"
             ),
+        }
+
+        // Point the MCP server at the ACTIVE node so balances/channels work for
+        // remote nodes too — not just the localhost:3001 default. The current
+        // account's node_url is the RLN node HTTP API the rest of the app uses.
+        if let Some(url) = app
+            .try_state::<crate::CurrentAccount>()
+            .and_then(|acc| {
+                acc.0
+                    .read()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|a| a.node_url.clone()))
+            })
+            .filter(|u| !u.trim().is_empty())
+        {
+            log::info!("[mind] RLN_NODE_URL={}", url);
+            cmd.env("RLN_NODE_URL", url);
         }
 
         let mut child = cmd

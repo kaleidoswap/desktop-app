@@ -110,6 +110,25 @@ fn main() {
                 // when the frontend detects the node is unlocked.
                 db::init();
 
+                // Production: point the KaleidoMind sidecar at the BUNDLED
+                // provider + MCP server (dev runs them from the sibling repos;
+                // a packaged .app/.exe has neither). mind.rs reads these env
+                // vars first (resolve_provider_dir / resolve_mcp_path) and
+                // existence-checks them, so this is a safe no-op until the
+                // `bundle.resources` actually ship these paths.
+                if let Ok(res) = app.path().resource_dir() {
+                    let provider = res.join("kaleido-mind/apps/provider");
+                    if provider.join("dist/index.js").exists() {
+                        std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
+                        log::info!("[mind] bundled provider dir: {}", provider.display());
+                    }
+                    let mcp = res.join("kaleido-mcp/dist/index.js");
+                    if mcp.exists() {
+                        std::env::set_var("KALEIDO_MCP_PATH", &mcp);
+                        log::info!("[mind] bundled mcp entry: {}", mcp.display());
+                    }
+                }
+
                 // Set up system tray
                 tray::setup_tray(app.handle(), Arc::clone(&node_process))?;
 
