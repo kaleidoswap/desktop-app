@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "tauri": "tauri",
+    "bundle:mind": "node src-tauri/scripts/prepare-mind-bundle.mjs",
     "tauri:build": "tauri build",
     "tauri:build:windows": "tauri build --target x86_64-pc-windows-msvc",
     "tauri:dev": "tauri dev",

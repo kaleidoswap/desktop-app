@@ -111,35 +111,36 @@ fn main() {
                 db::init();
 
                 // Production: point the KaleidoMind sidecar at the BUNDLED
-                // provider + MCP server (dev runs them from the sibling repos;
-                // a packaged .app/.exe has neither). mind.rs reads these env
-                // vars first (resolve_provider_dir / resolve_mcp_path) and
-                // existence-checks them, so this is a safe no-op until the
-                // `bundle.resources` actually ship these paths.
+                // provider + MCP + Node runtime (dev runs them from the sibling
+                // repos; a packaged .app/.exe has neither). mind.rs reads these
+                // env vars first (resolve_provider_dir / resolve_mcp_path /
+                // resolve_sidecar_command) and existence-checks them, so this is
+                // a safe no-op until `bundle.resources` actually ship them.
+                //
+                // The bundle lives under a `mind/` resource dir (see
+                // scripts/prepare-mind-bundle.mjs); Tauri's resource layout
+                // varies by version/platform, so probe a few candidate roots.
                 if let Ok(res) = app.path().resource_dir() {
-                    let provider = res.join("kaleido-mind/apps/provider");
-                    if provider.join("dist/index.js").exists() {
-                        std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
-                        log::info!("[mind] bundled provider dir: {}", provider.display());
-                    }
-                    let mcp = res.join("kaleido-mcp/dist/index.js");
-                    if mcp.exists() {
-                        std::env::set_var("KALEIDO_MCP_PATH", &mcp);
-                        log::info!("[mind] bundled mcp entry: {}", mcp.display());
-                    }
-                    // A Node runtime shipped with the app (so a packaged build
-                    // doesn't require system Node). Tries node[.exe] at the
-                    // resource root or under bin/.
-                    for cand in [
-                        res.join("node"),
-                        res.join("node.exe"),
-                        res.join("bin/node"),
-                        res.join("bin/node.exe"),
+                    for base in [
+                        res.join("mind"),
+                        res.join("resources/mind"),
+                        res.clone(),
                     ] {
-                        if cand.exists() {
-                            std::env::set_var("KALEIDO_NODE_BIN", &cand);
-                            log::info!("[mind] bundled node: {}", cand.display());
-                            break;
+                        let provider = base.join("provider");
+                        if provider.join("dist/index.js").exists() {
+                            std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
+                            log::info!("[mind] bundled provider: {}", provider.display());
+                        }
+                        let mcp = base.join("mcp/dist/index.js");
+                        if mcp.exists() {
+                            std::env::set_var("KALEIDO_MCP_PATH", &mcp);
+                            log::info!("[mind] bundled mcp: {}", mcp.display());
+                        }
+                        for node in [base.join("node"), base.join("node.exe")] {
+                            if node.exists() {
+                                std::env::set_var("KALEIDO_NODE_BIN", &node);
+                                log::info!("[mind] bundled node: {}", node.display());
+                            }
                         }
                     }
                 }
