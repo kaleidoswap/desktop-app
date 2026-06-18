@@ -204,8 +204,15 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
 
     let dist_entry = dir.join("dist").join("index.js");
     if dist_entry.exists() {
+        // Prefer a Node runtime BUNDLED with the app (KALEIDO_NODE_BIN, set from
+        // the resource dir in main.rs) so a packaged build doesn't depend on the
+        // user having Node installed; fall back to `node` on PATH for dev.
+        let node = std::env::var("KALEIDO_NODE_BIN")
+            .ok()
+            .filter(|p| !p.trim().is_empty())
+            .unwrap_or_else(|| "node".to_string());
         return Ok((
-            "node".to_string(),
+            node,
             vec![dist_entry.to_string_lossy().to_string()],
             Some(dir),
         ));

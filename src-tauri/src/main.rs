@@ -127,6 +127,21 @@ fn main() {
                         std::env::set_var("KALEIDO_MCP_PATH", &mcp);
                         log::info!("[mind] bundled mcp entry: {}", mcp.display());
                     }
+                    // A Node runtime shipped with the app (so a packaged build
+                    // doesn't require system Node). Tries node[.exe] at the
+                    // resource root or under bin/.
+                    for cand in [
+                        res.join("node"),
+                        res.join("node.exe"),
+                        res.join("bin/node"),
+                        res.join("bin/node.exe"),
+                    ] {
+                        if cand.exists() {
+                            std::env::set_var("KALEIDO_NODE_BIN", &cand);
+                            log::info!("[mind] bundled node: {}", cand.display());
+                            break;
+                        }
+                    }
                 }
 
                 // Set up system tray
