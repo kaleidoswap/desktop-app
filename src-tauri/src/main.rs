@@ -121,11 +121,7 @@ fn main() {
                 // scripts/prepare-mind-bundle.mjs); Tauri's resource layout
                 // varies by version/platform, so probe a few candidate roots.
                 if let Ok(res) = app.path().resource_dir() {
-                    for base in [
-                        res.join("mind"),
-                        res.join("resources/mind"),
-                        res.clone(),
-                    ] {
+                    for base in [res.join("mind"), res.join("resources/mind"), res.clone()] {
                         let provider = base.join("provider");
                         if provider.join("dist/index.js").exists() {
                             std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
