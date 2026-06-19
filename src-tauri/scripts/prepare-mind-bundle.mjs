@@ -57,7 +57,7 @@ function pruneProvider() {
   run('pnpm', ['--filter', '@kaleidorg/mind-provider', 'run', 'build'], mindRepo)
   run(
     'pnpm',
-    ['--filter', '@kaleidorg/mind-provider', 'deploy', '--prod', '--legacy', join(out, 'provider')],
+    ['--filter', '@kaleidorg/mind-provider', 'deploy', '--prod', join(out, 'provider')],
     mindRepo
   )
 }
@@ -68,10 +68,14 @@ function pruneMcp() {
   run('npm', ['run', 'build'], mcpRepo)
   const dst = join(out, 'mcp')
   mkdirSync(dst, { recursive: true })
-  for (const f of ['dist', 'package.json', 'package-lock.json']) {
+  for (const f of ['dist', 'package.json']) {
     cpSync(join(mcpRepo, f), join(dst, f), { recursive: true })
   }
-  run('npm', ['ci', '--omit=dev', '--ignore-scripts'], dst)
+  // The MCP checkout may have a lockfile generated before a local dependency
+  // bump. The packaged app consumes the manifest and freshly built dist, so
+  // resolve production dependencies from package.json instead of copying a
+  // potentially stale external lockfile into the bundle.
+  run('npm', ['install', '--omit=dev', '--ignore-scripts', '--no-package-lock'], dst)
 }
 
 // 3. Node runtime for the target platform (host by default).
