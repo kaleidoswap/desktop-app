@@ -23,7 +23,10 @@ jobs:
           - runner: macos-latest
             platform: darwin
             arch: arm64
-          - runner: macos-13
+          # x64 cross-built on the arm64 mac runner — the bundle script's
+          # NPM_OS/NPM_CPU make npm fetch the darwin-x64 prebuilt natives, so we
+          # don't depend on the scarce macos-13 (Intel) runners.
+          - runner: macos-latest
             platform: darwin
             arch: x64
           - runner: ubuntu-22.04
