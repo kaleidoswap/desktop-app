@@ -24,7 +24,14 @@
  * TARGET_PLATFORM / TARGET_ARCH (override host detection for cross-builds).
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync, cpSync, chmodSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  rmSync,
+  cpSync,
+  chmodSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
@@ -42,12 +49,22 @@ const out = join(srcTauri, 'resources', 'mind')
 // into a command string. Safe by construction.
 const run = (cmd, args, cwd) => {
   console.log(`$ ${cmd} ${args.join(' ')}${cwd ? `   (in ${cwd})` : ''}`)
-  execFileSync(cmd, args, { cwd, stdio: 'inherit' })
+  const env = { ...process.env }
+  // pnpm-only: the sibling repos pin an older packageManager (kaleido-mind →
+  // pnpm@9.0.0) and `deploy --legacy` only exists in pnpm ≥9.4. Disable pnpm's
+  // version switching so the host pnpm (which supports --legacy — the only
+  // deploy mode that yields a self-contained node_modules) runs regardless of
+  // each sibling's pin. Scoped to pnpm so npm doesn't warn on an unknown config.
+  if (cmd === 'pnpm') env.npm_config_manage_package_manager_versions = 'false'
+  execFileSync(cmd, args, { cwd, stdio: 'inherit', env })
 }
 
 function reset() {
   rmSync(out, { recursive: true, force: true })
   mkdirSync(out, { recursive: true })
+  // Restore the tracked placeholder so the dir survives in git — Tauri's
+  // build-time resource check needs resources/mind to exist in dev/CI.
+  writeFileSync(join(out, '.gitkeep'), '')
 }
 
 // 1. Provider — pnpm workspace member → `pnpm deploy --prod` gives a flat,
@@ -71,7 +88,16 @@ function pruneMcp() {
   for (const f of ['dist', 'package.json', 'package-lock.json']) {
     cpSync(join(mcpRepo, f), join(dst, f), { recursive: true })
   }
-  run('npm', ['ci', '--omit=dev', '--ignore-scripts'], dst)
+  // Prefer a reproducible `npm ci`, but kaleido-mcp's committed lockfile can
+  // lag its package.json (e.g. a stale kaleido-sdk pin); fall back to
+  // `npm install` so sibling lockfile drift doesn't break the bundle.
+  const npmArgs = ['--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund']
+  try {
+    run('npm', ['ci', ...npmArgs], dst)
+  } catch {
+    console.warn('  npm ci failed (lockfile drift?) — retrying with npm install')
+    run('npm', ['install', ...npmArgs], dst)
+  }
 }
 
 // 3. Node runtime for the target platform (host by default).
