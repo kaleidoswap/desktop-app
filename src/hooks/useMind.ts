@@ -10,6 +10,8 @@ import {
   mindClient,
   type CatalogModel,
   type CapabilityInfo,
+  type ChatHandlers,
+  type ChatResult,
   type InstalledModel,
   type MindEvent,
   type ProviderLoadingEvent,
@@ -35,15 +37,18 @@ export interface UseMindResult {
   downloadModel: (modelId: string) => Promise<void>
   cancelDownload: (modelId: string) => Promise<void>
   deleteModel: (modelId: string) => Promise<void>
-  addHuggingFaceModel: (
-    repo: string,
-    file: string,
-    displayName?: string
-  ) => Promise<void>
+  addHuggingFaceModel: (url: string, displayName?: string) => Promise<void>
   setSkillEnabled: (name: string, enabled: boolean) => Promise<void>
+  addSkill: (
+    name: string,
+    description: string,
+    instructions: string,
+    tools?: string[]
+  ) => Promise<void>
+  deleteSkill: (name: string) => Promise<void>
   addMcpServer: (name: string, url: string) => Promise<void>
   removeMcpServer: (id: string) => Promise<void>
-  chat: (prompt: string) => Promise<{ text: string; thinking?: string }>
+  chat: (prompt: string, handlers?: ChatHandlers) => Promise<ChatResult>
   /** Approve or decline the pending spend. */
   respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
@@ -189,12 +194,8 @@ export function useMind(): UseMindResult {
   )
 
   const addHuggingFaceModel = useCallback(
-    async (repo: string, file: string, displayName?: string) => {
-      const model = await mindClient.addHuggingFaceModel(
-        repo,
-        file,
-        displayName
-      )
+    async (url: string, displayName?: string) => {
+      const model = await mindClient.addHuggingFaceModel(url, displayName)
       setCatalog(await mindClient.listCatalogModels())
       setDownloads((d) => ({ ...d, [model.id]: 0 }))
     },
@@ -208,6 +209,24 @@ export function useMind(): UseMindResult {
     []
   )
 
+  const addSkill = useCallback(
+    async (
+      name: string,
+      description: string,
+      instructions: string,
+      tools?: string[]
+    ) => {
+      setCapabilities(
+        await mindClient.addSkill(name, description, instructions, tools)
+      )
+    },
+    []
+  )
+
+  const deleteSkill = useCallback(async (name: string) => {
+    setCapabilities(await mindClient.deleteSkill(name))
+  }, [])
+
   const addMcpServer = useCallback(async (name: string, url: string) => {
     setCapabilities(await mindClient.addMcpServer(name, url))
   }, [])
@@ -216,9 +235,8 @@ export function useMind(): UseMindResult {
     setCapabilities(await mindClient.removeMcpServer(id))
   }, [])
 
-  const chat = useCallback(async (prompt: string) => {
-    const res = await mindClient.chat(prompt)
-    return { text: res.text, thinking: res.thinking }
+  const chat = useCallback(async (prompt: string, handlers?: ChatHandlers) => {
+    return mindClient.chat(prompt, handlers)
   }, [])
 
   const respondConfirm = useCallback(
@@ -236,11 +254,13 @@ export function useMind(): UseMindResult {
   return {
     addHuggingFaceModel,
     addMcpServer,
+    addSkill,
     cancelDownload,
     capabilities,
     catalog,
     chat,
     deleteModel,
+    deleteSkill,
     downloadModel,
     downloads,
     installed,

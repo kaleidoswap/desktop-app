@@ -65,6 +65,9 @@ export const ORDER_CHANNEL_PATH = makePath(['order-new-channel'])
 export const CREATEUTXOS_PATH = makePath(['createutxos'])
 
 export const KALEIDO_MIND_PATH = makePath(['kaleido-mind'])
+// Chat is the landing view (index of /kaleido-mind). The Brain overview moved to
+// its own path so chat gets top billing.
+export const KALEIDO_MIND_BRAIN_PATH = makePath([KALEIDO_MIND_PATH, 'brain'])
 export const KALEIDO_MIND_PAIRING_PATH = makePath([
   KALEIDO_MIND_PATH,
   'pairing',
@@ -72,3 +75,4 @@ export const KALEIDO_MIND_PAIRING_PATH = makePath([
 export const KALEIDO_MIND_MODELS_PATH = makePath([KALEIDO_MIND_PATH, 'models'])
 export const KALEIDO_MIND_SKILLS_PATH = makePath([KALEIDO_MIND_PATH, 'skills'])
 export const KALEIDO_MIND_CHAT_PATH = makePath([KALEIDO_MIND_PATH, 'chat'])
+export const KALEIDO_MIND_AGENT_PATH = makePath([KALEIDO_MIND_PATH, 'agent'])

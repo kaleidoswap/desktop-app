@@ -3,15 +3,32 @@
 import {
   Brain,
   ChevronRight,
+  Clock,
+  Coins,
+  Cpu,
+  Gauge,
+  History,
   Loader2,
+  Plus,
   Send,
   ShieldAlert,
   Sparkles,
+  Trash2,
+  Zap,
 } from 'lucide-react'
 import React, { useRef, useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 
-import { useMindContext, useMindChat } from './shared'
+import { ToolEventView, fmtSats } from './cards'
+import {
+  useMindContext,
+  useMindChat,
+  type ChatMsgStats,
+  type ChatToolEvent,
+} from './shared'
+import { FollowupActions, WelcomeActions } from './welcome-actions'
 
 /**
  * Render the agent's Markdown (bold, lists, IDs) instead of raw `**text**`.
@@ -55,37 +72,133 @@ const MD_COMPONENTS: Components = {
   strong: ({ node: _node, ...p }) => (
     <strong className="font-semibold text-content-primary" {...p} />
   ),
+  table: ({ node: _node, ...p }) => (
+    <div className="mb-2 overflow-x-auto last:mb-0">
+      <table className="w-full border-collapse text-xs" {...p} />
+    </div>
+  ),
+  td: ({ node: _node, ...p }) => (
+    <td
+      className="border border-divider/15 px-2 py-1 text-content-secondary"
+      {...p}
+    />
+  ),
+  th: ({ node: _node, ...p }) => (
+    <th
+      className="border border-divider/20 px-2 py-1 text-left font-semibold text-content-primary"
+      {...p}
+    />
+  ),
   ul: ({ node: _node, ...p }) => (
     <ul className="mb-2 list-disc space-y-1 pl-4 last:mb-0" {...p} />
   ),
 }
 
+// remark-gfm → proper lists/tables/strikethrough; remark-breaks → a single
+// newline becomes a <br>. Small local models emit line-separated text (not
+// blank-line-separated paragraphs), which plain CommonMark collapses into one
+// run-on blob — these keep the model's intended line/list structure.
 const MarkdownText: React.FC<{ text: string }> = ({ text }) => (
-  <ReactMarkdown components={MD_COMPONENTS}>{text}</ReactMarkdown>
+  <ReactMarkdown
+    components={MD_COMPONENTS}
+    remarkPlugins={[remarkGfm, remarkBreaks]}
+  >
+    {text}
+  </ReactMarkdown>
 )
 
 /**
- * Collapsible view of the model's `<think>` reasoning for an assistant turn.
- * Hidden by default — click to expand and see how the brain reasoned (which
- * tools it considered, etc.).
+ * Per-response stats footer — real QVAC numbers (tok/s, tokens used, the backend
+ * device) plus the wall-clock timing the user actually waited.
  */
-const ThinkingDisclosure: React.FC<{ text: string }> = ({ text }) => {
-  const [open, setOpen] = useState(false)
+const StatsFooter: React.FC<{ stats: ChatMsgStats }> = ({ stats }) => {
+  const { tokensPerSecond, tokens, promptTokens, latencyMs, device } = stats
+  const hasAny =
+    (typeof tokensPerSecond === 'number' && tokensPerSecond > 0) ||
+    typeof tokens === 'number' ||
+    typeof latencyMs === 'number' ||
+    !!device
+  if (!hasAny) return null
   return (
-    <div className="mb-2">
+    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-divider/10 pt-1.5 text-[0.65rem] text-content-tertiary">
+      {typeof tokensPerSecond === 'number' && tokensPerSecond > 0 && (
+        <span className="inline-flex items-center gap-1">
+          <Gauge className="h-3 w-3" />
+          {tokensPerSecond.toFixed(1)} tok/s
+        </span>
+      )}
+      {typeof tokens === 'number' && (
+        <span
+          className="inline-flex items-center gap-1"
+          title={
+            typeof promptTokens === 'number'
+              ? `${promptTokens.toLocaleString('en-US')} prompt + ${Math.max(
+                  0,
+                  tokens - promptTokens
+                ).toLocaleString('en-US')} completion`
+              : undefined
+          }
+        >
+          <Coins className="h-3 w-3" />
+          {tokens.toLocaleString('en-US')} tokens
+        </span>
+      )}
+      {typeof latencyMs === 'number' && (
+        <span className="inline-flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          {(latencyMs / 1000).toFixed(latencyMs < 10_000 ? 1 : 0)}s
+        </span>
+      )}
+      {device && (
+        <span className="inline-flex items-center gap-1">
+          {device === 'gpu' ? (
+            <Zap className="h-3 w-3" />
+          ) : (
+            <Cpu className="h-3 w-3" />
+          )}
+          {device === 'gpu' ? 'GPU' : 'CPU'}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Collapsible view of the model's `<think>` reasoning for an assistant turn.
+ * Streams open WHILE the model is thinking (so you watch it reason live), then
+ * auto-collapses the moment the visible answer starts — a Claude-like
+ * thinking→answer transition. The user can still expand/collapse manually.
+ */
+const ThinkingDisclosure: React.FC<{
+  text: string
+  live?: boolean
+  hasContent?: boolean
+}> = ({ text, live = false, hasContent = false }) => {
+  // Actively reasoning = streaming this turn with no visible answer yet.
+  const reasoning = live && !hasContent
+  // Auto: open while there's no visible answer yet (you watch it think), then
+  // collapse once the answer appears. `pinnedOpen` lets a manual toggle win.
+  const [pinnedOpen, setPinnedOpen] = useState<boolean | null>(null)
+  const open = pinnedOpen ?? !hasContent
+  return (
+    <div className="mb-2 overflow-hidden rounded-lg border border-primary/20 bg-primary/5">
       <button
-        className="inline-flex items-center gap-1 rounded-md py-0.5 text-[0.7rem] font-medium text-content-tertiary transition-colors hover:text-content-secondary"
-        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-1.5 px-3 py-2 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        onClick={() => setPinnedOpen(!open)}
         type="button"
       >
         <ChevronRight
           className={`h-3 w-3 transition-transform ${open ? 'rotate-90' : ''}`}
         />
-        <Sparkles className="h-3 w-3" />
-        {open ? 'Hide thinking' : 'Show thinking'}
+        <Sparkles className={`h-3 w-3 ${reasoning ? 'animate-pulse' : ''}`} />
+        <span>{reasoning ? 'Thinking…' : 'Thought process'}</span>
+        <span className="ml-auto text-[0.65rem] font-normal text-content-tertiary">
+          {open ? 'Hide' : 'Show'}
+        </span>
       </button>
       {open && (
-        <div className="mt-1.5 whitespace-pre-wrap break-words rounded-lg border border-divider/10 bg-surface-base/60 px-3 py-2 font-mono text-[0.72rem] leading-relaxed text-content-tertiary">
+        <div className="max-h-56 overflow-y-auto whitespace-pre-wrap break-words border-t border-primary/15 bg-surface-base/60 px-3 py-2.5 font-mono text-[0.72rem] leading-relaxed text-content-tertiary">
           {text}
         </div>
       )}
@@ -99,12 +212,6 @@ function describeArgs(args: Record<string, unknown>): string {
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
   return parts.join('\n')
-}
-
-/** Format a sats value (number or numeric string) → "12,345 sats", else null. */
-function fmtSats(n: unknown): string | null {
-  const v = typeof n === 'number' ? n : Number(n)
-  return Number.isFinite(v) ? `${v.toLocaleString('en-US')} sats` : null
 }
 
 interface ConfirmSummary {
@@ -141,21 +248,27 @@ function summarizeConfirm(
   return null
 }
 
-/** Starter prompts shown on the empty chat — one tap to try the agent. */
-const SUGGESTIONS = [
-  'What can you do?',
-  "What's my balance?",
-  'Do I have channels?',
-  'Buy 100 USDT',
-]
-
 export const Component: React.FC = () => {
   const mind = useMindContext()
   const providerOn = mind.status?.on === true
+  // Real inference backend + throughput (from the SDK's per-turn stats) — shown
+  // in the header so "is the GPU actually being used?" is answered where you chat.
+  const device = mind.status?.inferenceDevice
+  const onGpu = device === 'gpu'
+  const deviceLabel =
+    device === 'gpu'
+      ? 'Metal/GPU'
+      : device === 'cpu'
+        ? 'CPU'
+        : device === 'mock'
+          ? 'Mock'
+          : 'detecting'
+  const tps = mind.status?.tokensPerSecond
 
   // Persisted across Mind sub-tabs (owned by the layout).
   const { messages, setMessages, input, setInput } = useMindChat()
   const [sending, setSending] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   const scrollToEnd = () =>
@@ -167,24 +280,139 @@ export const Component: React.FC = () => {
   const send = async (override?: string) => {
     const prompt = (override ?? input).trim()
     if (!prompt || sending || !providerOn) return
+    const assistantId = crypto.randomUUID()
+    const now = Date.now()
     setInput('')
-    setMessages((m) => [...m, { role: 'user', text: prompt }])
+    setMessages((m) => [
+      ...m,
+      { createdAt: now, id: crypto.randomUUID(), role: 'user', text: prompt },
+      {
+        createdAt: now,
+        id: assistantId,
+        role: 'assistant',
+        streaming: true,
+        text: '',
+        thinking: '',
+      },
+    ])
     setSending(true)
     scrollToEnd()
+    // Correlate tool calls↔results by (name, occurrence). The sidecar fires the
+    // call event fire-and-forget after an async lookup, so a fast result can
+    // race ahead of its call — counting per name makes the i-th call and i-th
+    // result resolve to the same event key regardless of arrival order.
+    const callSeq = new Map<string, number>()
+    const resultSeq = new Map<string, number>()
+    const upsertToolEvent = (
+      key: string,
+      patch: Partial<ChatToolEvent>,
+      fallback: ChatToolEvent
+    ) => {
+      setMessages((current) =>
+        current.map((message) => {
+          if (message.id !== assistantId) return message
+          const events = message.toolEvents ?? []
+          const index = events.findIndex((e) => e.id === key)
+          if (index >= 0) {
+            const next = events.slice()
+            next[index] = { ...next[index], ...patch }
+            return { ...message, toolEvents: next }
+          }
+          return { ...message, toolEvents: [...events, fallback] }
+        })
+      )
+      scrollToEnd()
+    }
     try {
-      const reply = await mind.chat(prompt)
-      setMessages((m) => [
-        ...m,
-        { role: 'assistant', text: reply.text, thinking: reply.thinking },
-      ])
-    } catch (e) {
-      setMessages((m) => [
-        ...m,
-        {
-          role: 'assistant',
-          text: `⚠️ ${e instanceof Error ? e.message : String(e)}`,
+      const reply = await mind.chat(prompt, {
+        onThinking: (delta) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId
+                ? {
+                    ...message,
+                    thinking: `${message.thinking ?? ''}${delta}`,
+                  }
+                : message
+            )
+          )
+          scrollToEnd()
         },
-      ])
+        onToken: (delta) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantId
+                ? { ...message, text: `${message.text}${delta}` }
+                : message
+            )
+          )
+          scrollToEnd()
+        },
+        onToolCall: (call) => {
+          const n = (callSeq.get(call.name) ?? 0) + 1
+          callSeq.set(call.name, n)
+          const key = `${call.name}#${n}`
+          upsertToolEvent(
+            key,
+            { arguments: call.arguments },
+            {
+              arguments: call.arguments,
+              id: key,
+              name: call.name,
+              status: 'running',
+            }
+          )
+        },
+        onToolResult: (res) => {
+          const n = (resultSeq.get(res.name) ?? 0) + 1
+          resultSeq.set(res.name, n)
+          const key = `${res.name}#${n}`
+          const status: ChatToolEvent['status'] = res.ok ? 'done' : 'error'
+          upsertToolEvent(
+            key,
+            { result: res.result, status },
+            {
+              arguments: res.arguments,
+              id: key,
+              name: res.name,
+              result: res.result,
+              status,
+            }
+          )
+        },
+      })
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                followups: reply.followups,
+                stats: {
+                  device: reply.device,
+                  latencyMs: reply.latencyMs,
+                  promptTokens: reply.promptTokens,
+                  tokens: reply.tokens,
+                  tokensPerSecond: reply.tokensPerSecond,
+                },
+                streaming: false,
+                text: reply.text,
+                thinking: reply.thinking ?? message.thinking,
+              }
+            : message
+        )
+      )
+    } catch (e) {
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantId
+            ? {
+                ...message,
+                streaming: false,
+                text: `⚠️ ${e instanceof Error ? e.message : String(e)}`,
+              }
+            : message
+        )
+      )
     } finally {
       setSending(false)
       scrollToEnd()
@@ -208,21 +436,128 @@ export const Component: React.FC = () => {
               : 'Start a model to chat'}
           </p>
         </div>
-        <span
-          className={`ml-auto inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
-            providerOn
-              ? 'bg-primary/15 text-primary'
-              : 'bg-surface-overlay text-content-tertiary'
-          }`}
-        >
+        <div className="ml-auto flex flex-shrink-0 items-center gap-2">
+          {providerOn && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
+                onGpu
+                  ? 'bg-status-success/15 text-status-success'
+                  : device === 'cpu'
+                    ? 'bg-status-warning/15 text-status-warning'
+                    : 'bg-surface-overlay text-content-tertiary'
+              }`}
+              title={
+                onGpu
+                  ? 'Inference is running on the GPU (Metal)'
+                  : device === 'cpu'
+                    ? 'Running on CPU — GPU/Metal was unavailable. See Brain → Recent activity.'
+                    : 'Detecting inference backend…'
+              }
+            >
+              {onGpu ? (
+                <Zap className="h-3 w-3" />
+              ) : (
+                <Cpu className="h-3 w-3" />
+              )}
+              {deviceLabel}
+              {typeof tps === 'number' && tps > 0
+                ? ` · ${tps.toFixed(0)} tok/s`
+                : ''}
+            </span>
+          )}
           <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              providerOn ? 'animate-pulse bg-primary' : 'bg-content-tertiary'
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-medium ${
+              providerOn
+                ? 'bg-primary/15 text-primary'
+                : 'bg-surface-overlay text-content-tertiary'
             }`}
-          />
-          {providerOn ? 'Online' : 'Offline'}
-        </span>
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                providerOn ? 'animate-pulse bg-primary' : 'bg-content-tertiary'
+              }`}
+            />
+            {providerOn ? 'Online' : 'Offline'}
+          </span>
+        </div>
+        <button
+          className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
+          disabled={messages.length === 0 || sending}
+          onClick={() => {
+            setMessages([])
+            setInput('')
+            setShowHistory(false)
+          }}
+          title="Start a new chat"
+          type="button"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          New chat
+        </button>
+        <button
+          className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay"
+          onClick={() => setShowHistory((value) => !value)}
+          type="button"
+        >
+          <History className="h-3.5 w-3.5" />
+          History
+        </button>
       </div>
+
+      {showHistory && (
+        <div className="border-b border-divider/15 bg-surface-overlay/40 px-5 py-3">
+          <div className="mb-2 flex items-center">
+            <p className="text-xs font-semibold text-content-primary">
+              Saved conversation · {messages.length} messages
+            </p>
+            <div className="ml-auto flex gap-2">
+              <button
+                className="inline-flex items-center gap-1 text-xs text-content-tertiary hover:text-content-primary"
+                onClick={() => {
+                  setMessages([])
+                  setShowHistory(false)
+                }}
+                type="button"
+              >
+                <Plus className="h-3.5 w-3.5" /> New chat
+              </button>
+              <button
+                className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300"
+                onClick={() => setMessages([])}
+                type="button"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Clear
+              </button>
+            </div>
+          </div>
+          <div className="max-h-40 space-y-1 overflow-y-auto">
+            {messages.length === 0 ? (
+              <p className="text-xs text-content-tertiary">
+                No saved messages yet.
+              </p>
+            ) : (
+              messages.map((message, index) => (
+                <div
+                  className="flex gap-2 rounded px-2 py-1 text-xs hover:bg-surface-overlay"
+                  key={message.id ?? index}
+                >
+                  <span className="w-14 shrink-0 font-medium text-content-tertiary">
+                    {message.role === 'user' ? 'You' : 'Mind'}
+                  </span>
+                  <span className="truncate text-content-secondary">
+                    {message.text || message.thinking || 'Thinking…'}
+                  </span>
+                  {message.createdAt && (
+                    <span className="ml-auto shrink-0 text-[0.65rem] text-content-tertiary">
+                      {new Date(message.createdAt).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4" ref={listRef}>
@@ -232,57 +567,65 @@ export const Component: React.FC = () => {
               <Brain className="h-7 w-7 text-primary" />
             </div>
             <p className="text-base font-semibold text-content-primary">
-              How can I help?
+              Your sovereign financial agent
             </p>
             <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
-              Your local AI brain for Bitcoin, Lightning &amp; RGB — read
-              balances and channels, or run a swap, right from chat.
+              I run locally and help with your wallet, node and portfolio. Pick
+              a starting point, or just ask.
             </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  className="rounded-full border border-border-default bg-surface-overlay/50 px-3.5 py-1.5 text-xs font-medium text-content-secondary transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-content-primary disabled:opacity-40 disabled:hover:translate-y-0"
-                  disabled={!providerOn || sending}
-                  key={s}
-                  onClick={() => void send(s)}
-                  type="button"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <WelcomeActions
+              disabled={!providerOn || sending}
+              onPick={(p) => void send(p)}
+              providerOn={providerOn}
+            />
           </div>
         ) : (
           messages.map((m, i) =>
             m.role === 'user' ? (
-              <div className="flex justify-end" key={i}>
+              <div className="flex justify-end" key={m.id ?? i}>
                 <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
                   {m.text}
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-2.5" key={i}>
+              <div className="flex items-start gap-2.5" key={m.id ?? i}>
                 <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
                   <Brain className="h-4 w-4 text-primary" />
                 </div>
-                <div className="max-w-[80%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
-                  {m.thinking && <ThinkingDisclosure text={m.thinking} />}
-                  <MarkdownText text={m.text} />
+                <div className="max-w-[88%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
+                  {m.thinking && (
+                    <ThinkingDisclosure
+                      hasContent={!!m.text}
+                      live={m.streaming}
+                      text={m.thinking}
+                    />
+                  )}
+                  {m.toolEvents?.map((ev) => (
+                    <ToolEventView event={ev} key={ev.id} />
+                  ))}
+                  {m.text ? (
+                    <MarkdownText text={m.text} />
+                  ) : m.streaming && !m.thinking && !m.toolEvents?.length ? (
+                    <span className="inline-flex items-center gap-2 text-content-tertiary">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      Thinking…
+                    </span>
+                  ) : null}
+                  {!m.streaming &&
+                    m.followups &&
+                    m.followups.length > 0 &&
+                    i === messages.length - 1 && (
+                      <FollowupActions
+                        actions={m.followups}
+                        disabled={!providerOn || sending}
+                        onPick={(p) => void send(p)}
+                      />
+                    )}
+                  {!m.streaming && m.stats && <StatsFooter stats={m.stats} />}
                 </div>
               </div>
             )
           )
-        )}
-        {sending && (
-          <div className="flex items-start gap-2.5">
-            <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-              <Brain className="h-4 w-4 text-primary" />
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm text-content-tertiary">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />{' '}
-              thinking…
-            </div>
-          </div>
         )}
       </div>
 
@@ -353,25 +696,50 @@ export const Component: React.FC = () => {
         </div>
       )}
       <div className="border-t border-divider/15 px-4 py-3">
-        <div className="flex items-center gap-2 rounded-xl border border-border-default bg-surface-overlay/40 py-1.5 pl-3 pr-1.5 transition-colors focus-within:border-primary/50">
+        {/* While the model is working, make it unmistakable that input is paused. */}
+        {sending && (
+          <div className="mb-2 flex items-center gap-2 px-1 text-xs font-medium text-primary">
+            <span className="flex items-end gap-0.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+            </span>
+            KaleidoMind is responding… please wait
+          </div>
+        )}
+        <div
+          className={`flex items-center gap-2 rounded-xl border bg-surface-overlay/40 py-1.5 pl-3 pr-1.5 transition-colors ${
+            sending
+              ? 'border-primary/40 opacity-70'
+              : 'border-border-default focus-within:border-primary/50'
+          }`}
+        >
           <input
-            className="flex-1 bg-transparent py-1.5 text-sm text-content-primary placeholder-content-tertiary focus:outline-none disabled:opacity-50"
+            className="flex-1 bg-transparent py-1.5 text-sm text-content-primary placeholder-content-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
             disabled={!providerOn || sending}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && send()}
             placeholder={
-              providerOn ? 'Message KaleidoMind…' : 'Start a model first'
+              sending
+                ? 'Waiting for KaleidoMind to finish…'
+                : providerOn
+                  ? 'Message KaleidoMind…'
+                  : 'Start a model first'
             }
             value={input}
           />
           <button
-            aria-label="Send message"
+            aria-label={sending ? 'KaleidoMind is responding' : 'Send message'}
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-40"
             disabled={!providerOn || sending || !input.trim()}
             onClick={() => send()}
             type="button"
           >
-            <Send className="h-4 w-4" />
+            {sending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </button>
         </div>
       </div>

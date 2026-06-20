@@ -75,6 +75,20 @@ impl MindProcess {
             cmd.current_dir(dir);
         }
 
+        // The desktop wallet is backed by RLN only. Keep legacy WDK/Spark
+        // aliases out of the model's tool prompt so small local models do not
+        // waste tokens choosing between duplicate wallet implementations.
+        cmd.env("KALEIDO_MIND_RLN_ONLY", "1");
+
+        // Conservative desktop defaults for local reasoning. Users can still
+        // override these through the inherited environment or Agent settings.
+        if std::env::var_os("KALEIDO_MIND_MAX_THINKING_TOKENS").is_none() {
+            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "128");
+        }
+        if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
+            cmd.env("KALEIDO_MIND_MAX_TOKENS", "512");
+        }
+
         // Point the sidecar at kaleido-mcp so the agent gets real tools.
         // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
         // narrates tool calls ("I'll check your balance…") it can never execute.
@@ -105,6 +119,27 @@ impl MindProcess {
         {
             log::info!("[mind] RLN_NODE_URL={}", url);
             cmd.env("RLN_NODE_URL", url);
+        }
+
+        // Point the MCP at the SAME maker the trading UI uses. kaleido-mcp
+        // defaults to mainnet api.kaleidoswap.com, which doesn't resolve on the
+        // test networks (signet/regtest) — so without this the LSP + swap tools
+        // "fetch failed". Source it from the active account's default_maker_url
+        // (e.g. https://api.signet.kaleidoswap.com), trimming any trailing slash
+        // so the SDK's "/api/v1/lsps1/*" paths don't double up.
+        if let Some(url) = app
+            .try_state::<crate::CurrentAccount>()
+            .and_then(|acc| {
+                acc.0
+                    .read()
+                    .ok()
+                    .and_then(|g| g.as_ref().map(|a| a.default_maker_url.clone()))
+            })
+            .map(|u| u.trim().trim_end_matches('/').to_string())
+            .filter(|u| !u.is_empty())
+        {
+            log::info!("[mind] KALEIDOSWAP_API_URL={}", url);
+            cmd.env("KALEIDOSWAP_API_URL", url);
         }
 
         let mut child = cmd

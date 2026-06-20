@@ -8,13 +8,46 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
+import type { SuggestedAction } from '../../api/mind'
 import type { UseMindResult } from '../../hooks/useMind'
 
+/**
+ * A tool the agent ran during an assistant turn — rendered live as a "running"
+ * pill, then as a typed result card when it returns. Correlated back to its
+ * call by tool `name` (the sidecar fires the call event fire-and-forget, so a
+ * fast result can arrive before its call — see chat.tsx).
+ */
+export interface ChatToolEvent {
+  id: string
+  name: string
+  arguments?: Record<string, unknown>
+  status: 'running' | 'done' | 'error'
+  result?: unknown
+}
+
+/** Per-response inference stats (real QVAC numbers), shown under the answer. */
+export interface ChatMsgStats {
+  tokensPerSecond?: number
+  tokens?: number
+  promptTokens?: number
+  latencyMs?: number
+  device?: 'gpu' | 'cpu' | null
+}
+
 export interface ChatMsg {
+  id?: string
   role: 'user' | 'assistant'
   text: string
   /** The model's `<think>` reasoning for an assistant turn, shown collapsed. */
   thinking?: string
+  /** Tools the agent invoked this turn, in arrival order (cards + live pills). */
+  toolEvents?: ChatToolEvent[]
+  /** Contextual next-step cards proposed by the agent after this reply. */
+  followups?: SuggestedAction[]
+  /** tok/s, tokens used, timing for this answer (QVAC). */
+  stats?: ChatMsgStats
+  createdAt?: number
+  streaming?: boolean
 }
 
 // Chat state is owned by the layout so the conversation survives navigating
@@ -76,11 +109,13 @@ export function StatusPill({
   return (
     <div
       className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-        on ? 'bg-green-600/20 text-green-300' : 'bg-gray-700/40 text-gray-400'
+        on
+          ? 'bg-status-success/15 text-status-success'
+          : 'bg-surface-overlay text-content-tertiary'
       }`}
     >
       <span
-        className={`h-2 w-2 rounded-full ${on ? 'bg-green-400' : 'bg-gray-500'}`}
+        className={`h-2 w-2 rounded-full ${on ? 'bg-status-success' : 'bg-content-tertiary'}`}
       />
       {on ? (
         <span>
@@ -104,7 +139,7 @@ export function MindCard({
 }) {
   return (
     <section
-      className={`rounded-xl border border-gray-800 bg-gray-900/40 p-5 ${className}`}
+      className={`rounded-xl border border-border-default bg-surface-base/50 p-5 ${className}`}
     >
       {children}
     </section>

@@ -29,10 +29,12 @@ import {
   WALLET_HISTORY_CHANNEL_ORDERS_PATH,
   CREATEUTXOS_PATH,
   KALEIDO_MIND_PATH,
+  KALEIDO_MIND_BRAIN_PATH,
   KALEIDO_MIND_PAIRING_PATH,
   KALEIDO_MIND_MODELS_PATH,
   KALEIDO_MIND_SKILLS_PATH,
   KALEIDO_MIND_CHAT_PATH,
+  KALEIDO_MIND_AGENT_PATH,
 } from './paths'
 
 export const router = createBrowserRouter([
@@ -136,7 +138,15 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            lazy: () => import('../../routes/kaleido-mind/chat'),
+          },
+          {
+            lazy: () => import('../../routes/kaleido-mind/chat'),
+            path: KALEIDO_MIND_CHAT_PATH,
+          },
+          {
             lazy: () => import('../../routes/kaleido-mind/brain'),
+            path: KALEIDO_MIND_BRAIN_PATH,
           },
           {
             lazy: () => import('../../routes/kaleido-mind/pairing'),
@@ -151,8 +161,8 @@ export const router = createBrowserRouter([
             path: KALEIDO_MIND_SKILLS_PATH,
           },
           {
-            lazy: () => import('../../routes/kaleido-mind/chat'),
-            path: KALEIDO_MIND_CHAT_PATH,
+            lazy: () => import('../../routes/kaleido-mind/agent'),
+            path: KALEIDO_MIND_AGENT_PATH,
           },
         ],
         lazy: () => import('../../routes/kaleido-mind'),
