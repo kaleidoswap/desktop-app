@@ -1,0 +1,5 @@
+# Placeholder so `resources/mind` exists for dev/CI builds.
+#
+# `scripts/prepare-mind-bundle.mjs` populates this directory before a packaged
+# `tauri build` with provider/, mcp/, and a per-platform node binary. Those
+# generated artifacts are gitignored; this file is the only tracked content.

@@ -26,6 +26,30 @@ export interface ProviderStatusEvent {
   peers: PeerInfo[]
   tokensPerSecond: number | null
   startedAt: number | null
+  inferenceDevice?: 'gpu' | 'cpu' | 'mock' | null
+}
+
+export interface CapabilityInfo {
+  skills: Array<{
+    name: string
+    description: string
+    enabled: boolean
+    tools: string[]
+  }>
+  tools: Array<{
+    name: string
+    description: string
+    requiresConfirmation: boolean
+  }>
+  mcpConnected: boolean
+  mcpServers: Array<{
+    id: string
+    name: string
+    url: string
+    connected: boolean
+    toolCount: number
+    error?: string
+  }>
 }
 
 export interface InstalledModel {
@@ -83,6 +107,112 @@ export interface ToolConfirmRequestEvent {
   timeoutMs: number
 }
 
+// ── Autonomy types (mirror apps/provider/src/protocol.ts) ────────────────
+
+export interface TaskAllocation {
+  btcSat: number
+  usdt: number
+  xaut: number
+}
+
+export interface AgentTask {
+  id: string
+  name: string
+  description: string
+  skill: string
+  scheduleSec: number
+  runOnStartup: boolean
+  allocation: TaskAllocation
+  enabled: boolean
+  createdAt: number
+  lastRunAt: number | null
+}
+
+export interface RiskLimits {
+  dryRun: boolean
+  minBtcReserveSat: number
+  stopLossBtcSat: number
+  maxSpendUsd: number
+  autoApproveUnderUsd: number
+  maxOpenOrders?: number
+}
+
+export interface PortfolioTargets {
+  btcPct: number
+  usdtPct: number
+  xautPct: number
+  driftThresholdPct: number
+}
+
+export interface TaskRunCost {
+  usd: number
+  inputTokens: number
+  outputTokens: number
+}
+
+export interface TaskStats {
+  runs: number
+  errors: number
+  lastRunAt: number | null
+  lastDurationMs: number | null
+  lastToolCalls: number | null
+  lastError: string | null
+  lastText: string | null
+}
+
+export interface TaskRunRecord {
+  taskId: string
+  taskName: string
+  startedAt: number
+  durationMs: number
+  toolCalls: number
+  ok: boolean
+  error: string | null
+  text: string
+  cost: TaskRunCost
+}
+
+export interface AgentState {
+  schedulerRunning: boolean
+  risk: RiskLimits
+  targets: PortfolioTargets
+  /** Generation token caps (0 ⇒ uncapped). */
+  generation: { maxThinkingTokens: number; maxOutputTokens: number }
+  recent: TaskRunRecord[]
+  stats: Record<string, TaskStats>
+  cumulative: TaskRunCost
+}
+
+export interface SuggestedAction {
+  id: string
+  /** 'wallet' | 'node' | 'portfolio' | 'trade' — mapped to an icon by the UI. */
+  icon: string
+  title: string
+  subtitle: string
+  prompt: string
+}
+
+export interface NewTaskInput {
+  name: string
+  description: string
+  skill: string
+  scheduleSec: number
+  enabled: boolean
+  runOnStartup?: boolean
+  allocation?: TaskAllocation
+  id?: string
+}
+
+export interface TaskPatchInput {
+  name?: string
+  description?: string
+  skill?: string
+  scheduleSec?: number
+  runOnStartup?: boolean
+  allocation?: TaskAllocation
+  enabled?: boolean
+}
+
 export type MindEvent =
   | { type: 'ready'; version: string }
   | ProviderStatusEvent
@@ -93,6 +223,37 @@ export type MindEvent =
   | { type: 'peer_disconnected'; shortKey: string }
   | { type: 'download_progress'; progress: DownloadProgress }
   | { type: 'download_completed'; modelId: string }
+  | { type: 'chat_thinking_delta'; chatId: string; delta: string }
+  | { type: 'chat_content_delta'; chatId: string; delta: string }
+  | {
+      type: 'chat_tool_call'
+      chatId: string
+      id: string
+      name: string
+      arguments: Record<string, unknown>
+      requiresConfirmation?: boolean
+    }
+  | {
+      type: 'chat_tool_result'
+      chatId: string
+      id: string
+      name: string
+      arguments: Record<string, unknown>
+      ok: boolean
+      result: unknown
+    }
+  | { type: 'capabilities_changed'; capabilities: CapabilityInfo }
+  | { type: 'tasks_changed'; tasks: AgentTask[] }
+  | { type: 'task_run_started'; taskId: string; taskName: string; at: number }
+  | { type: 'task_run_finished'; record: TaskRunRecord }
+  | { type: 'agent_state'; state: AgentState }
+  | {
+      type: 'agent_message'
+      text: string
+      taskId?: string
+      taskName?: string
+      at: number
+    }
   | { type: 'log'; level: 'debug' | 'info' | 'warn' | 'error'; message: string }
   | { type: 'response'; id: string; ok: true; data?: unknown }
   | { type: 'response'; id: string; ok: false; error: string }
@@ -100,8 +261,43 @@ export type MindEvent =
 
 export interface ChatResult {
   text: string
+  /** The model's `<think>` reasoning for this turn, if any (shown collapsed in chat). */
+  thinking?: string
   latencyMs: number
   tokensPerSecond: number
+  /** Total tokens this turn (prompt + completion), from QVAC stats. */
+  tokens?: number
+  promptTokens?: number
+  /** The backend that actually ran this response. */
+  device?: 'gpu' | 'cpu' | null
+  /** Contextual next-step cards the agent proposes after this reply. */
+  followups?: SuggestedAction[]
+}
+
+/** A tool the agent invoked mid-turn (drives the live "running" pill). */
+export interface ChatToolCall {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+  requiresConfirmation?: boolean
+}
+
+/** A tool's result (drives the typed result card). */
+export interface ChatToolResult {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+  ok: boolean
+  result: unknown
+}
+
+export interface ChatHandlers {
+  onThinking?: (delta: string) => void
+  onToken?: (delta: string) => void
+  /** The agent started a tool call (before it executes). */
+  onToolCall?: (call: ChatToolCall) => void
+  /** A tool returned (after it executes). */
+  onToolResult?: (result: ChatToolResult) => void
 }
 
 type EventHandler = (e: MindEvent) => void
@@ -223,6 +419,13 @@ class MindClient {
   downloadModel(modelId: string) {
     return this.send({ cmd: 'download_model', modelId })
   }
+  addHuggingFaceModel(url: string, displayName?: string) {
+    return this.request<CatalogModel>({
+      cmd: 'add_huggingface_model',
+      displayName,
+      url,
+    })
+  }
   cancelDownload(modelId: string) {
     return this.send({ cmd: 'cancel_download', modelId })
   }
@@ -236,13 +439,126 @@ class MindClient {
   stopProvider() {
     return this.request<ProviderStatusEvent>({ cmd: 'stop' })
   }
-  chat(prompt: string) {
+  chat(prompt: string, handlers?: ChatHandlers) {
     // Generous: an agentic run may pause up to 120s on a tool confirmation.
-    return this.request<ChatResult>({ cmd: 'chat', prompt }, 300_000)
+    const chatId = crypto.randomUUID()
+    const off = this.on((event) => {
+      if (event.type === 'chat_thinking_delta' && event.chatId === chatId) {
+        handlers?.onThinking?.(event.delta)
+      } else if (
+        event.type === 'chat_content_delta' &&
+        event.chatId === chatId
+      ) {
+        handlers?.onToken?.(event.delta)
+      } else if (event.type === 'chat_tool_call' && event.chatId === chatId) {
+        handlers?.onToolCall?.({
+          arguments: event.arguments,
+          id: event.id,
+          name: event.name,
+          requiresConfirmation: event.requiresConfirmation,
+        })
+      } else if (event.type === 'chat_tool_result' && event.chatId === chatId) {
+        handlers?.onToolResult?.({
+          arguments: event.arguments,
+          id: event.id,
+          name: event.name,
+          ok: event.ok,
+          result: event.result,
+        })
+      }
+    })
+    return this.request<ChatResult>(
+      { chatId, cmd: 'chat', prompt },
+      300_000
+    ).finally(off)
+  }
+  listCapabilities() {
+    return this.request<CapabilityInfo>({ cmd: 'list_capabilities' })
+  }
+  setSkillEnabled(name: string, enabled: boolean) {
+    return this.request<CapabilityInfo>({
+      cmd: 'set_skill_enabled',
+      enabled,
+      name,
+    })
+  }
+  addSkill(
+    name: string,
+    description: string,
+    instructions: string,
+    tools?: string[]
+  ) {
+    return this.request<CapabilityInfo>({
+      cmd: 'add_skill',
+      description,
+      instructions,
+      name,
+      tools,
+    })
+  }
+  deleteSkill(name: string) {
+    return this.request<CapabilityInfo>({ cmd: 'delete_skill', name })
+  }
+  addMcpServer(name: string, url: string) {
+    return this.request<CapabilityInfo>({
+      cmd: 'add_mcp_server',
+      name,
+      url,
+    })
+  }
+  removeMcpServer(id: string) {
+    return this.request<CapabilityInfo>({
+      cmd: 'remove_mcp_server',
+      serverId: id,
+    })
   }
   /** Answer a tool_confirm_request (approve/decline a pending spend). */
   confirmTool(confirmId: string, approved: boolean, reason?: string) {
     return this.send({ approved, cmd: 'tool_confirm', confirmId, reason })
+  }
+
+  // ── Autonomy (the agent's task brain) ──────────────────────────────
+  listTasks() {
+    return this.request<AgentTask[]>({ cmd: 'list_tasks' })
+  }
+  createTask(task: NewTaskInput) {
+    return this.request<AgentTask>({ cmd: 'create_task', task })
+  }
+  updateTask(taskId: string, patch: TaskPatchInput) {
+    return this.request<AgentTask | null>({ cmd: 'update_task', patch, taskId })
+  }
+  deleteTask(taskId: string) {
+    return this.request<{ removed: boolean }>({ cmd: 'delete_task', taskId })
+  }
+  /** Force-run a task now (regardless of schedule). Resolves with its outcome. */
+  runTask(taskId: string) {
+    return this.request<{
+      ok: boolean
+      text?: string
+      toolCalls?: number
+      error?: string
+    } | null>({ cmd: 'run_task', taskId }, 300_000)
+  }
+  setScheduler(running: boolean) {
+    return this.request<AgentState>({ cmd: 'set_scheduler', running })
+  }
+  getAgentState() {
+    return this.request<AgentState>({ cmd: 'get_agent_state' })
+  }
+  setRiskLimits(limits: Partial<RiskLimits>) {
+    return this.request<AgentState>({ cmd: 'set_risk_limits', limits })
+  }
+  setPortfolioTargets(targets: Partial<PortfolioTargets>) {
+    return this.request<AgentState>({ cmd: 'set_portfolio_targets', targets })
+  }
+  setGenerationLimits(limits: {
+    maxThinkingTokens?: number
+    maxOutputTokens?: number
+  }) {
+    return this.request<AgentState>({ cmd: 'set_generation_limits', ...limits })
+  }
+  getSuggestedActions() {
+    return this.request<SuggestedAction[]>({ cmd: 'get_suggested_actions' })
   }
 }
 

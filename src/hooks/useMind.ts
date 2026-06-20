@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   mindClient,
   type CatalogModel,
+  type CapabilityInfo,
+  type ChatHandlers,
+  type ChatResult,
   type InstalledModel,
   type MindEvent,
   type ProviderLoadingEvent,
@@ -26,6 +29,7 @@ export interface UseMindResult {
   ready: boolean
   /** A spend awaiting the user's approval (null when none). */
   pendingConfirm: ToolConfirmRequestEvent | null
+  capabilities: CapabilityInfo | null
   // actions
   refresh: () => Promise<void>
   startProvider: (modelId: string) => Promise<void>
@@ -33,7 +37,18 @@ export interface UseMindResult {
   downloadModel: (modelId: string) => Promise<void>
   cancelDownload: (modelId: string) => Promise<void>
   deleteModel: (modelId: string) => Promise<void>
-  chat: (prompt: string) => Promise<string>
+  addHuggingFaceModel: (url: string, displayName?: string) => Promise<void>
+  setSkillEnabled: (name: string, enabled: boolean) => Promise<void>
+  addSkill: (
+    name: string,
+    description: string,
+    instructions: string,
+    tools?: string[]
+  ) => Promise<void>
+  deleteSkill: (name: string) => Promise<void>
+  addMcpServer: (name: string, url: string) => Promise<void>
+  removeMcpServer: (id: string) => Promise<void>
+  chat: (prompt: string, handlers?: ChatHandlers) => Promise<ChatResult>
   /** Approve or decline the pending spend. */
   respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
@@ -49,6 +64,7 @@ export function useMind(): UseMindResult {
   const [logs, setLogs] = useState<string[]>([])
   const [pendingConfirm, setPendingConfirm] =
     useState<ToolConfirmRequestEvent | null>(null)
+  const [capabilities, setCapabilities] = useState<CapabilityInfo | null>(null)
   // Auto-clear the confirm card when the sidecar's timeout declines it.
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -63,14 +79,16 @@ export function useMind(): UseMindResult {
   const refresh = useCallback(async () => {
     try {
       await mindClient.start()
-      const [cat, inst, st] = await Promise.all([
+      const [cat, inst, st, caps] = await Promise.all([
         mindClient.listCatalogModels(),
         mindClient.listInstalledModels(),
         mindClient.getStatus(),
+        mindClient.listCapabilities(),
       ])
       setCatalog(cat)
       setInstalled(inst)
       setStatus(st)
+      setCapabilities(caps)
     } catch {
       /* sidecar may still be booting */
     }
@@ -113,6 +131,9 @@ export function useMind(): UseMindResult {
           })
           void refreshInstalledRef.current()
           break
+        case 'capabilities_changed':
+          setCapabilities(e.capabilities)
+          break
         case 'tool_confirm_request':
           setPendingConfirm(e)
           if (confirmTimer.current) clearTimeout(confirmTimer.current)
@@ -142,6 +163,7 @@ export function useMind(): UseMindResult {
   const startProvider = useCallback(async (modelId: string) => {
     const st = await mindClient.startProvider(modelId)
     setStatus(st)
+    setCapabilities(await mindClient.listCapabilities())
   }, [])
 
   const stopProvider = useCallback(async () => {
@@ -171,9 +193,50 @@ export function useMind(): UseMindResult {
     [refreshInstalled]
   )
 
-  const chat = useCallback(async (prompt: string) => {
-    const res = await mindClient.chat(prompt)
-    return res.text
+  const addHuggingFaceModel = useCallback(
+    async (url: string, displayName?: string) => {
+      const model = await mindClient.addHuggingFaceModel(url, displayName)
+      setCatalog(await mindClient.listCatalogModels())
+      setDownloads((d) => ({ ...d, [model.id]: 0 }))
+    },
+    []
+  )
+
+  const setSkillEnabled = useCallback(
+    async (name: string, enabled: boolean) => {
+      setCapabilities(await mindClient.setSkillEnabled(name, enabled))
+    },
+    []
+  )
+
+  const addSkill = useCallback(
+    async (
+      name: string,
+      description: string,
+      instructions: string,
+      tools?: string[]
+    ) => {
+      setCapabilities(
+        await mindClient.addSkill(name, description, instructions, tools)
+      )
+    },
+    []
+  )
+
+  const deleteSkill = useCallback(async (name: string) => {
+    setCapabilities(await mindClient.deleteSkill(name))
+  }, [])
+
+  const addMcpServer = useCallback(async (name: string, url: string) => {
+    setCapabilities(await mindClient.addMcpServer(name, url))
+  }, [])
+
+  const removeMcpServer = useCallback(async (id: string) => {
+    setCapabilities(await mindClient.removeMcpServer(id))
+  }, [])
+
+  const chat = useCallback(async (prompt: string, handlers?: ChatHandlers) => {
+    return mindClient.chat(prompt, handlers)
   }, [])
 
   const respondConfirm = useCallback(
@@ -189,10 +252,15 @@ export function useMind(): UseMindResult {
   )
 
   return {
+    addHuggingFaceModel,
+    addMcpServer,
+    addSkill,
     cancelDownload,
+    capabilities,
     catalog,
     chat,
     deleteModel,
+    deleteSkill,
     downloadModel,
     downloads,
     installed,
@@ -201,7 +269,9 @@ export function useMind(): UseMindResult {
     pendingConfirm,
     ready: status?.on === true && !loading,
     refresh,
+    removeMcpServer,
     respondConfirm,
+    setSkillEnabled,
     startProvider,
     status,
     stopProvider,

@@ -3,12 +3,14 @@
 // active sub-page (Brain / Pairing / Models / Skills / Chat) in the Outlet.
 
 import { Brain, Loader2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
+import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
 
 import { StatusPill, labelForPhase, type ChatMsg } from './shared'
+import { StartBrainModal } from './start-brain-modal'
 
 export const Component: React.FC = () => {
   const mind = useMind()
@@ -16,8 +18,52 @@ export const Component: React.FC = () => {
   const providerOn = status?.on === true
 
   // Chat state lives here so it persists across the Mind sub-tabs.
-  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    try {
+      const parsed = JSON.parse(
+        localStorage.getItem('kaleido-mind.chat-history.v1') ?? '[]'
+      )
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })
   const [input, setInput] = useState('')
+
+  useEffect(() => {
+    // Thinking/content can arrive token-by-token. Debounce persistence so live
+    // streaming does not synchronously rewrite localStorage for every token.
+    const timer = setTimeout(() => {
+      localStorage.setItem(
+        'kaleido-mind.chat-history.v1',
+        JSON.stringify(
+          messages
+            .slice(-100)
+            .map(({ streaming: _streaming, ...message }) => message)
+        )
+      )
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [messages])
+
+  // The agent can message you unprompted — a finished task, a liquidity alert.
+  // Those arrive as `agent_message` events and append to the conversation as
+  // assistant turns, even while you're on another Mind sub-tab.
+  useEffect(() => {
+    const off = mindClient.on((e: MindEvent) => {
+      if (e.type !== 'agent_message') return
+      setMessages((m) => [
+        ...m,
+        {
+          createdAt: e.at,
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          text: e.text,
+        },
+      ])
+    })
+    return off
+  }, [])
 
   return (
     <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 overflow-y-auto p-6">
@@ -57,6 +103,9 @@ export const Component: React.FC = () => {
       <Outlet
         context={{ chat: { input, messages, setInput, setMessages }, mind }}
       />
+
+      {/* Offline prompt — pops up on any Mind page when the brain isn't running. */}
+      <StartBrainModal mind={mind} />
     </div>
   )
 }

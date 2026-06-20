@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "tauri": "tauri",
+    "bundle:mind": "node src-tauri/scripts/prepare-mind-bundle.mjs",
     "tauri:build": "tauri build",
     "tauri:build:windows": "tauri build --target x86_64-pc-windows-msvc",
     "tauri:dev": "tauri dev",
@@ -52,6 +53,8 @@
     "react-router-dom": "^7.18.0",
     "react-spinners": "^0.17.0",
     "react-toastify": "^10.0.6",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "tailwind-merge": "^1.14.0",
     "webfontloader": "^1.6.28",
     "zod": "^3.25.76"

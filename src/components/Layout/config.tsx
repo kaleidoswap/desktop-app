@@ -18,12 +18,10 @@ import {
   HardDriveDownload,
   Target,
   Link as LinkIcon,
+  Bot,
   Brain,
   Droplets,
   Tag,
-  QrCode,
-  Cpu,
-  Sparkles,
   ArrowLeftRight,
   Radio,
   LayoutDashboard,
@@ -57,10 +55,8 @@ import {
   CREATE_NEW_CHANNEL_PATH,
   ORDER_CHANNEL_PATH,
   KALEIDO_MIND_PATH,
-  KALEIDO_MIND_PAIRING_PATH,
-  KALEIDO_MIND_MODELS_PATH,
-  KALEIDO_MIND_SKILLS_PATH,
-  KALEIDO_MIND_CHAT_PATH,
+  KALEIDO_MIND_BRAIN_PATH,
+  KALEIDO_MIND_AGENT_PATH,
 } from '../../app/router/paths'
 
 // Define types for navigation items
@@ -175,29 +171,20 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         matchPath: KALEIDO_MIND_PATH,
         subMenu: [
           {
-            icon: <LayoutDashboard className="w-4 h-4" />,
-            label: t('navigation.overview', 'Overview'),
+            icon: <MessageSquare className="w-4 h-4" />,
+            label: t('navigation.chat', 'Chat'),
             to: KALEIDO_MIND_PATH,
           },
           {
-            icon: <QrCode className="w-4 h-4" />,
-            label: t('navigation.pairing', 'Pairing'),
-            to: KALEIDO_MIND_PAIRING_PATH,
+            icon: <Bot className="w-4 h-4" />,
+            label: t('navigation.agent', 'Agent'),
+            to: KALEIDO_MIND_AGENT_PATH,
           },
           {
-            icon: <Cpu className="w-4 h-4" />,
-            label: t('navigation.models', 'Models'),
-            to: KALEIDO_MIND_MODELS_PATH,
-          },
-          {
-            icon: <Sparkles className="w-4 h-4" />,
-            label: t('navigation.skills', 'Skills'),
-            to: KALEIDO_MIND_SKILLS_PATH,
-          },
-          {
-            icon: <MessageSquare className="w-4 h-4" />,
-            label: t('navigation.chat', 'Chat'),
-            to: KALEIDO_MIND_CHAT_PATH,
+            // Brain hosts Models + Skills management inline.
+            icon: <LayoutDashboard className="w-4 h-4" />,
+            label: t('navigation.brain', 'Brain'),
+            to: KALEIDO_MIND_BRAIN_PATH,
           },
         ],
         to: KALEIDO_MIND_PATH,

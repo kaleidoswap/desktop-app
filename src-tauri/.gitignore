@@ -5,3 +5,10 @@
 
 /node_modules/
 package-lock.json
+
+# Staged KaleidoMind agent bundle (produced by scripts/prepare-mind-bundle.mjs
+# before `tauri build`) — large pruned trees + a per-platform Node binary, not
+# source. Re-generated on each packaged build. Keep the dir (Tauri's build
+# script requires the resource path to exist) but ignore its generated contents.
+/resources/mind/*
+!/resources/mind/.gitkeep
