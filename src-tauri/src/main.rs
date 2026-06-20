@@ -122,15 +122,27 @@ fn main() {
                 // varies by version/platform, so probe a few candidate roots.
                 if let Ok(res) = app.path().resource_dir() {
                     for base in [res.join("mind"), res.join("resources/mind"), res.clone()] {
-                        let provider = base.join("provider");
-                        if provider.join("dist/index.js").exists() {
-                            std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
-                            log::info!("[mind] bundled provider: {}", provider.display());
+                        // npm-install layout (provider installed from npm) first,
+                        // then the legacy pnpm-deploy layout.
+                        for provider in [
+                            base.join("provider/node_modules/@kaleidorg/mind-provider"),
+                            base.join("provider"),
+                        ] {
+                            if provider.join("dist/index.js").exists() {
+                                std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
+                                log::info!("[mind] bundled provider: {}", provider.display());
+                                break;
+                            }
                         }
-                        let mcp = base.join("mcp/dist/index.js");
-                        if mcp.exists() {
-                            std::env::set_var("KALEIDO_MCP_PATH", &mcp);
-                            log::info!("[mind] bundled mcp: {}", mcp.display());
+                        for mcp in [
+                            base.join("mcp/node_modules/kaleido-mcp/dist/index.js"),
+                            base.join("mcp/dist/index.js"),
+                        ] {
+                            if mcp.exists() {
+                                std::env::set_var("KALEIDO_MCP_PATH", &mcp);
+                                log::info!("[mind] bundled mcp: {}", mcp.display());
+                                break;
+                            }
                         }
                         for node in [base.join("node"), base.join("node.exe")] {
                             if node.exists() {
