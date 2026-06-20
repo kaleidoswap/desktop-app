@@ -39,14 +39,17 @@ const MCP_VERSION = process.env.MCP_VERSION ?? '^0.2.0'
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '^0.13.5'
 
 // @qvac/sdk hard-depends on EVERY inference engine (~4 GB), but the desktop
-// text agent only uses the LLM (llamacpp completion) + embeddings. Drop the
-// engines it never loads. The SDK loads engines per-registered-plugin (not on
-// import), and the provider is written to tolerate missing STT/TTS plugins, so
-// removing these is safe for the chat path. Override with MIND_DROP_ENGINES=""
-// to keep everything, or a custom comma-separated list.
+// agent only runs the LLM (llamacpp completion) — its provider config sets
+// ragEnabled/memoryEnabled false and wires no embedding/STT/TTS plugin. Drop
+// every engine it never loads. The SDK loads engines per-registered-plugin (not
+// on import) and the provider tolerates missing plugins, so this is safe for the
+// chat path (verified: `import('@qvac/sdk')` still loads with them removed).
+// embed-llamacpp is included because embeddings/RAG are off on desktop; keep it
+// by setting MIND_DROP_ENGINES to a custom list if you wire embeddings later.
 const DROP_ENGINES = (
   process.env.MIND_DROP_ENGINES ??
   [
+    'embed-llamacpp',
     'translation-nmtcpp',
     'vla-ggml',
     'diffusion-cpp',
@@ -59,6 +62,15 @@ const DROP_ENGINES = (
     'classification-ggml',
   ].join(',')
 )
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
+// Non-@qvac packages to drop too. bare-ffmpeg (~400 MB) is only used by the
+// audio decode path (whisper/tts/decoder-audio's decoder) — the text agent
+// never invokes it; decoder-audio's eagerly-imported constants.js needs no
+// ffmpeg (verified). Override with MIND_DROP_PACKAGES.
+const DROP_PACKAGES = (process.env.MIND_DROP_PACKAGES ?? 'bare-ffmpeg')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean)
@@ -104,17 +116,24 @@ function installFromNpm(name, deps) {
   run('npm', npmArgs, dir)
 }
 
-// Delete the unused @qvac inference engines from an installed tree (see
-// DROP_ENGINES). Removes ~3 GB the text agent never loads.
+// Delete the unused @qvac engines (DROP_ENGINES) and unused top-level native
+// packages (DROP_PACKAGES) from an installed tree — ~4 GB the agent never loads.
 function pruneEngines(name) {
-  if (!DROP_ENGINES.length) return
-  const qvac = join(out, name, 'node_modules', '@qvac')
-  if (!existsSync(qvac)) return
+  const nm = join(out, name, 'node_modules')
+  if (!existsSync(nm)) return
+  const qvac = join(nm, '@qvac')
   for (const eng of DROP_ENGINES) {
     const p = join(qvac, eng)
     if (existsSync(p)) {
       rmSync(p, { recursive: true, force: true })
       console.log(`  pruned @qvac/${eng}`)
+    }
+  }
+  for (const pkg of DROP_PACKAGES) {
+    const p = join(nm, pkg)
+    if (existsSync(p)) {
+      rmSync(p, { recursive: true, force: true })
+      console.log(`  pruned ${pkg}`)
     }
   }
 }
