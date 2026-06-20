@@ -11,12 +11,15 @@
 //! sidecar runs the QVAC model, the P2P provider (for phone delegation), skills
 //! and MCP tools.
 //!
-//! Sidecar launch (dev-spawn, no bundling yet) is resolved in this order:
+//! Sidecar launch is resolved in this order:
 //!   1. `$KALEIDO_MIND_CMD` (+ optional `$KALEIDO_MIND_ARGS`, space-separated)
 //!   2. `node <dir>/dist/index.js`        if that build exists
 //!   3. `pnpm start` with cwd = `<dir>`    (runs `tsx src/index.ts`)
 //!
-//! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` or a sibling-path guess.
+//! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` (override), the on-demand
+//! runtime downloaded into app data (mind_runtime), or a dev sibling-path guess.
+//! Resolution happens at start time and is passed to the child via cmd.env —
+//! we never mutate this process's own environment.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -58,7 +61,7 @@ impl MindProcess {
             return Ok(());
         }
 
-        let (program, args, cwd) = resolve_sidecar_command()?;
+        let (program, args, cwd) = resolve_sidecar_command(app)?;
         log::info!(
             "[mind] spawning sidecar: {} {} (cwd: {:?})",
             program,
@@ -94,7 +97,7 @@ impl MindProcess {
         // narrates tool calls ("I'll check your balance…") it can never execute.
         // The MCP server reads RLN_NODE_URL (default http://localhost:3001) +
         // KALEIDOSWAP_API_URL + WDK_SEED from the inherited env.
-        match resolve_mcp_path() {
+        match resolve_mcp_path(app) {
             Some(mcp) => {
                 log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
                 cmd.env("KALEIDO_MCP_PATH", mcp);
@@ -217,7 +220,9 @@ impl MindProcess {
 }
 
 /// Resolve `(program, args, cwd)` for launching the sidecar (see module docs).
-fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), String> {
+fn resolve_sidecar_command(
+    app: &AppHandle,
+) -> Result<(String, Vec<String>, Option<PathBuf>), String> {
     // 1. Explicit command override.
     if let Ok(cmd) = std::env::var("KALEIDO_MIND_CMD") {
         let cmd = cmd.trim().to_string();
@@ -234,17 +239,20 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
     }
 
     // 2/3. Resolve the provider directory, then prefer a built dist over pnpm.
-    let dir = resolve_provider_dir()
+    let dir = resolve_provider_dir(app)
         .ok_or("KaleidoMind provider dir not found — set KALEIDO_MIND_PROVIDER_DIR")?;
 
     let dist_entry = dir.join("dist").join("index.js");
     if dist_entry.exists() {
-        // Prefer a Node runtime BUNDLED with the app (KALEIDO_NODE_BIN, set from
-        // the resource dir in main.rs) so a packaged build doesn't depend on the
-        // user having Node installed; fall back to `node` on PATH for dev.
+        // Prefer the Node runtime shipped with a downloaded agent (or the
+        // KALEIDO_NODE_BIN override) so a packaged build doesn't need system
+        // Node; fall back to `node` on PATH for dev.
         let node = std::env::var("KALEIDO_NODE_BIN")
             .ok()
             .filter(|p| !p.trim().is_empty())
+            .or_else(|| {
+                crate::mind_runtime::node_bin_path(app).map(|p| p.to_string_lossy().into_owned())
+            })
             .unwrap_or_else(|| "node".to_string());
         return Ok((
             node,
@@ -258,21 +266,23 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
 }
 
 /// Whether the sidecar can resolve a provider to run — true if a runtime has
-/// been downloaded (env set by mind_runtime::apply_env) OR the dev sibling repos
-/// are present. Used by the UI to decide whether the on-demand download is
-/// needed before showing KaleidoMind.
-pub fn provider_available() -> bool {
-    resolve_provider_dir().is_some()
+/// been downloaded OR the dev sibling repos are present. Used by the UI to
+/// decide whether the on-demand download is needed before showing KaleidoMind.
+pub fn provider_available(app: &AppHandle) -> bool {
+    resolve_provider_dir(app).is_some()
 }
 
-/// Find the apps/provider directory: env override, then sibling-path guesses
-/// relative to the current working directory (works under `tauri dev`).
-fn resolve_provider_dir() -> Option<PathBuf> {
+/// Find the provider dir: `KALEIDO_MIND_PROVIDER_DIR` override (read-only) → a
+/// downloaded runtime in app data → dev sibling repos relative to the cwd.
+fn resolve_provider_dir(app: &AppHandle) -> Option<PathBuf> {
     if let Ok(d) = std::env::var("KALEIDO_MIND_PROVIDER_DIR") {
         let p = PathBuf::from(d);
         if p.join("package.json").exists() {
             return Some(p);
         }
+    }
+    if let Some(p) = crate::mind_runtime::provider_dir(app) {
+        return Some(p);
     }
     let rel = ["apps", "provider"];
     let cwd = std::env::current_dir().ok()?;
@@ -293,16 +303,18 @@ fn resolve_provider_dir() -> Option<PathBuf> {
     None
 }
 
-/// Resolve the kaleido-mcp entry (`dist/index.js`) the sidecar connects as its
-/// tool source. `$KALEIDO_MCP_PATH` override first, then sibling-path guesses
-/// (`../kaleido-mcp/dist/index.js`) relative to the cwd — mirrors
-/// [`resolve_provider_dir`]. Returns `None` if no built MCP is found.
-fn resolve_mcp_path() -> Option<PathBuf> {
+/// Resolve the kaleido-mcp entry (`dist/index.js`) passed to the sidecar child:
+/// `$KALEIDO_MCP_PATH` override → a downloaded runtime → dev sibling guesses.
+/// Returns `None` if no built MCP is found.
+fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
     if let Ok(p) = std::env::var("KALEIDO_MCP_PATH") {
         let pb = PathBuf::from(p.trim());
         if pb.exists() {
             return Some(pb);
         }
+    }
+    if let Some(p) = crate::mind_runtime::mcp_path(app) {
+        return Some(p);
     }
     let cwd = std::env::current_dir().ok()?;
     for base in [

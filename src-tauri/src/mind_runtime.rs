@@ -84,31 +84,34 @@ pub fn is_installed(app: &AppHandle) -> bool {
         .unwrap_or(false)
 }
 
-/// Point the sidecar env vars at the downloaded runtime if present. Called at
-/// startup (so a previously-downloaded runtime is used) and right after a
-/// successful install (so no app restart is needed). Returns true if found.
-pub fn apply_env(app: &AppHandle) -> bool {
-    let Some(base) = runtime_base(app) else {
-        return false;
-    };
-    let provider = provider_entry(&base);
+// Path resolvers for the downloaded runtime. mind.rs reads these at
+// sidecar-start time and passes them to the CHILD via cmd.env(...) — we never
+// mutate this process's own environment (std::env::set_var is not thread-safe).
+
+/// The downloaded provider package dir (`…/mind-provider`, parent of `dist/`),
+/// if a runtime has been installed.
+pub fn provider_dir(app: &AppHandle) -> Option<PathBuf> {
+    let provider = provider_entry(&runtime_base(app)?);
     if !provider.exists() {
-        return false;
+        return None;
     }
-    // KALEIDO_MIND_PROVIDER_DIR is the package dir (parent of dist/index.js).
-    if let Some(provider_dir) = provider.parent().and_then(Path::parent) {
-        std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", provider_dir);
-        log::info!("[mind] runtime provider: {}", provider_dir.display());
-    }
-    let mcp = mcp_entry(&base);
-    if mcp.exists() {
-        std::env::set_var("KALEIDO_MCP_PATH", &mcp);
-    }
-    let node = node_bin(&base);
-    if node.exists() {
-        std::env::set_var("KALEIDO_NODE_BIN", &node);
-    }
-    true
+    // …/mind-provider/dist/index.js → …/mind-provider
+    provider
+        .parent()
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+}
+
+/// The downloaded kaleido-mcp entry (`dist/index.js`), if installed.
+pub fn mcp_path(app: &AppHandle) -> Option<PathBuf> {
+    let p = mcp_entry(&runtime_base(app)?);
+    p.exists().then_some(p)
+}
+
+/// The downloaded bundled Node binary, if installed.
+pub fn node_bin_path(app: &AppHandle) -> Option<PathBuf> {
+    let p = node_bin(&runtime_base(app)?);
+    p.exists().then_some(p)
 }
 
 fn asset_name() -> Result<String, String> {
@@ -213,8 +216,9 @@ fn do_install(app: &AppHandle, name: &str, root: &Path) -> Result<(), String> {
         return Err("extracted tree missing provider entry".into());
     }
 
-    // 4. Wire env vars so the sidecar can start without an app restart.
-    apply_env(app);
+    // Done — no env mutation needed: mind.rs resolves this path on the next
+    // sidecar start (provider_dir/mcp_path/node_bin_path) and passes it to the
+    // child process, so the agent starts without an app restart.
     emit(app, "done", total, total, None);
     Ok(())
 }

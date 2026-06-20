@@ -54,7 +54,7 @@ fn mind_stop(mind: State<Arc<MindProcess>>) -> Result<(), String> {
 /// prompts the on-demand download.
 #[tauri::command]
 fn mind_runtime_installed(app: AppHandle) -> bool {
-    mind_runtime::is_installed(&app) || mind::provider_available()
+    mind_runtime::is_installed(&app) || mind::provider_available(&app)
 }
 
 /// Download + install the agent runtime (provider/mcp/node) into app data.
@@ -126,16 +126,11 @@ fn main() {
                 // when the frontend detects the node is unlocked.
                 db::init();
 
-                // Production: the agent runtime (provider + MCP + Node) is no
-                // longer bundled in the installer — it's downloaded on demand
-                // into app data the first time the user enables KaleidoMind (see
-                // mind_runtime). If a previous download exists, point the sidecar
-                // env vars at it now so it's used without a restart. Dev runs the
-                // sidecar from the sibling repos (mind.rs fallback), so this is a
-                // safe no-op when nothing has been downloaded.
-                if mind_runtime::apply_env(app.handle()) {
-                    log::info!("[mind] using downloaded agent runtime");
-                }
+                // The agent runtime (provider + MCP + Node) isn't bundled in the
+                // installer — it's downloaded on demand into app data the first
+                // time the user enables KaleidoMind (see mind_runtime). mind.rs
+                // resolves it at sidecar-start time (downloaded → dev siblings),
+                // so nothing to wire up here.
 
                 // Set up system tray
                 tray::setup_tray(app.handle(), Arc::clone(&node_process))?;

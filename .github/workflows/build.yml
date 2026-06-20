@@ -176,7 +176,7 @@ jobs:
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
         with:
-          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
           releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
             ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
