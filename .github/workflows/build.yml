@@ -20,20 +20,12 @@ jobs:
         include:
           - platform: 'macos-latest'
             args: '--target aarch64-apple-darwin --bundles app,dmg'
-            mindPlatform: 'darwin'
-            mindArch: 'arm64'
           - platform: 'macos-latest'
             args: '--target x86_64-apple-darwin --bundles app,dmg'
-            mindPlatform: 'darwin'
-            mindArch: 'x64'
           - platform: 'ubuntu-22.04'
             args: ''
-            mindPlatform: 'linux'
-            mindArch: 'x64'
           - platform: 'windows-latest'
             args: ''
-            # KaleidoMind not bundled on Windows yet (no @qvac native build);
-            # leaving mindPlatform unset skips the bundle step below.
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -121,16 +113,6 @@ jobs:
 
       - name: Install frontend dependencies
         run: pnpm install
-
-      - name: Bundle KaleidoMind agent (from npm)
-        if: matrix.mindPlatform != ''
-        shell: bash
-        env:
-          TARGET_PLATFORM: ${{ matrix.mindPlatform }}
-          TARGET_ARCH: ${{ matrix.mindArch }}
-          NPM_OS: ${{ matrix.mindPlatform }}
-          NPM_CPU: ${{ matrix.mindArch }}
-        run: node src-tauri/scripts/prepare-mind-bundle.mjs
 
       - name: Build and sign rgb-lightning-node binary (Unix)
         if: matrix.platform != 'windows-latest'

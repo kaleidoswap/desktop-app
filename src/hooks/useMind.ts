@@ -16,6 +16,7 @@ import {
   type MindEvent,
   type ProviderLoadingEvent,
   type ProviderStatusEvent,
+  type RuntimeProgress,
   type ToolConfirmRequestEvent,
 } from '../api/mind'
 
@@ -30,8 +31,14 @@ export interface UseMindResult {
   /** A spend awaiting the user's approval (null when none). */
   pendingConfirm: ToolConfirmRequestEvent | null
   capabilities: CapabilityInfo | null
+  /** Whether the agent runtime is downloaded (null while still checking). */
+  runtimeInstalled: boolean | null
+  /** Live progress of the runtime download (null when not downloading). */
+  runtimeProgress: RuntimeProgress | null
   // actions
   refresh: () => Promise<void>
+  /** Download + install the agent runtime on demand. */
+  installRuntime: () => Promise<void>
   startProvider: (modelId: string) => Promise<void>
   stopProvider: () => Promise<void>
   downloadModel: (modelId: string) => Promise<void>
@@ -65,6 +72,9 @@ export function useMind(): UseMindResult {
   const [pendingConfirm, setPendingConfirm] =
     useState<ToolConfirmRequestEvent | null>(null)
   const [capabilities, setCapabilities] = useState<CapabilityInfo | null>(null)
+  const [runtimeInstalled, setRuntimeInstalled] = useState<boolean | null>(null)
+  const [runtimeProgress, setRuntimeProgress] =
+    useState<RuntimeProgress | null>(null)
   // Auto-clear the confirm card when the sidecar's timeout declines it.
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -159,6 +169,38 @@ export function useMind(): UseMindResult {
     void refresh()
     return off
   }, [refresh])
+
+  // Agent runtime: check if it's installed and stream download progress.
+  useEffect(() => {
+    let alive = true
+    void mindClient
+      .runtimeInstalled()
+      .then((v) => alive && setRuntimeInstalled(v))
+      .catch(() => alive && setRuntimeInstalled(false))
+    const off = mindClient.onRuntimeProgress((p) => {
+      if (!alive) return
+      if (p.phase === 'done') {
+        setRuntimeProgress(null)
+        setRuntimeInstalled(true)
+      } else {
+        setRuntimeProgress(p) // keeps the error phase visible too
+      }
+    })
+    return () => {
+      alive = false
+      off()
+    }
+  }, [])
+
+  const installRuntime = useCallback(async () => {
+    setRuntimeProgress({
+      downloaded: 0,
+      message: null,
+      phase: 'downloading',
+      total: 0,
+    })
+    await mindClient.installRuntime()
+  }, [])
 
   const startProvider = useCallback(async (modelId: string) => {
     const st = await mindClient.startProvider(modelId)
@@ -263,6 +305,7 @@ export function useMind(): UseMindResult {
     deleteSkill,
     downloadModel,
     downloads,
+    installRuntime,
     installed,
     loading,
     logs,
@@ -271,6 +314,8 @@ export function useMind(): UseMindResult {
     refresh,
     removeMcpServer,
     respondConfirm,
+    runtimeInstalled,
+    runtimeProgress,
     setSkillEnabled,
     startProvider,
     status,

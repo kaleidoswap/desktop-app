@@ -9,6 +9,7 @@ mod db;
 mod dca;
 mod docker_node;
 mod mind;
+mod mind_runtime;
 mod node_backend;
 mod nwc;
 mod rgb_node;
@@ -46,6 +47,21 @@ fn mind_send(
 fn mind_stop(mind: State<Arc<MindProcess>>) -> Result<(), String> {
     mind.stop();
     Ok(())
+}
+
+/// Whether KaleidoMind can run without a download — a runtime has been
+/// installed, or (in dev) the sibling repos are present. When false, the UI
+/// prompts the on-demand download.
+#[tauri::command]
+fn mind_runtime_installed(app: AppHandle) -> bool {
+    mind_runtime::is_installed(&app) || mind::provider_available()
+}
+
+/// Download + install the agent runtime (provider/mcp/node) into app data.
+/// Returns immediately; progress streams on the `mind-runtime` event.
+#[tauri::command]
+fn mind_runtime_install(app: AppHandle) -> Result<(), String> {
+    mind_runtime::install(app)
 }
 
 #[tauri::command]
@@ -110,47 +126,15 @@ fn main() {
                 // when the frontend detects the node is unlocked.
                 db::init();
 
-                // Production: point the KaleidoMind sidecar at the BUNDLED
-                // provider + MCP + Node runtime (dev runs them from the sibling
-                // repos; a packaged .app/.exe has neither). mind.rs reads these
-                // env vars first (resolve_provider_dir / resolve_mcp_path /
-                // resolve_sidecar_command) and existence-checks them, so this is
-                // a safe no-op until `bundle.resources` actually ship them.
-                //
-                // The bundle lives under a `mind/` resource dir (see
-                // scripts/prepare-mind-bundle.mjs); Tauri's resource layout
-                // varies by version/platform, so probe a few candidate roots.
-                if let Ok(res) = app.path().resource_dir() {
-                    for base in [res.join("mind"), res.join("resources/mind"), res.clone()] {
-                        // npm-install layout (provider installed from npm) first,
-                        // then the legacy pnpm-deploy layout.
-                        for provider in [
-                            base.join("provider/node_modules/@kaleidorg/mind-provider"),
-                            base.join("provider"),
-                        ] {
-                            if provider.join("dist/index.js").exists() {
-                                std::env::set_var("KALEIDO_MIND_PROVIDER_DIR", &provider);
-                                log::info!("[mind] bundled provider: {}", provider.display());
-                                break;
-                            }
-                        }
-                        for mcp in [
-                            base.join("mcp/node_modules/kaleido-mcp/dist/index.js"),
-                            base.join("mcp/dist/index.js"),
-                        ] {
-                            if mcp.exists() {
-                                std::env::set_var("KALEIDO_MCP_PATH", &mcp);
-                                log::info!("[mind] bundled mcp: {}", mcp.display());
-                                break;
-                            }
-                        }
-                        for node in [base.join("node"), base.join("node.exe")] {
-                            if node.exists() {
-                                std::env::set_var("KALEIDO_NODE_BIN", &node);
-                                log::info!("[mind] bundled node: {}", node.display());
-                            }
-                        }
-                    }
+                // Production: the agent runtime (provider + MCP + Node) is no
+                // longer bundled in the installer — it's downloaded on demand
+                // into app data the first time the user enables KaleidoMind (see
+                // mind_runtime). If a previous download exists, point the sidecar
+                // env vars at it now so it's used without a restart. Dev runs the
+                // sidecar from the sibling repos (mind.rs fallback), so this is a
+                // safe no-op when nothing has been downloaded.
+                if mind_runtime::apply_env(app.handle()) {
+                    log::info!("[mind] using downloaded agent runtime");
                 }
 
                 // Set up system tray
@@ -251,6 +235,8 @@ fn main() {
             mind_send,
             mind_stop,
             mind_is_running,
+            mind_runtime_installed,
+            mind_runtime_install,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
