@@ -1,10 +1,18 @@
-// RuntimeInstall — first-run gate for KaleidoMind. The agent runtime (~1.7 GB:
-// the local model engine + tool server + Node) isn't shipped in the installer;
-// it's downloaded on demand the first time you enable KaleidoMind, so the app
-// download stays small. The Mind layout renders this whenever the runtime isn't
-// available yet (and never in dev, where the sibling repos are used).
+// RuntimeInstall — first-run intro + gate for KaleidoMind. The agent runtime
+// (the local model engine + tool server + Node) isn't shipped in the installer;
+// it's downloaded on demand the first time you enable KaleidoMind (~600 MB
+// download), so the app installer stays small. The Mind layout renders this
+// whenever the runtime isn't available yet (and never in dev, where the sibling
+// repos are used).
 
-import { AlertTriangle, Cpu, Download, Loader2 } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  Download,
+  Loader2,
+  Sparkles,
+  Wallet,
+} from 'lucide-react'
 import React from 'react'
 
 import type { UseMindResult } from '../../hooks/useMind'
@@ -20,6 +28,28 @@ const PHASE_LABEL: Record<string, string> = {
   verifying: 'Verifying',
 }
 
+const FEATURES: Array<{
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  body: string
+}> = [
+  {
+    body: 'Check balances, channels and pending transfers in plain language.',
+    icon: Wallet,
+    title: 'Ask about your wallet',
+  },
+  {
+    body: 'Create invoices, open channels, swap assets — spends always ask for your approval first.',
+    icon: ArrowLeftRight,
+    title: 'Get things done',
+  },
+  {
+    body: 'Find nearby merchants, check prices, and explore RGB assets.',
+    icon: Sparkles,
+    title: 'Explore',
+  },
+]
+
 export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const p = mind.runtimeProgress
   const busy = p !== null && p.phase !== 'error'
@@ -30,19 +60,37 @@ export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
 
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="w-full max-w-md rounded-2xl border border-violet-700/40 bg-violet-900/10 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/15">
-          <Cpu className="h-7 w-7 text-violet-300" />
-        </div>
-        <h2 className="text-lg font-semibold text-white">Set up KaleidoMind</h2>
+      <div className="w-full max-w-lg rounded-2xl border border-violet-700/40 bg-violet-900/10 p-8">
+        <h2 className="text-xl font-bold text-white">Meet KaleidoMind</h2>
         <p className="mt-2 text-sm text-gray-400">
-          KaleidoMind runs a local AI model on this device. The runtime
-          (~1.7&nbsp;GB) downloads once — the app installer stays small. You can
-          pick and download a model afterwards.
+          A private AI assistant that runs{' '}
+          <strong>entirely on this device</strong>. It understands your wallet
+          and node, and can act on them for you — your keys and data never leave
+          your computer.
+        </p>
+
+        <div className="mt-6 space-y-4">
+          {FEATURES.map(({ body, icon: Icon, title }) => (
+            <div className="flex items-start gap-3" key={title}>
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15">
+                <Icon className="h-5 w-5 text-violet-300" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">{title}</p>
+                <p className="text-xs text-gray-400">{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-6 rounded-lg border border-violet-800/40 bg-violet-950/30 px-3 py-2 text-xs text-violet-200">
+          First-time setup downloads the AI runtime — a one-time{' '}
+          <strong>~600 MB</strong>. After that you pick a model to download,
+          then you&apos;re ready to chat.
         </p>
 
         {p && p.phase !== 'error' && (
-          <div className="mt-6 text-left">
+          <div className="mt-5">
             <div className="mb-1 flex items-center justify-between text-xs text-violet-200">
               <span>
                 {PHASE_LABEL[p.phase] ?? p.phase}
@@ -75,7 +123,7 @@ export const RuntimeInstall: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         )}
 
         {p?.phase === 'error' && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-700/40 bg-red-900/20 p-3 text-left text-xs text-red-200">
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-700/40 bg-red-900/20 p-3 text-xs text-red-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{p.message ?? 'Download failed. Please try again.'}</span>
           </div>
