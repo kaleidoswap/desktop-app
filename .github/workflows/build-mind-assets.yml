@@ -1,0 +1,80 @@
+name: Build KaleidoMind assets
+
+# Builds the pruned KaleidoMind agent runtime per platform and uploads the
+# tarballs to a stable `mind-assets-v*` release. The desktop app downloads the
+# matching tarball on first activation (on-demand), so installers stay lean.
+# Built once per agent version, independent of app releases.
+on:
+  push:
+    tags:
+      - 'mind-assets-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create/upload to (e.g. mind-assets-v0.6.0)'
+        required: true
+
+jobs:
+  build-assets:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            platform: darwin
+            arch: arm64
+          - runner: macos-13
+            platform: darwin
+            arch: x64
+          - runner: ubuntu-22.04
+            platform: linux
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Stage agent bundle (from npm, pruned)
+        env:
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          TARGET_ARCH: ${{ matrix.arch }}
+          NPM_OS: ${{ matrix.platform }}
+          NPM_CPU: ${{ matrix.arch }}
+        run: node src-tauri/scripts/prepare-mind-bundle.mjs
+
+      - name: Package tarball + checksum
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          name="kaleidomind-${PLATFORM}-${ARCH}.tar.gz"
+          tar -czf "$name" -C src-tauri/resources mind
+          shasum -a 256 "$name" > "${name}.sha256"
+          ls -lh "$name"
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+          PLATFORM: ${{ matrix.platform }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          name="kaleidomind-${PLATFORM}-${ARCH}.tar.gz"
+          # Tolerate the create race across the 3 matrix jobs (first wins).
+          gh release create "$TAG" --repo "$GH_REPO" \
+            --title "KaleidoMind assets $TAG" \
+            --notes "Per-platform KaleidoMind agent runtime, downloaded on-demand by the desktop app." \
+            --prerelease || true
+          gh release upload "$TAG" "$name" "${name}.sha256" --repo "$GH_REPO" --clobber

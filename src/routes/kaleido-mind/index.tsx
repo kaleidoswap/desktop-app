@@ -9,6 +9,7 @@ import { Outlet } from 'react-router-dom'
 import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
 
+import { RuntimeInstall } from './runtime-install'
 import { StatusPill, labelForPhase, type ChatMsg } from './shared'
 import { StartBrainModal } from './start-brain-modal'
 
@@ -100,12 +101,24 @@ export const Component: React.FC = () => {
         </div>
       )}
 
-      <Outlet
-        context={{ chat: { input, messages, setInput, setMessages }, mind }}
-      />
+      {/* Gate: the agent runtime is downloaded on demand (not bundled). Show the
+          install screen until it's available; dev (sibling repos) skips this. */}
+      {mind.runtimeInstalled === null ? (
+        <div className="flex flex-1 items-center justify-center text-gray-500">
+          <Loader2 className="h-5 w-5 animate-spin" />
+        </div>
+      ) : mind.runtimeInstalled === false ? (
+        <RuntimeInstall mind={mind} />
+      ) : (
+        <>
+          <Outlet
+            context={{ chat: { input, messages, setInput, setMessages }, mind }}
+          />
 
-      {/* Offline prompt — pops up on any Mind page when the brain isn't running. */}
-      <StartBrainModal mind={mind} />
+          {/* Offline prompt — pops up on any Mind page when the brain isn't running. */}
+          <StartBrainModal mind={mind} />
+        </>
+      )}
     </div>
   )
 }

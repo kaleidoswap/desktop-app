@@ -96,6 +96,18 @@ export interface ProviderLoadingEvent {
 }
 
 /**
+ * Progress of the on-demand agent-runtime download (the ~1.7 GB provider/mcp/
+ * node tree, fetched the first time KaleidoMind is enabled). Emitted on the
+ * `mind-runtime` Tauri event, separate from the sidecar `mind-event` stream.
+ */
+export interface RuntimeProgress {
+  phase: 'downloading' | 'verifying' | 'extracting' | 'done' | 'error'
+  downloaded: number
+  total: number
+  message: string | null
+}
+
+/**
  * The agent wants to run a confirmation-gated tool (a spend). Show the call
  * and answer with confirmTool() within timeoutMs, or the sidecar declines it
  * (fail closed).
@@ -371,6 +383,33 @@ class MindClient {
 
   async isRunning(): Promise<boolean> {
     return invoke<boolean>('mind_is_running')
+  }
+
+  // ── Agent runtime (on-demand download) ──────────────────────────────
+  /** Whether the agent runtime (provider/mcp/node) is downloaded + installed. */
+  async runtimeInstalled(): Promise<boolean> {
+    return invoke<boolean>('mind_runtime_installed')
+  }
+
+  /** Start downloading the agent runtime; progress arrives via onRuntimeProgress. */
+  async installRuntime(): Promise<void> {
+    await invoke('mind_runtime_install')
+  }
+
+  /** Subscribe to runtime download/extract progress. Returns an unsubscribe fn. */
+  onRuntimeProgress(handler: (p: RuntimeProgress) => void): () => void {
+    let unlisten: (() => void) | undefined
+    let cancelled = false
+    void listen<RuntimeProgress>('mind-runtime', (e) =>
+      handler(e.payload)
+    ).then((u) => {
+      if (cancelled) u()
+      else unlisten = u
+    })
+    return () => {
+      cancelled = true
+      unlisten?.()
+    }
   }
 
   /** Fire-and-forget command (no response awaited). */

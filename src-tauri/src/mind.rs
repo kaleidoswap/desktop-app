@@ -257,6 +257,14 @@ fn resolve_sidecar_command() -> Result<(String, Vec<String>, Option<PathBuf>), S
     Ok(("pnpm".to_string(), vec!["start".to_string()], Some(dir)))
 }
 
+/// Whether the sidecar can resolve a provider to run — true if a runtime has
+/// been downloaded (env set by mind_runtime::apply_env) OR the dev sibling repos
+/// are present. Used by the UI to decide whether the on-demand download is
+/// needed before showing KaleidoMind.
+pub fn provider_available() -> bool {
+    resolve_provider_dir().is_some()
+}
+
 /// Find the apps/provider directory: env override, then sibling-path guesses
 /// relative to the current working directory (works under `tauri dev`).
 fn resolve_provider_dir() -> Option<PathBuf> {

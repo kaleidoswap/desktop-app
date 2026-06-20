@@ -17,8 +17,7 @@
     "targets": "all",
     "resources": [
       "../docs",
-      "../bin/rgb-lightning-node",
-      "resources/mind"
+      "../bin/rgb-lightning-node"
     ],
     "linux": {
       "appimage": {
