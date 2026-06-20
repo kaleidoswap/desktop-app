@@ -81,7 +81,10 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: latest
+          # Pinned to 10: pnpm 11 stopped reading package.json `pnpm.overrides`,
+          # which breaks --frozen-lockfile against the committed lockfile (same
+          # pin as pr-checks.yml). `version: latest` was failing every build.
+          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
