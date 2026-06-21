@@ -88,23 +88,33 @@ fn installed_version(app: &AppHandle) -> Option<String> {
     fs::read_to_string(vf).ok().map(|s| s.trim().to_string())
 }
 
-/// True once the CURRENT runtime version has been downloaded + extracted. A
-/// different (older) installed version reports false so the app re-downloads.
+/// The runtime base, but ONLY if the installed version matches ASSETS_TAG.
+/// A stale runtime (old/missing version marker) is treated as absent EVERYWHERE
+/// — so after a version bump the sidecar won't keep using an old, possibly
+/// broken runtime; the app shows the download screen and re-fetches the fix.
+fn current_runtime_base(app: &AppHandle) -> Option<PathBuf> {
+    if installed_version(app).as_deref() != Some(ASSETS_TAG) {
+        return None;
+    }
+    runtime_base(app)
+}
+
+/// True once the CURRENT runtime version has been downloaded + extracted.
 pub fn is_installed(app: &AppHandle) -> bool {
-    let Some(base) = runtime_base(app) else {
-        return false;
-    };
-    provider_entry(&base).exists() && installed_version(app).as_deref() == Some(ASSETS_TAG)
+    current_runtime_base(app)
+        .map(|b| provider_entry(&b).exists())
+        .unwrap_or(false)
 }
 
 // Path resolvers for the downloaded runtime. mind.rs reads these at
 // sidecar-start time and passes them to the CHILD via cmd.env(...) — we never
 // mutate this process's own environment (std::env::set_var is not thread-safe).
+// All gate on the current version so a stale runtime is ignored.
 
 /// The downloaded provider package dir (`…/mind-provider`, parent of `dist/`),
-/// if a runtime has been installed.
+/// if the current-version runtime is installed.
 pub fn provider_dir(app: &AppHandle) -> Option<PathBuf> {
-    let provider = provider_entry(&runtime_base(app)?);
+    let provider = provider_entry(&current_runtime_base(app)?);
     if !provider.exists() {
         return None;
     }
@@ -117,13 +127,13 @@ pub fn provider_dir(app: &AppHandle) -> Option<PathBuf> {
 
 /// The downloaded kaleido-mcp entry (`dist/index.js`), if installed.
 pub fn mcp_path(app: &AppHandle) -> Option<PathBuf> {
-    let p = mcp_entry(&runtime_base(app)?);
+    let p = mcp_entry(&current_runtime_base(app)?);
     p.exists().then_some(p)
 }
 
 /// The downloaded bundled Node binary, if installed.
 pub fn node_bin_path(app: &AppHandle) -> Option<PathBuf> {
-    let p = node_bin(&runtime_base(app)?);
+    let p = node_bin(&current_runtime_base(app)?);
     p.exists().then_some(p)
 }
 
