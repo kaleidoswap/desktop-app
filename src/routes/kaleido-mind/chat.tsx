@@ -21,6 +21,7 @@ import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 
+import { BrainLauncher } from './brain-launcher'
 import { ToolEventView, fmtSats } from './cards'
 import {
   useMindContext,
@@ -276,6 +277,11 @@ export const Component: React.FC = () => {
       () => listRef.current?.scrollTo(0, listRef.current.scrollHeight),
       50
     )
+
+  // Before chat works the brain must be running. While it's offline (no model
+  // downloaded yet, or just not started), guide the user through that setup
+  // instead of dropping them into a disabled chat box.
+  if (!providerOn) return <BrainLauncher mind={mind} />
 
   const send = async (override?: string) => {
     const prompt = (override ?? input).trim()

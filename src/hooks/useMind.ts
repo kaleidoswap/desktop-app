@@ -28,6 +28,10 @@ export interface UseMindResult {
   loading: ProviderLoadingEvent | null
   logs: string[]
   ready: boolean
+  /** True while the catalog/installed lists are being (re)fetched. */
+  catalogLoading: boolean
+  /** Last catalog fetch error, so the UI can offer a retry (null when ok). */
+  catalogError: string | null
   /** A spend awaiting the user's approval (null when none). */
   pendingConfirm: ToolConfirmRequestEvent | null
   capabilities: CapabilityInfo | null
@@ -65,6 +69,8 @@ const MAX_LOGS = 100
 export function useMind(): UseMindResult {
   const [status, setStatus] = useState<ProviderStatusEvent | null>(null)
   const [catalog, setCatalog] = useState<CatalogModel[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
   const [installed, setInstalled] = useState<InstalledModel[]>([])
   const [downloads, setDownloads] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState<ProviderLoadingEvent | null>(null)
@@ -87,6 +93,8 @@ export function useMind(): UseMindResult {
   }, [])
 
   const refresh = useCallback(async () => {
+    setCatalogLoading(true)
+    setCatalogError(null)
     try {
       await mindClient.start()
       const [cat, inst, st, caps] = await Promise.all([
@@ -99,8 +107,14 @@ export function useMind(): UseMindResult {
       setInstalled(inst)
       setStatus(st)
       setCapabilities(caps)
-    } catch {
-      /* sidecar may still be booting */
+    } catch (e) {
+      // Surface the failure so the Models UI can offer a retry instead of
+      // spinning on "Loading catalog…" forever. The common case is a fresh
+      // install: the sidecar can't be resolved until the runtime download has
+      // finished, so the mount-time fetch fails and must be retried.
+      setCatalogError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setCatalogLoading(false)
     }
   }, [])
 
@@ -166,22 +180,31 @@ export function useMind(): UseMindResult {
           break
       }
     })
-    void refresh()
     return off
-  }, [refresh])
+  }, [])
 
-  // Agent runtime: check if it's installed and stream download progress.
+  // Agent runtime: check if it's installed and stream download progress. The
+  // sidecar can only resolve a provider once the runtime is installed, so the
+  // catalog/installed lists are fetched the moment it becomes available — the
+  // initial check resolving true or the on-demand download finishing. Without
+  // this a fresh install leaves the catalog stuck empty on "Loading catalog…",
+  // since nothing else re-fetches it after the gate opens.
   useEffect(() => {
     let alive = true
     void mindClient
       .runtimeInstalled()
-      .then((v) => alive && setRuntimeInstalled(v))
+      .then((v) => {
+        if (!alive) return
+        setRuntimeInstalled(v)
+        if (v) void refresh()
+      })
       .catch(() => alive && setRuntimeInstalled(false))
     const off = mindClient.onRuntimeProgress((p) => {
       if (!alive) return
       if (p.phase === 'done') {
         setRuntimeProgress(null)
         setRuntimeInstalled(true)
+        void refresh()
       } else {
         setRuntimeProgress(p) // keeps the error phase visible too
       }
@@ -190,7 +213,7 @@ export function useMind(): UseMindResult {
       alive = false
       off()
     }
-  }, [])
+  }, [refresh])
 
   const installRuntime = useCallback(async () => {
     setRuntimeProgress({
@@ -300,6 +323,8 @@ export function useMind(): UseMindResult {
     cancelDownload,
     capabilities,
     catalog,
+    catalogError,
+    catalogLoading,
     chat,
     deleteModel,
     deleteSkill,

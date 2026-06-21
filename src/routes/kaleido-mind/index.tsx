@@ -4,8 +4,12 @@
 
 import { FlaskConical, Loader2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 
+import {
+  KALEIDO_MIND_CHAT_PATH,
+  KALEIDO_MIND_PATH,
+} from '../../app/router/paths'
 import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
 
@@ -17,6 +21,11 @@ export const Component: React.FC = () => {
   const mind = useMind()
   const { status } = mind
   const providerOn = status?.on === true
+  const { pathname } = useLocation()
+  // The chat page (index + /chat) shows its own inline brain-setup launcher when
+  // offline, so the popup would double up there — only nudge from other tabs.
+  const onChatRoute =
+    pathname === KALEIDO_MIND_PATH || pathname === KALEIDO_MIND_CHAT_PATH
 
   // Chat state lives here so it persists across the Mind sub-tabs.
   const [messages, setMessages] = useState<ChatMsg[]>(() => {
@@ -110,8 +119,9 @@ export const Component: React.FC = () => {
             context={{ chat: { input, messages, setInput, setMessages }, mind }}
           />
 
-          {/* Offline prompt — pops up on any Mind page when the brain isn't running. */}
-          <StartBrainModal mind={mind} />
+          {/* Offline prompt — pops up on Mind pages (except chat, which has its
+              own inline launcher) when the brain isn't running. */}
+          {!onChatRoute && <StartBrainModal mind={mind} />}
         </>
       )}
     </div>
