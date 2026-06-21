@@ -1,7 +1,9 @@
 ## [Version 0.5.0] - 2026-06-21
 
+> ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
+
 ### 🚀 Features
-- **KaleidoMind — on-device AI agent**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`)
+- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`)
 - **Trade by chat**: Ask "buy 1 USDT on KaleidoSwap" and the agent quotes the maker and runs the full atomic swap (quote → init → whitelist → execute) behind a single confirmation gate showing the real numbers
 - **Buy a Lightning channel by chat**: Order inbound BTC liquidity or a new RGB asset channel (USDT/XAUT) pre-loaded via the LSP, as a one-confirmation flow
 - **Agent tab (autonomy)**: Schedule the agent to run optimizer tasks (portfolio, DCA-style) with risk limits and a dry-run default; review recent runs and costs
