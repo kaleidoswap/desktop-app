@@ -478,9 +478,17 @@ class MindClient {
   stopProvider() {
     return this.request<ProviderStatusEvent>({ cmd: 'stop' })
   }
-  chat(prompt: string, handlers?: ChatHandlers) {
+  /** Stop an in-flight chat turn (the stop button). Fire-and-forget — the
+   *  matching `chat()` promise then resolves with whatever was produced so far. */
+  cancelChat(chatId: string) {
+    return this.send({ chatId, cmd: 'cancel_chat' })
+  }
+  chat(
+    prompt: string,
+    handlers?: ChatHandlers,
+    chatId: string = crypto.randomUUID()
+  ) {
     // Generous: an agentic run may pause up to 120s on a tool confirmation.
-    const chatId = crypto.randomUUID()
     const off = this.on((event) => {
       if (event.type === 'chat_thinking_delta' && event.chatId === chatId) {
         handlers?.onThinking?.(event.delta)

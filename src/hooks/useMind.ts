@@ -59,7 +59,13 @@ export interface UseMindResult {
   deleteSkill: (name: string) => Promise<void>
   addMcpServer: (name: string, url: string) => Promise<void>
   removeMcpServer: (id: string) => Promise<void>
-  chat: (prompt: string, handlers?: ChatHandlers) => Promise<ChatResult>
+  chat: (
+    prompt: string,
+    handlers?: ChatHandlers,
+    chatId?: string
+  ) => Promise<ChatResult>
+  /** Stop the in-flight chat turn (the stop button). */
+  cancelChat: (chatId: string) => Promise<void>
   /** Approve or decline the pending spend. */
   respondConfirm: (approved: boolean, reason?: string) => Promise<void>
 }
@@ -300,8 +306,15 @@ export function useMind(): UseMindResult {
     setCapabilities(await mindClient.removeMcpServer(id))
   }, [])
 
-  const chat = useCallback(async (prompt: string, handlers?: ChatHandlers) => {
-    return mindClient.chat(prompt, handlers)
+  const chat = useCallback(
+    async (prompt: string, handlers?: ChatHandlers, chatId?: string) => {
+      return mindClient.chat(prompt, handlers, chatId)
+    },
+    []
+  )
+
+  const cancelChat = useCallback(async (chatId: string) => {
+    await mindClient.cancelChat(chatId)
   }, [])
 
   const respondConfirm = useCallback(
@@ -320,6 +333,7 @@ export function useMind(): UseMindResult {
     addHuggingFaceModel,
     addMcpServer,
     addSkill,
+    cancelChat,
     cancelDownload,
     capabilities,
     catalog,
