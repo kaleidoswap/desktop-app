@@ -2,7 +2,7 @@
 // useMind() instance and renders the shared header + loading banner, with the
 // active sub-page (Brain / Pairing / Models / Skills / Chat) in the Outlet.
 
-import { Brain, Loader2 } from 'lucide-react'
+import { FlaskConical, Loader2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 
@@ -68,18 +68,13 @@ export const Component: React.FC = () => {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 overflow-y-auto p-6">
-      {/* Header */}
+      {/* Header — the app's section header already shows the "KaleidoMind"
+          title, so here we just flag the feature as experimental + show status. */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Brain className="h-7 w-7 text-violet-400" />
-          <div>
-            <h1 className="text-xl font-bold text-white">KaleidoMind</h1>
-            <p className="text-sm text-gray-400">
-              Local AI brain — runs a model on this desktop and lets your phone
-              delegate to it.
-            </p>
-          </div>
-        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300">
+          <FlaskConical className="h-3.5 w-3.5" />
+          Experimental
+        </span>
         <StatusPill
           model={status?.activeModelName}
           on={providerOn}
