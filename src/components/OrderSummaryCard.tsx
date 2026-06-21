@@ -56,50 +56,52 @@ const LiquiditySummaryCard = ({
   outbound,
   outboundColor,
   outboundLabel,
+  showTotal = true,
   subtitle,
   ticker,
   title,
   titleClassName,
   totalLabel,
-}: LiquiditySection) => (
+}: LiquiditySection & { showTotal?: boolean }) => (
   <div
-    className={`min-w-0 rounded-[22px] border p-4 shadow-[0_12px_30px_-22px_rgba(0,0,0,0.7)] ${borderClassName} ${backgroundClassName}`}
+    className={`min-w-0 rounded-2xl border p-4 ${borderClassName} ${backgroundClassName}`}
   >
-    <div className="flex flex-wrap items-start gap-3">
-      <div className="min-w-0 flex flex-1 items-start gap-3">
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2.5">
         <img
           alt={iconAlt}
-          className="mt-0.5 h-5 w-5 flex-shrink-0 rounded-full"
+          className="h-5 w-5 flex-shrink-0 rounded-full"
           src={iconSrc}
         />
-        <div className="min-w-0">
-          <p
-            className={`text-sm font-semibold ${
-              titleClassName || 'text-content-primary'
-            }`}
-          >
-            {title}
+        <p
+          className={`truncate text-sm font-semibold ${
+            titleClassName || 'text-content-primary'
+          }`}
+        >
+          {title}
+        </p>
+      </div>
+      {showTotal && (
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-content-tertiary">
+            {ticker}
           </p>
-          {subtitle && (
-            <p className="mt-1 text-xs leading-relaxed text-content-secondary">
-              {subtitle}
-            </p>
-          )}
+          <p className={`${accentClassName} text-sm font-semibold`}>
+            {totalLabel}
+          </p>
         </div>
-      </div>
-      <div className="rounded-xl border border-border-subtle bg-surface-overlay/60 px-3 py-2 text-right">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-content-tertiary">
-          {ticker}
-        </p>
-        <p className={`${accentClassName} mt-1 text-sm font-semibold`}>
-          {totalLabel}
-        </p>
-      </div>
+      )}
     </div>
 
-    {meta && <div className="mt-4">{meta}</div>}
+    {subtitle && (
+      <p className="mt-2 text-xs leading-relaxed text-content-secondary">
+        {subtitle}
+      </p>
+    )}
 
-    <div className="mt-4">
+    {meta && <div className="mt-3">{meta}</div>}
+
+    <div className="mt-3">
       <LiquidityBar
         inbound={inbound}
         inboundColor={inboundColor}
@@ -123,7 +125,7 @@ export const OrderSummaryCard = ({
   totalCapacityValue,
 }: OrderSummaryCardProps) => {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-border-subtle bg-surface-base/80 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
+    <div className="overflow-hidden rounded-[24px] border border-border-subtle bg-surface-base/80 shadow-[0_12px_40px_rgba(2,6,23,0.25)]">
       {(title || totalCapacityValue) && (
         <div className="border-b border-border-subtle bg-gradient-to-br from-amber-400/10 via-transparent to-cyan-400/6 p-5">
           <div className="flex items-start justify-between gap-4">
@@ -169,12 +171,16 @@ export const OrderSummaryCard = ({
           }`}
         >
           {liquiditySections.map((section) => (
-            <LiquiditySummaryCard key={section.title} {...section} />
+            <LiquiditySummaryCard
+              key={section.title}
+              showTotal={liquiditySections.length > 1}
+              {...section}
+            />
           ))}
         </div>
 
         {costBreakdown && (
-          <div className="rounded-[22px] border border-border-subtle bg-surface-overlay/40 p-4">
+          <div className="rounded-2xl border border-border-subtle/70 bg-surface-overlay/30 p-4">
             <div className="space-y-1.5">
               {costBreakdown.items.map((item) => (
                 <div
