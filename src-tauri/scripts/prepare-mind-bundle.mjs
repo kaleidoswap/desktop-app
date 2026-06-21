@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.6.0'
+const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.6.2'
 const MCP_VERSION = process.env.MCP_VERSION ?? '^0.2.0'
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '^0.13.5'
 
