@@ -17,7 +17,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 /// GitHub release tag the agent tarballs live under. Bump when the agent
 /// (provider/mcp/@qvac) version changes and new assets are published.
-const ASSETS_TAG: &str = "mind-assets-v0.6.0";
+const ASSETS_TAG: &str = "mind-assets-v0.6.1";
 const ASSETS_REPO: &str = "kaleidoswap/desktop-app";
 const RUNTIME_EVENT: &str = "mind-runtime";
 
@@ -77,11 +77,24 @@ fn node_bin(base: &Path) -> PathBuf {
     base.join(if cfg!(windows) { "node.exe" } else { "node" })
 }
 
-/// True once the runtime has been downloaded + extracted.
+/// Marker file recording which ASSETS_TAG is installed, so a tag bump (a fixed
+/// runtime) forces a re-download instead of reusing a stale/broken one.
+fn version_file(app: &AppHandle) -> Option<PathBuf> {
+    install_root(app).map(|r| r.join("version"))
+}
+
+fn installed_version(app: &AppHandle) -> Option<String> {
+    let vf = version_file(app)?;
+    fs::read_to_string(vf).ok().map(|s| s.trim().to_string())
+}
+
+/// True once the CURRENT runtime version has been downloaded + extracted. A
+/// different (older) installed version reports false so the app re-downloads.
 pub fn is_installed(app: &AppHandle) -> bool {
-    runtime_base(app)
-        .map(|b| provider_entry(&b).exists())
-        .unwrap_or(false)
+    let Some(base) = runtime_base(app) else {
+        return false;
+    };
+    provider_entry(&base).exists() && installed_version(app).as_deref() == Some(ASSETS_TAG)
 }
 
 // Path resolvers for the downloaded runtime. mind.rs reads these at
@@ -214,6 +227,12 @@ fn do_install(app: &AppHandle, name: &str, root: &Path) -> Result<(), String> {
 
     if !provider_entry(&base).exists() {
         return Err("extracted tree missing provider entry".into());
+    }
+
+    // Record the installed version so a future ASSETS_TAG bump triggers a
+    // re-download (is_installed compares this to ASSETS_TAG).
+    if let Some(vf) = version_file(app) {
+        let _ = fs::write(vf, ASSETS_TAG);
     }
 
     // Done — no env mutation needed: mind.rs resolves this path on the next
