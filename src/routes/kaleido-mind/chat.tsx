@@ -13,6 +13,7 @@ import {
   Send,
   ShieldAlert,
   Sparkles,
+  Square,
   Trash2,
   Zap,
 } from 'lucide-react'
@@ -271,6 +272,13 @@ export const Component: React.FC = () => {
   const [sending, setSending] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  // chatId of the in-flight turn, so the stop button can cancel it.
+  const activeChatRef = useRef<string | null>(null)
+
+  const stop = () => {
+    const id = activeChatRef.current
+    if (id) void mind.cancelChat(id)
+  }
 
   const scrollToEnd = () =>
     setTimeout(
@@ -302,6 +310,7 @@ export const Component: React.FC = () => {
       },
     ])
     setSending(true)
+    activeChatRef.current = assistantId
     scrollToEnd()
     // Correlate tool calls↔results by (name, occurrence). The sidecar fires the
     // call event fire-and-forget after an async lookup, so a fast result can
@@ -330,63 +339,67 @@ export const Component: React.FC = () => {
       scrollToEnd()
     }
     try {
-      const reply = await mind.chat(prompt, {
-        onThinking: (delta) => {
-          setMessages((current) =>
-            current.map((message) =>
-              message.id === assistantId
-                ? {
-                    ...message,
-                    thinking: `${message.thinking ?? ''}${delta}`,
-                  }
-                : message
+      const reply = await mind.chat(
+        prompt,
+        {
+          onThinking: (delta) => {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === assistantId
+                  ? {
+                      ...message,
+                      thinking: `${message.thinking ?? ''}${delta}`,
+                    }
+                  : message
+              )
             )
-          )
-          scrollToEnd()
-        },
-        onToken: (delta) => {
-          setMessages((current) =>
-            current.map((message) =>
-              message.id === assistantId
-                ? { ...message, text: `${message.text}${delta}` }
-                : message
+            scrollToEnd()
+          },
+          onToken: (delta) => {
+            setMessages((current) =>
+              current.map((message) =>
+                message.id === assistantId
+                  ? { ...message, text: `${message.text}${delta}` }
+                  : message
+              )
             )
-          )
-          scrollToEnd()
+            scrollToEnd()
+          },
+          onToolCall: (call) => {
+            const n = (callSeq.get(call.name) ?? 0) + 1
+            callSeq.set(call.name, n)
+            const key = `${call.name}#${n}`
+            upsertToolEvent(
+              key,
+              { arguments: call.arguments },
+              {
+                arguments: call.arguments,
+                id: key,
+                name: call.name,
+                status: 'running',
+              }
+            )
+          },
+          onToolResult: (res) => {
+            const n = (resultSeq.get(res.name) ?? 0) + 1
+            resultSeq.set(res.name, n)
+            const key = `${res.name}#${n}`
+            const status: ChatToolEvent['status'] = res.ok ? 'done' : 'error'
+            upsertToolEvent(
+              key,
+              { result: res.result, status },
+              {
+                arguments: res.arguments,
+                id: key,
+                name: res.name,
+                result: res.result,
+                status,
+              }
+            )
+          },
         },
-        onToolCall: (call) => {
-          const n = (callSeq.get(call.name) ?? 0) + 1
-          callSeq.set(call.name, n)
-          const key = `${call.name}#${n}`
-          upsertToolEvent(
-            key,
-            { arguments: call.arguments },
-            {
-              arguments: call.arguments,
-              id: key,
-              name: call.name,
-              status: 'running',
-            }
-          )
-        },
-        onToolResult: (res) => {
-          const n = (resultSeq.get(res.name) ?? 0) + 1
-          resultSeq.set(res.name, n)
-          const key = `${res.name}#${n}`
-          const status: ChatToolEvent['status'] = res.ok ? 'done' : 'error'
-          upsertToolEvent(
-            key,
-            { result: res.result, status },
-            {
-              arguments: res.arguments,
-              id: key,
-              name: res.name,
-              result: res.result,
-              status,
-            }
-          )
-        },
-      })
+        assistantId
+      )
       setMessages((current) =>
         current.map((message) =>
           message.id === assistantId
@@ -421,6 +434,7 @@ export const Component: React.FC = () => {
       )
     } finally {
       setSending(false)
+      activeChatRef.current = null
       scrollToEnd()
     }
   }
@@ -710,7 +724,7 @@ export const Component: React.FC = () => {
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
             </span>
-            KaleidoMind is responding… please wait
+            KaleidoMind is responding… tap ■ to stop
           </div>
         )}
         <div
@@ -735,14 +749,18 @@ export const Component: React.FC = () => {
             value={input}
           />
           <button
-            aria-label={sending ? 'KaleidoMind is responding' : 'Send message'}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-40"
-            disabled={!providerOn || sending || !input.trim()}
-            onClick={() => send()}
+            aria-label={sending ? 'Stop KaleidoMind' : 'Send message'}
+            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all active:scale-95 disabled:opacity-40 ${
+              sending
+                ? 'bg-red text-white hover:bg-red/90'
+                : 'bg-primary text-surface-base hover:bg-primary-emphasis'
+            }`}
+            disabled={!providerOn || (!sending && !input.trim())}
+            onClick={() => (sending ? stop() : send())}
             type="button"
           >
             {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Square className="h-3.5 w-3.5 fill-current" />
             ) : (
               <Send className="h-4 w-4" />
             )}
