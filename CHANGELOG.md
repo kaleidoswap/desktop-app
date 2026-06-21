@@ -1,3 +1,25 @@
+## [Version 0.5.0] - 2026-06-21
+
+> ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
+
+### 🚀 Features
+- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`)
+- **Trade by chat**: Ask "buy 1 USDT on KaleidoSwap" and the agent quotes the maker and runs the full atomic swap (quote → init → whitelist → execute) behind a single confirmation gate showing the real numbers
+- **Buy a Lightning channel by chat**: Order inbound BTC liquidity or a new RGB asset channel (USDT/XAUT) pre-loaded via the LSP, as a one-confirmation flow
+- **Agent tab (autonomy)**: Schedule the agent to run optimizer tasks (portfolio, DCA-style) with risk limits and a dry-run default; review recent runs and costs
+- **Stop button**: Cancel an in-flight chat turn at any time — the running on-device inference is aborted immediately and the turn ends cleanly
+- **Live tool activity + reasoning**: Watch the model's tool calls (balances, channels, quotes) render as typed result cards, and optionally expand its `<think>` reasoning
+- **Wallet & node tools over MCP**: The agent reads balances, channels, and quotes, and drafts payments/swaps through the KaleidoSwap MCP server, with every spend gated by explicit confirmation
+
+### 🔧 Improvements
+- **Redesigned buy-channel flow**: Cleaner channel summary and payment-review UI with richer states and clearer cost breakdowns
+- **Mind runtime v0.7.0**: Updated the bundled provider (`@kaleidorg/mind-provider ^0.6.3`) and MCP (`kaleido-mcp ^0.2.1`) so chat trading and the stop button work end to end
+- **SDK migration**: Moved to `kaleido-sdk ^0.1.11` (BitcoinNetwork node/api split, TransferKind enum, refresh defaults)
+
+### 🐛 Bug Fixes
+- **Chat swap quote failed validation**: "buy 1 USDT" hit an MCP input-validation error because the swap recipe sent the wrong argument names; the quote tool now derives layers and accepts a buy-side amount, and the recipe emits the correct fields
+- **Chat stalled on extraction cancel/timeout**: A cancelled or timed-out slot-extraction inference on small models no longer fails the whole request — it degrades to deterministic parsing for requests the app already understands
+
 ## [Version 0.4.0] - 2026-04-15
 
 ### 🚀 Features

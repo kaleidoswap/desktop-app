@@ -147,8 +147,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
               </div>
             </div>
 
-            <div className="mt-4 rounded-[20px] border border-border-subtle bg-white/5 p-3">
-              <div className="mx-auto w-full max-w-[200px] rounded-[16px] bg-white p-3 shadow-lg">
+            <div className="mt-4 flex flex-1 items-center justify-center">
+              <div className="w-full max-w-[200px] rounded-2xl bg-white p-3 shadow-lg">
                 <QRCodeSVG
                   size={256}
                   style={{ display: 'block', height: 'auto', width: '100%' }}

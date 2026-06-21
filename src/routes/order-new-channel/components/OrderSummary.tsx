@@ -47,7 +47,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       inboundLabel: `${formatBitcoinAmount(order.lsp_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
       outbound: order.client_balance_sat,
       outboundLabel: `${formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)} ${bitcoinUnit}`,
-      ticker: t('orderChannel.step3.confirmedChannel'),
+      ticker: t('orderChannel.step3.total'),
       title: t('orderChannel.step3.confirmedChannel'),
       totalLabel: `${formatBitcoinAmount(totalCapacity, bitcoinUnit)} ${bitcoinUnit}`,
     }),

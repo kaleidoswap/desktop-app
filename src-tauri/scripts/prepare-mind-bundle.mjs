@@ -34,8 +34,12 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.6.0'
-const MCP_VERSION = process.env.MCP_VERSION ?? '^0.2.0'
+// 0.6.3 adds the `cancel_chat` command (stop button); pulls @kaleidorg/mind
+// 0.6.4 which threads the AbortSignal through the funnel/recipe/qvac provider.
+const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.6.3'
+// 0.2.1 fixes the chat-swap quote tool (optional layers + buy-side to_amount);
+// pairs with @kaleidorg/mind 0.6.2's corrected kaleidoswap-atomic recipe args.
+const MCP_VERSION = process.env.MCP_VERSION ?? '^0.2.1'
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '^0.13.5'
 
 // @qvac/sdk hard-depends on EVERY inference engine (~4 GB), but the desktop

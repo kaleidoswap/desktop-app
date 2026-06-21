@@ -17,7 +17,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 /// GitHub release tag the agent tarballs live under. Bump when the agent
 /// (provider/mcp/@qvac) version changes and new assets are published.
-const ASSETS_TAG: &str = "mind-assets-v0.6.1";
+const ASSETS_TAG: &str = "mind-assets-v0.7.0";
 const ASSETS_REPO: &str = "kaleidoswap/desktop-app";
 const RUNTIME_EVENT: &str = "mind-runtime";
 
