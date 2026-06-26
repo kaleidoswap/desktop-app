@@ -1,10 +1,10 @@
-import { Search, ChevronDown, Plus } from 'lucide-react'
+import { Search, ChevronDown, Plus, ArrowRight, Download } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../../app/store/hooks'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
-import rgbLogo from '../../../../assets/rgb-symbol-color.svg'
+import rgbLogo from '../../../../assets/rgb-logo.svg'
 import { BTC_ASSET_ID } from '../../../../constants'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { DepositModal, uiSliceSeletors } from '../../../../slices/ui/ui.slice'
@@ -73,22 +73,18 @@ export const Step1 = ({ onNext }: Props) => {
   }, [assetId, onNext, isNewAsset])
 
   return (
-    <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
-      <div className="flex flex-col items-center mb-3">
-        {selectedAsset?.asset_id === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-8 h-8 mb-2" src={btcLogo} />
-        ) : (
-          <img alt="RGB Asset" className="w-8 h-8 mb-2" src={rgbLogo} />
-        )}
-        <h3 className="text-xl font-bold text-white mb-1">
-          {t('depositModal.step1.title')}
+    <div>
+      <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+        <Download className="w-6 h-6 text-primary" />
+        <h3 className="text-xl font-bold text-white">
+          {t('depositModal.title', 'Deposit')}
         </h3>
-        <p className="text-content-secondary text-center max-w-md text-xs">
-          {t('depositModal.step1.subtitle')}
-        </p>
       </div>
 
       <div className="space-y-3 max-w-xl mx-auto">
+        <p className="text-content-secondary text-sm">
+          {t('depositModal.step1.title')}
+        </p>
         {/* Asset Selector trigger */}
         <button
           className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default
@@ -138,8 +134,8 @@ export const Step1 = ({ onNext }: Props) => {
                 <input
                   autoFocus
                   className="w-full pl-10 pr-4 py-1.5 bg-surface-base/50 rounded-lg border border-border-default
-                           text-white placeholder:text-content-tertiary focus:border-primary/60
-                           focus:ring-1 focus:ring-primary/30 text-sm"
+                           text-white placeholder:text-content-tertiary focus:border-primary
+                           focus:outline-none text-sm"
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('depositModal.step1.searchPlaceholder')}
                   type="text"
@@ -233,6 +229,7 @@ export const Step1 = ({ onNext }: Props) => {
           onClick={handleSubmit}
         >
           {t('depositModal.common.continue')}
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>

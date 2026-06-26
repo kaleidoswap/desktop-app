@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { CloseChannelModal } from '../CloseChannelModal'

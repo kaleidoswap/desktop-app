@@ -3,7 +3,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { twJoin } from 'tailwind-merge'
 
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import defaultIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 

@@ -1,4 +1,12 @@
-import { ArrowLeft, Clock, Rocket, Settings, Zap } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Clock,
+  Rocket,
+  Settings,
+  Upload,
+  Zap,
+} from 'lucide-react'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -123,7 +131,10 @@ export const WithdrawModalContent: React.FC = () => {
   // Use useMemo to prevent recreating the array on every render
   const availableAssets = useMemo(
     () => [
-      { label: bitcoinUnit, value: BTC_ASSET_ID },
+      {
+        label: bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit,
+        value: BTC_ASSET_ID,
+      },
       ...((assets.data?.nia || []).map((asset: any) => ({
         label: asset.ticker,
         value: asset.asset_id,
@@ -1394,108 +1405,130 @@ export const WithdrawModalContent: React.FC = () => {
 
   return (
     <>
-      <div className="max-w-2xl mx-auto p-4 max-h-[85vh] flex flex-col">
-        <div className="mb-4 text-center">
-          <div className="w-10 h-10 mx-auto rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mb-3">
-            <Zap className="w-5 h-5 text-primary" />
-          </div>
-          <h3 className="text-xl font-bold text-primary mb-1">
+      <div className="flex flex-col">
+        <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+          <Upload className="w-6 h-6 text-primary" />
+          <h3 className="text-xl font-bold text-white">
             {showConfirmation
               ? t('withdrawModal.main.title.confirm')
               : t('withdrawModal.main.title.form')}
           </h3>
-          <p className="text-content-secondary text-sm">
-            {showConfirmation
-              ? t('withdrawModal.main.subtitle.confirm')
-              : t('withdrawModal.main.subtitle.form')}
-          </p>
         </div>
 
         <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
-          <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
-            {showConfirmation ? (
-              <ConfirmationModal
-                assets={assets}
-                availableAssets={availableAssets}
-                bitcoinUnit={bitcoinUnit}
-                customFee={customFee}
-                feeRates={feeRates}
-                isConfirming={isConfirming}
-                isPollingStatus={isPollingStatus}
-                onCancel={() => {
-                  setShowConfirmation(false)
-                  // If polling was active when cancelled from confirmation screen, stop it.
-                  if (isPollingStatus) {
-                    setIsPollingStatus(false)
-                    setPaymentStatus(null) // Reset status
-                    setValidationMessage(null) // Clear any polling error
-                    setIsConfirming(false) // Stop loading indicator
-                  }
-                }}
-                onConfirm={handleConfirmedSubmit}
-                paymentHash={paymentHash}
-                paymentStatus={paymentStatus}
-                pendingData={pendingData}
-                validationMessage={validationMessage}
-              />
-            ) : (
-              <WithdrawForm
-                addressType={addressType}
-                assetBalance={assetBalance}
-                assetId={assetId}
-                assets={assets}
-                availableAssets={availableAssets}
-                bitcoinUnit={bitcoinUnit}
-                clearValidationError={clearValidationError}
-                customFee={customFee}
-                decodedInvoice={decodedInvoice}
-                decodedRgbInvoice={decodedRgbInvoice}
-                feeRate={feeRate}
-                feeRates={feeRates}
-                fetchAssetBalance={fetchAssetBalance}
-                fetchBtcBalance={fetchBtcBalance}
-                form={form}
-                getFeeIcon={getFeeIcon}
-                getMinAmount={getMinAmount}
-                getMinAmountMessage={getMinAmountMessage}
-                handleInvoiceChange={handleInvoiceChange}
-                handlePasteFromClipboard={handlePasteFromClipboard}
-                isDecodingInvoice={isDecodingInvoice}
-                isPollingStatus={isPollingStatus}
-                maxAssetCapacities={maxAssetCapacities}
-                maxLightningCapacity={maxLightningCapacity}
-                onSubmit={onSubmit}
-                paymentStatus={paymentStatus}
-                setCustomFee={setCustomFee}
-                setShowAssetDropdown={setShowAssetDropdown}
-                setValue={setValueWrapper}
-                showAssetDropdown={showAssetDropdown}
-                validationMessage={validationMessage}
-              />
-            )}
-          </div>
+          {showConfirmation ? (
+            <ConfirmationModal
+              assets={assets}
+              availableAssets={availableAssets}
+              bitcoinUnit={bitcoinUnit}
+              customFee={customFee}
+              feeRates={feeRates}
+              isConfirming={isConfirming}
+              isPollingStatus={isPollingStatus}
+              onCancel={() => {
+                setShowConfirmation(false)
+                // If polling was active when cancelled from confirmation screen, stop it.
+                if (isPollingStatus) {
+                  setIsPollingStatus(false)
+                  setPaymentStatus(null) // Reset status
+                  setValidationMessage(null) // Clear any polling error
+                  setIsConfirming(false) // Stop loading indicator
+                }
+              }}
+              onConfirm={handleConfirmedSubmit}
+              paymentHash={paymentHash}
+              paymentStatus={paymentStatus}
+              pendingData={pendingData}
+              validationMessage={validationMessage}
+            />
+          ) : (
+            <WithdrawForm
+              addressType={addressType}
+              assetBalance={assetBalance}
+              assetId={assetId}
+              assets={assets}
+              availableAssets={availableAssets}
+              bitcoinUnit={bitcoinUnit}
+              clearValidationError={clearValidationError}
+              customFee={customFee}
+              decodedInvoice={decodedInvoice}
+              decodedRgbInvoice={decodedRgbInvoice}
+              feeRate={feeRate}
+              feeRates={feeRates}
+              fetchAssetBalance={fetchAssetBalance}
+              fetchBtcBalance={fetchBtcBalance}
+              form={form}
+              getFeeIcon={getFeeIcon}
+              getMinAmount={getMinAmount}
+              getMinAmountMessage={getMinAmountMessage}
+              handleInvoiceChange={handleInvoiceChange}
+              handlePasteFromClipboard={handlePasteFromClipboard}
+              isDecodingInvoice={isDecodingInvoice}
+              isPollingStatus={isPollingStatus}
+              maxAssetCapacities={maxAssetCapacities}
+              maxLightningCapacity={maxLightningCapacity}
+              onSubmit={onSubmit}
+              paymentStatus={paymentStatus}
+              setCustomFee={setCustomFee}
+              setShowAssetDropdown={setShowAssetDropdown}
+              setValue={setValueWrapper}
+              showAssetDropdown={showAssetDropdown}
+              validationMessage={validationMessage}
+            />
+          )}
         </div>
 
         {!showConfirmation && (
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between items-center pt-4">
             <button
-              className="px-3 py-2 text-content-secondary hover:text-white transition-colors 
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors
                        flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
               onClick={() => {
-                // Reset all states
                 setShowConfirmation(false)
                 setIsConfirming(false)
                 setIsPollingStatus(false)
                 setPaymentStatus(null)
                 setValidationMessage(null)
-
-                // Close the modal
                 dispatch(uiSliceActions.setModal({ type: 'none' }))
               }}
               type="button"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>{t('withdrawModal.main.buttons.cancel')}</span>
+            </button>
+            <button
+              className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
+                       text-primary-foreground rounded-lg font-semibold transition-colors duration-200
+                       flex items-center gap-2 text-sm"
+              disabled={
+                form.formState.isSubmitting ||
+                addressType === 'unknown' ||
+                addressType === 'invalid' ||
+                validationMessage?.type === 'error'
+              }
+              form="withdraw-form"
+              type="submit"
+            >
+              {form.formState.isSubmitting ? (
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>
+                    {addressType === 'lightning' ||
+                    addressType === 'lightning-address'
+                      ? t('withdrawModal.form.submit.lightning')
+                      : addressType === 'rgb'
+                        ? t('withdrawModal.form.submit.rgb')
+                        : t('withdrawModal.form.submit.onchain')}
+                  </span>
+                  {addressType === 'lightning' ||
+                  addressType === 'lightning-address' ? (
+                    <Zap className="w-4 h-4" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
+                </>
+              )}
             </button>
           </div>
         )}

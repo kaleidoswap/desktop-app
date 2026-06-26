@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { WALLET_HISTORY_ASSETS_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'

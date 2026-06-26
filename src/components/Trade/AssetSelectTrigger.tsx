@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react'
 import React from 'react'
 import { twJoin } from 'tailwind-merge'
 
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import defaultIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 
 import { AssetOptionData } from './AssetSelectionModal'
