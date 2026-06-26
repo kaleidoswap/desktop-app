@@ -83,6 +83,11 @@ const here = dirname(fileURLToPath(import.meta.url))
 const srcTauri = resolve(here, '..')
 const out = join(srcTauri, 'resources', 'mind')
 
+// On Windows npm is `npm.cmd`; execFile (no shell) won't resolve the .cmd
+// extension, so spawning bare `npm` throws ENOENT. Use the platform-correct
+// binary name and keep the no-shell safety. (curl/tar are .exe — they resolve.)
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+
 // execFile (no shell) — args are passed as an array, so nothing is interpolated
 // into a command string. Safe by construction.
 const run = (cmd, args, cwd) => {
@@ -117,7 +122,7 @@ function installFromNpm(name, deps) {
   const npmArgs = ['install', '--omit=dev', '--no-audit', '--no-fund']
   if (process.env.NPM_OS) npmArgs.push(`--os=${process.env.NPM_OS}`)
   if (process.env.NPM_CPU) npmArgs.push(`--cpu=${process.env.NPM_CPU}`)
-  run('npm', npmArgs, dir)
+  run(NPM, npmArgs, dir)
 }
 
 // Delete the unused @qvac engines (DROP_ENGINES) and unused top-level native
