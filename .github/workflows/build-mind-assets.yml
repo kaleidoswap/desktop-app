@@ -75,7 +75,14 @@ jobs:
         run: |
           name="kaleidomind-${PLATFORM}-${ARCH}.tar.gz"
           tar -czf "$name" -C src-tauri/resources mind
-          shasum -a 256 "$name" > "${name}.sha256"
+          # Git Bash (Windows) ships coreutils `sha256sum` but not the Perl
+          # `shasum`; macOS is the reverse. Both emit `<hex>  <file>`, which the
+          # app's verifier parses (first whitespace token).
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$name" > "${name}.sha256"
+          else
+            shasum -a 256 "$name" > "${name}.sha256"
+          fi
           ls -lh "$name"
 
       - name: Upload to release
