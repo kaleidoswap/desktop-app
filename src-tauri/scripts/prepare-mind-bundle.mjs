@@ -91,6 +91,14 @@ const isWin = process.platform === 'win32'
 // shell. curl/tar are .exe and run shell-less as before.
 const NPM = isWin ? 'npm.cmd' : 'npm'
 
+// Under Git Bash, MSYS GNU tar shadows the System32 bsdtar on PATH — but GNU
+// tar can't extract .zip (the Windows Node archive) and reads a `C:` drive
+// prefix as a remote `host:path`. Point at System32's bsdtar (libarchive),
+// which handles .zip and drive paths. On mac/linux plain `tar` is correct.
+const TAR = isWin
+  ? join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe')
+  : 'tar'
+
 // execFile — args are passed as an array, so nothing is interpolated into a
 // command string. `shell` is opt-in (Windows .cmd only); every arg this script
 // passes is a static constant (no untrusted input), so it stays safe even then.
@@ -211,7 +219,7 @@ function fetchNode() {
 
   run('curl', ['-fSL', url, '-o', archive])
   // bsdtar (mac/linux/win10+) extracts both .tar.gz and .zip.
-  run('tar', ['-xf', archive, '-C', work])
+  run(TAR, ['-xf', archive, '-C', work])
 
   const binSrc = isWin ? join(work, base, 'node.exe') : join(work, base, 'bin', 'node')
   const binDst = join(out, isWin ? 'node.exe' : 'node')
