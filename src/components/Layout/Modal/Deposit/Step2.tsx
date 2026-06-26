@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Copy,
+  Download,
   Loader,
   RefreshCw,
   Wallet,
@@ -19,7 +20,8 @@ import { toast } from 'react-toastify'
 
 import { useSettings } from '../../../../hooks/useSettings'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
-import rgbLogo from '../../../../assets/rgb-symbol-color.svg'
+import lightningLogo from '../../../../assets/lightning-logo.svg'
+import rgbLogo from '../../../../assets/rgb-logo.svg'
 import { CreateUTXOModal } from '../../../../components/CreateUTXOModal'
 import { BTC_ASSET_ID } from '../../../../constants'
 import {
@@ -315,7 +317,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const [recipientId, setRecipientId] = useState<string>()
 
   const [assetTicker, setAssetTicker] = useState<string>('')
-  const [assetName, setAssetName] = useState<string>('')
   const { data: assetList } = nodeApi.endpoints.listAssets.useQuery()
 
   useEffect(() => {
@@ -323,11 +324,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
       const asset = assetList.nia.find((a: any) => a.asset_id === assetId)
       if (asset) {
         setAssetTicker(asset.ticker ?? '')
-        setAssetName(asset.name ?? '')
       }
     } else if (assetId === BTC_ASSET_ID) {
       setAssetTicker('BTC')
-      setAssetName('Bitcoin')
     }
   }, [assetList, assetId])
 
@@ -611,7 +610,9 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
           ${
             network === type
-              ? 'bg-violet-500/15 border-violet-500 text-violet-400'
+              ? type === 'lightning'
+                ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400'
+                : 'bg-violet-500/15 border-violet-500 text-violet-400'
               : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
           }
         `}
@@ -664,33 +665,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }, [invoiceStatus, onNext])
 
-  const addressLabel =
-    network === 'lightning'
-      ? t('depositModal.step2.labels.lnInvoice')
-      : assetId === BTC_ASSET_ID
-        ? t('depositModal.step2.labels.btcAddress')
-        : t('depositModal.step2.labels.rgbInvoice')
-
   return (
-    <div className="bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-4">
-      <div className="flex flex-col items-center mb-2">
-        {assetId === BTC_ASSET_ID ? (
-          <img alt="Bitcoin" className="w-8 h-8 mb-2" src={btcLogo} />
-        ) : (
-          <img alt="RGB Asset" className="w-8 h-8 mb-2" src={rgbLogo} />
-        )}
-
-        <h3 className="text-xl font-bold text-white mb-1">{titleText}</h3>
-
-        {assetName && (
-          <div className="text-content-secondary mb-1 text-xs">{assetName}</div>
-        )}
-
-        {assetId && assetId !== BTC_ASSET_ID && (
-          <div className="text-xs text-content-tertiary bg-surface-overlay px-2 py-0.5 rounded-full">
-            {assetId.slice(0, 8)}...{assetId.slice(-8)}
-          </div>
-        )}
+    <div>
+      <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+        <Download className="w-6 h-6 text-primary" />
+        <h3 className="text-xl font-bold text-white">{titleText}</h3>
       </div>
 
       <div className="space-y-3">
@@ -741,59 +720,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </div>
         )}
 
-        {/* Network info and faucet suggestion */}
-        {networkInfo && (
-          <div className="p-3 bg-black/30 rounded-xl border border-white/15">
-            {(() => {
-              const faucetKey =
-                networkInfo.network === Network.Signet ||
-                networkInfo.network === Network.SignetCustom
-                  ? 'signet'
-                  : networkInfo.network === Network.Regtest
-                    ? 'regtest'
-                    : 'testnet'
-              const link =
-                faucetKey === 'regtest'
-                  ? 'https://t.me/rgb_lightning_bot'
-                  : 'https://faucet.mutinynet.com/'
-
-              return (
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/15 text-white text-xs font-medium">
-                      {networkInfo.network}
-                    </span>
-                    <span className="text-white/70 text-xs">
-                      {t('depositModal.step2.networkInfo.using', {
-                        network: networkInfo.network,
-                      })}
-                    </span>
-                  </div>
-
-                  <div className="text-xs text-white/60 mt-1">
-                    <p className="mb-1.5">
-                      {t(
-                        `depositModal.step2.networkInfo.description.${faucetKey}`
-                      )}
-                    </p>
-                    <button
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent
-                          hover:bg-white/5 border border-white/30 hover:border-white/50
-                          text-white rounded-lg transition-colors text-xs font-semibold"
-                      onClick={() => {
-                        openUrl(link)
-                      }}
-                    >
-                      <ArrowRight className="w-3 h-3" />
-                      {t(`depositModal.step2.networkInfo.button.${faucetKey}`)}
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
         {/* No Colorable UTXOs Warning */}
         {noColorableUtxos && (
           <div className="p-2 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
@@ -824,87 +750,97 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           <>
             {/* BTC Amount Input (optional) */}
             <div className="space-y-1 animate-fadeIn">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-medium text-content-secondary">
                   {t('depositModal.step2.amount.optionalLabel')}
                 </label>
+                <span className="text-xs text-content-secondary">
+                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
+                           focus:outline-none focus:border-primary text-white
+                           placeholder:text-content-tertiary transition-colors duration-150 text-sm"
+                  inputMode="decimal"
+                  onChange={handleAmountChange}
+                  placeholder={t('depositModal.step2.amount.btcPlaceholder')}
+                  type="text"
+                  value={amount}
+                />
                 {maxDepositAmount > 0 && (
-                  <div className="text-xs text-content-secondary">
-                    {t('depositModal.step2.amount.maxLabel', {
-                      amount: formatAmount(maxDepositAmount, 'BTC'),
-                      asset: getDisplayAsset('BTC', bitcoinUnit),
-                    })}
-                  </div>
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
+                             bg-primary/20 hover:bg-primary/30 text-primary
+                             rounded-lg transition-colors text-xs font-medium"
+                    onClick={handleSetMaxAmount}
+                    type="button"
+                  >
+                    {t('depositModal.step2.amount.maxButton')}
+                  </button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <input
-                    className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default
-                             focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
-                             placeholder:text-content-tertiary transition-all duration-200 text-sm"
-                    inputMode="decimal"
-                    onChange={handleAmountChange}
-                    placeholder={t('depositModal.step2.amount.btcPlaceholder')}
-                    type="text"
-                    value={amount}
-                  />
-                  {maxDepositAmount > 0 && (
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                               bg-primary/20 hover:bg-primary/30 text-primary
-                               rounded-lg transition-colors text-xs font-medium"
-                      onClick={handleSetMaxAmount}
-                      type="button"
-                    >
-                      {t('depositModal.step2.amount.maxButton')}
-                    </button>
-                  )}
-                </div>
-                <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
-                  {getDisplayAsset('BTC', bitcoinUnit)}
-                </div>
-              </div>
-              <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-xs text-primary">
-                  {t('depositModal.step2.amount.zeroAmountInfo')}
+              {maxDepositAmount > 0 && (
+                <p className="text-xs text-content-secondary pt-0.5">
+                  Max: {formatAmount(maxDepositAmount, 'BTC')}{' '}
+                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
                 </p>
-              </div>
+              )}
             </div>
 
-            {!address ? (
-              <button
-                className="w-full py-2.5 px-6 bg-status-success/15 hover:bg-status-success/25 disabled:opacity-50
-                     border border-status-success/30 text-status-success
-                     rounded-xl font-semibold transition-all duration-200
-                     flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-                disabled={
-                  loading ||
-                  (network === 'lightning' &&
-                    maxDepositAmount > 0 &&
-                    amount &&
-                    parseAmount(
-                      amount,
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    ) > maxDepositAmount) ||
-                  (network === 'lightning' && maxDepositAmount === 0)
-                }
-                onClick={generateAddress}
-              >
-                {loading ? (
-                  <Loader className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>
-                      {network === 'lightning'
-                        ? t('depositModal.step2.actions.generateInvoice')
-                        : t('depositModal.step2.actions.generateAddressCta')}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            ) : (
+            {/* Network info and faucet suggestion */}
+            {networkInfo && (
+              <div className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default">
+                {(() => {
+                  const faucetKey =
+                    networkInfo.network === Network.Signet ||
+                    networkInfo.network === Network.SignetCustom
+                      ? 'signet'
+                      : networkInfo.network === Network.Regtest
+                        ? 'regtest'
+                        : 'testnet'
+                  const link =
+                    faucetKey === 'regtest'
+                      ? 'https://t.me/rgb_lightning_bot'
+                      : 'https://faucet.mutinynet.com/'
+
+                  return (
+                    <div className="flex flex-col">
+                      <p className="text-white text-xs font-medium mb-1">
+                        {t(
+                          'depositModal.step2.networkInfo.testCoins',
+                          'Test Coins'
+                        )}
+                      </p>
+
+                      <div className="text-xs text-content-secondary mt-1">
+                        <p className="mb-1.5">
+                          {t(
+                            `depositModal.step2.networkInfo.description.${faucetKey}`
+                          )}
+                        </p>
+                        <button
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent
+                              hover:bg-white/5 border border-white/30 hover:border-white/50
+                              text-white rounded-lg transition-colors text-xs font-semibold"
+                          onClick={() => {
+                            openUrl(link)
+                          }}
+                        >
+                          <ArrowRight className="w-3 h-3" />
+                          {t(
+                            `depositModal.step2.networkInfo.button.${faucetKey}`
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {address ? (
               <div className="space-y-4 animate-fadeIn">
                 {/* Payment Status */}
                 {invoiceStatus && (
@@ -956,6 +892,24 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   </span>
                 </div>
 
+                {/* Regenerate icon button */}
+                <div className="flex justify-end">
+                  <button
+                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30
+                             hover:border-white/50 text-white transition-colors disabled:opacity-40
+                             disabled:cursor-not-allowed"
+                    disabled={loading}
+                    onClick={handleRegenerateBtc}
+                    title={t('depositModal.step2.actions.regenerate')}
+                  >
+                    {loading ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
                 {/* On-chain Address */}
                 {onchainAddress && (
                   <div
@@ -964,9 +918,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                                 transition-all duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                      <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-orange-500/20 text-orange-400 border border-orange-500/20 flex-shrink-0">
-                        {t('depositModal.step2.labels.btcAddress')}
-                      </span>
+                      <img
+                        alt="Bitcoin"
+                        className="w-6 h-6 flex-shrink-0"
+                        src={btcLogo}
+                      />
                       <span className="truncate">
                         {onchainAddress.length > 40
                           ? `${onchainAddress.slice(0, 20)}...${onchainAddress.slice(-10)}`
@@ -992,9 +948,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                                 transition-all duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                      <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 flex-shrink-0">
-                        {t('depositModal.step2.labels.lnInvoice')}
-                      </span>
+                      <img
+                        alt="Lightning"
+                        className="w-6 h-6 flex-shrink-0"
+                        src={lightningLogo}
+                      />
                       <span className="truncate">
                         {lnInvoiceStr.length > 40
                           ? `${lnInvoiceStr.slice(0, 20)}...${lnInvoiceStr.slice(-10)}`
@@ -1011,24 +969,8 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     </button>
                   </div>
                 )}
-
-                {/* Regenerate button */}
-                <button
-                  className="w-full py-2 px-4 bg-surface-overlay/50 hover:bg-surface-overlay rounded-xl
-                           border border-border-default hover:border-primary/50 text-content-secondary
-                           hover:text-primary transition-all duration-200 flex items-center justify-center gap-2 text-sm"
-                  disabled={loading}
-                  onClick={handleRegenerateBtc}
-                >
-                  {loading ? (
-                    <Loader className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  <span>{t('depositModal.step2.actions.regenerate')}</span>
-                </button>
               </div>
-            )}
+            ) : null}
           </>
         )}
 
@@ -1038,108 +980,99 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
             {/* Amount Input for On-chain RGB Invoices */}
             {network === 'on-chain' && assetId && assetId !== BTC_ASSET_ID && (
               <div className="space-y-1 animate-fadeIn">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-2">
                   <label className="text-xs font-medium text-content-secondary">
                     {t('depositModal.step2.amount.optionalLabel')}
                   </label>
-                  {assetTicker && (
-                    <div className="text-xs text-content-secondary">
-                      {t('depositModal.step2.amount.precision', {
-                        value: getAssetPrecision(
-                          assetTicker,
-                          bitcoinUnit,
-                          assetList?.nia
-                        ),
-                      })}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
-                    <input
-                      className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default
-                               focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
-                               placeholder:text-content-tertiary transition-all duration-200 text-sm"
-                      inputMode="decimal"
-                      onChange={handleAmountChange}
-                      placeholder={t('depositModal.step2.amount.example', {
-                        ticker: assetTicker,
-                      })}
-                      type="text"
-                      value={amount}
-                    />
-                  </div>
-                  <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
+                  <span className="text-xs text-content-secondary">
                     {assetTicker}
-                  </div>
+                  </span>
                 </div>
+                <div className="relative">
+                  <input
+                    className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
+                             focus:border-primary focus:outline-none text-white
+                             placeholder:text-content-tertiary transition-colors duration-150 text-sm"
+                    inputMode="decimal"
+                    onChange={handleAmountChange}
+                    placeholder={t(
+                      'depositModal.step2.amount.requiredLabel',
+                      'Enter amount'
+                    )}
+                    type="text"
+                    value={amount}
+                  />
+                </div>
+                {assetTicker && (
+                  <p className="text-xs text-content-secondary pt-0.5">
+                    {t('depositModal.step2.amount.precision', {
+                      value: getAssetPrecision(
+                        assetTicker,
+                        bitcoinUnit,
+                        assetList?.nia
+                      ),
+                    })}
+                  </p>
+                )}
               </div>
             )}
 
             {/* Amount Input for Lightning (RGB) */}
             {network === 'lightning' && (
               <div className="space-y-1 animate-fadeIn">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-2">
                   <label className="text-xs font-medium text-content-secondary">
                     {t('depositModal.step2.amount.optionalLabel')}
                   </label>
+                  <span className="text-xs text-content-secondary">
+                    {assetId === BTC_ASSET_ID
+                      ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
+                        ? 'SATS'
+                        : getDisplayAsset('BTC', bitcoinUnit)
+                      : assetTicker}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    autoFocus
+                    className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
+                             focus:border-primary focus:outline-none text-white
+                             placeholder:text-content-tertiary transition-colors duration-150 text-sm"
+                    inputMode="decimal"
+                    onChange={handleAmountChange}
+                    placeholder={t(
+                      'depositModal.step2.amount.requiredLabel',
+                      'Enter amount'
+                    )}
+                    type="text"
+                    value={amount}
+                  />
                   {maxDepositAmount > 0 && (
-                    <div className="text-xs text-content-secondary">
-                      {t('depositModal.step2.amount.maxLabel', {
-                        amount: formatAmount(
-                          maxDepositAmount,
-                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                        ),
-                        asset: getDisplayAsset(
-                          assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
-                          bitcoinUnit
-                        ),
-                      })}
-                    </div>
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
+                               bg-primary/20 hover:bg-primary/30 text-primary
+                               rounded-lg transition-colors text-xs font-medium"
+                      onClick={handleSetMaxAmount}
+                      type="button"
+                    >
+                      {t('depositModal.step2.amount.maxButton')}
+                    </button>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
-                    <input
-                      autoFocus
-                      className="w-full px-3 py-2 pr-16 bg-surface-overlay/50 rounded-xl border border-border-default
-                               focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
-                               placeholder:text-content-tertiary transition-all duration-200 text-sm"
-                      inputMode="decimal"
-                      onChange={handleAmountChange}
-                      placeholder={t(
-                        'depositModal.step2.amount.maxPlaceholder',
-                        {
-                          amount:
-                            maxDepositAmount > 0
-                              ? formatAmount(
-                                  maxDepositAmount,
-                                  assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                                )
-                              : t('depositModal.step2.amount.notAvailable'),
-                        }
-                      )}
-                      type="text"
-                      value={amount}
-                    />
-                    {maxDepositAmount > 0 && (
-                      <button
-                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                                 bg-primary/20 hover:bg-primary/30 text-primary
-                                 rounded-lg transition-colors text-xs font-medium"
-                        onClick={handleSetMaxAmount}
-                        type="button"
-                      >
-                        {t('depositModal.step2.amount.maxButton')}
-                      </button>
-                    )}
-                  </div>
-                  <div className="px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default text-content-secondary text-sm">
+                {maxDepositAmount > 0 && (
+                  <p className="text-xs text-content-secondary pt-0.5">
+                    Max:{' '}
+                    {formatAmount(
+                      maxDepositAmount,
+                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
+                    )}{' '}
                     {assetId === BTC_ASSET_ID
-                      ? getDisplayAsset('BTC', bitcoinUnit)
+                      ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
+                        ? 'SATS'
+                        : getDisplayAsset('BTC', bitcoinUnit)
                       : assetTicker}
-                  </div>
-                </div>
+                  </p>
+                )}
 
                 {/* Validation and info messages */}
                 {amount &&
@@ -1177,54 +1110,18 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 )}
 
                 {maxDepositAmount === 0 && (
-                  <div className="mt-1 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                    <p className="text-xs text-yellow-400">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/15 border border-yellow-500/40 rounded-lg">
+                    <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                    <p className="text-xs text-yellow-300 font-medium">
                       {t('depositModal.step2.amount.noChannels')}
                     </p>
                   </div>
                 )}
-
-                <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                  <p className="text-xs text-primary">
-                    {t('depositModal.step2.amount.zeroAmountInfo')}
-                  </p>
-                </div>
               </div>
             )}
 
             {/* RGB Generate / Display */}
-            {!address ? (
-              <button
-                className="w-full py-2.5 px-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
-                         text-white rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
-                         flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-                disabled={
-                  loading ||
-                  (network === 'lightning' &&
-                    maxDepositAmount > 0 &&
-                    amount &&
-                    parseAmount(
-                      amount,
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    ) > maxDepositAmount) ||
-                  (network === 'lightning' && maxDepositAmount === 0)
-                }
-                onClick={generateAddress}
-              >
-                {loading ? (
-                  <Loader className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>
-                      {network === 'lightning'
-                        ? t('depositModal.step2.actions.generateInvoice')
-                        : t('depositModal.step2.actions.generateAddressCta')}
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            ) : (
+            {address ? (
               <div className="space-y-4 animate-fadeIn">
                 {/* Payment Status */}
                 {invoiceStatus && (
@@ -1266,6 +1163,24 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   </div>
                 </div>
 
+                {/* Regenerate icon button */}
+                <div className="flex justify-end">
+                  <button
+                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30
+                             hover:border-white/50 text-white transition-colors disabled:opacity-40
+                             disabled:cursor-not-allowed"
+                    disabled={loading}
+                    onClick={generateAddress}
+                    title={t('depositModal.step2.actions.generateAddress')}
+                  >
+                    {loading ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
                 {/* Address Display */}
                 <div
                   className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
@@ -1273,55 +1188,30 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                               transition-all duration-200"
                 >
                   <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                    <span
-                      className={`
-                      px-1.5 py-0.5 rounded-md text-xs font-medium
-                      ${
-                        assetId === BTC_ASSET_ID
-                          ? 'bg-orange-500/20 text-orange-400 border border-orange-500/20'
-                          : 'bg-purple-500/20 text-purple-400 border border-purple-500/20'
-                      }
-                    `}
-                    >
-                      {addressLabel}
-                    </span>
+                    <img
+                      alt="RGB"
+                      className="w-6 h-6 flex-shrink-0"
+                      src={rgbLogo}
+                    />
                     {address.length > 45
                       ? `${address.slice(0, 42)}...`
                       : address}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                               text-content-secondary hover:text-primary disabled:opacity-50
-                               disabled:cursor-not-allowed"
-                      disabled={loading}
-                      onClick={generateAddress}
-                      title={t('depositModal.step2.actions.generateAddress')}
-                    >
-                      <Loader
-                        className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-                      />
-                    </button>
-                    <button
-                      className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                               text-content-secondary hover:text-primary"
-                      onClick={() => handleCopy(address)}
-                      title={t('depositModal.step2.actions.copy')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <button
+                    className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
+                             text-content-secondary hover:text-primary"
+                    onClick={() => handleCopy(address)}
+                    title={t('depositModal.step2.actions.copy')}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
                 </div>
 
                 {/* Recipient ID Display for Assets */}
                 {assetId !== BTC_ASSET_ID &&
                   recipientId &&
                   network === 'on-chain' && (
-                    <div
-                      className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
-                                flex items-center justify-between group hover:border-primary/50
-                                transition-all duration-200"
-                    >
+                    <div className="flex items-center justify-between px-3">
                       <div className="truncate flex-1 text-content-secondary font-mono text-xs">
                         <span className="text-content-secondary mr-2">
                           Recipient ID:
@@ -1341,7 +1231,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                     </div>
                   )}
               </div>
-            )}
+            ) : null}
           </>
         )}
 
@@ -1357,12 +1247,23 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
           </button>
 
           <button
-            className="px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
-                     transition-colors flex items-center gap-1.5 text-sm"
-            onClick={onNext}
+            className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
+                     text-primary-foreground rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
+            disabled={loading}
+            onClick={address ? onNext : generateAddress}
           >
-            <span>{t('depositModal.common.finish')}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            {loading ? (
+              <Loader className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <span>
+                  {address
+                    ? t('depositModal.common.finish')
+                    : t('depositModal.step2.actions.generateAddressCta')}
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </>
+            )}
           </button>
         </div>
       </div>

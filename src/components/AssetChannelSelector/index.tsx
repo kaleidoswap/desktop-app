@@ -10,7 +10,7 @@ import {
 import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { formatNumberWithCommas } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import './animations.css'

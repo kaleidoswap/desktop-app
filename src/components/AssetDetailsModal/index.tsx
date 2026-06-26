@@ -1,7 +1,7 @@
 import { Info } from 'lucide-react'
 import React from 'react'
 
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { Modal } from '../ui'
