@@ -32,9 +32,21 @@ jobs:
           - runner: ubuntu-22.04
             platform: linux
             arch: x64
+          # Built natively on a Windows runner. @qvac engines bundle their
+          # win32-x64 `.bare` prebuilds in-package (not as os/cpu-split optional
+          # deps), so NPM_OS/NPM_CPU don't gate them — a native runner also
+          # grabs the correct node.exe via fetchNode().
+          - runner: windows-latest
+            platform: win
+            arch: x64
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
+    # Force bash everywhere so the Package/Upload steps' shell syntax (and
+    # tar/shasum/curl) work on the Windows runner via Git Bash, not PowerShell.
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
