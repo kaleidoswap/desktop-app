@@ -83,16 +83,20 @@ const here = dirname(fileURLToPath(import.meta.url))
 const srcTauri = resolve(here, '..')
 const out = join(srcTauri, 'resources', 'mind')
 
-// On Windows npm is `npm.cmd`; execFile (no shell) won't resolve the .cmd
-// extension, so spawning bare `npm` throws ENOENT. Use the platform-correct
-// binary name and keep the no-shell safety. (curl/tar are .exe — they resolve.)
-const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+const isWin = process.platform === 'win32'
 
-// execFile (no shell) — args are passed as an array, so nothing is interpolated
-// into a command string. Safe by construction.
-const run = (cmd, args, cwd) => {
+// On Windows npm is `npm.cmd`; execFile (no shell) can't resolve the .cmd
+// extension (ENOENT) and Node 24's CVE-2024-27980 hardening refuses to spawn a
+// .cmd/.bat without a shell (EINVAL). So on Windows we run npm.cmd through a
+// shell. curl/tar are .exe and run shell-less as before.
+const NPM = isWin ? 'npm.cmd' : 'npm'
+
+// execFile — args are passed as an array, so nothing is interpolated into a
+// command string. `shell` is opt-in (Windows .cmd only); every arg this script
+// passes is a static constant (no untrusted input), so it stays safe even then.
+const run = (cmd, args, cwd, { shell = false } = {}) => {
   console.log(`$ ${cmd} ${args.join(' ')}${cwd ? `   (in ${cwd})` : ''}`)
-  execFileSync(cmd, args, { cwd, stdio: 'inherit' })
+  execFileSync(cmd, args, { cwd, stdio: 'inherit', shell })
 }
 
 function reset() {
@@ -122,7 +126,7 @@ function installFromNpm(name, deps) {
   const npmArgs = ['install', '--omit=dev', '--no-audit', '--no-fund']
   if (process.env.NPM_OS) npmArgs.push(`--os=${process.env.NPM_OS}`)
   if (process.env.NPM_CPU) npmArgs.push(`--cpu=${process.env.NPM_CPU}`)
-  run(NPM, npmArgs, dir)
+  run(NPM, npmArgs, dir, { shell: isWin })
 }
 
 // Delete the unused @qvac engines (DROP_ENGINES) and unused top-level native
