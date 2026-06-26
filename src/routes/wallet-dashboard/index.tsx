@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowLeftRight,
-  Info,
   Plus,
   Loader as LoaderIcon,
   Database,
@@ -15,7 +14,6 @@ import {
   ShoppingCart,
   ExternalLink,
   Lock,
-  Unlock,
   Download,
   Upload,
   History,
@@ -400,6 +398,7 @@ export const Component = () => {
               </h3>
               <div className="flex items-center gap-2">
                 <Button
+                  className="border-white/30 hover:border-white/50"
                   icon={<Database className="w-4 h-4" />}
                   onClick={() => setShowUTXOModal(true)}
                   size="sm"
@@ -573,17 +572,15 @@ export const Component = () => {
                 <h3 className="text-base font-bold text-content-primary">
                   {t('dashboard.lightningChannels')}
                 </h3>
-                {channels.length > 0 && (
-                  <span className="text-xs font-bold bg-secondary/15 text-secondary border border-secondary/20 rounded-full px-2 py-0.5">
-                    {channels.filter((c: any) => c.ready).length}/
-                    {channels.length}
-                  </span>
-                )}
               </div>
               {channels.length > 0 && (
                 <span className="text-xs text-status-success flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
                   Online
+                  <span className="font-bold text-status-success">
+                    {channels.filter((c: any) => c.ready).length}/
+                    {channels.length}
+                  </span>
                 </span>
               )}
             </div>
@@ -684,11 +681,6 @@ export const Component = () => {
                               <span className="text-[10px] font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">
                                 {t('channelCard.status.pending')}
                               </span>
-                            )}
-                            {ch.public ? (
-                              <Unlock className="w-3 h-3 text-content-tertiary" />
-                            ) : (
-                              <Lock className="w-3 h-3 text-secondary/70" />
                             )}
                           </div>
                         </div>
@@ -810,7 +802,7 @@ export const Component = () => {
               {[
                 {
                   icon: <Plus className="w-3.5 h-3.5" />,
-                  label: t('dashboard.openChannel'),
+                  label: t('channels.createNewChannel'),
                   onClick: () => navigate(CREATE_NEW_CHANNEL_PATH),
                 },
                 {
@@ -840,12 +832,6 @@ export const Component = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center gap-2 text-xs text-content-tertiary px-1 mt-2">
-        <Info className="h-3 w-3 flex-shrink-0" />
-        <p>{t('dashboard.liquidityInfo')}</p>
       </div>
     </div>
   )
