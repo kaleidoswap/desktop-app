@@ -265,7 +265,6 @@ const NotificationPanel: React.FC<{
         <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-content-secondary">
-              <Bell className="w-12 h-12 mb-2" />
               <p>No notifications</p>
             </div>
           ) : (
