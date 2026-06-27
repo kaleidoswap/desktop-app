@@ -16,40 +16,34 @@ export interface FriendlyPaymentError {
 
 const PATTERNS: Array<{ test: RegExp; key: string }> = [
   {
-    
     key: 'withdrawModal.main.errors.recipientNetworkMismatch',
     // APIError::InvalidRecipientNetwork
-test: /different network than the wallet/i,
+    test: /different network than the wallet/i,
   },
   {
-    
     key: 'withdrawModal.main.errors.invalidRecipientId',
     // APIError::InvalidRecipientID
-test: /recipient ID is neither a blinded UTXO or a script/i,
+    test: /recipient ID is neither a blinded UTXO or a script/i,
   },
   {
-    
     key: 'withdrawModal.main.errors.invalidRecipientData',
     // APIError::InvalidRecipientData
-test: /provided recipient data is invalid/i,
+    test: /provided recipient data is invalid/i,
   },
   {
-    
     key: 'withdrawModal.main.errors.invalidRecipientData',
     // APIError::InvalidRecipientMap
-test: /provided recipient map is invalid/i,
+    test: /provided recipient map is invalid/i,
   },
   {
-    
     key: 'withdrawModal.main.errors.invalidTransportEndpoint',
     // APIError::InvalidTransportEndpoint(s) / InvalidProxyEndpoint
-test: /(transport endpoint|proxy endpoint|proxy protocol)/i,
+    test: /(transport endpoint|proxy endpoint|proxy protocol)/i,
   },
   {
-    
     key: 'withdrawModal.main.errors.insufficientUtxos',
     // APIError::NoAvailableUtxos and friends (kept generic on purpose)
-test: /(no available UTXOs|not enough UTXOs|insufficient UTXOs|no uncolored UTXOs)/i,
+    test: /(no available UTXOs|not enough UTXOs|insufficient UTXOs|no uncolored UTXOs)/i,
   },
 ]
 
