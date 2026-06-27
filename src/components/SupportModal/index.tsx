@@ -119,10 +119,6 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
         <div className="p-6">
           {activeSection === 'main' && (
             <div className="space-y-6">
-              <p className="text-content-secondary">
-                {t('supportModal.intro')}
-              </p>
-
               {/* Support Options */}
               <div className="grid gap-4">
                 {/* Documentation */}
@@ -221,7 +217,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
                 {/* Troubleshooting */}
                 <div
-                  className="bg-gradient-to-br from-cyan/10 to-transparent border-2 border-primary/20 rounded-xl p-4 cursor-pointer hover:bg-primary/5 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
                   onClick={() => setActiveSection('troubleshoot')}
                 >
                   <div className="flex items-center gap-4">
@@ -342,34 +338,16 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
         {/* Footer */}
         <div className="p-5 border-t border-divider/10 bg-surface-base">
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <div className="text-sm text-content-secondary">
-              {t('supportModal.needMoreHelp')}{' '}
-              <button
-                className="text-primary hover:underline"
-                onClick={() => {
-                  openUrl('mailto:support@kaleidoswap.com')
-                }}
-              >
-                support@kaleidoswap.com
-              </button>
-            </div>
-            <div className="flex gap-3">
-              <button
-                className="px-4 py-2 bg-surface-elevated/60 text-white rounded-lg hover:bg-surface-elevated/80 transition-colors"
-                onClick={onClose}
-              >
-                {t('supportModal.close')}
-              </button>
-              {activeSection !== 'main' && (
-                <button
-                  className="px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors"
-                  onClick={goBack}
-                >
-                  {t('supportModal.back')}
-                </button>
-              )}
-            </div>
+          <div className="text-sm text-content-secondary text-center">
+            {t('supportModal.needMoreHelp')}{' '}
+            <button
+              className="text-primary hover:underline"
+              onClick={() => {
+                openUrl('mailto:support@kaleidoswap.com')
+              }}
+            >
+              support@kaleidoswap.com
+            </button>
           </div>
         </div>
       </div>
