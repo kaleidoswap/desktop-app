@@ -1,7 +1,7 @@
 # Kaleidoswap Desktop App
 
 <div align="center">
-<img src="./public/Kaleidoswap_Full_Logo.svg" alt="Kaleidoswap Logo" width="200">
+<img src="./public/kaleidoswap-full-logo.svg" alt="Kaleidoswap Logo" width="200">
 </div>
 
 ## Overview

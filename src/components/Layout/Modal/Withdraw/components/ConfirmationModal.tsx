@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import React, { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -197,7 +198,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       {renderOverlay()}
 
       <div className="space-y-4">
-        <div className="p-3 bg-surface-overlay/50 rounded-xl">
+        <div className="p-3 bg-surface-overlay/50 rounded-xl overflow-hidden">
           <div className="space-y-2 divide-y divide-slate-700/50">
             {/* Type */}
             <div className="flex justify-between py-2">
@@ -225,11 +226,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
             {/* Amount - Only show for on-chain or for regular BTC Lightning payments */}
             {!isRgbLightningPayment && (
-              <div className="flex justify-between py-2">
-                <span className="text-content-secondary text-sm">
+              <div className="flex justify-between gap-4 py-2">
+                <span className="text-content-secondary text-sm shrink-0">
                   {t('withdrawModal.confirmation.labels.amount')}
                 </span>
-                <span className="text-white text-sm font-medium">
+                <span className="text-white text-sm font-medium text-right break-all">
                   {hasRegularBtcAmount
                     ? getBtcAmount()
                     : pendingData?.asset_id === BTC_ASSET_ID
@@ -390,18 +391,19 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
         <div className="flex items-center justify-between gap-3 mt-4">
           <button
-            className="flex-1 px-4 py-2.5 border border-border-default hover:bg-surface-overlay/50
-                     text-content-secondary rounded-lg transition-colors text-sm"
+            className="px-3 py-2 text-content-secondary hover:text-white transition-colors
+                     flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
             disabled={isConfirming || showOverlay}
             onClick={onCancel}
             type="button"
           >
+            <ArrowLeft className="w-3.5 h-3.5" />
             {t('withdrawModal.confirmation.buttons.back')}
           </button>
           <button
-            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
-                     text-white rounded-lg font-semibold transition-all duration-200 shadow-md shadow-primary/20
-                     flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
+            className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
+                     text-primary-foreground rounded-lg font-semibold transition-colors duration-200
+                     flex items-center justify-center gap-2 text-sm"
             disabled={
               isConfirming ||
               isPollingStatus ||
@@ -413,10 +415,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             type="button"
           >
             {isConfirming ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
                 <span>{t('withdrawModal.confirmation.buttons.confirm')}</span>
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>

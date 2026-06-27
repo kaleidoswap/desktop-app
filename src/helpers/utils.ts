@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-import defaultRgbIcon from '../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../assets/rgb-logo.svg'
 import { COIN_ICON_URL } from '../constants'
 
 // Cache for asset icons to prevent repeated downloads

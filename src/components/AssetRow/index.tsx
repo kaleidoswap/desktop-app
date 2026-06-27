@@ -1,15 +1,63 @@
 import { Download, Upload, History } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 
 import { WALLET_HISTORY_ASSETS_PATH } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 import { NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
 import { AssetDetailsModal } from '../AssetDetailsModal'
 import { LoadingPlaceholder } from '../ui'
+
+interface TooltipButtonProps {
+  icon: React.ReactNode
+  label: string
+  color: string
+  onClick: () => void
+}
+
+const TooltipButton: React.FC<TooltipButtonProps> = ({
+  icon,
+  label,
+  color,
+  onClick,
+}) => {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  const handleMouseEnter = () => {
+    if (!btnRef.current) return
+    const r = btnRef.current.getBoundingClientRect()
+    setPos({ x: r.left + r.width / 2, y: r.top - 6 })
+  }
+
+  return (
+    <>
+      <button
+        className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
+        onClick={onClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setPos(null)}
+        ref={btnRef}
+      >
+        {icon}
+      </button>
+      {pos &&
+        createPortal(
+          <div
+            className="fixed z-[9999] -translate-x-1/2 -translate-y-full bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg"
+            style={{ left: pos.x, top: pos.y }}
+          >
+            {label}
+          </div>,
+          document.body
+        )}
+    </>
+  )
+}
 
 interface AssetRowProps {
   asset: NiaAsset
@@ -52,7 +100,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false)
 
   const formatAmount = (asset: NiaAsset, amount: number) => {
-    const precision = asset.precision || 0
+    const precision = asset.precision ?? 0
     const formattedAmount = amount / Math.pow(10, precision)
     return formattedAmount.toLocaleString('en-US', {
       maximumFractionDigits: precision,
@@ -104,7 +152,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
           <div className="flex items-center gap-0.5">
             {[
               {
-                color: 'text-white hover:bg-white/10',
+                color: 'text-status-success hover:bg-status-success/15',
                 icon: <Download className="w-3.5 h-3.5" />,
                 label: 'Deposit',
                 onClick: () =>
@@ -116,7 +164,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
               {
-                color: 'text-white hover:bg-white/10',
+                color: 'text-violet-400 hover:bg-violet-500/15',
                 icon: <Upload className="w-3.5 h-3.5" />,
                 label: 'Withdraw',
                 onClick: () =>
@@ -137,18 +185,13 @@ export const AssetRow: React.FC<AssetRowProps> = ({
                   ),
               },
             ].map(({ icon, label, color, onClick }) => (
-              <div className="relative group/btn" key={label}>
-                <button
-                  className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
-                  onClick={onClick}
-                  title={label}
-                >
-                  {icon}
-                </button>
-                <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
-                  {label}
-                </div>
-              </div>
+              <TooltipButton
+                color={color}
+                icon={icon}
+                key={label}
+                label={label}
+                onClick={onClick}
+              />
             ))}
           </div>
         </div>

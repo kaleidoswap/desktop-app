@@ -67,7 +67,7 @@ export function useAssetChannelQuote({
       return 0
     }
 
-    const precision = assetMap[assetId]?.precision || 0
+    const precision = assetMap[assetId]?.precision ?? 0
     return Math.round(parsed * Math.pow(10, precision))
   }, [assetId, assetMap, clientAssetAmount, enabled])
 

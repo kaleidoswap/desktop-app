@@ -22,13 +22,12 @@ import {
   Brain,
   Droplets,
   Tag,
+  TrendingUp,
   ArrowLeftRight,
   Radio,
   LayoutDashboard,
 } from 'lucide-react'
 import React from 'react'
-
-import { DcaBagIcon } from '../icons/DcaBagIcon'
 
 import {
   TRADE_PATH,
@@ -113,7 +112,7 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             to: TRADE_NOSTR_P2P_PATH,
           },
           {
-            icon: <DcaBagIcon className="h-4 w-4" />,
+            icon: <TrendingUp className="h-4 w-4" />,
             label: t('navigation.dca', 'DCA'),
             to: TRADE_DCA_PATH,
           },
@@ -331,20 +330,24 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.settings'),
   },
   [TRADE_DCA_PATH]: {
-    icon: <DcaBagIcon className="h-9 w-9" />,
+    icon: <TrendingUp className="h-4 w-4" />,
     title: t('navigation.dca', 'DCA'),
   },
   [TRADE_LIMIT_PATH]: {
-    icon: <Target className="w-5 h-5" />,
+    icon: <Target className="h-4 w-4" />,
     title: t('navigation.limitOrders', 'Limit Orders'),
   },
   [TRADE_MANUAL_PATH]: {
-    icon: <Zap className="w-5 h-5" />,
+    icon: <ArrowLeftRight className="h-4 w-4" />,
     title: t('navigation.manualSwaps'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
-    icon: <Store className="w-5 h-5" />,
+    icon: <Store className="h-4 w-4" />,
     title: t('navigation.marketMaker'),
+  },
+  [TRADE_NOSTR_P2P_PATH]: {
+    icon: <Radio className="h-4 w-4" />,
+    title: t('navigation.nostrP2P', 'Nostr P2P'),
   },
   [TRADE_PATH]: {
     icon: <Zap className="w-5 h-5" />,

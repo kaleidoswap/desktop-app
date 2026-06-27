@@ -161,6 +161,15 @@ export function categorizeError(
   // Categorize by status code
   if (statusCode) {
     switch (true) {
+      case statusCode === 400:
+        return {
+          category: ErrorCategory.VALIDATION,
+          isRetryable: false,
+          message,
+          originalError: error,
+          statusCode,
+        }
+
       case statusCode === 401:
         return {
           category: ErrorCategory.AUTHENTICATION,
@@ -217,18 +226,24 @@ export function categorizeError(
     }
   }
 
-  // Check for network errors
-  const errorStr = String(error).toLowerCase()
+  // Check for connectivity errors. Only when there is NO HTTP status code: a
+  // real network failure never carries one. This guards against content errors
+  // whose message merely contains a word like "network" (e.g. the RGB node's
+  // "recipient ID is for a different network than the wallet's one"), which must
+  // stay a 400 validation error and not be reported as an unreachable node.
   const messageLower = message.toLowerCase()
   if (
-    errorStr.includes('network') ||
-    errorStr.includes('fetch') ||
-    errorStr.includes('timeout') ||
-    errorStr.includes('connection') ||
-    messageLower.includes('load failed') || // WebKit (Tauri macOS/iOS webview)
-    messageLower.includes('failed to fetch') || // Chromium (WebView2 on Windows)
-    messageLower.includes('networkerror') || // Firefox
-    messageLower.includes('network request failed') // React Native / other runtimes
+    !statusCode &&
+    (messageLower.includes('load failed') || // WebKit (Tauri macOS/iOS webview)
+      messageLower.includes('failed to fetch') || // Chromium (WebView2 on Windows)
+      messageLower.includes('networkerror') || // Firefox
+      messageLower.includes('network request failed') || // React Native / other runtimes
+      messageLower.includes('connection refused') ||
+      messageLower.includes('connection timed out') ||
+      messageLower.includes('request timed out') ||
+      messageLower.includes('econnrefused') ||
+      messageLower.includes('etimedout') ||
+      messageLower.includes('enotfound'))
   ) {
     return {
       category: ErrorCategory.NETWORK,
@@ -253,11 +268,28 @@ export function categorizeError(
  * Transform SDK errors into RTK Query error format
  */
 export function transformSdkError(error: unknown): FetchBaseQueryError {
-  const categorized = categorizeError(error)
+  // kaleido-sdk throws KaleidoError subclasses carrying an HTTP `statusCode`
+  // and a `code` (e.g. 'VALIDATION_ERROR', 'NETWORK_ERROR'). We must forward
+  // these to categorizeError — otherwise a 400 validation error is misread as a
+  // connectivity failure whenever its message happens to contain a word like
+  // "network".
+  const sdkError = error as { statusCode?: number; code?: string } | undefined
+  const statusCode =
+    typeof sdkError?.statusCode === 'number' ? sdkError.statusCode : undefined
+  const code = typeof sdkError?.code === 'string' ? sdkError.code : undefined
 
-  // Network errors (connection refused, unreachable host, etc.) should use
-  // RTK Query's string-status format so callers can check `status === 'FETCH_ERROR'`.
-  if (categorized.category === ErrorCategory.NETWORK) {
+  const categorized = categorizeError(error, statusCode)
+
+  // Connectivity failures (connection refused, unreachable host, timeout) should
+  // use RTK Query's string-status format so callers can check
+  // `status === 'FETCH_ERROR'`. Trust the SDK's explicit code first; only fall
+  // back to the heuristic category when there is no HTTP status to contradict it.
+  const isConnectivityFailure =
+    code === 'NETWORK_ERROR' ||
+    code === 'TIMEOUT_ERROR' ||
+    (categorized.category === ErrorCategory.NETWORK && statusCode === undefined)
+
+  if (isConnectivityFailure) {
     return {
       error: categorized.message,
       status: 'FETCH_ERROR',
@@ -267,10 +299,10 @@ export function transformSdkError(error: unknown): FetchBaseQueryError {
   return {
     data: {
       category: categorized.category,
-      code: categorized.code,
+      code: code ?? categorized.code,
       error: categorized.message,
     } as ApiErrorResponse,
-    status: categorized.statusCode || 500,
+    status: statusCode ?? categorized.statusCode ?? 500,
   }
 }
 

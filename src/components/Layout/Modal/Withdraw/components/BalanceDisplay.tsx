@@ -16,21 +16,17 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   const { t } = useTranslation()
 
   if (addressType === 'bitcoin') {
+    const amount =
+      bitcoinUnit === 'SAT'
+        ? assetBalance.toLocaleString()
+        : (assetBalance / 100000000).toFixed(8)
     return (
-      <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 mb-4">
-        <div className="flex justify-between items-center">
-          <span className="text-content-secondary text-sm">
-            {t('withdrawModal.balance.btcLabel')}
-          </span>
-          <span className="text-white font-medium">
-            {/* assetBalance is now always in satoshis, so convert for display */}
-            {bitcoinUnit === 'SAT'
-              ? assetBalance.toLocaleString()
-              : (assetBalance / 100000000).toFixed(8)}{' '}
-            {bitcoinUnit}
-          </span>
-        </div>
-      </div>
+      <p className="text-content-secondary text-sm mb-4">
+        {t('withdrawModal.balance.btcLabel')}{' '}
+        <span className="text-white font-medium">
+          {amount} {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
+        </span>
+      </p>
     )
   }
 
@@ -45,21 +41,16 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
     )
     if (assetInfo) {
       const ticker = assetInfo.ticker
-      const precision = assetInfo.precision || 8
-      // Convert raw balance to display units
+      const precision = assetInfo.precision ?? 8
       const displayBalance = assetBalance / Math.pow(10, precision)
 
       return (
-        <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-content-secondary text-sm">
-              {t('withdrawModal.balance.assetLabel', { ticker })}
-            </span>
-            <span className="text-white font-medium">
-              {displayBalance.toFixed(precision)} {ticker}
-            </span>
-          </div>
-        </div>
+        <p className="text-content-secondary text-sm mb-4">
+          {t('withdrawModal.balance.assetLabel', { ticker })}{' '}
+          <span className="text-white font-medium">
+            {displayBalance.toFixed(precision)} {ticker}
+          </span>
+        </p>
       )
     }
   }

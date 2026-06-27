@@ -81,7 +81,7 @@
     "loadingData": "Loading data...",
     "openChannel": "Open Channel",
     "buyChannel": "Buy Channel",
-    "createNewChannel": "Create New Channel",
+    "createNewChannel": "Create Channel",
     "buyAChannel": "Buy a Channel",
     "manageChannels": "Manage Channels",
     "refreshing": "Refreshing...",
@@ -1871,6 +1871,10 @@
     }
   },
   "tradeManual": {
+    "loading": {
+      "initializing": "Initializing Manual Swap",
+      "checkingBalance": "Checking wallet balance and requirements"
+    },
     "errors": {
       "initializationFailed": "Failed to initialize the manual swap component. Please try again."
     },
@@ -2154,7 +2158,7 @@
         "noChannels": "Warning: No active Lightning channels found. Lightning deposits are unavailable.",
         "exceeds": "Amount exceeds maximum available: {{amount}} {{asset}}",
         "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount",
-        "btcPlaceholder": "Enter amount (optional)"
+        "btcPlaceholder": "Enter amount"
       },
       "bip21": {
         "badge": "Unified BIP21"
@@ -2235,7 +2239,7 @@
   },
   "tradeMarketMaker": {
     "loading": {
-      "checkingBalance": "Checking wallet balance and requirements...",
+      "checkingBalance": "Checking wallet balance and requirements",
       "verifyingChannels": "Verifying channel availability and liquidity...",
       "connectingMaker": "Connecting to market maker and fetching trading pairs...",
       "initializingInfrastructure": "Initializing trading infrastructure...",
@@ -2253,8 +2257,8 @@
     "form": {
       "youSend": "You Send",
       "youReceive": "You Receive (Estimated)",
-      "available": "Available:",
-      "onchainAvailable": "Onchain Available:",
+      "available": "Available",
+      "onchainAvailable": "Onchain Available",
       "canReceiveUpTo": "Can receive up to:",
       "status": "Status:",
       "channelNeeded": "Channel needed"
@@ -2356,7 +2360,7 @@
       "available": "Available Balance:"
     },
     "form": {
-      "addressPlaceholder": "Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice",
+      "addressPlaceholder": "Paste Bitcoin address, LN invoice, LN address, or RGB invoice",
       "addressRequired": "Address or invoice is required",
       "analyzing": "Analyzing input…",
       "clear": "Clear",
@@ -2493,7 +2497,12 @@
         "withdrawalFailedDefault": "Withdrawal failed",
         "onchainExceedsBalance": "Withdrawal amount ({{amount}}) exceeds available balance ({{balance}})",
         "capacityToast": "Cannot proceed: Invoice amount ({{amount}} sats) exceeds your outbound capacity ({{capacity}} sats).",
-        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice."
+        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice.",
+        "recipientNetworkMismatch": "This RGB invoice is for a different Bitcoin network than your wallet (your wallet is on {{network}}). Ask the recipient for an invoice generated on the same network and try again.",
+        "invalidRecipientId": "This RGB invoice's recipient ID is not valid (it must be a blinded UTXO or a script). Please double-check the invoice and ask the recipient to generate a new one.",
+        "invalidRecipientData": "The RGB invoice could not be read correctly. Please verify you pasted the full, unmodified invoice, or ask the recipient for a new one.",
+        "invalidTransportEndpoint": "The RGB transport (proxy) endpoint in this invoice is invalid or unreachable. Ask the recipient for an invoice with a valid transport endpoint, or check your proxy settings.",
+        "insufficientUtxos": "Not enough available UTXOs to complete this RGB payment. You may need to create new UTXOs before sending."
       },
       "warnings": {
         "invoiceAdjusted": "Warning: The invoice requested {{requested}} {{asset}} but your balance is only {{balance}} {{asset}}. Adjusted to maximum sendable amount.",

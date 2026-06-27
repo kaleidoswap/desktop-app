@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ArrowLeftRight,
-  Info,
   Plus,
   Loader as LoaderIcon,
   Database,
@@ -15,7 +14,6 @@ import {
   ShoppingCart,
   ExternalLink,
   Lock,
-  Unlock,
   Download,
   Upload,
   History,
@@ -45,8 +43,9 @@ import { Button, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
+import { getAllRgbAssets } from '../../utils/rgbUtils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
@@ -114,22 +113,28 @@ export const Component = () => {
   const refreshData = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      await Promise.all([
-        assets(),
-        listChannels(),
-        btcBalance(),
-        refreshTransfers({}),
-      ])
+      // Settle any incoming RGB transfers BEFORE reading the asset list.
+      // refreshtransfers is what registers a newly received asset and moves its
+      // balance from "incoming" to spendable; running it concurrently with
+      // listAssets meant the dashboard read the pre-refresh state and only
+      // surfaced received assets a poll (or never) later. Errors are logged
+      // rather than swallowed so a failing refresh is visible.
+      try {
+        await refreshTransfers({}).unwrap()
+      } catch (err) {
+        console.error('refreshTransfers failed during dashboard refresh:', err)
+      }
+      await Promise.all([assets(), listChannels(), btcBalance()])
     } finally {
       setIsRefreshing(false)
     }
   }, [assets, btcBalance, listChannels, refreshTransfers])
 
   useEffect(() => {
-    if (assetsResponse.data?.nia) {
+    if (assetsResponse.data) {
       const newAssetsMap: Record<string, NiaAsset> = {}
-      assetsResponse.data.nia.forEach((asset: any) => {
-        if (asset.asset_id) newAssetsMap[asset.asset_id] = asset as NiaAsset
+      getAllRgbAssets(assetsResponse.data).forEach((asset) => {
+        if (asset.asset_id) newAssetsMap[asset.asset_id] = asset
       })
       setAssetsMap(newAssetsMap)
     }
@@ -153,7 +158,7 @@ export const Component = () => {
         string,
         { offChain: number; onChain: number; incoming: number }
       > = {}
-      for (const asset of assetsResponse.data?.nia || []) {
+      for (const asset of getAllRgbAssets(assetsResponse.data)) {
         if (asset.asset_id) {
           const balance = await assetBalance({ asset_id: asset.asset_id })
           const spendable = balance.data?.spendable || 0
@@ -216,7 +221,7 @@ export const Component = () => {
     liquidityTotal > 0 ? (totalInboundLiquidity / liquidityTotal) * 100 : 50
 
   const pubkey = nodeInfoResponse.data?.pubkey || ''
-  const niaAssets = assetsResponse.data?.nia || []
+  const niaAssets = getAllRgbAssets(assetsResponse.data)
 
   const handleCopyPubkey = () => {
     if (!pubkey) return
@@ -329,8 +334,8 @@ export const Component = () => {
                     formatBitcoinAmount(totalBalance, bitcoinUnit)
                   )}
                 </span>
-                <span className="text-xl font-semibold text-primary">
-                  {bitcoinUnit}
+                <span className="text-xl font-semibold text-white">
+                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
                 </span>
               </div>
               <div className="flex items-center gap-4 text-sm flex-wrap">
@@ -400,6 +405,7 @@ export const Component = () => {
               </h3>
               <div className="flex items-center gap-2">
                 <Button
+                  className="border-white/30 hover:border-white/50"
                   icon={<Database className="w-4 h-4" />}
                   onClick={() => setShowUTXOModal(true)}
                   size="sm"
@@ -573,17 +579,15 @@ export const Component = () => {
                 <h3 className="text-base font-bold text-content-primary">
                   {t('dashboard.lightningChannels')}
                 </h3>
-                {channels.length > 0 && (
-                  <span className="text-xs font-bold bg-secondary/15 text-secondary border border-secondary/20 rounded-full px-2 py-0.5">
-                    {channels.filter((c: any) => c.ready).length}/
-                    {channels.length}
-                  </span>
-                )}
               </div>
               {channels.length > 0 && (
                 <span className="text-xs text-status-success flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-status-success animate-pulse" />
                   Online
+                  <span className="font-bold text-status-success">
+                    {channels.filter((c: any) => c.ready).length}/
+                    {channels.length}
+                  </span>
                 </span>
               )}
             </div>
@@ -684,11 +688,6 @@ export const Component = () => {
                               <span className="text-[10px] font-semibold text-amber-400 border border-amber-400/30 px-1.5 py-0.5 rounded uppercase">
                                 {t('channelCard.status.pending')}
                               </span>
-                            )}
-                            {ch.public ? (
-                              <Unlock className="w-3 h-3 text-content-tertiary" />
-                            ) : (
-                              <Lock className="w-3 h-3 text-secondary/70" />
                             )}
                           </div>
                         </div>
@@ -810,7 +809,7 @@ export const Component = () => {
               {[
                 {
                   icon: <Plus className="w-3.5 h-3.5" />,
-                  label: t('dashboard.openChannel'),
+                  label: t('channels.createNewChannel'),
                   onClick: () => navigate(CREATE_NEW_CHANNEL_PATH),
                 },
                 {
@@ -840,12 +839,6 @@ export const Component = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center gap-2 text-xs text-content-tertiary px-1 mt-2">
-        <Info className="h-3 w-3 flex-shrink-0" />
-        <p>{t('dashboard.liquidityInfo')}</p>
       </div>
     </div>
   )

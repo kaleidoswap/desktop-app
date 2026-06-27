@@ -2,7 +2,7 @@ import { ChevronDown } from 'lucide-react'
 import React from 'react'
 import { twJoin } from 'tailwind-merge'
 
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import defaultIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 
 import { AssetOptionData } from './AssetSelectionModal'
@@ -64,12 +64,6 @@ export const AssetSelectTrigger: React.FC<AssetSelectTriggerProps> = ({
               <div className="text-base font-semibold text-white truncate leading-tight">
                 {displayTicker}
               </div>
-              {selectedOption.assetId &&
-                selectedOption.assetId.startsWith('rgb:') && (
-                  <div className="text-[10px] text-content-tertiary font-mono truncate leading-tight">
-                    {selectedOption.assetId.slice(4, 15)}…
-                  </div>
-                )}
             </div>
           </>
         ) : (

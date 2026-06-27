@@ -430,11 +430,11 @@ export const Component: React.FC = () => {
 
                 const fromPrecision = fromAssetIsBtc
                   ? 8
-                  : assetInfo[swap.from_asset || '']?.precision || 8
+                  : (assetInfo[swap.from_asset || '']?.precision ?? 8)
 
                 const toPrecision = toAssetIsBtc
                   ? 8
-                  : assetInfo[swap.to_asset || '']?.precision || 8
+                  : (assetInfo[swap.to_asset || '']?.precision ?? 8)
 
                 const fromAmount = formatAmount(
                   swap.qty_from ?? 0,

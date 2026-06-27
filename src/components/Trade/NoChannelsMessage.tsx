@@ -46,10 +46,10 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
 
   if (!hasEnoughBalance) {
     return (
-      <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-8">
+      <div className="max-w-2xl w-full bg-surface-base/80 backdrop-blur-sm rounded-xl border border-border-default/50 p-8 shadow-lg">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
-            <Wallet className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
+            <Wallet className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold text-white">
             {t('trade.noChannels.insufficientBalance')}
@@ -76,8 +76,8 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
   return (
     <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-8">
       <div className="flex flex-col items-center space-y-4">
-        <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
-          <Link className="w-8 h-8 text-blue-500" />
+        <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
+          <Link className="w-8 h-8 text-emerald-500" />
         </div>
         <h2 className="text-2xl font-bold text-white">
           {t('trade.noChannels.noRGBChannels')}
@@ -96,8 +96,8 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
             {t('trade.noChannels.openChannel')}
           </button>
           <button
-            className="px-6 py-3 border border-blue-500/50 text-blue-500 rounded-xl
-                     hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-base"
+            className="px-6 py-3 bg-transparent border border-white/30 text-white rounded-xl
+                     hover:bg-white/5 hover:border-white/50 transition-colors flex items-center gap-2 text-base"
             onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
           >
             <ShoppingCart className="w-5 h-5" />
