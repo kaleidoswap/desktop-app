@@ -1,4 +1,4 @@
-import { Wallet, Link, Plus, ShoppingCart } from 'lucide-react'
+import { Wallet, Link, Plus, ShoppingCart, Store } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
@@ -3337,14 +3337,13 @@ export const Component = () => {
             {isStillLoading ? (
               <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-blue-500/25 to-purple-600/30 rounded-full blur-2xl"></div>
-                  <div className="relative bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 border border-slate-600/50 shadow-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-cyan-400/3 to-transparent rounded-3xl"></div>
-                    <div className="w-10 h-10 border-4 border-cyan-500/50 border-t-cyan-400 rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+                  <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+                    <Store className="relative z-10 w-10 h-10 text-[#15E99A]" />
                   </div>
                 </div>
                 <div className="text-center space-y-4 max-w-lg">
-                  <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-cyan-100 to-blue-100 bg-clip-text text-transparent">
+                  <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
                     {loadingPhase === 'connecting-maker'
                       ? t('tradeMarketMaker.loading.connectingToMaker')
                       : t('tradeMarketMaker.loading.initializingInterface')}
@@ -3353,7 +3352,7 @@ export const Component = () => {
                     {getLoadingMessage()}
                   </p>
                   <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
-                    <div className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 rounded-full animate-pulse shadow-lg"></div>
+                    <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
                   </div>
                 </div>
               </div>

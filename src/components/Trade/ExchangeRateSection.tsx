@@ -1,4 +1,4 @@
-import { TrendingUp, Clock, RefreshCw } from 'lucide-react'
+import { Clock, RefreshCw } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -134,7 +134,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
           <span className="text-white font-semibold">1</span>
           <AssetOption ticker={fromDisplayAsset} />
         </div>
-        <TrendingUp className="w-3 h-3 text-green-500 shrink-0" />
+        <span className="text-content-tertiary text-sm font-medium">=</span>
         <div className="flex items-center gap-1">
           <span
             className={`text-white font-semibold transition-all duration-300 ${

@@ -120,14 +120,14 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               </span>
               {onRefresh && (
                 <button
-                  className="p-0.5 rounded hover:bg-surface-high/60 active:scale-95 transition-all duration-200 group/refresh"
+                  className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors text-content-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={disabled}
                   onClick={onRefresh}
                   title={t('trade.swapInput.refreshAmounts')}
                   type="button"
                 >
                   <RefreshCw
-                    className={`w-3 h-3 text-content-tertiary group-hover/refresh:text-primary transition-colors ${isLoadingState ? 'animate-spin text-primary' : ''}`}
+                    className={`w-3 h-3 transition-colors ${isLoadingState ? 'animate-spin text-primary' : ''}`}
                   />
                 </button>
               )}

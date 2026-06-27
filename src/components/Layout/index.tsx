@@ -182,8 +182,8 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
           flex items-center rounded-xl transition-all duration-300
           ${
             isActive
-              ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
-              : 'text-content-secondary hover:text-primary hover:bg-surface-overlay/50'
+              ? 'bg-status-success/10 text-status-success font-semibold border-l-2 border-status-success/60 shadow-lg shadow-status-success/5'
+              : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:shadow-md'
           }
           transform hover:scale-[1.02] active:scale-95
         `}
@@ -210,7 +210,7 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
             type="button"
           >
             <ChevronRight
-              className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-primary' : ''}`}
+              className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-status-success' : ''}`}
             />
           </button>
         )}
@@ -224,8 +224,8 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
                 className={`
                 flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm cursor-pointer
                 transition-all duration-200
-                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/50 hover:text-primary hover:scale-[1.02] active:scale-95'}
-                ${location.pathname === subItem.to ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-primary/50' : 'text-content-secondary'}
+                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/80 hover:text-white hover:translate-x-1'}
+                ${location.pathname === subItem.to ? 'bg-status-success/10 text-status-success font-semibold border-l-2 border-status-success/50' : 'text-content-secondary'}
               `}
                 key={index}
                 onClick={() => handleSubMenuClick(subItem)}

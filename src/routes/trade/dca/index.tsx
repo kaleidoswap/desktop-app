@@ -7,6 +7,7 @@ import {
   BarChart2,
   Info,
   X,
+  TrendingUp,
 } from 'lucide-react'
 
 import { DcaBagIcon } from '../../../components/icons/DcaBagIcon'
@@ -278,7 +279,7 @@ export const Component = () => {
 
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-4 py-6">
         <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
-          <section className="h-full overflow-hidden rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+          <section className="h-full overflow-hidden rounded-2xl border border-border-default/60 bg-surface-overlay shadow-xl p-5">
             <div className="flex h-full flex-col">
               <div className="flex items-start justify-between gap-4">
                 <div className="max-w-xs">
@@ -374,7 +375,7 @@ export const Component = () => {
             </div>
           </section>
 
-          <section className="h-full rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+          <section className="h-full rounded-2xl border border-border-default/60 bg-surface-overlay shadow-xl p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-content-primary">
                 {t('dca.section.balances', 'Channel Balances')}
@@ -631,7 +632,7 @@ export const Component = () => {
             {displayedOrders.length === 0 ? (
               <div className="flex min-h-[300px] flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border-subtle bg-surface-base/40 px-6 text-center">
                 <div className="rounded-2xl bg-surface-overlay/50 p-4 text-content-secondary">
-                  <DcaBagIcon className="h-8 w-8" />
+                  <TrendingUp className="h-8 w-8" />
                 </div>
                 <p className="text-sm font-medium text-content-secondary">
                   {tab === 'active'

@@ -1,11 +1,4 @@
-import {
-  ChevronDown,
-  Globe,
-  RefreshCw,
-  Plus,
-  Check,
-  Server,
-} from 'lucide-react'
+import { ChevronDown, Server, RefreshCw, Plus, Check } from 'lucide-react'
 import React, { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
@@ -191,17 +184,10 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
   )
 
   const refreshButtonClasses = twJoin(
-    'relative p-2 rounded-xl',
+    'p-1.5 rounded-lg transition-colors flex-shrink-0',
     !wsConnected
-      ? 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25'
-      : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
-    'transition-all duration-200',
-    'active:scale-[0.95]',
-    'border',
-    'flex-shrink-0',
-    'shadow-sm',
-    'overflow-hidden',
-    'group'
+      ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
+      : 'text-content-secondary hover:bg-primary/10 hover:text-primary'
   )
 
   return (
@@ -217,17 +203,17 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             {/* Background effects removed */}
 
             <div className="relative flex items-center gap-2.5 min-w-0">
-              <Server className="w-4 h-4 text-blue-400" />
+              <Server className="w-4 h-4 text-status-success" />
               <span className="text-sm font-medium text-content-primary overflow-hidden text-ellipsis whitespace-nowrap max-w-[140px]">
                 {currentUrl
                   ? new URL(currentUrl).hostname
                   : t('trade.maker.selectMaker')}
               </span>
               {isLoading ? (
-                <RefreshCw className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
+                <RefreshCw className="w-4 h-4 text-status-success animate-spin flex-shrink-0" />
               ) : (
                 <ChevronDown
-                  className={`w-4 h-4 flex-shrink-0 text-blue-400 transition-transform duration-500 ${
+                  className={`w-4 h-4 flex-shrink-0 text-status-success transition-transform duration-500 ${
                     isOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -254,7 +240,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         {/* Dropdown Menu */}
         {isOpen && (
           <div
-            className="absolute top-full right-0 mt-2 w-72 z-[9999] animate-fade-in"
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 z-[9999] animate-fade-in"
             style={{ minWidth: 'max-content' }}
           >
             <div className="bg-surface-overlay rounded-xl border border-border-default/50 shadow-2xl overflow-hidden">
@@ -272,21 +258,21 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                       'group/item',
                       'hover:bg-surface-high/50',
                       url === currentUrl
-                        ? 'bg-blue-500/20 text-blue-200'
-                        : 'text-content-secondary hover:text-white'
+                        ? 'bg-status-success/15 text-status-success border border-status-success/30'
+                        : 'text-content-secondary hover:text-white border border-transparent'
                     )}
                     key={url}
                     onClick={() => handleMakerChange(url)}
                     type="button"
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Globe className="w-4 h-4 flex-shrink-0" />
+                      <Server className="w-4 h-4 flex-shrink-0" />
                       <span className="truncate text-sm">
                         {new URL(url).hostname}
                       </span>
                     </div>
                     {url === currentUrl && (
-                      <Check className="w-4 h-4 text-blue-400" />
+                      <Check className="w-4 h-4 text-status-success" />
                     )}
                   </button>
                 ))}
@@ -297,7 +283,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                 {isAddingNew ? (
                   <div className="space-y-2 p-2">
                     <input
-                      className="w-full px-3 py-2 rounded-lg bg-surface-base/50 border border-border-default/50 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500/60 focus:ring-2 focus:ring-blue-500/20"
+                      className="w-full px-3 py-2 rounded-lg bg-surface-base/50 border border-border-default/50 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-status-success/60 focus:ring-2 focus:ring-status-success/20"
                       onChange={(e) => setNewMakerUrl(e.target.value)}
                       placeholder={t('trade.maker.enterUrl')}
                       type="text"
@@ -315,7 +301,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
                         {t('trade.maker.cancel')}
                       </button>
                       <button
-                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 text-sm font-medium text-blue-300 hover:bg-blue-500/30 hover:text-blue-200 transition-all"
+                        className="px-3 py-1.5 rounded-lg bg-status-success/15 text-sm font-medium text-status-success hover:bg-status-success/25 hover:text-status-success transition-all"
                         onClick={handleAddNewMaker}
                         type="button"
                       >
