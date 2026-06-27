@@ -304,7 +304,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
       const assetInfo = assets.data?.nia.find(
         (a: NiaAsset) => a.asset_id === assetId
       )
-      const precision = assetInfo?.precision || 8
+      const precision = assetInfo?.precision ?? 8
       const displayAmount = maxRawAmount / Math.pow(10, precision)
 
       return displayAmount
@@ -664,7 +664,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                             const assetInfo = assets.data?.nia.find(
                               (a: NiaAsset) => a.asset_id === assetId
                             )
-                            const precision = assetInfo?.precision || 8
+                            const precision = assetInfo?.precision ?? 8
                             const displayBalance =
                               assetBalance / Math.pow(10, precision)
                             return displayBalance.toLocaleString('en-US', {
@@ -917,7 +917,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         const assetInfo = assets.data?.nia.find(
                           (a: NiaAsset) => a.asset_id === assetId
                         )
-                        const precision = assetInfo?.precision || 8
+                        const precision = assetInfo?.precision ?? 8
                         inputRawUnits = Math.round(
                           inputValue * Math.pow(10, precision)
                         )

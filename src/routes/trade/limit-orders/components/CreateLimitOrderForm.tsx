@@ -219,7 +219,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         asset_id: a.asset_id,
         is_active: true,
         name: a.name || '',
-        precision: a.precision || 8,
+        precision: a.precision ?? 8,
         ticker: a.ticker || '',
       })) || [],
     [assetsData]

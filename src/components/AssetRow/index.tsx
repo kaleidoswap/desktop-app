@@ -100,7 +100,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false)
 
   const formatAmount = (asset: NiaAsset, amount: number) => {
-    const precision = asset.precision || 0
+    const precision = asset.precision ?? 0
     const formattedAmount = amount / Math.pow(10, precision)
     return formattedAmount.toLocaleString('en-US', {
       maximumFractionDigits: precision,

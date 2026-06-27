@@ -41,7 +41,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
     )
     if (assetInfo) {
       const ticker = assetInfo.ticker
-      const precision = assetInfo.precision || 8
+      const precision = assetInfo.precision ?? 8
       const displayBalance = assetBalance / Math.pow(10, precision)
 
       return (

@@ -59,7 +59,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
             (a: any) => a.asset_id === formData.assetId
           )
           if (asset) {
-            setAssetPrecision(asset.precision || 8)
+            setAssetPrecision(asset.precision ?? 8)
           }
         })
         .catch((error) => {
