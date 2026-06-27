@@ -112,12 +112,18 @@ export const Component = () => {
   const refreshData = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      await Promise.all([
-        assets(),
-        listChannels(),
-        btcBalance(),
-        refreshTransfers({}),
-      ])
+      // Settle any incoming RGB transfers BEFORE reading the asset list.
+      // refreshtransfers is what registers a newly received asset and moves its
+      // balance from "incoming" to spendable; running it concurrently with
+      // listAssets meant the dashboard read the pre-refresh state and only
+      // surfaced received assets a poll (or never) later. Errors are logged
+      // rather than swallowed so a failing refresh is visible.
+      try {
+        await refreshTransfers({}).unwrap()
+      } catch (err) {
+        console.error('refreshTransfers failed during dashboard refresh:', err)
+      }
+      await Promise.all([assets(), listChannels(), btcBalance()])
     } finally {
       setIsRefreshing(false)
     }

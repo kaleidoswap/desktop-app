@@ -2510,7 +2510,12 @@
         "onchainExceedsBalance": "L'importo del prelievo ({{amount}}) supera il saldo disponibile ({{balance}})",
         "capacityToast": "Impossibile procedere: L'importo della fattura ({{amount}} sats) supera la tua capacità in uscita ({{capacity}} sats).",
         "lightningSendPayment": "Pagamento Lightning fallito: {{error}}",
-        "zeroAmountRequired": "Inserisci un importo per questa fattura a importo zero."
+        "zeroAmountRequired": "Inserisci un importo per questa fattura a importo zero.",
+        "recipientNetworkMismatch": "Questo invoice RGB è per una rete Bitcoin diversa da quella del tuo wallet (il tuo wallet è su {{network}}). Chiedi al destinatario un invoice generato sulla stessa rete e riprova.",
+        "invalidRecipientId": "L'ID destinatario di questo invoice RGB non è valido (deve essere un UTXO blinded o uno script). Verifica l'invoice e chiedi al destinatario di generarne uno nuovo.",
+        "invalidRecipientData": "Non è stato possibile leggere correttamente l'invoice RGB. Verifica di aver incollato l'invoice completo e integro, oppure chiedine uno nuovo al destinatario.",
+        "invalidTransportEndpoint": "L'endpoint di trasporto (proxy) RGB in questo invoice non è valido o non è raggiungibile. Chiedi al destinatario un invoice con un endpoint valido, o controlla le impostazioni del proxy.",
+        "insufficientUtxos": "Non ci sono abbastanza UTXO disponibili per completare questo pagamento RGB. Potrebbe essere necessario creare nuovi UTXO prima di inviare."
       },
       "warnings": {
         "invoiceAdjusted": "Avviso: La fattura richiedeva {{requested}} {{asset}} ma il tuo saldo è solo {{balance}} {{asset}}. Aggiustato all'importo massimo inviabile.",

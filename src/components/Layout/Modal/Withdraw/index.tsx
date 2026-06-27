@@ -37,6 +37,7 @@ import {
   ValidationMessage,
 } from './types'
 import { getAssignmentAmount } from '../../../../utils/rgbUtils'
+import { resolveRgbPaymentErrorKey } from '../../../../utils/rgbPaymentErrors'
 
 const isLightningAddress = (input: string): boolean => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -59,6 +60,9 @@ export const WithdrawModalContent: React.FC = () => {
   const { bitcoinUnit } = useSettings()
   const transportEndpoint = useAppSelector(
     (state) => state.nodeSettings.data.proxy_endpoint
+  )
+  const walletNetwork = useAppSelector(
+    (state) => state.nodeSettings.data.network
   )
   const [assetBalance, setAssetBalance] = useState(0)
   const [showAssetDropdown, setShowAssetDropdown] = useState(false)
@@ -1308,6 +1312,13 @@ export const WithdrawModalContent: React.FC = () => {
       } else if (typeof error === 'string') {
         // String error
         errorMessage = error
+      }
+
+      // Translate known, cryptic node errors into a clear, actionable message.
+      // Falls back to the raw message when the error is not recognised.
+      const friendlyKey = resolveRgbPaymentErrorKey(errorMessage)
+      if (friendlyKey) {
+        errorMessage = t(friendlyKey, { network: walletNetwork })
       }
 
       // Show detailed error in toast

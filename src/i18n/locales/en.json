@@ -2493,7 +2493,12 @@
         "withdrawalFailedDefault": "Withdrawal failed",
         "onchainExceedsBalance": "Withdrawal amount ({{amount}}) exceeds available balance ({{balance}})",
         "capacityToast": "Cannot proceed: Invoice amount ({{amount}} sats) exceeds your outbound capacity ({{capacity}} sats).",
-        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice."
+        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice.",
+        "recipientNetworkMismatch": "This RGB invoice is for a different Bitcoin network than your wallet (your wallet is on {{network}}). Ask the recipient for an invoice generated on the same network and try again.",
+        "invalidRecipientId": "This RGB invoice's recipient ID is not valid (it must be a blinded UTXO or a script). Please double-check the invoice and ask the recipient to generate a new one.",
+        "invalidRecipientData": "The RGB invoice could not be read correctly. Please verify you pasted the full, unmodified invoice, or ask the recipient for a new one.",
+        "invalidTransportEndpoint": "The RGB transport (proxy) endpoint in this invoice is invalid or unreachable. Ask the recipient for an invoice with a valid transport endpoint, or check your proxy settings.",
+        "insufficientUtxos": "Not enough available UTXOs to complete this RGB payment. You may need to create new UTXOs before sending."
       },
       "warnings": {
         "invoiceAdjusted": "Warning: The invoice requested {{requested}} {{asset}} but your balance is only {{balance}} {{asset}}. Adjusted to maximum sendable amount.",
