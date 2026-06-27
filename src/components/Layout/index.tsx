@@ -3,10 +3,11 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import Decimal from 'decimal.js'
 import {
-  ArrowUpRight,
+  ArrowDownLeft,
   ChevronLeft,
   ChevronRight,
-  ArrowDownLeft,
+  Download,
+  Upload,
   Activity,
   Bell,
   HelpCircle,
@@ -158,13 +159,10 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
     }
   }, [isActive, hasSubMenu])
 
-  const handleClick = () => {
-    // When collapsed, let the NavLink navigate to the item's default route.
-    if (isCollapsed) return
-    // For items with a submenu: toggle it (navigation to parent still happens).
-    if (hasSubMenu) {
-      setIsSubMenuOpen((open) => !open)
-    }
+  const handleChevronClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsSubMenuOpen((open) => !open)
   }
 
   const handleSubMenuClick = (subItem: any) => {
@@ -179,34 +177,44 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
       className="relative group"
       title={isCollapsed ? item.label : undefined}
     >
-      <NavLink
+      <div
         className={`
-          flex items-center py-3 px-4 rounded-xl transition-all duration-300
+          flex items-center rounded-xl transition-all duration-300
           ${
             isActive
               ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-cyan shadow-lg shadow-primary/5'
-              : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:shadow-md'
+              : 'text-content-secondary hover:text-primary hover:bg-surface-overlay/50'
           }
-          ${isCollapsed ? 'justify-center' : hasSubMenu ? 'justify-between' : 'justify-start space-x-4'}
-          transform hover:translate-x-1 active:scale-[0.98]
+          transform hover:scale-[1.02] active:scale-95
         `}
-        onClick={handleClick}
-        to={item.to ?? '#'}
       >
-        <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
-          <div className="transition-transform duration-300 group-hover:scale-110">
-            {item.icon}
+        <NavLink
+          className={`flex items-center py-3 px-4 flex-1 min-w-0
+            ${isCollapsed ? 'justify-center' : 'justify-start space-x-4'}
+          `}
+          to={item.to ?? '#'}
+        >
+          <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
+            <div className="transition-transform duration-300 group-hover:scale-110">
+              {item.icon}
+            </div>
+            {!isCollapsed && (
+              <span className="font-semibold text-base">{item.label}</span>
+            )}
           </div>
-          {!isCollapsed && (
-            <span className="font-semibold text-base">{item.label}</span>
-          )}
-        </div>
+        </NavLink>
         {hasSubMenu && !isCollapsed && (
-          <ChevronRight
-            className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-primary' : ''}`}
-          />
+          <button
+            className="pr-4 py-3 flex items-center"
+            onClick={handleChevronClick}
+            type="button"
+          >
+            <ChevronRight
+              className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-primary' : ''}`}
+            />
+          </button>
         )}
-      </NavLink>
+      </div>
 
       {hasSubMenu && isSubMenuOpen && !isCollapsed && (
         <div className="pl-4 mt-2 space-y-1.5 animate-fadeInUp">
@@ -216,7 +224,7 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
                 className={`
                 flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm cursor-pointer
                 transition-all duration-200
-                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/80 hover:text-white hover:translate-x-1'}
+                ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/50 hover:text-primary hover:scale-[1.02] active:scale-95'}
                 ${location.pathname === subItem.to ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary font-semibold border-l-2 border-primary/50' : 'text-content-secondary'}
               `}
                 key={index}
@@ -1146,7 +1154,7 @@ export const Layout = (props: Props) => {
 
             {/* Quick action buttons — node-only, hidden in KaleidoMind-only mode */}
             {!isSidebarCollapsed && Boolean(nodeSettingsData?.name) && (
-              <div className="px-4 pb-6 bg-surface-base">
+              <div className="px-4 pb-6 pt-[25px] bg-surface-base">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl
@@ -1156,7 +1164,7 @@ export const Layout = (props: Props) => {
                                transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => handleTransactionAction('deposit')}
                   >
-                    <ArrowDownLeft className="w-4 h-4 flex-shrink-0" />
+                    <Download className="w-4 h-4 flex-shrink-0" />
                     {t('actions.deposit')}
                   </button>
                   <button
@@ -1167,7 +1175,7 @@ export const Layout = (props: Props) => {
                                transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => handleTransactionAction('withdraw')}
                   >
-                    <ArrowUpRight className="w-4 h-4 flex-shrink-0" />
+                    <Upload className="w-4 h-4 flex-shrink-0" />
                     {t('actions.withdraw')}
                   </button>
                 </div>
