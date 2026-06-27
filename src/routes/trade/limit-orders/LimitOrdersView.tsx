@@ -181,14 +181,12 @@ export const LimitOrdersView = () => {
         <section className="min-h-[420px] rounded-3xl border border-border-subtle bg-surface-raised p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-content-secondary">
+              <h2 className="text-xl font-semibold text-content-primary">
                 {tab === 'active'
-                  ? t('limitOrders.tabs.active', 'Active')
-                  : t('limitOrders.tabs.history', 'History')}
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-content-primary">
-                {tab === 'active'
-                  ? t('limitOrders.orders.activeTitle', 'Active Limit Orders')
+                  ? t(
+                      'limitOrders.orders.activeTitle',
+                      'Scheduled Limit Orders'
+                    )
                   : t(
                       'limitOrders.orders.historyTitle',
                       'Filled & Closed Orders'

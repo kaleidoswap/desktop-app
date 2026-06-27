@@ -58,9 +58,9 @@ const AssetOption = React.memo(
       <div
         className={twJoin(
           'flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer group',
-          'hover:bg-surface-high/40 hover:border-blue-500/50',
+          'hover:bg-surface-high/30 hover:border-border-default/80',
           isSelected
-            ? 'bg-blue-500/20 border-blue-500/50 ring-1 ring-blue-500/30'
+            ? 'bg-surface-high/60 border-border-default/80'
             : 'bg-surface-overlay/50 border-border-default/50'
         )}
         onClick={onClick}
@@ -196,13 +196,6 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
       })
   }
 
-  // Focus search input when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 100)
-    }
-  }, [isOpen])
-
   // Handle escape key to close modal
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -238,8 +231,8 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
     >
       <div
         className={twJoin(
-          'bg-surface-base/98 backdrop-blur-md border border-blue-500/50',
-          'rounded-2xl shadow-2xl shadow-blue-500/20 overflow-hidden',
+          'bg-surface-base backdrop-blur-md border border-border-default/50',
+          'rounded-2xl shadow-2xl shadow-black/30 overflow-hidden',
           'w-full max-w-2xl max-h-[80vh] flex flex-col',
           'animate-in fade-in-0 zoom-in-95 duration-300'
         )}
@@ -269,7 +262,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-secondary" />
             <input
-              className="w-full pl-10 pr-10 py-3 bg-surface-base/70 border border-border-default/50 rounded-xl text-white text-sm placeholder:text-content-tertiary focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+              className="w-full pl-10 pr-10 py-3 bg-surface-base/70 border border-border-default/50 rounded-xl text-white text-sm placeholder:text-content-tertiary focus:border-status-success focus:ring-2 focus:ring-status-success/20 focus:outline-none"
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={displaySearchPlaceholder}
               ref={searchInputRef}
@@ -323,7 +316,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
                   <p className="text-sm">{t('trade.assetModal.searchHint')}</p>
                   {searchTerm && (
                     <button
-                      className="mt-3 text-sm text-blue-400 hover:text-blue-300 underline"
+                      className="mt-3 text-sm text-status-success hover:text-status-success/80 underline"
                       onClick={clearSearch}
                     >
                       {t('trade.assetModal.clearSearch')}
@@ -333,23 +326,6 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-border-default/50 bg-surface-overlay/30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-content-tertiary">
-              💡 {t('trade.assetModal.tip')}
-            </p>
-            {selectedOption && (
-              <div className="flex items-center gap-2 text-xs text-content-secondary">
-                <span>{t('trade.assetModal.selectedLabel')}:</span>
-                <span className="font-medium text-blue-300">
-                  {selectedOption.ticker}
-                </span>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>,

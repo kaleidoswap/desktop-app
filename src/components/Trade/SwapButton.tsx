@@ -160,14 +160,14 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       ),
       success: twJoin(
         baseStyles,
-        'bg-primary',
-        'border-primary/40',
-        'text-primary-foreground',
-        'hover:opacity-90',
+        'bg-[#15E99A]',
+        'border-[#15E99A]/60',
+        'text-gray-900',
+        'hover:bg-[#12C97E]',
         'hover:scale-[1.01]',
         'active:scale-[0.99]',
         'cursor-pointer',
-        'shadow-lg shadow-primary/20'
+        'shadow-md shadow-primary/20'
       ),
       warning: twJoin(
         baseStyles,
