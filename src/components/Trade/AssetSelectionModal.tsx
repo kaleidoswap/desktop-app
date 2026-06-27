@@ -173,8 +173,6 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
     )
   }, [options, searchTerm])
 
-  const selectedOption = options.find((option) => option.value === value)
-
   const handleSelect = (optionValue: string) => {
     onChange(optionValue)
     onClose()

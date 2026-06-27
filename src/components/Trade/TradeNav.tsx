@@ -6,6 +6,7 @@ import { ArrowLeftRight, Radio, Store, Target, TrendingUp } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
+import { twJoin } from 'tailwind-merge'
 
 import {
   TRADE_MARKET_MAKER_PATH,
@@ -57,26 +58,39 @@ export const TradeNav: React.FC = () => {
   const { t } = useTranslation()
 
   return (
-    <div className="mb-6 w-full flex justify-center px-1">
-      <div className="inline-flex flex-wrap items-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-raised/80 p-1.5 shadow-sm backdrop-blur-sm">
-        {TABS.map((tab) => (
-          <NavLink
-            className={({ isActive }) =>
-              `inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-status-success/15 text-status-success border border-status-success/30 shadow-sm'
-                  : 'text-content-secondary hover:text-content-primary border border-transparent'
-              }`
-            }
-            end
-            key={tab.to}
-            to={tab.to}
-          >
-            {tab.icon}
-            {t(tab.labelKey, { defaultValue: tab.fallback })}
-          </NavLink>
-        ))}
-      </div>
+    <div className="mb-6 w-full border-b border-border-default flex">
+      {TABS.map((tab) => (
+        <NavLink
+          className={({ isActive }) =>
+            twJoin(
+              'flex-1 flex items-center gap-2 px-6 py-3 font-medium relative justify-center transition-colors duration-200',
+              isActive
+                ? 'text-primary'
+                : 'text-content-secondary hover:text-white'
+            )
+          }
+          end
+          key={tab.to}
+          to={tab.to}
+        >
+          {({ isActive }) => (
+            <>
+              <div
+                className={twJoin(
+                  'p-1.5 rounded-md',
+                  isActive ? 'bg-primary/10 text-primary' : 'bg-transparent'
+                )}
+              >
+                {tab.icon}
+              </div>
+              <span>{t(tab.labelKey, { defaultValue: tab.fallback })}</span>
+              {isActive && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </>
+          )}
+        </NavLink>
+      ))}
     </div>
   )
 }

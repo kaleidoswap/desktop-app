@@ -237,10 +237,10 @@ export const MarketMakerFormPanel = ({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div
-                className={`w-1.5 h-1.5 rounded-full ${
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                   wsConnected
                     ? hasTradablePairs
-                      ? 'bg-emerald-400'
+                      ? 'bg-green shadow-lg shadow-green/50 animate-pulse'
                       : 'bg-amber-400 animate-pulse'
                     : 'bg-red-400 animate-pulse'
                 }`}
@@ -308,7 +308,6 @@ export const MarketMakerFormPanel = ({
                   minAmount={minFromAmount}
                   onAmountChange={onFromAmountChange}
                   onAssetChange={(value) => onAssetChange('fromAsset', value)}
-                  onRefresh={onMakerChange}
                   onSizeClick={onSizeClick}
                   selectedSize={selectedSize}
                   showMaxAmount={!!missingChannelAsset}

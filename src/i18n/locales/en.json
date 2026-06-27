@@ -1871,6 +1871,10 @@
     }
   },
   "tradeManual": {
+    "loading": {
+      "initializing": "Initializing Manual Swap",
+      "checkingBalance": "Checking wallet balance and requirements"
+    },
     "errors": {
       "initializationFailed": "Failed to initialize the manual swap component. Please try again."
     },
@@ -2235,7 +2239,7 @@
   },
   "tradeMarketMaker": {
     "loading": {
-      "checkingBalance": "Checking wallet balance and requirements...",
+      "checkingBalance": "Checking wallet balance and requirements",
       "verifyingChannels": "Verifying channel availability and liquidity...",
       "connectingMaker": "Connecting to market maker and fetching trading pairs...",
       "initializingInfrastructure": "Initializing trading infrastructure...",
@@ -2253,8 +2257,8 @@
     "form": {
       "youSend": "You Send",
       "youReceive": "You Receive (Estimated)",
-      "available": "Available:",
-      "onchainAvailable": "Onchain Available:",
+      "available": "Available",
+      "onchainAvailable": "Onchain Available",
       "canReceiveUpTo": "Can receive up to:",
       "status": "Status:",
       "channelNeeded": "Channel needed"

@@ -106,6 +106,28 @@
     background: rgb(var(--color-primary) / 0.2);
   }
 
+  /* Interactive elements define their own colored focus states (border + ring).
+     Tailwind's `outline-none` only paints a transparent outline, which in the
+     Tauri WebKit runtime can still leave a stray light focus ring on click.
+     Truly remove the default outline so the intended green focus/active effect
+     shows directly — on tabs, buttons, and text inputs alike. */
+  button:focus,
+  button:focus-visible,
+  [role='button']:focus,
+  [role='button']:focus-visible,
+  [role='tab']:focus,
+  [role='tab']:focus-visible,
+  a:focus,
+  a:focus-visible,
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none;
+  }
+
   /* Ensure app fits on smaller screens */
   @media (max-height: 768px) {
     .compact-text {
@@ -432,4 +454,25 @@
 
 .price-update-indicator {
   animation: priceUpdate 0.6s ease-in-out;
+}
+
+/* Splash-style loading line (matches public/splashscreen.html progress-fill) */
+@keyframes splashLoading {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+  50% {
+    width: 100%;
+    opacity: 0.5;
+  }
+  100% {
+    width: 0;
+    opacity: 1;
+  }
+}
+
+.splash-progress-fill {
+  background: linear-gradient(90deg, #15e99a, #6f32ff);
+  animation: splashLoading 2s ease-in-out infinite;
 }
