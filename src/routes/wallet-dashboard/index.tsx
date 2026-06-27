@@ -45,7 +45,7 @@ import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { getAllRgbAssets } from '../../utils/rgbUtils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
@@ -334,8 +334,8 @@ export const Component = () => {
                     formatBitcoinAmount(totalBalance, bitcoinUnit)
                   )}
                 </span>
-                <span className="text-xl font-semibold text-primary">
-                  {bitcoinUnit}
+                <span className="text-xl font-semibold text-white">
+                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
                 </span>
               </div>
               <div className="flex items-center gap-4 text-sm flex-wrap">

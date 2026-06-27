@@ -34,7 +34,7 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { AssetInfo, LspOptions } from '../../utils/channelOrderUtils'
 
 import bitcoinLogo from '../../assets/bitcoin-logo.svg'
-import rgbIcon from '../../assets/rgb-symbol-color.svg'
+import rgbIcon from '../../assets/rgb-logo.svg'
 
 import 'react-toastify/dist/ReactToastify.css'
 

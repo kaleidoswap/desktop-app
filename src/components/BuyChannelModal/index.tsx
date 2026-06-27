@@ -45,7 +45,7 @@ import {
 import { LiquidityCard, LiquiditySlider } from '../Liquidity'
 import { AssetSelectWithModal } from '../Trade/AssetSelectWithModal'
 import bitcoinLogo from '../../assets/bitcoin-logo.svg'
-import rgbIcon from '../../assets/rgb-symbol-color.svg'
+import rgbIcon from '../../assets/rgb-logo.svg'
 
 import {
   QuoteDisplay,

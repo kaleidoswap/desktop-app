@@ -2154,7 +2154,7 @@
         "noChannels": "Warning: No active Lightning channels found. Lightning deposits are unavailable.",
         "exceeds": "Amount exceeds maximum available: {{amount}} {{asset}}",
         "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount",
-        "btcPlaceholder": "Enter amount (optional)"
+        "btcPlaceholder": "Enter amount"
       },
       "bip21": {
         "badge": "Unified BIP21"
@@ -2356,7 +2356,7 @@
       "available": "Available Balance:"
     },
     "form": {
-      "addressPlaceholder": "Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice",
+      "addressPlaceholder": "Paste Bitcoin address, LN invoice, LN address, or RGB invoice",
       "addressRequired": "Address or invoice is required",
       "analyzing": "Analyzing input…",
       "clear": "Clear",

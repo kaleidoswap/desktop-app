@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Zap,
   Link as ChainIcon,
   ChevronDown,
@@ -48,6 +47,7 @@ interface NumberInputProps {
   displayUnit?: string
   secondaryValue?: string
   secondaryUnit?: string
+  onMax?: () => void
 }
 
 const formatSliderValue = (value: number, precision: number = 0): string => {
@@ -76,6 +76,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   displayUnit,
   secondaryValue,
   secondaryUnit,
+  onMax,
 }) => {
   const { t } = useTranslation()
   const [displayValue, setDisplayValue] = useState(
@@ -160,7 +161,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
         <input
           className={`w-full px-3 py-2 bg-surface-overlay/50 border ${
             error ? 'border-red-500' : 'border-border-default'
-          } rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/60 transition-all duration-200 text-white text-sm`}
+          } rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/60 transition-all duration-200 text-white text-sm ${onMax ? 'pr-14' : ''}`}
           onBlur={handleBlur}
           onChange={handleChange}
           onFocus={handleFocus}
@@ -170,6 +171,17 @@ const NumberInput: React.FC<NumberInputProps> = ({
             isFocused ? displayValue : formatNumberWithCommas(displayValue)
           }
         />
+        {onMax && (
+          <button
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
+                       bg-primary/20 hover:bg-primary/30 text-primary
+                       rounded-lg transition-colors text-xs font-medium"
+            onClick={onMax}
+            type="button"
+          >
+            MAX
+          </button>
+        )}
         {error && hasUserInteracted && (
           <div className="absolute mt-1 p-2 bg-red-500/10 rounded-lg border border-red-500/20 flex items-start gap-2 max-w-full">
             <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0 mt-0.5" />
@@ -247,7 +259,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   const { t } = useTranslation()
   const {
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = form
 
   // Filter available assets based on address type
@@ -321,7 +333,11 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
   }
 
   return (
-    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+    <form
+      className="space-y-4"
+      id="withdraw-form"
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
       {/* Universal Address/Invoice Input */}
       <div className="space-y-1">
         <label className="text-xs font-medium text-content-secondary">
@@ -459,7 +475,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   {t('withdrawModal.form.lightningCapacity.title')}
                 </span>
                 <span className="text-white font-medium">
-                  {(maxLightningCapacity / 1000).toLocaleString()} sat
+                  {(maxLightningCapacity / 1000).toLocaleString()} SATS
                 </span>
               </div>
               {assetId === BTC_ASSET_ID && (
@@ -802,9 +818,9 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                   const { secondaryValue, secondaryUnit } = getSecondaryValue()
 
                   return (
-                    <div className="relative">
+                    <div className="overflow-x-hidden">
                       <NumberInput
-                        className="group transition-all duration-300 hover:translate-x-1"
+                        className=""
                         displayUnit={displayUnit}
                         error={errors.amount?.message}
                         label={t('withdrawModal.form.amount.label')}
@@ -812,30 +828,29 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         min={minAmount}
                         onChange={(value) => {
                           field.onChange(value)
-                          // Clear any existing validation errors when user starts typing
                           if (errors.amount) {
                             form.clearErrors('amount')
                           }
-                          // Also clear general validation errors when user starts editing
                           if (validationMessage) {
                             clearValidationError()
                           }
                         }}
+                        onMax={() => {
+                          const formattedMaxAmount =
+                            precision === 0
+                              ? Math.round(maxWithdrawable).toString()
+                              : maxWithdrawable.toString()
+                          field.onChange(formattedMaxAmount)
+                        }}
                         onSliderChange={(e) => {
                           field.onChange(e.target.value)
-                          // Clear any existing validation errors when user uses slider
                           if (errors.amount) {
                             form.clearErrors('amount')
                           }
                         }}
                         placeholder={t(
-                          'withdrawModal.form.amount.maxPlaceholder',
-                          {
-                            amount:
-                              maxWithdrawable > 0
-                                ? maxWithdrawable.toLocaleString()
-                                : t('withdrawModal.form.amount.notAvailable'),
-                          }
+                          'withdrawModal.form.amount.placeholder',
+                          'Enter amount'
                         )}
                         precision={precision}
                         secondaryUnit={secondaryUnit}
@@ -853,27 +868,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                         }
                         value={field.value || ''}
                       />
-
-                      {/* Max button */}
-                      <button
-                        className="absolute right-2 top-8 px-2 py-1 text-primary text-xs font-medium hover:text-primary 
-                                   hover:bg-primary/10 rounded-md transition-all duration-200
-                                   border border-primary/30 hover:border-primary/40 z-10"
-                        onClick={() => {
-                          // Format the max amount for display
-                          let formattedMaxAmount
-                          if (precision === 0) {
-                            formattedMaxAmount =
-                              Math.round(maxWithdrawable).toString()
-                          } else {
-                            formattedMaxAmount = maxWithdrawable.toString()
-                          }
-                          field.onChange(formattedMaxAmount)
-                        }}
-                        type="button"
-                      >
-                        {t('withdrawModal.form.amount.maxButton')}
-                      </button>
                     </div>
                   )
                 }}
@@ -1096,41 +1090,6 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
           )}
         </>
       )}
-
-      {/* Submit Button */}
-      <button
-        className="w-full py-2.5 px-6 bg-gradient-to-r from-primary to-secondary hover:opacity-90 disabled:opacity-50
-                 text-white rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
-                 flex items-center justify-center gap-2 mt-4 disabled:cursor-not-allowed"
-        disabled={
-          isSubmitting === true ||
-          addressType === 'unknown' ||
-          addressType === 'invalid' ||
-          validationMessage?.type === 'error'
-        }
-        type="submit"
-      >
-        {isSubmitting ? (
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <>
-            <span>
-              {addressType === 'lightning' ||
-              addressType === 'lightning-address'
-                ? t('withdrawModal.form.submit.lightning')
-                : addressType === 'rgb'
-                  ? t('withdrawModal.form.submit.rgb')
-                  : t('withdrawModal.form.submit.onchain')}
-            </span>
-            {addressType === 'lightning' ||
-            addressType === 'lightning-address' ? (
-              <Zap className="w-4 h-4" />
-            ) : (
-              <ArrowRight className="w-4 h-4" />
-            )}
-          </>
-        )}
-      </button>
     </form>
   )
 }

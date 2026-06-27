@@ -7,7 +7,7 @@ import { twJoin } from 'tailwind-merge'
 import { z } from 'zod'
 
 import { useSettings } from '../../hooks/useSettings'
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import defaultIcon from '../../assets/rgb-logo.svg'
 import { FormError } from '../../components/FormError'
 import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { Button } from '../../components/ui'
