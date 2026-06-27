@@ -43,6 +43,7 @@ import { Button, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
+import { getAllRgbAssets } from '../../utils/rgbUtils'
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
 import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
 import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
@@ -130,10 +131,10 @@ export const Component = () => {
   }, [assets, btcBalance, listChannels, refreshTransfers])
 
   useEffect(() => {
-    if (assetsResponse.data?.nia) {
+    if (assetsResponse.data) {
       const newAssetsMap: Record<string, NiaAsset> = {}
-      assetsResponse.data.nia.forEach((asset: any) => {
-        if (asset.asset_id) newAssetsMap[asset.asset_id] = asset as NiaAsset
+      getAllRgbAssets(assetsResponse.data).forEach((asset) => {
+        if (asset.asset_id) newAssetsMap[asset.asset_id] = asset
       })
       setAssetsMap(newAssetsMap)
     }
@@ -157,7 +158,7 @@ export const Component = () => {
         string,
         { offChain: number; onChain: number; incoming: number }
       > = {}
-      for (const asset of assetsResponse.data?.nia || []) {
+      for (const asset of getAllRgbAssets(assetsResponse.data)) {
         if (asset.asset_id) {
           const balance = await assetBalance({ asset_id: asset.asset_id })
           const spendable = balance.data?.spendable || 0
@@ -220,7 +221,7 @@ export const Component = () => {
     liquidityTotal > 0 ? (totalInboundLiquidity / liquidityTotal) * 100 : 50
 
   const pubkey = nodeInfoResponse.data?.pubkey || ''
-  const niaAssets = assetsResponse.data?.nia || []
+  const niaAssets = getAllRgbAssets(assetsResponse.data)
 
   const handleCopyPubkey = () => {
     if (!pubkey) return

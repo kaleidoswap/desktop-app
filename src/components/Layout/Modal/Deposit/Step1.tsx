@@ -8,6 +8,7 @@ import rgbLogo from '../../../../assets/rgb-symbol-color.svg'
 import { BTC_ASSET_ID } from '../../../../constants'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { DepositModal, uiSliceSeletors } from '../../../../slices/ui/ui.slice'
+import { getAllRgbAssets } from '../../../../utils/rgbUtils'
 
 interface Props {
   onNext: (assetId?: string) => void
@@ -30,10 +31,11 @@ export const Step1 = ({ onNext }: Props) => {
 
   const assets = nodeApi.useListAssetsQuery()
 
-  // Combine BTC with other assets
+  // Combine BTC with every RGB asset schema (NIA, CFA, UDA, IFA), not just NIA,
+  // so received collectibles/unique/inflatable assets are selectable too.
   const allAssets: Asset[] = [
     { asset_id: BTC_ASSET_ID, name: 'Bitcoin', ticker: 'BTC' },
-    ...(assets.data?.nia || []).map((a: any) => ({
+    ...getAllRgbAssets(assets.data).map((a) => ({
       asset_id: a.asset_id ?? '',
       icon: undefined,
       name: a.name,
