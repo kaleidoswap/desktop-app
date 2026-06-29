@@ -1,10 +1,27 @@
 import Decimal from 'decimal.js'
-import { Link as Chain, Zap, RefreshCw, Loader, Search } from 'lucide-react'
+import {
+  Coins,
+  LayoutGrid,
+  Calendar,
+  Link as Chain,
+  Zap,
+  RefreshCw,
+  Loader,
+  Search,
+  Upload,
+} from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../app/store/hooks'
-import { Button, Badge, IconButton, Card, Alert } from '../../../components/ui'
+import {
+  Button,
+  Badge,
+  IconButton,
+  Card,
+  Alert,
+  Select,
+} from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -68,9 +85,21 @@ export const Component: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <Loader className="w-12 h-12 animate-spin text-red-500" />
-        <p className="text-content-secondary">{t('withdrawals.loading')}</p>
+      <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+          <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+            <Upload className="relative z-10 w-10 h-10 text-[#15E99A]" />
+          </div>
+        </div>
+        <div className="text-center space-y-4 max-w-lg">
+          <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
+            {t('withdrawals.loading')}
+          </p>
+          <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+            <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -180,8 +209,8 @@ export const Component: React.FC = () => {
     <Card className="bg-surface-overlay/50 border border-border-default/50">
       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-red-500/10">
-            <Chain className="h-6 w-6 text-red-500" />
+          <div className="p-2.5 rounded-lg bg-green-500/10">
+            <Upload className="h-6 w-6 text-green-500" />
           </div>
           <h2 className="text-xl font-bold text-white">
             {t('withdrawals.title')}
@@ -190,12 +219,13 @@ export const Component: React.FC = () => {
 
         <IconButton
           aria-label={t('withdrawals.refresh')}
+          className="border-white/30 hover:border-white/50"
           disabled={isRefreshing}
           icon={
             isRefreshing ? (
-              <Loader className="w-5 h-5 animate-spin" />
+              <Loader className="w-4 h-4 animate-spin" />
             ) : (
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-4 h-4" />
             )
           }
           onClick={handleRefresh}
@@ -209,7 +239,7 @@ export const Component: React.FC = () => {
             <Search className="h-4 w-4 text-content-secondary" />
           </div>
           <input
-            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('withdrawals.searchPlaceholder')}
             type="text"
@@ -217,96 +247,38 @@ export const Component: React.FC = () => {
           />
         </div>
 
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            onChange={(e) => setTypeFilter(e.target.value as any)}
-            value={typeFilter}
-          >
-            <option value="all">{t('withdrawals.allTypes')}</option>
-            <option value="on-chain">{t('withdrawals.onChain')}</option>
-            <option value="off-chain">{t('withdrawals.offChain')}</option>
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Chain className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
+        <Select
+          icon={<Coins className="h-4 w-4" />}
+          onChange={(val) => setAssetFilter(val as any)}
+          options={[
+            { label: t('withdrawals.allAssets'), value: 'all' },
+            ...uniqueAssets.map((asset) => ({ label: asset, value: asset })),
+          ]}
+          value={assetFilter}
+        />
 
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            onChange={(e) => setAssetFilter(e.target.value)}
-            value={assetFilter}
-          >
-            <option value="all">{t('withdrawals.allAssets')}</option>
-            {uniqueAssets.map((asset) => (
-              <option key={asset} value={asset}>
-                {asset}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Zap className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
+        <Select
+          icon={<LayoutGrid className="h-4 w-4" />}
+          onChange={(val) => setTypeFilter(val as any)}
+          options={[
+            { label: t('withdrawals.allTypes'), value: 'all' },
+            { label: t('withdrawals.onChain'), value: 'on-chain' },
+            { label: t('withdrawals.offChain'), value: 'off-chain' },
+          ]}
+          value={typeFilter}
+        />
 
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-3 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            onChange={(e) => setStatusFilter(e.target.value)}
-            value={statusFilter}
-          >
-            <option value="all">{t('withdrawals.allStatuses')}</option>
-            <option value="Completed">{t('withdrawals.completed')}</option>
-            <option value="Pending">{t('withdrawals.pending')}</option>
-            <option value="Failed">{t('withdrawals.failed')}</option>
-          </select>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
+        <Select
+          icon={<Calendar className="h-4 w-4" />}
+          onChange={(val) => setStatusFilter(val as any)}
+          options={[
+            { label: t('withdrawals.allStatuses'), value: 'all' },
+            { label: t('withdrawals.completed'), value: 'Completed' },
+            { label: t('withdrawals.pending'), value: 'Pending' },
+            { label: t('withdrawals.failed'), value: 'Failed' },
+          ]}
+          value={statusFilter}
+        />
       </div>
 
       {showTxWarning && (

@@ -1,7 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 import {
   RefreshCw,
+  RotateCcw,
   Search,
+  LayoutGrid,
   Loader as LoaderIcon,
   Settings,
   Trash2,
@@ -17,13 +19,14 @@ import {
   Hash,
   Coins,
   Activity,
+  ArrowDownUp,
   Info,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { IconButton, Card } from '../../../components/ui'
+import { IconButton, Card, Select, Button } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -35,6 +38,7 @@ import {
   makerApi,
   Lsps1CreateOrderResponse,
 } from '../../../slices/makerApi/makerApi.slice'
+import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
 interface ChannelOrder {
   id: number
@@ -621,6 +625,9 @@ export const Component = () => {
     Record<string, Lsps1CreateOrderResponse>
   >({})
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [assetFilter, setAssetFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
   const [selectedColumns, setSelectedColumns] =
     useState<string[]>(DEFAULT_COLUMNS)
   const [showColumnSelector, setShowColumnSelector] = useState(false)
@@ -754,9 +761,61 @@ export const Component = () => {
     setSelectedColumns(DEFAULT_COLUMNS)
   }
 
-  const filteredOrders = orders.filter((order) =>
-    order.order_id.toLowerCase().includes(searchTerm.toLowerCase())
+  const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery()
+
+  const uniqueAssetIds = Array.from(
+    new Set(
+      orders
+        .map((order) => {
+          try {
+            return JSON.parse(order.payload).asset_id as string | undefined
+          } catch {
+            return undefined
+          }
+        })
+        .filter((id): id is string => !!id)
+    )
   )
+
+  const uniqueAssets = uniqueAssetIds.map((id) => {
+    const asset = (assetsData?.nia || []).find((a: any) => a.asset_id === id)
+    return {
+      id,
+      label: asset
+        ? `${asset.name} (${asset.ticker})`
+        : id.substring(0, 20) + '…',
+    }
+  })
+
+  const filteredOrders = orders.filter((order) => {
+    if (!order.order_id.toLowerCase().includes(searchTerm.toLowerCase()))
+      return false
+    if (statusFilter !== 'all') {
+      const orderStatus = orderStatuses[order.order_id] || 'Unknown'
+      if (orderStatus !== statusFilter) return false
+    }
+    if (typeFilter !== 'all') {
+      let parsedPayload: any = {}
+      try {
+        parsedPayload = JSON.parse(order.payload)
+      } catch {
+        /* */
+      }
+      const isRgb = !!parsedPayload.asset_id
+      if (typeFilter === 'rgb' && !isRgb) return false
+      if (typeFilter === 'bitcoin' && isRgb) return false
+    }
+    if (assetFilter !== 'all') {
+      let parsedPayload: any = {}
+      try {
+        parsedPayload = JSON.parse(order.payload)
+      } catch {
+        /* */
+      }
+      if (parsedPayload.asset_id !== assetFilter) return false
+    }
+    return true
+  })
 
   if (loading) {
     return (
@@ -790,8 +849,8 @@ export const Component = () => {
     <Card className="bg-surface-overlay/50 border border-border-default/50">
       <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-blue-500/10">
-            <Zap className="h-6 w-6 text-blue-500" />
+          <div className="p-2.5 rounded-lg bg-green-500/10">
+            <ArrowDownUp className="h-6 w-6 text-green-500" />
           </div>
           <h2 className="text-xl font-bold text-white">
             {t('components.walletHistory.channelOrders.title')}
@@ -799,21 +858,24 @@ export const Component = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            className="flex items-center gap-2 px-3 py-2 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-colors text-sm"
+          <Button
+            className="border-white/30 hover:border-white/50"
+            icon={<Settings className="w-4 h-4" />}
             onClick={() => setShowColumnSelector(!showColumnSelector)}
+            size="sm"
+            variant="outline"
           >
-            <Settings className="w-4 h-4" />
-            {t('components.walletHistory.channelOrders.columns')}
-          </button>
+            {t('components.walletHistory.channelOrders.editColumns')}
+          </Button>
           <IconButton
             aria-label="Refresh"
+            className="border-white/30 hover:border-white/50"
             disabled={refreshing}
             icon={
               refreshing ? (
-                <LoaderIcon className="w-5 h-5 animate-spin" />
+                <LoaderIcon className="w-4 h-4 animate-spin" />
               ) : (
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4" />
               )
             }
             onClick={handleRefresh}
@@ -824,15 +886,17 @@ export const Component = () => {
 
       {/* Column Selector */}
       {showColumnSelector && (
-        <div className="mb-6 p-4 bg-surface-high/50 rounded-lg border border-border-default">
+        <div className="mb-6 p-4 rounded-lg border border-border-default/50">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-white">
               {t('components.walletHistory.channelOrders.selectColumns')}
             </h3>
             <button
-              className="px-3 py-1 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded text-sm transition-colors"
+              className="flex items-center gap-1.5 text-sm text-content-secondary hover:text-white transition-colors"
               onClick={resetToDefaults}
+              type="button"
             >
+              <RotateCcw className="w-3.5 h-3.5" />
               {t('components.walletHistory.channelOrders.resetToDefaults')}
             </button>
           </div>
@@ -844,7 +908,7 @@ export const Component = () => {
               >
                 <input
                   checked={selectedColumns.includes(column.key)}
-                  className="form-checkbox h-4 w-4 text-blue-500 bg-surface-high border-border-default rounded focus:ring-blue-500 focus:ring-2"
+                  className="form-checkbox h-4 w-4 accent-primary bg-surface-high border-border-default rounded focus:ring-primary/20 focus:ring-1"
                   onChange={() => handleColumnToggle(column.key)}
                   type="checkbox"
                 />
@@ -857,14 +921,14 @@ export const Component = () => {
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
+      {/* Search + Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-content-secondary" />
           </div>
           <input
-            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t(
               'components.walletHistory.channelOrders.searchPlaceholder'
@@ -873,6 +937,65 @@ export const Component = () => {
             value={searchTerm}
           />
         </div>
+
+        <Select
+          icon={<Coins className="h-4 w-4" />}
+          onChange={(val) => setAssetFilter(val)}
+          options={[
+            {
+              label: t('components.walletHistory.channelOrders.allAssets'),
+              value: 'all',
+            },
+            ...uniqueAssets.map((a) => ({ label: a.label, value: a.id })),
+          ]}
+          value={assetFilter}
+        />
+
+        <Select
+          icon={<LayoutGrid className="h-4 w-4" />}
+          onChange={(val) => setTypeFilter(val)}
+          options={[
+            {
+              label: t('components.walletHistory.channelOrders.allTypes'),
+              value: 'all',
+            },
+            {
+              label: t('components.walletHistory.channelOrders.typeBitcoin'),
+              value: 'bitcoin',
+            },
+            {
+              label: t('components.walletHistory.channelOrders.typeRgbAsset'),
+              value: 'rgb',
+            },
+          ]}
+          value={typeFilter}
+        />
+
+        <Select
+          icon={<Calendar className="h-4 w-4" />}
+          onChange={(val) => setStatusFilter(val)}
+          options={[
+            {
+              label: t('components.walletHistory.channelOrders.allStatuses'),
+              value: 'all',
+            },
+            {
+              label: t(
+                'components.walletHistory.channelOrders.statusCompleted'
+              ),
+              value: 'COMPLETED',
+            },
+            {
+              label: t('components.walletHistory.channelOrders.statusCreated'),
+              value: 'CREATED',
+            },
+            {
+              label: t('components.walletHistory.channelOrders.statusFailed'),
+              value: 'FAILED',
+            },
+          ]}
+          value={statusFilter}
+        />
       </div>
 
       {filteredOrders.length === 0 ? (
@@ -1027,30 +1150,38 @@ export const Component = () => {
                   case 'actions': {
                     return (
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleViewDetails(order)
-                          }}
-                          title={t(
-                            'components.walletHistory.channelOrders.actions.viewDetails'
-                          )}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </button>
-                        <button
-                          className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(order.order_id)
-                          }}
-                          title={t(
-                            'components.walletHistory.channelOrders.actions.deleteOrder'
-                          )}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="relative group/btn">
+                          <button
+                            className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleViewDetails(order)
+                            }}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                            {t(
+                              'components.walletHistory.channelOrders.actions.viewDetails'
+                            )}
+                          </div>
+                        </div>
+                        <div className="relative group/btn">
+                          <button
+                            className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(order.order_id)
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                            {t(
+                              'components.walletHistory.channelOrders.actions.deleteOrder'
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )
                   }

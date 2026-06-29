@@ -349,7 +349,7 @@
     "deposits": "Deposits",
     "paymentsWithdrawals": "Withdrawals",
     "swaps": "Swaps",
-    "assets": "Assets",
+    "assets": "RGB Assets",
     "channelOrders": "Channel Orders"
   },
   "btcHistory": {
@@ -1211,7 +1211,7 @@
     "offChainUnavailableMessage": "Could not load Lightning payments. On-chain withdrawals are shown below."
   },
   "swaps": {
-    "title": "Swap History",
+    "title": "Swaps History",
     "loading": "Loading swap history...",
     "errorLoading": "Error Loading Data",
     "errorMessage": "There was an error loading your swap history. Please try again.",
@@ -1239,7 +1239,7 @@
     "refresh": "Refresh"
   },
   "assets": {
-    "title": "Asset Transfers",
+    "title": "RGB Assets History",
     "loading": "Loading transfers...",
     "refresh": "Refresh",
     "refreshing": "Refreshing...",
@@ -1247,6 +1247,8 @@
     "transactionIdCopied": "Transaction ID copied to clipboard",
     "recipientIdCopied": "Recipient ID copied to clipboard",
     "searchPlaceholder": "Search transactions...",
+    "allAssets": "All Assets",
+    "selectAsset": "Select an asset to view transfers",
     "allTypes": "All Types",
     "sent": "Sent",
     "received": "Received",
@@ -2628,6 +2630,15 @@
         "columns": "Columns",
         "selectColumns": "Select Columns",
         "resetToDefaults": "Reset to Defaults",
+        "editColumns": "Edit Columns",
+        "allAssets": "All Assets",
+        "allTypes": "All Types",
+        "typeBitcoin": "Bitcoin",
+        "typeRgbAsset": "RGB Asset",
+        "allStatuses": "All Statuses",
+        "statusCompleted": "Completed",
+        "statusFailed": "Failed",
+        "statusCreated": "Created",
         "refresh": "Refresh",
         "detailsModal": {
           "title": "Channel Order Details",
