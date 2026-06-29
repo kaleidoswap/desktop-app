@@ -1,10 +1,17 @@
-import { Coins, Search, RefreshCw, Copy, ArrowDownRight } from 'lucide-react'
+import {
+  Coins,
+  Search,
+  RefreshCw,
+  Copy,
+  LayoutGrid,
+  Calendar,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { Button, Card, LoadingPlaceholder, Badge } from '../../../components/ui'
+import { IconButton, Card, Badge, Select, Button } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -36,6 +43,7 @@ export const Component = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [showTxDetails, setShowTxDetails] = useState<string | null>(null)
+  const [allTransfers, setAllTransfers] = useState<Transfer[]>([])
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -51,46 +59,57 @@ export const Component = () => {
   }, [assets])
 
   useEffect(() => {
-    if ((assetsResponse?.data?.nia || []).length) {
-      if (urlAssetId) {
-        // Check if the URL asset ID exists in the assets list
-        const assetExists = (assetsResponse?.data?.nia || []).some(
-          (asset: any) => asset.asset_id === urlAssetId
-        )
-        if (assetExists) {
-          setSelectedAssetId(urlAssetId)
-        } else if (!selectedAssetId && (assetsResponse?.data?.nia || [])[0]) {
-          setSelectedAssetId(
-            (assetsResponse.data?.nia || [])[0].asset_id || null
-          )
-        }
-      } else if (!selectedAssetId && (assetsResponse?.data?.nia || [])[0]) {
-        setSelectedAssetId((assetsResponse.data?.nia || [])[0].asset_id || null)
+    if (urlAssetId && (assetsResponse?.data?.nia || []).length) {
+      const assetExists = (assetsResponse?.data?.nia || []).some(
+        (asset: any) => asset.asset_id === urlAssetId
+      )
+      if (assetExists) {
+        setSelectedAssetId(urlAssetId)
       }
     }
-  }, [assetsResponse.data, selectedAssetId, urlAssetId])
+  }, [assetsResponse.data, urlAssetId])
 
   useEffect(() => {
     const fetchTransfers = async () => {
-      if (selectedAssetId) {
-        setIsLoading(true)
-        try {
+      setIsLoading(true)
+      try {
+        if (selectedAssetId) {
+          setAllTransfers([])
           await getTransfers(selectedAssetId)
-        } finally {
-          setIsLoading(false)
+        } else {
+          const rgbAssets = assetsResponse.data?.nia || []
+          if (rgbAssets.length > 0) {
+            const results = await Promise.all(
+              rgbAssets.map((asset: any) => getTransfers(asset.asset_id))
+            )
+            setAllTransfers(
+              results.flatMap((r: any) => r.data?.transfers || [])
+            )
+          } else {
+            setAllTransfers([])
+          }
         }
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchTransfers()
-  }, [selectedAssetId, getTransfers])
+  }, [selectedAssetId, getTransfers, assetsResponse.data])
 
   const refreshData = async () => {
     setIsRefreshing(true)
     try {
-      await assets()
+      const refreshedAssets = await assets()
       if (selectedAssetId) {
         await getTransfers(selectedAssetId)
+      } else {
+        const nia =
+          (refreshedAssets as any)?.data?.nia || assetsResponse.data?.nia || []
+        const results = await Promise.all(
+          nia.map((asset: any) => getTransfers(asset.asset_id))
+        )
+        setAllTransfers(results.flatMap((r: any) => r.data?.transfers || []))
       }
     } finally {
       setIsRefreshing(false)
@@ -170,8 +189,12 @@ export const Component = () => {
       })
   }
 
+  const activeTransfers = selectedAssetId
+    ? transfersResponse.data?.transfers || []
+    : allTransfers
+
   const filteredTransfers =
-    (transfersResponse.data?.transfers || []).filter((transfer: Transfer) => {
+    activeTransfers.filter((transfer: Transfer) => {
       // Apply search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase()
@@ -232,277 +255,167 @@ export const Component = () => {
 
   // Get unique statuses for filter dropdown
   const uniqueStatuses = Array.from(
-    new Set<string>(
-      (transfersResponse.data?.transfers || []).map((t: any) => t.status) || []
-    )
+    new Set<string>(activeTransfers.map((t: any) => t.status))
   )
 
+  const rgbAssets = assetsResponse.data?.nia || []
+
   return (
-    <div className="space-y-6">
-      {selectedAssetId && (
-        <Card className="bg-surface-overlay/50 border border-border-default/50">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-purple-500/10">
-                <Coins className="h-6 w-6 text-purple-500" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-white">
-                  {getSelectedAsset()?.name} ({getSelectedAsset()?.ticker})
-                </h3>
-                <div className="flex items-center mt-1">
-                  <p className="text-xs text-content-secondary truncate max-w-[200px] md:max-w-[300px]">
-                    {selectedAssetId}
-                  </p>
-                  <button
-                    className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
-                    onClick={() =>
-                      copyToClipboard(selectedAssetId, 'assets.assetIdCopied')
-                    }
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                disabled={isRefreshing}
-                icon={
-                  <RefreshCw
-                    className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
-                  />
-                }
-                onClick={refreshData}
-                size="sm"
-                variant="outline"
-              >
-                {isRefreshing ? t('assets.refreshing') : t('assets.refresh')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-content-secondary" />
-              </div>
-              <input
-                className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t('assets.searchPlaceholder')}
-                type="text"
-                value={searchTerm}
-              />
-            </div>
-
-            <div className="relative">
-              <select
-                className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                onChange={(e) => setTypeFilter(e.target.value)}
-                value={typeFilter}
-              >
-                <option value="all">{t('assets.allTypes')}</option>
-                <option value="sent">{t('assets.sent')}</option>
-                <option value="received">{t('assets.received')}</option>
-                <option value="issuance">{t('assets.issuance')}</option>
-              </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <ArrowDownRight className="h-4 w-4 text-content-secondary" />
-              </div>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-4 w-4 text-content-secondary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M19 9l-7 7-7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            <div className="relative">
-              <select
-                className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                onChange={(e) => setStatusFilter(e.target.value)}
-                value={statusFilter}
-              >
-                <option value="all">{t('assets.allStatuses')}</option>
-                {uniqueStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Coins className="h-4 w-4 text-content-secondary" />
-              </div>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg
-                  className="h-4 w-4 text-content-secondary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M19 9l-7 7-7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4 relative">
-            <select
-              className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              disabled={isLoading || !(assetsResponse.data?.nia || []).length}
-              onChange={(e) => setSelectedAssetId(e.target.value)}
-              value={selectedAssetId || ''}
-            >
-              {(assetsResponse.data?.nia || []).map((asset: any) => (
-                <option key={asset.asset_id} value={asset.asset_id}>
-                  {asset.name} ({asset.ticker})
-                </option>
-              ))}
-            </select>
+    <Card className="bg-surface-overlay/50 border border-border-default/50">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Coins className="h-4 w-4 text-purple-500" />
+              <Search className="h-4 w-4 text-content-secondary" />
             </div>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <svg
-                className="h-4 w-4 text-content-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 9l-7 7-7-7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
+            <input
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('assets.searchPlaceholder')}
+              type="text"
+              value={searchTerm}
+            />
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingPlaceholder />
+          <Select
+            disabled={isLoading || !rgbAssets.length}
+            icon={<Coins className="h-4 w-4" />}
+            onChange={(val) => setSelectedAssetId(val || null)}
+            options={[
+              { label: t('assets.allAssets'), value: '' },
+              ...rgbAssets.map((asset: any) => ({
+                label: `${asset.name} (${asset.ticker})`,
+                value: asset.asset_id,
+              })),
+            ]}
+            value={selectedAssetId || ''}
+          />
+
+          <Select
+            icon={<LayoutGrid className="h-4 w-4" />}
+            onChange={(val) => setTypeFilter(val as any)}
+            options={[
+              { label: t('assets.allTypes'), value: 'all' },
+              { label: t('assets.sent'), value: 'sent' },
+              { label: t('assets.received'), value: 'received' },
+              { label: t('assets.issuance'), value: 'issuance' },
+            ]}
+            value={typeFilter}
+          />
+
+          <Select
+            icon={<Calendar className="h-4 w-4" />}
+            onChange={(val) => setStatusFilter(val as any)}
+            options={[
+              { label: t('assets.allStatuses'), value: 'all' },
+              ...uniqueStatuses.map((status) => ({
+                label: status,
+                value: status,
+              })),
+            ]}
+            value={statusFilter}
+          />
+        </div>
+
+        <div className="relative group/ref shrink-0">
+          <IconButton
+            aria-label={t('assets.refresh')}
+            className="border-white/30 hover:border-white/50"
+            disabled={isRefreshing}
+            icon={
+              isRefreshing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )
+            }
+            onClick={refreshData}
+            variant="outline"
+          />
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+            Refresh data
+          </div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex flex-col justify-center items-center py-16 gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+            <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+              <Coins className="relative z-10 w-10 h-10 text-[#15E99A]" />
             </div>
-          ) : filteredTransfers.length > 0 ? (
-            <Table
-              columns={[
-                {
-                  accessor: (transfer: Transfer) => (
-                    <Badge
-                      size="sm"
-                      variant={getKindBadgeVariant(transfer.kind)}
-                    >
-                      {getKindLabel(transfer.kind)}
-                    </Badge>
-                  ),
-                  className: 'col-span-1',
-                  header: t('assets.type'),
-                },
-                {
-                  accessor: (transfer: Transfer) => (
-                    <span
-                      className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
-                    >
-                      {transfer.kind === TransferKind.Send ? '-' : '+'}
-                      {formatAmount(
-                        transfer.requested_assignment
-                          ? getAssignmentAmount(transfer.requested_assignment)
-                          : 0
-                      )}
-                    </span>
-                  ),
-                  className: 'col-span-1',
-                  header: t('assets.amount'),
-                },
-                {
-                  accessor: (transfer: Transfer) =>
-                    renderDateField((transfer.created_at || 0) * 1000),
-                  className: 'col-span-1',
-                  header: t('assets.date'),
-                },
-                {
-                  accessor: (transfer: Transfer) =>
-                    renderCopyableField(
-                      transfer.txid || '',
-                      true,
-                      4,
-                      t('assets.transactionId')
-                    ),
-                  className: 'col-span-1',
-                  header: t('assets.transactionId'),
-                },
-                {
-                  accessor: (transfer: Transfer) =>
-                    renderStatusBadge(
-                      transfer.status || 'Unknown',
-                      getStatusBadgeVariant(transfer.status)
-                    ),
-                  className: 'col-span-1',
-                  header: t('assets.status'),
-                },
-              ]}
-              data={filteredTransfers}
-              emptyState={
-                <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
-                  {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                    ? t('assets.noTransfersFiltered')
-                    : t('assets.noTransfers')}
-                  {(searchTerm ||
-                    statusFilter !== 'all' ||
-                    typeFilter !== 'all') && (
-                    <Button
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchTerm('')
-                        setStatusFilter('all')
-                        setTypeFilter('all')
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {t('assets.clearFilters')}
-                    </Button>
+          </div>
+          <div className="text-center space-y-4 max-w-lg">
+            <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
+              {t('assets.loading')}
+            </p>
+            <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+              <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
+            </div>
+          </div>
+        </div>
+      ) : filteredTransfers.length > 0 ? (
+        <Table
+          columns={[
+            {
+              accessor: (transfer: Transfer) => (
+                <Badge size="sm" variant={getKindBadgeVariant(transfer.kind)}>
+                  {getKindLabel(transfer.kind)}
+                </Badge>
+              ),
+              className: 'col-span-1',
+              header: t('assets.type'),
+            },
+            {
+              accessor: (transfer: Transfer) => (
+                <span
+                  className={`text-sm font-semibold ${getKindColor(transfer.kind)}`}
+                >
+                  {transfer.kind === TransferKind.Send ? '-' : '+'}
+                  {formatAmount(
+                    transfer.requested_assignment
+                      ? getAssignmentAmount(transfer.requested_assignment)
+                      : 0
                   )}
-                </div>
-              }
-              gridClassName="grid-cols-5"
-              onRowClick={(transfer: Transfer) =>
-                setShowTxDetails(
-                  showTxDetails === `${transfer.txid}-${transfer.idx}`
-                    ? null
-                    : `${transfer.txid}-${transfer.idx}`
-                )
-              }
-              rowClassName={(transfer: Transfer) =>
-                `cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-surface-high/30' : ''}`
-              }
-            />
-          ) : (
-            <div className="py-12 text-center">
-              <p className="text-content-secondary">
-                {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                  ? t('assets.noTransfersFiltered')
-                  : t('assets.noTransfers')}
-              </p>
+                </span>
+              ),
+              className: 'col-span-1',
+              header: t('assets.amount'),
+            },
+            {
+              accessor: (transfer: Transfer) =>
+                renderDateField((transfer.created_at || 0) * 1000),
+              className: 'col-span-1',
+              header: t('assets.date'),
+            },
+            {
+              accessor: (transfer: Transfer) =>
+                renderCopyableField(
+                  transfer.txid || '',
+                  true,
+                  4,
+                  t('assets.transactionId')
+                ),
+              className: 'col-span-1',
+              header: t('assets.transactionId'),
+            },
+            {
+              accessor: (transfer: Transfer) =>
+                renderStatusBadge(
+                  transfer.status || 'Unknown',
+                  getStatusBadgeVariant(transfer.status)
+                ),
+              className: 'col-span-1',
+              header: t('assets.status'),
+            },
+          ]}
+          data={filteredTransfers}
+          emptyState={
+            <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
+              {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+                ? t('assets.noTransfersFiltered')
+                : t('assets.noTransfers')}
               {(searchTerm ||
                 statusFilter !== 'all' ||
                 typeFilter !== 'all') && (
@@ -520,119 +433,150 @@ export const Component = () => {
                 </Button>
               )}
             </div>
+          }
+          gridClassName="grid-cols-5"
+          onRowClick={(transfer: Transfer) =>
+            setShowTxDetails(
+              showTxDetails === `${transfer.txid}-${transfer.idx}`
+                ? null
+                : `${transfer.txid}-${transfer.idx}`
+            )
+          }
+          rowClassName={(transfer: Transfer) =>
+            `cursor-pointer ${showTxDetails === `${transfer.txid}-${transfer.idx}` ? 'bg-surface-high/30' : ''}`
+          }
+        />
+      ) : (
+        <div className="py-12 text-center">
+          <p className="text-content-secondary">
+            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
+              ? t('assets.noTransfersFiltered')
+              : t('assets.noTransfers')}
+          </p>
+          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+            <Button
+              className="mt-4"
+              onClick={() => {
+                setSearchTerm('')
+                setStatusFilter('all')
+                setTypeFilter('all')
+              }}
+              size="sm"
+              variant="outline"
+            >
+              {t('assets.clearFilters')}
+            </Button>
           )}
+        </div>
+      )}
 
-          {/* Expanded transaction details */}
-          {filteredTransfers.map(
-            (transfer: any) =>
-              showTxDetails === `${transfer.txid}-${transfer.idx}` && (
-                <div
-                  className="mt-4 bg-surface-overlay/50 rounded-lg p-4"
-                  key={`${transfer.txid}-${transfer.idx}`}
-                >
-                  <div className="bg-surface-base/50 rounded-lg p-4 space-y-3">
-                    <div>
-                      <h4 className="text-sm font-medium text-content-secondary mb-1">
-                        {t('assets.transactionDetails')}
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-content-secondary">
-                          {t('assets.transactionIdLabel')}
-                        </span>
-                        <div className="flex items-center">
-                          <span className="text-xs text-content-secondary">
-                            {transfer.txid}
-                          </span>
-                          <button
-                            className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              copyToClipboard(
-                                transfer.txid || '',
-                                'assets.transactionIdCopied'
-                              )
-                            }}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
+      {/* Expanded transaction details */}
+      {filteredTransfers.map(
+        (transfer: any) =>
+          showTxDetails === `${transfer.txid}-${transfer.idx}` && (
+            <div
+              className="mt-4 bg-surface-overlay/50 rounded-lg p-4"
+              key={`${transfer.txid}-${transfer.idx}`}
+            >
+              <div className="bg-surface-base/50 rounded-lg p-4 space-y-3">
+                <div>
+                  <h4 className="text-sm font-medium text-content-secondary mb-1">
+                    {t('assets.transactionDetails')}
+                  </h4>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-content-secondary">
+                      {t('assets.transactionIdLabel')}
+                    </span>
+                    <div className="flex items-center">
                       <span className="text-xs text-content-secondary">
-                        {t('assets.amountLabel')}
+                        {transfer.txid}
                       </span>
-                      <span
-                        className={`text-xs ${getKindColor(transfer.kind)}`}
+                      <button
+                        className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyToClipboard(
+                            transfer.txid || '',
+                            'assets.transactionIdCopied'
+                          )
+                        }}
                       >
-                        {transfer.kind === TransferKind.Send ? '-' : '+'}
-                        {formatAmount(
-                          transfer.requested_assignment
-                            ? getAssignmentAmount(transfer.requested_assignment)
-                            : 0
-                        )}{' '}
-                        {getSelectedAsset()?.ticker}
-                      </span>
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-content-secondary">
-                        {t('assets.typeLabel')}
-                      </span>
-                      <Badge variant={getKindBadgeVariant(transfer.kind)}>
-                        {getKindLabel(transfer.kind)}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-content-secondary">
-                        {t('assets.statusLabel')}
-                      </span>
-                      <Badge variant={getStatusBadgeVariant(transfer.status)}>
-                        {transfer.status}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-content-secondary">
-                        {t('assets.dateLabel')}
-                      </span>
-                      <span className="text-xs text-content-secondary">
-                        {formatDate((transfer.created_at || 0) * 1000)}
-                      </span>
-                    </div>
-
-                    {transfer.recipient_id && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-content-secondary">
-                          {t('assets.recipientIdLabel')}
-                        </span>
-                        <div className="flex items-center">
-                          <span className="text-xs text-content-secondary truncate max-w-[200px]">
-                            {transfer.recipient_id}
-                          </span>
-                          <button
-                            className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              copyToClipboard(
-                                transfer.recipient_id || '',
-                                'assets.recipientIdCopied'
-                              )
-                            }}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
-              )
-          )}
-        </Card>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-content-secondary">
+                    {t('assets.amountLabel')}
+                  </span>
+                  <span className={`text-xs ${getKindColor(transfer.kind)}`}>
+                    {transfer.kind === TransferKind.Send ? '-' : '+'}
+                    {formatAmount(
+                      transfer.requested_assignment
+                        ? getAssignmentAmount(transfer.requested_assignment)
+                        : 0
+                    )}{' '}
+                    {getSelectedAsset()?.ticker}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-content-secondary">
+                    {t('assets.typeLabel')}
+                  </span>
+                  <Badge variant={getKindBadgeVariant(transfer.kind)}>
+                    {getKindLabel(transfer.kind)}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-content-secondary">
+                    {t('assets.statusLabel')}
+                  </span>
+                  <Badge variant={getStatusBadgeVariant(transfer.status)}>
+                    {transfer.status}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-content-secondary">
+                    {t('assets.dateLabel')}
+                  </span>
+                  <span className="text-xs text-content-secondary">
+                    {formatDate((transfer.created_at || 0) * 1000)}
+                  </span>
+                </div>
+
+                {transfer.recipient_id && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-content-secondary">
+                      {t('assets.recipientIdLabel')}
+                    </span>
+                    <div className="flex items-center">
+                      <span className="text-xs text-content-secondary truncate max-w-[200px]">
+                        {transfer.recipient_id}
+                      </span>
+                      <button
+                        className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          copyToClipboard(
+                            transfer.recipient_id || '',
+                            'assets.recipientIdCopied'
+                          )
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
       )}
-    </div>
+    </Card>
   )
 }
