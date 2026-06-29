@@ -19,14 +19,13 @@ import {
   Hash,
   Coins,
   Activity,
-  ArrowDownUp,
   Info,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { IconButton, Card, Select, Button } from '../../../components/ui'
+import { IconButton, Card, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -847,26 +846,100 @@ export const Component = () => {
 
   return (
     <Card className="bg-surface-overlay/50 border border-border-default/50">
-      <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-green-500/10">
-            <ArrowDownUp className="h-6 w-6 text-green-500" />
+      {/* Search + Filters */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-content-secondary" />
+            </div>
+            <input
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t(
+                'components.walletHistory.channelOrders.searchPlaceholder'
+              )}
+              type="text"
+              value={searchTerm}
+            />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            {t('components.walletHistory.channelOrders.title')}
-          </h2>
+
+          <Select
+            icon={<Coins className="h-4 w-4" />}
+            onChange={(val) => setAssetFilter(val)}
+            options={[
+              {
+                label: t('components.walletHistory.channelOrders.allAssets'),
+                value: 'all',
+              },
+              ...uniqueAssets.map((a) => ({ label: a.label, value: a.id })),
+            ]}
+            value={assetFilter}
+          />
+
+          <Select
+            icon={<LayoutGrid className="h-4 w-4" />}
+            onChange={(val) => setTypeFilter(val)}
+            options={[
+              {
+                label: t('components.walletHistory.channelOrders.allTypes'),
+                value: 'all',
+              },
+              {
+                label: t('components.walletHistory.channelOrders.typeBitcoin'),
+                value: 'bitcoin',
+              },
+              {
+                label: t('components.walletHistory.channelOrders.typeRgbAsset'),
+                value: 'rgb',
+              },
+            ]}
+            value={typeFilter}
+          />
+
+          <Select
+            icon={<Calendar className="h-4 w-4" />}
+            onChange={(val) => setStatusFilter(val)}
+            options={[
+              {
+                label: t('components.walletHistory.channelOrders.allStatuses'),
+                value: 'all',
+              },
+              {
+                label: t(
+                  'components.walletHistory.channelOrders.statusCompleted'
+                ),
+                value: 'COMPLETED',
+              },
+              {
+                label: t(
+                  'components.walletHistory.channelOrders.statusCreated'
+                ),
+                value: 'CREATED',
+              },
+              {
+                label: t('components.walletHistory.channelOrders.statusFailed'),
+                value: 'FAILED',
+              },
+            ]}
+            value={statusFilter}
+          />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
+        <div className="relative group/cols shrink-0">
+          <IconButton
+            aria-label={t('components.walletHistory.channelOrders.editColumns')}
             className="border-white/30 hover:border-white/50"
             icon={<Settings className="w-4 h-4" />}
             onClick={() => setShowColumnSelector(!showColumnSelector)}
-            size="sm"
             variant="outline"
-          >
+          />
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/cols:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
             {t('components.walletHistory.channelOrders.editColumns')}
-          </Button>
+          </div>
+        </div>
+
+        <div className="relative group/ref shrink-0">
           <IconButton
             aria-label="Refresh"
             className="border-white/30 hover:border-white/50"
@@ -881,6 +954,9 @@ export const Component = () => {
             onClick={handleRefresh}
             variant="outline"
           />
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+            Refresh data
+          </div>
         </div>
       </div>
 
@@ -889,7 +965,7 @@ export const Component = () => {
         <div className="mb-6 p-4 rounded-lg border border-border-default/50">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-white">
-              {t('components.walletHistory.channelOrders.selectColumns')}
+              {t('components.walletHistory.channelOrders.editColumns')}
             </h3>
             <button
               className="flex items-center gap-1.5 text-sm text-content-secondary hover:text-white transition-colors"
@@ -920,83 +996,6 @@ export const Component = () => {
           </div>
         </div>
       )}
-
-      {/* Search + Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-content-secondary" />
-          </div>
-          <input
-            className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t(
-              'components.walletHistory.channelOrders.searchPlaceholder'
-            )}
-            type="text"
-            value={searchTerm}
-          />
-        </div>
-
-        <Select
-          icon={<Coins className="h-4 w-4" />}
-          onChange={(val) => setAssetFilter(val)}
-          options={[
-            {
-              label: t('components.walletHistory.channelOrders.allAssets'),
-              value: 'all',
-            },
-            ...uniqueAssets.map((a) => ({ label: a.label, value: a.id })),
-          ]}
-          value={assetFilter}
-        />
-
-        <Select
-          icon={<LayoutGrid className="h-4 w-4" />}
-          onChange={(val) => setTypeFilter(val)}
-          options={[
-            {
-              label: t('components.walletHistory.channelOrders.allTypes'),
-              value: 'all',
-            },
-            {
-              label: t('components.walletHistory.channelOrders.typeBitcoin'),
-              value: 'bitcoin',
-            },
-            {
-              label: t('components.walletHistory.channelOrders.typeRgbAsset'),
-              value: 'rgb',
-            },
-          ]}
-          value={typeFilter}
-        />
-
-        <Select
-          icon={<Calendar className="h-4 w-4" />}
-          onChange={(val) => setStatusFilter(val)}
-          options={[
-            {
-              label: t('components.walletHistory.channelOrders.allStatuses'),
-              value: 'all',
-            },
-            {
-              label: t(
-                'components.walletHistory.channelOrders.statusCompleted'
-              ),
-              value: 'COMPLETED',
-            },
-            {
-              label: t('components.walletHistory.channelOrders.statusCreated'),
-              value: 'CREATED',
-            },
-            {
-              label: t('components.walletHistory.channelOrders.statusFailed'),
-              value: 'FAILED',
-            },
-          ]}
-          value={statusFilter}
-        />
-      </div>
 
       {filteredOrders.length === 0 ? (
         <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">

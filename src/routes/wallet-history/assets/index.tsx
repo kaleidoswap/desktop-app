@@ -262,81 +262,80 @@ export const Component = () => {
 
   return (
     <Card className="bg-surface-overlay/50 border border-border-default/50">
-      <div className="flex justify-between items-center gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-green-500/10">
-            <Coins className="h-6 w-6 text-green-500" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-content-secondary" />
+            </div>
+            <input
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('assets.searchPlaceholder')}
+              type="text"
+              value={searchTerm}
+            />
           </div>
-          <h2 className="text-xl font-bold text-white">{t('assets.title')}</h2>
-        </div>
-        <IconButton
-          aria-label={t('assets.refresh')}
-          className="border-white/30 hover:border-white/50"
-          disabled={isRefreshing}
-          icon={
-            isRefreshing ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )
-          }
-          onClick={refreshData}
-          variant="outline"
-        />
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-content-secondary" />
-          </div>
-          <input
-            className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t('assets.searchPlaceholder')}
-            type="text"
-            value={searchTerm}
+          <Select
+            disabled={isLoading || !rgbAssets.length}
+            icon={<Coins className="h-4 w-4" />}
+            onChange={(val) => setSelectedAssetId(val || null)}
+            options={[
+              { label: t('assets.allAssets'), value: '' },
+              ...rgbAssets.map((asset: any) => ({
+                label: `${asset.name} (${asset.ticker})`,
+                value: asset.asset_id,
+              })),
+            ]}
+            value={selectedAssetId || ''}
+          />
+
+          <Select
+            icon={<LayoutGrid className="h-4 w-4" />}
+            onChange={(val) => setTypeFilter(val as any)}
+            options={[
+              { label: t('assets.allTypes'), value: 'all' },
+              { label: t('assets.sent'), value: 'sent' },
+              { label: t('assets.received'), value: 'received' },
+              { label: t('assets.issuance'), value: 'issuance' },
+            ]}
+            value={typeFilter}
+          />
+
+          <Select
+            icon={<Calendar className="h-4 w-4" />}
+            onChange={(val) => setStatusFilter(val as any)}
+            options={[
+              { label: t('assets.allStatuses'), value: 'all' },
+              ...uniqueStatuses.map((status) => ({
+                label: status,
+                value: status,
+              })),
+            ]}
+            value={statusFilter}
           />
         </div>
 
-        <Select
-          disabled={isLoading || !rgbAssets.length}
-          icon={<Coins className="h-4 w-4" />}
-          onChange={(val) => setSelectedAssetId(val || null)}
-          options={[
-            { label: t('assets.allAssets'), value: '' },
-            ...rgbAssets.map((asset: any) => ({
-              label: `${asset.name} (${asset.ticker})`,
-              value: asset.asset_id,
-            })),
-          ]}
-          value={selectedAssetId || ''}
-        />
-
-        <Select
-          icon={<LayoutGrid className="h-4 w-4" />}
-          onChange={(val) => setTypeFilter(val as any)}
-          options={[
-            { label: t('assets.allTypes'), value: 'all' },
-            { label: t('assets.sent'), value: 'sent' },
-            { label: t('assets.received'), value: 'received' },
-            { label: t('assets.issuance'), value: 'issuance' },
-          ]}
-          value={typeFilter}
-        />
-
-        <Select
-          icon={<Calendar className="h-4 w-4" />}
-          onChange={(val) => setStatusFilter(val as any)}
-          options={[
-            { label: t('assets.allStatuses'), value: 'all' },
-            ...uniqueStatuses.map((status) => ({
-              label: status,
-              value: status,
-            })),
-          ]}
-          value={statusFilter}
-        />
+        <div className="relative group/ref shrink-0">
+          <IconButton
+            aria-label={t('assets.refresh')}
+            className="border-white/30 hover:border-white/50"
+            disabled={isRefreshing}
+            icon={
+              isRefreshing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )
+            }
+            onClick={refreshData}
+            variant="outline"
+          />
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+            Refresh data
+          </div>
+        </div>
       </div>
 
       {isLoading ? (

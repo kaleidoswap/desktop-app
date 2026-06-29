@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import React, { ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
 
 export interface SelectOption {
