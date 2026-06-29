@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
+import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+
 import { CHANNELS_PATH } from '../../app/router/paths'
 import { FormError } from '../../components/FormError'
 import { useAppDispatch } from '../../app/store/hooks'
@@ -238,8 +240,11 @@ export const Component = () => {
   }
 
   return (
-    <>
-      <div className="container mx-auto px-4 py-6 max-w-3xl text-white">
+    <div className="w-full min-h-full text-white">
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <ChannelsNav />
+      </div>
+      <div className="container mx-auto px-4 py-6 max-w-3xl">
         {/* Step Progress Indicator */}
         {!insufficientBalance && (
           <div className="flex justify-between mb-4">
@@ -426,6 +431,6 @@ export const Component = () => {
         operationType={utxoModalProps.operationType}
         retryFunction={utxoModalProps.retryFunction}
       />
-    </>
+    </div>
   )
 }

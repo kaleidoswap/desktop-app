@@ -153,7 +153,7 @@ export const getNavSections = (t: TFunction): NavSection[] => [
           {
             disabled: true,
             icon: <Tag className="w-4 h-4" />,
-            label: t('liquidity.sell', 'Sell'),
+            label: t('liquidity.sellChannels', 'Sell Channels'),
           },
         ],
         to: CHANNELS_PATH,
@@ -310,20 +310,20 @@ export const SUPPORT_RESOURCES = getSupportResources(
 // Page configuration mapping
 export const getPageConfig = (t: TFunction) => ({
   [CHANNELS_PATH]: {
-    icon: <Activity className="w-5 h-5" />,
-    title: t('navigation.channels'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [CREATE_NEW_CHANNEL_PATH]: {
-    icon: <Plus className="w-5 h-5" />,
-    title: t('channels.createNewChannel'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [NWC_PATH]: {
     icon: <LinkIcon className="w-5 h-5" />,
     title: t('navigation.nwc', 'App Connections (NWC)'),
   },
   [ORDER_CHANNEL_PATH]: {
-    icon: <ShoppingCart className="w-5 h-5" />,
-    title: t('channels.buyAChannel'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [SETTINGS_PATH]: {
     icon: <Settings className="w-5 h-5" />,

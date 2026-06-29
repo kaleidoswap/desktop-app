@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
+import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
 import {
@@ -297,38 +299,45 @@ export const Component = () => {
   )
 
   return (
-    <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white relative isolate min-h-fit">
-      {loading && (
-        <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-          <ClipLoader color={'#123abc'} loading={loading} size={50} />
-        </div>
-      )}
-      {showBackConfirmation && <BackConfirmationModal />}
-      {step === 1 && <Step1 onNext={onSubmitStep1} />}
+    <div className="w-full min-h-full text-white">
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <ChannelsNav />
+      </div>
+      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full relative isolate min-h-fit">
+        {loading && (
+          <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+            <ClipLoader color={'#123abc'} loading={loading} size={50} />
+          </div>
+        )}
+        {showBackConfirmation && <BackConfirmationModal />}
+        {step === 1 && <Step1 onNext={onSubmitStep1} />}
 
-      {step === 2 && <Step2 onBack={onStepBack} onNext={onSubmitStep2} />}
+        {step === 2 && <Step2 onBack={onStepBack} onNext={onSubmitStep2} />}
 
-      {step === 3 && (
-        <Step3
-          detectedPaymentMethod={paymentMethod}
-          isProcessingPayment={isProcessingPayment}
-          key={orderId ?? 'draft-order'}
-          onBack={onStepBack}
-          onRestart={handleRestartFlow}
-          order={(createOrderResponse.data as Lsps1CreateOrderResponse) || null}
-          orderPayload={orderPayload}
-          paymentReceived={paymentReceived}
-          paymentStatus={paymentStatus}
-        />
-      )}
+        {step === 3 && (
+          <Step3
+            detectedPaymentMethod={paymentMethod}
+            isProcessingPayment={isProcessingPayment}
+            key={orderId ?? 'draft-order'}
+            onBack={onStepBack}
+            onRestart={handleRestartFlow}
+            order={
+              (createOrderResponse.data as Lsps1CreateOrderResponse) || null
+            }
+            orderPayload={orderPayload}
+            paymentReceived={paymentReceived}
+            paymentStatus={paymentStatus}
+          />
+        )}
 
-      {step === 4 && (
-        <Step4
-          onRestart={handleRestartFlow}
-          orderId={orderId ?? undefined}
-          paymentStatus={paymentStatus || 'error'}
-        />
-      )}
+        {step === 4 && (
+          <Step4
+            onRestart={handleRestartFlow}
+            orderId={orderId ?? undefined}
+            paymentStatus={paymentStatus || 'error'}
+          />
+        )}
+      </div>
     </div>
   )
 }

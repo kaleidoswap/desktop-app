@@ -76,7 +76,7 @@
     "expandSidebar": "Expand sidebar"
   },
   "channels": {
-    "pageTitle": "Lightning Wallet Dashboard",
+    "pageTitle": "Manage Channels",
     "lastUpdated": "Last updated: {{time}}",
     "loadingData": "Loading data...",
     "openChannel": "Open Channel",
@@ -95,7 +95,7 @@
     "rgb": "RGB",
     "filter": "Filter",
     "filterBy": "Filter by:",
-    "sortBy": "Sort by:",
+    "sortBy": "Sort by",
     "clearAll": "Clear all",
     "clearFilters": "Clear Filters",
     "public": "Public",

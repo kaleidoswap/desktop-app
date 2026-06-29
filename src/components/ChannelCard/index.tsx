@@ -2,8 +2,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   X,
+  Globe,
   Lock,
-  Unlock,
   Info,
   Copy,
   CheckCheck,
@@ -291,7 +291,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   const isUsable = channel.is_usable
 
   return (
-    <div className="group bg-surface-base/80 hover:bg-surface-overlay/70 text-white rounded-xl shadow-md border border-border-default/30 hover:border-border-default/50 transition-all duration-200 relative overflow-hidden flex flex-col">
+    <div className="group bg-surface-base/80 hover:bg-black/20 text-white rounded-xl shadow-md border border-border-default/30 transition-all duration-200 relative overflow-hidden flex flex-col">
       {/* Status bar */}
       <div
         className={`absolute top-0 left-0 w-full h-[2px] ${
@@ -335,7 +335,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             {/* Public/Private */}
             <span className="flex items-center gap-0.5 text-[10px] text-content-tertiary">
               {isPublic ? (
-                <Unlock className="h-2.5 w-2.5" />
+                <Globe className="h-2.5 w-2.5" />
               ) : (
                 <Lock className="h-2.5 w-2.5" />
               )}
@@ -460,9 +460,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-border-default/20">
+      <div className="flex items-center gap-1.5 px-4 py-2.5">
         <button
-          className="flex-1 min-w-0 py-1.5 rounded-lg bg-surface-overlay/60 hover:bg-surface-high/70 transition-colors text-xs text-content-secondary hover:text-content-primary border border-border-default/20 hover:border-border-default/40 flex items-center justify-center gap-1"
+          className="flex-1 min-w-0 py-1.5 rounded-lg bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center justify-center gap-1.5"
           onClick={(e) => {
             e.stopPropagation()
             setIsInfoModalOpen(true)
