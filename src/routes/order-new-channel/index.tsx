@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, ArrowRight, CheckCircle, Loader2, X } from 'lucide-react'
-import { ClipLoader } from 'react-spinners'
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  ArrowRight,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react'
 import { toast } from 'react-toastify'
 
 import { RootState } from '../../app/store'
@@ -36,6 +42,14 @@ import 'react-toastify/dist/ReactToastify.css'
 
 export const Component = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const navState = (location.state ?? {}) as {
+    preselectedAssetId?: string
+    returnTo?: string
+  }
+  const preselectedAssetId = navState.preselectedAssetId
+  const returnTo = navState.returnTo
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -355,13 +369,16 @@ export const Component = () => {
   const onStepBack = useCallback(() => {
     if (step === 3 || step === 4) {
       setShowBackConfirmation(true)
+    } else if (returnTo) {
+      // Arrived from Market Maker — go back to the originating screen
+      navigate(returnTo)
     } else {
       setStep(
         (prevStep) =>
           (prevStep > 1 ? prevStep - 1 : prevStep) as 1 | 2 | 3 | 4 | 5
       )
     }
-  }, [step])
+  }, [step, returnTo, navigate])
 
   const handleRestartFlow = useCallback(() => {
     // Reset all state
@@ -384,8 +401,13 @@ export const Component = () => {
     if (toastId) {
       toast.dismiss(toastId)
     }
-    setStep(2)
-  }, [resetPaymentMonitor])
+    if (returnTo) {
+      // Arrived from Market Maker — go back to the originating screen
+      navigate(returnTo)
+    } else {
+      setStep(2)
+    }
+  }, [resetPaymentMonitor, returnTo, navigate])
 
   const BackConfirmationModal = () => (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
@@ -393,44 +415,34 @@ export const Component = () => {
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setShowBackConfirmation(false)}
       />
-      <div className="w-full max-w-md rounded-2xl border border-border-default/40 bg-surface-overlay shadow-2xl relative z-10">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-default/30">
-          <div className="flex items-center gap-3">
-            <ArrowLeft className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-base font-semibold text-white">
+      <div className="w-full max-w-md rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl shadow-black/20 relative z-10">
+        <div className="px-8 py-8">
+          {/* Title row */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+            <ArrowLeft className="w-6 h-6 text-emerald-400" />
+            <h3 className="text-xl font-bold text-white">
               {t('orderChannel.backConfirmTitle')}
             </h3>
           </div>
-          <button
-            className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
-            onClick={() => setShowBackConfirmation(false)}
-            type="button"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        {/* Body */}
-        <div className="px-5 py-4">
           <p className="text-sm text-content-secondary mb-5">
             {t('orderChannel.backConfirmMessage')}
           </p>
-          <div className="flex gap-3">
+          <div className="flex items-center justify-between">
             <button
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border-default/40 bg-surface-high/50 text-sm text-white hover:bg-surface-elevated transition-colors"
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
               onClick={handleConfirmBack}
               type="button"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               {t('orderChannel.backConfirmGoBack')}
             </button>
             <button
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
               onClick={() => setShowBackConfirmation(false)}
               type="button"
             >
-              <CheckCircle className="w-4 h-4" />
               {t('orderChannel.backConfirmCancel')}
+              <CheckCircle className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -446,7 +458,7 @@ export const Component = () => {
           <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
               <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-                <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
                   <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
                   <h3 className="text-xl font-bold text-white">
                     {t('orderChannel.step1.alreadyConnected')}
@@ -454,14 +466,14 @@ export const Component = () => {
                 </div>
 
                 {isLoadingLspConfirm ? (
-                  <div className="flex items-center justify-center h-20 mb-6">
+                  <div className="flex items-center justify-center h-20 mb-4">
                     <Spinner color="#15E99A" overlay={false} size={32} />
                   </div>
                 ) : lspConfirmError ? (
-                  <p className="text-sm text-red-400 mb-6">{lspConfirmError}</p>
+                  <p className="text-sm text-red-400 mb-4">{lspConfirmError}</p>
                 ) : (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-4">
+                  <div className="mb-9">
+                    <div className="flex items-center gap-3 mb-4 pt-5">
                       <img
                         alt="KaleidoSwap"
                         className="w-8 h-8 flex-shrink-0"
@@ -485,11 +497,11 @@ export const Component = () => {
                     onClick={handleCancelLsp}
                     type="button"
                   >
-                    <X className="w-3.5 h-3.5" />
-                    {t('orderChannel.step1.cancelButton')}
+                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                    Change
                   </button>
                   <button
-                    className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-semibold transition-all duration-200 active:scale-95 shadow-lg shadow-primary/20 text-sm disabled:bg-primary/40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     disabled={
                       isLoadingLspConfirm ||
                       !!lspConfirmError ||
@@ -498,12 +510,12 @@ export const Component = () => {
                     onClick={handleConfirmLsp}
                     type="button"
                   >
+                    {t('orderChannel.step1.continueButton')}
                     {isConnectingLsp ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <ArrowRight className="w-4 h-4" />
                     )}
-                    {t('orderChannel.step1.continueButton')}
                   </button>
                 </div>
               </div>
@@ -518,13 +530,19 @@ export const Component = () => {
       <div className="py-4 px-4 w-full relative isolate min-h-fit animate-fade-in">
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-            <ClipLoader color={'#15E99A'} loading={loading} size={50} />
+            <Spinner color="#15E99A" overlay={false} size={50} />
           </div>
         )}
         {showBackConfirmation && <BackConfirmationModal />}
         {step === 1 && <Step1 onNext={onSubmitStep1} />}
 
-        {step === 2 && <Step2 onBack={onStepBack} onNext={onSubmitStep2} />}
+        {step === 2 && (
+          <Step2
+            onBack={onStepBack}
+            onNext={onSubmitStep2}
+            preselectedAssetId={preselectedAssetId}
+          />
+        )}
 
         {step === 3 && (
           <Step3
@@ -560,6 +578,7 @@ export const Component = () => {
             onRestart={handleRestartFlow}
             orderId={orderId ?? undefined}
             paymentStatus={paymentStatus || 'error'}
+            returnTo={returnTo}
           />
         )}
       </div>

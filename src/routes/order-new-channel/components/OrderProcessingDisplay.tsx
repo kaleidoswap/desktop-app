@@ -1,10 +1,13 @@
-import { Clock, CheckCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Card } from '../../../components/ui'
 import { formatBitcoinAmount } from '../../../helpers/number'
+import { useAssetIcon } from '../../../helpers/utils'
 import { Lsps1CreateOrderResponse } from '../../../slices/makerApi/makerApi.slice'
 import { NiaAsset } from '../../../slices/nodeApi/nodeApi.slice'
+import rgbIcon from '../../../assets/rgb-logo.svg'
 
 interface OrderProcessingDisplayProps {
   paymentMethod: 'lightning' | 'onchain'
@@ -26,172 +29,99 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
   order,
 }) => {
   const { t } = useTranslation()
-  return (
-    <div className="mx-auto max-w-3xl">
-      <div className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-surface-base/90 p-8 text-center shadow-[0_24px_80px_rgba(2,6,23,0.45)]">
-        <div className="pointer-events-none absolute -left-16 top-0 h-44 w-44 rounded-full bg-cyan-400/12 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl" />
+  const [assetIcon] = useAssetIcon(assetInfo?.ticker ?? '', rgbIcon)
+  const hasAsset = !!(orderPayload?.asset_id || order?.asset_id)
 
-        {/* Animated Icon */}
-        <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-400/15">
-          <div className="absolute inset-0 rounded-full border-4 border-primary/25 border-t-primary animate-spin"></div>
-          <CheckCircle className="h-10 w-10 text-cyan-300" />
+  return (
+    <div className="flex flex-col items-center justify-center w-full min-h-[70vh] text-white p-4">
+      <div className="w-full max-w-lg text-center">
+        {/* Animated loading ring (wallet-unlock style) with current icon */}
+        <div className="relative mx-auto mb-6 w-28 h-28">
+          <div className="absolute inset-0 rounded-full border-2 border-primary/15" />
+          <div className="absolute inset-2 rounded-full border border-dashed border-primary/20 animate-[spin_12s_linear_infinite]" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary/50 border-r-primary/30 animate-[spin_4s_linear_infinite]" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/10">
+              <CheckCircle className="w-8 h-8 text-primary" />
+            </div>
+          </div>
         </div>
 
         {/* Title */}
-        <h3 className="mb-4 text-2xl font-bold text-white">
+        <h3 className="text-2xl font-bold mb-3">
           {t('orderChannel.step3.paymentReceived')}
         </h3>
 
         {/* Subtitle */}
-        <p className="mb-6 text-content-secondary">
-          {t('orderChannel.step3.processingSubtitle')}
+        <p className="text-content-secondary mb-6">
+          {t('orderChannel.step3.waitingMakerConfirmation')}
         </p>
 
-        {/* Payment Details */}
-        <div className="mb-6 rounded-[22px] border border-border-subtle bg-surface-overlay/50 p-4">
-          <div className="mb-3 flex items-center justify-center gap-4 text-sm">
-            <span className="text-content-secondary">
-              {t('orderChannel.step3.amount')}:
+        {/* Order details */}
+        <Card className="divide-y divide-border-default/40 text-left">
+          {/* Amount */}
+          <div className="flex items-center justify-between py-3 first:pt-0">
+            <span className="text-sm text-content-secondary">
+              {t('orderChannel.step3.amount')}
             </span>
-            <span className="text-white font-medium">
+            <span className="text-sm text-white font-medium">
               {formatBitcoinAmount(
                 currentPayment?.order_total_sat || 0,
                 bitcoinUnit
               )}{' '}
-              {bitcoinUnit}
-            </span>
-            <span className="text-content-secondary">•</span>
-            <span className="text-content-secondary">
-              {t('orderChannel.step3.method')}:
-            </span>
-            <span className="text-white font-medium flex items-center gap-1">
-              {paymentMethod === 'lightning' ? (
-                <>⚡ {t('orderChannel.step3.lightning')}</>
-              ) : (
-                <>₿ {t('orderChannel.step3.onchain')}</>
-              )}
+              {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
             </span>
           </div>
 
-          {orderId && (
-            <div className="text-xs text-content-tertiary font-mono">
-              {t('orderChannel.step3.order')}: {orderId.slice(0, 8)}...
-              {orderId.slice(-8)}
-            </div>
-          )}
-        </div>
+          {/* Method */}
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm text-content-secondary">
+              {t('orderChannel.step3.method')}
+            </span>
+            <span className="text-sm text-white font-medium">
+              {paymentMethod === 'lightning'
+                ? t('orderChannel.step3.lightning')
+                : t('orderChannel.step3.onchain')}
+            </span>
+          </div>
 
-        {/* Asset Information */}
-        {(orderPayload?.asset_id || order?.asset_id) && (
-          <div className="mb-6 rounded-[22px] border border-emerald-400/20 bg-emerald-400/8 p-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
-              <span className="text-sm font-medium text-emerald-200">
+          {/* Type */}
+          {hasAsset && (
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-content-secondary">Type</span>
+              <span className="text-sm text-white font-medium">
                 {t('orderChannel.step3.rgbAssetChannel')}
               </span>
             </div>
-            <div className="text-center text-sm text-content-secondary">
-              {assetInfo ? (
-                <>
-                  {assetInfo.name} ({assetInfo.ticker})
-                </>
-              ) : (
-                <span className="font-mono text-xs">
-                  {(order?.asset_id || orderPayload?.asset_id)
-                    ?.split('-')
-                    .slice(0, 2)
-                    .join('-')}
-                  ...
-                </span>
-              )}
-            </div>
-            {(order?.lsp_asset_amount ||
-              orderPayload?.lsp_asset_amount ||
-              order?.client_asset_amount ||
-              orderPayload?.client_asset_amount) && (
-              <div className="mt-3 pt-3 border-t border-purple-500/20 text-xs space-y-1">
-                {(order?.lsp_asset_amount ||
-                  orderPayload?.lsp_asset_amount) && (
-                  <div className="flex justify-center gap-2">
-                    <span className="text-content-tertiary">
-                      {t('orderChannel.step3.lspAmount')}:
-                    </span>
-                    <span className="text-emerald-300">
-                      {(
-                        order?.lsp_asset_amount ||
-                        orderPayload?.lsp_asset_amount
-                      )?.toLocaleString()}
-                      {assetInfo ? ` ${assetInfo.ticker}` : ''}
-                    </span>
-                  </div>
-                )}
-                {(order?.client_asset_amount ||
-                  orderPayload?.client_asset_amount) && (
-                  <div className="flex justify-center gap-2">
-                    <span className="text-content-tertiary">
-                      {t('orderChannel.step3.yourAmount')}:
-                    </span>
-                    <span className="text-blue-300">
-                      {(
-                        order?.client_asset_amount ||
-                        orderPayload?.client_asset_amount
-                      )?.toLocaleString()}
-                      {assetInfo ? ` ${assetInfo.ticker}` : ''}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* Progress Steps */}
-        <div className="mb-6">
-          <div className="mb-4 flex items-center justify-center space-x-4">
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="ml-2 text-sm text-green-400">
-                {t('orderChannel.step3.paymentReceivedStatus')}
+          {/* Asset */}
+          {hasAsset && assetInfo && (
+            <div className="flex items-center justify-between py-3">
+              <span className="text-sm text-content-secondary">Asset</span>
+              <span className="flex items-center gap-1.5 text-sm text-white font-medium">
+                <img
+                  alt={assetInfo.ticker}
+                  className="w-4 h-4 rounded-full"
+                  src={assetIcon}
+                />
+                {assetInfo.name} ({assetInfo.ticker})
               </span>
             </div>
-            <ArrowRight className="text-content-tertiary" size={16} />
-            <div className="flex items-center">
-              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <span className="ml-2 text-sm text-blue-400">
-                {t('orderChannel.step3.processingOrder')}
+          )}
+
+          {/* Order ID */}
+          {orderId && (
+            <div className="flex items-start justify-between gap-4 py-3 last:pb-0">
+              <span className="text-sm text-content-secondary shrink-0">
+                Order ID
+              </span>
+              <span className="text-xs text-white font-mono break-all text-right">
+                {orderId}
               </span>
             </div>
-            <ArrowRight className="text-content-tertiary" size={16} />
-            <div className="flex items-center">
-              <div className="w-3 h-3 bg-surface-elevated rounded-full"></div>
-              <span className="ml-2 text-sm text-content-tertiary">
-                {t('orderChannel.step3.channelReady')}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Message */}
-        <div className="rounded-[20px] border border-primary/20 bg-cyan-400/10 p-4">
-          <div className="flex items-center justify-center gap-2 text-sm text-cyan-200">
-            <Clock className="w-4 h-4" />
-            <span>{t('orderChannel.step3.waitingMakerConfirmation')}</span>
-          </div>
-        </div>
-
-        {/* Pulsing dots for visual feedback */}
-        <div className="flex justify-center items-center mt-6 space-x-1">
-          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          <div
-            className="w-2 h-2 bg-primary rounded-full animate-pulse"
-            style={{ animationDelay: '0.2s' }}
-          ></div>
-          <div
-            className="w-2 h-2 bg-primary rounded-full animate-pulse"
-            style={{ animationDelay: '0.4s' }}
-          ></div>
-        </div>
+          )}
+        </Card>
       </div>
     </div>
   )

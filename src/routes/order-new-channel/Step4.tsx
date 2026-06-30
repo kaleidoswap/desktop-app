@@ -5,10 +5,7 @@ import { toast } from 'react-toastify'
 import { ArrowLeft, Wallet } from 'lucide-react'
 
 import 'react-toastify/dist/ReactToastify.css'
-import {
-  PaymentSection,
-  WalletFundsCard,
-} from '../../components/BuyChannelModal/components'
+import { PaymentSection } from '../../components/BuyChannelModal/components'
 import { useSettings } from '../../hooks/useSettings'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { Lsps1CreateOrderResponse } from '../../slices/makerApi/makerApi.slice'
@@ -84,7 +81,7 @@ export const Step4: React.FC<StepProps> = ({
   const [showWalletConfirmation, setShowWalletConfirmation] = useState(false)
   const [isProcessingWalletPayment, setIsProcessingWalletPayment] =
     useState(false)
-  const [isLoadingData, setIsLoadingData] = useState(false)
+  const [, setIsLoadingData] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const refreshData = useCallback(async () => {

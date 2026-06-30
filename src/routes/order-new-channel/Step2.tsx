@@ -39,6 +39,7 @@ import 'react-toastify/dist/ReactToastify.css'
 interface Props {
   onNext: (data: TChannelRequestForm, asset?: AssetInfo | null) => void
   onBack: () => void
+  preselectedAssetId?: string
 }
 
 const FormFieldsSchema = z.object({
@@ -57,7 +58,11 @@ const AssetListIcon = ({ ticker }: { ticker: string }) => {
   return <img alt={ticker} className="w-3.5 h-3.5" src={icon} />
 }
 
-export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
+export const Step2: React.FC<Props> = ({
+  onNext,
+  onBack,
+  preselectedAssetId,
+}) => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
@@ -183,6 +188,18 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
     }
     fetchData()
   }, [getInfoRequest])
+
+  // Preselect and lock the asset when arriving from Market Maker
+  useEffect(() => {
+    if (!preselectedAssetId) return
+    const asset = assetMap[preselectedAssetId]
+    if (!asset) return
+    setSelectedAsset(asset)
+    setAddAsset(true)
+    setValue('assetId', asset.asset_id)
+  }, [preselectedAssetId, assetMap, setValue])
+
+  const isAssetLocked = !!preselectedAssetId && !!assetMap[preselectedAssetId]
 
   const formatNumber = (n: number) => n.toLocaleString('en-US')
 
@@ -717,8 +734,15 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
               </h5>
 
               <button
-                className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default hover:border-primary/50 transition-all duration-200 flex items-center justify-between text-left"
-                onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
+                className={`w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default transition-all duration-200 flex items-center justify-between text-left ${
+                  isAssetLocked
+                    ? 'cursor-default opacity-90'
+                    : 'hover:border-primary/50'
+                }`}
+                disabled={isAssetLocked}
+                onClick={() =>
+                  !isAssetLocked && setIsAssetDropdownOpen(!isAssetDropdownOpen)
+                }
                 type="button"
               >
                 <div className="flex items-center gap-2">
@@ -746,9 +770,11 @@ export const Step2: React.FC<Props> = ({ onNext, onBack }) => {
                     </span>
                   )}
                 </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-content-secondary transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
-                />
+                {!isAssetLocked && (
+                  <ChevronDown
+                    className={`w-4 h-4 text-content-secondary transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+                  />
+                )}
               </button>
 
               {isAssetDropdownOpen && (

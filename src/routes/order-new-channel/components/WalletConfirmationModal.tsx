@@ -110,198 +110,199 @@ export const WalletConfirmationModal: React.FC<
       />
 
       <div className="absolute inset-0 overflow-y-auto px-4 py-8 flex items-center justify-center">
-        <div className="w-full max-w-lg rounded-2xl border border-border-default/40 bg-surface-overlay shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border-default/30">
-            <div className="flex items-center gap-3">
-              <Wallet className="w-5 h-5 text-primary" />
-              <h3 className="text-base font-semibold text-white">
+        <div className="w-full max-w-lg rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl">
+          <div className="px-8 py-8">
+            {/* Title row */}
+            <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+              <Wallet className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-bold text-white flex-1">
                 {t('orderChannel.step3.payWithWallet')}
               </h3>
+              <button
+                className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+                onClick={onClose}
+                type="button"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <button
-              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
-              onClick={onClose}
-              type="button"
-            >
-              <X size={18} />
-            </button>
-          </div>
 
-          {/* Content */}
-          <div className="px-5 py-4 space-y-3">
-            {isProcessing ? (
-              <div className="flex flex-col items-center justify-center py-10">
-                <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                <p className="mt-4 text-sm font-medium text-content-primary">
-                  {t('orderChannel.step3.processingPayment')}
-                </p>
-                <p className="mt-1 text-sm text-content-secondary">
-                  {t('orderChannel.step3.processingWait')}
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Lightning card */}
-                {lightningAvailable && (
-                  <div
-                    className={`rounded-lg border p-3 flex flex-col gap-3 cursor-pointer transition-all duration-200 ${
-                      selectedMethod === 'lightning'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border-default hover:border-primary/50'
-                    }`}
-                    onClick={() => handleCardClick('lightning')}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <img
-                          alt="Lightning"
-                          className="w-4 h-4 flex-shrink-0"
-                          src={LightningLogo}
-                        />
-                        <span className="text-sm font-medium text-white">
-                          Lightning
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-content-secondary">
-                        <span>
-                          {t('components.buyChannelModal.availableLabel')}:{' '}
-                          <span className="text-white font-medium">
-                            {formatBitcoinAmount(
-                              outboundLiquidity,
-                              bitcoinUnit
-                            )}{' '}
-                            {displayUnit}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {!hasLightningBalance && (
-                      <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                        <p className="text-xs text-yellow-200">
-                          {t('components.buyChannelModal.balanceNeededTitle')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Onchain card */}
-                {onchainAvailable && (
-                  <div
-                    className={`rounded-lg border p-3 flex flex-col gap-3 cursor-pointer transition-all duration-200 ${
-                      selectedMethod === 'onchain'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border-default hover:border-primary/50'
-                    }`}
-                    onClick={() => handleCardClick('onchain')}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <img
-                          alt="Bitcoin"
-                          className="w-4 h-4 flex-shrink-0"
-                          src={BitcoinLogo}
-                        />
-                        <span className="text-sm font-medium text-white">
-                          Onchain
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-content-secondary">
-                        <span>
-                          {t('components.buyChannelModal.availableLabel')}:{' '}
-                          <span className="text-white font-medium">
-                            {formatBitcoinAmount(onChainBalance, bitcoinUnit)}{' '}
-                            {displayUnit}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Fee selector — shown when Onchain is selected */}
-                    {selectedMethod === 'onchain' && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <label className="block text-xs font-medium text-content-secondary mb-2">
-                          {t('orderChannel.step3.feeRateLabel')}
-                        </label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {feeOptions.map(({ value, label, icon, rate }) => (
-                            <button
-                              className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all duration-200 border text-xs ${
-                                selectedFee === value
-                                  ? 'bg-primary/10 border-primary text-primary'
-                                  : 'border-white/20 hover:border-primary/50 text-content-secondary'
-                              }`}
-                              key={value}
-                              onClick={() => onFeeChange(value)}
-                              type="button"
-                            >
-                              {icon}
-                              <span className="text-[10px]">{label}</span>
-                              <span className="text-[9px]">
-                                {value === 'custom' && selectedFee === 'custom'
-                                  ? `${customFee} sat/vB`
-                                  : rate}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                        {selectedFee === 'custom' && (
-                          <div className="mt-2">
-                            <input
-                              className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none text-white text-sm"
-                              min={0.1}
-                              onChange={(e) =>
-                                onCustomFeeChange(
-                                  parseFloat(e.target.value) || 1
-                                )
-                              }
-                              step={0.1}
-                              type="number"
-                              value={customFee}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {!hasOnchainBalance && (
-                      <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                        <p className="text-xs text-yellow-200">
-                          {t('components.buyChannelModal.balanceNeededTitle')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Single pay button */}
-                <button
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={!selectedMethod || !canPay}
-                  onClick={() => selectedMethod && onPay(selectedMethod)}
-                  type="button"
-                >
-                  <ArrowUpRight className="h-4 w-4" />
-                  {t('orderChannel.step3.pay')}
-                  {selectedMethod && (
-                    <>
-                      {' '}
-                      {formatBitcoinAmount(
+            {/* Content */}
+            <div className="space-y-3">
+              {isProcessing ? (
+                <div className="flex flex-col items-center justify-center py-10">
+                  <div className="h-12 w-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                  <p className="mt-4 text-sm font-medium text-content-primary">
+                    {t('orderChannel.step3.processingPayment')}
+                  </p>
+                  <p className="mt-1 text-sm text-content-secondary">
+                    {t('orderChannel.step3.processingWait')}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Lightning card */}
+                  {lightningAvailable && (
+                    <div
+                      className={`rounded-lg border p-3 flex flex-col gap-3 cursor-pointer transition-all duration-200 ${
                         selectedMethod === 'lightning'
-                          ? lightningAmountSat
-                          : onchainAmountSat,
-                        bitcoinUnit
-                      )}{' '}
-                      {displayUnit}
-                    </>
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border-default hover:border-primary/50'
+                      }`}
+                      onClick={() => handleCardClick('lightning')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img
+                            alt="Lightning"
+                            className="w-4 h-4 flex-shrink-0"
+                            src={LightningLogo}
+                          />
+                          <span className="text-sm font-medium text-white">
+                            Lightning
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-content-secondary">
+                          <span>
+                            {t('components.buyChannelModal.availableLabel')}:{' '}
+                            <span className="text-white font-medium">
+                              {formatBitcoinAmount(
+                                outboundLiquidity,
+                                bitcoinUnit
+                              )}{' '}
+                              {displayUnit}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {!hasLightningBalance && (
+                        <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5">
+                          <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                          <p className="text-xs text-yellow-200">
+                            {t('components.buyChannelModal.balanceNeededTitle')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </button>
-              </>
-            )}
+
+                  {/* Onchain card */}
+                  {onchainAvailable && (
+                    <div
+                      className={`rounded-lg border p-3 flex flex-col gap-3 cursor-pointer transition-all duration-200 ${
+                        selectedMethod === 'onchain'
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border-default hover:border-primary/50'
+                      }`}
+                      onClick={() => handleCardClick('onchain')}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img
+                            alt="Bitcoin"
+                            className="w-4 h-4 flex-shrink-0"
+                            src={BitcoinLogo}
+                          />
+                          <span className="text-sm font-medium text-white">
+                            Onchain
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-content-secondary">
+                          <span>
+                            {t('components.buyChannelModal.availableLabel')}:{' '}
+                            <span className="text-white font-medium">
+                              {formatBitcoinAmount(onChainBalance, bitcoinUnit)}{' '}
+                              {displayUnit}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Fee selector — shown when Onchain is selected */}
+                      {selectedMethod === 'onchain' && (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <label className="block text-xs font-medium text-content-secondary mb-2">
+                            {t('orderChannel.step3.feeRateLabel')}
+                          </label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {feeOptions.map(({ value, label, icon, rate }) => (
+                              <button
+                                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all duration-200 border text-xs ${
+                                  selectedFee === value
+                                    ? 'bg-primary/10 border-primary text-primary'
+                                    : 'border-white/20 hover:border-primary/50 text-content-secondary'
+                                }`}
+                                key={value}
+                                onClick={() => onFeeChange(value)}
+                                type="button"
+                              >
+                                {icon}
+                                <span className="text-[10px]">{label}</span>
+                                <span className="text-[9px]">
+                                  {value === 'custom' &&
+                                  selectedFee === 'custom'
+                                    ? `${customFee} sat/vB`
+                                    : rate}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                          {selectedFee === 'custom' && (
+                            <div className="mt-2">
+                              <input
+                                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none text-white text-sm"
+                                min={0.1}
+                                onChange={(e) =>
+                                  onCustomFeeChange(
+                                    parseFloat(e.target.value) || 1
+                                  )
+                                }
+                                step={0.1}
+                                type="number"
+                                value={customFee}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!hasOnchainBalance && (
+                        <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2.5">
+                          <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                          <p className="text-xs text-yellow-200">
+                            {t('components.buyChannelModal.balanceNeededTitle')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Single pay button */}
+                  <button
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={!selectedMethod || !canPay}
+                    onClick={() => selectedMethod && onPay(selectedMethod)}
+                    type="button"
+                  >
+                    <ArrowUpRight className="h-4 w-4" />
+                    {t('orderChannel.step3.pay')}
+                    {selectedMethod && (
+                      <>
+                        {' '}
+                        {formatBitcoinAmount(
+                          selectedMethod === 'lightning'
+                            ? lightningAmountSat
+                            : onchainAmountSat,
+                          bitcoinUnit
+                        )}{' '}
+                        {displayUnit}
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
