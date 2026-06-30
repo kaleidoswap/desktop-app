@@ -82,12 +82,12 @@ export function DcaHistoryChart({ executions }: Props) {
           <linearGradient id="dcaGrad" x1="0" x2="0" y1="0" y2="1">
             <stop
               offset="0%"
-              stopColor="rgb(var(--color-primary))"
+              stopColor="rgb(var(--app-primary))"
               stopOpacity="0.25"
             />
             <stop
               offset="100%"
-              stopColor="rgb(var(--color-primary))"
+              stopColor="rgb(var(--app-primary))"
               stopOpacity="0.02"
             />
           </linearGradient>
@@ -97,7 +97,7 @@ export function DcaHistoryChart({ executions }: Props) {
         {priceTicks.map((tick, i) => (
           <line
             key={i}
-            stroke="rgb(var(--color-border-subtle))"
+            stroke="rgb(var(--app-border-subtle))"
             strokeOpacity="0.4"
             strokeWidth="1"
             x1={PAD.left}
@@ -114,7 +114,7 @@ export function DcaHistoryChart({ executions }: Props) {
         <path
           d={pricePath}
           fill="none"
-          stroke="rgb(var(--color-primary))"
+          stroke="rgb(var(--app-primary))"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2"
@@ -125,10 +125,10 @@ export function DcaHistoryChart({ executions }: Props) {
           <circle
             cx={toX(p.ts)}
             cy={toPriceY(p.price)}
-            fill="rgb(var(--color-primary))"
+            fill="rgb(var(--app-primary))"
             key={i}
             r="3.5"
-            stroke="rgb(var(--color-surface-base))"
+            stroke="rgb(var(--app-surface-base))"
             strokeWidth="1.5"
           />
         ))}
@@ -137,7 +137,7 @@ export function DcaHistoryChart({ executions }: Props) {
         {priceTicks.map((tick, i) => (
           <text
             dominantBaseline="middle"
-            fill="rgb(var(--color-content-tertiary))"
+            fill="rgb(var(--app-content-tertiary))"
             fontSize="9"
             key={i}
             textAnchor="end"
@@ -151,7 +151,7 @@ export function DcaHistoryChart({ executions }: Props) {
         {/* X axis labels */}
         <text
           dominantBaseline="hanging"
-          fill="rgb(var(--color-content-tertiary))"
+          fill="rgb(var(--app-content-tertiary))"
           fontSize="9"
           textAnchor="start"
           x={PAD.left}
@@ -161,7 +161,7 @@ export function DcaHistoryChart({ executions }: Props) {
         </text>
         <text
           dominantBaseline="hanging"
-          fill="rgb(var(--color-content-tertiary))"
+          fill="rgb(var(--app-content-tertiary))"
           fontSize="9"
           textAnchor="end"
           x={PAD.left + chartW}
