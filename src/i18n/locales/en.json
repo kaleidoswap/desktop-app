@@ -86,7 +86,7 @@
     "manageChannels": "Manage Channels",
     "refreshing": "Refreshing...",
     "refresh": "Refresh",
-    "totalBalance": "Total Balance",
+    "totalBalance": "Total Lightning Balance",
     "inboundLiquidity": "Inbound Liquidity",
     "outboundLiquidity": "Outbound Liquidity",
     "yourChannels": "Your Channels",
