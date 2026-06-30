@@ -1,4 +1,4 @@
-import { Layers, PlusCircle, ShoppingCart, Tag } from 'lucide-react'
+import { PlusCircle, ShoppingCart, SlidersHorizontal, Tag } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
@@ -20,7 +20,7 @@ const TABS: {
   {
     end: true,
     fallback: 'Manage Channels',
-    icon: <Layers className="h-4 w-4" />,
+    icon: <SlidersHorizontal className="h-4 w-4" />,
     labelKey: 'channels.manageChannels',
     to: CHANNELS_PATH,
   },

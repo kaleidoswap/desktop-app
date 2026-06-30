@@ -1,17 +1,24 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { ArrowLeft, ArrowRight, CheckCircle, Loader2, X } from 'lucide-react'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
+import { RootState } from '../../app/store'
+import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
+import kaleidoswapPictogram from '../../assets/logo.svg'
 import { ChannelsNav } from '../../components/Channels/ChannelsNav'
-
+import { Spinner } from '../../components/Spinner'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
+import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
 import {
   makerApi,
   Lsps1CreateOrderResponse,
 } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
   AssetInfo,
   buildChannelOrderPayload,
@@ -24,23 +31,134 @@ import { Step1 } from './Step1'
 import { Step2 } from './Step2'
 import { Step3 } from './Step3'
 import { Step4 } from './Step4'
+import { Step5 } from './Step5'
 import 'react-toastify/dist/ReactToastify.css'
 
 export const Component = () => {
   const { t } = useTranslation()
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [orderPayload, setOrderPayload] = useState<any>(null)
   const [showBackConfirmation, setShowBackConfirmation] = useState(false)
+  const [selectedAssetInfo, setSelectedAssetInfo] = useState<AssetInfo | null>(
+    null
+  )
+
+  // Initial LSP confirm modal state
+  const [showLspConfirm, setShowLspConfirm] = useState(true)
+  const [lspConfirmUrl, setLspConfirmUrl] = useState('')
+  const [isLoadingLspConfirm, setIsLoadingLspConfirm] = useState(true)
+  const [lspConfirmError, setLspConfirmError] = useState<string | null>(null)
+  const [isConnectingLsp, setIsConnectingLsp] = useState(false)
+
+  const dispatch = useAppDispatch()
+  const currentAccount = useAppSelector(
+    (state: RootState) => state.nodeSettings.data
+  )
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
+  const [getNetworkInfoRequest] = nodeApi.endpoints.networkInfo.useLazyQuery()
+  const [connectPeerRequest] = nodeApi.endpoints.connectPeer.useMutation()
+  const [listPeersRequest] = nodeApi.endpoints.listPeers.useLazyQuery()
   const [createOrderRequest, createOrderResponse] =
     makerApi.endpoints.create_order.useLazyQuery()
   const [getOrderRequest] = makerApi.endpoints.get_order.useLazyQuery()
   const [getInfoRequest] = makerApi.endpoints.get_info.useLazyQuery()
+
+  useEffect(() => {
+    const initDefaultLsp = async () => {
+      try {
+        const networkInfo = await getNetworkInfoRequest().unwrap()
+        if (!networkInfo?.network)
+          throw new Error(t('orderChannel.step1.networkInfoNotAvailable'))
+
+        const network = Object.keys(NETWORK_DEFAULTS).find(
+          (key) =>
+            key.toLowerCase() === String(networkInfo.network).toLowerCase()
+        )
+        if (!network)
+          throw new Error(
+            t('orderChannel.step1.unsupportedNetwork', {
+              network: networkInfo.network,
+            })
+          )
+
+        const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
+        if (!defaultLspUrl)
+          throw new Error(
+            t('orderChannel.step1.noDefaultLspUrl', {
+              network: networkInfo.network,
+            })
+          )
+
+        dispatch(
+          nodeSettingsActions.setNodeSettings({
+            ...currentAccount,
+            default_lsp_url: defaultLspUrl,
+            default_maker_url: defaultLspUrl,
+          })
+        )
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        const info = await getInfoRequest().unwrap()
+        if (info.lsp_connection_url) {
+          setLspConfirmUrl(info.lsp_connection_url)
+        } else {
+          throw new Error(t('orderChannel.step1.lspUrlMissing'))
+        }
+      } catch (err) {
+        setLspConfirmError(
+          err instanceof Error
+            ? err.message
+            : t('orderChannel.step1.kaleidoLspFailed')
+        )
+      } finally {
+        setIsLoadingLspConfirm(false)
+      }
+    }
+    initDefaultLsp()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleConfirmLsp = async () => {
+    if (!lspConfirmUrl) return
+    setIsConnectingLsp(true)
+    try {
+      const pubkey = lspConfirmUrl.split('@')[0]
+      const peersResp = await listPeersRequest().unwrap()
+      const isConnected = peersResp?.peers?.some(
+        (p: any) => p.pubkey === pubkey
+      )
+      if (!isConnected) {
+        const result = await connectPeerRequest({
+          peer_pubkey_and_addr: lspConfirmUrl,
+        })
+        if ('error' in result)
+          throw new Error(t('orderChannel.step1.failedToConnectPeer'))
+      }
+      setShowLspConfirm(false)
+      setStep(2)
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('orderChannel.step1.failedToConnectPeer'),
+        {
+          autoClose: 4000,
+          position: 'bottom-right',
+        }
+      )
+    } finally {
+      setIsConnectingLsp(false)
+    }
+  }
+
+  const handleCancelLsp = () => {
+    setShowLspConfirm(false)
+  }
 
   const toastId: string | number | null = null
 
@@ -53,9 +171,9 @@ export const Component = () => {
     setPaymentStatus,
   } = useChannelOrderPaymentMonitor({
     accessToken,
-    enabled: step === 3,
+    enabled: step === 4,
     getOrder: getOrderRequest,
-    onTerminalState: () => setStep(4),
+    onTerminalState: () => setStep(5),
     orderId,
     orderPayload,
   })
@@ -66,14 +184,15 @@ export const Component = () => {
         setStep(2)
       } else {
         setPaymentStatus('error')
-        setStep(4)
+        setStep(5)
       }
     },
     [setPaymentStatus]
   )
 
   const onSubmitStep2 = useCallback(
-    async (data: any) => {
+    async (data: any, asset?: AssetInfo | null) => {
+      setSelectedAssetInfo(asset ?? null)
       setLoading(true)
       try {
         // Validate that we have basic prerequisites
@@ -234,11 +353,12 @@ export const Component = () => {
   )
 
   const onStepBack = useCallback(() => {
-    if (step === 3) {
+    if (step === 3 || step === 4) {
       setShowBackConfirmation(true)
     } else {
       setStep(
-        (prevStep) => (prevStep > 1 ? prevStep - 1 : prevStep) as 1 | 2 | 3 | 4
+        (prevStep) =>
+          (prevStep > 1 ? prevStep - 1 : prevStep) as 1 | 2 | 3 | 4 | 5
       )
     }
   }, [step])
@@ -273,26 +393,46 @@ export const Component = () => {
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => setShowBackConfirmation(false)}
       />
-      <div className="bg-surface-overlay rounded-xl p-6 max-w-md w-full relative z-10">
-        <h3 className="text-xl font-bold text-white mb-4">
-          {t('orderChannel.backConfirmTitle')}
-        </h3>
-        <p className="text-content-secondary mb-6">
-          {t('orderChannel.backConfirmMessage')}
-        </p>
-        <div className="flex gap-4">
+      <div className="w-full max-w-md rounded-2xl border border-border-default/40 bg-surface-overlay shadow-2xl relative z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border-default/30">
+          <div className="flex items-center gap-3">
+            <ArrowLeft className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-base font-semibold text-white">
+              {t('orderChannel.backConfirmTitle')}
+            </h3>
+          </div>
           <button
-            className="flex-1 px-4 py-2 bg-surface-high text-white rounded-lg hover:bg-surface-elevated transition-colors"
+            className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
             onClick={() => setShowBackConfirmation(false)}
+            type="button"
           >
-            {t('orderChannel.backConfirmCancel')}
+            <X size={18} />
           </button>
-          <button
-            className="flex-1 px-4 py-2 bg-primary text-[#12131C] rounded-lg hover:bg-primary-emphasis transition-colors"
-            onClick={handleConfirmBack}
-          >
-            {t('orderChannel.backConfirmGoBack')}
-          </button>
+        </div>
+        {/* Body */}
+        <div className="px-5 py-4">
+          <p className="text-sm text-content-secondary mb-5">
+            {t('orderChannel.backConfirmMessage')}
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border-default/40 bg-surface-high/50 text-sm text-white hover:bg-surface-elevated transition-colors"
+              onClick={handleConfirmBack}
+              type="button"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('orderChannel.backConfirmGoBack')}
+            </button>
+            <button
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+              onClick={() => setShowBackConfirmation(false)}
+              type="button"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {t('orderChannel.backConfirmCancel')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -300,13 +440,85 @@ export const Component = () => {
 
   return (
     <div className="w-full min-h-full text-white">
+      {showLspConfirm &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+              <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+                <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
+                  <h3 className="text-xl font-bold text-white">
+                    {t('orderChannel.step1.alreadyConnected')}
+                  </h3>
+                </div>
+
+                {isLoadingLspConfirm ? (
+                  <div className="flex items-center justify-center h-20 mb-6">
+                    <Spinner color="#15E99A" overlay={false} size={32} />
+                  </div>
+                ) : lspConfirmError ? (
+                  <p className="text-sm text-red-400 mb-6">{lspConfirmError}</p>
+                ) : (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <img
+                        alt="KaleidoSwap"
+                        className="w-8 h-8 flex-shrink-0"
+                        src={kaleidoswapPictogram}
+                      />
+                      <span className="text-sm font-medium text-white">
+                        KaleidoSwap LSP
+                      </span>
+                    </div>
+                    <div className="p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
+                      <p className="text-sm text-content-secondary break-all font-mono">
+                        {lspConfirmUrl}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <button
+                    className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                    onClick={handleCancelLsp}
+                    type="button"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    {t('orderChannel.step1.cancelButton')}
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-semibold transition-all duration-200 active:scale-95 shadow-lg shadow-primary/20 text-sm disabled:bg-primary/40 disabled:cursor-not-allowed"
+                    disabled={
+                      isLoadingLspConfirm ||
+                      !!lspConfirmError ||
+                      isConnectingLsp
+                    }
+                    onClick={handleConfirmLsp}
+                    type="button"
+                  >
+                    {isConnectingLsp ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowRight className="w-4 h-4" />
+                    )}
+                    {t('orderChannel.step1.continueButton')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <ChannelsNav />
       </div>
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-4 px-4 rounded-xl border border-border-subtle/50 shadow-xl w-full relative isolate min-h-fit">
+      <div className="py-4 px-4 w-full relative isolate min-h-fit animate-fade-in">
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
-            <ClipLoader color={'#123abc'} loading={loading} size={50} />
+            <ClipLoader color={'#15E99A'} loading={loading} size={50} />
           </div>
         )}
         {showBackConfirmation && <BackConfirmationModal />}
@@ -316,6 +528,19 @@ export const Component = () => {
 
         {step === 3 && (
           <Step3
+            assetInfo={selectedAssetInfo}
+            key={orderId ?? 'draft-order'}
+            onBack={onStepBack}
+            onNext={() => setStep(4)}
+            order={
+              (createOrderResponse.data as Lsps1CreateOrderResponse) || null
+            }
+            orderPayload={orderPayload}
+          />
+        )}
+
+        {step === 4 && (
+          <Step4
             detectedPaymentMethod={paymentMethod}
             isProcessingPayment={isProcessingPayment}
             key={orderId ?? 'draft-order'}
@@ -330,8 +555,8 @@ export const Component = () => {
           />
         )}
 
-        {step === 4 && (
-          <Step4
+        {step === 5 && (
+          <Step5
             onRestart={handleRestartFlow}
             orderId={orderId ?? undefined}
             paymentStatus={paymentStatus || 'error'}

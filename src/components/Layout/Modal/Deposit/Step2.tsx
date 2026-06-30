@@ -41,6 +41,7 @@ import {
 interface Props {
   assetId?: string
   onBack: VoidFunction
+  onClose: () => void
   onNext: VoidFunction
 }
 

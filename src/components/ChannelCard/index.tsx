@@ -297,7 +297,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         className={`absolute top-0 left-0 w-full h-[2px] ${
           isUsable
             ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
-            : 'bg-gradient-to-r from-transparent via-red-500/50 to-transparent'
+            : 'bg-gradient-to-r from-transparent via-[#6F32FF]/50 to-transparent'
         }`}
       />
 
@@ -374,7 +374,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               <span className="font-medium">BTC</span>
             </div>
             <div className="flex items-center gap-1.5 text-[10px]">
-              <span className="flex items-center gap-0.5 text-amber-300/80">
+              <span className="flex items-center gap-0.5 text-purple-300/80">
                 <ArrowUpRight className="h-3 w-3" />
                 <span className="font-mono">
                   {formatBitcoinAmount(
@@ -384,7 +384,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 </span>
               </span>
               <span className="text-content-tertiary/40">/</span>
-              <span className="flex items-center gap-0.5 text-blue-300/80">
+              <span className="flex items-center gap-0.5 text-emerald-300/80">
                 <ArrowDownRight className="h-3 w-3" />
                 <span className="font-mono">
                   {formatBitcoinAmount(
@@ -397,13 +397,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           </div>
           <LiquidityBar
             inbound={channel.inbound_balance_msat / 1000}
-            inboundColor="bg-blue-500"
+            inboundColor="bg-emerald-500"
             inboundLabel={formatBitcoinAmount(
               channel.inbound_balance_msat / 1000,
               bitcoinUnit
             )}
             outbound={channel.outbound_balance_msat / 1000}
-            outboundColor="bg-yellow-500"
+            outboundColor="bg-[#6F32FF]"
             outboundLabel={formatBitcoinAmount(
               channel.outbound_balance_msat / 1000,
               bitcoinUnit

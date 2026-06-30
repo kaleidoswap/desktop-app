@@ -339,20 +339,7 @@ export const Component: React.FC = () => {
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <ChannelsNav />
       </div>
-      <div className="px-4 pb-6">
-        <div className="flex justify-end mb-8">
-          <button
-            className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            disabled={isLoading}
-            onClick={() => void refreshData()}
-            title={isLoading ? t('channels.refreshing') : t('channels.refresh')}
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`}
-            />
-          </button>
-        </div>
-
+      <div className="px-4 pb-6 pt-8 animate-fade-in">
         <div className="grid gap-4 md:grid-cols-3 mb-8">
           <StatCard
             icon={<Wallet className="h-4 w-4 text-primary" />}
@@ -505,6 +492,20 @@ export const Component: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Refresh button — rightmost */}
+              <button
+                className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={isLoading}
+                onClick={() => void refreshData()}
+                title={
+                  isLoading ? t('channels.refreshing') : t('channels.refresh')
+                }
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`}
+                />
+              </button>
             </div>
           </div>
 

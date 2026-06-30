@@ -6,8 +6,10 @@ import {
   MessageSquare,
   Github,
   Plus,
+  PlusCircle,
   ShoppingCart,
   Activity,
+  SlidersHorizontal,
   Settings,
   Store,
   Zap,
@@ -136,12 +138,12 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         matchPath: CHANNELS_PATH,
         subMenu: [
           {
-            icon: <Activity className="w-4 h-4" />,
+            icon: <SlidersHorizontal className="w-4 h-4" />,
             label: t('channels.manageChannels'),
             to: CHANNELS_PATH,
           },
           {
-            icon: <Plus className="w-4 h-4" />,
+            icon: <PlusCircle className="w-4 h-4" />,
             label: t('channels.createNewChannel'),
             to: CREATE_NEW_CHANNEL_PATH,
           },

@@ -47,7 +47,7 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
   if (!hasBalanceData) {
     return (
       <div className="flex items-center justify-center gap-3 p-8">
-        <ClipLoader color="#3B82F6" size={24} />
+        <ClipLoader color="#15E99A" size={24} />
         <span className="text-content-secondary">
           {t('orderChannel.step3.loadingBalance')}
         </span>

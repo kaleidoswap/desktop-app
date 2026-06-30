@@ -28,13 +28,13 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
   const { t } = useTranslation()
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="relative overflow-hidden rounded-[28px] border border-cyan-400/20 bg-surface-base/90 p-8 text-center shadow-[0_24px_80px_rgba(2,6,23,0.45)]">
+      <div className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-surface-base/90 p-8 text-center shadow-[0_24px_80px_rgba(2,6,23,0.45)]">
         <div className="pointer-events-none absolute -left-16 top-0 h-44 w-44 rounded-full bg-cyan-400/12 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 right-0 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl" />
 
         {/* Animated Icon */}
         <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-400/15">
-          <div className="absolute inset-0 rounded-full border-4 border-cyan-400/25 border-t-cyan-300 animate-spin"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-primary/25 border-t-primary animate-spin"></div>
           <CheckCircle className="h-10 w-10 text-cyan-300" />
         </div>
 
@@ -157,7 +157,7 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
             </div>
             <ArrowRight className="text-content-tertiary" size={16} />
             <div className="flex items-center">
-              <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
               <span className="ml-2 text-sm text-blue-400">
                 {t('orderChannel.step3.processingOrder')}
               </span>
@@ -173,7 +173,7 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
         </div>
 
         {/* Status Message */}
-        <div className="rounded-[20px] border border-cyan-400/20 bg-cyan-400/10 p-4">
+        <div className="rounded-[20px] border border-primary/20 bg-cyan-400/10 p-4">
           <div className="flex items-center justify-center gap-2 text-sm text-cyan-200">
             <Clock className="w-4 h-4" />
             <span>{t('orderChannel.step3.waitingMakerConfirmation')}</span>
@@ -182,13 +182,13 @@ export const OrderProcessingDisplay: React.FC<OrderProcessingDisplayProps> = ({
 
         {/* Pulsing dots for visual feedback */}
         <div className="flex justify-center items-center mt-6 space-x-1">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           <div
-            className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+            className="w-2 h-2 bg-primary rounded-full animate-pulse"
             style={{ animationDelay: '0.2s' }}
           ></div>
           <div
-            className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"
+            className="w-2 h-2 bg-primary rounded-full animate-pulse"
             style={{ animationDelay: '0.4s' }}
           ></div>
         </div>
