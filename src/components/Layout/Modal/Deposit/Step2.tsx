@@ -9,6 +9,7 @@ import {
   Loader,
   RefreshCw,
   Wallet,
+  X,
   Zap,
   Link as ChainIcon,
   AlertTriangle,
@@ -41,6 +42,7 @@ import {
 interface Props {
   assetId?: string
   onBack: VoidFunction
+  onClose: () => void
   onNext: VoidFunction
 }
 
@@ -48,7 +50,7 @@ const MSATS_PER_SAT = 1000
 const RGB_HTLC_MIN_SAT = 3000
 const SATOSHIS_PER_BTC = 100_000_000
 
-export const Step2 = ({ assetId, onBack, onNext }: Props) => {
+export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const isBtc = assetId === BTC_ASSET_ID
 
   // Network toggle only used for RGB assets
@@ -669,7 +671,14 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     <div>
       <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
         <Download className="w-6 h-6 text-primary" />
-        <h3 className="text-xl font-bold text-white">{titleText}</h3>
+        <h3 className="text-xl font-bold text-white flex-1">{titleText}</h3>
+        <button
+          className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <div className="space-y-3">

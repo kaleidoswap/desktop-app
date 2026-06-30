@@ -5,6 +5,7 @@ import {
   Rocket,
   Settings,
   Upload,
+  X,
   Zap,
 } from 'lucide-react'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
@@ -62,7 +63,9 @@ const createFungibleAssignment = (amount: number): any => {
   }
 }
 
-export const WithdrawModalContent: React.FC = () => {
+export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
+  onClose,
+}) => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
   const { bitcoinUnit } = useSettings()
@@ -1419,11 +1422,18 @@ export const WithdrawModalContent: React.FC = () => {
       <div className="flex flex-col">
         <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
           <Upload className="w-6 h-6 text-primary" />
-          <h3 className="text-xl font-bold text-white">
+          <h3 className="text-xl font-bold text-white flex-1">
             {showConfirmation
               ? t('withdrawModal.main.title.confirm')
               : t('withdrawModal.main.title.form')}
           </h3>
+          <button
+            className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">

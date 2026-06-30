@@ -1,6 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
-import { AlertCircle, CheckCircle, Info } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle,
+  Link,
+  Plus,
+  X,
+} from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -22,21 +29,13 @@ interface Props {
   formData: TNewChannelForm
   onFormUpdate: (updates: Partial<TNewChannelForm>) => void
   formError?: string | null
-  infoMessage?: string
 }
 
 interface FormFields {
   pubKeyAndAddress: string
 }
 
-export const Step1 = ({
-  onNext,
-  onBack,
-  formData,
-  onFormUpdate,
-  formError,
-  infoMessage,
-}: Props) => {
+export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
@@ -252,21 +251,11 @@ export const Step1 = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-16 mb-10">
-        <h3 className="text-3xl font-bold text-white mb-4">
+      <div className="text-center mt-4 mb-8">
+        <h3 className="text-3xl font-bold text-white">
           {t('createChannel.step1.title')}
         </h3>
-        <p className="text-content-secondary">
-          {t('createChannel.step1.subtitle')}
-        </p>
       </div>
-
-      {infoMessage && (
-        <div className="flex items-center gap-2 text-sm text-amber-200 mb-4 p-3 bg-amber-400/10 border border-amber-400/25 rounded-lg">
-          <Info className="h-4 w-4 text-amber-400 flex-shrink-0" />
-          <p>{infoMessage}</p>
-        </div>
-      )}
 
       {formError && (
         <div className="flex items-center gap-2 text-sm text-red-400 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -275,170 +264,175 @@ export const Step1 = ({
         </div>
       )}
 
-      {/* Connected Peers Section */}
-      <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h4 className="text-lg font-semibold text-white">
+      <div className="flex gap-6">
+        {/* Left card: Connect New Peer */}
+        <div className="flex-1 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 flex flex-col gap-5">
+          <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Plus className="w-5 h-5 text-primary" />
+            {t('createChannel.step1.connectNewPeer')}
+          </h4>
+
+          {/* Suggested nodes */}
+          <div>
+            <div className="mb-3 text-sm font-medium text-white">
+              {t('createChannel.step1.suggestedNodes')}
+            </div>
+            <div className="flex gap-3">
+              <button
+                className="flex items-center gap-2 p-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
+                disabled={isLoading}
+                onClick={fetchLspInfo}
+                type="button"
+              >
+                <img
+                  alt="KaleidoSwap"
+                  className="w-8 h-8"
+                  src={kaleidoswapPictogram}
+                />
+              </button>
+            </div>
+            {isLoading && (
+              <div className="flex items-center mt-3">
+                <Spinner color="#15E99A" size={20} />
+                <span className="ml-2 text-content-secondary text-sm">
+                  {t('createChannel.step1.loadingLsp')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border-default/40" />
+
+          {/* Connect manually subtitle + textarea */}
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium text-white">
+              {t('createChannel.step1.connectManually')}
+            </div>
+            <Controller
+              control={control}
+              name="pubKeyAndAddress"
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <input
+                    className={`w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border ${
+                      fieldState.error || localError
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-border-default focus:border-primary'
+                    } focus:outline-none text-white placeholder:text-content-tertiary transition-colors duration-150 text-sm`}
+                    placeholder="pubkey@host:port"
+                    type="text"
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      if (formState.errors.pubKeyAndAddress) {
+                        clearErrors('pubKeyAndAddress')
+                      }
+                      if (localError) {
+                        setLocalError('')
+                      }
+                      if (selectedFromConnected) {
+                        setSelectedFromConnected('')
+                      }
+                      onFormUpdate({
+                        pubKeyAndAddress: e.target.value,
+                      })
+                    }}
+                  />
+                  {(fieldState.error || localError) && (
+                    <p className="text-red-500 text-sm">
+                      {localError || fieldState.error?.message}
+                    </p>
+                  )}
+                  <p className="text-content-secondary text-xs">
+                    {t('createChannel.step1.helpText')}
+                  </p>
+                  <p className="text-content-secondary/60 text-xs font-mono break-all">
+                    e.g.
+                    039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735
+                  </p>
+                </div>
+              )}
+            />
+          </div>
+
+          <Button
+            disabled={!formData.pubKeyAndAddress}
+            icon={<ArrowRight className="w-4 h-4" />}
+            iconPosition="right"
+            isLoading={isLoading}
+            size="md"
+            type="submit"
+            variant="primary"
+          >
+            {t('createChannel.step1.continue')}
+          </Button>
+        </div>
+
+        {/* Right card: Connected Peers */}
+        <div className="flex-1 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6">
+          <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Link className="w-5 h-5 text-primary" />
             {t('createChannel.step1.connectedPeers')}
           </h4>
-        </div>
 
-        {loadingPeers ? (
-          <div className="flex items-center justify-center py-4">
-            <Spinner color="#3B82F6" size={24} />
-            <span className="ml-2 text-content-secondary">
-              {t('createChannel.step1.loadingPeers')}
-            </span>
-          </div>
-        ) : connectedPeers.length > 0 ? (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {connectedPeers.map((peer) => (
-              <div
-                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                  selectedFromConnected === peer.pubkey
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-border-default bg-surface-high/50 hover:border-blue-400 hover:bg-blue-500/5'
-                }`}
-                key={peer.pubkey}
-                onClick={() => handleSelectConnectedPeer(peer.pubkey)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-mono text-content-secondary truncate">
-                      {peer.pubkey}
+          {loadingPeers ? (
+            <div className="flex items-center justify-center py-4">
+              <Spinner color="#15E99A" size={24} />
+              <span className="ml-2 text-content-secondary">
+                {t('createChannel.step1.loadingPeers')}
+              </span>
+            </div>
+          ) : connectedPeers.length > 0 ? (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {connectedPeers.map((peer) => (
+                <div
+                  className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    selectedFromConnected === peer.pubkey
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border-default bg-surface-high/50 hover:border-primary/50 hover:bg-primary/5'
+                  }`}
+                  key={peer.pubkey}
+                  onClick={() => handleSelectConnectedPeer(peer.pubkey)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-mono text-content-secondary break-all">
+                        {peer.pubkey}
+                      </div>
                     </div>
+                    {selectedFromConnected === peer.pubkey && (
+                      <CheckCircle className="w-5 h-5 text-primary ml-2 flex-shrink-0" />
+                    )}
                   </div>
-                  {selectedFromConnected === peer.pubkey && (
-                    <CheckCircle className="w-5 h-5 text-blue-500 ml-2" />
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6 text-content-secondary">
-            {t('createChannel.step1.noPeers')}
-          </div>
-        )}
-      </div>
-
-      {/* Separator */}
-      <div className="text-center py-4 font-medium text-content-secondary">
-        {t('createChannel.step1.or')}
-      </div>
-
-      {/* Manual Peer Connection Section */}
-      <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
-        <h4 className="text-lg font-semibold text-white mb-4">
-          {t('createChannel.step1.connectNewPeer')}
-        </h4>
-
-        <Controller
-          control={control}
-          name="pubKeyAndAddress"
-          render={({ field, fieldState }) => (
-            <div className="space-y-2">
-              <textarea
-                className={`w-full px-4 py-3 bg-surface-high text-white rounded-lg border 
-                  ${
-                    fieldState.error || localError
-                      ? 'border-red-500 focus:border-red-500'
-                      : 'border-border-default focus:border-blue-500'
-                  }
-                  focus:ring-1 focus:ring-blue-500 font-mono text-sm min-h-[6rem] resize-none`}
-                placeholder={t('createChannel.step1.placeholder')}
-                {...field}
-                onChange={(e) => {
-                  field.onChange(e)
-                  if (formState.errors.pubKeyAndAddress) {
-                    clearErrors('pubKeyAndAddress')
-                  }
-                  if (localError) {
-                    setLocalError('')
-                  }
-                  // Clear selected from connected when manually typing
-                  if (selectedFromConnected) {
-                    setSelectedFromConnected('')
-                  }
-                  // Update form data as user types
-                  onFormUpdate({
-                    pubKeyAndAddress: e.target.value,
-                  })
-                }}
-              />
-              {(fieldState.error || localError) && (
-                <p className="text-red-500 text-sm">
-                  {localError || fieldState.error?.message}
-                </p>
-              )}
-              <p className="text-content-secondary text-xs">
-                {t('createChannel.step1.helpText')}
-              </p>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-content-secondary">
+              {t('createChannel.step1.noPeers')}
             </div>
           )}
-        />
-
-        <div className="text-center py-6 font-medium text-content-secondary">
-          {t('createChannel.step1.or')}
         </div>
-
-        <div className="mb-6 text-center font-medium text-white">
-          {t('createChannel.step1.suggestedNodes')}
-        </div>
-
-        <div className="flex justify-center space-x-6">
-          <button
-            className="flex items-center space-x-2 p-4 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
-            disabled={isLoading}
-            onClick={fetchLspInfo}
-            type="button"
-          >
-            <img
-              alt="KaleidoSwap"
-              className="w-10 h-10"
-              src={kaleidoswapPictogram}
-            />
-          </button>
-        </div>
-
-        {isLoading && (
-          <div className="flex justify-center items-center mt-4">
-            <Spinner color="#3B82F6" size={24} />
-            <span className="ml-2 text-content-secondary">
-              {t('createChannel.step1.loadingLsp')}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8 flex justify-between">
-        <button
-          className="px-4 py-2 rounded-xl bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-sm font-semibold transition-colors"
-          onClick={onBack}
-          type="button"
-        >
-          {t('createChannel.goBack', 'Go Back')}
-        </button>
-        <Button
-          disabled={!formData.pubKeyAndAddress && !selectedFromConnected}
-          isLoading={isLoading}
-          size="md"
-          type="submit"
-          variant="primary"
-        >
-          {t('createChannel.step1.continue')}
-        </Button>
       </div>
 
       {/* Connection Dialog */}
       {showConnectionDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4">
+          <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4 relative">
+            <button
+              className="absolute top-4 right-4 text-content-tertiary hover:text-white transition-colors"
+              onClick={() => setShowConnectionDialog(false)}
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
             <h3 className="text-2xl font-bold text-white mb-4">
               {t('createChannel.step1.connectDialog.title')}
             </h3>
             <p className="text-content-secondary mb-6">
-              {t('createChannel.step1.connectDialog.message')}
+              Would you like to connect to this peer to open a channel?
             </p>
 
             {isConnecting && (
@@ -450,26 +444,19 @@ export const Step1 = ({
               </div>
             )}
 
-            <div className="flex justify-end space-x-4">
-              <Button
-                onClick={() => setShowConnectionDialog(false)}
-                size="md"
-                type="button"
-                variant="secondary"
-              >
-                {t('createChannel.step1.connectDialog.cancel')}
-              </Button>
-              <Button
-                disabled={isConnecting}
-                isLoading={isConnecting}
-                onClick={handleConnect}
-                size="md"
-                type="button"
-                variant="primary"
-              >
-                {t('createChannel.step1.connectDialog.connect')}
-              </Button>
-            </div>
+            <Button
+              disabled={isConnecting}
+              fullWidth
+              icon={<Link className="w-4 h-4" />}
+              iconPosition="right"
+              isLoading={isConnecting}
+              onClick={handleConnect}
+              size="md"
+              type="button"
+              variant="primary"
+            >
+              {t('createChannel.step1.connectDialog.connect')}
+            </Button>
           </div>
         </div>
       )}
