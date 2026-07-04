@@ -102,7 +102,7 @@ export function LiquiditySlider({
                   type="number"
                   value={isFocused.current ? inputText : clamped}
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-tertiary">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-tertiary border-l border-border-default/60 pl-3 h-5 flex items-center">
                   {unit}
                 </span>
               </div>

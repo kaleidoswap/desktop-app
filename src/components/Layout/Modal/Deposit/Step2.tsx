@@ -608,13 +608,13 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
       <button
         className={`
           flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5
-          rounded-xl transition-all duration-200 border-2
+          rounded-lg transition-all duration-200 border-2
           ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
           ${
             network === type
               ? type === 'lightning'
                 ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400'
-                : 'bg-violet-500/15 border-violet-500 text-violet-400'
+                : 'bg-orange-500/15 border-orange-500 text-orange-400'
               : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
           }
         `}
@@ -759,43 +759,23 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
           <>
             {/* BTC Amount Input (optional) */}
             <div className="space-y-1 animate-fadeIn">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-medium text-content-secondary">
-                  {t('depositModal.step2.amount.optionalLabel')}
-                </label>
-                <span className="text-xs text-content-secondary">
-                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
-                </span>
-              </div>
-              <div className="relative">
+              <label className="block text-xs font-medium text-content-secondary mb-2">
+                {t('depositModal.step2.amount.optionalLabel')}
+              </label>
+              <div className="flex items-center bg-surface-overlay/50 rounded-xl border border-border-default focus-within:border-primary transition-colors duration-150">
                 <input
-                  className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
-                           focus:outline-none focus:border-primary text-white
-                           placeholder:text-content-tertiary transition-colors duration-150 text-sm"
+                  className="flex-1 min-w-0 px-3 py-2 bg-transparent focus:outline-none text-white
+                           placeholder:text-content-tertiary text-sm"
                   inputMode="decimal"
                   onChange={handleAmountChange}
                   placeholder={t('depositModal.step2.amount.btcPlaceholder')}
                   type="text"
                   value={amount}
                 />
-                {maxDepositAmount > 0 && (
-                  <button
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                             bg-primary/20 hover:bg-primary/30 text-primary
-                             rounded-lg transition-colors text-xs font-medium"
-                    onClick={handleSetMaxAmount}
-                    type="button"
-                  >
-                    {t('depositModal.step2.amount.maxButton')}
-                  </button>
-                )}
-              </div>
-              {maxDepositAmount > 0 && (
-                <p className="text-xs text-content-secondary pt-0.5">
-                  Max: {formatAmount(maxDepositAmount, 'BTC')}{' '}
+                <span className="text-xs text-content-tertiary pr-3 pl-2 flex-shrink-0 border-l border-border-default/60 ml-1 py-2">
                   {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
-                </p>
-              )}
+                </span>
+              </div>
             </div>
 
             {/* Network info and faucet suggestion */}
@@ -1029,24 +1009,14 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
             {/* Amount Input for Lightning (RGB) */}
             {network === 'lightning' && (
               <div className="space-y-1 animate-fadeIn">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-medium text-content-secondary">
-                    {t('depositModal.step2.amount.optionalLabel')}
-                  </label>
-                  <span className="text-xs text-content-secondary">
-                    {assetId === BTC_ASSET_ID
-                      ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
-                        ? 'SATS'
-                        : getDisplayAsset('BTC', bitcoinUnit)
-                      : assetTicker}
-                  </span>
-                </div>
-                <div className="relative">
+                <label className="block text-xs font-medium text-content-secondary mb-2">
+                  {t('depositModal.step2.amount.optionalLabel')}
+                </label>
+                <div className="flex items-center bg-surface-overlay/50 rounded-xl border border-border-default focus-within:border-primary transition-colors duration-150">
                   <input
                     autoFocus
-                    className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
-                             focus:border-primary focus:outline-none text-white
-                             placeholder:text-content-tertiary transition-colors duration-150 text-sm"
+                    className="flex-1 min-w-0 px-3 py-2 bg-transparent focus:outline-none text-white
+                             placeholder:text-content-tertiary text-sm"
                     inputMode="decimal"
                     onChange={handleAmountChange}
                     placeholder={t(
@@ -1056,32 +1026,14 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                     type="text"
                     value={amount}
                   />
-                  {maxDepositAmount > 0 && (
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                               bg-primary/20 hover:bg-primary/30 text-primary
-                               rounded-lg transition-colors text-xs font-medium"
-                      onClick={handleSetMaxAmount}
-                      type="button"
-                    >
-                      {t('depositModal.step2.amount.maxButton')}
-                    </button>
-                  )}
-                </div>
-                {maxDepositAmount > 0 && (
-                  <p className="text-xs text-content-secondary pt-0.5">
-                    Max:{' '}
-                    {formatAmount(
-                      maxDepositAmount,
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    )}{' '}
+                  <span className="text-xs text-content-tertiary pr-3 pl-2 flex-shrink-0 border-l border-border-default/60 ml-1 py-2">
                     {assetId === BTC_ASSET_ID
                       ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
                         ? 'SATS'
                         : getDisplayAsset('BTC', bitcoinUnit)
                       : assetTicker}
-                  </p>
-                )}
+                  </span>
+                </div>
 
                 {/* Validation and info messages */}
                 {amount &&
@@ -1111,8 +1063,21 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   )}
 
                 {assetId && assetId !== BTC_ASSET_ID && (
-                  <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                    <p className="text-xs text-primary">
+                  <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
+                    <svg
+                      className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <p className="text-blue-200/90 text-xs leading-relaxed">
                       {t('depositModal.step2.amount.rgbNote')}
                     </p>
                   </div>

@@ -20,9 +20,14 @@ import {
   Info,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
 import { IconButton, Card } from '../../../components/ui'
 import {
   Table,
@@ -172,6 +177,7 @@ const OrderDetailCard: React.FC<{
   onDelete: () => void
 }> = ({ isOpen, onClose, order, orderData, orderStatus, onDelete }) => {
   const { t } = useTranslation()
+  const pos = getModalPositionClass()
   if (!isOpen) return null
 
   const getStatusIcon = (status: string) => {
@@ -217,8 +223,13 @@ const OrderDetailCard: React.FC<{
   const feePaid = bolt11Fee || onchainFee
   const delivery = getOrderDeliveryMetadata(orderData)
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-2xl max-w-3xl w-full my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border-default/70">
@@ -515,13 +526,13 @@ const OrderDetailCard: React.FC<{
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-border-default/70">
           <button
-            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-lg transition-colors"
+            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-md transition-colors"
             onClick={onClose}
           >
             {t('components.walletHistory.channelOrders.detailsModal.close')}
           </button>
           <button
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center gap-2"
             onClick={() => {
               onDelete()
               onClose()
@@ -534,7 +545,8 @@ const OrderDetailCard: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -546,10 +558,16 @@ const DeleteConfirmationModal: React.FC<{
   orderId: string
 }> = ({ isOpen, onClose, onConfirm, orderId }) => {
   const { t } = useTranslation()
+  const pos2 = getModalPositionClass()
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div
+      className={`${pos2} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-xl max-w-md w-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-default/70">
@@ -592,13 +610,13 @@ const DeleteConfirmationModal: React.FC<{
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 p-4 border-t border-border-default/70">
           <button
-            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-lg transition-colors"
+            className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay rounded-md transition-colors"
             onClick={onClose}
           >
             {t('components.walletHistory.channelOrders.deleteModal.cancel')}
           </button>
           <button
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors flex items-center gap-2"
             onClick={onConfirm}
           >
             <Trash2 className="w-4 h-4" />
@@ -606,7 +624,8 @@ const DeleteConfirmationModal: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -777,7 +796,7 @@ export const Component = () => {
           })}
         </div>
         <button
-          className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+          className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
           onClick={handleRefresh}
         >
           {t('components.walletHistory.channelOrders.messages.retry')}
@@ -800,7 +819,7 @@ export const Component = () => {
 
         <div className="flex items-center gap-2">
           <button
-            className="flex items-center gap-2 px-3 py-2 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 px-3 py-2 bg-surface-high hover:bg-surface-elevated text-white rounded-md transition-colors text-sm"
             onClick={() => setShowColumnSelector(!showColumnSelector)}
           >
             <Settings className="w-4 h-4" />
@@ -830,7 +849,7 @@ export const Component = () => {
               {t('components.walletHistory.channelOrders.selectColumns')}
             </h3>
             <button
-              className="px-3 py-1 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded text-sm transition-colors"
+              className="px-3 py-1 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-sm text-sm transition-colors"
               onClick={resetToDefaults}
             >
               {t('components.walletHistory.channelOrders.resetToDefaults')}
@@ -1028,7 +1047,7 @@ export const Component = () => {
                     return (
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                          className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-md transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleViewDetails(order)
@@ -1040,7 +1059,7 @@ export const Component = () => {
                           <ExternalLink className="w-4 h-4" />
                         </button>
                         <button
-                          className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                          className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDelete(order.order_id)

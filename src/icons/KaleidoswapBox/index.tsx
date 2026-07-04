@@ -20,15 +20,15 @@ export const KaleidoswapBoxIcon = (props: React.SVGProps<SVGSVGElement>) => (
       />
       <path
         d="M42 0.0541992L35.0021 7.04656L28 0.0541992L42 0.0541992Z"
-        fill="#A788FF"
+        fill="#9365FF"
       />
-      <path d="M14 0L7.00209 6.99236L0 0H14Z" fill="#A788FF" />
-      <path d="M14 42.0002H0L7.00209 35.0078L14 42.0002Z" fill="#A788FF" />
+      <path d="M14 0L7.00209 6.99236L0 0H14Z" fill="#9365FF" />
+      <path d="M14 42.0002H0L7.00209 35.0078L14 42.0002Z" fill="#9365FF" />
       <path
         d="M28 28.0151L28 41.9999L21.0021 35.0075L28 28.0151Z"
         fill="#FFF970"
       />
-      <path d="M42 42.0002H28L35.0021 35.0078L42 42.0002Z" fill="#A788FF" />
+      <path d="M42 42.0002H28L35.0021 35.0078L42 42.0002Z" fill="#9365FF" />
       <path
         d="M21.0021 21.027L14 28.0152L14 14.0347L21.0021 21.027Z"
         fill="#7AC3D9"

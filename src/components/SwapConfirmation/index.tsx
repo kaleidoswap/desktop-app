@@ -1,6 +1,11 @@
 import { X } from 'lucide-react'
 import React from 'react'
+import { createPortal } from 'react-dom'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { calculateAndFormatRate } from '../../helpers/number'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { AssetOption } from '../Trade'
@@ -40,9 +45,17 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
     return asset === 'BTC' && bitcoinUnit === 'SAT' ? 'SAT' : asset
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-surface-base border border-border-subtle rounded-2xl max-w-lg w-full mx-4 overflow-hidden">
+  const pos = getModalPositionClass()
+
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center`}
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-base border border-border-subtle rounded-2xl max-w-lg w-full mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6 border-b border-border-subtle">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
@@ -119,7 +132,7 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
           <div className="flex gap-4">
             <button
               className="flex-1 px-6 py-3 border border-border-default text-content-secondary 
-                       rounded-xl hover:bg-surface-overlay transition-colors"
+                       rounded-lg hover:bg-surface-overlay transition-colors"
               onClick={onClose}
               type="button"
             >
@@ -127,7 +140,7 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
             </button>
             <button
               className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis
-                       disabled:opacity-60 text-primary-foreground rounded-xl font-medium
+                       disabled:opacity-60 text-primary-foreground rounded-lg font-medium
                        transition-colors disabled:cursor-not-allowed"
               disabled={isLoading}
               onClick={onConfirm}
@@ -138,6 +151,7 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

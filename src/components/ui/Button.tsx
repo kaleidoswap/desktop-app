@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-medium transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50'
+    'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50'
 
   const variantStyles = {
     danger:
@@ -131,7 +131,7 @@ export const ActionButton: React.FC<
   return (
     <button
       className={`
-        flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium
+        flex items-center justify-center px-3 py-1.5 rounded-md text-xs font-medium
         bg-surface-overlay hover:bg-surface-elevated transition-all duration-200
         ${colorStyle.border} hover:${colorStyle.borderHover} border
         ${props.className || ''}
@@ -168,7 +168,7 @@ export const IconButton: React.FC<
 
   return (
     <button
-      className={`rounded-lg transition-colors ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+      className={`rounded-md transition-all duration-150 ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
       {...props}
     >
       {icon}

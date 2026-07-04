@@ -120,7 +120,7 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
           >
-            <span className="text-xs font-medium text-content-tertiary uppercase tracking-wider">
+            <span className="text-xs font-medium text-white uppercase tracking-wider">
               {t('trade.feeSection.title')}
             </span>
             <div className="flex items-center gap-2">

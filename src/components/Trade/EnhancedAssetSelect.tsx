@@ -1,6 +1,11 @@
 import { Search, ChevronDown, X, Copy, Check } from 'lucide-react'
 import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { twJoin } from 'tailwind-merge'
 
 import defaultIcon from '../../assets/rgb-logo.svg'
@@ -257,18 +262,21 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
   return (
     <>
       {/* Backdrop for better UX when dropdown is open */}
-      {isOpen && !disabled && (
-        <div
-          className="fixed inset-0 z-[9998] bg-black/20 backdrop-blur-[1px]"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {isOpen &&
+        !disabled &&
+        createPortal(
+          <div
+            className={`${getModalPositionClass()} inset-0 z-[9998] bg-black/20 backdrop-blur-[1px]`}
+            onClick={() => setIsOpen(false)}
+          />,
+          getModalPortalTarget()
+        )}
 
       <div className={twJoin('relative', className)}>
         {/* Trigger Button */}
         <button
           className={twJoin(
-            'flex items-center justify-between w-full px-4 py-3 rounded-xl border transition-all duration-200',
+            'flex items-center justify-between w-full px-4 py-3 rounded-lg border transition-all duration-200',
             'bg-surface-base/70 border-border-default/50 hover:border-border-subtle/70 backdrop-blur-sm',
             'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
             'min-w-[140px] h-[48px] relative',
@@ -363,7 +371,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                   />
                   {searchTerm && (
                     <button
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded transition-colors"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded-sm transition-colors"
                       onClick={clearSearch}
                     >
                       <X className="w-3 h-3 text-content-secondary" />

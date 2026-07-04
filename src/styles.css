@@ -15,8 +15,8 @@
     --color-primary: 21 233 154; /* #15E99A */
     --color-primary-emphasis: 18 201 126; /* #12C97E */
     --color-primary-foreground: 18 19 28;
-    --color-secondary: 139 92 246; /* #8B5CF6 */
-    --color-secondary-emphasis: 124 58 237;
+    --color-secondary: 147 101 255; /* #9365FF */
+    --color-secondary-emphasis: 122 61 255; /* #7A3DFF */
     --color-secondary-foreground: 255 255 255;
     --color-content-primary: 232 233 242; /* #E8E9F2 — slightly cool white */
     --color-content-secondary: 142 146 172; /* #8E92AC */
@@ -42,8 +42,8 @@
     --color-primary: 23 181 129; /* #17B581 */
     --color-primary-emphasis: 19 138 100; /* #138A64 */
     --color-primary-foreground: 255 255 255;
-    --color-secondary: 111 50 255; /* #6F32FF */
-    --color-secondary-emphasis: 90 31 229; /* #5A1FE5 */
+    --color-secondary: 147 101 255; /* #9365FF */
+    --color-secondary-emphasis: 122 61 255; /* #7A3DFF */
     --color-secondary-foreground: 255 255 255;
     --color-content-primary: 18 19 30; /* #12131E */
     --color-content-secondary: 70 74 105; /* #464A69 */
@@ -76,10 +76,12 @@
 
   html {
     @apply antialiased;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-surface-raised text-content-primary font-sans;
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--color-surface-base) / 0.8)
       rgb(var(--color-surface-base) / 0.3);
@@ -223,6 +225,17 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-primary) / 0.2);
   }
+}
+
+/* Global press animation — outside @layer so it overrides transition-colors utilities */
+button {
+  transition: all 150ms ease;
+}
+button:not([disabled]):hover {
+  transform: scale(1.02);
+}
+button:not([disabled]):active {
+  transform: scale(0.98);
 }
 
 /* Animations */
@@ -473,7 +486,7 @@
 }
 
 .splash-progress-fill {
-  background: linear-gradient(90deg, #15e99a, #6f32ff);
+  background: linear-gradient(90deg, #15e99a, #9365ff);
   animation: splashLoading 2s ease-in-out infinite;
 }
 

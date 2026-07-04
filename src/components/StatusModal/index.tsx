@@ -1,5 +1,11 @@
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 
 export const ModalType = {
   ERROR: 'error',
@@ -81,10 +87,15 @@ export const StatusModal: React.FC<StatusModalProps> = ({
 
   const config = getModalConfig()
 
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  const pos = getModalPositionClass()
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
+      onClick={onClose}
+    >
       <div
         className={`max-w-md w-full rounded-xl shadow-2xl ${config.bgColor} border ${config.borderColor} p-6 transform transition-all duration-300 ease-in-out animate-fade-in`}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start">
           <div className="flex-shrink-0 mr-4">{config.icon}</div>
@@ -102,7 +113,7 @@ export const StatusModal: React.FC<StatusModalProps> = ({
 
             <div className="flex justify-end mt-4">
               <button
-                className={`px-4 py-2 rounded-lg ${config.buttonColor} text-white font-medium transition-colors duration-200`}
+                className={`px-4 py-2 rounded-md ${config.buttonColor} text-white font-medium transition-colors duration-200`}
                 onClick={onClose}
               >
                 {type === ModalType.SUCCESS ? 'Continue' : 'Close'}
@@ -111,6 +122,7 @@ export const StatusModal: React.FC<StatusModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

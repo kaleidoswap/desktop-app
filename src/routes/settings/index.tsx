@@ -18,22 +18,31 @@ import {
   Server,
   Trash2,
   Star,
+  Store,
   RefreshCw,
   Lock,
   ArrowRight,
+  KeyRound,
+  Timer,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
 import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
+import { ChangePasswordModal } from '../../components/ChangePasswordModal'
 import { MnemonicViewerModal } from '../../components/MnemonicViewer'
 import {
   ModalType,
@@ -79,6 +88,7 @@ interface FormFields {
 export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const pos = getModalPositionClass()
   const dispatch = useDispatch()
   const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, appMode } =
     useSelector((state: RootState) => state.settings)
@@ -176,6 +186,20 @@ export const Component: React.FC = () => {
     handleBackup,
     selectBackupFolder,
   } = useBackup({ nodeSettings })
+
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [autoLockTimeout, setAutoLockTimeout] = useState('15')
+  const [autoLockOpen, setAutoLockOpen] = useState(false)
+
+  const AUTO_LOCK_OPTIONS = [
+    { label: 'Never', value: 'never' },
+    { label: '1 min', value: '1' },
+    { label: '5 min', value: '5' },
+    { label: '15 min', value: '15' },
+    { label: '30 min', value: '30' },
+    { label: '1 hour', value: '60' },
+    { label: '4 hours', value: '240' },
+  ]
 
   const fetchNodeLogs = async () => {
     // Skip if too many failures
@@ -566,577 +590,575 @@ export const Component: React.FC = () => {
   // If the page is loading, show a loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen py-8 px-4">
-        <div className="w-16 h-16 mb-8">
-          <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        </div>
-        <h2 className="text-2xl font-bold text-white mb-2">
+      <div className="flex flex-col items-center justify-center h-full py-8 px-4">
+        <div className="w-12 h-12 mb-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <h2 className="text-xl font-bold text-white mb-1">
           {t('settings.loadingSettings')}
         </h2>
-        <p className="text-content-secondary">{t('settings.pleaseWait')}</p>
+        <p className="text-content-secondary text-sm">
+          {t('settings.pleaseWait')}
+        </p>
       </div>
     )
   }
 
+  const inputCls =
+    'w-full px-4 py-2.5 text-sm text-white bg-surface-overlay/30 border border-border-default/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors'
+  const selectCls = `${inputCls} appearance-none pr-10`
+
   return (
-    <div className="flex flex-col min-h-screen py-8 px-4">
-      {/* Page Header */}
-      <div className="w-full max-w-7xl mx-auto mb-8">
-        <p className="text-content-secondary text-sm">
-          {t('settings.subtitle')}
-        </p>
-      </div>
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-4 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* ── Left column: forms ── */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={handleSubmit(handleSave)}
+          >
+            {/* Application Settings */}
+            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
+                <Settings className="w-5 h-5 text-primary flex-shrink-0" />
+                <h2 className="text-base font-bold text-white">
+                  {t('settings.applicationSettings')}
+                </h2>
+              </div>
 
-      {/* Main Content Grid */}
-      <div className="w-full max-w-7xl mx-auto space-y-8">
-        {/* Settings Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Application Settings */}
-          <div className="lg:col-span-2 space-y-6">
-            <form onSubmit={handleSubmit(handleSave)}>
-              {/* Application Settings Card */}
-              <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
-                <div className="flex items-center gap-2 mb-6">
-                  <Settings className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-xl font-semibold text-white">
-                    {t('settings.applicationSettings')}
-                  </h3>
+              <div className="p-5 space-y-5">
+                {/* Capabilities */}
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-content-secondary">
+                    {t('settings.capabilities', {
+                      defaultValue: 'Capabilities',
+                    })}
+                  </label>
+                  <p className="text-xs text-content-tertiary">
+                    {t('settings.capabilitiesDescription', {
+                      defaultValue:
+                        'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
+                    })}
+                  </p>
+                  <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1 w-fit mt-2">
+                    {APP_MODE_OPTIONS.map((opt) => (
+                      <button
+                        className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
+                          appMode === opt.mode
+                            ? 'bg-primary/15 text-primary border border-primary/30'
+                            : 'text-content-secondary hover:text-white border border-transparent'
+                        }`}
+                        key={opt.mode}
+                        onClick={() => dispatch(setAppMode(opt.mode))}
+                        type="button"
+                      >
+                        {t(opt.labelKey, { defaultValue: opt.fallback })}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="space-y-8">
-                  {/* General Settings */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-content-secondary mb-4">
-                      {t('settings.generalSettings')}
-                    </h4>
-                    <div className="space-y-6">
-                      {/* App mode / capabilities */}
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.capabilities', {
-                            defaultValue: 'Capabilities',
-                          })}
-                        </label>
-                        <p className="text-xs text-content-tertiary mb-2">
-                          {t('settings.capabilitiesDescription', {
-                            defaultValue:
-                              'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
-                          })}
-                        </p>
-                        <div className="flex flex-wrap rounded-lg overflow-hidden border border-border-default w-fit">
-                          {APP_MODE_OPTIONS.map((opt) => (
-                            <button
-                              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                                appMode === opt.mode
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-surface-high/40 text-content-secondary hover:text-white'
-                              }`}
-                              key={opt.mode}
-                              onClick={() => dispatch(setAppMode(opt.mode))}
-                              type="button"
-                            >
-                              {t(opt.labelKey, { defaultValue: opt.fallback })}
-                            </button>
+                {/* Bitcoin Unit */}
+                <Controller
+                  control={control}
+                  name="bitcoinUnit"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.bitcoinUnit')}
+                      </label>
+                      <div className="relative">
+                        <select {...field} className={selectCls}>
+                          <option value="SAT">
+                            {t('settings.bitcoinUnitSat')}
+                          </option>
+                          <option value="BTC">
+                            {t('settings.bitcoinUnitBtc')}
+                          </option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
+                />
+
+                {/* Fiat Currency */}
+                <Controller
+                  control={control}
+                  name="fiatCurrency"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.fiatCurrency')}
+                      </label>
+                      <p className="text-xs text-content-tertiary">
+                        {t('settings.fiatCurrencyDescription')}
+                      </p>
+                      <div className="relative">
+                        <select {...field} className={selectCls}>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <option key={currency} value={currency}>
+                              {CURRENCY_SYMBOLS[currency]}
+                              {CURRENCY_LABELS[currency]}
+                            </option>
                           ))}
-                        </div>
-                      </div>
-
-                      {/* Bitcoin Unit */}
-                      <Controller
-                        control={control}
-                        name="bitcoinUnit"
-                        render={({ field }) => (
-                          <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-content-secondary mb-2">
-                              {t('settings.bitcoinUnit')}
-                            </label>
-                            <div className="relative">
-                              <select
-                                {...field}
-                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                              >
-                                <option value="SAT">
-                                  {t('settings.bitcoinUnitSat')}
-                                </option>
-                                <option value="BTC">
-                                  {t('settings.bitcoinUnitBtc')}
-                                </option>
-                              </select>
-                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
-                            </div>
-                          </div>
-                        )}
-                      />
-
-                      {/* Fiat Currency Selector */}
-                      <Controller
-                        control={control}
-                        name="fiatCurrency"
-                        render={({ field }) => (
-                          <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-content-secondary mb-2">
-                              {t('settings.fiatCurrency')}
-                            </label>
-                            <p className="text-xs text-content-tertiary mb-2">
-                              {t('settings.fiatCurrencyDescription')}
-                            </p>
-                            <div className="relative">
-                              <select
-                                {...field}
-                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                              >
-                                {SUPPORTED_CURRENCIES.map((currency) => (
-                                  <option key={currency} value={currency}>
-                                    {CURRENCY_SYMBOLS[currency]}
-                                    {CURRENCY_LABELS[currency]}
-                                  </option>
-                                ))}
-                              </select>
-                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
-                            </div>
-                          </div>
-                        )}
-                      />
-
-                      {/* Theme Toggle — light mode temporarily disabled */}
-                      <div className="group transition-all duration-300 hover:translate-x-1 opacity-50 pointer-events-none">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.theme')}
-                        </label>
-                        <div className="flex rounded-lg overflow-hidden border border-border-default w-fit">
-                          <button
-                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground"
-                            disabled
-                            type="button"
-                          >
-                            <Moon className="w-4 h-4" />
-                            {t('settings.themeDark')}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Language Selector */}
-                      <Controller
-                        control={control}
-                        name="language"
-                        render={({ field }) => (
-                          <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-content-secondary mb-2">
-                              {t('settings.language')}
-                            </label>
-                            <div className="relative">
-                              <select
-                                {...field}
-                                className="block w-full pl-4 pr-10 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                              >
-                                {Object.entries(LANGUAGES).map(
-                                  ([code, { name, flag }]) => (
-                                    <option key={code} value={code}>
-                                      {flag} {name}
-                                    </option>
-                                  )
-                                )}
-                              </select>
-                              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-content-secondary pointer-events-none" />
-                            </div>
-                          </div>
-                        )}
-                      />
-
-                      {/* LSP URL */}
-                      <Controller
-                        control={control}
-                        name="lspUrl"
-                        render={({ field }) => (
-                          <div className="group transition-all duration-300 hover:translate-x-1">
-                            <label className="block text-sm font-semibold text-content-secondary mb-2">
-                              {t('settings.lspUrl')}
-                            </label>
-                            <input
-                              {...field}
-                              className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                              placeholder={t('settings.lspUrlPlaceholder')}
-                              type="text"
-                            />
-                          </div>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Maker Settings */}
-                  <div className="pt-6 border-t border-border-default">
-                    <h4 className="text-sm font-semibold text-content-secondary mb-4">
-                      {t('settings.makerSettings')}
-                    </h4>
-                    <div className="space-y-6">
-                      {/* Additional Maker URLs */}
-                      <div>
-                        <label className="block text-sm font-semibold text-content-secondary mb-4">
-                          {t('settings.makerUrls')}
-                        </label>
-                        <Controller
-                          control={control}
-                          name="makerUrls"
-                          render={({ field }) => (
-                            <div className="space-y-4">
-                              {(field.value ?? []).map((url, index) => (
-                                <div className="flex gap-2" key={index}>
-                                  <div className="flex-1 relative group">
-                                    <input
-                                      className="w-full px-4 py-3 bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                                      onChange={(e) => {
-                                        const newUrls = [...(field.value ?? [])]
-                                        newUrls[index] = e.target.value
-                                        field.onChange(newUrls)
-                                      }}
-                                      placeholder={
-                                        t('settings.makerUrlPlaceholder') ||
-                                        'Maker URL'
-                                      }
-                                      type="text"
-                                      value={url}
-                                    />
-                                    {url === watch('defaultMakerUrl') && (
-                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs bg-blue-500/20 text-blue-400 rounded-md">
-                                        {t('settings.default')}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      className={`p-3 rounded-lg transition-colors ${
-                                        url === watch('defaultMakerUrl')
-                                          ? 'bg-blue-500/20 text-blue-400'
-                                          : 'bg-surface-elevated/20 text-content-secondary hover:bg-blue-500/20 hover:text-blue-400'
-                                      }`}
-                                      onClick={() => {
-                                        setValue('defaultMakerUrl', url)
-                                      }}
-                                      title={
-                                        url === watch('defaultMakerUrl')
-                                          ? t('settings.currentDefault')
-                                          : t('settings.setAsDefault')
-                                      }
-                                      type="button"
-                                    >
-                                      <Star
-                                        className={`w-5 h-5 ${
-                                          url === watch('defaultMakerUrl')
-                                            ? 'fill-current'
-                                            : ''
-                                        }`}
-                                      />
-                                    </button>
-                                    <button
-                                      className="p-3 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-colors"
-                                      onClick={() => {
-                                        const newUrls = (
-                                          field.value ?? []
-                                        ).filter((_, i) => i !== index)
-                                        field.onChange(newUrls)
-                                        // If we're removing the default URL, clear it
-                                        if (url === watch('defaultMakerUrl')) {
-                                          setValue(
-                                            'defaultMakerUrl',
-                                            newUrls[0] || ''
-                                          )
-                                        }
-                                      }}
-                                      title={t('settings.removeUrl')}
-                                      type="button"
-                                    >
-                                      <Trash2 className="w-5 h-5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                              <button
-                                className="w-full px-4 py-3 border border-blue-500/20 text-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors"
-                                onClick={() => {
-                                  const newUrls = [...(field.value ?? []), '']
-                                  field.onChange(newUrls)
-                                  // If this is the first URL, set it as default
-                                  if ((field.value ?? []).length === 0) {
-                                    setValue('defaultMakerUrl', '')
-                                  }
-                                }}
-                                type="button"
-                              >
-                                {t('settings.addMakerUrl')}
-                              </button>
-                            </div>
-                          )}
-                        />
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  )}
+                />
 
-              {/* Node Connection Settings Card */}
-              <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <Server className="w-5 h-5 text-blue-400" />
-                    <h3 className="text-xl font-semibold text-white">
-                      {t('settings.nodeConnectionSettings')}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                    <span className="text-xs text-yellow-500">
-                      {t('settings.requiresRestart')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Node Connection String */}
-                  <Controller
-                    control={control}
-                    name="nodeConnectionString"
-                    render={({ field }) => (
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.nodeConnectionString')}
-                        </label>
-                        <input
-                          {...field}
-                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                          placeholder="e.g., http://localhost:3001"
-                          type="text"
-                        />
-                      </div>
-                    )}
-                  />
-
-                  {/* RPC Connection URL */}
-                  <Controller
-                    control={control}
-                    name="rpcConnectionUrl"
-                    render={({ field }) => (
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.bitcoindRpc')}
-                        </label>
-                        <input
-                          {...field}
-                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                          placeholder="Bitcoin RPC URL"
-                          type="text"
-                        />
-                      </div>
-                    )}
-                  />
-
-                  {/* Indexer URL */}
-                  <Controller
-                    control={control}
-                    name="indexerUrl"
-                    render={({ field }) => (
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.indexerUrl')}
-                        </label>
-                        <input
-                          {...field}
-                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                          placeholder="Indexer service URL"
-                          type="text"
-                        />
-                      </div>
-                    )}
-                  />
-
-                  {/* Proxy Endpoint */}
-                  <Controller
-                    control={control}
-                    name="proxyEndpoint"
-                    render={({ field }) => (
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.rgbProxyEndpoint')}
-                        </label>
-                        <input
-                          {...field}
-                          className="w-full px-4 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                          placeholder={t('settings.rgbProxyPlaceholder')}
-                          type="text"
-                        />
-                      </div>
-                    )}
-                  />
-                  {/* Bearer Token Field */}
-                  <Controller
-                    control={control}
-                    name="bearerToken"
-                    render={({ field }) => (
-                      <div className="group transition-all duration-300 hover:translate-x-1">
-                        <label className="block text-sm font-semibold text-content-secondary mb-2">
-                          {t('settings.bearerToken')}
-                        </label>
-                        <input
-                          {...field}
-                          className="block w-full pl-10 pr-12 py-3 text-white bg-surface-high/50 border border-border-default rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200"
-                          placeholder={t('settings.bearerTokenPlaceholder')}
-                          type="text"
-                        />
-                      </div>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Form Actions */}
-              <div className="sticky bottom-6 mt-6">
-                <div className="bg-surface-overlay/95 backdrop-blur-sm p-4 rounded-xl border border-border-default shadow-lg">
-                  <div className="flex gap-4">
+                {/* Theme (disabled) */}
+                <div className="space-y-1.5 opacity-50 pointer-events-none">
+                  <label className="block text-sm font-medium text-content-secondary">
+                    {t('settings.theme')}
+                  </label>
+                  <div className="flex rounded-lg overflow-hidden border border-border-default/50 w-fit">
                     <button
-                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-surface-elevated text-white rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
-                      disabled={isSaving}
-                      onClick={handleUndo}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-[#12131C]"
+                      disabled
                       type="button"
                     >
-                      <Undo className="w-5 h-5 mr-2.5" />
-                      {t('settings.resetChanges')}
-                    </button>
-                    <button
-                      className="flex-1 flex items-center justify-center px-6 py-3.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
-                      disabled={isSaving}
-                      type="submit"
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="w-5 h-5 mr-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          {t('settings.saving')}
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-5 h-5 mr-2.5" />
-                          {t('settings.saveSettings')}
-                        </>
-                      )}
+                      <Moon className="w-4 h-4" />
+                      {t('settings.themeDark')}
                     </button>
                   </div>
                 </div>
-              </div>
-            </form>
-          </div>
 
-          {/* Right Column - Node Status and Actions */}
-          <div className="space-y-6">
-            {/* Security & Backup Card */}
-            <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
-              <div className="flex items-center gap-2 mb-6">
-                <Shield className="w-5 h-5 text-blue-400" />
-                <h3 className="text-xl font-semibold text-white">
-                  {t('settings.securityBackup')}
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                {/* View Recovery Phrase Button - Only for local nodes */}
-                {isLocalNode && (
-                  <button
-                    className="w-full group bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl p-4 transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                    onClick={() => setShowMnemonicModal(true)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary-foreground/10 rounded-lg group-hover:bg-primary-foreground/20 transition-colors">
-                          <Lock className="w-5 h-5" />
-                        </div>
-                        <div className="text-left">
-                          <div className="font-semibold">
-                            {t('settings.viewRecoveryPhrase')}
-                          </div>
-                          <div className="text-sm text-primary-foreground/70">
-                            {t('settings.accessSeedPhrase')}
-                          </div>
-                        </div>
+                {/* Language */}
+                <Controller
+                  control={control}
+                  name="language"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.language')}
+                      </label>
+                      <div className="relative">
+                        <select {...field} className={selectCls}>
+                          {Object.entries(LANGUAGES).map(
+                            ([code, { name, flag }]) => (
+                              <option key={code} value={code}>
+                                {flag} {name}
+                              </option>
+                            )
+                          )}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
                       </div>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </div>
-                  </button>
-                )}
+                  )}
+                />
 
-                {/* Backup Wallet Button */}
+                {/* LSP URL */}
+                <Controller
+                  control={control}
+                  name="lspUrl"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.lspUrl')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder={t('settings.lspUrlPlaceholder')}
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+              </div>
+            </section>
+
+            {/* Maker Settings */}
+            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
+                <Store className="w-5 h-5 text-primary flex-shrink-0" />
+                <h2 className="text-base font-bold text-white">
+                  {t('settings.makerSettings')}
+                </h2>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-content-secondary">
+                    {t('settings.makerUrls')}
+                  </label>
+                  <Controller
+                    control={control}
+                    name="makerUrls"
+                    render={({ field }) => (
+                      <div className="space-y-2">
+                        {(field.value ?? []).map((url, index) => (
+                          <div className="flex items-center gap-2" key={index}>
+                            <div className="flex-1 relative">
+                              <input
+                                className={inputCls}
+                                onChange={(e) => {
+                                  const n = [...(field.value ?? [])]
+                                  n[index] = e.target.value
+                                  field.onChange(n)
+                                }}
+                                placeholder={
+                                  t('settings.makerUrlPlaceholder') ||
+                                  'Maker URL'
+                                }
+                                type="text"
+                                value={url}
+                              />
+                              {url === watch('defaultMakerUrl') && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-xs bg-primary/15 text-primary rounded-md">
+                                  {t('settings.default')}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                className="rounded p-1.5 text-content-secondary transition-colors hover:bg-primary/15 hover:text-primary"
+                                onClick={() => setValue('defaultMakerUrl', url)}
+                                title={
+                                  url === watch('defaultMakerUrl')
+                                    ? t('settings.currentDefault')
+                                    : t('settings.setAsDefault')
+                                }
+                                type="button"
+                              >
+                                <Star
+                                  className={`w-4 h-4 ${url === watch('defaultMakerUrl') ? 'fill-current' : ''}`}
+                                />
+                              </button>
+                              <button
+                                className="rounded p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                                onClick={() => {
+                                  const n = (field.value ?? []).filter(
+                                    (_, i) => i !== index
+                                  )
+                                  field.onChange(n)
+                                  if (url === watch('defaultMakerUrl'))
+                                    setValue('defaultMakerUrl', n[0] || '')
+                                }}
+                                title={t('settings.removeUrl')}
+                                type="button"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        <button
+                          className="w-full inline-flex items-center justify-center h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-semibold text-white transition-colors"
+                          onClick={() => {
+                            const n = [...(field.value ?? []), '']
+                            field.onChange(n)
+                            if ((field.value ?? []).length === 0)
+                              setValue('defaultMakerUrl', '')
+                          }}
+                          type="button"
+                        >
+                          {t('settings.addMakerUrl')}
+                        </button>
+                      </div>
+                    )}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Node Connection Settings */}
+            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-divider/10">
+                <div className="flex items-center gap-3">
+                  <Server className="w-5 h-5 text-primary flex-shrink-0" />
+                  <h2 className="text-base font-bold text-white">
+                    {t('settings.nodeConnectionSettings')}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-status-warning/10 border border-status-warning/20 rounded-lg">
+                  <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
+                  <span className="text-xs text-status-warning">
+                    {t('settings.requiresRestart')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <Controller
+                  control={control}
+                  name="nodeConnectionString"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.nodeConnectionString')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder="e.g., http://localhost:3001"
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="rpcConnectionUrl"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.bitcoindRpc')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder="Bitcoin RPC URL"
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="indexerUrl"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.indexerUrl')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder="Indexer service URL"
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="proxyEndpoint"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.rgbProxyEndpoint')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder={t('settings.rgbProxyPlaceholder')}
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="bearerToken"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-content-secondary">
+                        {t('settings.bearerToken')}
+                      </label>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder={t('settings.bearerTokenPlaceholder')}
+                        type="text"
+                      />
+                    </div>
+                  )}
+                />
+              </div>
+            </section>
+
+            {/* Sticky save bar */}
+            <div className="sticky bottom-4">
+              <div className="flex gap-3">
                 <button
-                  className="w-full group bg-surface-high/50 hover:bg-surface-high border border-border-default hover:border-border-subtle text-white rounded-xl p-4 transition-all duration-200"
-                  onClick={() => setShowBackupModal(true)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                  disabled={isSaving}
+                  onClick={handleUndo}
+                  type="button"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                        <Download className="w-5 h-5 text-blue-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold">
-                          {t('settings.backupWallet')}
-                        </div>
-                        <div className="text-sm text-content-secondary">
-                          {t('settings.exportBackup')}
-                        </div>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-content-secondary group-hover:translate-x-1 transition-transform" />
-                  </div>
+                  <Undo className="w-4 h-4" />
+                  {t('settings.resetChanges')}
+                </button>
+                <button
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary-emphasis text-sm font-semibold text-[#12131C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isSaving}
+                  type="submit"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-[#12131C]/40 border-t-[#12131C] rounded-full animate-spin" />
+                      {t('settings.saving')}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      {t('settings.saveSettings')}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
+          </form>
+        </div>
 
-            {/* Node Status Card */}
-            <div className="bg-surface-overlay/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border-default">
-              <div className="flex items-center gap-2 mb-6">
-                <Activity className="w-5 h-5 text-blue-400" />
-                <h3 className="text-xl font-semibold text-white">
-                  {t('settings.nodeStatus')}
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                {/* Status Indicator */}
-                <div
-                  className={`p-4 rounded-xl border ${
-                    isNodeRunning
-                      ? 'bg-green-500/10 border-green-500/20'
-                      : 'bg-red-500/10 border-red-500/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {isNodeRunning ? (
-                      <div className="relative">
-                        <CheckCircle2 className="w-6 h-6 text-green-400" />
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                      </div>
-                    ) : (
-                      <div className="relative">
-                        <XCircle className="w-6 h-6 text-red-400" />
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full" />
-                      </div>
-                    )}
-                    <span
-                      className={`text-lg font-medium ${
-                        isNodeRunning ? 'text-green-400' : 'text-red-400'
-                      }`}
-                    >
-                      {isNodeRunning
-                        ? t('settings.nodeRunning')
-                        : t('settings.nodeOffline')}
-                    </span>
+        {/* ── Right column: status + actions ── */}
+        <div className="flex flex-col gap-6">
+          {/* Security & Backup */}
+          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
+              <Shield className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-base font-bold text-white">
+                {t('settings.securityBackup')}
+              </h2>
+            </div>
+            <div className="p-4 space-y-3">
+              {/* Auto Time-Lock */}
+              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                    <Timer className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <div className="text-sm font-semibold">
+                      {t('settings.autoTimeLock', 'Auto Time-Lock')}
+                    </div>
+                    <div className="text-xs text-content-secondary">
+                      {t(
+                        'settings.autoTimeLockDescription',
+                        'Lock wallet after inactivity'
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                {/* Connection Type */}
-                <div className="p-4 bg-surface-high/30 rounded-xl border border-border-default">
-                  <div className="flex items-center gap-2 text-content-secondary mb-1">
-                    <Server className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      {t('settings.connectionType')}
-                    </span>
+                <div className="relative flex-shrink-0">
+                  <button
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border-default/50 bg-surface-overlay/30 text-sm text-white hover:bg-surface-elevated transition-colors"
+                    onClick={() => setAutoLockOpen((v) => !v)}
+                    type="button"
+                  >
+                    {
+                      AUTO_LOCK_OPTIONS.find((o) => o.value === autoLockTimeout)
+                        ?.label
+                    }
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-content-secondary transition-transform ${autoLockOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {autoLockOpen && (
+                    <div className="absolute right-0 top-full mt-1 z-50 min-w-[110px] rounded-lg border border-border-default/50 bg-surface-overlay shadow-xl overflow-hidden">
+                      {AUTO_LOCK_OPTIONS.map((opt) => (
+                        <button
+                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${autoLockTimeout === opt.value ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-elevated'}`}
+                          key={opt.value}
+                          onClick={() => {
+                            setAutoLockTimeout(opt.value)
+                            setAutoLockOpen(false)
+                          }}
+                          type="button"
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
+                onClick={() => setShowMnemonicModal(true)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
+                    <Lock className="w-4 h-4 text-primary" />
                   </div>
-                  <p className="text-white font-medium ml-6">
+                  <div className="text-left">
+                    <div className="text-sm font-semibold">
+                      {t('settings.viewRecoveryPhrase')}
+                    </div>
+                    <div className="text-xs text-content-secondary">
+                      {t('settings.accessSeedPhrase')}
+                    </div>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
+              </button>
+              <button
+                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
+                onClick={() => setShowChangePasswordModal(true)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
+                    <KeyRound className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold">
+                      {t('settings.changePassword', 'Change Password')}
+                    </div>
+                    <div className="text-xs text-content-secondary">
+                      Update wallet encryption password
+                    </div>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
+              </button>
+
+              <button
+                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
+                onClick={() => setShowBackupModal(true)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
+                    <Download className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold">
+                      {t('settings.backupWallet')}
+                    </div>
+                    <div className="text-xs text-content-secondary">
+                      Export encrypted backup wallet
+                    </div>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+          </section>
+
+          {/* Node Status */}
+          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
+              <Activity className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-base font-bold text-white">
+                {t('settings.nodeStatus')}
+              </h2>
+            </div>
+            <div className="p-4 space-y-3">
+              {/* Status pill */}
+              <div
+                className={`flex items-center gap-3 p-3 rounded-xl border ${isNodeRunning ? 'bg-status-success/10 border-status-success/20' : 'bg-status-danger/10 border-status-danger/20'}`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isNodeRunning ? 'bg-status-success animate-pulse' : 'bg-status-danger'}`}
+                />
+                <span
+                  className={`text-sm font-semibold ${isNodeRunning ? 'text-status-success' : 'text-status-danger'}`}
+                >
+                  {isNodeRunning
+                    ? t('settings.nodeRunning')
+                    : t('settings.nodeOffline')}
+                </span>
+              </div>
+
+              {/* Connection type */}
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-border-default/50 bg-surface-overlay/30">
+                <Server className="w-4 h-4 text-content-tertiary flex-shrink-0" />
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-content-tertiary">
+                    {t('settings.connectionType')}
+                  </p>
+                  <p className="text-sm font-medium text-white">
                     {isLocalNode
                       ? t('settings.localNode')
                       : t('settings.remoteNode')}
@@ -1144,177 +1166,158 @@ export const Component: React.FC = () => {
                 </div>
               </div>
 
-              {/* Node Actions */}
-              <div className="space-y-3 mt-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    className="flex items-center justify-center px-4 py-3 bg-surface-elevated text-white rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 transition-all duration-200"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="w-5 h-5 mr-2" />
-                    {t('settings.logout')}
-                  </button>
-
-                  <button
-                    className="flex items-center justify-center px-4 py-3 bg-surface-elevated text-red-500 rounded-xl hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-200 text-sm"
-                    onClick={handleShutdown}
-                  >
-                    <Power className="w-5 h-5 mr-2" />
-                    {t('settings.shutdown')}
-                  </button>
-                </div>
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-medium text-white transition-colors"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                  {t('settings.logout')}
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-status-danger/20 bg-status-danger/10 text-sm font-medium text-status-danger hover:bg-status-danger/20 transition-colors"
+                  onClick={handleShutdown}
+                >
+                  <Power className="w-4 h-4" />
+                  {t('settings.shutdown')}
+                </button>
               </div>
             </div>
+          </section>
 
-            {/* App Version Info */}
-            <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-border-default">
-              <AppVersion showDetailed={true} />
-            </div>
-          </div>
+          {/* App Version */}
+          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+            <AppVersion showDetailed={true} />
+          </section>
         </div>
+      </div>
 
-        {/* Logs Section */}
-        {isLocalNode && (
-          <div className="bg-surface-overlay/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-border-default overflow-hidden">
-            {/* Header with controls */}
-            <div className="p-4 border-b border-border-default/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-xl font-semibold text-white">
-                    {t('settings.nodeLogs')}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Entry selector */}
-                  <div className="flex items-center gap-2 bg-surface-high/30 px-2 py-1 rounded-lg border border-border-default">
-                    <span className="text-sm text-content-secondary">
-                      {t('settings.show')}
-                    </span>
-                    <select
-                      className="bg-transparent text-white text-sm focus:outline-none focus:ring-0 border-0"
-                      onChange={(e) => {
-                        setMaxLogEntries(Number(e.target.value))
-                        setCurrentPage(1) // Reset to first page when changing page size
-                      }}
-                      value={maxLogEntries}
-                    >
-                      <option value="50">50</option>
-                      <option value="100">100</option>
-                      <option value="200">200</option>
-                      <option value="500">500</option>
-                    </select>
-                    <span className="text-sm text-content-secondary">
-                      {t('settings.entries')}
-                    </span>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex gap-1.5">
-                    <button
-                      className="p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
-                      disabled={nodeLogs.length === 0 || isLoadingLogs}
-                      onClick={handleExportLogs}
-                      title={t('settings.exportLogs')}
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                    <button
-                      className={`p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors border border-border-default ${
-                        isLoadingLogs ? 'animate-spin' : ''
-                      }`}
-                      disabled={isLoadingLogs}
-                      onClick={() => {
-                        setCurrentPage(1)
-                        fetchNodeLogs()
-                      }}
-                      title={t('settings.refreshLogs')}
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </button>
-                    <button
-                      className="p-2 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
-                      disabled={nodeLogs.length === 0 || isLoadingLogs}
-                      onClick={() => setNodeLogs([])}
-                      title={t('settings.clearLogs')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+      {/* Logs */}
+      {isLocalNode && (
+        <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-divider/10">
+            <div className="flex items-center gap-3">
+              <Activity className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-base font-bold text-white">
+                {t('settings.nodeLogs')}
+              </h2>
             </div>
-
-            <div className="bg-surface-base/95">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-border-default/50 bg-surface-overlay/50">
-                <span className="text-sm font-medium text-content-secondary">
-                  {t('settings.liveNodeLogs')}
-                </span>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-content-tertiary">
-                    {t('settings.page')} {currentPage} {t('settings.of')}{' '}
-                    {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} (
-                    {totalLogs} {t('settings.totalEntries')})
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      className="px-2 py-1 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
-                      disabled={currentPage === 1 || isLoadingLogs}
-                      onClick={() => {
-                        setCurrentPage((prev) => Math.max(1, prev - 1))
-                      }}
-                    >
-                      {t('settings.previous')}
-                    </button>
-                    <button
-                      className="px-2 py-1 text-sm bg-surface-high/30 hover:bg-surface-elevated/50 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-default"
-                      disabled={
-                        currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
-                        isLoadingLogs
-                      }
-                      onClick={() => {
-                        setCurrentPage((prev) => prev + 1)
-                      }}
-                    >
-                      {t('settings.next')}
-                    </button>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-default/50 bg-surface-overlay/30 text-sm text-content-secondary">
+                <span>{t('settings.show')}</span>
+                <select
+                  className="bg-transparent text-white text-sm focus:outline-none border-0"
+                  onChange={(e) => {
+                    setMaxLogEntries(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  value={maxLogEntries}
+                >
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="500">500</option>
+                </select>
+                <span>{t('settings.entries')}</span>
               </div>
-
-              <div className="h-[500px] overflow-auto relative">
-                {isLoadingLogs ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-surface-base/50 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm text-content-secondary">
-                        {t('settings.loadingLogs')}
-                      </span>
-                    </div>
-                  </div>
-                ) : nodeLogs.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-content-tertiary">
-                    <span className="flex items-center gap-2">
-                      <Activity className="w-4 h-4" />
-                      {t('settings.noLogsAvailable')}
-                    </span>
-                  </div>
-                ) : (
-                  <TerminalLogDisplay
-                    logs={nodeLogs}
-                    maxEntries={maxLogEntries}
+              <div className="flex gap-1">
+                <button
+                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
+                  disabled={nodeLogs.length === 0 || isLoadingLogs}
+                  onClick={handleExportLogs}
+                  title={t('settings.exportLogs')}
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
+                  disabled={isLoadingLogs}
+                  onClick={() => {
+                    setCurrentPage(1)
+                    fetchNodeLogs()
+                  }}
+                  title={t('settings.refreshLogs')}
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`}
                   />
-                )}
+                </button>
+                <button
+                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
+                  disabled={nodeLogs.length === 0 || isLoadingLogs}
+                  onClick={() => setNodeLogs([])}
+                  title={t('settings.clearLogs')}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="flex items-center justify-between px-5 py-2 border-b border-divider/10 bg-surface-base/50">
+            <span className="text-xs text-content-tertiary">
+              {t('settings.liveNodeLogs')}
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-content-tertiary">
+                {t('settings.page')} {currentPage} {t('settings.of')}{' '}
+                {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} ({totalLogs}{' '}
+                {t('settings.totalEntries')})
+              </span>
+              <div className="flex gap-1">
+                <button
+                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
+                  disabled={currentPage === 1 || isLoadingLogs}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  {t('settings.previous')}
+                </button>
+                <button
+                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
+                  disabled={
+                    currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
+                    isLoadingLogs
+                  }
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  {t('settings.next')}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[500px] overflow-auto relative bg-surface-base/95">
+            {isLoadingLogs ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-surface-base/50">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="text-sm text-content-secondary">
+                    {t('settings.loadingLogs')}
+                  </span>
+                </div>
+              </div>
+            ) : nodeLogs.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-content-tertiary gap-2">
+                <Activity className="w-4 h-4" />
+                <span className="text-sm">{t('settings.noLogsAvailable')}</span>
+              </div>
+            ) : (
+              <TerminalLogDisplay logs={nodeLogs} maxEntries={maxLogEntries} />
+            )}
+          </div>
+        </section>
+      )}
 
       <MnemonicViewerModal
         isOpen={showMnemonicModal}
         onClose={() => setShowMnemonicModal(false)}
+      />
+
+      <ChangePasswordModal
+        accountName={currentAccount?.name ?? ''}
+        onClose={() => setShowChangePasswordModal(false)}
+        showModal={showChangePasswordModal}
       />
 
       <BackupModal
@@ -1340,120 +1343,152 @@ export const Component: React.FC = () => {
         type={modal.type}
       />
 
-      {showRestartConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
-            <div className="flex items-center justify-center text-yellow-500 mb-4">
-              <AlertTriangle size={48} />
-            </div>
-            <h2 className="text-2xl font-bold mb-4 text-center text-white">
-              {t('settings.restartNode')}
-            </h2>
-            <p className="text-content-secondary text-center mb-6">
-              {t('settings.restartNodeMessage')}
-            </p>
-            <div className="flex justify-between space-x-4">
-              <button
-                className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                onClick={() => setShowRestartConfirmation(false)}
-                type="button"
-              >
-                {t('settings.later')}
-              </button>
-              <button
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                onClick={() => {
-                  setShowRestartConfirmation(false)
-                  handleRestartNode()
-                }}
-                type="button"
-              >
-                {t('settings.restartNow')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showLogoutConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
-            <div className="flex items-center justify-center text-yellow-500 mb-4">
-              <AlertTriangle size={48} />
-            </div>
-            <h2 className="text-2xl font-bold mb-4 text-center text-white">
-              {t('settings.confirmLogout')}
-            </h2>
-            <p className="text-content-secondary text-center mb-6">
-              {t('settings.logoutMessage')}
-            </p>
-            <div className="flex justify-between space-x-4">
-              <button
-                className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                onClick={() => setShowLogoutConfirmation(false)}
-                type="button"
-              >
-                {t('settings.cancel')}
-              </button>
-              <button
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                onClick={confirmLogout}
-                type="button"
-              >
-                {t('settings.confirmLogout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showShutdownConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm">
-            {isShuttingDown ? (
-              <div className="flex flex-col items-center py-6">
-                <div className="w-16 h-16 mb-4">
-                  <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {t('settings.shuttingDownTitle')}
-                </h3>
-                <p className="text-content-secondary text-center">
-                  {t('settings.shuttingDownMessage')}
-                </p>
+      {showRestartConfirmation &&
+        createPortal(
+          <div
+            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget)
+                setShowRestartConfirmation(false)
+            }}
+          >
+            <div
+              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-center text-yellow-500 mb-4">
+                <AlertTriangle size={48} />
               </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-center text-red-500 mb-4">
-                  <AlertTriangle size={48} />
+              <h2 className="text-2xl font-bold mb-4 text-center text-white">
+                {t('settings.restartNode')}
+              </h2>
+              <p className="text-content-secondary text-center mb-6">
+                {t('settings.restartNodeMessage')}
+              </p>
+              <div className="flex justify-between space-x-4">
+                <button
+                  className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                  onClick={() => setShowRestartConfirmation(false)}
+                  type="button"
+                >
+                  {t('settings.later')}
+                </button>
+                <button
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                  onClick={() => {
+                    setShowRestartConfirmation(false)
+                    handleRestartNode()
+                  }}
+                  type="button"
+                >
+                  {t('settings.restartNow')}
+                </button>
+              </div>
+            </div>
+          </div>,
+          getModalPortalTarget()
+        )}
+
+      {showLogoutConfirmation &&
+        createPortal(
+          <div
+            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setShowLogoutConfirmation(false)
+            }}
+          >
+            <div
+              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-center text-yellow-500 mb-4">
+                <AlertTriangle size={48} />
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-center text-white">
+                {t('settings.confirmLogout')}
+              </h2>
+              <p className="text-content-secondary text-center mb-6">
+                {t('settings.logoutMessage')}
+              </p>
+              <div className="flex justify-between space-x-4">
+                <button
+                  className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                  onClick={() => setShowLogoutConfirmation(false)}
+                  type="button"
+                >
+                  {t('settings.cancel')}
+                </button>
+                <button
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                  onClick={confirmLogout}
+                  type="button"
+                >
+                  {t('settings.confirmLogout')}
+                </button>
+              </div>
+            </div>
+          </div>,
+          getModalPortalTarget()
+        )}
+
+      {showShutdownConfirmation &&
+        createPortal(
+          <div
+            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget)
+                setShowShutdownConfirmation(false)
+            }}
+          >
+            <div
+              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {isShuttingDown ? (
+                <div className="flex flex-col items-center py-6">
+                  <div className="w-16 h-16 mb-4">
+                    <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {t('settings.shuttingDownTitle')}
+                  </h3>
+                  <p className="text-content-secondary text-center">
+                    {t('settings.shuttingDownMessage')}
+                  </p>
                 </div>
-                <h2 className="text-2xl font-bold mb-4 text-center text-white">
-                  {t('settings.confirmShutdown')}
-                </h2>
-                <p className="text-content-secondary text-center mb-6">
-                  {t('settings.confirmShutdownMessage')}
-                </p>
-                <div className="flex justify-between space-x-4">
-                  <button
-                    className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-md hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                    onClick={() => setShowShutdownConfirmation(false)}
-                    type="button"
-                  >
-                    {t('settings.cancel')}
-                  </button>
-                  <button
-                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                    onClick={confirmShutdown}
-                    type="button"
-                  >
+              ) : (
+                <>
+                  <div className="flex items-center justify-center text-red-500 mb-4">
+                    <AlertTriangle size={48} />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4 text-center text-white">
                     {t('settings.confirmShutdown')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+                  </h2>
+                  <p className="text-content-secondary text-center mb-6">
+                    {t('settings.confirmShutdownMessage')}
+                  </p>
+                  <div className="flex justify-between space-x-4">
+                    <button
+                      className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                      onClick={() => setShowShutdownConfirmation(false)}
+                      type="button"
+                    >
+                      {t('settings.cancel')}
+                    </button>
+                    <button
+                      className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
+                      onClick={confirmShutdown}
+                      type="button"
+                    >
+                      {t('settings.confirmShutdown')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>,
+          getModalPortalTarget()
+        )}
     </div>
   )
 }

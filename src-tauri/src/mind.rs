@@ -28,6 +28,12 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{AppHandle, Emitter, Manager};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+/// `CREATE_NO_WINDOW` — prevent a console window from flashing on Windows.
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 pub const MIND_EVENT: &str = "mind-event";
 
 /// Supervises the single Node sidecar child process + its stdin handle.
@@ -57,7 +63,15 @@ impl MindProcess {
     /// Spawn the sidecar if it isn't already running, wiring stdout→events and
     /// stderr→log reader threads. Idempotent.
     pub fn ensure_started(&self, app: &AppHandle) -> Result<(), String> {
-        if self.is_running() {
+        // Hold the child lock for the entire check-and-spawn to prevent a race
+        // where two concurrent callers both observe is_running()==false and each
+        // try to spawn, producing multiple visible console windows on Windows.
+        let mut child_guard = self.child.lock().unwrap();
+        let already_running = match child_guard.as_mut() {
+            Some(c) => matches!(c.try_wait(), Ok(None)),
+            None => false,
+        };
+        if already_running {
             return Ok(());
         }
 
@@ -77,6 +91,10 @@ impl MindProcess {
         if let Some(dir) = &cwd {
             cmd.current_dir(dir);
         }
+        // Suppress the console window that `node` / `pnpm` would otherwise
+        // open on Windows whenever the sidecar is (re-)spawned.
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
 
         // The desktop wallet is backed by RLN only. Keep legacy WDK/Spark
         // aliases out of the model's tool prompt so small local models do not
@@ -155,7 +173,8 @@ impl MindProcess {
         let stderr = child.stderr.take().ok_or("no stderr on sidecar")?;
 
         *self.stdin.lock().unwrap() = Some(child_stdin);
-        *self.child.lock().unwrap() = Some(child);
+        *child_guard = Some(child);
+        drop(child_guard);
 
         // stdout → forward each JSON line to the webview as `mind-event`.
         let app_out = app.clone();

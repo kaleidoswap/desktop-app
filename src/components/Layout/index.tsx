@@ -140,6 +140,7 @@ interface UserProfileProps {
   isCollapsed: boolean
   onSupportClick: () => void
   onLogout: () => void
+  dropdownAlign?: 'left' | 'right'
 }
 
 // NavItem component for sidebar
@@ -210,7 +211,7 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
             type="button"
           >
             <ChevronRight
-              className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90 text-status-success' : ''}`}
+              className={`w-4 h-4 transition-all duration-300 ${isSubMenuOpen ? 'rotate-90' : ''}`}
             />
           </button>
         )}
@@ -335,6 +336,7 @@ const UserProfile = ({
   isCollapsed,
   onSupportClick,
   onLogout,
+  dropdownAlign = 'left',
 }: UserProfileProps) => {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
@@ -409,7 +411,7 @@ const UserProfile = ({
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className={`flex items-center ${!isCollapsed && 'space-x-2'}`}>
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 p-0.5">
             <div
               className="w-8 h-8 bg-gradient-to-br from-purple via-purple/80 to-cyan/50 rounded-full flex items-center justify-center
                           shadow-lg shadow-purple/20 ring-2 ring-purple/10 transition-all duration-300
@@ -418,7 +420,7 @@ const UserProfile = ({
               <User className="w-4 h-4 text-white" />
             </div>
             <div
-              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface-base
+              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface-base
               transition-all duration-300 ${statusDotClass}`}
             ></div>
           </div>
@@ -433,9 +435,6 @@ const UserProfile = ({
                   {statusText}
                 </span>
               </div>
-              <ChevronRight
-                className={`w-4 h-4 transition-all duration-300 ${isOpen ? 'rotate-90 text-primary' : 'text-content-secondary group-hover:text-primary'}`}
-              />
             </>
           )}
         </div>
@@ -455,8 +454,9 @@ const UserProfile = ({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 mt-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
-                      rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn"
+          className={`absolute top-full mt-2 bg-surface-elevated/95 backdrop-blur-xl border border-divider/30
+                      rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 w-56 animate-scaleIn
+                      ${dropdownAlign === 'right' ? 'right-0' : 'left-0'}`}
         >
           <div className="p-3 border-b border-divider/20 bg-gradient-to-br from-surface-overlay/50 to-transparent">
             <div className="flex items-center space-x-2">
@@ -568,11 +568,15 @@ export const Layout = (props: Props) => {
   const MAIN_NAV_ITEMS = getMainNavItems(t)
   const isItemActive = (item: NavItem) => {
     const path = location.pathname
-    if (item.matchPath) {
-      return path === item.matchPath || path.startsWith(`${item.matchPath}/`)
-    }
+    if (
+      item.matchPath &&
+      (path === item.matchPath || path.startsWith(`${item.matchPath}/`))
+    )
+      return true
     if (item.to && path === item.to) return true
-    return !!item.subMenu?.some((sub) => sub.to && path === sub.to)
+    return !!item.subMenu?.some(
+      (sub) => sub.to && (path === sub.to || path.startsWith(`${sub.to}/`))
+    )
   }
   const CHANNEL_MENU_ITEMS = getChannelMenuItems(t)
   const TRANSACTION_MENU_ITEMS = getTransactionMenuItems(t)
@@ -921,14 +925,14 @@ export const Layout = (props: Props) => {
               {isNodeActive ? (
                 <>
                   <button
-                    className="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60"
                     disabled={isHandlingCloseAction}
                     onClick={handleKeepRunningInBackground}
                   >
                     Keep Running In Background
                   </button>
                   <button
-                    className="w-full px-4 py-3 rounded-lg bg-red-500/15 text-red-300 border border-red-500/30 font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 rounded-md bg-red-500/15 text-red-300 border border-red-500/30 font-medium disabled:opacity-60 flex items-center justify-center gap-2"
                     disabled={isHandlingCloseAction}
                     onClick={handleShutdownAndQuit}
                   >
@@ -944,7 +948,7 @@ export const Layout = (props: Props) => {
                 </>
               ) : (
                 <button
-                  className="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60"
+                  className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60"
                   disabled={isHandlingCloseAction}
                   onClick={handleQuitApp}
                 >
@@ -953,7 +957,7 @@ export const Layout = (props: Props) => {
               )}
 
               <button
-                className="w-full px-4 py-3 rounded-lg bg-surface-overlay text-content-secondary font-medium disabled:opacity-60"
+                className="w-full px-4 py-3 rounded-md bg-surface-overlay text-content-secondary font-medium disabled:opacity-60"
                 disabled={isHandlingCloseAction}
                 onClick={() => setShowCloseConfirmModal(false)}
               >
@@ -993,7 +997,7 @@ export const Layout = (props: Props) => {
 
                 <div className="mt-6 flex flex-col sm:flex-row gap-3">
                   <button
-                    className="px-4 py-3 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="px-4 py-3 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60 flex items-center justify-center gap-2"
                     disabled={isRetryingNodeConnection}
                     onClick={handleRetryNodeConnection}
                   >
@@ -1010,7 +1014,7 @@ export const Layout = (props: Props) => {
                   </button>
 
                   <button
-                    className="px-4 py-3 rounded-lg bg-surface-overlay text-content-secondary font-medium"
+                    className="px-4 py-3 rounded-md bg-surface-overlay text-content-secondary font-medium"
                     onClick={() => navigate(WALLET_SETUP_PATH)}
                   >
                     {t('nodeReachability.changeNode', {
@@ -1025,7 +1029,7 @@ export const Layout = (props: Props) => {
       )}
 
       {!shouldHideNavbar ? (
-        <div className="min-h-screen flex m-0 p-0">
+        <div className="min-h-screen flex m-0 p-0 overflow-x-hidden">
           {/* Sidebar Navigation */}
           <div
             className={`flex flex-col fixed left-0 top-0 h-screen bg-surface-base border-r border-divider/30
@@ -1048,7 +1052,7 @@ export const Layout = (props: Props) => {
               )}
 
               <button
-                className="p-3 rounded-xl text-content-secondary hover:text-primary
+                className="p-3 rounded-lg text-content-secondary hover:text-primary
                            hover:bg-surface-overlay/50 transition-all duration-300
                            transform hover:scale-110 active:scale-95
                            ring-1 ring-divider/10 hover:ring-primary/30 flex-shrink-0"
@@ -1064,15 +1068,6 @@ export const Layout = (props: Props) => {
                   <ChevronLeft size={18} />
                 )}
               </button>
-            </div>
-
-            {/* Account / node status bar — at the top of the sidebar */}
-            <div className="px-4 pb-3 mb-1 border-b border-divider/20 bg-surface-base">
-              <UserProfile
-                isCollapsed={isSidebarCollapsed}
-                onLogout={() => setShowLogoutModal(true)}
-                onSupportClick={() => setShowSupportModal(true)}
-              />
             </div>
 
             {/* Main navigation — grouped into Node / Mind categories */}
@@ -1157,7 +1152,7 @@ export const Layout = (props: Props) => {
               <div className="px-4 pb-6 pt-[25px] bg-surface-base">
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl
+                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg
                                bg-status-success/15 hover:bg-status-success/25
                                border border-status-success/30 text-status-success
                                font-semibold text-sm transition-all duration-200
@@ -1168,7 +1163,7 @@ export const Layout = (props: Props) => {
                     {t('actions.deposit')}
                   </button>
                   <button
-                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-xl
+                    className="flex items-center justify-center gap-2 py-3 px-3 rounded-lg
                                bg-violet-500/15 hover:bg-violet-500/25
                                border border-violet-500/30 text-violet-400
                                font-semibold text-sm transition-all duration-200
@@ -1193,7 +1188,7 @@ export const Layout = (props: Props) => {
 
           {/* Main content */}
           <main
-            className={`flex-1 flex flex-col min-h-screen bg-surface-raised transition-all duration-300
+            className={`flex-1 flex flex-col min-h-screen max-w-full overflow-x-hidden bg-surface-raised transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}
           >
             {/* Top bar with page title and notifications */}
@@ -1245,7 +1240,7 @@ export const Layout = (props: Props) => {
                   {/* Manual update check button */}
                   {/* <button
                     aria-label="Check for updates"
-                    className={`relative p-2 rounded-lg hover:bg-surface-overlay transition-colors ${
+                    className={`relative p-2 rounded-md hover:bg-surface-overlay transition-colors ${
                       hasUpdateNotification
                         ? 'text-amber-400 hover:text-amber-300'
                         : 'text-content-secondary hover:text-white'
@@ -1295,6 +1290,14 @@ export const Layout = (props: Props) => {
                       </span>
                     )}
                   </button>
+
+                  {/* User profile */}
+                  <UserProfile
+                    dropdownAlign="right"
+                    isCollapsed={false}
+                    onLogout={() => setShowLogoutModal(true)}
+                    onSupportClick={() => setShowSupportModal(true)}
+                  />
 
                   {/* Quick action dropdown menus - only show on smaller screens */}
                   <div className="md:hidden flex items-center space-x-2">
@@ -1354,7 +1357,12 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main content area */}
-            <div className="flex-1 overflow-hidden p-6">{props.children}</div>
+            <div
+              className="relative isolate flex-1 overflow-hidden p-6"
+              id="content-area"
+            >
+              {props.children}
+            </div>
           </main>
         </div>
       ) : (

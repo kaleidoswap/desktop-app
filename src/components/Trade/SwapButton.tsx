@@ -132,7 +132,7 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
 
   const getButtonStyles = () => {
     const baseStyles = twJoin(
-      'relative w-full py-4 px-6 rounded-2xl font-bold text-base',
+      'relative w-full py-4 px-6 rounded-lg font-bold text-base',
       'transition-all duration-300 ease-out',
       'flex items-center justify-center gap-3',
       'min-h-[60px] border-2 backdrop-blur-xl',

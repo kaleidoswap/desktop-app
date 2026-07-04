@@ -789,7 +789,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
               {swapString}
             </pre>
             <button
-              className="absolute top-2 right-2 p-1.5 bg-surface-high rounded hover:bg-surface-elevated transition-colors"
+              className="absolute top-2 right-2 p-1.5 bg-surface-high rounded hover:bg-surface-elevated transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
               onClick={() => copyToClipboard(swapString)}
               title="Copy swap string"
               type="button"

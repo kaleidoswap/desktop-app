@@ -55,7 +55,7 @@
     "overview": "Overview",
     "activate": "Activate {{name}}",
     "dashboard": "Dashboard",
-    "trade": "Trade",
+    "trade": "Trading",
     "history": "History",
     "liquidity": "Liquidity",
     "brain": "Brain",
@@ -81,7 +81,7 @@
     "loadingData": "Loading data...",
     "openChannel": "Open Channel",
     "buyChannel": "Buy Channel",
-    "createNewChannel": "Create Channel",
+    "createNewChannel": "Open Channel",
     "buyAChannel": "Buy Channel",
     "manageChannels": "Manage Channels",
     "refreshing": "Refreshing...",
@@ -139,7 +139,7 @@
     "title": "Settings",
     "subtitle": "Manage your node and application preferences",
     "applicationSettings": "Application Settings",
-    "generalSettings": "General Settings",
+    "generalSettings": "General",
     "capabilities": "Capabilities",
     "capabilitiesDescription": "Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.",
     "language": "Language",
@@ -450,7 +450,6 @@
       "helpText": "The connection string should be a 66-character hex public key, followed by @ symbol, then the host address, and port number (e.g. :9735)",
       "suggestedNodes": "Suggested Nodes",
       "loadingLsp": "Loading LSP information...",
-      "continue": "Continue",
       "connectDialog": {
         "title": "Connect to Peer",
         "message": "Would you like to connect to this peer before opening a channel?",
@@ -463,7 +462,8 @@
       "errorNoLspUrl": "No default LSP URL configured for network: {{network}}",
       "errorFetchLsp": "Failed to fetch LSP connection information",
       "errorInvalidPeerString": "Invalid peer connection string",
-      "errorConnectFailed": "Failed to connect to peer. Please try again."
+      "errorConnectFailed": "Failed to connect to peer. Please try again.",
+      "continue": "Configure Channel"
     },
     "step2": {
       "title": "Configure Channel",
@@ -510,7 +510,7 @@
       "privateDescription": "Only known to the two parties and cannot be used for routing",
       "privacyInfo": "Public channels are discoverable and can route payments for the network. Private channels provide direct connectivity without network visibility.",
       "back": "Back",
-      "next": "Next",
+      "next": "Review Details",
       "formError": "Please check the form for errors",
       "errorCapacityRequired": "Please enter a channel capacity.",
       "errorMinCapacity": "Channel capacity must be at least {{amount}} sats.",
@@ -1508,7 +1508,7 @@
       "alreadyConnectedMessage": "Already Connected to this LSP",
       "connectButton": "Connect to LSP",
       "cancelButton": "Cancel",
-      "continueButton": "Continue",
+      "continueButton": "Configure Channel",
       "modalTitle": "Connect to LSP?",
       "modalMessage": "This will connect to the Lightning Service Provider and fetch channel parameters.",
       "checkPeerFailed": "Failed to check peer connection status",
@@ -1519,7 +1519,7 @@
       "timeout": "Request timed out. The LSP server is not responding. Please check the URL and try again.",
       "networkError": "Network error. Please check your connection and the LSP URL.",
       "waitForConnectionUrl": "Please wait for LSP connection URL to be fetched",
-      "alreadyConnected": "Continue with this LSP?",
+      "alreadyConnected": "Continue with connected LSP",
       "alreadyConnectedToast": "Already connected to LSP",
       "connectedSuccess": "Successfully connected to LSP",
       "kaleidoLspFetched": "Kaleidoswap LSP information fetched successfully",
@@ -1571,7 +1571,7 @@
       "assetAmount": "Asset Amount",
       "loading": "Loading...",
       "backButton": "Back",
-      "nextButton": "Continue",
+      "nextButton": "Review Details",
       "fees": {
         "title": "Estimated Fees",
         "lspFee": "LSP Fee",
@@ -1700,7 +1700,7 @@
       "success": {
         "title": "Order Completed!",
         "message": "Your payment has been received and the channel is being opened.",
-        "buttonText": "Go to Channels Page",
+        "buttonText": "Go to Manage Channels",
         "channelOpening": "Channel opening in progress"
       },
       "error": {
@@ -1737,7 +1737,7 @@
       "pendingButtonText": "Check Status",
       "pendingMessage": "Your payment is being processed. This may take a few moments.",
       "pendingTitle": "Processing Payment",
-      "successButtonText": "Go to Channels Page",
+      "successButtonText": "Go to Manage Channels",
       "successMessage": "Your payment has been received and the channel is in progress.",
       "successTitle": "Order Completed",
       "channelProgress": "Channel Opening in Progress",
@@ -2320,7 +2320,7 @@
       "depositBitcoin": "Deposit Bitcoin",
       "noChannelsAvailable": "No Channels Available",
       "noChannelsMessage": "To start trading, you need to create a channel with some assets or buy one from a Lightning Service Provider.",
-      "createChannel": "Create Channel",
+      "createChannel": "Open Channel",
       "buyFromLSP": "Buy from LSP"
     },
     "toast": {
@@ -2858,7 +2858,7 @@
       "usdtLnBalance": "USDT LN balance"
     },
     "section": {
-      "balances": "Channel Balances",
+      "balances": "Channel Status",
       "pendingBadge": "pending",
       "pendingUsdtChannels": "Pending USDT channels",
       "pendingUsdtDescription": "Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.",

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Input } from '../ui'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -25,6 +26,10 @@ import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { MinidenticonImg } from '../../components/MinidenticonImg'
 import { Spinner } from '../../components/Spinner'
 import { BitcoinNetwork, getNetworkDisplayName } from '../../constants'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import {
   nodeSettingsActions,
   setSettingsAsync,
@@ -79,10 +84,12 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
     }
   }, [])
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
       aria-modal="true"
-      className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
       onClick={onClose}
       role="dialog"
     >
@@ -99,7 +106,8 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 

@@ -53,7 +53,7 @@
   },
   "channels": {
     "buyChannel": "Acheter un canal",
-    "createNewChannel": "Créer un nouveau canal",
+    "createNewChannel": "Open Channel",
     "buyAChannel": "Acheter un canal",
     "manageChannels": "Gérer les canaux",
     "pageTitle": "Tableau de bord du portefeuille Lightning",

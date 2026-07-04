@@ -141,7 +141,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
       : undefined
 
   return (
-    <div className="rounded-2xl border border-border-default/50 bg-surface-overlay/50 shadow-sm transition-all duration-300 hover:bg-surface-overlay/80 swap-card hover:border-border-default">
+    <div className="rounded-2xl border border-border-default/50 bg-surface-base/35 shadow-sm transition-all duration-300 hover:bg-surface-base/50 swap-card hover:border-border-default">
       <div className="flex items-start gap-3 p-4">
         {/* Left: Info */}
         <div className="min-w-0 flex-1 space-y-2">
