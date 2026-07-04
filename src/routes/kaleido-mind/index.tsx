@@ -14,7 +14,7 @@ import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
 
 import { RuntimeInstall } from './runtime-install'
-import { StatusPill, labelForPhase, type ChatMsg } from './shared'
+import { StatusPill, type ChatMsg } from './shared'
 import { StartBrainModal } from './start-brain-modal'
 
 export const Component: React.FC = () => {
@@ -91,20 +91,6 @@ export const Component: React.FC = () => {
         />
       </div>
 
-      {/* Loading banner */}
-      {mind.loading && (
-        <div className="flex items-center gap-2 rounded-lg border border-violet-700/40 bg-violet-900/20 px-4 py-2 text-sm text-violet-200">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>
-            {labelForPhase(mind.loading.phase)}
-            {typeof mind.loading.percentage === 'number'
-              ? ` · ${mind.loading.percentage}%`
-              : ''}
-            {mind.loading.message ? ` — ${mind.loading.message}` : ''}
-          </span>
-        </div>
-      )}
-
       {/* Gate: the agent runtime is downloaded on demand (not bundled). Show the
           install screen until it's available; dev (sibling repos) skips this. */}
       {mind.runtimeInstalled === null ? (
@@ -120,8 +106,11 @@ export const Component: React.FC = () => {
           />
 
           {/* Offline prompt — pops up on Mind pages (except chat, which has its
-              own inline launcher) when the brain isn't running. */}
-          {!onChatRoute && <StartBrainModal mind={mind} />}
+              own inline launcher) when the brain isn't running. Always mounted
+              (rather than conditionally on onChatRoute) so its "dismissed" state
+              survives switching between Mind sub-tabs — otherwise remounting on
+              every tab change reset the dismissal and the modal reappeared. */}
+          <StartBrainModal mind={mind} suppressed={onChatRoute} />
         </>
       )}
     </div>

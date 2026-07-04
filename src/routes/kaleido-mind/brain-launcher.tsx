@@ -6,11 +6,9 @@
 import {
   AlertTriangle,
   Brain,
-  Check,
   Cpu,
   Download,
   HardDrive,
-  Loader2,
   MemoryStick,
   Play,
   RefreshCw,
@@ -26,47 +24,6 @@ import type { UseMindResult } from '../../hooks/useMind'
 
 import { gb, labelForPhase } from './shared'
 import { LAST_MODEL_KEY } from './start-brain-modal'
-
-/** Two-step progress header: choose a model → start the brain. */
-const StepRail: React.FC<{ step: 1 | 2 }> = ({ step }) => {
-  const steps = ['Choose a model', 'Start the brain']
-  return (
-    <div className="mb-5 flex items-center justify-center gap-2">
-      {steps.map((label, i) => {
-        const n = (i + 1) as 1 | 2
-        const done = step > n
-        const active = step === n
-        return (
-          <React.Fragment key={label}>
-            <div className="flex items-center gap-2">
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                  done
-                    ? 'bg-status-success/20 text-status-success'
-                    : active
-                      ? 'bg-primary text-surface-base'
-                      : 'bg-surface-overlay text-content-tertiary'
-                }`}
-              >
-                {done ? <Check className="h-3.5 w-3.5" /> : n}
-              </span>
-              <span
-                className={`text-xs font-medium ${
-                  active ? 'text-content-primary' : 'text-content-tertiary'
-                }`}
-              >
-                {label}
-              </span>
-            </div>
-            {i === 0 && (
-              <span aria-hidden className="h-px w-8 bg-border-default" />
-            )}
-          </React.Fragment>
-        )
-      })}
-    </div>
-  )
-}
 
 /** Shimmer rows while the catalog loads. */
 const CatalogSkeleton: React.FC = () => (
@@ -88,11 +45,8 @@ const CatalogSkeleton: React.FC = () => (
 
 /** Step 1 — choose & download a model from the catalog. */
 const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
-  const navigate = useNavigate()
   const isEmpty = mind.catalog.length === 0
   const recommendedId = mind.catalog[0]?.id
-  // Keep the launcher focused: surface the top picks, link out for the rest.
-  const picks = mind.catalog.slice(0, 3)
 
   return (
     <div className="w-full max-w-lg">
@@ -136,7 +90,7 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {picks.map((m) => {
+          {mind.catalog.map((m) => {
             const dl = mind.downloads[m.id]
             const downloading = typeof dl === 'number'
             const isRecommended = m.id === recommendedId
@@ -211,15 +165,6 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
               </div>
             )
           })}
-          {mind.catalog.length > picks.length && (
-            <button
-              className="mt-1 inline-flex items-center justify-center gap-1.5 self-center rounded-md px-3 py-1.5 text-xs font-medium text-content-tertiary hover:text-content-primary"
-              onClick={() => navigate(KALEIDO_MIND_MODELS_PATH)}
-              type="button"
-            >
-              Browse all {mind.catalog.length} models
-            </button>
-          )}
         </div>
       )}
     </div>
@@ -229,9 +174,8 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
 /** Step 2 — start the brain on an installed model. */
 const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const navigate = useNavigate()
-  const { installed, loading } = mind
+  const { installed, loading, starting } = mind
   const [selected, setSelected] = useState('')
-  const [starting, setStarting] = useState(false)
 
   let lastId: string | null = null
   try {
@@ -249,15 +193,42 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
 
   const start = () => {
     if (!modelId) return
-    setStarting(true)
     try {
       localStorage.setItem(LAST_MODEL_KEY, modelId)
     } catch {
       /* ignore */
     }
-    // loading/providerOn flips → this view is replaced by the chat. On failure
-    // allow a retry.
-    void mind.startProvider(modelId).catch(() => setStarting(false))
+    // loading/providerOn flips → this view is replaced by the chat. On
+    // failure mind.starting flips back to false, allowing a retry.
+    void mind.startProvider(modelId).catch(() => {})
+  }
+
+  if (busy) {
+    return (
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 blur-2xl" />
+          <div className="relative rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-6 shadow-lg shadow-primary/10 ring-1 ring-primary/20 backdrop-blur-2xl">
+            <Brain className="relative z-10 h-10 w-10 text-[#15E99A]" />
+          </div>
+        </div>
+        <div className="max-w-lg space-y-4 text-center">
+          <p className="bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-xl font-bold text-transparent">
+            Starting your brain…
+          </p>
+          <p className="text-base leading-relaxed text-slate-300">
+            {loading ? labelForPhase(loading.phase) : 'Starting…'}
+            {typeof loading?.percentage === 'number'
+              ? ` · ${loading.percentage}%`
+              : ''}
+            {loading?.message ? ` — ${loading.message}` : ''}
+          </p>
+          <div className="mx-auto h-2 w-80 overflow-hidden rounded-full border border-slate-600/40 bg-slate-800/60 shadow-inner backdrop-blur-sm">
+            <div className="splash-progress-fill h-full rounded-full shadow-lg" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -266,39 +237,17 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         <Brain className="h-6 w-6 text-primary" />
       </div>
       <h2 className="text-base font-semibold text-content-primary">
-        {busy ? 'Starting the brain…' : 'Start your brain'}
+        Start your brain
       </h2>
       <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-content-tertiary">
-        {busy
-          ? (loading?.message ?? 'Loading the model into memory…')
-          : 'Your model is ready. Start the brain to begin chatting.'}
+        Your model is ready. Start the brain to begin chatting.
       </p>
 
-      {busy ? (
-        <div className="mt-5">
-          <div className="mb-2 flex items-center justify-center gap-2 text-sm text-primary">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>
-              {loading ? labelForPhase(loading.phase) : 'Starting…'}
-              {typeof loading?.percentage === 'number'
-                ? ` · ${loading.percentage}%`
-                : ''}
-            </span>
-          </div>
-          {typeof loading?.percentage === 'number' && (
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-overlay">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${loading.percentage}%` }}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="mt-5 space-y-3">
-          {installed.length > 1 && (
+      <div className="mt-5 space-y-3">
+        {installed.length > 1 && (
+          <div className="relative">
             <select
-              className="w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-sm text-content-primary focus:border-primary focus:outline-none"
+              className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-sm text-content-primary focus:outline-none focus:ring-2 focus:ring-primary"
               onChange={(e) => setSelected(e.target.value)}
               value={modelId}
             >
@@ -309,38 +258,63 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
                 </option>
               ))}
             </select>
-          )}
-          <button
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-semibold text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-50"
-            disabled={!modelId}
-            onClick={start}
-            type="button"
-          >
-            <Play className="h-4 w-4" />
-            Start {active?.displayName ?? 'brain'}
-          </button>
-          <button
-            className="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-content-tertiary hover:text-content-primary"
-            onClick={() => navigate(KALEIDO_MIND_MODELS_PATH)}
-            type="button"
-          >
-            <Settings2 className="h-3.5 w-3.5" /> Manage models
-          </button>
-        </div>
-      )}
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Cpu className="h-4 w-4 text-content-tertiary" />
+            </div>
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <svg
+                className="h-4 w-4 text-content-tertiary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 9l-7 7-7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </div>
+        )}
+        <button
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-semibold text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-50"
+          disabled={!modelId}
+          onClick={start}
+          type="button"
+        >
+          <Play className="h-4 w-4" />
+          Start {active?.displayName ?? 'brain'}
+        </button>
+        <button
+          className="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-content-tertiary hover:text-content-primary"
+          onClick={() => navigate(KALEIDO_MIND_MODELS_PATH)}
+          type="button"
+        >
+          <Settings2 className="h-3.5 w-3.5" /> Manage models
+        </button>
+      </div>
     </div>
   )
 }
 
 export const BrainLauncher: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const hasModel = mind.installed.length > 0
-  const step: 1 | 2 = hasModel ? 2 : 1
+
+  if (hasModel) {
+    return (
+      <div className="flex min-h-[440px] flex-1 flex-col items-center justify-center px-5 py-8">
+        <StartBrain mind={mind} />
+      </div>
+    )
+  }
 
   return (
     <section className="flex min-h-[440px] flex-1 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
       <div className="flex flex-1 flex-col items-center justify-center px-5 py-8">
-        <StepRail step={step} />
-        {hasModel ? <StartBrain mind={mind} /> : <ChooseModel mind={mind} />}
+        <ChooseModel mind={mind} />
       </div>
     </section>
   )
