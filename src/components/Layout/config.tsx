@@ -8,7 +8,6 @@ import {
   Plus,
   PlusCircle,
   ShoppingCart,
-  Activity,
   SlidersHorizontal,
   Settings,
   Store,
@@ -28,6 +27,10 @@ import {
   ArrowLeftRight,
   Radio,
   LayoutDashboard,
+  Download,
+  Upload,
+  Coins,
+  ArrowDownUp,
 } from 'lucide-react'
 import React from 'react'
 
@@ -130,7 +133,34 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         icon: <Clock className="w-5 h-5" />,
         label: t('navigation.history'),
         matchPath: WALLET_HISTORY_PATH,
-        to: WALLET_HISTORY_PATH,
+        subMenu: [
+          {
+            icon: <Download className="w-4 h-4" />,
+            label: t('history.deposits'),
+            to: WALLET_HISTORY_DEPOSITS_PATH,
+          },
+          {
+            icon: <Upload className="w-4 h-4" />,
+            label: t('history.paymentsWithdrawals'),
+            to: WALLET_HISTORY_WITHDRAWALS_PATH,
+          },
+          {
+            icon: <ArrowLeftRight className="w-4 h-4" />,
+            label: t('history.swaps'),
+            to: WALLET_HISTORY_TRADES_PATH,
+          },
+          {
+            icon: <Coins className="w-4 h-4" />,
+            label: t('history.assets'),
+            to: WALLET_HISTORY_ASSETS_PATH,
+          },
+          {
+            icon: <ArrowDownUp className="w-4 h-4" />,
+            label: t('history.channelOrders'),
+            to: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
+          },
+        ],
+        to: WALLET_HISTORY_DEPOSITS_PATH,
       },
       {
         icon: <Droplets className="w-5 h-5" />,
@@ -360,15 +390,15 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.dashboard'),
   },
   [WALLET_HISTORY_ASSETS_PATH]: {
-    icon: <Activity className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_CHANNEL_ORDERS_PATH]: {
-    icon: <ShoppingCart className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_DEPOSITS_PATH]: {
-    icon: <ArrowDownLeft className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_PATH]: {
@@ -376,11 +406,11 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_TRADES_PATH]: {
-    icon: <Zap className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_WITHDRAWALS_PATH]: {
-    icon: <ArrowUpRight className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
 })

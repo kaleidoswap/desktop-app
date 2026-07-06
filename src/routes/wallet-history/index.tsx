@@ -1,8 +1,9 @@
 import {
   ArrowDownUp,
+  ArrowLeftRight,
   Coins,
-  ArrowDown,
-  ArrowUp,
+  Download,
+  Upload,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
@@ -44,19 +45,19 @@ export const Component = () => {
   const TABS = [
     {
       color: 'green',
-      icon: <ArrowDown className="w-5 h-5" />,
+      icon: <Download className="w-5 h-5" />,
       label: t('history.deposits'),
       path: WALLET_HISTORY_DEPOSITS_PATH,
     },
     {
       color: 'red',
-      icon: <ArrowUp className="w-5 h-5" />,
+      icon: <Upload className="w-5 h-5" />,
       label: t('history.paymentsWithdrawals'),
       path: WALLET_HISTORY_WITHDRAWALS_PATH,
     },
     {
       color: 'blue',
-      icon: <ArrowDownUp className="w-5 h-5" />,
+      icon: <ArrowLeftRight className="w-5 h-5" />,
       label: t('history.swaps'),
       path: WALLET_HISTORY_TRADES_PATH,
     },
@@ -80,12 +81,6 @@ export const Component = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
-      <div className="mb-6">
-        <p className="text-content-secondary text-sm">
-          {t('history.description')}
-        </p>
-      </div>
-
       {/* Desktop Tabs */}
       <div className="hidden md:flex mb-6 border-b border-border-default">
         {TABS.map((tab) => {
