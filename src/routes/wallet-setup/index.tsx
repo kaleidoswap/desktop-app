@@ -270,10 +270,9 @@ export const Component = () => {
 
           <div className="min-h-screen py-8 md:py-16 flex items-center justify-center p-4 relative z-10">
             <Card
-              className="p-6 md:p-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-blue-dark/40 via-blue-dark/30 to-blue-dark/40 
-              border-2 border-primary/20 shadow-2xl shadow-primary/10 
-              hover:shadow-primary/20 transition-all duration-500 
-              ring-1 ring-cyan/10 hover:ring-cyan/20"
+              className="p-6 md:p-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-blue-dark/40 via-blue-dark/30 to-blue-dark/40
+              border border-primary/20 shadow-2xl shadow-primary/10
+              hover:shadow-primary/20 transition-all duration-500"
             >
               <div
                 className="fade-in content-container"

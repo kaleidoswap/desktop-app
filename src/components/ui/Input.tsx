@@ -92,7 +92,7 @@ export const PasswordInput = forwardRef<
       ref={ref}
       suffixNode={
         <button
-          className="p-1 hover:bg-surface-high/50 rounded-md transition-colors"
+          className="p-1 hover:bg-surface-high/50 rounded-md transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
           onClick={onToggleVisibility}
           type="button"
         >

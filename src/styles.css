@@ -75,10 +75,12 @@
 
   html {
     @apply antialiased;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-surface-raised text-content-primary font-sans;
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--app-surface-base) / 0.8)
       rgb(var(--app-surface-base) / 0.3);
@@ -222,6 +224,17 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--app-primary) / 0.2);
   }
+}
+
+/* Global press animation — outside @layer so it overrides transition-colors utilities */
+button {
+  transition: all 150ms ease;
+}
+button:not([disabled]):hover {
+  transform: scale(1.02);
+}
+button:not([disabled]):active {
+  transform: scale(0.98);
 }
 
 /* Animations */
@@ -472,7 +485,7 @@
 }
 
 .splash-progress-fill {
-  background: linear-gradient(90deg, #15e99a, #6f32ff);
+  background: linear-gradient(90deg, #15e99a, #9365ff);
   animation: splashLoading 2s ease-in-out infinite;
 }
 

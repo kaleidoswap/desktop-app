@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -437,7 +441,7 @@ export const Component = () => {
               {t('orderChannel.backConfirmGoBack')}
             </button>
             <button
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
               onClick={() => setShowBackConfirmation(false)}
               type="button"
             >
@@ -455,7 +459,9 @@ export const Component = () => {
       {showLspConfirm &&
         typeof document !== 'undefined' &&
         createPortal(
-          <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div
+            className={`${getModalPositionClass()} inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
+          >
             <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
               <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
                 <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
@@ -501,7 +507,7 @@ export const Component = () => {
                     Change
                   </button>
                   <button
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     disabled={
                       isLoadingLspConfirm ||
                       !!lspConfirmError ||
@@ -521,7 +527,7 @@ export const Component = () => {
               </div>
             </div>
           </div>,
-          document.body
+          getModalPortalTarget()
         )}
 
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">

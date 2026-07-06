@@ -7,13 +7,14 @@ import {
   Copy,
   CheckCircle,
   X,
-  Shield,
+  KeyRound,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { Button } from './ui'
+import { getModalPortalTarget } from '../helpers/modalPortal'
 
 interface MnemonicViewerModalProps {
   isOpen: boolean
@@ -33,7 +34,6 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
   const [showPassword, setShowPassword] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setStep('password')
@@ -47,29 +47,25 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!password) {
       setError(t('walletUnlock.passwordRequired'))
       return
     }
-
     setIsLoading(true)
     setError(null)
-
     try {
       const decryptedMnemonic = await invoke<string>('get_decrypted_mnemonic', {
         password,
       })
-
       setMnemonic(decryptedMnemonic)
       setStep('display')
       toast.success(t('mnemonicViewer.retrievedSuccess'))
     } catch (err) {
-      const errorMessage =
+      setError(
         err instanceof Error
           ? err.toString()
           : t('mnemonicViewer.incorrectPassword')
-      setError(errorMessage)
+      )
       toast.error(t('mnemonicViewer.decryptFailed'))
     } finally {
       setIsLoading(false)
@@ -78,85 +74,64 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
   const handleCopy = async () => {
     if (!mnemonic) return
-
     try {
       await navigator.clipboard.writeText(mnemonic)
       setCopied(true)
       toast.success(t('walletInit.mnemonicStep.mnemonicCopied'))
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
+    } catch {
       toast.error(t('mnemonicViewer.copyFailed'))
     }
   }
 
-  const handleClose = () => {
-    onClose()
-  }
+  if (!isOpen) return null
 
   const mnemonicWords = mnemonic ? mnemonic.split(' ') : []
 
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-surface-base border border-border-default rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-border-default px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600/20 rounded-lg">
-                <Shield className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  {step === 'password'
-                    ? t('mnemonicViewer.unlockTitle')
-                    : t('mnemonicViewer.displayTitle')}
-                </h2>
-                <p className="text-sm text-content-secondary">
-                  {step === 'password'
-                    ? t('mnemonicViewer.unlockSubtitle')
-                    : t('mnemonicViewer.displaySubtitle')}
-                </p>
-              </div>
-            </div>
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+        <div className="max-h-[90vh] overflow-y-auto px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+            <KeyRound className="w-6 h-6 text-primary" />
+            <h3 className="text-xl font-bold text-white flex-1">
+              {step === 'password'
+                ? t('mnemonicViewer.unlockTitle')
+                : t('mnemonicViewer.displayTitle')}
+            </h3>
             <button
-              className="p-2 hover:bg-surface-overlay rounded-lg transition-colors text-content-secondary hover:text-white"
-              onClick={handleClose}
+              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+              onClick={onClose}
+              type="button"
             >
-              <X className="w-5 h-5" />
+              <X size={18} />
             </button>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="p-6">
           {step === 'password' ? (
-            // Password Entry Step
-            <form className="space-y-6" onSubmit={handlePasswordSubmit}>
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Lock className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-blue-400 mb-1">
-                      {t('mnemonicViewer.securityNoticeTitle')}
-                    </h4>
-                    <p className="text-xs text-blue-200/80">
-                      {t('mnemonicViewer.securityNoticeDescription')}
-                    </p>
-                  </div>
-                </div>
+            <form className="space-y-5" onSubmit={handlePasswordSubmit}>
+              {/* Security notice */}
+              <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-200/80 leading-relaxed">
+                  {t('mnemonicViewer.securityNoticeDescription')}
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-2">
+              {/* Password field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
                   {t('walletUnlock.walletPassword')}
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-content-tertiary" />
+                <div className="flex items-center bg-surface-overlay/50 rounded-xl border border-border-default focus-within:border-primary/60 transition-colors">
+                  <Lock className="w-4 h-4 text-content-tertiary ml-3 flex-shrink-0" />
                   <input
                     autoFocus
-                    className="w-full bg-surface-overlay border border-border-default rounded-lg pl-10 pr-12 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    className="flex-1 min-w-0 px-3 py-2.5 bg-transparent focus:outline-none text-white placeholder:text-content-tertiary text-sm"
                     disabled={isLoading}
                     onChange={(e) => {
                       setPassword(e.target.value)
@@ -167,91 +142,84 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                     value={password}
                   />
                   <button
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary hover:text-content-secondary transition-colors"
+                    className="px-3 text-content-secondary hover:text-white transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     type="button"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
+                      <EyeOff className="w-4 h-4" />
                     ) : (
-                      <Eye className="w-5 h-5" />
+                      <Eye className="w-4 h-4" />
                     )}
                   </button>
                 </div>
                 {error && (
-                  <div className="mt-3 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                    <p className="text-sm text-red-400 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                      {error}
-                    </p>
-                  </div>
+                  <p className="text-xs text-status-danger flex items-center gap-1.5 pt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {error}
+                  </p>
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="flex-1 bg-surface-high hover:bg-surface-elevated text-white py-3"
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium"
                   disabled={isLoading}
-                  onClick={handleClose}
+                  onClick={onClose}
                   type="button"
                 >
+                  <X className="w-4 h-4" />
                   {t('common.cancel')}
-                </Button>
-                <Button
-                  className="flex-1 bg-primary hover:bg-primary-emphasis text-primary-foreground py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={isLoading || !password}
                   type="submit"
                 >
                   {isLoading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      {t('mnemonicViewer.decrypting')}
-                    </>
+                    <div className="w-4 h-4 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
                   ) : (
-                    <>
-                      <Eye className="w-5 h-5 mr-2" />
-                      {t('mnemonicViewer.viewButton')}
-                    </>
+                    <Eye className="w-4 h-4" />
                   )}
-                </Button>
+                  {isLoading
+                    ? t('mnemonicViewer.decrypting')
+                    : t('mnemonicViewer.viewButton')}
+                </button>
               </div>
             </form>
           ) : (
-            // Mnemonic Display Step
-            <div className="space-y-6">
-              {/* Critical Warning */}
-              <div className="bg-yellow-500/10 border-2 border-yellow-500/30 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="text-base font-bold text-yellow-400 mb-2">
-                      {t('mnemonicViewer.warningTitle')}
-                    </h4>
-                    <ul className="text-sm text-yellow-200/90 space-y-1 list-disc list-inside">
-                      <li>{t('mnemonicViewer.warningNeverShare')}</li>
-                      <li>{t('mnemonicViewer.warningControlWallet')}</li>
-                      <li>{t('mnemonicViewer.warningStoreSecurely')}</li>
-                      <li>{t('mnemonicViewer.warningScreenPrivacy')}</li>
-                    </ul>
-                  </div>
+            <div className="space-y-5">
+              {/* Warning */}
+              <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-xs font-semibold text-amber-400">
+                    {t('mnemonicViewer.warningTitle')}
+                  </p>
+                  <ul className="text-xs text-amber-200/80 space-y-0.5 list-disc list-inside leading-relaxed">
+                    <li>{t('mnemonicViewer.warningNeverShare')}</li>
+                    <li>{t('mnemonicViewer.warningStoreSecurely')}</li>
+                    <li>{t('mnemonicViewer.warningScreenPrivacy')}</li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Mnemonic Grid */}
-              <div className="bg-surface-overlay/50 border-2 border-border-default rounded-xl p-6">
-                <h3 className="text-sm font-semibold text-content-secondary mb-4 uppercase tracking-wide">
+              {/* Mnemonic grid */}
+              <div className="bg-surface-overlay/50 rounded-xl border border-border-default/60 p-4">
+                <p className="text-[10px] font-semibold text-content-tertiary uppercase tracking-widest mb-3">
                   {t('mnemonicViewer.recoveryPhraseHeading')}
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                </p>
+                <div className="grid grid-cols-3 gap-2">
                   {mnemonicWords.map((word, index) => (
                     <div
-                      className="bg-surface-base border border-border-default rounded-lg px-4 py-3 flex items-center gap-3 hover:border-blue-500/50 transition-colors"
+                      className="bg-surface-base border border-border-default rounded-lg px-3 py-2 flex items-center gap-2"
                       key={index}
                     >
-                      <span className="text-xs text-content-tertiary font-mono font-bold min-w-[24px]">
+                      <span className="text-[10px] text-content-tertiary font-mono font-bold min-w-[16px] tabular-nums">
                         {index + 1}.
                       </span>
-                      <span className="text-base text-white font-mono font-medium flex-1">
+                      <span className="text-sm text-white font-mono font-medium">
                         {word}
                       </span>
                     </div>
@@ -259,36 +227,36 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  className="flex-1 bg-surface-high hover:bg-surface-elevated text-white py-3"
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium"
+                  onClick={onClose}
+                  type="button"
+                >
+                  <EyeOff className="w-4 h-4" />
+                  {t('mnemonicViewer.closeButton')}
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm"
                   onClick={handleCopy}
+                  type="button"
                 >
                   {copied ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      {t('mnemonicViewer.copySuccessButton')}
-                    </>
+                    <CheckCircle className="w-4 h-4" />
                   ) : (
-                    <>
-                      <Copy className="w-5 h-5 mr-2" />
-                      {t('mnemonicViewer.copyButton')}
-                    </>
+                    <Copy className="w-4 h-4" />
                   )}
-                </Button>
-                <Button
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3"
-                  onClick={handleClose}
-                >
-                  <EyeOff className="w-5 h-5 mr-2" />
-                  {t('mnemonicViewer.closeButton')}
-                </Button>
+                  {copied
+                    ? t('mnemonicViewer.copySuccessButton')
+                    : t('mnemonicViewer.copyButton')}
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

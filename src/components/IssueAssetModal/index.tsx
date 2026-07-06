@@ -1,8 +1,13 @@
 import { X } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { CreateUTXOModal } from '../CreateUTXOModal'
@@ -100,10 +105,18 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
     }
   }
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-surface-overlay rounded-xl border border-border-default p-6 w-full max-w-md">
+      <div
+        className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+        onClick={onClose}
+      >
+        <div
+          className="bg-surface-overlay rounded-xl border border-border-default p-6 w-full max-w-md"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">
               {t('issueAssetModal.title')}
@@ -201,7 +214,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             )}
             <button
               className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis
-                       text-primary-foreground rounded-xl font-medium transition-colors
+                       text-primary-foreground rounded-lg font-medium transition-colors
                        disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isLoading}
               type="submit"
@@ -224,6 +237,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
         operationType={utxoModalProps.operationType}
         retryFunction={utxoModalProps.retryFunction}
       />
-    </>
+    </>,
+    getModalPortalTarget()
   )
 }

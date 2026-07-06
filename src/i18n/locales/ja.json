@@ -53,7 +53,7 @@
   },
   "channels": {
     "buyChannel": "チャネルを購入",
-    "createNewChannel": "新しいチャネルを作成",
+    "createNewChannel": "Open Channel",
     "buyAChannel": "チャネルを購入",
     "manageChannels": "チャネルを管理",
     "pageTitle": "Lightningウォレットダッシュボード",

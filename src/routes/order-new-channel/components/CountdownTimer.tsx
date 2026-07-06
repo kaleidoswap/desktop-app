@@ -56,11 +56,11 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
         </span>
       </div>
 
-      <div className="mb-[10px] h-1.5 w-full rounded-full bg-[#3B1A7A]/50">
+      <div className="mb-[10px] h-1.5 w-full rounded-full bg-[#9365FF]/20">
         <div
           className="h-1.5 rounded-full transition-all duration-1000 ease-linear"
           style={{
-            backgroundColor: '#6F32FF',
+            backgroundColor: '#9365FF',
             width: `${(countdown / initialSecondsRef.current) * 100}%`,
           }}
         ></div>

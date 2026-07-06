@@ -1,9 +1,14 @@
-import { Users, Plus, Loader, X, Link as LinkIcon, Unlink } from 'lucide-react'
+import { Users, Plus, Loader, X, Link as LinkIcon, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface PeerManagementModalProps {
@@ -64,10 +69,12 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
     }
   }
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20"
-      onClick={handleBackdropClick}
+      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20`}
+      onMouseDown={handleBackdropClick}
     >
       <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-2xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
@@ -96,7 +103,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
                 type="text"
               />
               <button
-                className="px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
+                className="px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
                          font-medium transition-colors flex items-center gap-2"
                 type="submit"
               >
@@ -105,7 +112,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
               </button>
               <button
                 className="px-4 py-2 bg-surface-overlay hover:bg-surface-high text-content-secondary
-                         rounded-xl font-medium transition-colors"
+                         rounded-lg font-medium transition-colors"
                 onClick={() => setShowConnectForm(false)}
                 type="button"
               >
@@ -115,7 +122,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
           </form>
         ) : (
           <button
-            className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl
+            className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
                      font-medium transition-colors flex items-center justify-center gap-2"
             onClick={() => setShowConnectForm(true)}
           >
@@ -132,24 +139,32 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
           <div className="space-y-3">
             {peersData.peers.map((peer: any) => (
               <div
-                className="bg-surface-overlay/50 rounded-xl border border-border-default p-4 
-                         flex items-center justify-between group hover:border-red-500/20 hover:bg-red-500/5"
+                className="bg-surface-overlay/50 rounded-xl border border-border-default p-4
+                         flex items-center gap-3 justify-between group hover:border-red-500/20 hover:bg-red-500/5"
                 key={peer.pubkey}
               >
+                <div className="w-8 h-8 rounded-full bg-surface-high flex items-center justify-center flex-shrink-0 border border-border-default/60">
+                  <span className="text-[10px] font-bold text-content-secondary uppercase">
+                    {peer.pubkey?.slice(0, 2)}
+                  </span>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-content-secondary truncate">
                     {peer.pubkey}
                   </div>
                 </div>
-                <button
-                  className="ml-4 px-3 py-1.5 text-red-400 hover:text-red-300 bg-red-500/10
-                           rounded-lg transition-colors flex items-center gap-2 opacity-60 group-hover:opacity-100"
-                  onClick={() => handleDisconnect(peer.pubkey ?? '')}
-                  title={t('peerManagement.disconnectTooltip')}
-                >
-                  <Unlink className="w-4 h-4" />
-                  <span>{t('peerManagement.disconnect')}</span>
-                </button>
+                <div className="relative group/disc ml-4 flex-shrink-0">
+                  <button
+                    className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger opacity-60 group-hover:opacity-100"
+                    onClick={() => handleDisconnect(peer.pubkey ?? '')}
+                    type="button"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/disc:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                    {t('peerManagement.disconnectTooltip')}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -159,6 +174,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

@@ -372,7 +372,7 @@ export const Step2 = ({
               type="text"
               value={capacitySat ? formatNumber(parseFloat(capacitySat)) : ''}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
               SATS
             </span>
           </div>

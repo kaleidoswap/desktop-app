@@ -1,6 +1,11 @@
 import { Search, X, Copy, Check, ArrowRight } from 'lucide-react'
 import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { useTranslation } from 'react-i18next'
 import { twJoin } from 'tailwind-merge'
 
@@ -57,7 +62,7 @@ const AssetOption = React.memo(
     return (
       <div
         className={twJoin(
-          'flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer group',
+          'flex items-center justify-between p-4 rounded-lg border transition-all duration-200 cursor-pointer group',
           'hover:bg-surface-high/30 hover:border-border-default/80',
           isSelected
             ? 'bg-surface-high/60 border-border-default/80'
@@ -222,9 +227,11 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
 
   if (!isOpen) return null
 
+  const pos = getModalPositionClass()
   return createPortal(
     <div
-      className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className={`${pos} inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4`}
+      onClick={onClose}
       style={{ zIndex: 999999 }}
     >
       <div
@@ -234,6 +241,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
           'w-full max-w-2xl max-h-[80vh] flex flex-col',
           'animate-in fade-in-0 zoom-in-95 duration-300'
         )}
+        onClick={(e) => e.stopPropagation()}
         ref={modalRef}
       >
         {/* Header */}
@@ -269,7 +277,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
             />
             {searchTerm && (
               <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded-sm transition-colors"
                 onClick={clearSearch}
               >
                 <X className="w-3 h-3 text-content-secondary" />
@@ -327,6 +335,6 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
         </div>
       </div>
     </div>,
-    document.body
+    getModalPortalTarget()
   )
 }

@@ -459,7 +459,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                         {nodeInfoData.pubkey}
                       </code>
                       <button
-                        className="p-1.5 rounded bg-surface-high hover:bg-surface-elevated transition-colors"
+                        className="p-1.5 rounded bg-surface-high hover:bg-surface-elevated transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
                         onClick={() => {
                           navigator.clipboard.writeText(
                             nodeInfoData.pubkey ?? ''

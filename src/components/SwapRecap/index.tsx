@@ -8,8 +8,13 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import React, { useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 import { AssetOption } from '../../components/Trade'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { calculateAndFormatRate } from '../../helpers/number'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
@@ -136,9 +141,11 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
 
   if (!isOpen) return null
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+      className={`${pos} inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200`}
       onClick={handleClose}
     >
       <div
@@ -158,7 +165,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
             </h2>
             <button
               aria-label="Close"
-              className="p-2.5 rounded-xl transition-all duration-200 text-content-secondary hover:text-white hover:bg-surface-overlay active:scale-95"
+              className="p-2.5 rounded-lg transition-all duration-200 text-content-secondary hover:text-white hover:bg-surface-overlay active:scale-95"
               onClick={handleClose}
               title="Close"
             >
@@ -303,7 +310,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
 
           {/* Action Button */}
           <button
-            className={`w-full py-3.5 px-4 rounded-xl font-medium transition-all duration-200 
+            className={`w-full py-3.5 px-4 rounded-lg font-medium transition-all duration-200 
               flex items-center justify-center gap-2.5 text-base
               ${
                 isExpired
@@ -336,6 +343,7 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

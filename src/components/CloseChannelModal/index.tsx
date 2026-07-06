@@ -1,8 +1,13 @@
 import { X, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
 
 interface CloseChannelModalProps {
@@ -115,10 +120,12 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
     onClose()
   }
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleBackdropClick}
+      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+      onMouseDown={handleBackdropClick}
     >
       <div className="bg-surface-overlay rounded-lg p-6 max-w-md w-full shadow-xl border border-border-default/50">
         <div className="flex justify-between items-center mb-4">
@@ -290,6 +297,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

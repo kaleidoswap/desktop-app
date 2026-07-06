@@ -13,7 +13,13 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 
 interface SupportModalProps {
   isOpen: boolean
@@ -88,8 +94,12 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
     setExpandedIssue(null)
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+  const pos = getModalPositionClass()
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto`}
+      onClick={onClose}
+    >
       <div
         className="bg-surface-base border border-divider/20 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
@@ -351,7 +361,8 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 

@@ -1,7 +1,7 @@
 import { AlertTriangle, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ChannelsNav } from '../../components/Channels/ChannelsNav'
 
@@ -42,7 +42,19 @@ export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [feeRates, setFeeRates] = useState(DEFAULT_FEE_RATES)
   const [formError, setFormError] = useState<string | null>(null)
-  const [formData, setFormData] = useState<TNewChannelForm>(initialFormState)
+
+  const location = useLocation()
+  const navState = (location.state ?? {}) as {
+    preselectedAssetId?: string
+    returnTo?: string
+  }
+  const preselectedAssetId = navState.preselectedAssetId
+  const returnTo = navState.returnTo
+
+  const [formData, setFormData] = useState<TNewChannelForm>({
+    ...initialFormState,
+    assetId: preselectedAssetId ?? '',
+  })
 
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -321,7 +333,7 @@ export const Component = () => {
             {step === 4 && (
               <Step4
                 error={channelOpeningError}
-                onFinish={() => navigate(CHANNELS_PATH)}
+                onFinish={() => navigate(returnTo ?? CHANNELS_PATH)}
                 onGoBack={() => setStep(1)}
                 onRetry={() => setStep(3)}
               />

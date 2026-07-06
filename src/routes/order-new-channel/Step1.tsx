@@ -1,8 +1,22 @@
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
-import { Globe, Link, Copy, ArrowRight, Loader2, Plus } from 'lucide-react'
+import {
+  Globe,
+  Link,
+  Copy,
+  ArrowRight,
+  Loader2,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import CopyToClipboard from 'react-copy-to-clipboard'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { toast } from 'react-toastify'
 
 import { RootState } from '../../app/store'
@@ -237,7 +251,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     className?: string
   }) => (
     <button
-      className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm ${className} ${
+      className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md font-semibold transition-all duration-200 text-sm ${className} ${
         enabled
           ? 'bg-primary hover:bg-primary-emphasis text-[#12131C] active:scale-95'
           : 'bg-primary/30 text-[#12131C]/50 cursor-not-allowed'
@@ -322,7 +336,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                       text={manualConnectionUrl}
                     >
                       <button
-                        className="absolute right-2 top-2 p-1.5 bg-surface-high/80 hover:bg-surface-elevated rounded-lg transition-colors group"
+                        className="absolute right-2 top-2 p-1.5 bg-surface-high/80 hover:bg-surface-elevated rounded-md transition-all duration-150 hover:scale-[1.05] active:scale-[0.95] group"
                         title={t('orderChannel.step1.copyToClipboard')}
                         type="button"
                       >
@@ -380,9 +394,24 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                       className="w-8 h-8 flex-shrink-0"
                       src={kaleidoswapPictogram}
                     />
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-sm font-medium text-white flex-1">
                       KaleidoSwap LSP
                     </span>
+                    <div className="relative group/disc flex-shrink-0">
+                      <button
+                        className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLspConnectionUrl('')
+                        }}
+                        type="button"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/disc:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                        Deselect LSP
+                      </div>
+                    </div>
                   </div>
                   <div className="p-3 rounded-lg border border-border-default bg-surface-high/50">
                     <div className="text-xs text-content-secondary font-mono break-all">
@@ -408,11 +437,15 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         </div>
       </div>
 
-      {isConnecting && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
-          <Spinner color="#15E99A" overlay={false} size={48} />
-        </div>
-      )}
+      {isConnecting &&
+        createPortal(
+          <div
+            className={`${getModalPositionClass()} inset-0 z-[200] flex items-center justify-center bg-black/60`}
+          >
+            <Spinner color="#15E99A" overlay={false} size={48} />
+          </div>,
+          getModalPortalTarget()
+        )}
     </div>
   )
 }

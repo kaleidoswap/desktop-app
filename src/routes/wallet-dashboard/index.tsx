@@ -39,7 +39,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { AssetRow } from '../../components/AssetRow'
 import { IssueAssetModal } from '../../components/IssueAssetModal'
 import { PeerManagementModal } from '../../components/PeerManagementModal'
-import { Button, LoadingPlaceholder } from '../../components/ui'
+import { Button, IconButton, LoadingPlaceholder } from '../../components/ui'
 import { UTXOManagementModal } from '../../components/UTXOManagementModal'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
@@ -270,7 +270,7 @@ export const Component = () => {
       {/* KaleidoMind not active in this mode — offer a way to activate it */}
       {!mindActive && (
         <button
-          className="group mb-5 flex w-full items-center gap-4 rounded-2xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
+          className="group mb-5 flex w-full items-center gap-4 rounded-xl border border-purple/30 bg-gradient-to-r from-purple/10 to-transparent px-5 py-4 text-left transition-all duration-300 hover:border-purple/50 hover:from-purple/15"
           onClick={activateMind}
           type="button"
         >
@@ -300,22 +300,25 @@ export const Component = () => {
           {/* Balance Card */}
           <div className="relative overflow-hidden bg-surface-overlay rounded-2xl border border-border-default/60 shadow-xl p-6 group">
             {/* Refresh icon — top right */}
-            <button
-              className="absolute top-4 right-4 z-20 p-1.5 rounded-lg text-content-tertiary hover:text-content-primary hover:bg-surface-elevated transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              disabled={isRefreshing}
-              onClick={refreshData}
-              title={
-                isRefreshing
-                  ? t('dashboard.refreshing')
-                  : t('dashboard.refresh')
-              }
-            >
-              {isRefreshing ? (
-                <LoaderIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-            </button>
+            <div className="absolute top-4 right-4 z-20">
+              <IconButton
+                aria-label={
+                  isRefreshing
+                    ? t('dashboard.refreshing')
+                    : t('dashboard.refresh')
+                }
+                disabled={isRefreshing}
+                icon={
+                  isRefreshing ? (
+                    <LoaderIcon className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-5 h-5" />
+                  )
+                }
+                onClick={refreshData}
+                variant="outline"
+              />
+            </div>
             <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -359,7 +362,7 @@ export const Component = () => {
             {/* Actions — compact 3-button row */}
             <div className="relative z-10 grid grid-cols-3 gap-2">
               <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-status-success/15 hover:bg-status-success/25 border border-status-success/30 hover:border-status-success/50 text-status-success text-xs font-semibold transition-all overflow-hidden"
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -373,14 +376,14 @@ export const Component = () => {
                 <span className="truncate">{t('dashboard.deposit')}</span>
               </button>
               <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white text-xs font-semibold transition-all overflow-hidden"
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white text-xs font-semibold transition-all overflow-hidden"
                 onClick={() => navigate(TRADE_PATH)}
               >
                 <ArrowLeftRight className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate">{t('dashboard.swap', 'Swap')}</span>
               </button>
               <button
-                className="flex items-center justify-center gap-1 px-2 py-2 rounded-xl bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50 text-violet-400 text-xs font-semibold transition-all overflow-hidden"
+                className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/30 hover:border-violet-500/50 text-violet-400 text-xs font-semibold transition-all overflow-hidden"
                 onClick={() =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -502,7 +505,7 @@ export const Component = () => {
                   ].map(({ icon, label, color, onClick }) => (
                     <div className="relative group/btn" key={label}>
                       <button
-                        className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
+                        className={`p-1.5 rounded-md transition-colors duration-150 ${color}`}
                         onClick={onClick}
                         title={label}
                       >
@@ -670,7 +673,7 @@ export const Component = () => {
                         <div className="flex items-center justify-between text-xs mb-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span
-                              className={`w-2 h-2 rounded-full flex-shrink-0 ${ch.is_usable ? 'bg-status-success' : 'bg-status-danger'}`}
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${!ch.ready ? 'bg-amber-400 animate-pulse' : ch.is_usable ? 'bg-status-success' : 'bg-status-danger'}`}
                             />
                             <span className="text-content-secondary font-medium truncate">
                               {ch.peer_alias || ch.peer_pubkey?.slice(0, 10)}…
@@ -695,7 +698,7 @@ export const Component = () => {
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
                           <div className="flex items-center justify-between text-[10px] text-content-tertiary mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
-                            <span className="flex items-center gap-0.5 text-yellow-400">
+                            <span className="flex items-center gap-0.5 text-purple-400">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount(
                                 (ch.outbound_balance_msat || 0) / 1000,
@@ -705,7 +708,7 @@ export const Component = () => {
                             <span className="text-content-secondary font-medium">
                               BTC
                             </span>
-                            <span className="flex items-center gap-0.5 text-blue-400">
+                            <span className="flex items-center gap-0.5 text-emerald-400">
                               {formatBitcoinAmount(
                                 (ch.inbound_balance_msat || 0) / 1000,
                                 bitcoinUnit
@@ -715,7 +718,7 @@ export const Component = () => {
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                             <div
-                              className="absolute left-0 top-0 h-full bg-[#6F32FF] rounded-l-full"
+                              className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
                               style={{ width: `${btcOutPct}%` }}
                             />
                             <div
@@ -765,24 +768,24 @@ export const Component = () => {
             {/* Liquidity totals */}
             {channels.length > 0 && !isLoading && (
               <div className="border-t border-border-default/40 mt-4 pt-3">
-                <div className="flex justify-between text-xs text-content-tertiary mb-1.5">
-                  <span className="flex items-center gap-1">
-                    <ArrowUpRight className="w-3 h-3 text-purple-400" />
+                <div className="flex justify-between text-xs mb-1.5">
+                  <span className="flex items-center gap-1 text-purple-400">
+                    <ArrowUpRight className="w-3 h-3" />
                     {formatBitcoinAmount(
                       totalOutboundLiquidity,
                       bitcoinUnit
                     )}{' '}
                     {bitcoinUnit}
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-emerald-400">
                     {formatBitcoinAmount(totalInboundLiquidity, bitcoinUnit)}{' '}
                     {bitcoinUnit}
-                    <ArrowDownRight className="w-3 h-3 text-emerald-400" />
+                    <ArrowDownRight className="w-3 h-3" />
                   </span>
                 </div>
                 <div className="relative w-full bg-surface-elevated/60 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-[#6F32FF] rounded-l-full transition-all duration-500"
+                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full transition-all duration-500"
                     style={{ width: `${outboundPct}%` }}
                   />
                   <div
@@ -798,7 +801,7 @@ export const Component = () => {
             <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-border-default/40">
               {/* Primary: Manage */}
               <button
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-xs font-semibold transition-colors flex-shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white text-xs font-semibold transition-colors flex-shrink-0"
                 onClick={() => navigate(CHANNELS_PATH)}
               >
                 <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
@@ -825,7 +828,7 @@ export const Component = () => {
               ].map(({ icon, label, onClick }) => (
                 <div className="relative group/act" key={label}>
                   <button
-                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors"
+                    className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors"
                     onClick={onClick}
                     title={label}
                   >

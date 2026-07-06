@@ -6,17 +6,25 @@ import {
   CheckCircle,
   Link,
   Plus,
+  Trash2,
   X,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 
 import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import { isValidPubkeyAndAddress } from '../../helpers/address'
 import kaleidoswapPictogram from '../../assets/logo.svg'
+import { MinidenticonImg } from '../../components/MinidenticonImg'
 import {
   NewChannelFormSchema,
   TNewChannelForm,
@@ -50,6 +58,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
 
   const [getNetworkInfo] = nodeApi.endpoints.networkInfo.useLazyQuery()
   const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
+  const [disconnectPeer] = nodeApi.endpoints.disconnectPeer.useMutation()
   const [listPeers] = nodeApi.endpoints.listPeers.useLazyQuery()
 
   const { handleSubmit, control, formState, clearErrors, setValue } =
@@ -151,6 +160,16 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
 
     // Since the peer is already connected, we can proceed directly
     onNext()
+  }
+
+  const handleDisconnectPeer = async (pubkey: string) => {
+    try {
+      await disconnectPeer({ peer_pubkey: pubkey }).unwrap()
+      setConnectedPeers((prev) => prev.filter((p) => p.pubkey !== pubkey))
+      if (selectedFromConnected === pubkey) setSelectedFromConnected('')
+    } catch {
+      // silently ignore disconnect errors
+    }
   }
 
   const fetchLspInfo = async () => {
@@ -279,7 +298,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
             </div>
             <div className="flex gap-3">
               <button
-                className="flex items-center gap-2 p-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
+                className="flex items-center gap-2 p-3 rounded-md border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
                 disabled={isLoading}
                 onClick={fetchLspInfo}
                 type="button"
@@ -376,6 +395,8 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
             {t('createChannel.step1.connectedPeers')}
           </h4>
 
+          <div className="border-t border-border-default/40 mb-3" />
+
           {loadingPeers ? (
             <div className="flex items-center justify-center py-4">
               <Spinner color="#15E99A" size={24} />
@@ -387,7 +408,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {connectedPeers.map((peer) => (
                 <div
-                  className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                  className={`relative p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                     selectedFromConnected === peer.pubkey
                       ? 'border-primary bg-primary/10'
                       : 'border-border-default bg-surface-high/50 hover:border-primary/50 hover:bg-primary/5'
@@ -395,14 +416,32 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
                   key={peer.pubkey}
                   onClick={() => handleSelectConnectedPeer(peer.pubkey)}
                 >
-                  <div className="flex items-center justify-between">
+                  <button
+                    className="absolute top-1.5 right-1.5 rounded-lg p-1 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDisconnectPeer(peer.pubkey)
+                    }}
+                    title="Disconnect peer"
+                    type="button"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="flex items-center gap-3 pr-5">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-surface-elevated">
+                      <MinidenticonImg
+                        className="block w-full h-full"
+                        saturation="90"
+                        username={peer.pubkey}
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-mono text-content-secondary break-all">
+                      <div className="text-sm font-mono text-content-secondary truncate">
                         {peer.pubkey}
                       </div>
                     </div>
                     {selectedFromConnected === peer.pubkey && (
-                      <CheckCircle className="w-5 h-5 text-primary ml-2 flex-shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
                     )}
                   </div>
                 </div>
@@ -413,53 +452,62 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
               {t('createChannel.step1.noPeers')}
             </div>
           )}
+
+          <div className="border-t border-border-default/40 mt-3" />
         </div>
       </div>
 
       {/* Connection Dialog */}
-      {showConnectionDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4 relative">
-            <button
-              className="absolute top-4 right-4 text-content-tertiary hover:text-white transition-colors"
-              onClick={() => setShowConnectionDialog(false)}
-              type="button"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {showConnectionDialog &&
+        createPortal(
+          <div
+            className={`${getModalPositionClass()} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setShowConnectionDialog(false)
+            }}
+          >
+            <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4 relative">
+              <button
+                className="absolute top-4 right-4 text-content-tertiary hover:text-white transition-colors"
+                onClick={() => setShowConnectionDialog(false)}
+                type="button"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            <h3 className="text-2xl font-bold text-white mb-4">
-              {t('createChannel.step1.connectDialog.title')}
-            </h3>
-            <p className="text-content-secondary mb-6">
-              Would you like to connect to this peer to open a channel?
-            </p>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                {t('createChannel.step1.connectDialog.title')}
+              </h3>
+              <p className="text-content-secondary mb-6">
+                Would you like to connect to this peer to open a channel?
+              </p>
 
-            {isConnecting && (
-              <div className="flex items-center justify-center mb-4">
-                <Spinner color="#3B82F6" size={24} />
-                <span className="ml-2 text-content-secondary">
-                  {t('createChannel.step1.connectDialog.connecting')}
-                </span>
-              </div>
-            )}
+              {isConnecting && (
+                <div className="flex items-center justify-center mb-4">
+                  <Spinner color="#3B82F6" size={24} />
+                  <span className="ml-2 text-content-secondary">
+                    {t('createChannel.step1.connectDialog.connecting')}
+                  </span>
+                </div>
+              )}
 
-            <Button
-              disabled={isConnecting}
-              fullWidth
-              icon={<Link className="w-4 h-4" />}
-              iconPosition="right"
-              isLoading={isConnecting}
-              onClick={handleConnect}
-              size="md"
-              type="button"
-              variant="primary"
-            >
-              {t('createChannel.step1.connectDialog.connect')}
-            </Button>
-          </div>
-        </div>
-      )}
+              <Button
+                disabled={isConnecting}
+                fullWidth
+                icon={<Link className="w-4 h-4" />}
+                iconPosition="right"
+                isLoading={isConnecting}
+                onClick={handleConnect}
+                size="md"
+                type="button"
+                variant="primary"
+              >
+                {t('createChannel.step1.connectDialog.connect')}
+              </Button>
+            </div>
+          </div>,
+          getModalPortalTarget()
+        )}
     </form>
   )
 }

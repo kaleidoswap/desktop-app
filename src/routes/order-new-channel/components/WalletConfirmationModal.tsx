@@ -12,6 +12,10 @@ import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
 import { formatBitcoinAmount } from '../../../helpers/number'
 import BitcoinLogo from '../../../assets/bitcoin-logo.svg'
 import LightningLogo from '../../../assets/lightning-logo.svg'
@@ -102,8 +106,10 @@ export const WalletConfirmationModal: React.FC<
     setSelectedMethod((prev) => (prev === method ? null : method))
   }
 
+  const pos = getModalPositionClass()
+
   return createPortal(
-    <div className="fixed inset-0 z-[100]">
+    <div className={`${pos} inset-0 z-[100]`}>
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => !isProcessing && onClose()}
@@ -119,7 +125,7 @@ export const WalletConfirmationModal: React.FC<
                 {t('orderChannel.step3.payWithWallet')}
               </h3>
               <button
-                className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+                className="text-content-secondary hover:text-white p-1.5 rounded-md hover:bg-surface-high/60 transition-colors"
                 onClick={onClose}
                 type="button"
               >
@@ -228,7 +234,7 @@ export const WalletConfirmationModal: React.FC<
                           <div className="grid grid-cols-4 gap-2">
                             {feeOptions.map(({ value, label, icon, rate }) => (
                               <button
-                                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all duration-200 border text-xs ${
+                                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-md transition-all duration-200 border text-xs ${
                                   selectedFee === value
                                     ? 'bg-primary/10 border-primary text-primary'
                                     : 'border-white/20 hover:border-primary/50 text-content-secondary'
@@ -280,7 +286,7 @@ export const WalletConfirmationModal: React.FC<
 
                   {/* Single pay button */}
                   <button
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={!selectedMethod || !canPay}
                     onClick={() => selectedMethod && onPay(selectedMethod)}
                     type="button"
@@ -307,6 +313,6 @@ export const WalletConfirmationModal: React.FC<
         </div>
       </div>
     </div>,
-    document.body
+    getModalPortalTarget()
   )
 }

@@ -60,7 +60,6 @@ import {
   ORDER_CHANNEL_PATH,
   KALEIDO_MIND_PATH,
   KALEIDO_MIND_BRAIN_PATH,
-  KALEIDO_MIND_AGENT_PATH,
 } from '../../app/router/paths'
 
 // Define types for navigation items
@@ -112,11 +111,6 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             to: TRADE_MANUAL_PATH,
           },
           {
-            icon: <Radio className="w-4 h-4" />,
-            label: t('navigation.nostrP2P', 'Nostr P2P'),
-            to: TRADE_NOSTR_P2P_PATH,
-          },
-          {
             icon: <TrendingUp className="h-4 w-4" />,
             label: t('navigation.dca', 'DCA'),
             to: TRADE_DCA_PATH,
@@ -125,6 +119,11 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             icon: <Target className="w-4 h-4" />,
             label: t('navigation.limitOrders', 'Limit Orders'),
             to: TRADE_LIMIT_PATH,
+          },
+          {
+            disabled: true,
+            icon: <Radio className="w-4 h-4" />,
+            label: t('navigation.nostrP2P', 'Nostr P2P'),
           },
         ],
         to: TRADE_MARKET_MAKER_PATH,
@@ -207,15 +206,15 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             to: KALEIDO_MIND_PATH,
           },
           {
-            icon: <Bot className="w-4 h-4" />,
-            label: t('navigation.agent', 'Agent'),
-            to: KALEIDO_MIND_AGENT_PATH,
-          },
-          {
             // Brain hosts Models + Skills management inline.
             icon: <LayoutDashboard className="w-4 h-4" />,
             label: t('navigation.brain', 'Brain'),
             to: KALEIDO_MIND_BRAIN_PATH,
+          },
+          {
+            disabled: true,
+            icon: <Bot className="w-4 h-4" />,
+            label: t('navigation.agent', 'Agent'),
           },
         ],
         to: KALEIDO_MIND_PATH,
@@ -288,18 +287,13 @@ export const getUserMenuItems = (t: TFunction) => [
   },
   {
     icon: <LinkIcon className="w-4 h-4" />,
-    label: t('navigation.nwc', 'App Connections (NWC)'),
+    label: t('navigation.nwc', 'App Connections'),
     to: NWC_PATH,
   },
   {
     action: 'backup',
     icon: <HardDriveDownload className="w-4 h-4" />,
     label: t('settings.backupWallet'),
-  },
-  {
-    action: 'support',
-    icon: <HelpCircle className="w-4 h-4" />,
-    label: t('navigation.helpSupport'),
   },
 ]
 
@@ -351,7 +345,7 @@ export const getPageConfig = (t: TFunction) => ({
   },
   [NWC_PATH]: {
     icon: <LinkIcon className="w-5 h-5" />,
-    title: t('navigation.nwc', 'App Connections (NWC)'),
+    title: t('navigation.nwc', 'App Connections'),
   },
   [ORDER_CHANNEL_PATH]: {
     icon: <Droplets className="w-5 h-5" />,
@@ -362,28 +356,28 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.settings'),
   },
   [TRADE_DCA_PATH]: {
-    icon: <TrendingUp className="h-4 w-4" />,
-    title: t('navigation.dca', 'DCA'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_LIMIT_PATH]: {
-    icon: <Target className="h-4 w-4" />,
-    title: t('navigation.limitOrders', 'Limit Orders'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_MANUAL_PATH]: {
-    icon: <ArrowLeftRight className="h-4 w-4" />,
-    title: t('navigation.manualSwaps'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
-    icon: <Store className="h-4 w-4" />,
-    title: t('navigation.marketMaker'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_NOSTR_P2P_PATH]: {
-    icon: <Radio className="h-4 w-4" />,
-    title: t('navigation.nostrP2P', 'Nostr P2P'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_PATH]: {
     icon: <Zap className="w-5 h-5" />,
-    title: t('navigation.trade'),
+    title: t('navigation.trading', 'Trading'),
   },
   [WALLET_DASHBOARD_PATH]: {
     icon: <Home className="w-5 h-5" />,

@@ -9,10 +9,15 @@ import {
   CheckCheck,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
@@ -156,10 +161,12 @@ const InfoModal: React.FC<InfoModalProps> = ({
     )
   }
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
+      className={`${pos} inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
+      onMouseDown={handleBackdropClick}
     >
       <div className="bg-surface-overlay rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-border-default/40 overflow-hidden">
         {/* Header */}
@@ -239,7 +246,8 @@ const InfoModal: React.FC<InfoModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -297,7 +305,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         className={`absolute top-0 left-0 w-full h-[2px] ${
           isUsable
             ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
-            : 'bg-gradient-to-r from-transparent via-[#6F32FF]/50 to-transparent'
+            : 'bg-gradient-to-r from-transparent via-[#9365FF]/50 to-transparent'
         }`}
       />
 
@@ -305,6 +313,15 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       <div className="flex items-start justify-between px-4 pt-5 pb-3 gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                isReady
+                  ? isUsable
+                    ? 'bg-emerald-400'
+                    : 'bg-red-400'
+                  : 'bg-amber-400 animate-pulse'
+              }`}
+            />
             {/* Peer name */}
             <span className="font-semibold text-sm text-white truncate max-w-[150px]">
               {channel.peer_alias || channel.peer_pubkey.slice(0, 10) + '…'}
@@ -403,7 +420,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               bitcoinUnit
             )}
             outbound={channel.outbound_balance_msat / 1000}
-            outboundColor="bg-[#6F32FF]"
+            outboundColor="bg-[#9365FF]"
             outboundLabel={formatBitcoinAmount(
               channel.outbound_balance_msat / 1000,
               bitcoinUnit
@@ -460,20 +477,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5">
+      <div className="flex items-center justify-between px-4 py-2.5">
         <button
-          className="flex-1 min-w-0 py-1.5 rounded-lg bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center justify-center gap-1.5"
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsInfoModalOpen(true)
-          }}
-          type="button"
-        >
-          <Info className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{t('channelCard.buttons.details')}</span>
-        </button>
-        <button
-          className="flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
+          className="py-1.5 px-1 transition-colors text-xs text-content-tertiary hover:text-content-secondary flex items-center gap-1"
           onClick={(e) => {
             e.stopPropagation()
             setIsCloseModalOpen(true)
@@ -481,7 +487,18 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           type="button"
         >
           <X className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{t('channelCard.buttons.close')}</span>
+          <span>{t('channelCard.buttons.close')}</span>
+        </button>
+        <button
+          className="py-1.5 px-2.5 rounded-md bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center gap-1.5"
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsInfoModalOpen(true)
+          }}
+          type="button"
+        >
+          <Info className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{t('channelCard.buttons.details')}</span>
         </button>
       </div>
 

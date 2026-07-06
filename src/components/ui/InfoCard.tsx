@@ -50,7 +50,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
             </span>
             {copyable && (
               <button
-                className="shrink-0 p-1.5 hover:bg-surface-high/50 rounded-lg transition-colors"
+                className="shrink-0 p-1.5 hover:bg-surface-high/50 rounded-lg transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
                 onClick={handleCopy}
                 title={`Copy ${label}`}
               >
