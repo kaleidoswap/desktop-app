@@ -42,7 +42,7 @@ const connectionOptions: ConnectionOption[] = [
     description:
       'Connect to a node started by the kaleidoswap-maker Docker stack',
     details: [
-      'Node on localhost:3001 (make start-channels)',
+      'Node on localhost:3001',
       'Backends via docker hostnames (bitcoind / esplora)',
       'Indexer http://esplora:3000',
       'Default wallet password prefilled',
