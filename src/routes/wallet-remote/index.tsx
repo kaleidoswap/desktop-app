@@ -196,7 +196,35 @@ export const Component = () => {
 
       clearTimeout(timeoutId)
 
+      // A genuine authentication failure comes back as 401 from the node's
+      // auth layer ("Missing or invalid credentials").
+      if (response.status === 401) {
+        setConnectionError({
+          details: t('walletRemote.authenticationFailedDetails'),
+          message: t('walletRemote.authenticationFailed'),
+          type: 'auth',
+        })
+        toast.error(t('walletRemote.authenticationFailedToast'))
+        return
+      }
+
       if (response.status === 403) {
+        // rgb-lightning-node returns 403 for a LOCKED node — that is not an
+        // auth problem: the node is reachable and gets unlocked on the next
+        // step. Only treat a non-locked 403 as an auth failure.
+        let lockedNode = false
+        try {
+          const body = await response.clone().json()
+          lockedNode =
+            body?.name === 'LockedNode' || /is locked/i.test(body?.error ?? '')
+        } catch {
+          // body not JSON — fall through to the auth error below
+        }
+        if (lockedNode) {
+          setConnectionSuccess(true)
+          toast.success(t('walletRemote.connectionSuccessToast'))
+          return
+        }
         setConnectionError({
           details: t('walletRemote.authenticationFailedDetails'),
           message: t('walletRemote.authenticationFailed'),
