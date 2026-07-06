@@ -26,30 +26,8 @@ export const LayoutModal = () => {
                    shadow-2xl shadow-black/20 overflow-hidden relative"
         ref={modalRef}
       >
-        <div className="flex justify-end px-4 pt-4">
-          <button
-            aria-label="Close modal"
-            className="p-2 rounded-full hover:bg-surface-overlay transition-colors"
-            onClick={handleCloseModal}
-          >
-            <svg
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M18 6L6 18"></path>
-              <path d="M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <div className="max-h-[calc(85vh-52px)] overflow-y-auto px-8 pb-8">
-          <Content modal={modal} />
+        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">
+          <Content modal={modal} onClose={handleCloseModal} />
         </div>
       </div>
     </div>

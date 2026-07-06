@@ -715,11 +715,11 @@ export const Component = () => {
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                             <div
-                              className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full"
+                              className="absolute left-0 top-0 h-full bg-[#6F32FF] rounded-l-full"
                               style={{ width: `${btcOutPct}%` }}
                             />
                             <div
-                              className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full"
+                              className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
                               style={{ width: `${btcInPct}%` }}
                             />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
@@ -767,7 +767,7 @@ export const Component = () => {
               <div className="border-t border-border-default/40 mt-4 pt-3">
                 <div className="flex justify-between text-xs text-content-tertiary mb-1.5">
                   <span className="flex items-center gap-1">
-                    <ArrowUpRight className="w-3 h-3 text-yellow-400" />
+                    <ArrowUpRight className="w-3 h-3 text-purple-400" />
                     {formatBitcoinAmount(
                       totalOutboundLiquidity,
                       bitcoinUnit
@@ -777,16 +777,16 @@ export const Component = () => {
                   <span className="flex items-center gap-1">
                     {formatBitcoinAmount(totalInboundLiquidity, bitcoinUnit)}{' '}
                     {bitcoinUnit}
-                    <ArrowDownRight className="w-3 h-3 text-blue-400" />
+                    <ArrowDownRight className="w-3 h-3 text-emerald-400" />
                   </span>
                 </div>
                 <div className="relative w-full bg-surface-elevated/60 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-yellow-500 rounded-l-full transition-all duration-500"
+                    className="absolute left-0 top-0 h-full bg-[#6F32FF] rounded-l-full transition-all duration-500"
                     style={{ width: `${outboundPct}%` }}
                   />
                   <div
-                    className="absolute right-0 top-0 h-full bg-blue-500 rounded-r-full transition-all duration-500"
+                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full transition-all duration-500"
                     style={{ width: `${inboundPct}%` }}
                   />
                   <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />

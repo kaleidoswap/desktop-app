@@ -1,26 +1,10 @@
-import {
-  Zap,
-  ChevronLeft,
-  ArrowRight,
-  ExternalLink,
-  Wallet,
-  Activity,
-  TagIcon,
-  Users,
-  Eye,
-  EyeOff,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import BitcoinLogo from '../../assets/bitcoin-logo.svg'
-import {
-  Button,
-  Card,
-  InfoCard,
-  InfoCardGrid,
-  Badge,
-} from '../../components/ui'
+import RgbLogo from '../../assets/rgb-logo.svg'
+import { Button, Card } from '../../components/ui'
 import { TNewChannelForm } from '../../slices/channel/channel.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
@@ -45,11 +29,10 @@ const formatPubKey = (pubKey: string) => {
 export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [assetPrecision, setAssetPrecision] = useState<number>(8) // Default to 8 decimals
+  const [assetPrecision, setAssetPrecision] = useState<number>(8)
 
   const [takerAssets] = nodeApi.endpoints.listAssets.useLazyQuery()
 
-  // Fetch asset precision when we have an assetId
   useEffect(() => {
     if (formData.assetId) {
       takerAssets()
@@ -64,7 +47,6 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         })
         .catch((error) => {
           console.error('Error fetching asset information:', error)
-          // Keep default precision of 8 if fetch fails
         })
     }
   }, [formData.assetId, takerAssets])
@@ -131,13 +113,10 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mt-16 mb-10">
-        <h3 className="text-3xl font-bold text-white mb-2">
-          {t('createChannel.step3.title')}
+      <div className="text-center mt-4 mb-8">
+        <h3 className="text-3xl font-bold text-white">
+          {t('createChannel.step3.channelDetails')}
         </h3>
-        <p className="text-content-secondary">
-          {t('createChannel.step3.subtitle')}
-        </p>
       </div>
 
       {error && (
@@ -146,187 +125,109 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
         </div>
       )}
 
-      <Card className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-500/10 rounded-lg">
-            <Zap className="w-5 h-5 text-blue-500" />
+      <Card className="mb-6 divide-y divide-border-default/40">
+        {/* Capacity */}
+        <div className="flex items-center justify-between py-4 first:pt-0">
+          <span className="text-sm text-content-secondary">
+            {t('createChannel.step3.channelCapacity')}
+          </span>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-1.5">
+              <img alt="Bitcoin" className="w-3.5 h-3.5" src={BitcoinLogo} />
+              <span className="text-white font-semibold">
+                {formatNumber(formData.capacitySat)}{' '}
+                {t('createChannel.step3.sat')}
+              </span>
+            </div>
+            {isAssetChannel && (
+              <div className="flex items-center gap-1.5">
+                <img alt="RGB" className="w-3.5 h-3.5" src={RgbLogo} />
+                <span className="text-white font-semibold text-sm">
+                  {formatAssetAmount} {formData.assetTicker}
+                </span>
+              </div>
+            )}
           </div>
-          <h3 className="text-xl font-bold text-white">
-            {t('createChannel.step3.channelDetails')}
-          </h3>
-          <Badge
-            className="ml-auto"
-            icon={
-              isAssetChannel ? (
-                <TagIcon className="w-3 h-3" />
-              ) : (
-                <img alt="Bitcoin" className="w-3.5 h-3.5" src={BitcoinLogo} />
-              )
-            }
-            variant={isAssetChannel ? 'info' : 'primary'}
-          >
-            {isAssetChannel
-              ? t('createChannel.step3.rgbAsset')
-              : t('createChannel.step3.bitcoin')}
-          </Badge>
         </div>
 
-        <InfoCardGrid className="mb-6" columns={1}>
-          <InfoCard
-            icon={<Wallet className="w-4 h-4 text-blue-500" />}
-            label={t('createChannel.step3.channelCapacity')}
-            value={
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
-                  <span className="text-blue-400 font-bold">
-                    {formatNumber(formData.capacitySat)}{' '}
-                    {t('createChannel.step3.sat')}
-                  </span>
-                </div>
-                {isAssetChannel && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-primary text-sm font-medium">
-                      {formatAssetAmount} {formData.assetTicker}
-                    </span>
-                  </div>
-                )}
-              </div>
-            }
-          />
-        </InfoCardGrid>
-
-        <InfoCardGrid className="mb-6" columns={1}>
-          <InfoCard
-            icon={<Users className="w-4 h-4 text-blue-500" />}
-            label={t('createChannel.step3.connectedNode')}
-            value={
-              hasValidNodeInfo ? (
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center">
-                    <span className="text-xs text-content-secondary mr-2">
-                      {t('createChannel.step3.nodeId')}
-                    </span>
-                    <span className="text-sm text-white font-mono truncate">
-                      {formatPubKey(
-                        connectionDetails.pubKey || formData.pubKeyAndAddress
-                      )}
-                    </span>
-                    <button
-                      className="ml-2 text-blue-400 hover:text-blue-300 p-1 hover:bg-surface-high/50 rounded transition-colors"
-                      onClick={() =>
-                        navigator.clipboard.writeText(
-                          connectionDetails.pubKey || formData.pubKeyAndAddress
-                        )
-                      }
-                      title={t('createChannel.step3.copyPubkey')}
-                      type="button"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  {connectionDetails.host && connectionDetails.port ? (
-                    <div className="flex items-center">
-                      <span className="text-xs text-content-secondary mr-2">
-                        {t('createChannel.step3.host')}
-                      </span>
-                      <span className="text-sm text-white font-mono">
-                        {connectionDetails.host}:{connectionDetails.port}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      <span className="text-xs text-content-secondary mr-2">
-                        {t('createChannel.step3.status')}
-                      </span>
-                      <span className="text-sm text-green-400">
-                        {t('createChannel.step3.alreadyConnected')}
-                      </span>
-                    </div>
+        {/* Peer */}
+        <div className="flex items-start justify-between py-4">
+          <span className="text-sm text-content-secondary shrink-0 mr-4">
+            {t('createChannel.step3.connectedNode')}
+          </span>
+          {hasValidNodeInfo ? (
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-white font-mono">
+                  {formatPubKey(
+                    connectionDetails.pubKey || formData.pubKeyAndAddress
                   )}
+                </span>
+                <div className="relative group/copy">
+                  <button
+                    className="text-content-tertiary hover:text-white p-0.5 rounded transition-colors"
+                    onClick={() =>
+                      navigator.clipboard.writeText(
+                        connectionDetails.pubKey || formData.pubKeyAndAddress
+                      )
+                    }
+                    type="button"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                  <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/copy:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                    {t('createChannel.step3.copyPubkey')}
+                  </div>
                 </div>
-              ) : (
-                <span className="text-red-500 text-sm">
-                  {t('createChannel.step3.errorInvalidNode')}
-                </span>
-              )
-            }
-          />
-        </InfoCardGrid>
-
-        <InfoCardGrid columns={1}>
-          <InfoCard
-            icon={<Activity className="w-4 h-4 text-blue-500" />}
-            label={t('createChannel.step3.transactionFeeRate')}
-            value={
-              <div className="flex items-center justify-between">
-                <span className="text-white capitalize">{formData.fee}</span>
-                <span className="text-content-secondary text-sm ml-2">
-                  {feeRates[formData.fee]} sat/vB
-                </span>
               </div>
-            }
-          />
-        </InfoCardGrid>
+              {connectionDetails.host && connectionDetails.port && (
+                <span className="text-xs text-content-secondary font-mono">
+                  {connectionDetails.host}:{connectionDetails.port}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-red-500 text-sm">
+              {t('createChannel.step3.errorInvalidNode')}
+            </span>
+          )}
+        </div>
 
-        <InfoCardGrid columns={1}>
-          <InfoCard
-            icon={
-              formData.public ? (
-                <Eye className="w-4 h-4 text-blue-500" />
-              ) : (
-                <EyeOff className="w-4 h-4 text-blue-500" />
-              )
-            }
-            label={t('createChannel.step3.channelPrivacy')}
-            value={
-              <div className="flex items-center justify-between">
-                <span className="text-white capitalize">
-                  {formData.public
-                    ? t('createChannel.step3.public')
-                    : t('createChannel.step3.private')}
-                </span>
-                <span className="text-content-secondary text-sm ml-2">
-                  {formData.public
-                    ? t('createChannel.step3.visibleOnNetwork')
-                    : t('createChannel.step3.onlyKnownToParties')}
-                </span>
-              </div>
-            }
-          />
-        </InfoCardGrid>
+        {/* Fee */}
+        <div className="flex items-center justify-between py-4">
+          <span className="text-sm text-content-secondary">
+            {t('createChannel.step3.transactionFeeRate')}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-white capitalize">{formData.fee}</span>
+            <span className="text-content-secondary text-sm">
+              · {feeRates[formData.fee]} sat/vB
+            </span>
+          </div>
+        </div>
+
+        {/* Privacy */}
+        <div className="flex items-center justify-between py-4 last:pb-0">
+          <span className="text-sm text-content-secondary">
+            {t('createChannel.step3.channelPrivacy')}
+          </span>
+          <span className="text-white capitalize">
+            {formData.public
+              ? t('createChannel.step3.public')
+              : t('createChannel.step3.private')}
+          </span>
+        </div>
       </Card>
 
-      {isAssetChannel && (
-        <Card className="mb-6">
-          <div className="flex items-start gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-              <TagIcon className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-white mb-1">
-                {t('createChannel.step3.rgbAssetChannel')}
-              </h4>
-              <p className="text-xs text-content-secondary">
-                {t('createChannel.step3.rgbAssetInfo', {
-                  amount: formatAssetAmount,
-                  ticker: formData.assetTicker,
-                })}
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <div className="flex justify-between mt-8">
-        <Button
-          icon={<ChevronLeft className="w-5 h-5" />}
+        <button
+          className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
           onClick={onBack}
-          size="lg"
-          variant="secondary"
+          type="button"
         >
+          <ArrowLeft className="w-3.5 h-3.5" />
           {t('createChannel.step3.back')}
-        </Button>
+        </button>
 
         <Button
           disabled={!hasValidNodeInfo || isSubmitting}

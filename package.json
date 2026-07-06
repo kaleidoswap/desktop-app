@@ -88,15 +88,6 @@
     "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.1.9"
   },
-  "pnpm": {
-    "overrides": {
-      "rollup": ">=4.59.0",
-      "minimatch": ">=10.2.3",
-      "qs": ">=6.15.2",
-      "brace-expansion": ">=5.0.6",
-      "esbuild": ">=0.28.1"
-    }
-  },
   "lint-staged": {
     "src/**/*": "prettier --write --ignore-unknown",
     "src/**/*.{ts,tsx}": "eslint --fix"
