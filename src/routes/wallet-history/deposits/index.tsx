@@ -196,8 +196,18 @@ export const Component: React.FC = () => {
     }
   )
 
+  // Zero-amount BTC Lightning invoice (an unpaid receive invoice — e.g. the
+  // one auto-created when the deposit screen opens). These are hidden from the
+  // list by default and only shown via the "Pending invoices" filter.
+  const isZeroAmountLnInvoice = (d: DepositWithTimestamp) =>
+    d.type === 'off-chain' &&
+    !d.rgbAssetId &&
+    parseFloat(d.satAmount || '0') === 0
+
   const filteredDeposits = allDeposits.filter(
     (deposit: DepositWithTimestamp) => {
+      if (statusFilter !== 'pending-invoice' && isZeroAmountLnInvoice(deposit))
+        return false
       if (typeFilter !== 'all' && deposit.type !== typeFilter) return false
       if (assetFilter !== 'all' && assetLabel(deposit) !== assetFilter)
         return false
