@@ -9,6 +9,7 @@ import { toast } from 'react-toastify'
 import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
+  WALLET_UNLOCK_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
@@ -328,6 +329,9 @@ export const Component = () => {
     setIsConnecting(true)
     setConnectionStep('testing')
     setConnectionError(null)
+    // The node reachable-but-locked case (403): create the account, then send
+    // the user to the unlock screen rather than the dashboard.
+    let lockedNode = false
 
     // Auto-generate a unique account name if one already exists
     try {
@@ -369,7 +373,20 @@ export const Component = () => {
 
       clearTimeout(timeoutId)
 
+      // rgb-lightning-node returns 403 for a LOCKED (but reachable) node and
+      // 401 for a genuine auth failure. A locked node is fine here — the
+      // account is created now and the node is unlocked on the next step.
       if (response.status === 403) {
+        try {
+          const body = await response.clone().json()
+          lockedNode =
+            body?.name === 'LockedNode' || /is locked/i.test(body?.error ?? '')
+        } catch {
+          // body not JSON — treat as a non-locked 403 (auth error) below
+        }
+      }
+
+      if (response.status === 401 || (response.status === 403 && !lockedNode)) {
         setConnectionError({
           details: t('walletRemote.authenticationFailedDetails'),
           message: t('walletRemote.authenticationFailed'),
@@ -407,7 +424,7 @@ export const Component = () => {
         return
       }
 
-      if (!response.ok) {
+      if (!response.ok && !lockedNode) {
         setConnectionError({
           details: t('walletRemote.connectionTestFailedDetails', {
             status: response.status,
@@ -427,21 +444,27 @@ export const Component = () => {
         return
       }
 
-      // Test if response is valid JSON
-      try {
-        await response.json()
+      // A locked node is reachable — proceed to create the account. Otherwise
+      // confirm the node returned valid nodeinfo JSON.
+      if (lockedNode) {
         setConnectionStep('creating')
         toast.success(t('walletRemote.connectionSuccessCreating'))
-      } catch (jsonError) {
-        setConnectionError({
-          details: t('walletRemote.invalidResponseFormatDetails'),
-          message: t('walletRemote.invalidResponseFormat'),
-          type: 'connection',
-        })
-        toast.error(t('walletRemote.invalidResponseToast'))
-        setIsConnecting(false)
-        setConnectionStep('idle')
-        return
+      } else {
+        try {
+          await response.json()
+          setConnectionStep('creating')
+          toast.success(t('walletRemote.connectionSuccessCreating'))
+        } catch (jsonError) {
+          setConnectionError({
+            details: t('walletRemote.invalidResponseFormatDetails'),
+            message: t('walletRemote.invalidResponseFormat'),
+            type: 'connection',
+          })
+          toast.error(t('walletRemote.invalidResponseToast'))
+          setIsConnecting(false)
+          setConnectionStep('idle')
+          return
+        }
       }
     } catch (error: any) {
       setIsConnecting(false)
@@ -522,8 +545,9 @@ export const Component = () => {
 
       setConnectionStep('finalizing')
 
-      // Navigate to dashboard after successful connection
-      navigate(WALLET_DASHBOARD_PATH)
+      // A locked node must be unlocked first; an already-unlocked node goes
+      // straight to the dashboard.
+      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
 
       // Insert account
       await invoke('insert_account', {
