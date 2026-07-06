@@ -201,7 +201,15 @@ export const Component: React.FC = () => {
       if (typeFilter !== 'all' && deposit.type !== typeFilter) return false
       if (assetFilter !== 'all' && assetLabel(deposit) !== assetFilter)
         return false
-      if (statusFilter !== 'all') {
+      if (statusFilter === 'pending-invoice') {
+        // Unpaid, zero-amount Lightning invoices generated to receive BTC.
+        const isPendingZeroInvoice =
+          deposit.type === 'off-chain' &&
+          (deposit.status ?? '').toLowerCase() === 'pending' &&
+          !deposit.rgbAssetId &&
+          parseFloat(deposit.satAmount || '0') === 0
+        if (!isPendingZeroInvoice) return false
+      } else if (statusFilter !== 'all') {
         const depositStatus = deposit.status ?? 'Completed'
         if (depositStatus.toLowerCase() !== statusFilter.toLowerCase())
           return false
@@ -403,6 +411,10 @@ export const Component: React.FC = () => {
               { label: t('deposits.completed'), value: 'Completed' },
               { label: t('deposits.pending'), value: 'Pending' },
               { label: t('deposits.failed'), value: 'Failed' },
+              {
+                label: t('deposits.pendingInvoices', 'Pending invoices'),
+                value: 'pending-invoice',
+              },
             ]}
             value={statusFilter}
           />

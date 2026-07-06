@@ -105,10 +105,13 @@ export const Component = () => {
 
         // Handle regtest connection type selection
         if (value.network === 'Regtest' && value.regtestConnectionType) {
-          networkKey =
-            value.regtestConnectionType === 'local'
-              ? 'LocalRegtest'
-              : 'BitfinexRegtest'
+          if (value.regtestConnectionType === 'local') {
+            networkKey = 'LocalRegtest'
+          } else if (value.regtestConnectionType === 'docker') {
+            networkKey = 'LocalDockerRegtest'
+          } else {
+            networkKey = 'BitfinexRegtest'
+          }
         }
 
         const defaults = NETWORK_DEFAULTS[networkKey]
@@ -125,6 +128,12 @@ export const Component = () => {
             'node_url',
             `http://localhost:${defaults.daemon_listening_port}`
           )
+          // The maker docker stack ships a fixed regtest wallet password —
+          // prefill it so the node started by `make start-channels` unlocks
+          // out of the box.
+          if (value.regtestConnectionType === 'docker') {
+            form.setValue('password', 'password')
+          }
         }
       }
     })
@@ -452,10 +461,13 @@ export const Component = () => {
 
       // Handle regtest connection type selection
       if (data.network === 'Regtest' && data.regtestConnectionType) {
-        networkKey =
-          data.regtestConnectionType === 'local'
-            ? 'LocalRegtest'
-            : 'BitfinexRegtest'
+        if (data.regtestConnectionType === 'local') {
+          networkKey = 'LocalRegtest'
+        } else if (data.regtestConnectionType === 'docker') {
+          networkKey = 'LocalDockerRegtest'
+        } else {
+          networkKey = 'BitfinexRegtest'
+        }
       }
 
       const networkDefaults = NETWORK_DEFAULTS[networkKey]
@@ -528,18 +540,20 @@ export const Component = () => {
 
   const selectedNetwork = form.watch('network')
   const regtestConnectionType = form.watch('regtestConnectionType')
+  // Both 'local' and 'docker' target a localhost node; only 'bitfinex' is remote.
+  const isLocalRegtest =
+    regtestConnectionType === 'local' || regtestConnectionType === 'docker'
   const nodeUrlDescription =
     selectedNetwork === 'Regtest'
       ? t('walletRemote.nodeUrlDescriptionRegtest', {
-          type:
-            regtestConnectionType === 'local'
-              ? t('walletRemote.regtestTypeLocal')
-              : t('walletRemote.regtestTypeBitfinex'),
+          type: isLocalRegtest
+            ? t('walletRemote.regtestTypeLocal')
+            : t('walletRemote.regtestTypeBitfinex'),
         })
       : t('walletRemote.nodeUrlDescription')
   const nodeUrlPlaceholder =
     selectedNetwork === 'Regtest'
-      ? regtestConnectionType === 'local'
+      ? isLocalRegtest
         ? t('walletRemote.nodeUrlPlaceholderRegtest')
         : t('walletRemote.nodeUrlPlaceholderBitfinex')
       : t('walletRemote.nodeUrlPlaceholder')
