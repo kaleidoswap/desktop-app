@@ -105,10 +105,13 @@ export const Component = () => {
 
         // Handle regtest connection type selection
         if (value.network === 'Regtest' && value.regtestConnectionType) {
-          networkKey =
-            value.regtestConnectionType === 'local'
-              ? 'LocalRegtest'
-              : 'BitfinexRegtest'
+          if (value.regtestConnectionType === 'local') {
+            networkKey = 'LocalRegtest'
+          } else if (value.regtestConnectionType === 'docker') {
+            networkKey = 'LocalDockerRegtest'
+          } else {
+            networkKey = 'BitfinexRegtest'
+          }
         }
 
         const defaults = NETWORK_DEFAULTS[networkKey]
@@ -125,6 +128,12 @@ export const Component = () => {
             'node_url',
             `http://localhost:${defaults.daemon_listening_port}`
           )
+          // The maker docker stack ships a fixed regtest wallet password —
+          // prefill it so the node started by `make start-channels` unlocks
+          // out of the box.
+          if (value.regtestConnectionType === 'docker') {
+            form.setValue('password', 'password')
+          }
         }
       }
     })

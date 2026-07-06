@@ -47,7 +47,6 @@ interface Props {
 }
 
 const MSATS_PER_SAT = 1000
-const RGB_HTLC_MIN_SAT = 3000
 const SATOSHIS_PER_BTC = 100_000_000
 
 export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
@@ -229,24 +228,21 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const calculateMaxDepositAmount = useCallback(
     (asset: string): number => {
       if (asset === 'BTC') {
-        if (channels.length === 0) {
+        // A deposit RECEIVES over Lightning, so the ceiling is inbound
+        // liquidity (the peer's balance we can pull), taken as the largest
+        // single usable channel — NOT next_outbound_htlc_limit_msat, which is
+        // our *send* limit. This bound is Lightning-only; on-chain deposits
+        // are unlimited.
+        const usableChannels = channels.filter((c: Channel) => c.is_usable)
+        if (usableChannels.length === 0) {
           return 0
         }
 
-        const channelHtlcLimits = channels.map(
-          (c: Channel) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
+        const inboundSats = usableChannels.map(
+          (c: Channel) => (c.inbound_balance_msat ?? 0) / MSATS_PER_SAT
         )
 
-        if (
-          channelHtlcLimits.length === 0 ||
-          Math.max(...channelHtlcLimits) <= 0
-        ) {
-          return 0
-        }
-
-        const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        const maxDepositableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
-        return Math.max(0, maxDepositableAmount)
+        return Math.max(0, Math.max(...inboundSats))
       } else {
         const assetChannels = channels.filter(
           (c: Channel) => c.asset_id === asset && c.is_usable
@@ -792,7 +788,11 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
               </div>
               {maxDepositAmount > 0 && (
                 <p className="text-xs text-content-secondary pt-0.5">
-                  Max: {formatAmount(maxDepositAmount, 'BTC')}{' '}
+                  {t(
+                    'depositModal.step2.amount.maxLightning',
+                    'Max via Lightning'
+                  )}
+                  : {formatAmount(maxDepositAmount, 'BTC')}{' '}
                   {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
                 </p>
               )}

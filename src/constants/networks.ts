@@ -18,6 +18,19 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
     proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',
     rpc_connection_url: 'user:password@regtest-bitcoind.rgbtools.org:80',
   },
+  // Node started by the kaleidoswap-maker docker stack (`make start-channels`).
+  // The rgb-lightning-node runs INSIDE the compose network, so it reaches its
+  // backends via docker-internal hostnames (bitcoind / esplora / myproxy.local),
+  // not localhost — even though the desktop connects to it on localhost:3001.
+  LocalDockerRegtest: {
+    daemon_listening_port: '3001',
+    default_lsp_url: 'http://localhost:8000/',
+    default_maker_url: 'http://localhost:8000/',
+    indexer_url: 'http://esplora:3000',
+    ldk_peer_listening_port: '9735',
+    proxy_endpoint: 'rpc://myproxy.local:3000/json-rpc',
+    rpc_connection_url: 'user:password@bitcoind:18443',
+  },
   LocalRegtest: {
     daemon_listening_port: '3001',
     default_lsp_url: 'http://localhost:8000/',

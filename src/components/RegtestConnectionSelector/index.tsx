@@ -1,4 +1,4 @@
-import { Server, Globe, Check } from 'lucide-react'
+import { Server, Globe, Check, Container } from 'lucide-react'
 import { useState } from 'react'
 
 import { RegtestConnectionType } from '../../constants'
@@ -35,6 +35,21 @@ const connectionOptions: ConnectionOption[] = [
     icon: <Globe className="w-5 h-5" />,
     title: 'Remote (Bitfinex Regtest)',
     type: 'bitfinex',
+  },
+  {
+    badge: 'Docker',
+    badgeVariant: 'warning',
+    description:
+      'Connect to a node started by the kaleidoswap-maker Docker stack',
+    details: [
+      'Node on localhost:3001 (make start-channels)',
+      'Backends via docker hostnames (bitcoind / esplora)',
+      'Indexer http://esplora:3000',
+      'Default wallet password prefilled',
+    ],
+    icon: <Container className="w-5 h-5" />,
+    title: 'Local Docker Regtest',
+    type: 'docker',
   },
   {
     badge: 'Local',

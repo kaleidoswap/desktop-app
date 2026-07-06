@@ -23,7 +23,7 @@ const NETWORK_DISPLAY_NAMES: Record<string, string> = {
 export const getNetworkDisplayName = (network: string): string =>
   NETWORK_DISPLAY_NAMES[network] ?? network
 
-export type RegtestConnectionType = 'local' | 'bitfinex'
+export type RegtestConnectionType = 'local' | 'bitfinex' | 'docker'
 
 // Error constants
 export const ERROR_NOT_ENOUGH_UNCOLORED =
