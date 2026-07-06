@@ -585,7 +585,7 @@ export const Component: React.FC = () => {
                 </button>
               ) : (
                 <button
-                  className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-emphasis transition text-[#12131C] font-medium shadow-lg shadow-primary/20 flex items-center mx-auto"
+                  className="px-5 py-2.5 rounded-lg bg-primary hover:bg-primary-emphasis transition text-primary-foreground font-medium shadow-lg shadow-primary/20 flex items-center mx-auto"
                   onClick={() => navigate(CREATE_NEW_CHANNEL_PATH)}
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />

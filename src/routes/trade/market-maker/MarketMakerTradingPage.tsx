@@ -3384,7 +3384,7 @@ export const Component = () => {
         />
       ) : (
         <div className="w-full min-h-full relative">
-          <div className="w-full max-w-screen-xl mx-auto px-4 py-6">
+          <div className="w-full max-w-screen-xl mx-auto px-4 py-2">
             {isStillLoading ? (
               <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
                 <div className="relative">

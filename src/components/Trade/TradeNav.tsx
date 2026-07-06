@@ -11,7 +11,6 @@ import { twJoin } from 'tailwind-merge'
 import {
   TRADE_MARKET_MAKER_PATH,
   TRADE_MANUAL_PATH,
-  TRADE_NOSTR_P2P_PATH,
   TRADE_DCA_PATH,
   TRADE_LIMIT_PATH,
 } from '../../app/router/paths'

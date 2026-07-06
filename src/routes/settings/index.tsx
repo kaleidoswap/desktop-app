@@ -13,8 +13,6 @@ import {
   Download,
   Activity,
   Settings,
-  CheckCircle2,
-  XCircle,
   Server,
   Trash2,
   Star,
@@ -42,7 +40,6 @@ import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
 import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
-import { ChangePasswordModal } from '../../components/ChangePasswordModal'
 import { MnemonicViewerModal } from '../../components/MnemonicViewer'
 import {
   ModalType,
@@ -186,20 +183,6 @@ export const Component: React.FC = () => {
     handleBackup,
     selectBackupFolder,
   } = useBackup({ nodeSettings })
-
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const [autoLockTimeout, setAutoLockTimeout] = useState('15')
-  const [autoLockOpen, setAutoLockOpen] = useState(false)
-
-  const AUTO_LOCK_OPTIONS = [
-    { label: 'Never', value: 'never' },
-    { label: '1 min', value: '1' },
-    { label: '5 min', value: '5' },
-    { label: '15 min', value: '15' },
-    { label: '30 min', value: '30' },
-    { label: '1 hour', value: '60' },
-    { label: '4 hours', value: '240' },
-  ]
 
   const fetchNodeLogs = async () => {
     // Skip if too many failures
@@ -1014,8 +997,10 @@ export const Component: React.FC = () => {
               </h2>
             </div>
             <div className="p-4 space-y-3">
-              {/* Auto Time-Lock */}
-              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white">
+              {/* Auto Time-Lock — coming soon. The selector was not persisted
+                  and no inactivity timer consumed it, so it locked nothing.
+                  Shown disabled until backed by a real inactivity timer. */}
+              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white opacity-60">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                     <Timer className="w-4 h-4 text-primary" />
@@ -1032,38 +1017,9 @@ export const Component: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="relative flex-shrink-0">
-                  <button
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border-default/50 bg-surface-overlay/30 text-sm text-white hover:bg-surface-elevated transition-colors"
-                    onClick={() => setAutoLockOpen((v) => !v)}
-                    type="button"
-                  >
-                    {
-                      AUTO_LOCK_OPTIONS.find((o) => o.value === autoLockTimeout)
-                        ?.label
-                    }
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 text-content-secondary transition-transform ${autoLockOpen ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  {autoLockOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-50 min-w-[110px] rounded-lg border border-border-default/50 bg-surface-overlay shadow-xl overflow-hidden">
-                      {AUTO_LOCK_OPTIONS.map((opt) => (
-                        <button
-                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${autoLockTimeout === opt.value ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-elevated'}`}
-                          key={opt.value}
-                          onClick={() => {
-                            setAutoLockTimeout(opt.value)
-                            setAutoLockOpen(false)
-                          }}
-                          type="button"
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-surface-elevated text-content-secondary border border-border-default/50">
+                  {t('common.comingSoon', 'Coming soon')}
+                </span>
               </div>
               <button
                 className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
@@ -1084,12 +1040,15 @@ export const Component: React.FC = () => {
                 </div>
                 <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
               </button>
-              <button
-                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
-                onClick={() => setShowChangePasswordModal(true)}
-              >
+              {/* Change Password — coming soon. The node's /changepassword
+                  endpoint requires the wallet to be locked, so a correct
+                  implementation must lock → change → re-unlock (tracked as a
+                  follow-up). The previous flow only re-encrypted the local
+                  mnemonic copy without changing the node's unlock password,
+                  which silently diverged the two. Disabled until wired. */}
+              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white opacity-60">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
+                  <div className="p-2 bg-primary/10 rounded-lg">
                     <KeyRound className="w-4 h-4 text-primary" />
                   </div>
                   <div className="text-left">
@@ -1097,12 +1056,17 @@ export const Component: React.FC = () => {
                       {t('settings.changePassword', 'Change Password')}
                     </div>
                     <div className="text-xs text-content-secondary">
-                      Update wallet encryption password
+                      {t(
+                        'settings.changePasswordDescription',
+                        'Update wallet encryption password'
+                      )}
                     </div>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
-              </button>
+                <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-surface-elevated text-content-secondary border border-border-default/50">
+                  {t('common.comingSoon', 'Coming soon')}
+                </span>
+              </div>
 
               <button
                 className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
@@ -1312,12 +1276,6 @@ export const Component: React.FC = () => {
       <MnemonicViewerModal
         isOpen={showMnemonicModal}
         onClose={() => setShowMnemonicModal(false)}
-      />
-
-      <ChangePasswordModal
-        accountName={currentAccount?.name ?? ''}
-        onClose={() => setShowChangePasswordModal(false)}
-        showModal={showChangePasswordModal}
       />
 
       <BackupModal

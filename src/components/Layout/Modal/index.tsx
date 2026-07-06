@@ -1,11 +1,6 @@
 import { useRef } from 'react'
-import { createPortal } from 'react-dom'
 
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../../helpers/modalPortal'
 import { useOnClickOutside } from '../../../hooks/useOnClickOutside'
 import { uiSliceActions, uiSliceSeletors } from '../../../slices/ui/ui.slice'
 
@@ -24,12 +19,8 @@ export const LayoutModal = () => {
 
   if (modal.type === 'none') return null
 
-  const pos = getModalPositionClass()
-
-  return createPortal(
-    <div
-      className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
-    >
+  return (
+    <div className="fixed inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div
         className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50
                    shadow-2xl shadow-black/20 overflow-hidden relative"
@@ -39,7 +30,6 @@ export const LayoutModal = () => {
           <Content modal={modal} onClose={handleCloseModal} />
         </div>
       </div>
-    </div>,
-    getModalPortalTarget()
+    </div>
   )
 }

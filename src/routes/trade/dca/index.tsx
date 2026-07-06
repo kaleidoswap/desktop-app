@@ -19,7 +19,6 @@ import {
   getModalPositionClass,
 } from '../../../helpers/modalPortal'
 
-import { DcaBagIcon } from '../../../components/icons/DcaBagIcon'
 import { IconButton } from '../../../components/ui'
 import { TradeNav } from '../../../components/Trade'
 
@@ -225,11 +224,6 @@ export const Component = () => {
       s + (ch.asset_remote_amount ?? 0) / Math.pow(10, usdtPrecision),
     0
   )
-  const btcChannelUsdValue =
-    currentBtcPrice != null
-      ? (totalBtcSats / 100_000_000) * currentBtcPrice
-      : undefined
-
   const hasRgbChannels = readyChannels.some((ch: any) => ch.asset_id)
 
   const isRefreshing = isChannelsFetching || isAssetsFetching

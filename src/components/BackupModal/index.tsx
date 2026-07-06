@@ -4,10 +4,7 @@ import { Controller } from 'react-hook-form'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../helpers/modalPortal'
+import { getModalPortalTarget } from '../../helpers/modalPortal'
 
 interface BackupModalProps {
   showModal: boolean
