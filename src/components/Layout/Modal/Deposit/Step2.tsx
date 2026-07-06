@@ -228,21 +228,18 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const calculateMaxDepositAmount = useCallback(
     (asset: string): number => {
       if (asset === 'BTC') {
-        // A deposit RECEIVES over Lightning, so the ceiling is inbound
-        // liquidity (the peer's balance we can pull), taken as the largest
-        // single usable channel — NOT next_outbound_htlc_limit_msat, which is
-        // our *send* limit. This bound is Lightning-only; on-chain deposits
-        // are unlimited.
-        const usableChannels = channels.filter((c: Channel) => c.is_usable)
-        if (usableChannels.length === 0) {
+        // The most a single Lightning payment can carry is the largest HTLC
+        // limit across all channels. This bound is Lightning-only; on-chain
+        // deposits are unlimited.
+        if (channels.length === 0) {
           return 0
         }
 
-        const inboundSats = usableChannels.map(
-          (c: Channel) => (c.inbound_balance_msat ?? 0) / MSATS_PER_SAT
+        const htlcLimitsSats = channels.map(
+          (c: Channel) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
         )
 
-        return Math.max(0, Math.max(...inboundSats))
+        return Math.max(0, Math.max(...htlcLimitsSats))
       } else {
         const assetChannels = channels.filter(
           (c: Channel) => c.asset_id === asset && c.is_usable
