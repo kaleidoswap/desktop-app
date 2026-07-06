@@ -50,6 +50,7 @@ import type {
   SignMessageRequest,
   SignMessageResponse,
   UnlockRequest,
+  ChangePasswordRequest,
   KeysendRequest,
   KeysendResponse,
   ListPeersResponse,
@@ -111,6 +112,14 @@ export class NodeApiWrapper {
 
   async lockWallet(): Promise<ApiResult<void>> {
     return this.execute(() => this.client.lockWallet())
+  }
+
+  // Node re-encrypts the mnemonic with the new password. NB: the node requires
+  // the wallet to be LOCKED for this call (it returns 403 otherwise).
+  async changePassword(
+    request: ChangePasswordRequest
+  ): Promise<ApiResult<void>> {
+    return this.execute(() => this.client.changePassword(request))
   }
 
   async backup(request: BackupRequest): Promise<ApiResult<void>> {
