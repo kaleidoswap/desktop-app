@@ -849,7 +849,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
               </div>
             )}
 
-            {address ? (
+            {onchainAddress || lnInvoiceStr ? (
               <div className="space-y-4 animate-fadeIn">
                 {/* Payment Status */}
                 {invoiceStatus && (
@@ -979,7 +979,11 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   </div>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <div className="flex justify-center py-10">
+                <Loader className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
           </>
         )}
 

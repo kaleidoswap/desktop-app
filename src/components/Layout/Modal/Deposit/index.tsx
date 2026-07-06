@@ -1,12 +1,7 @@
 import { useState } from 'react'
 
-import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
-import { BTC_ASSET_ID } from '../../../../constants'
-import {
-  DepositModal,
-  uiSliceActions,
-  uiSliceSeletors,
-} from '../../../../slices/ui/ui.slice'
+import { useAppDispatch } from '../../../../app/store/hooks'
+import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 import { Step1 } from './Step1'
 import { Step2 } from './Step2'
@@ -17,14 +12,8 @@ interface DepositModalContentProps {
 
 export const DepositModalContent = ({ onClose }: DepositModalContentProps) => {
   const dispatch = useAppDispatch()
-  const modal = useAppSelector(uiSliceSeletors.modal) as DepositModal
-  // Open straight on the address/invoice screen (Step2), defaulting to BTC, so
-  // a BTC deposit shows a generated address immediately — no asset pick +
-  // "Continue" click. The asset can still be changed via Back (→ Step1).
-  const [step, setStep] = useState<number>(2)
-  const [assetId, setAssetId] = useState<string | undefined>(
-    modal.assetId ?? BTC_ASSET_ID
-  )
+  const [step, setStep] = useState<number>(1)
+  const [assetId, setAssetId] = useState<string>()
 
   return (
     <div
