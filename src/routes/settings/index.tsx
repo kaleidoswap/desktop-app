@@ -40,6 +40,7 @@ import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
 import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
+import { ChangePasswordModal } from '../../components/ChangePasswordModal'
 import { MnemonicViewerModal } from '../../components/MnemonicViewer'
 import {
   ModalType,
@@ -130,6 +131,7 @@ export const Component: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
   const [showMnemonicModal, setShowMnemonicModal] = useState(false)
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
   const maxLogsFetchRetries = 3
 
   // Replace showModal with unified modal state
@@ -1040,15 +1042,12 @@ export const Component: React.FC = () => {
                 </div>
                 <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
               </button>
-              {/* Change Password — coming soon. The node's /changepassword
-                  endpoint requires the wallet to be locked, so a correct
-                  implementation must lock → change → re-unlock (tracked as a
-                  follow-up). The previous flow only re-encrypted the local
-                  mnemonic copy without changing the node's unlock password,
-                  which silently diverged the two. Disabled until wired. */}
-              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white opacity-60">
+              <button
+                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
+                onClick={() => setShowChangePasswordModal(true)}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
                     <KeyRound className="w-4 h-4 text-primary" />
                   </div>
                   <div className="text-left">
@@ -1063,10 +1062,8 @@ export const Component: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-surface-elevated text-content-secondary border border-border-default/50">
-                  {t('common.comingSoon', 'Coming soon')}
-                </span>
-              </div>
+                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
+              </button>
 
               <button
                 className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
@@ -1276,6 +1273,12 @@ export const Component: React.FC = () => {
       <MnemonicViewerModal
         isOpen={showMnemonicModal}
         onClose={() => setShowMnemonicModal(false)}
+      />
+
+      <ChangePasswordModal
+        accountName={currentAccount?.name ?? ''}
+        onClose={() => setShowChangePasswordModal(false)}
+        showModal={showChangePasswordModal}
       />
 
       <BackupModal
