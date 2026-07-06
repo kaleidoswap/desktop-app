@@ -7,46 +7,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ── Semantic tokens (CSS-variable backed, support opacity modifiers) ──
-        surface: {
-          base: 'rgb(var(--color-surface-base) / <alpha-value>)',
-          raised: 'rgb(var(--color-surface-raised) / <alpha-value>)',
-          overlay: 'rgb(var(--color-surface-overlay) / <alpha-value>)',
-          elevated: 'rgb(var(--color-surface-elevated) / <alpha-value>)',
-          high: 'rgb(var(--color-surface-high) / <alpha-value>)',
-        },
-        primary: {
-          DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
-          emphasis: 'rgb(var(--color-primary-emphasis) / <alpha-value>)',
-          foreground: 'rgb(var(--color-primary-foreground) / <alpha-value>)',
-        },
-        secondary: {
-          DEFAULT: 'rgb(var(--color-secondary) / <alpha-value>)',
-          emphasis: 'rgb(var(--color-secondary-emphasis) / <alpha-value>)',
-          foreground: 'rgb(var(--color-secondary-foreground) / <alpha-value>)',
-        },
-        content: {
-          primary: 'rgb(var(--color-content-primary) / <alpha-value>)',
-          secondary: 'rgb(var(--color-content-secondary) / <alpha-value>)',
-          tertiary: 'rgb(var(--color-content-tertiary) / <alpha-value>)',
-          inverse: 'rgb(var(--color-content-inverse) / <alpha-value>)',
-        },
-        border: {
-          subtle: 'rgb(var(--color-border-subtle) / <alpha-value>)',
-          default: 'rgb(var(--color-border-default) / <alpha-value>)',
-          strong: 'rgb(var(--color-border-strong) / <alpha-value>)',
-        },
-        status: {
-          success: 'rgb(var(--color-status-success) / <alpha-value>)',
-          'success-subtle': 'rgb(var(--color-status-success) / 0.15)',
-          danger: 'rgb(var(--color-status-danger) / <alpha-value>)',
-          'danger-subtle': 'rgb(var(--color-status-danger) / 0.15)',
-          warning: 'rgb(var(--color-status-warning) / <alpha-value>)',
-          'warning-subtle': 'rgb(var(--color-status-warning) / 0.15)',
-          info: 'rgb(var(--color-status-info) / <alpha-value>)',
-          'info-subtle': 'rgb(var(--color-status-info) / 0.15)',
-        },
-        // ── Legacy tokens (kept during migration) ──
+        // ── Semantic tokens (surface/primary/secondary/content/border/status/divider)
+        //    + typography (Satoshi) now come from kaleido-ui/css via @theme.
+        //    See src/styles.css `@import "kaleido-ui/css"`. ──
+        // ── Legacy palette (app-specific; migrate to semantic tokens gradually) ──
         background: '#202027',
         'blue-dark': '#2E303C',
         'blue-darker': '#252632',
@@ -64,7 +28,6 @@ export default {
           800: '#1B677F',
           900: '#124454',
         },
-        divider: '#56596C',
         green: {
           DEFAULT: '#15E99A',
           50: '#ECFDED',
@@ -148,9 +111,6 @@ export default {
           lighter: '#D9D9D9',
         },
         'section-lighter': '#3A3C4A',
-      },
-      fontFamily: {
-        sans: ['Mulish', 'sans-serif'],
       },
       spacing: {
         'screen-90': '90vh',
