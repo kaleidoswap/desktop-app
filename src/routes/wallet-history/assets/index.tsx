@@ -26,6 +26,31 @@ import {
 } from '../../../slices/nodeApi/nodeApi.slice'
 import { getAssignmentAmount } from '../../../utils/rgbUtils'
 
+// Cap simultaneous listTransfers calls: the RGB node serializes these, so an
+// unbounded Promise.all over every asset causes a thundering-herd on wallets
+// with many assets (this runs on every "All Assets" page load / refresh).
+const TRANSFER_FETCH_CONCURRENCY = 5
+
+// Run an async task over items with bounded concurrency, preserving order.
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  task: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      for (let i = next++; i < items.length; i = next++) {
+        results[i] = await task(items[i])
+      }
+    }
+  )
+  await Promise.all(workers)
+  return results
+}
+
 export const Component = () => {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
@@ -79,9 +104,22 @@ export const Component = () => {
         } else {
           const rgbAssets = assetsResponse.data?.nia || []
           if (rgbAssets.length > 0) {
-            const results = await Promise.all(
-              rgbAssets.map((asset: any) => getTransfers(asset.asset_id))
+            const results = await mapWithConcurrency(
+              rgbAssets,
+              TRANSFER_FETCH_CONCURRENCY,
+              (asset: any) => getTransfers(asset.asset_id)
             )
+            const failed = results.filter((r: any) => r.error).length
+            if (failed > 0) {
+              toast.warn(
+                t('history.someTransfersFailed', {
+                  count: failed,
+                  defaultValue:
+                    'Could not load transfers for {{count}} of {{total}} assets',
+                  total: rgbAssets.length,
+                })
+              )
+            }
             setAllTransfers(
               results.flatMap((r: any) => r.data?.transfers || [])
             )
@@ -106,9 +144,22 @@ export const Component = () => {
       } else {
         const nia =
           (refreshedAssets as any)?.data?.nia || assetsResponse.data?.nia || []
-        const results = await Promise.all(
-          nia.map((asset: any) => getTransfers(asset.asset_id))
+        const results = await mapWithConcurrency(
+          nia,
+          TRANSFER_FETCH_CONCURRENCY,
+          (asset: any) => getTransfers(asset.asset_id)
         )
+        const failed = results.filter((r: any) => r.error).length
+        if (failed > 0) {
+          toast.warn(
+            t('history.someTransfersFailed', {
+              count: failed,
+              defaultValue:
+                'Could not load transfers for {{count}} of {{total}} assets',
+              total: nia.length,
+            })
+          )
+        }
         setAllTransfers(results.flatMap((r: any) => r.data?.transfers || []))
       }
     } finally {
