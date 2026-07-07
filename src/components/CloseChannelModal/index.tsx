@@ -1,11 +1,4 @@
-import {
-  X,
-  AlertTriangle,
-  AlertCircle,
-  Loader2,
-  ZapOff,
-  Handshake,
-} from 'lucide-react'
+import { X, AlertTriangle, AlertCircle, Loader2, Handshake } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'

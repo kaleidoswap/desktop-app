@@ -31,7 +31,7 @@ import {
   getModalPositionClass,
 } from '../../../helpers/modalPortal'
 
-import { IconButton, Card, Select } from '../../../components/ui'
+import { Card, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,

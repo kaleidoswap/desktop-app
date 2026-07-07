@@ -13,14 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../../../app/store'
-import {
-  Button,
-  IconButton,
-  Badge,
-  Card,
-  Alert,
-  Select,
-} from '../../../components/ui'
+import { Button, Badge, Card, Alert, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,

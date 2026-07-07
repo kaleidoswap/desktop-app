@@ -14,14 +14,7 @@ import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../app/store/hooks'
-import {
-  Button,
-  Badge,
-  IconButton,
-  Card,
-  Alert,
-  Select,
-} from '../../../components/ui'
+import { Button, Badge, Card, Alert, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,

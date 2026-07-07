@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { IconButton, Card, Badge, Select, Button } from '../../../components/ui'
+import { Card, Badge, Select, Button } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
