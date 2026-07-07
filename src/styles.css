@@ -244,6 +244,17 @@ button:not([disabled]):active {
   pointer-events: none;
 }
 
+/* Modals portal into #modal-portal, which fills #content-area — a region shorter
+   than the viewport that clips its overflow. Modal scroll wrappers cap their
+   height in viewport units (max-h-[85vh]/[90vh]); on windows under ~1000px tall
+   that exceeds the content area and the modal (header / footer actions) gets
+   clipped. Cap the scroll region to the space actually available below the top
+   bar so it scrolls internally instead. The `.overflow-y-scroll` class is used
+   only by these modal wrappers — nested lists/dropdowns use `.overflow-y-auto`. */
+#modal-portal .overflow-y-scroll {
+  max-height: calc(100vh - 7rem);
+}
+
 /* Icon-only action buttons — override global scale with explicit center origin to prevent lateral drift */
 button.icon-action:not([disabled]):hover {
   transform: scale(1.08);
