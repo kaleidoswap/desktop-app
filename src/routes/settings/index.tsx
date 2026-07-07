@@ -21,7 +21,6 @@ import {
   Lock,
   ArrowRight,
   KeyRound,
-  Timer,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -999,30 +998,6 @@ export const Component: React.FC = () => {
               </h2>
             </div>
             <div className="p-4 space-y-3">
-              {/* Auto Time-Lock — coming soon. The selector was not persisted
-                  and no inactivity timer consumed it, so it locked nothing.
-                  Shown disabled until backed by a real inactivity timer. */}
-              <div className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 text-white opacity-60">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                    <Timer className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <div className="text-sm font-semibold">
-                      {t('settings.autoTimeLock', 'Auto Time-Lock')}
-                    </div>
-                    <div className="text-xs text-content-secondary">
-                      {t(
-                        'settings.autoTimeLockDescription',
-                        'Lock wallet after inactivity'
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-surface-elevated text-content-secondary border border-border-default/50">
-                  {t('common.comingSoon', 'Coming soon')}
-                </span>
-              </div>
               <button
                 className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
                 onClick={() => setShowMnemonicModal(true)}
