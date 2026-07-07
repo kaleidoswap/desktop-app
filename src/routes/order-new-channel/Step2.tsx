@@ -7,7 +7,7 @@ import { toast } from 'react-toastify'
 import * as z from 'zod'
 
 import { useAppDispatch } from '../../app/store/hooks'
-import { Button } from '../../components/ui'
+import { Button, InfoHint } from '../../components/ui'
 import { Spinner } from '../../components/Spinner'
 import {
   FeeBreakdownDisplay,
@@ -619,9 +619,12 @@ export const Step2: React.FC<Props> = ({
             {/* Channel Capacity */}
             <div className="mb-12">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-content-secondary">
-                  {t('orderChannel.step2.channelCapacity')}
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-content-secondary">
+                    {t('orderChannel.step2.channelCapacity')}
+                  </label>
+                  <InfoHint content="The total size of the channel, in sats. A larger capacity lets you send and receive more, but costs more on-chain to open." />
+                </div>
                 <div className="flex items-center gap-1">
                   {[
                     { label: '100k', value: 100_000 },
@@ -697,9 +700,12 @@ export const Step2: React.FC<Props> = ({
             {/* Outbound Balance — how many sats are yours to send at open */}
             <div className="mb-12">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-content-secondary">
-                  Outbound Balance
-                </label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-content-secondary">
+                    Outbound Balance
+                  </label>
+                  <InfoHint content="How many sats start on your side, ready to send the moment the channel opens. The rest is inbound — what you can receive." />
+                </div>
                 {maxOutbound > 0 && (
                   <div className="flex items-center gap-1">
                     {[25, 50, 75, 100].map((pct) => (
@@ -868,9 +874,12 @@ export const Step2: React.FC<Props> = ({
 
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-content-secondary">
-                            Amount
-                          </label>
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-sm font-medium text-content-secondary">
+                              Amount
+                            </label>
+                            <InfoHint content="Total amount of this asset the channel will hold. Set how much starts on your side below — that portion is what you're buying." />
+                          </div>
                           {assetPresetsCalc.length > 0 && (
                             <div className="flex items-center gap-1">
                               {assetPresetsCalc.map((preset) => (
