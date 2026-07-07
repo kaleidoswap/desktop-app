@@ -18,15 +18,10 @@ interface InfoHintProps {
 export const InfoHint: React.FC<InfoHintProps> = ({
   content,
   title,
-  position = 'top',
+  position = 'right',
   className = '',
 }) => (
-  <Tooltip
-    content={content}
-    position={position}
-    title={title}
-    width="max-w-[16rem]"
-  >
+  <Tooltip content={content} position={position} title={title} width="w-64">
     <Info
       className={`h-3.5 w-3.5 cursor-help text-content-tertiary transition-colors hover:text-content-secondary ${className}`}
     />
