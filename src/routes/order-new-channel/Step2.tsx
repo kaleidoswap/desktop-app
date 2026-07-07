@@ -609,12 +609,6 @@ export const Step2: React.FC<Props> = ({
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('orderChannel.step2.title')}
-        </h3>
-      </div>
-
       <form onSubmit={handleSubmit(onSubmit)}>
         {isLoading ? (
           <div className="flex items-center justify-center h-64">

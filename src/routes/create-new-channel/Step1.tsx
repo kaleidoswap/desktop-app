@@ -275,12 +275,6 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('createChannel.step1.title')}
-        </h3>
-      </div>
-
       {formError && (
         <div className="flex items-center gap-2 text-sm text-red-400 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />

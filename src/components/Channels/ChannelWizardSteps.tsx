@@ -28,9 +28,9 @@ export const ChannelWizardSteps = ({
 
       return (
         <Fragment key={label}>
-          <div className="flex flex-col items-center gap-1.5 w-16 sm:w-20 flex-shrink-0">
+          <div className="flex flex-col items-center gap-2 w-20 sm:w-28 flex-shrink-0">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-colors duration-300 ${
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-bold transition-colors duration-300 ${
                 isActive
                   ? 'bg-primary text-primary-foreground'
                   : isDone
@@ -38,10 +38,10 @@ export const ChannelWizardSteps = ({
                     : 'bg-surface-high text-content-tertiary'
               }`}
             >
-              {isDone ? <Check className="h-4 w-4" /> : stepNumber}
+              {isDone ? <Check className="h-5 w-5" /> : stepNumber}
             </div>
             <span
-              className={`text-center text-[11px] leading-tight transition-colors duration-300 ${
+              className={`text-center text-sm leading-tight transition-colors duration-300 ${
                 isActive
                   ? 'font-medium text-white'
                   : isDone
@@ -54,7 +54,7 @@ export const ChannelWizardSteps = ({
           </div>
 
           {!isLast && (
-            <div className="mt-4 h-0.5 flex-1 overflow-hidden rounded-full bg-surface-high">
+            <div className="mt-5 h-0.5 flex-1 overflow-hidden rounded-full bg-surface-high">
               <div
                 className={`h-full rounded-full bg-primary transition-all duration-300 ${
                   isDone ? 'w-full' : 'w-0'

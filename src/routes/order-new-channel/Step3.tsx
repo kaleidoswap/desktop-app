@@ -103,12 +103,6 @@ export const Step3: React.FC<Props> = ({
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('orderChannel.step3.channelDetailsTitle')}
-        </h3>
-      </div>
-
       <Card className="mb-6 divide-y divide-border-default/40">
         {/* Order ID */}
         <div className="flex items-start justify-between py-4 first:pt-0">

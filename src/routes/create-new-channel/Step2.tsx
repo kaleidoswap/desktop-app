@@ -518,12 +518,6 @@ export const Step2 = ({
 
   return (
     <form className="max-w-3xl mx-auto" onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('createChannel.step2.title')}
-        </h3>
-      </div>
-
       <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
         {/* PubKey display section */}
         <div className="mb-12">
