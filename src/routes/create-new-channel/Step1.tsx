@@ -32,7 +32,9 @@ import {
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 const truncateMiddle = (str: string, head = 14, tail = 10): string =>
-  str.length <= head + tail + 1 ? str : `${str.slice(0, head)}…${str.slice(-tail)}`
+  str.length <= head + tail + 1
+    ? str
+    : `${str.slice(0, head)}…${str.slice(-tail)}`
 
 interface Props {
   onNext: VoidFunction
