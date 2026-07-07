@@ -74,36 +74,34 @@ export const NoChannelsMessage: React.FC<NoChannelsMessageProps> = ({
   }
 
   return (
-    <div className="max-w-2xl w-full bg-surface-base/50 backdrop-blur-sm rounded-2xl border border-border-subtle/50 p-8">
-      <div className="flex flex-col items-center space-y-4">
-        <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
-          <Link className="w-8 h-8 text-emerald-500" />
-        </div>
-        <h2 className="text-2xl font-bold text-white">
-          {t('trade.noChannels.noRGBChannels')}
-        </h2>
-        <p className="text-content-secondary text-center text-base max-w-md">
-          {t('trade.noChannels.noRGBChannelsMessage')}
-        </p>
+    <div className="flex flex-col items-center space-y-4">
+      <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center">
+        <Link className="w-8 h-8 text-emerald-500" />
+      </div>
+      <h2 className="text-2xl font-bold text-white">
+        {t('trade.noChannels.noRGBChannels')}
+      </h2>
+      <p className="text-content-secondary text-center text-base max-w-md">
+        {t('trade.noChannels.noRGBChannelsMessage')}
+      </p>
 
-        <div className="flex gap-4 pt-4">
-          <button
-            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
-                     font-medium transition-colors flex items-center gap-2 text-base"
-            onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            {t('trade.noChannels.buyFromLSP')}
-          </button>
-          <button
-            className="px-6 py-3 bg-transparent border border-white/30 text-white rounded-lg
-                     hover:bg-white/5 hover:border-white/50 transition-colors flex items-center gap-2 text-base"
-            onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
-          >
-            <Plus className="w-5 h-5" />
-            {t('trade.noChannels.openChannel')}
-          </button>
-        </div>
+      <div className="flex gap-4 pt-4">
+        <button
+          className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
+                   font-medium transition-colors flex items-center gap-2 text-base"
+          onClick={() => onNavigate(CREATE_NEW_CHANNEL_PATH)}
+        >
+          <Plus className="w-5 h-5" />
+          {t('trade.noChannels.openChannel')}
+        </button>
+        <button
+          className="px-6 py-3 bg-transparent border border-white/30 text-white rounded-lg
+                   hover:bg-white/5 hover:border-white/50 transition-colors flex items-center gap-2 text-base"
+          onClick={() => onNavigate(ORDER_CHANNEL_PATH)}
+        >
+          <ShoppingCart className="w-5 h-5" />
+          {t('trade.noChannels.buyFromLSP')}
+        </button>
       </div>
     </div>
   )

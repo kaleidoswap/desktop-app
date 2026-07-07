@@ -5,13 +5,13 @@ import {
   ArrowDownRight,
   AlertCircle,
   Layers,
-  Bolt,
   Filter,
   PlusCircle,
   SortAsc,
   ChevronDown,
   Wallet,
   X,
+  Bitcoin,
 } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -368,7 +368,7 @@ export const Component: React.FC = () => {
 
             <div className="flex items-center gap-2">
               {/* Channel type tabs */}
-              <div className="flex gap-1 rounded-xl bg-surface-overlay/50 p-1">
+              <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
                 <button
                   className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                     activeTab === 'all'
@@ -393,7 +393,7 @@ export const Component: React.FC = () => {
                   }`}
                   onClick={() => setActiveTab('bitcoin')}
                 >
-                  <Bolt className="h-3.5 w-3.5" />
+                  <Bitcoin className="h-3.5 w-3.5 text-primary" />
                   {t('channels.bitcoin')}
                   <span
                     className={`text-xs ${activeTab === 'bitcoin' ? 'text-primary' : 'text-white/60'}`}

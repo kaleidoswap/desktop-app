@@ -32,6 +32,7 @@ const initialFormState: TNewChannelForm = {
   assetId: '',
   assetTicker: '',
   capacitySat: MIN_CHANNEL_CAPACITY,
+  channelExpireBlocks: 12960,
   fee: 'medium',
   pubKeyAndAddress: '',
   public: true,
@@ -334,7 +335,7 @@ export const Component = () => {
               <Step4
                 error={channelOpeningError}
                 onFinish={() => navigate(returnTo ?? CHANNELS_PATH)}
-                onGoBack={() => setStep(1)}
+                onGoBack={() => setStep(3)}
                 onRetry={() => setStep(3)}
               />
             )}

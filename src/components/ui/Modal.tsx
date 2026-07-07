@@ -85,7 +85,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="max-h-[80vh] overflow-auto">{children}</div>
+        <div className="max-h-[80vh] overflow-y-scroll">{children}</div>
       </div>
     </div>,
     getModalPortalTarget()

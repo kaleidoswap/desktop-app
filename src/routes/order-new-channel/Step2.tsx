@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, ArrowRight, ChevronDown } from 'lucide-react'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -53,9 +53,36 @@ const FormFieldsSchema = z.object({
 
 type FormFields = z.infer<typeof FormFieldsSchema>
 
-const AssetListIcon = ({ ticker }: { ticker: string }) => {
-  const [icon] = useAssetIcon(ticker, rgbIcon)
-  return <img alt={ticker} className="w-3.5 h-3.5" src={icon} />
+const BuyAssetDropdownItem = ({
+  asset,
+  isSelected,
+  onSelect,
+}: {
+  asset: AssetInfo
+  isSelected: boolean
+  onSelect: () => void
+}) => {
+  const [iconSrc, setIconSrc] = useAssetIcon(asset.ticker, rgbIcon)
+  return (
+    <button
+      className={`w-full px-3 py-2 flex items-center gap-3 text-left text-sm transition-colors duration-150 ${isSelected ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
+      onClick={onSelect}
+      type="button"
+    >
+      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img
+          alt={asset.ticker}
+          className="w-full h-full object-cover rounded-full"
+          onError={() => setIconSrc(rgbIcon)}
+          src={iconSrc}
+        />
+      </div>
+      <div className="text-left">
+        <div className="font-medium">{asset.ticker}</div>
+        <div className="text-xs text-content-tertiary">{asset.name}</div>
+      </div>
+    </button>
+  )
 }
 
 export const Step2: React.FC<Props> = ({
@@ -71,7 +98,24 @@ export const Step2: React.FC<Props> = ({
   const [lspOptions, setLspOptions] = useState<LspOptions | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<AssetInfo | null>(null)
   const [isAssetDropdownOpen, setIsAssetDropdownOpen] = useState(false)
-  const [selectedAssetIcon] = useAssetIcon(selectedAsset?.ticker ?? '', rgbIcon)
+  const [selectedAssetIcon, setSelectedAssetIcon] = useAssetIcon(
+    selectedAsset?.ticker ?? '',
+    rgbIcon
+  )
+  const assetDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        assetDropdownRef.current &&
+        !assetDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAssetDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const [effectiveMinCapacity, setEffectiveMinCapacity] =
     useState<number>(MIN_CHANNEL_CAPACITY)
   const [effectiveMaxCapacity, setEffectiveMaxCapacity] =
@@ -598,6 +642,28 @@ export const Step2: React.FC<Props> = ({
                 <label className="text-sm font-medium text-content-secondary">
                   {t('orderChannel.step2.channelCapacity')}
                 </label>
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: '100k', value: 100_000 },
+                    { label: '250k', value: 250_000 },
+                    { label: '500k', value: 500_000 },
+                    { label: '1M', value: 1_000_000 },
+                  ].map(({ label, value }) => (
+                    <button
+                      className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                        value > effectiveMaxCapacity
+                          ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
+                          : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                      }`}
+                      disabled={value > effectiveMaxCapacity}
+                      key={label}
+                      onClick={() => handleCapacityChange(value.toString())}
+                      type="button"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="relative">
                 <input
@@ -733,97 +799,89 @@ export const Step2: React.FC<Props> = ({
                 Add RGB Asset
               </h5>
 
-              <button
-                className={`w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default transition-all duration-200 flex items-center justify-between text-left ${
-                  isAssetLocked
-                    ? 'cursor-default opacity-90'
-                    : 'hover:border-primary/50'
-                }`}
-                disabled={isAssetLocked}
-                onClick={() =>
-                  !isAssetLocked && setIsAssetDropdownOpen(!isAssetDropdownOpen)
-                }
-                type="button"
-              >
-                <div className="flex items-center gap-2">
-                  {selectedAsset ? (
-                    <>
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                        <img
-                          alt={selectedAsset.ticker}
-                          className="w-4 h-4"
-                          src={selectedAssetIcon}
-                        />
-                      </div>
-                      <div>
-                        <div className="font-medium text-white text-sm">
+              <div className="relative" ref={assetDropdownRef}>
+                <button
+                  className={`w-full flex items-center gap-2 py-2 pl-3 pr-3 text-sm bg-surface-overlay/30 rounded-lg border text-white transition-all duration-200 focus:outline-none ${
+                    isAssetLocked
+                      ? 'cursor-default opacity-90 border-border-default/50'
+                      : isAssetDropdownOpen
+                        ? 'border-primary/50 ring-1 ring-primary/20'
+                        : 'border-border-default/50'
+                  }`}
+                  disabled={isAssetLocked}
+                  onClick={() =>
+                    !isAssetLocked &&
+                    setIsAssetDropdownOpen(!isAssetDropdownOpen)
+                  }
+                  type="button"
+                >
+                  <span className="flex-1 text-left">
+                    {selectedAsset ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <img
+                            alt={selectedAsset.ticker}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={() => setSelectedAssetIcon(rgbIcon)}
+                            src={selectedAssetIcon}
+                          />
+                        </span>
+                        <span className="font-medium">
                           {selectedAsset.ticker}
-                        </div>
-                        <div className="text-xs text-content-secondary">
+                        </span>
+                        <span className="text-content-secondary text-xs">
                           {selectedAsset.name}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-content-secondary text-sm">
-                      No Asset
-                    </span>
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-content-secondary">No Asset</span>
+                    )}
+                  </span>
+                  {!isAssetLocked && (
+                    <ChevronDown
+                      className={`w-4 h-4 text-content-secondary flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+                    />
                   )}
-                </div>
-                {!isAssetLocked && (
-                  <ChevronDown
-                    className={`w-4 h-4 text-content-secondary transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
-                  />
-                )}
-              </button>
+                </button>
 
-              {isAssetDropdownOpen && (
-                <div className="rounded-xl border border-border-default bg-surface-overlay shadow-lg overflow-hidden mt-1">
-                  <div className="max-h-[220px] overflow-y-auto">
-                    <button
-                      className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-white/5 text-content-secondary transition-colors duration-200 border-b border-border-default/50 text-sm"
-                      onClick={() => {
-                        setSelectedAsset(null)
-                        setAddAsset(false)
-                        setValue('assetId', '')
-                        setValue('lspAssetAmount', '')
-                        setValue('clientAssetAmount', '0')
-                        setIsAssetDropdownOpen(false)
-                      }}
-                      type="button"
-                    >
-                      No Asset
-                    </button>
-                    {Object.values(assetMap).map((asset) => (
+                {isAssetDropdownOpen && (
+                  <div className="absolute z-50 mt-1 w-full rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
+                    <div className="max-h-[220px] overflow-y-auto">
                       <button
-                        className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors duration-200 text-sm"
-                        key={asset.asset_id}
+                        className={`w-full px-3 py-2 text-left text-sm transition-colors duration-150 border-b border-border-default/50 ${!selectedAsset ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
                         onClick={() => {
-                          setSelectedAsset(asset)
-                          setAddAsset(true)
-                          setValue('assetId', asset.asset_id)
+                          setSelectedAsset(null)
+                          setAddAsset(false)
+                          setValue('assetId', '')
                           setValue('lspAssetAmount', '')
                           setValue('clientAssetAmount', '0')
                           setIsAssetDropdownOpen(false)
                         }}
                         type="button"
                       >
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <AssetListIcon ticker={asset.ticker} />
-                        </div>
-                        <div className="text-left">
-                          <div className="font-medium text-white">
-                            {asset.ticker}
-                          </div>
-                          <div className="text-xs text-content-tertiary">
-                            {asset.name}
-                          </div>
-                        </div>
+                        No Asset
                       </button>
-                    ))}
+                      {Object.values(assetMap).map((asset) => (
+                        <BuyAssetDropdownItem
+                          asset={asset}
+                          isSelected={
+                            selectedAsset?.asset_id === asset.asset_id
+                          }
+                          key={asset.asset_id}
+                          onSelect={() => {
+                            setSelectedAsset(asset)
+                            setAddAsset(true)
+                            setValue('assetId', asset.asset_id)
+                            setValue('lspAssetAmount', '')
+                            setValue('clientAssetAmount', '0')
+                            setIsAssetDropdownOpen(false)
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {selectedAsset && addAsset && assetInfo && (
                 <div className="mt-6">
@@ -910,6 +968,106 @@ export const Step2: React.FC<Props> = ({
                             {selectedAsset.ticker}
                           </span>
                         </div>
+
+                        {/* Channel Capacity slider — synced with lspAssetAmount input above, shown only when value > 0 */}
+                        {parseFloat(lspAssetAmount || '0') > 0 &&
+                          assetMax > assetMin && (
+                            <div className="mt-4 px-1">
+                              <div className="relative">
+                                <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+                                  <div
+                                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+                                    style={{
+                                      width: `${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}%`,
+                                    }}
+                                  />
+                                </div>
+                                <input
+                                  className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+                                  max={assetMax}
+                                  min={assetMin}
+                                  onChange={(e) =>
+                                    setValue('lspAssetAmount', e.target.value)
+                                  }
+                                  step={Math.max(
+                                    1,
+                                    (assetMax - assetMin) / 100
+                                  )}
+                                  type="range"
+                                  value={parseFloat(lspAssetAmount || '0')}
+                                />
+                                <div
+                                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+                                  style={{
+                                    left: `calc(${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}% - 8px)`,
+                                  }}
+                                />
+                              </div>
+                              <div className="flex justify-between text-xs text-content-tertiary mt-2">
+                                <span>
+                                  Min: {assetMin} {selectedAsset.ticker}
+                                </span>
+                                <span>
+                                  Max: {assetMax} {selectedAsset.ticker}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Outbound Balance slider — synced with clientAssetAmount, shown only when lspAssetAmount > 0 */}
+                        {parseFloat(lspAssetAmount || '0') > 0 && (
+                          <div className="mt-4 px-1">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs text-content-secondary">
+                                Outbound Balance
+                              </span>
+                              <span className="text-xs font-medium text-white">
+                                {parseFloat(clientAssetAmount || '0') > 0
+                                  ? `${parseFloat(clientAssetAmount)} ${selectedAsset.ticker}`
+                                  : '0 ' + selectedAsset.ticker}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+                                <div
+                                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+                                  style={{
+                                    width: `${parseFloat(lspAssetAmount || '0') > 0 ? Math.max(0, Math.min(100, (parseFloat(clientAssetAmount || '0') / parseFloat(lspAssetAmount)) * 100)) : 0}%`,
+                                  }}
+                                />
+                              </div>
+                              <input
+                                className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+                                max={parseFloat(lspAssetAmount || '0')}
+                                min={0}
+                                onChange={(e) =>
+                                  setValue('clientAssetAmount', e.target.value)
+                                }
+                                step={Math.max(
+                                  1,
+                                  parseFloat(lspAssetAmount || '0') / 100
+                                )}
+                                type="range"
+                                value={
+                                  parseFloat(clientAssetAmount || '0') || 0
+                                }
+                              />
+                              <div
+                                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+                                style={{
+                                  left: `calc(${parseFloat(lspAssetAmount || '0') > 0 ? Math.max(0, Math.min(100, (parseFloat(clientAssetAmount || '0') / parseFloat(lspAssetAmount)) * 100)) : 0}% - 8px)`,
+                                }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-content-tertiary mt-2">
+                              <span>0 {selectedAsset.ticker}</span>
+                              <span>
+                                {parseFloat(lspAssetAmount || '0')}{' '}
+                                {selectedAsset.ticker}
+                              </span>
+                            </div>
+                          </div>
+                        )}
 
                         {clientAssetAmount &&
                           parseFloat(clientAssetAmount) > 0 && (

@@ -68,7 +68,6 @@ export const Component = () => {
   const [showLspConfirm, setShowLspConfirm] = useState(true)
   const [lspConfirmUrl, setLspConfirmUrl] = useState('')
   const [isLoadingLspConfirm, setIsLoadingLspConfirm] = useState(true)
-  const [lspConfirmError, setLspConfirmError] = useState<string | null>(null)
   const [isConnectingLsp, setIsConnectingLsp] = useState(false)
 
   const dispatch = useAppDispatch()
@@ -127,12 +126,8 @@ export const Component = () => {
         } else {
           throw new Error(t('orderChannel.step1.lspUrlMissing'))
         }
-      } catch (err) {
-        setLspConfirmError(
-          err instanceof Error
-            ? err.message
-            : t('orderChannel.step1.kaleidoLspFailed')
-        )
+      } catch (_err) {
+        setShowLspConfirm(false)
       } finally {
         setIsLoadingLspConfirm(false)
       }
@@ -371,7 +366,9 @@ export const Component = () => {
   )
 
   const onStepBack = useCallback(() => {
-    if (step === 3 || step === 4) {
+    if (step === 4) {
+      setStep(3)
+    } else if (step === 3) {
       setShowBackConfirmation(true)
     } else if (returnTo) {
       // Arrived from Market Maker — go back to the originating screen
@@ -460,70 +457,66 @@ export const Component = () => {
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className={`${getModalPositionClass()} inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
+            className={`${getModalPositionClass()} inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto`}
+            onClick={handleCancelLsp}
           >
-            <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-              <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-                <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
-                  <h3 className="text-xl font-bold text-white">
-                    {t('orderChannel.step1.alreadyConnected')}
-                  </h3>
-                </div>
+            <div
+              className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+                <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
+                <h3 className="text-xl font-bold text-white">
+                  {t('orderChannel.step1.alreadyConnected')}
+                </h3>
+              </div>
 
-                {isLoadingLspConfirm ? (
-                  <div className="flex items-center justify-center h-20 mb-4">
-                    <Spinner color="#15E99A" overlay={false} size={32} />
-                  </div>
-                ) : lspConfirmError ? (
-                  <p className="text-sm text-red-400 mb-4">{lspConfirmError}</p>
-                ) : (
-                  <div className="mb-9">
-                    <div className="flex items-center gap-3 mb-4 pt-5">
-                      <img
-                        alt="KaleidoSwap"
-                        className="w-8 h-8 flex-shrink-0"
-                        src={kaleidoswapPictogram}
-                      />
-                      <span className="text-sm font-medium text-white">
-                        KaleidoSwap LSP
-                      </span>
-                    </div>
-                    <div className="p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
-                      <p className="text-sm text-content-secondary break-all font-mono">
-                        {lspConfirmUrl}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <button
-                    className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-                    onClick={handleCancelLsp}
-                    type="button"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5" />
-                    Change
-                  </button>
-                  <button
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled={
-                      isLoadingLspConfirm ||
-                      !!lspConfirmError ||
-                      isConnectingLsp
-                    }
-                    onClick={handleConfirmLsp}
-                    type="button"
-                  >
-                    {t('orderChannel.step1.continueButton')}
-                    {isConnectingLsp ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ArrowRight className="w-4 h-4" />
-                    )}
-                  </button>
+              {isLoadingLspConfirm ? (
+                <div className="flex items-center justify-center h-20 mb-4">
+                  <Spinner color="#15E99A" overlay={false} size={32} />
                 </div>
+              ) : (
+                <div className="mb-9">
+                  <div className="flex items-center gap-3 mb-4 pt-5">
+                    <img
+                      alt="KaleidoSwap"
+                      className="w-8 h-8 flex-shrink-0"
+                      src={kaleidoswapPictogram}
+                    />
+                    <span className="text-sm font-medium text-white">
+                      KaleidoSwap LSP
+                    </span>
+                  </div>
+                  <div className="p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
+                    <p className="text-sm text-content-secondary break-all font-mono">
+                      {lspConfirmUrl}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <button
+                  className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                  onClick={handleCancelLsp}
+                  type="button"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                  Change
+                </button>
+                <button
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={isLoadingLspConfirm || isConnectingLsp}
+                  onClick={handleConfirmLsp}
+                  type="button"
+                >
+                  {t('orderChannel.step1.continueButton')}
+                  {isConnectingLsp ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
           </div>,

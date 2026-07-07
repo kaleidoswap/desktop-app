@@ -586,45 +586,6 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     }
   }
 
-  const NetworkOption = ({
-    type,
-    icon: Icon,
-    label,
-  }: {
-    type: 'on-chain' | 'lightning'
-    icon: any
-    label: string
-  }) => {
-    const isDisabled = type === 'lightning' && !assetId
-
-    return (
-      <button
-        className={`
-          flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5
-          rounded-xl transition-all duration-200 border-2
-          ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
-          ${
-            network === type
-              ? type === 'lightning'
-                ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400'
-                : 'bg-violet-500/15 border-violet-500 text-violet-400'
-              : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
-          }
-        `}
-        disabled={isDisabled}
-        onClick={() => !isDisabled && setNetwork(type)}
-      >
-        <Icon className="w-5 h-5" />
-        <span className="font-medium text-sm">{label}</span>
-        {isDisabled && (
-          <span className="text-xs text-content-tertiary">
-            {t('depositModal.step2.network.requiresAsset')}
-          </span>
-        )}
-      </button>
-    )
-  }
-
   const getStatusColor = () => {
     if (!invoiceStatus) return 'text-content-secondary'
     switch (invoiceStatus.status) {
@@ -677,17 +638,31 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
       <div className="space-y-3">
         {/* Network Selection - Only for RGB assets */}
         {!isBtc && (
-          <div className="flex gap-2">
-            <NetworkOption
-              icon={ChainIcon}
-              label={t('depositModal.step2.network.onchain')}
-              type="on-chain"
-            />
-            <NetworkOption
-              icon={Zap}
-              label={t('depositModal.step2.network.lightning')}
-              type="lightning"
-            />
+          <div className="flex gap-2 p-0.5">
+            {(['on-chain', 'lightning'] as const).map((type) => {
+              const isDisabled = type === 'lightning' && !assetId
+              const Icon = type === 'lightning' ? Zap : ChainIcon
+              const label = t(
+                `depositModal.step2.network.${type === 'on-chain' ? 'onchain' : 'lightning'}`
+              )
+              return (
+                <button
+                  className={`flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5 rounded-xl transition-colors duration-200 border-2 ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${network === type ? (type === 'lightning' ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400' : 'bg-violet-500/15 border-violet-500 text-violet-400') : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'}`}
+                  disabled={isDisabled}
+                  key={type}
+                  onClick={() => setNetwork(type)}
+                  type="button"
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium text-sm">{label}</span>
+                  {isDisabled && (
+                    <span className="text-xs text-content-tertiary">
+                      {t('depositModal.step2.network.requiresAsset')}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
 
@@ -921,7 +896,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   <div
                     className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                                 flex items-center justify-between group hover:border-primary/50
-                                transition-all duration-200"
+                                transition-colors duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                       <img
@@ -951,7 +926,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                   <div
                     className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                                 flex items-center justify-between group hover:border-primary/50
-                                transition-all duration-200"
+                                transition-colors duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                       <img
@@ -1195,7 +1170,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 <div
                   className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                               flex items-center justify-between group hover:border-primary/50
-                              transition-all duration-200"
+                              transition-colors duration-200"
                 >
                   <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                     <img

@@ -193,6 +193,9 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
           className={`flex items-center py-3 px-4 flex-1 min-w-0
             ${isCollapsed ? 'justify-center' : 'justify-start space-x-4'}
           `}
+          onClick={() => {
+            if (isActive && hasSubMenu) setIsSubMenuOpen(true)
+          }}
           to={item.to ?? '#'}
         >
           <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
@@ -1229,9 +1232,8 @@ export const Layout = (props: Props) => {
                   {/* Support button in header */}
                   <button
                     aria-label="Support"
-                    className="p-3 text-content-secondary hover:text-primary rounded-xl hover:bg-surface-overlay/50
-                             transition-all duration-300 transform hover:scale-110 active:scale-95
-                             ring-1 ring-divider/10 hover:ring-primary/30"
+                    className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-surface-overlay/80
+                             transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                     onClick={() => setShowSupportModal(true)}
                   >
                     <HelpCircle className="w-5 h-5" />
@@ -1270,9 +1272,8 @@ export const Layout = (props: Props) => {
                   {/* Notifications bell */}
                   <button
                     aria-label="Toggle notifications"
-                    className="relative p-3 text-content-secondary hover:text-primary rounded-xl hover:bg-surface-overlay/50
-                             transition-all duration-300 transform hover:scale-110 active:scale-95
-                             ring-1 ring-divider/10 hover:ring-primary/30"
+                    className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-surface-overlay/80
+                             transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -1361,6 +1362,8 @@ export const Layout = (props: Props) => {
               className="relative isolate flex-1 overflow-hidden p-6"
               id="content-area"
             >
+              {/* Portal target for modals — absolute inset-0 so modals cover only this area */}
+              <div className="absolute inset-0 z-50" id="modal-portal" />
               {props.children}
             </div>
           </main>
