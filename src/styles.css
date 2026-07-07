@@ -237,6 +237,13 @@ button:not([disabled]):active {
   transform: scale(0.98);
 }
 
+/* Modal portal target: when no modal is mounted the empty overlay must not
+   intercept clicks/scrolls on the content behind it. As soon as a modal is
+   portaled in, `:empty` no longer matches and pointer events return to normal. */
+#modal-portal:empty {
+  pointer-events: none;
+}
+
 /* Icon-only action buttons — override global scale with explicit center origin to prevent lateral drift */
 button.icon-action:not([disabled]):hover {
   transform: scale(1.08);
@@ -641,7 +648,7 @@ button.icon-action:not([disabled]):active {
   }
 }
 
-.zap-btn:hover .zap-icon {
+.close-channel-btn:hover .zap-icon {
   animation: zapPulse 0.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 

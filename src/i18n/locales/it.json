@@ -605,7 +605,7 @@
     "cooperativeClose": "Chiusura cooperativa",
     "forcedClose": "Chiusura forzata",
     "recommendedLabel": "Consigliata",
-    "forceClose": "Force Channel Closing",
+    "forceClose": "Chiudi canale forzatamente",
     "useCautionLabel": "Usare con cautela",
     "forceCloseConditionsTitle": "Usa la chiusura forzata solo se:",
     "forceCloseCondition1": "Il peer è offline o non risponde",
@@ -620,8 +620,8 @@
     "forceCloseReason3": "Può comportare commissioni più elevate",
     "closingMessage": "Chiusura canale in corso... Attendere prego",
     "processing": "Elaborazione...",
-    "forceCloseChannel": "Force Channel Closing",
-    "closeChannel": "Cooperate to Close Channel",
+    "forceCloseChannel": "Chiudi canale forzatamente",
+    "closeChannel": "Chiudi canale in modo cooperativo",
     "cancel": "Annulla",
     "successMessage": "Canale {{channelId}}... chiusura {{forceClose}} avviata con successo",
     "errorMessage": "Impossibile chiudere il canale: {{error}}"
@@ -3015,7 +3015,7 @@
       "totalExecutions": "Esecuzioni riuscite"
     },
     "orders": {
-      "activeTitle": "Planned Limit Orders",
+      "activeTitle": "Ordini Limite Pianificati",
       "historyTitle": "Ordini Eseguiti & Chiusi"
     },
     "empty": {

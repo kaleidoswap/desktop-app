@@ -126,7 +126,14 @@ export const Component = () => {
         } else {
           throw new Error(t('orderChannel.step1.lspUrlMissing'))
         }
-      } catch (_err) {
+      } catch (err) {
+        // Couldn't auto-select the default LSP — fall back to the manual flow
+        // (hide the confirm modal) but surface the reason instead of failing silently.
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : t('orderChannel.step1.kaleidoLspFailed')
+        )
         setShowLspConfirm(false)
       } finally {
         setIsLoadingLspConfirm(false)
