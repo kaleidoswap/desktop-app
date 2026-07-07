@@ -19,6 +19,7 @@ import { RootState } from '../../app/store'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import kaleidoswapPictogram from '../../assets/logo.svg'
 import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+import { ChannelWizardSteps } from '../../components/Channels/ChannelWizardSteps'
 import { Spinner } from '../../components/Spinner'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
@@ -534,6 +535,18 @@ export const Component = () => {
         <ChannelsNav />
       </div>
       <div className="py-4 px-4 w-full relative isolate min-h-fit animate-fade-in">
+        <div className="mx-auto mb-8 w-full max-w-2xl">
+          <ChannelWizardSteps
+            current={step}
+            steps={[
+              t('orderChannel.step1.title'),
+              t('orderChannel.step2.title'),
+              t('orderChannel.step3.title'),
+              t('orderChannel.step4.paymentTitle'),
+              t('createChannel.stepComplete'),
+            ]}
+          />
+        </div>
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
             <Spinner color="#15E99A" overlay={false} size={50} />

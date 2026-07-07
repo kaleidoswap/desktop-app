@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+import { ChannelWizardSteps } from '../../components/Channels/ChannelWizardSteps'
 
 import { CHANNELS_PATH } from '../../app/router/paths'
 import { FormError } from '../../components/FormError'
@@ -300,6 +301,16 @@ export const Component = () => {
           </div>
         ) : (
           <div>
+            <ChannelWizardSteps
+              className="mb-8"
+              current={step}
+              steps={[
+                t('createChannel.stepPeerConnection'),
+                t('createChannel.stepChannelSettings'),
+                t('createChannel.stepReviewConfirm'),
+                t('createChannel.stepComplete'),
+              ]}
+            />
             {step === 1 && (
               <Step1
                 formData={formData}
