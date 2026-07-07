@@ -14,7 +14,7 @@ import {
   ChannelDurationSelector,
 } from '../../components/ChannelConfiguration'
 import { FormError } from '../../components/FormError'
-import { AssetQuoteDisplay } from '../../components/Liquidity'
+import { AssetQuoteDisplay, LiquiditySlider } from '../../components/Liquidity'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   getQuoteFromAmount,
@@ -265,20 +265,6 @@ export const Step2: React.FC<Props> = ({
     setValue('capacitySat', clamped.toString())
     if (btcOut > clamped)
       setValue('clientBalanceSat', Math.floor(clamped / 2).toString())
-  }
-
-  const handleOutboundChange = (value: string) => {
-    const sanitized = value.replace(/[^0-9]/g, '')
-    if (sanitized === '') {
-      setValue('clientBalanceSat', '0')
-      return
-    }
-    const num = parseInt(sanitized, 10)
-    if (isNaN(num)) return
-    setValue(
-      'clientBalanceSat',
-      Math.min(maxOutbound, Math.max(minOutbound, num)).toString()
-    )
   }
 
   const parseAssetAmount = useCallback(
@@ -714,7 +700,7 @@ export const Step2: React.FC<Props> = ({
               )}
             </div>
 
-            {/* Outbound Balance */}
+            {/* Outbound Balance — how many sats are yours to send at open */}
             <div className="mb-12">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-content-secondary">
@@ -744,53 +730,27 @@ export const Step2: React.FC<Props> = ({
                   </div>
                 )}
               </div>
-              <div className="relative">
-                <input
-                  className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
-                  onChange={(e) => handleOutboundChange(e.target.value)}
-                  placeholder="0"
-                  type="text"
-                  value={btcOut > 0 ? formatNumber(btcOut) : ''}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
-                  SATS
-                </span>
-              </div>
-              {currentCapacity > 0 && (
-                <div className="mt-4 px-1">
-                  <div className="relative">
-                    <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
-                      <div
-                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
-                        style={{
-                          width: `${maxOutbound > minOutbound ? Math.max(0, Math.min(100, ((btcOut - minOutbound) / (maxOutbound - minOutbound)) * 100)) : 0}%`,
-                        }}
-                      />
-                    </div>
-                    <input
-                      className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                      max={maxOutbound}
-                      min={minOutbound}
-                      onChange={(e) =>
-                        setValue('clientBalanceSat', e.target.value)
-                      }
-                      step={currentCapacity >= 1000000 ? 10000 : 1000}
-                      type="range"
-                      value={btcOut}
-                    />
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                      style={{
-                        left: `calc(${maxOutbound > minOutbound ? Math.max(0, Math.min(100, ((btcOut - minOutbound) / (maxOutbound - minOutbound)) * 100)) : 0}% - 8px)`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-content-tertiary mt-3">
-                    <span>Min: {formatNumber(minOutbound)} sats</span>
-                    <span>Max: {formatNumber(maxOutbound)} sats</span>
-                  </div>
-                </div>
-              )}
+              <LiquiditySlider
+                inboundColor="bg-emerald-500"
+                inboundLabel={`${formatNumber(Math.max(0, currentCapacity - btcOut))} sats`}
+                inputFocusClass="focus:border-primary"
+                inputHint="Type the exact BTC amount you want available to send once the channel is live."
+                inputLabel="Available to send now"
+                inputTextClass="text-white"
+                max={maxOutbound}
+                maxLabel={`Max: ${formatNumber(maxOutbound)} sats`}
+                min={minOutbound}
+                minLabel={`Min: ${formatNumber(minOutbound)} sats`}
+                onChange={(val) =>
+                  setValue('clientBalanceSat', Math.round(val).toString())
+                }
+                outboundColor="bg-[#9365FF]"
+                outboundLabel={`${formatNumber(btcOut)} sats`}
+                step={currentCapacity >= 1000000 ? 10000 : 1000}
+                thumbBorderClass="border-[#9365FF]"
+                unit="sats"
+                value={btcOut}
+              />
             </div>
 
             {/* Add RGB Asset */}
@@ -1014,58 +974,36 @@ export const Step2: React.FC<Props> = ({
                             </div>
                           )}
 
-                        {/* Outbound Balance slider — synced with clientAssetAmount, shown only when lspAssetAmount > 0 */}
+                        {/* Outbound Balance — how much of the asset is yours to send at open (drives the quote) */}
                         {parseFloat(lspAssetAmount || '0') > 0 && (
-                          <div className="mt-4 px-1">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-xs text-content-secondary">
-                                Outbound Balance
-                              </span>
-                              <span className="text-xs font-medium text-white">
-                                {parseFloat(clientAssetAmount || '0') > 0
-                                  ? `${parseFloat(clientAssetAmount)} ${selectedAsset.ticker}`
-                                  : '0 ' + selectedAsset.ticker}
-                              </span>
-                            </div>
-                            <div className="relative">
-                              <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
-                                <div
-                                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
-                                  style={{
-                                    width: `${parseFloat(lspAssetAmount || '0') > 0 ? Math.max(0, Math.min(100, (parseFloat(clientAssetAmount || '0') / parseFloat(lspAssetAmount)) * 100)) : 0}%`,
-                                  }}
-                                />
-                              </div>
-                              <input
-                                className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                                max={parseFloat(lspAssetAmount || '0')}
-                                min={0}
-                                onChange={(e) =>
-                                  setValue('clientAssetAmount', e.target.value)
-                                }
-                                step={Math.max(
-                                  1,
-                                  parseFloat(lspAssetAmount || '0') / 100
-                                )}
-                                type="range"
-                                value={
-                                  parseFloat(clientAssetAmount || '0') || 0
-                                }
-                              />
-                              <div
-                                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                                style={{
-                                  left: `calc(${parseFloat(lspAssetAmount || '0') > 0 ? Math.max(0, Math.min(100, (parseFloat(clientAssetAmount || '0') / parseFloat(lspAssetAmount)) * 100)) : 0}% - 8px)`,
-                                }}
-                              />
-                            </div>
-                            <div className="flex justify-between text-xs text-content-tertiary mt-2">
-                              <span>0 {selectedAsset.ticker}</span>
-                              <span>
-                                {parseFloat(lspAssetAmount || '0')}{' '}
-                                {selectedAsset.ticker}
-                              </span>
-                            </div>
+                          <div className="mt-4">
+                            <LiquiditySlider
+                              inboundColor="bg-emerald-500"
+                              inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                              inputFocusClass="focus:border-primary"
+                              inputHint={`Type the exact ${selectedAsset.ticker} amount you want available to send immediately after funding.`}
+                              inputLabel="Available to send now"
+                              inputTextClass="text-white"
+                              max={parseFloat(lspAssetAmount) || 0}
+                              maxLabel={`Max: ${parseFloat(lspAssetAmount) || 0} ${selectedAsset.ticker}`}
+                              min={0}
+                              minLabel={`0 ${selectedAsset.ticker}`}
+                              onChange={(val) =>
+                                setValue('clientAssetAmount', val.toString())
+                              }
+                              outboundColor="bg-[#9365FF]"
+                              outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                              step={
+                                (parseFloat(lspAssetAmount) || 0) >= 1000
+                                  ? 10
+                                  : assetInfo.precision > 0
+                                    ? 1 / assetFactor
+                                    : 1
+                              }
+                              thumbBorderClass="border-[#9365FF]"
+                              unit={selectedAsset.ticker}
+                              value={parseFloat(clientAssetAmount) || 0}
+                            />
                           </div>
                         )}
 
