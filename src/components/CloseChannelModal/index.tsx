@@ -247,20 +247,9 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end space-x-4 mt-6">
+        <div className="mt-6">
           <button
-            className="px-4 py-2 rounded-lg bg-surface-high text-white hover:bg-surface-elevated active:bg-surface-elevated transition-colors"
-            disabled={isClosing}
-            onClick={(e) => {
-              e.stopPropagation()
-              resetAndClose()
-            }}
-            type="button"
-          >
-            {t('closeChannelModal.cancel')}
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg flex items-center justify-center ${
+            className={`w-full px-4 py-2 rounded-lg flex items-center justify-center ${
               isClosing ? 'opacity-70 cursor-not-allowed' : ''
             } ${
               suggestForceClose

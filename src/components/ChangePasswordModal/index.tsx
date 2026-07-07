@@ -328,18 +328,9 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           <p className="text-sm text-status-danger leading-relaxed">{error}</p>
         )}
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="pt-2">
           <button
-            className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoading}
-            onClick={handleClose}
-            type="button"
-          >
-            <X className="w-4 h-4" />
-            {t('common.cancel', 'Cancel')}
-          </button>
-          <button
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-md font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-md font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               isLoading || !currentPassword || !newPassword || !confirmPassword
             }

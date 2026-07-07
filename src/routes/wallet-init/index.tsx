@@ -43,7 +43,6 @@ import {
   Button,
   Card,
   Alert,
-  FormField,
   Input,
   AdvancedSettings,
   NetworkSettings,
@@ -1084,26 +1083,10 @@ export const Component = () => {
         </div>
         {/* Right content panel */}
         <div className="flex flex-col flex-1 overflow-hidden bg-surface-raised">
-          {onBack && (
-            <div className="flex items-center px-6 py-4 border-b border-border-subtle shrink-0">
-              <button
-                className="flex items-center gap-2 text-sm text-content-secondary hover:text-content-primary transition-colors"
-                onClick={onBack}
-                type="button"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-            </div>
-          )}
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="max-w-2xl mx-auto px-6 py-8">
-              {/* Mobile header */}
-              <div className="md:hidden mb-6">
-                <h1 className="text-2xl font-bold text-content-primary mb-1">
-                  {title}
-                </h1>
-                <p className="text-sm text-content-secondary">{subtitle}</p>
+            <div className="max-w-2xl mx-auto px-6 py-6">
+              <div className="text-center mt-4 mb-8">
+                <h3 className="text-3xl font-bold text-white">{title}</h3>
               </div>
               {content}
             </div>
@@ -1123,14 +1106,20 @@ export const Component = () => {
               Before you begin using KaleidoSwap, please review and accept our
               Terms of Service and Privacy Policy.
             </p>
-            <Button
-              className="w-full max-w-sm"
-              onClick={() => setShowTermsModal(true)}
-            >
-              Review Terms & Privacy Policy
-            </Button>
-          </div>,
-          () => navigate(WALLET_SETUP_PATH)
+            <div className="flex justify-between w-full max-w-sm mt-8">
+              <button
+                className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                onClick={() => navigate(WALLET_SETUP_PATH)}
+                type="button"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+              <Button onClick={() => setShowTermsModal(true)}>
+                Review Terms & Privacy Policy
+              </Button>
+            </div>
+          </div>
         )
 
       case 'setup':
@@ -1142,10 +1131,10 @@ export const Component = () => {
             <NodeSetupForm
               errors={errors}
               form={nodeSetupForm}
+              onBack={() => navigate(WALLET_SETUP_PATH)}
               onSubmit={handleNodeSetup}
             />
-          </div>,
-          () => navigate(WALLET_SETUP_PATH)
+          </div>
         )
 
       case 'password':
@@ -1208,11 +1197,11 @@ export const Component = () => {
               form={passwordForm}
               isLoading={isInitializing}
               isPasswordVisible={isPasswordVisible}
+              onBack={() => handleBackNavigation()}
               onSubmit={handlePasswordSetup}
               setIsPasswordVisible={setIsPasswordVisible}
             />
-          </div>,
-          () => handleBackNavigation()
+          </div>
         )
 
       case 'mnemonic':
@@ -1223,12 +1212,12 @@ export const Component = () => {
           <div className="w-full">
             <MnemonicDisplay
               mnemonic={mnemonic}
+              onBack={() => handleBackNavigation()}
               onCopy={copyMnemonicToClipboard}
               onNext={() => handleStepChange('verify')}
               onSkip={handleSkipMnemonicBackup}
             />
-          </div>,
-          () => handleBackNavigation()
+          </div>
         )
 
       case 'verify':
@@ -1240,10 +1229,10 @@ export const Component = () => {
             <MnemonicVerifyForm
               errors={errors}
               form={mnemonicForm}
+              onBack={() => handleBackNavigation()}
               onSubmit={handleMnemonicVerify}
             />
-          </div>,
-          () => handleBackNavigation()
+          </div>
         )
 
       case 'unlock':
@@ -1286,8 +1275,7 @@ export const Component = () => {
                 }
               />
             </div>
-          ),
-          isNodeError ? () => handleStepChange('verify') : undefined
+          )
         )
 
       default:
@@ -1665,10 +1653,11 @@ const generateRandomName = () => {
 interface NodeSetupFormProps {
   form: UseFormReturn<NodeSetupFields>
   onSubmit: SubmitHandler<NodeSetupFields>
+  onBack: () => void
   errors: string[]
 }
 
-const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
+const NodeSetupForm = ({ form, onSubmit, onBack, errors }: NodeSetupFormProps) => {
   const { t } = useTranslation()
   const selectedNetwork = form.watch('network')
 
@@ -1684,12 +1673,7 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
 
   return (
     <div className="w-full">
-      <p className="text-content-secondary mb-6 leading-relaxed">
-        {t('walletInit.setupStep.description')}
-      </p>
-
-      <Card className="p-6 bg-surface-elevated/40 border border-border-subtle/20">
-        <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+      <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           {errors.length > 0 && (
             <Alert
               icon={<AlertCircle className="w-4 h-4" />}
@@ -1707,13 +1691,12 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
           )}
 
           <div className="space-y-4">
-            <FormField
-              description={t('walletInit.setupStep.accountNameDescription')}
-              error={form.formState.errors.name?.message}
-              htmlFor="name"
-              label={t('walletInit.setupStep.accountNameLabel')}
-            >
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-content-secondary" htmlFor="name">
+                {t('walletInit.setupStep.accountNameLabel')}
+              </label>
               <Input
+                className="!py-2.5 text-sm"
                 id="name"
                 placeholder={t('walletInit.setupStep.accountNamePlaceholder')}
                 {...form.register('name', {
@@ -1735,7 +1718,11 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
                   </button>
                 }
               />
-            </FormField>
+              {form.formState.errors.name && (
+                <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+              )}
+              <p className="text-xs text-content-tertiary">{t('walletInit.setupStep.accountNameDescription')}</p>
+            </div>
 
             <NetworkSelector
               className="mb-2"
@@ -1747,35 +1734,44 @@ const NodeSetupForm = ({ form, onSubmit, errors }: NodeSetupFormProps) => {
           <AdvancedSettings>
             <NetworkSettings form={form} />
 
-            <FormField
-              description={t('walletInit.setupStep.bearerTokenDescription')}
-              error={form.formState.errors.bearer_token?.message}
-              htmlFor="bearer_token"
-              label={t('walletInit.setupStep.bearerTokenLabel')}
-            >
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-content-secondary" htmlFor="bearer_token">
+                {t('walletInit.setupStep.bearerTokenLabel')}
+              </label>
               <Input
+                className="!py-2.5 text-sm"
                 id="bearer_token"
                 placeholder={t('walletInit.setupStep.bearerTokenPlaceholder')}
                 {...form.register('bearer_token')}
                 error={!!form.formState.errors.bearer_token}
               />
-            </FormField>
+              {form.formState.errors.bearer_token && (
+                <p className="text-sm text-red-500">{form.formState.errors.bearer_token.message}</p>
+              )}
+              <p className="text-xs text-content-tertiary">{t('walletInit.setupStep.bearerTokenDescription')}</p>
+            </div>
           </AdvancedSettings>
 
-          <div className="pt-3">
+          <div className="flex justify-between items-center pt-6">
+            <button
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+              onClick={onBack}
+              type="button"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back
+            </button>
             <Button
-              className="w-full"
               icon={<ArrowRight className="w-4 h-4" />}
               iconPosition="right"
               size="lg"
               type="submit"
               variant="primary"
             >
-              {t('walletInit.setupStep.continueButton')}
+              Set Password
             </Button>
           </div>
-        </form>
-      </Card>
+      </form>
     </div>
   )
 }

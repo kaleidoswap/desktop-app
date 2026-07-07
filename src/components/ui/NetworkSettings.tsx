@@ -1,7 +1,6 @@
 import { UseFormReturn } from 'react-hook-form'
 
 import { Input } from './Input'
-import { FormField } from './SetupLayout'
 
 interface NetworkSettingsProps {
   form: UseFormReturn<any>
@@ -15,19 +14,19 @@ export const NetworkSettings = ({
   form,
   className = '',
 }: NetworkSettingsProps) => {
-  // Helper function to safely convert error messages to strings
   const getErrorMessage = (error: any): string | undefined => {
     return error?.message ? String(error.message) : undefined
   }
 
+  const fieldCls = 'space-y-1.5'
+  const labelCls = 'block text-sm font-medium text-content-secondary'
+
   return (
     <div className={`space-y-4 ${className}`}>
-      <FormField
-        error={getErrorMessage(form.formState.errors.rpc_connection_url)}
-        htmlFor="rpc_connection_url"
-        label="RPC Connection URL"
-      >
+      <div className={fieldCls}>
+        <label className={labelCls} htmlFor="rpc_connection_url">RPC Connection URL</label>
         <Input
+          className="!py-2.5 text-sm"
           id="rpc_connection_url"
           placeholder="Enter RPC connection URL"
           {...form.register('rpc_connection_url', {
@@ -35,14 +34,15 @@ export const NetworkSettings = ({
           })}
           error={!!form.formState.errors.rpc_connection_url}
         />
-      </FormField>
+        {getErrorMessage(form.formState.errors.rpc_connection_url) && (
+          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.rpc_connection_url)}</p>
+        )}
+      </div>
 
-      <FormField
-        error={getErrorMessage(form.formState.errors.indexer_url)}
-        htmlFor="indexer_url"
-        label="Indexer URL"
-      >
+      <div className={fieldCls}>
+        <label className={labelCls} htmlFor="indexer_url">Indexer URL</label>
         <Input
+          className="!py-2.5 text-sm"
           id="indexer_url"
           placeholder="Enter indexer URL"
           {...form.register('indexer_url', {
@@ -50,14 +50,15 @@ export const NetworkSettings = ({
           })}
           error={!!form.formState.errors.indexer_url}
         />
-      </FormField>
+        {getErrorMessage(form.formState.errors.indexer_url) && (
+          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.indexer_url)}</p>
+        )}
+      </div>
 
-      <FormField
-        error={getErrorMessage(form.formState.errors.proxy_endpoint)}
-        htmlFor="proxy_endpoint"
-        label="Proxy Endpoint"
-      >
+      <div className={fieldCls}>
+        <label className={labelCls} htmlFor="proxy_endpoint">Proxy Endpoint</label>
         <Input
+          className="!py-2.5 text-sm"
           id="proxy_endpoint"
           placeholder="Enter proxy endpoint"
           {...form.register('proxy_endpoint', {
@@ -65,15 +66,16 @@ export const NetworkSettings = ({
           })}
           error={!!form.formState.errors.proxy_endpoint}
         />
-      </FormField>
+        {getErrorMessage(form.formState.errors.proxy_endpoint) && (
+          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.proxy_endpoint)}</p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField
-          error={getErrorMessage(form.formState.errors.daemon_listening_port)}
-          htmlFor="daemon_listening_port"
-          label="Daemon Listening Port"
-        >
+        <div className={fieldCls}>
+          <label className={labelCls} htmlFor="daemon_listening_port">Daemon Listening Port</label>
           <Input
+            className="!py-2.5 text-sm"
             id="daemon_listening_port"
             placeholder="Enter daemon port"
             {...form.register('daemon_listening_port', {
@@ -81,14 +83,15 @@ export const NetworkSettings = ({
             })}
             error={!!form.formState.errors.daemon_listening_port}
           />
-        </FormField>
+          {getErrorMessage(form.formState.errors.daemon_listening_port) && (
+            <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.daemon_listening_port)}</p>
+          )}
+        </div>
 
-        <FormField
-          error={getErrorMessage(form.formState.errors.ldk_peer_listening_port)}
-          htmlFor="ldk_peer_listening_port"
-          label="LDK Peer Listening Port"
-        >
+        <div className={fieldCls}>
+          <label className={labelCls} htmlFor="ldk_peer_listening_port">LDK Peer Listening Port</label>
           <Input
+            className="!py-2.5 text-sm"
             id="ldk_peer_listening_port"
             placeholder="Enter LDK peer port"
             {...form.register('ldk_peer_listening_port', {
@@ -96,7 +99,10 @@ export const NetworkSettings = ({
             })}
             error={!!form.formState.errors.ldk_peer_listening_port}
           />
-        </FormField>
+          {getErrorMessage(form.formState.errors.ldk_peer_listening_port) && (
+            <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.ldk_peer_listening_port)}</p>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -114,7 +114,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
   return (
     <div className="flex flex-col items-center justify-center py-8 space-y-6">
       <div
-        className={`w-20 h-20 ${current.bgColor} rounded-full flex items-center justify-center ${status === 'success' ? 'animate-pulse' : ''}`}
+        className={`w-20 h-20 ${current.bgColor} rounded-full flex items-center justify-center animate-pulse`}
       >
         {current.icon}
       </div>

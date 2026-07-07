@@ -384,6 +384,28 @@ button:not([disabled]):active {
   animation: shimmer 2s infinite;
 }
 
+/* Purple ripple expand-and-fade */
+@keyframes ripplePurple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.animate-ripple-1 {
+  animation: ripplePurple 2.4s ease-out infinite;
+}
+.animate-ripple-2 {
+  animation: ripplePurple 2.4s ease-out 0.8s infinite;
+}
+.animate-ripple-3 {
+  animation: ripplePurple 2.4s ease-out 1.6s infinite;
+}
+
 /* Active indicator pulse */
 .active-indicator {
   position: relative;
