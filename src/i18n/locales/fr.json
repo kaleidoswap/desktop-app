@@ -897,7 +897,9 @@
       "assetExceedsMax": "Le montant dépasse la limite maximale de {{amount}} {{ticker}}. Saisissez un montant valide.",
       "adjustmentsMade": "Certaines valeurs ont été ajustées pour respecter les exigences.",
       "formError": "Erreur dans les données du formulaire. Vérifiez vos saisies.",
-      "unexpectedError": "Une erreur inattendue est survenue. Veuillez réessayer."
+      "unexpectedError": "Une erreur inattendue est survenue. Veuillez réessayer.",
+      "noAsset": "Aucun actif",
+      "moreAssets": "+{{count}} de plus"
     },
     "step3": {
       "title": "Finaliser le Paiement",

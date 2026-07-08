@@ -897,7 +897,9 @@
       "assetExceedsMax": "金額が最大制限{{amount}} {{ticker}}を超えています。続行する前に有効な金額を入力してください。",
       "adjustmentsMade": "要件を満たすためにいくつかの値が調整されました。",
       "formError": "フォームデータにエラーがありました。入力を確認してください。",
-      "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。"
+      "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。",
+      "noAsset": "アセットなし",
+      "moreAssets": "他{{count}}件"
     },
     "step3": {
       "title": "支払いを完了",

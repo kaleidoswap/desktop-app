@@ -3158,14 +3158,24 @@ export const Component = () => {
     navigate(CREATE_NEW_CHANNEL_PATH)
   }, [navigate])
 
-  // Determine which asset (if any) to preselect on the Buy Channel page
-  const resolvePreselectedAssetId = useCallback((): string | undefined => {
-    if (missingChannelAsset) {
-      return missingChannelAsset.assetId
-    }
-
+  // Determine which asset (if any) to preselect on the Buy Channel page, along
+  // with the amount the user intended to trade. The amount becomes the client
+  // (user-side) balance of the asset in the new channel.
+  const resolvePreselectedAsset = useCallback((): {
+    assetId?: string
+    amount?: number
+  } => {
     const toAsset = form.getValues().toAsset
     const fromAsset = form.getValues().fromAsset
+    const toAmount = parseFloat(form.getValues().to || '0') || undefined
+    const fromAmount = parseFloat(form.getValues().from || '0') || undefined
+
+    if (missingChannelAsset) {
+      return {
+        amount: missingChannelAsset.isFromAsset ? fromAmount : toAmount,
+        assetId: missingChannelAsset.assetId,
+      }
+    }
 
     const channelAssetIds = new Set(
       channels
@@ -3179,33 +3189,44 @@ export const Component = () => {
       toAsset !== 'BTC' &&
       !channelAssetIds.has(selectedPair?.quote_asset_id || '')
     ) {
-      return selectedPair?.quote_asset_id || undefined
+      return {
+        amount: toAmount,
+        assetId: selectedPair?.quote_asset_id || undefined,
+      }
     }
 
     if (
       fromAsset !== 'BTC' &&
       !channelAssetIds.has(selectedPair?.base_asset_id || '')
     ) {
-      return selectedPair?.base_asset_id || undefined
+      return {
+        amount: fromAmount,
+        assetId: selectedPair?.base_asset_id || undefined,
+      }
     }
 
     if (toAsset && toAsset !== 'BTC') {
-      return selectedPair?.quote_asset_id || undefined
+      return {
+        amount: toAmount,
+        assetId: selectedPair?.quote_asset_id || undefined,
+      }
     }
 
-    return undefined
+    return {}
   }, [missingChannelAsset, form, channels, selectedPair])
 
   // Navigate to the full Buy Channel page with the asset preselected,
   // remembering where to return after the order completes / is cancelled.
   const goToBuyChannel = useCallback(() => {
+    const { assetId, amount } = resolvePreselectedAsset()
     navigate(ORDER_CHANNEL_PATH, {
       state: {
-        preselectedAssetId: resolvePreselectedAssetId(),
+        preselectedAssetAmount: amount,
+        preselectedAssetId: assetId,
         returnTo: location.pathname,
       },
     })
-  }, [navigate, resolvePreselectedAssetId, location.pathname])
+  }, [navigate, resolvePreselectedAsset, location.pathname])
 
   const handleBuyChannelAction = useCallback(() => {
     goToBuyChannel()

@@ -1558,7 +1558,9 @@
       "assetExceedsMax": "La cantidad excede el límite máximo de {{amount}} {{ticker}}. Por favor introduce una cantidad válida antes de continuar.",
       "adjustmentsMade": "Algunos valores fueron ajustados para cumplir con los requisitos.",
       "formError": "Hubo un error con los datos del formulario. Por favor verifica tus entradas.",
-      "unexpectedError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo."
+      "unexpectedError": "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+      "noAsset": "Sin activo",
+      "moreAssets": "+{{count}} más"
     },
     "step3": {
       "title": "Completar Pago",

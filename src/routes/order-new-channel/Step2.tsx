@@ -40,6 +40,7 @@ interface Props {
   onNext: (data: TChannelRequestForm, asset?: AssetInfo | null) => void
   onBack: () => void
   preselectedAssetId?: string
+  preselectedAssetAmount?: number
 }
 
 const FormFieldsSchema = z.object({
@@ -85,10 +86,51 @@ const BuyAssetDropdownItem = ({
   )
 }
 
+// How many assets to surface as one-click chips before collapsing the rest
+// into a compact "more" dropdown.
+const MAX_VISIBLE_ASSET_CHIPS = 4
+
+const assetChipClass = (active: boolean) =>
+  `inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+    active
+      ? 'bg-primary/10 border-primary text-primary'
+      : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+  }`
+
+const AssetChip = ({
+  asset,
+  isSelected,
+  onSelect,
+}: {
+  asset: AssetInfo
+  isSelected: boolean
+  onSelect: () => void
+}) => {
+  const [iconSrc, setIconSrc] = useAssetIcon(asset.ticker, rgbIcon)
+  return (
+    <button
+      className={assetChipClass(isSelected)}
+      onClick={onSelect}
+      type="button"
+    >
+      <span className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img
+          alt={asset.ticker}
+          className="w-full h-full object-cover rounded-full"
+          onError={() => setIconSrc(rgbIcon)}
+          src={iconSrc}
+        />
+      </span>
+      {asset.ticker}
+    </button>
+  )
+}
+
 export const Step2: React.FC<Props> = ({
   onNext,
   onBack,
   preselectedAssetId,
+  preselectedAssetAmount,
 }) => {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
@@ -233,17 +275,27 @@ export const Step2: React.FC<Props> = ({
     fetchData()
   }, [getInfoRequest])
 
-  // Preselect and lock the asset when arriving from Market Maker
+  // Preselect the asset (and prefill the amount the user intended to buy) when
+  // arriving from Market Maker. Applied once so the fields stay editable.
+  const preselectAppliedRef = useRef(false)
   useEffect(() => {
+    if (preselectAppliedRef.current) return
     if (!preselectedAssetId) return
     const asset = assetMap[preselectedAssetId]
     if (!asset) return
+    preselectAppliedRef.current = true
     setSelectedAsset(asset)
     setAddAsset(true)
     setValue('assetId', asset.asset_id)
-  }, [preselectedAssetId, assetMap, setValue])
-
-  const isAssetLocked = !!preselectedAssetId && !!assetMap[preselectedAssetId]
+    if (preselectedAssetAmount && preselectedAssetAmount > 0) {
+      // The intended amount is what the user is buying — i.e. their client-side
+      // balance. Seed the total ("Amount") to match so the client slider is
+      // available and the quote is fetched for that amount.
+      const amount = String(preselectedAssetAmount)
+      setValue('lspAssetAmount', amount)
+      setValue('clientAssetAmount', amount)
+    }
+  }, [preselectedAssetId, preselectedAssetAmount, assetMap, setValue])
 
   const formatNumber = (n: number) => n.toLocaleString('en-US')
 
@@ -266,6 +318,35 @@ export const Step2: React.FC<Props> = ({
     if (btcOut > clamped)
       setValue('clientBalanceSat', Math.floor(clamped / 2).toString())
   }
+
+  // Select an asset (or clear it for a BTC-only channel) and reset the amounts.
+  const selectAsset = (asset: AssetInfo | null) => {
+    setSelectedAsset(asset)
+    setAddAsset(!!asset)
+    setValue('assetId', asset?.asset_id ?? '')
+    setValue('lspAssetAmount', '')
+    setValue('clientAssetAmount', '0')
+    setIsAssetDropdownOpen(false)
+  }
+
+  // Show the first few assets as quick-pick chips; collapse the rest into a
+  // compact dropdown. The current selection is always promoted into the chips
+  // so it stays visible even when it lives in the overflow group.
+  const assetList = Object.values(assetMap)
+  let visibleAssets = assetList.slice(0, MAX_VISIBLE_ASSET_CHIPS)
+  if (
+    selectedAsset &&
+    assetList.some((a) => a.asset_id === selectedAsset.asset_id) &&
+    !visibleAssets.some((a) => a.asset_id === selectedAsset.asset_id)
+  ) {
+    visibleAssets = [
+      selectedAsset,
+      ...assetList.filter((a) => a.asset_id !== selectedAsset.asset_id),
+    ].slice(0, MAX_VISIBLE_ASSET_CHIPS)
+  }
+  const overflowAssets = assetList.filter(
+    (a) => !visibleAssets.some((v) => v.asset_id === a.asset_id)
+  )
 
   const parseAssetAmount = useCallback(
     (amount: string, id: string): number => {
@@ -759,86 +840,69 @@ export const Step2: React.FC<Props> = ({
                 Add RGB Asset
               </h5>
 
-              <div className="relative" ref={assetDropdownRef}>
+              <div
+                className="flex flex-wrap items-center gap-2"
+                ref={assetDropdownRef}
+              >
+                {/* BTC-only (no RGB asset) */}
                 <button
-                  className={`w-full flex items-center gap-2 py-2 pl-3 pr-3 text-sm bg-surface-overlay/30 rounded-lg border text-white transition-all duration-200 focus:outline-none ${
-                    isAssetLocked
-                      ? 'cursor-default opacity-90 border-border-default/50'
-                      : isAssetDropdownOpen
-                        ? 'border-primary/50 ring-1 ring-primary/20'
-                        : 'border-border-default/50'
-                  }`}
-                  disabled={isAssetLocked}
-                  onClick={() =>
-                    !isAssetLocked &&
-                    setIsAssetDropdownOpen(!isAssetDropdownOpen)
-                  }
+                  className={assetChipClass(!selectedAsset)}
+                  onClick={() => selectAsset(null)}
                   type="button"
                 >
-                  <span className="flex-1 text-left">
-                    {selectedAsset ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          <img
-                            alt={selectedAsset.ticker}
-                            className="w-full h-full object-cover rounded-full"
-                            onError={() => setSelectedAssetIcon(rgbIcon)}
-                            src={selectedAssetIcon}
-                          />
-                        </span>
-                        <span className="font-medium">
-                          {selectedAsset.ticker}
-                        </span>
-                        <span className="text-content-secondary text-xs">
-                          {selectedAsset.name}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-content-secondary">No Asset</span>
-                    )}
-                  </span>
-                  {!isAssetLocked && (
-                    <ChevronDown
-                      className={`w-4 h-4 text-content-secondary flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
-                    />
-                  )}
+                  {t('orderChannel.step2.noAsset')}
                 </button>
 
-                {isAssetDropdownOpen && (
-                  <div className="absolute z-50 mt-1 w-full rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
-                    <div className="max-h-[220px] overflow-y-auto">
-                      <button
-                        className={`w-full px-3 py-2 text-left text-sm transition-colors duration-150 border-b border-border-default/50 ${!selectedAsset ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
-                        onClick={() => {
-                          setSelectedAsset(null)
-                          setAddAsset(false)
-                          setValue('assetId', '')
-                          setValue('lspAssetAmount', '')
-                          setValue('clientAssetAmount', '0')
-                          setIsAssetDropdownOpen(false)
-                        }}
-                        type="button"
-                      >
-                        No Asset
-                      </button>
-                      {Object.values(assetMap).map((asset) => (
-                        <BuyAssetDropdownItem
-                          asset={asset}
-                          isSelected={
-                            selectedAsset?.asset_id === asset.asset_id
-                          }
-                          key={asset.asset_id}
-                          onSelect={() => {
-                            setSelectedAsset(asset)
-                            setAddAsset(true)
-                            setValue('assetId', asset.asset_id)
-                            setValue('lspAssetAmount', '')
-                            setValue('clientAssetAmount', '0')
-                            setIsAssetDropdownOpen(false)
-                          }}
-                        />
-                      ))}
-                    </div>
+                {/* First N assets as one-click chips */}
+                {visibleAssets.map((asset) => (
+                  <AssetChip
+                    asset={asset}
+                    isSelected={selectedAsset?.asset_id === asset.asset_id}
+                    key={asset.asset_id}
+                    onSelect={() => selectAsset(asset)}
+                  />
+                ))}
+
+                {/* Remaining assets collapsed into a compact dropdown */}
+                {overflowAssets.length > 0 && (
+                  <div className="relative">
+                    <button
+                      className={assetChipClass(
+                        isAssetDropdownOpen ||
+                          overflowAssets.some(
+                            (a) => a.asset_id === selectedAsset?.asset_id
+                          )
+                      )}
+                      onClick={() =>
+                        setIsAssetDropdownOpen(!isAssetDropdownOpen)
+                      }
+                      type="button"
+                    >
+                      {t('orderChannel.step2.moreAssets', {
+                        count: overflowAssets.length,
+                        defaultValue: '+{{count}} more',
+                      })}
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+
+                    {isAssetDropdownOpen && (
+                      <div className="absolute z-50 mt-1 min-w-[220px] rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
+                        <div className="max-h-[220px] overflow-y-auto">
+                          {overflowAssets.map((asset) => (
+                            <BuyAssetDropdownItem
+                              asset={asset}
+                              isSelected={
+                                selectedAsset?.asset_id === asset.asset_id
+                              }
+                              key={asset.asset_id}
+                              onSelect={() => selectAsset(asset)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -853,6 +917,7 @@ export const Step2: React.FC<Props> = ({
                             <img
                               alt={selectedAsset.ticker}
                               className="w-5 h-5"
+                              onError={() => setSelectedAssetIcon(rgbIcon)}
                               src={selectedAssetIcon}
                             />
                           </div>

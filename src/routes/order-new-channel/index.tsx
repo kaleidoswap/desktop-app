@@ -51,9 +51,11 @@ export const Component = () => {
   const location = useLocation()
   const navState = (location.state ?? {}) as {
     preselectedAssetId?: string
+    preselectedAssetAmount?: number
     returnTo?: string
   }
   const preselectedAssetId = navState.preselectedAssetId
+  const preselectedAssetAmount = navState.preselectedAssetAmount
   const returnTo = navState.returnTo
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [loading, setLoading] = useState(false)
@@ -122,10 +124,31 @@ export const Component = () => {
         await new Promise((resolve) => setTimeout(resolve, 100))
 
         const info = await getInfoRequest().unwrap()
-        if (info.lsp_connection_url) {
-          setLspConfirmUrl(info.lsp_connection_url)
-        } else {
+        if (!info.lsp_connection_url) {
           throw new Error(t('orderChannel.step1.lspUrlMissing'))
+        }
+        setLspConfirmUrl(info.lsp_connection_url)
+
+        // If the channel LSP is the same node the user is already trading with
+        // (maker == LSP) and we're already connected to it, skip the confirm
+        // step and jump straight to channel configuration.
+        const lspIsMaker =
+          !!currentAccount.default_maker_url &&
+          currentAccount.default_maker_url === defaultLspUrl
+        if (lspIsMaker) {
+          try {
+            const lspPubkey = info.lsp_connection_url.split('@')[0]
+            const peersResp = await listPeersRequest().unwrap()
+            const alreadyConnected = peersResp?.peers?.some(
+              (p: any) => p.pubkey === lspPubkey
+            )
+            if (alreadyConnected) {
+              setShowLspConfirm(false)
+              setStep(2)
+            }
+          } catch {
+            // Peer check failed — keep the manual confirm step as a fallback.
+          }
         }
       } catch (err) {
         // Couldn't auto-select the default LSP — fall back to the manual flow
@@ -559,6 +582,7 @@ export const Component = () => {
           <Step2
             onBack={onStepBack}
             onNext={onSubmitStep2}
+            preselectedAssetAmount={preselectedAssetAmount}
             preselectedAssetId={preselectedAssetId}
           />
         )}
