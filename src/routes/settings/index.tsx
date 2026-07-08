@@ -162,7 +162,10 @@ export const Component: React.FC = () => {
         fiatCurrency,
         indexerUrl: nodeSettings.indexer_url || '',
         language: language || 'en',
-        lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
+        lspUrl:
+          nodeSettings.default_lsp_url ||
+          nodeSettings.default_maker_url ||
+          'http://localhost:8000',
         makerUrls: Array.isArray(nodeSettings.maker_urls)
           ? nodeSettings.maker_urls
           : [],
@@ -282,7 +285,10 @@ export const Component: React.FC = () => {
       fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
-      lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
+      lspUrl:
+        nodeSettings.default_lsp_url ||
+        nodeSettings.default_maker_url ||
+        'http://localhost:8000',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
         : [],
@@ -402,12 +408,20 @@ export const Component: React.FC = () => {
       // We just update the settings here - the market maker page will detect the change
       // and reconnect automatically if needed
 
-      // Check if node connection settings were changed
+      // Check if node *connection* settings actually changed. Maker/LSP URLs
+      // don't require a node restart, so they must never trip this check.
+      // Compare against the same normalized baselines used to seed the form —
+      // otherwise a null/undefined stored field (shown as '') or a node_url
+      // that differs from the settings-slice value falsely reports a change
+      // and prompts a needless restart on maker/LSP-only saves.
       const nodeSettingsChanged =
-        data.nodeConnectionString !== nodeConnectionString ||
-        data.rpcConnectionUrl !== nodeSettings.rpc_connection_url ||
-        data.indexerUrl !== nodeSettings.indexer_url ||
-        data.proxyEndpoint !== nodeSettings.proxy_endpoint
+        data.nodeConnectionString !==
+          (nodeSettings.node_url ||
+            nodeConnectionString ||
+            'http://localhost:3001') ||
+        data.rpcConnectionUrl !== (nodeSettings.rpc_connection_url || '') ||
+        data.indexerUrl !== (nodeSettings.indexer_url || '') ||
+        data.proxyEndpoint !== (nodeSettings.proxy_endpoint || '')
 
       if (nodeSettingsChanged) {
         // Show restart confirmation modal instead of just a toast
@@ -503,7 +517,10 @@ export const Component: React.FC = () => {
       fiatCurrency,
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
-      lspUrl: nodeSettings.default_lsp_url || 'http://localhost:8000',
+      lspUrl:
+        nodeSettings.default_lsp_url ||
+        nodeSettings.default_maker_url ||
+        'http://localhost:8000',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
         : [],
@@ -732,34 +749,15 @@ export const Component: React.FC = () => {
                     </div>
                   )}
                 />
-
-                {/* LSP URL */}
-                <Controller
-                  control={control}
-                  name="lspUrl"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.lspUrl')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder={t('settings.lspUrlPlaceholder')}
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
               </div>
             </section>
 
-            {/* Maker Settings */}
+            {/* Maker & LSP Settings */}
             <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
                 <Store className="w-5 h-5 text-primary flex-shrink-0" />
                 <h2 className="text-base font-bold text-white">
-                  {t('settings.makerSettings')}
+                  {t('settings.makerLspSettings', 'Maker & LSP Settings')}
                 </h2>
               </div>
               <div className="p-5 space-y-4">
@@ -844,6 +842,48 @@ export const Component: React.FC = () => {
                     )}
                   />
                 </div>
+
+                {/* LSP URL — usually matches the default Maker URL */}
+                <Controller
+                  control={control}
+                  name="lspUrl"
+                  render={({ field }) => (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="block text-sm font-medium text-content-secondary">
+                          {t('settings.lspUrl')}
+                        </label>
+                        {watch('defaultMakerUrl') &&
+                          field.value !== watch('defaultMakerUrl') && (
+                            <button
+                              className="text-xs font-medium text-primary hover:underline"
+                              onClick={() =>
+                                field.onChange(watch('defaultMakerUrl'))
+                              }
+                              type="button"
+                            >
+                              {t(
+                                'settings.matchMakerUrl',
+                                'Match default Maker URL'
+                              )}
+                            </button>
+                          )}
+                      </div>
+                      <input
+                        {...field}
+                        className={inputCls}
+                        placeholder={t('settings.lspUrlPlaceholder')}
+                        type="text"
+                      />
+                      <p className="text-xs text-content-tertiary">
+                        {t(
+                          'settings.lspUrlHint',
+                          'The LSP URL usually matches your default Maker URL.'
+                        )}
+                      </p>
+                    </div>
+                  )}
+                />
               </div>
             </section>
 
