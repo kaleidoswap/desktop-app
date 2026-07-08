@@ -28,31 +28,26 @@ export const WalletAction: React.FC<WalletActionProps> = ({
   return (
     <div
       className={`relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
-      hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-2 w-full text-left cursor-pointer group fade-in
+      hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-2 w-full text-left cursor-pointer group fade-in flex flex-col
       ${primary ? 'bg-gradient-to-br from-cyan/15 to-transparent border-primary/40' : 'bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20'}`}
       onClick={onClick}
     >
-      <div className="p-6">
+      <div className="p-6 flex flex-col h-full">
         <div className="flex items-center gap-4 mb-4">
           <div
-            className={`${IconWrapper}
-            ${primary ? 'bg-surface-elevated/80 text-primary scale-105' : 'bg-surface-elevated/80 text-white'}`}
+            className={`${IconWrapper} bg-surface-elevated/80 text-status-success`}
           >
             {React.cloneElement(icon as React.ReactElement, {
               strokeWidth: 2.5,
             })}
           </div>
-          <h2
-            className={`text-2xl font-bold ${primary ? 'text-primary' : 'text-white'}`}
-          >
-            {title}
-          </h2>
+          <h2 className="text-2xl font-bold text-white">{title}</h2>
         </div>
-        <p className="text-content-secondary text-sm leading-relaxed mb-6">
+        <p className="text-content-secondary text-sm leading-relaxed mb-6 flex-1">
           {description}
         </p>
         <div
-          className={`flex items-center gap-2 text-sm font-medium
+          className={`flex items-center gap-2 text-sm font-medium mt-auto
           ${primary ? 'text-primary' : 'text-content-secondary group-hover:text-content-secondary'}`}
         >
           {t('walletSetup.getStarted')}

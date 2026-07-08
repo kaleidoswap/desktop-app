@@ -117,18 +117,9 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-2">
+            <div className="pt-2">
               <button
-                className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isBackupInProgress}
-                onClick={onClose}
-                type="button"
-              >
-                <X className="w-4 h-4" />
-                {t('backupModal.cancel')}
-              </button>
-              <button
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isBackupInProgress}
                 type="submit"
               >

@@ -404,30 +404,20 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
         {/* Footer - Fixed */}
         <div className="px-6 py-4 border-t border-border-subtle/50 bg-surface-overlay/50 flex-shrink-0 sticky bottom-0 z-10 w-full">
-          <div className="flex justify-end space-x-3 w-full">
-            <Button
-              className="flex-1 max-w-[140px]"
-              disabled={isLoading}
-              onClick={onClose}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              className="flex-1 max-w-[160px]"
-              disabled={
-                isLoading ||
-                (btcBalanceData?.vanilla?.spendable !== undefined &&
-                  numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
-              }
-              icon={!isLoading ? <Zap size={18} /> : undefined}
-              isLoading={isLoading}
-              onClick={handleCreateUTXOs}
-              variant="primary"
-            >
-              Create UTXOs
-            </Button>
-          </div>
+          <Button
+            className="w-full"
+            disabled={
+              isLoading ||
+              (btcBalanceData?.vanilla?.spendable !== undefined &&
+                numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
+            }
+            icon={!isLoading ? <Zap size={18} /> : undefined}
+            isLoading={isLoading}
+            onClick={handleCreateUTXOs}
+            variant="primary"
+          >
+            Create UTXOs
+          </Button>
         </div>
       </div>
     </div>,

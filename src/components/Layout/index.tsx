@@ -1232,8 +1232,8 @@ export const Layout = (props: Props) => {
                   {/* Support button in header */}
                   <button
                     aria-label="Support"
-                    className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-surface-overlay/80
-                             transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                    className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
+                             transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() => setShowSupportModal(true)}
                   >
                     <HelpCircle className="w-5 h-5" />
@@ -1272,8 +1272,8 @@ export const Layout = (props: Props) => {
                   {/* Notifications bell */}
                   <button
                     aria-label="Toggle notifications"
-                    className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-surface-overlay/80
-                             transition-all duration-300 transform hover:scale-[1.02] active:scale-95"
+                    className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
+                             transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()

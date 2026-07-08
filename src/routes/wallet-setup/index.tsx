@@ -5,18 +5,18 @@ import {
   Cloud,
   Server,
   Container,
-  ArrowRight,
-  Zap,
   ArrowLeft,
   HelpCircle,
-  Languages,
+  Bell,
   Boxes,
   Brain,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
+
+import { useNotification } from '../../components/NotificationSystem'
 
 import {
   WALLET_INIT_PATH,
@@ -25,24 +25,17 @@ import {
   KALEIDO_MIND_PATH,
 } from '../../app/router/paths'
 import logoFull from '../../assets/logo-full.svg'
+import logoIcon from '../../assets/logo.svg'
 import { AppVersion } from '../../components/AppVersion'
 import { Layout } from '../../components/Layout'
 import { SupportModal } from '../../components/SupportModal'
 import { Toolbar } from '../../components/Toolbar'
-import { Card, Button } from '../../components/ui'
 import {
   NodeOption,
   WalletAction,
-  RemoteNodeInfo,
   IconWrapper,
 } from '../../components/wallet-setup'
-import { LANGUAGES } from '../../i18n/config'
-import {
-  setLanguage,
-  setAppMode,
-  type AppMode,
-} from '../../slices/settings/settings.slice'
-import type { RootState } from '../../app/store'
+import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
 
 const MODE_OPTIONS: {
   mode: AppMode
@@ -71,18 +64,16 @@ const MODE_OPTIONS: {
 ]
 
 export const Component = () => {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useDispatch()
-  const currentLanguage = useSelector(
-    (state: RootState) => state.settings.language
-  )
   const [nodeType, setNodeType] = useState<'local' | 'remote' | null>(null)
   // Which capabilities the user wants. 'both' (Node + Mind) is the default;
   // 'mind' skips node setup entirely and opens KaleidoMind.
   const [selectedMode, setSelectedMode] = useState<AppMode>('both')
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const { toggleNotificationPanel, notifications } = useNotification()
   // Docker / local node mode
   const [isNativeSupported, setIsNativeSupported] = useState(false)
   const [isDockerAvailable, setIsDockerAvailable] = useState(false)
@@ -90,11 +81,6 @@ export const Component = () => {
   const [localNodeMode, setLocalNodeMode] = useState<
     'native' | 'docker' | null
   >(null)
-
-  const handleLanguageChange = (languageCode: string) => {
-    dispatch(setLanguage(languageCode))
-    i18n.changeLanguage(languageCode)
-  }
 
   // Check local node capabilities (native binary + Docker)
   useEffect(() => {
@@ -207,115 +193,90 @@ export const Component = () => {
             <Toolbar />
           </div>
 
-          {/* Support button and version at bottom of sidebar */}
-          <div className="p-4 border-t border-divider/10 space-y-3">
-            <button
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 
-                bg-gradient-to-r from-cyan/10 to-blue-500/10 hover:from-cyan/20 hover:to-blue-500/20 
-                text-primary rounded-xl border border-primary/20 hover:border-primary/30
-                transition-all duration-300 shadow-lg shadow-primary/5 hover:shadow-primary/10
-                group relative overflow-hidden"
-              onClick={() => setShowSupportModal(true)}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-cyan/5 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-              <HelpCircle className="w-4 h-4 relative z-10" />
-              <span className="relative z-10 font-medium">
-                {t('walletSetup.getHelpSupport')}
-              </span>
-            </button>
+          {/* App version at bottom of sidebar */}
+          <div className="p-4 border-t border-divider/10">
             <AppVersion className="relative" />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto relative">
+        <div className="flex-1 overflow-hidden relative flex flex-col">
+          {/* Top bar with Support + Notifications */}
+          <div className="flex-shrink-0 z-30 bg-surface-base/80 backdrop-blur-xl border-b border-divider/20 px-6 py-4 flex justify-end items-center gap-2">
+            <button
+              aria-label="Support"
+              className="p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
+                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => setShowSupportModal(true)}
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
+              aria-label="Toggle notifications"
+              className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
+                         transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+              onClick={toggleNotificationPanel}
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-br from-cyan to-cyan/80 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-lg shadow-primary/30 animate-pulse ring-2 ring-surface-base">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Animated background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-cyan/5 via-transparent to-blue-500/5 pointer-events-none" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none" />
 
-          {/* Language Selector */}
-          <div className="absolute top-4 right-4 z-20">
-            <div className="relative group">
-              <div className="flex items-center space-x-2 px-4 py-2 bg-surface-elevated/60 backdrop-blur-xl border border-primary/20 rounded-lg hover:border-primary/40 transition-all duration-300 shadow-lg shadow-primary/5 hover:shadow-primary/10">
-                <Languages className="w-4 h-4 text-primary" />
-                <select
-                  className="bg-transparent text-white text-sm font-medium cursor-pointer focus:outline-none appearance-none pr-6"
-                  onChange={(e) => handleLanguageChange(e.target.value)}
-                  value={currentLanguage || 'en'}
-                >
-                  {Object.entries(LANGUAGES).map(([code, { name, flag }]) => (
-                    <option key={code} value={code}>
-                      {flag} {name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-content-secondary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M19 9l-7 7-7-7"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="min-h-screen py-8 md:py-16 flex items-center justify-center p-4 relative z-10">
-            <Card
-              className="p-6 md:p-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-blue-dark/40 via-blue-dark/30 to-blue-dark/40
-              border border-primary/20 shadow-2xl shadow-primary/10
-              hover:shadow-primary/20 transition-all duration-500"
-            >
+          <div className="flex-1 flex items-center justify-center p-4 relative z-10 overflow-hidden">
+            <div className="w-full max-w-4xl">
               <div
                 className="fade-in content-container"
                 id="wallet-setup-content"
               >
-                {!nodeType ? (
+                {!nodeType || nodeType === 'remote' ? (
                   <>
                     <div className="text-center mb-12 slide-in">
-                      <div className="relative inline-flex mb-6 group">
+                      <div className="relative inline-flex mb-6">
+                        {/* Purple ripple rings */}
+                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/15 animate-ripple-1 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/10 animate-ripple-2 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/8 animate-ripple-3 pointer-events-none" />
                         <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/30 via-cyan/20 to-blue-500/20 border-2 border-primary/40 
-                          rounded-2xl shadow-2xl shadow-primary/20 
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/30`}
+                          className={`${IconWrapper} bg-gradient-to-br from-primary/20 via-primary/10 to-purple/10 border-2 border-primary/40
+                          rounded-2xl shadow-2xl shadow-primary/20
+                          relative z-10`}
                         >
-                          <Zap className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]" />
+                          <img
+                            alt="KaleidoSwap"
+                            className="w-8 h-8 brightness-0 invert"
+                            src={logoIcon}
+                          />
                         </div>
-                        {/* Glow effect */}
-                        <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                        {/* Green glow */}
+                        <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl scale-150 opacity-30 [animation:pulse_6s_ease-in-out_infinite]" />
                       </div>
-                      <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-purple-400 to-violet-500 bg-clip-text text-transparent tracking-tight py-2">
-                        {t('walletSetup.connectTitle')}
+                      <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white tracking-tight leading-tight py-2">
+                        {t('walletSetup.welcomeTo')}{' '}
+                        <span className="bg-gradient-to-r from-[#15E99A] to-[#9365FF] bg-clip-text text-transparent">
+                          KaleidoSwap
+                        </span>
                       </h1>
-                      <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                        {t('walletSetup.connectSubtitle')}
-                      </p>
-                      <div className="mt-4 flex items-center justify-center space-x-2">
-                        <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse" />
-                        <div className="h-1 w-8 rounded-full bg-gradient-to-r from-cyan/60 to-transparent" />
-                        <div className="h-1 w-1 rounded-full bg-primary/60 animate-pulse delay-75" />
-                      </div>
                     </div>
 
                     {/* Mode selector — Node + Mind (default) / Only Node / Only Mind */}
                     <div className="flex justify-center mb-8 slide-in">
-                      <div className="inline-flex flex-wrap justify-center gap-1 rounded-2xl border border-primary/20 bg-surface-elevated/40 p-1 backdrop-blur-xl">
+                      <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
                         {MODE_OPTIONS.map((m) => {
                           const active = selectedMode === m.mode
                           return (
                             <button
-                              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-300 ${
+                              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
                                 active
-                                  ? 'bg-primary/15 text-primary shadow-lg shadow-primary/10'
-                                  : 'text-content-secondary hover:text-white'
+                                  ? 'bg-primary/15 text-primary border border-primary/30'
+                                  : 'text-content-secondary hover:text-white border border-transparent'
                               }`}
                               key={m.mode}
                               onClick={() => setSelectedMode(m.mode)}
@@ -332,24 +293,29 @@ export const Component = () => {
                     </div>
 
                     {selectedMode === 'mind' ? (
-                      <div className="flex flex-col items-center gap-5 py-6 slide-in">
-                        <p className="max-w-md text-center text-content-secondary">
-                          {t('walletSetup.mindOnlyHint', {
-                            defaultValue:
-                              'Run a local AI brain on this desktop — no node required. You can connect a node any time later.',
-                          })}
-                        </p>
-                        <Button
-                          icon={<ArrowRight className="w-5 h-5 ml-1" />}
-                          iconPosition="right"
+                      <div className="flex justify-center slide-in">
+                        <div
+                          className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
+                            hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
+                            bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
                           onClick={openMindOnly}
-                          size="lg"
-                          variant="primary"
                         >
-                          {t('walletSetup.openMind', {
-                            defaultValue: 'Open KaleidoMind',
-                          })}
-                        </Button>
+                          <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="p-4 rounded-xl backdrop-blur-sm bg-primary/5 text-primary/80 flex items-center justify-center">
+                                <Brain className="w-6 h-6" strokeWidth={2} />
+                              </div>
+                              <h2 className="text-2xl font-bold text-white">
+                                KaleidoMind
+                              </h2>
+                            </div>
+                            <p className="text-content-secondary text-sm leading-relaxed">
+                              Run local AI models on this desktop. You can
+                              connect the app to a RGB Lightning node any time
+                              later.
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ) : !capabilitiesLoaded ? (
                       <div className="flex justify-center py-12">
@@ -362,10 +328,14 @@ export const Component = () => {
                           icon={<Cloud className="w-6 h-6" />}
                           onClick={() => {
                             dispatch(setAppMode(selectedMode))
-                            handleNodeTypeChange('remote')
+                            navigate(WALLET_REMOTE_PATH)
                           }}
                           recommended={true}
-                          title={t('walletSetup.remoteNodeTitle')}
+                          title={
+                            selectedMode === 'both'
+                              ? 'Remote Node + Mind'
+                              : t('walletSetup.remoteNodeTitle')
+                          }
                         />
                         <NodeOption
                           description={t('walletSetup.localNodeDescription')}
@@ -374,7 +344,11 @@ export const Component = () => {
                             dispatch(setAppMode(selectedMode))
                             handleNodeTypeChange('local')
                           }}
-                          title={t('walletSetup.localNodeTitle')}
+                          title={
+                            selectedMode === 'both'
+                              ? 'Local Node + Mind'
+                              : t('walletSetup.localNodeTitle')
+                          }
                         />
                       </div>
                     )}
@@ -382,31 +356,28 @@ export const Component = () => {
                 ) : nodeType === 'local' ? (
                   <>
                     <div className="mb-8 slide-in">
-                      <Button
-                        className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
-                        icon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={() => {
-                          handleNodeTypeChange(null)
-                        }}
-                        size="sm"
-                        variant="outline"
+                      <button
+                        className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                        onClick={() => handleNodeTypeChange(null)}
+                        type="button"
                       >
-                        {t('walletSetup.backToOptions')}
-                      </Button>
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        Back
+                      </button>
                     </div>
 
                     <div className="text-center mb-10 slide-in">
-                      <div className="relative inline-flex mb-6 group">
+                      <div className="relative inline-flex mb-6">
                         <div
                           className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-primary/30
                           rounded-2xl shadow-2xl shadow-primary/15
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/25`}
+                          relative z-10`}
                         >
                           <Server className="w-7 h-7 text-primary drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
                         </div>
-                        <div className="absolute inset-0 bg-primary/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-primary/15 rounded-2xl blur-xl scale-150 opacity-50" />
                       </div>
-                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
+                      <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white leading-tight tracking-tight">
                         {t('walletSetup.setupLocalTitle')}
                       </h1>
                       <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
@@ -430,7 +401,7 @@ export const Component = () => {
                       >
                         <div className="flex items-center gap-3 mb-2">
                           <Server
-                            className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-cyan' : 'text-content-secondary'}`}
+                            className={`w-5 h-5 ${localNodeMode === 'native' ? 'text-status-success' : 'text-content-secondary'}`}
                           />
                           <span
                             className={`font-semibold ${localNodeMode === 'native' ? 'text-white' : 'text-content-secondary'}`}
@@ -465,7 +436,7 @@ export const Component = () => {
                               className={`w-5 h-5 ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
                             />
                             <span
-                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-white' : 'text-content-secondary'}`}
+                              className={`font-semibold ${localNodeMode === 'docker' ? 'text-purple-400' : 'text-content-secondary'}`}
                             >
                               {t('walletSetup.backendDocker')}
                             </span>
@@ -504,7 +475,9 @@ export const Component = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <WalletAction
                           description={t('walletSetup.createWalletDescription')}
-                          icon={<Wallet className="w-6 h-6 text-white" />}
+                          icon={
+                            <Wallet className="w-6 h-6 text-status-success" />
+                          }
                           onClick={() => navigateToWalletInit(WALLET_INIT_PATH)}
                           primary
                           title={t('walletSetup.createWalletTitle')}
@@ -514,7 +487,7 @@ export const Component = () => {
                             'walletSetup.restoreWalletDescription'
                           )}
                           icon={
-                            <ArrowLeftRight className="w-6 h-6 text-white" />
+                            <ArrowLeftRight className="w-6 h-6 text-status-success" />
                           }
                           onClick={() =>
                             navigateToWalletInit(WALLET_RESTORE_PATH)
@@ -524,62 +497,9 @@ export const Component = () => {
                       </div>
                     )}
                   </>
-                ) : (
-                  <>
-                    <div className="mb-8 slide-in">
-                      <Button
-                        className="hover:bg-surface-elevated/60 hover:border-primary/40 transition-all duration-300"
-                        icon={<ArrowLeft className="w-4 h-4" />}
-                        onClick={() => handleNodeTypeChange(null)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        {t('walletSetup.backToOptions')}
-                      </Button>
-                    </div>
-
-                    <div className="text-center mb-10 slide-in">
-                      <div className="relative inline-flex mb-6 group">
-                        <div
-                          className={`${IconWrapper} bg-gradient-to-br from-cyan/25 via-cyan/15 to-blue-500/15 border-2 border-primary/30
-                          rounded-2xl shadow-2xl shadow-primary/15
-                          relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:shadow-primary/25`}
-                        >
-                          <Cloud className="w-7 h-7 text-primary drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
-                        </div>
-                        <div className="absolute inset-0 bg-primary/15 rounded-2xl blur-xl scale-150 opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
-                      </div>
-                      <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-cyan via-blue-400 to-cyan bg-clip-text text-transparent leading-tight tracking-tight">
-                        {t('walletSetup.connectRemoteTitle')}
-                      </h1>
-                      <p className="text-content-secondary text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                        {t('walletSetup.connectRemoteSubtitle')}
-                      </p>
-                    </div>
-
-                    <RemoteNodeInfo />
-
-                    <div className="flex justify-center mt-8 fade-in">
-                      <Button
-                        className="group relative overflow-hidden shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all duration-300"
-                        icon={
-                          <ArrowRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform duration-300" />
-                        }
-                        iconPosition="right"
-                        onClick={() => navigate(WALLET_REMOTE_PATH)}
-                        size="lg"
-                        variant="primary"
-                      >
-                        <span className="relative z-10">
-                          {t('walletSetup.continueSetup')}
-                        </span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan/0 via-white/10 to-cyan/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                      </Button>
-                    </div>
-                  </>
-                )}
+                ) : null}
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

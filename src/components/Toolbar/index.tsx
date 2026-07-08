@@ -7,8 +7,15 @@ import {
   Server,
   Cloud,
   AlertTriangle,
+  Settings,
+  Save,
+  ArrowRight,
+  Loader2,
+  ChevronDown,
+  Copy,
+  Check,
 } from 'lucide-react'
-import { Input } from '../ui'
+import { Input, AdvancedSettings, Button } from '../ui'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -89,22 +96,15 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
   return createPortal(
     <div
       aria-modal="true"
-      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
+      className={`${pos} left-72 top-16 right-0 bottom-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
       onClick={onClose}
       role="dialog"
     >
       <div
-        className="bg-surface-overlay text-white p-8 rounded-xl shadow-xl max-w-lg w-full mx-4 overflow-auto max-h-[90vh] animate-scaleIn"
+        className="bg-surface-base text-white rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 max-w-lg w-full mx-4 overflow-hidden animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          aria-label="Close modal"
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-high text-content-secondary hover:text-white transition-colors"
-          onClick={onClose}
-        >
-          <X size={20} />
-        </button>
-        {children}
+        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">{children}</div>
       </div>
     </div>,
     getModalPortalTarget()
@@ -210,7 +210,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
               {account.name}
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs px-2 py-0.5 rounded-full bg-surface-base text-content-secondary">
+              <span
+                className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}
+              >
                 {getNetworkDisplayName(account.network)}
               </span>
               <span className={`flex items-center ${nodeColor} text-sm`}>
@@ -956,11 +958,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
     <>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <div
-          className={`flex items-center justify-between ${isCollapsed ? 'p-2' : 'p-4'} flex-shrink-0`}
+          className={`flex items-center justify-between ${isCollapsed ? 'p-2' : 'px-4 pt-4 pb-1'} flex-shrink-0`}
         >
           {/* Title - completely hidden in collapsed state, no hover effect */}
           {!isCollapsed && (
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xs font-semibold text-content-tertiary uppercase tracking-wider">
               {t('toolbar.main.title')}
             </h2>
           )}
@@ -1037,6 +1039,87 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 }
 
 // Modal Content Components
+const CopyField = ({ label, value }: { label: string; value: string }) => {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div>
+      <label className="text-xs font-medium text-content-secondary uppercase tracking-wider">
+        {label}
+      </label>
+      <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border-default/50 bg-surface-overlay/30 group">
+        <span className="flex-1 text-sm text-white break-all font-mono">
+          {value}
+        </span>
+        <button
+          className="shrink-0 p-1 rounded text-content-tertiary hover:text-white hover:bg-surface-high/60 transition-colors"
+          onClick={handleCopy}
+          title="Copy"
+          type="button"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-primary" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const AccordionSection = ({
+  title,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string
+  isOpen: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) => (
+  <div className="rounded-lg overflow-hidden">
+    <button
+      className={`w-full px-4 py-2.5 flex items-center justify-between text-left text-sm
+        border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20
+        ${
+          isOpen
+            ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
+            : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
+        }`}
+      onClick={onToggle}
+      type="button"
+    >
+      <span className="font-medium text-white">{title}</span>
+      <ChevronDown
+        className={`w-4 h-4 text-content-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+      />
+    </button>
+    {isOpen && (
+      <div className="p-4 border border-t-0 border-primary/50 rounded-b-lg bg-surface-elevated/60 space-y-3">
+        {children}
+      </div>
+    )}
+  </div>
+)
+
+const getNetworkChipColor = (network: string): string => {
+  switch (network) {
+    case 'Testnet':
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+    case 'Signet':
+    case 'SignetCustom':
+      return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+    default:
+      return 'bg-primary/20 text-primary border-primary/30'
+  }
+}
+
 interface NodeSelectionModalContentProps {
   account: Account
   isLoading: boolean
@@ -1157,45 +1240,29 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     ? t('toolbar.modal.localNode')
     : t('toolbar.modal.remoteNode')
   const nodeColor = account.datapath ? 'text-green-400' : 'text-primary'
-  const bgColor = account.datapath
-    ? 'from-green-500/5 to-transparent'
-    : 'from-cyan/5 to-transparent'
 
   return (
-    <div className="max-h-[80vh] overflow-y-auto">
-      <div className="sticky top-0 bg-surface-overlay pb-4 z-10">
-        <h2 className="text-2xl font-bold mb-2">
+    <div>
+      <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+        <NodeIcon className={`w-6 h-6 ${nodeColor}`} />
+        <h3 className="text-xl font-bold text-white flex-1">
           {t('toolbar.modal.switchNode')}
-        </h2>
-        <p className="text-content-secondary text-sm">
-          {t('toolbar.modal.reviewDetails')}
-        </p>
+        </h3>
+        <button
+          className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+          onClick={onCancel}
+          type="button"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Loading State */}
       {loadingState && (
-        <div className="bg-white/5 border border-white/10 rounded-lg p-4 mb-4">
+        <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <Spinner size={24} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 bg-primary rounded-full" />
-              </div>
-            </div>
-            <div>
-              <p className="text-primary font-medium">{loadingState.message}</p>
-              <div className="mt-2 flex gap-2">
-                <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 1 ? 'bg-primary' : 'bg-surface-high'}`}
-                />
-                <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 2 ? 'bg-primary' : 'bg-surface-high'}`}
-                />
-                <div
-                  className={`h-1 rounded-full flex-1 ${loadingState.step >= 3 ? 'bg-primary' : 'bg-surface-high'}`}
-                />
-              </div>
-            </div>
+            <AlertTriangle className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-primary font-medium">{loadingState.message}</p>
           </div>
         </div>
       )}
@@ -1226,229 +1293,111 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         </div>
       )}
 
-      <div
-        className={`bg-gradient-to-b ${bgColor} rounded-xl p-4 mb-4 border border-border-default`}
-      >
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <MinidenticonImg
-              className="rounded-lg"
-              height="56"
-              saturation="90"
-              username={account.name}
-              width="56"
-            />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface-base flex items-center justify-center shadow-md">
-              <NodeIcon className={`w-3.5 h-3.5 ${nodeColor}`} />
-            </div>
-          </div>
-          <div className="flex-grow">
-            <h3 className="text-xl font-semibold text-white">{account.name}</h3>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="bg-surface-base px-3 py-1 rounded-full text-sm text-content-secondary">
-                {getNetworkDisplayName(account.network)}
-              </span>
-              <span
-                className={`flex items-center ${nodeColor} text-sm font-medium`}
-              >
-                <NodeIcon className="mr-1.5" size={14} />
-                {nodeType}
-              </span>
-            </div>
+      <div className="flex items-center gap-4 mb-4 p-3 bg-surface-overlay/30 rounded-xl border border-border-default/50">
+        <div className="shrink-0">
+          <MinidenticonImg
+            className="rounded-lg"
+            height="44"
+            saturation="90"
+            username={account.name}
+            width="44"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-white truncate">{account.name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}
+            >
+              {getNetworkDisplayName(account.network)}
+            </span>
+            <span
+              className={`flex items-center gap-1 text-xs font-medium ${nodeColor}`}
+            >
+              <NodeIcon size={11} />
+              {nodeType}
+            </span>
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
         {/* Connection Details Section */}
-        <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
-          <button
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
-            onClick={() => toggleSection('connection')}
-          >
-            <span className="font-medium text-white">
-              {t('toolbar.modal.connectionDetails')}
-            </span>
-            <div
-              className={`transform transition-transform ${expandedSection === 'connection' ? 'rotate-180' : ''}`}
-            >
-              <svg
-                className="w-5 h-5 text-content-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M19 9l-7 7-7-7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </button>
-          {expandedSection === 'connection' && (
-            <div className="px-4 pb-4 space-y-3">
-              <div>
-                <label className="text-sm text-content-secondary">
-                  {t('toolbar.modal.nodeUrl')}
-                </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
-                  {account.node_url}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-content-secondary">
-                  {t('toolbar.modal.rpcConnection')}
-                </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
-                  {account.rpc_connection_url}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <AccordionSection
+          isOpen={expandedSection === 'connection'}
+          onToggle={() => toggleSection('connection')}
+          title={t('toolbar.modal.connectionDetails')}
+        >
+          <CopyField
+            label={t('toolbar.modal.nodeUrl')}
+            value={account.node_url}
+          />
+          <CopyField
+            label={t('toolbar.modal.rpcConnection')}
+            value={account.rpc_connection_url}
+          />
+        </AccordionSection>
 
         {/* Service Endpoints Section */}
-        <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
-          <button
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
-            onClick={() => toggleSection('services')}
-          >
-            <span className="font-medium text-white">
-              {t('toolbar.modal.serviceEndpoints')}
-            </span>
-            <div
-              className={`transform transition-transform ${expandedSection === 'services' ? 'rotate-180' : ''}`}
-            >
-              <svg
-                className="w-5 h-5 text-content-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M19 9l-7 7-7-7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </button>
-          {expandedSection === 'services' && (
-            <div className="px-4 pb-4 space-y-3">
-              <div>
-                <label className="text-sm text-content-secondary">
-                  {t('toolbar.modal.indexerUrl')}
-                </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
-                  {account.indexer_url}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-content-secondary">
-                  {t('toolbar.modal.rgbProxy')}
-                </label>
-                <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
-                  {account.proxy_endpoint}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <AccordionSection
+          isOpen={expandedSection === 'services'}
+          onToggle={() => toggleSection('services')}
+          title={t('toolbar.modal.serviceEndpoints')}
+        >
+          <CopyField
+            label={t('toolbar.modal.indexerUrl')}
+            value={account.indexer_url}
+          />
+          <CopyField
+            label={t('toolbar.modal.rgbProxy')}
+            value={account.proxy_endpoint}
+          />
+        </AccordionSection>
 
         {/* Port Configuration Section - Only for Local Nodes */}
         {account.datapath && (
-          <div className="bg-surface-overlay/30 rounded-lg border border-border-default overflow-hidden">
-            <button
-              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-surface-overlay/50 transition-colors"
-              onClick={() => toggleSection('ports')}
-            >
-              <span className="font-medium text-white">
-                {t('toolbar.modal.portConfiguration')}
-              </span>
-              <div
-                className={`transform transition-transform ${expandedSection === 'ports' ? 'rotate-180' : ''}`}
-              >
-                <svg
-                  className="w-5 h-5 text-content-secondary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M19 9l-7 7-7-7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            </button>
-            {expandedSection === 'ports' && (
-              <div className="px-4 pb-4 space-y-3">
-                <div>
-                  <label className="text-sm text-content-secondary">
-                    {t('toolbar.modal.daemonPort')}
-                  </label>
-                  <div className="mt-1 text-sm text-white font-mono bg-surface-base/30 p-2 rounded">
-                    {account.daemon_listening_port}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-content-secondary">
-                    {t('toolbar.modal.ldkPeerPort')}
-                  </label>
-                  <div className="mt-1 text-sm text-white font-mono bg-surface-base/30 p-2 rounded">
-                    {account.ldk_peer_listening_port}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-content-secondary">
-                    {t('toolbar.modal.dataPath')}
-                  </label>
-                  <div className="mt-1 text-sm text-white break-all font-mono bg-surface-base/30 p-2 rounded">
-                    {account.datapath}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <AccordionSection
+            isOpen={expandedSection === 'ports'}
+            onToggle={() => toggleSection('ports')}
+            title={t('toolbar.modal.portConfiguration')}
+          >
+            <CopyField
+              label={t('toolbar.modal.daemonPort')}
+              value={account.daemon_listening_port}
+            />
+            <CopyField
+              label={t('toolbar.modal.ldkPeerPort')}
+              value={account.ldk_peer_listening_port}
+            />
+            <CopyField
+              label={t('toolbar.modal.dataPath')}
+              value={account.datapath}
+            />
+          </AccordionSection>
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-surface-overlay pt-4 mt-6 border-t border-border-default">
-        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          <button
-            className="flex-1 px-4 py-2.5 bg-surface-high hover:bg-surface-elevated text-white font-medium rounded-lg transition-colors"
-            disabled={isLoading || loadingState !== null}
-            onClick={onCancel}
-            type="button"
-          >
-            {t('toolbar.modal.cancel')}
-          </button>
-          <button
-            className={`flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors text-primary-foreground
-              ${
-                isLoading || loadingState !== null
-                  ? 'bg-primary/50 cursor-not-allowed'
-                  : 'bg-primary hover:bg-primary-emphasis'
-              }`}
-            disabled={isLoading || loadingState !== null}
-            onClick={handleConfirm}
-            type="button"
-          >
-            {isLoading || loadingState ? (
-              <div className="flex items-center justify-center gap-2">
-                <Spinner size={20} />
-                <span>{t('toolbar.modal.switching')}</span>
-              </div>
+      <div className="mt-4">
+        <Button
+          className="w-full"
+          disabled={isLoading || loadingState !== null}
+          icon={
+            isLoading || loadingState ? (
+              <Spinner size={16} />
             ) : (
-              t('toolbar.modal.switchToNode')
-            )}
-          </button>
-        </div>
+              <ArrowRight className="w-4 h-4" />
+            )
+          }
+          iconPosition="right"
+          onClick={handleConfirm}
+          size="lg"
+          type="button"
+          variant="primary"
+        >
+          {isLoading || loadingState
+            ? t('toolbar.modal.switching')
+            : t('toolbar.modal.switchToNode')}
+        </Button>
       </div>
     </div>
   )
@@ -1478,60 +1427,56 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
 
   return (
     <>
-      <div className="flex flex-col items-center mb-6">
-        <AlertTriangle className="text-red-600 w-16 h-16 mb-4" />
-        <h2 className="text-2xl font-bold">{t('toolbar.delete.title')}</h2>
-      </div>
-
-      <div className="space-y-4 mb-8">
-        <p className="text-content-secondary">
-          {t('toolbar.delete.confirmMessage', { name: account.name })}
-        </p>
-
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-left">
-          <p className="text-yellow-500 font-medium mb-2">
-            {t('toolbar.delete.warningTitle')}
-          </p>
-          <ul className="text-yellow-100/80 space-y-2 text-sm">
-            <li>• {t('toolbar.delete.cannotUndo')}</li>
-            {account.datapath ? (
-              <>
-                <li>• {t('toolbar.delete.localWarning1')}</li>
-                <li>• {t('toolbar.delete.localWarning2')}</li>
-                <li className="break-all">
-                  •{' '}
-                  {t('toolbar.delete.localWarning3', {
-                    path: account.datapath,
-                  })}
-                </li>
-              </>
-            ) : (
-              <>
-                <li>• {t('toolbar.delete.remoteWarning1')}</li>
-                <li>• {t('toolbar.delete.remoteWarning2')}</li>
-                <li>• {t('toolbar.delete.remoteWarning3')}</li>
-              </>
-            )}
-          </ul>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-8 -mt-8 mb-5 px-8 pt-8 pb-4">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-status-danger" />
+          <h3 className="text-lg font-semibold text-white">
+            {t('toolbar.delete.title')}
+          </h3>
         </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
         <button
-          className="flex-1 px-6 py-3 border border-white/30 hover:bg-surface-high rounded-lg transition-colors text-white font-medium"
+          className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
           onClick={onCancel}
           type="button"
         >
-          {t('toolbar.delete.cancel')}
-        </button>
-        <button
-          className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-white font-medium"
-          onClick={handleDelete}
-          type="button"
-        >
-          Delete
+          <X className="w-4 h-4" />
         </button>
       </div>
+
+      <div className="space-y-2 mb-6 text-sm text-content-secondary">
+        <p>{t('toolbar.delete.confirmMessage', { name: account.name })}</p>
+        <ul className="space-y-1.5">
+          <li>• {t('toolbar.delete.cannotUndo')}</li>
+          {account.datapath ? (
+            <>
+              <li>• {t('toolbar.delete.localWarning1')}</li>
+              <li>• {t('toolbar.delete.localWarning2')}</li>
+              <li className="break-all">
+                •{' '}
+                {t('toolbar.delete.localWarning3', {
+                  path: account.datapath,
+                })}
+              </li>
+            </>
+          ) : (
+            <>
+              <li>• {t('toolbar.delete.remoteWarning1')}</li>
+              <li>• {t('toolbar.delete.remoteWarning2')}</li>
+              <li>• {t('toolbar.delete.remoteWarning3')}</li>
+            </>
+          )}
+        </ul>
+      </div>
+
+      <button
+        className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-white text-sm font-medium shadow-md flex items-center justify-center gap-2"
+        onClick={handleDelete}
+        type="button"
+      >
+        <Trash2 className="w-4 h-4" />
+        {t('toolbar.delete.title')}
+      </button>
     </>
   )
 }
@@ -1550,7 +1495,6 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   const { t } = useTranslation()
   const [formData, setFormData] = useState(account)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'advanced'>('basic')
   const [portErrors, setPortErrors] = useState<{
     daemon?: string
     ldk?: string
@@ -1562,21 +1506,18 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     const daemonPortNum = parseInt(daemonPort)
     const ldkPortNum = parseInt(ldkPort)
 
-    // Validate daemon port
     if (!daemonPort || isNaN(daemonPortNum)) {
       errors.daemon = t('toolbar.edit.validation.daemonPortRequired')
     } else if (daemonPortNum < 1024 || daemonPortNum > 65535) {
       errors.daemon = t('toolbar.edit.validation.daemonPortRange')
     }
 
-    // Validate LDK port
     if (!ldkPort || isNaN(ldkPortNum)) {
       errors.ldk = t('toolbar.edit.validation.ldkPortRequired')
     } else if (ldkPortNum < 1024 || ldkPortNum > 65535) {
       errors.ldk = t('toolbar.edit.validation.ldkPortRange')
     }
 
-    // Check if ports are the same
     if (daemonPort && ldkPort && daemonPort === ldkPort) {
       errors.daemon = t('toolbar.edit.validation.portsMustDiffer')
       errors.ldk = t('toolbar.edit.validation.portsMustDiffer')
@@ -1586,7 +1527,6 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     return Object.keys(errors).length === 0
   }
 
-  // Validate ports on initial load
   useEffect(() => {
     validatePorts(
       formData.daemon_listening_port,
@@ -1597,7 +1537,6 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate ports before submission
     const isValidPorts = validatePorts(
       formData.daemon_listening_port,
       formData.ldk_peer_listening_port
@@ -1625,12 +1564,10 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     const newFormData = { ...formData, [field]: value }
     setFormData(newFormData)
 
-    // Real-time validation for port fields
     if (
       field === 'daemon_listening_port' ||
       field === 'ldk_peer_listening_port'
     ) {
-      // Use a small timeout to avoid excessive validation calls while typing
       setTimeout(() => {
         validatePorts(
           newFormData.daemon_listening_port,
@@ -1640,292 +1577,199 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     }
   }
 
+  const labelClass =
+    'block text-xs font-medium text-content-secondary uppercase tracking-wider mb-1.5'
+
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-primary">
-          {t('toolbar.edit.title')}
-        </h2>
-        <div className="flex items-center">
-          <MinidenticonImg
-            className="rounded-lg mr-3"
-            height="32"
-            saturation="90"
-            username={account.name}
-            width="32"
-          />
-          <span className="font-medium text-lg">{account.name}</span>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-6 -mt-6 mb-4 px-6 pt-6 pb-4">
+        <div className="flex items-center gap-3">
+          <Settings className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold text-white">
+            {t('toolbar.edit.title')}
+          </h3>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-border-default mb-6">
         <button
-          className={`px-4 py-2 font-medium text-sm transition-colors relative
-            ${
-              activeTab === 'basic'
-                ? 'text-primary'
-                : 'text-content-secondary hover:text-content-primary'
-            }`}
-          onClick={() => setActiveTab('basic')}
+          className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
+          onClick={onClose}
           type="button"
         >
-          {t('toolbar.edit.tabs.basic')}
-          {activeTab === 'basic' && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan" />
-          )}
-        </button>
-        <button
-          className={`px-4 py-2 font-medium text-sm transition-colors relative
-            ${
-              activeTab === 'advanced'
-                ? 'text-primary'
-                : 'text-content-secondary hover:text-content-primary'
-            }`}
-          onClick={() => setActiveTab('advanced')}
-          type="button"
-        >
-          {t('toolbar.edit.tabs.advanced')}
-          {activeTab === 'advanced' && (
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan" />
-          )}
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        {activeTab === 'basic' && (
-          <>
-            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-content-secondary mb-4">
-                {t('toolbar.edit.sections.connectionSettings')}
-              </h3>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Basic fields — directly on bg */}
+        <div>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.nodeName')}
+          </label>
+          <Input disabled type="text" value={formData.name} />
+        </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.nodeName')}
-                  </label>
-                  <Input disabled type="text" value={formData.name} />
-                </div>
+        <div>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.nodeUrl')}
+          </label>
+          <Input
+            onChange={(e) => handleInputChange('node_url', e.target.value)}
+            placeholder="http://localhost:3000"
+            type="text"
+            value={formData.node_url}
+          />
+        </div>
 
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.nodeUrl')}
-                  </label>
-                  <Input
-                    onChange={(e) =>
-                      handleInputChange('node_url', e.target.value)
-                    }
-                    placeholder="http://localhost:3000"
-                    type="text"
-                    value={formData.node_url}
-                  />
-                </div>
+        <div>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.rpcConnectionUrl')}
+          </label>
+          <Input
+            onChange={(e) =>
+              handleInputChange('rpc_connection_url', e.target.value)
+            }
+            placeholder="http://localhost:3001/rpc"
+            type="text"
+            value={formData.rpc_connection_url}
+          />
+        </div>
 
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.rpcConnectionUrl')}
-                  </label>
-                  <Input
-                    onChange={(e) =>
-                      handleInputChange('rpc_connection_url', e.target.value)
-                    }
-                    placeholder="http://localhost:3001/rpc"
-                    type="text"
-                    value={formData.rpc_connection_url}
-                  />
-                </div>
-              </div>
+        {/* Advanced Settings accordion */}
+        <AdvancedSettings>
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.indexerUrl')}
+            </label>
+            <Input
+              onChange={(e) => handleInputChange('indexer_url', e.target.value)}
+              placeholder="http://localhost:3002/api"
+              type="text"
+              value={formData.indexer_url}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.rgbProxyEndpoint')}
+            </label>
+            <Input
+              onChange={(e) =>
+                handleInputChange('proxy_endpoint', e.target.value)
+              }
+              placeholder="http://localhost:3003/proxy"
+              type="text"
+              value={formData.proxy_endpoint}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.defaultMakerUrl')}
+            </label>
+            <Input
+              onChange={(e) =>
+                handleInputChange('default_maker_url', e.target.value)
+              }
+              placeholder="http://localhost:3004/maker"
+              type="text"
+              value={formData.default_maker_url}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.defaultLspUrl')}
+            </label>
+            <Input
+              onChange={(e) =>
+                handleInputChange('default_lsp_url', e.target.value)
+              }
+              placeholder="http://localhost:3005/lsp"
+              type="text"
+              value={formData.default_lsp_url}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.daemonListeningPort')}
+            </label>
+            <Input
+              error={!!portErrors.daemon}
+              max="65535"
+              min="1024"
+              onChange={(e) =>
+                handleInputChange('daemon_listening_port', e.target.value)
+              }
+              placeholder="3001"
+              type="number"
+              value={formData.daemon_listening_port}
+            />
+            {portErrors.daemon ? (
+              <p className="text-xs text-red-400 mt-1">{portErrors.daemon}</p>
+            ) : (
+              <p className="text-xs text-content-secondary mt-1">
+                {t('toolbar.edit.fields.daemonListeningPortHint')}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.ldkPeerListeningPort')}
+            </label>
+            <Input
+              error={!!portErrors.ldk}
+              max="65535"
+              min="1024"
+              onChange={(e) =>
+                handleInputChange('ldk_peer_listening_port', e.target.value)
+              }
+              placeholder="9735"
+              type="number"
+              value={formData.ldk_peer_listening_port}
+            />
+            {portErrors.ldk ? (
+              <p className="text-xs text-red-400 mt-1">{portErrors.ldk}</p>
+            ) : (
+              <p className="text-xs text-content-secondary mt-1">
+                {t('toolbar.edit.fields.ldkPeerListeningPortHint')}
+              </p>
+            )}
+          </div>
+
+          {account.datapath && (
+            <div>
+              <label className={labelClass}>
+                {t('toolbar.edit.fields.dataPath')}
+              </label>
+              <Input disabled type="text" value={formData.datapath} />
+              <p className="text-xs text-content-secondary mt-1">
+                {t('toolbar.edit.fields.dataPathHint')}
+              </p>
             </div>
-          </>
-        )}
+          )}
+        </AdvancedSettings>
 
-        {activeTab === 'advanced' && (
-          <>
-            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-content-secondary mb-4">
-                {t('toolbar.edit.sections.serviceEndpoints')}
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.bitcoindRpcUrl')}
-                  </label>
-                  <Input
-                    onChange={(e) =>
-                      handleInputChange('rpc_connection_url', e.target.value)
-                    }
-                    placeholder="user:password@localhost:18443"
-                    type="text"
-                    value={formData.rpc_connection_url}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.indexerUrl')}
-                  </label>
-                  <Input
-                    onChange={(e) =>
-                      handleInputChange('indexer_url', e.target.value)
-                    }
-                    placeholder="http://localhost:3002/api"
-                    type="text"
-                    value={formData.indexer_url}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.rgbProxyEndpoint')}
-                  </label>
-                  <Input
-                    onChange={(e) =>
-                      handleInputChange('proxy_endpoint', e.target.value)
-                    }
-                    placeholder="http://localhost:3003/proxy"
-                    type="text"
-                    value={formData.proxy_endpoint}
-                  />
-                </div>
-
-                {account.datapath && (
-                  <div>
-                    <label className="block text-content-secondary text-sm mb-1.5">
-                      {t('toolbar.edit.fields.dataPath')}
-                    </label>
-                    <Input disabled type="text" value={formData.datapath} />
-                    <p className="text-xs text-content-secondary mt-1">
-                      {t('toolbar.edit.fields.dataPathHint')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-content-secondary mb-4">
-                {t('toolbar.edit.sections.portConfiguration')}
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.daemonListeningPort')}
-                  </label>
-                  <Input
-                    error={!!portErrors.daemon}
-                    max="65535"
-                    min="1024"
-                    onChange={(e) =>
-                      handleInputChange('daemon_listening_port', e.target.value)
-                    }
-                    placeholder="3001"
-                    type="number"
-                    value={formData.daemon_listening_port}
-                  />
-                  {portErrors.daemon ? (
-                    <p className="text-xs text-red-400 mt-1">
-                      {portErrors.daemon}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-content-secondary mt-1">
-                      {t('toolbar.edit.fields.daemonListeningPortHint')}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.ldkPeerListeningPort')}
-                  </label>
-                  <Input
-                    error={!!portErrors.ldk}
-                    max="65535"
-                    min="1024"
-                    onChange={(e) =>
-                      handleInputChange(
-                        'ldk_peer_listening_port',
-                        e.target.value
-                      )
-                    }
-                    placeholder="9735"
-                    type="number"
-                    value={formData.ldk_peer_listening_port}
-                  />
-                  {portErrors.ldk ? (
-                    <p className="text-xs text-red-400 mt-1">
-                      {portErrors.ldk}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-content-secondary mt-1">
-                      {t('toolbar.edit.fields.ldkPeerListeningPortHint')}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface-overlay/30 p-4 rounded-lg border border-divider/10">
-              <h3 className="text-sm font-medium text-content-secondary mb-4">
-                {t('toolbar.edit.sections.makerSettings')}
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.defaultMakerUrl')}
-                  </label>
-                  <div className="flex items-center">
-                    <input
-                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
-                      onChange={(e) =>
-                        handleInputChange('default_maker_url', e.target.value)
-                      }
-                      placeholder="http://localhost:3004/maker"
-                      type="text"
-                      value={formData.default_maker_url}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-content-secondary text-sm mb-1.5">
-                    {t('toolbar.edit.fields.defaultLspUrl')}
-                  </label>
-                  <div className="flex items-center">
-                    <input
-                      className="w-full bg-surface-high rounded-lg px-4 py-2.5 text-white border border-border-default focus:border-primary/50 focus:outline-none"
-                      onChange={(e) =>
-                        handleInputChange('default_lsp_url', e.target.value)
-                      }
-                      placeholder="http://localhost:3005/lsp"
-                      type="text"
-                      value={formData.default_lsp_url}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="flex space-x-4 mt-8 pt-4 border-t border-border-default">
-          <button
-            className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated rounded-lg transition-colors text-white font-medium"
-            onClick={onClose}
-            type="button"
-          >
-            {t('toolbar.edit.cancel')}
-          </button>
-          <button
-            className="flex-1 px-6 py-3 bg-[#15E99A] hover:bg-[#12C97E] rounded-lg transition-colors text-gray-900 font-medium flex items-center justify-center"
+        {/* Save button */}
+        <div className="pt-2">
+          <Button
+            className="w-full"
             disabled={isLoading}
+            icon={
+              isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )
+            }
+            iconPosition="left"
+            size="lg"
             type="submit"
+            variant="primary"
           >
-            {isLoading ? <Spinner size={20} /> : t('toolbar.edit.saveChanges')}
-          </button>
+            {t('toolbar.edit.saveChanges')}
+          </Button>
         </div>
       </form>
     </>

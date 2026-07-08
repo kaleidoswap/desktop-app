@@ -141,6 +141,30 @@
   animation: bounceScale 0.5s ease-in-out;
 }
 
+/* Ripple (expand + fade) Animation */
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+.animate-ripple-1 {
+  animation: ripple 4s ease-out infinite;
+}
+
+.animate-ripple-2 {
+  animation: ripple 4s ease-out 1.3s infinite;
+}
+
+.animate-ripple-3 {
+  animation: ripple 4s ease-out 2.6s infinite;
+}
+
 /* Rotate Scale Animation */
 @keyframes rotateScale {
   0% {

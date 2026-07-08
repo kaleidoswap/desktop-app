@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const stateStyles = error
       ? 'border-red/50 focus:ring-red/20 text-white'
-      : 'border-border-default/50 focus:ring-primary/20 focus:border-cyan text-white'
+      : 'border-border-default/50 focus:ring-primary/20 focus:border-primary text-white'
 
     const paddingLeft =
       prefixNode || (icon && iconPosition === 'left') ? 'pl-10' : ''

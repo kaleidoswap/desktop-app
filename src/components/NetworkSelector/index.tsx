@@ -55,7 +55,7 @@ export const NetworkSelector = ({
 
   return (
     <div className={`${className} relative`} ref={dropdownRef}>
-      <label className="block text-sm font-medium mb-2 text-white">
+      <label className="block text-sm font-medium mb-2 text-content-secondary">
         Network
       </label>
 
@@ -63,11 +63,11 @@ export const NetworkSelector = ({
       <button
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        className={`flex items-center justify-between w-full px-4 py-3 
-          border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan/50
+        className={`flex items-center justify-between w-full px-4 py-2.5 text-sm
+          border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20
           ${
             isOpen
-              ? 'border-cyan bg-surface-elevated/60 shadow-[0_0_10px_rgba(0,200,255,0.15)]'
+              ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)]'
               : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
           }`}
         onClick={() => setIsOpen(!isOpen)}

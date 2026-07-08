@@ -1,8 +1,8 @@
-import { AlertTriangle } from 'lucide-react'
+import { Scale, ArrowRight, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { TermsAndPrivacyContent } from '../TermsAndPrivacyContent'
-import { Modal } from '../ui'
+import { Modal, Button } from '../ui'
 
 interface TermsWarningModalProps {
   isOpen: boolean
@@ -21,59 +21,70 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="md">
-        <div className="p-6">
-          <div className="flex items-start mb-6">
-            <AlertTriangle className="w-6 h-6 text-yellow-500 mr-4 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="text-xl font-bold text-white mb-4">
-                Terms & Privacy Policy Agreement
-              </h3>
-              <p className="text-content-secondary mb-4">
-                Before proceeding, please note that by using KaleidoSwap, you
-                agree to our:
-              </p>
-              <ul className="list-disc pl-5 mb-6 space-y-2 text-content-secondary">
-                <li>
+      <Modal isOpen={isOpen} onClose={onClose} size="sm">
+        <div>
+          {/* Header — matches Deposit modal style */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4 px-6 pt-6">
+            <Scale className="w-6 h-6 text-primary" />
+            <h3 className="text-xl font-bold text-white flex-1">
+              Terms & Privacy Policy
+            </h3>
+            <button
+              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+              onClick={onClose}
+              type="button"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="px-6 pb-6 space-y-5">
+            <p className="text-content-secondary text-sm leading-relaxed">
+              By using KaleidoSwap, you agree to our:
+            </p>
+
+            <ul className="space-y-2 text-sm text-content-secondary">
+              <li className="flex items-start gap-2">
+                <span className="text-content-tertiary mt-0.5">•</span>
+                <span>
                   <button
-                    className="text-blue-400 hover:text-blue-300 underline"
+                    className="text-content-secondary hover:text-white underline transition-colors"
                     onClick={() => setShowContent('terms')}
                   >
                     Terms of Service
                   </button>{' '}
-                  - Including important notices about the experimental nature of
-                  the app
-                </li>
-                <li>
+                  — including notices about the experimental nature of the app
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-content-tertiary mt-0.5">•</span>
+                <span>
                   <button
-                    className="text-blue-400 hover:text-blue-300 underline"
+                    className="text-content-secondary hover:text-white underline transition-colors"
                     onClick={() => setShowContent('privacy')}
                   >
                     Privacy Policy
                   </button>{' '}
-                  - How we handle your data and privacy
-                </li>
-              </ul>
-              <p className="text-sm text-content-secondary">
-                Click the links above to read the full documents. By clicking "I
-                Accept", you acknowledge that you have read and agree to both
-                documents.
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end space-x-4">
-            <button
-              className="px-4 py-2 rounded-lg border border-border-default hover:bg-surface-high text-content-secondary transition-colors"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-emphasis text-primary-foreground font-medium transition-colors"
+                  — how we handle your data and privacy
+                </span>
+              </li>
+            </ul>
+
+            <p className="text-xs text-content-tertiary">
+              Click the links above to read the full documents.
+            </p>
+
+            <Button
+              className="w-full"
+              icon={<ArrowRight className="w-4 h-4" />}
+              iconPosition="right"
               onClick={onAccept}
+              size="lg"
+              type="button"
+              variant="primary"
             >
-              I Accept
-            </button>
+              Accept & Continue
+            </Button>
           </div>
         </div>
       </Modal>
