@@ -741,6 +741,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         if (orderId && orderPayload) {
           try {
             await persistChannelOrder({
+              fallbackAccessToken: accessToken,
               order,
               orderId,
               orderPayload,
@@ -774,6 +775,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         if (orderId && orderPayload) {
           try {
             await persistChannelOrder({
+              fallbackAccessToken: accessToken,
               order,
               orderId,
               orderPayload,

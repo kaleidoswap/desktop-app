@@ -169,7 +169,12 @@ export const useChannelOrderPaymentMonitor = ({
         }
 
         reachedTerminalState = true
-        await persistOrder(orderData)
+        // Only persist orders that succeeded or where a payment was actually
+        // made. Failed/expired orders with no payment produce empty "Unknown"
+        // rows in history, so we skip saving them.
+        if (terminalStatus === 'success' || paymentReceivedRef.current) {
+          await persistOrder(orderData)
+        }
         setPaymentStatus(terminalStatus)
         onTerminalStateRef.current?.(terminalStatus, orderData)
       } catch (error) {
