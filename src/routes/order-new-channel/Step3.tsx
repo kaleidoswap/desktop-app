@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Copy,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import CopyToClipboard from 'react-copy-to-clipboard'
@@ -97,12 +103,6 @@ export const Step3: React.FC<Props> = ({
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('orderChannel.step3.channelDetailsTitle')}
-        </h3>
-      </div>
-
       <Card className="mb-6 divide-y divide-border-default/40">
         {/* Order ID */}
         <div className="flex items-start justify-between py-4 first:pt-0">
@@ -130,68 +130,122 @@ export const Step3: React.FC<Props> = ({
         </div>
 
         {/* BTC Section */}
-        <div className="py-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
-            <span className="text-sm font-semibold text-white">
-              Bitcoin (BTC)
-            </span>
-          </div>
-          <div className="space-y-1.5 pl-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-content-secondary">
-                Total Capacity
-              </span>
-              <span className="text-sm text-white font-medium">
-                {formatNumber(totalCapacity)} SATS
-              </span>
+        {(() => {
+          const btcOut = order.client_balance_sat
+          const btcIn = order.lsp_balance_sat
+          const btcTotal = btcOut + btcIn
+          const btcOutPct = btcTotal > 0 ? (btcOut / btcTotal) * 100 : 50
+          const btcInPct = btcTotal > 0 ? (btcIn / btcTotal) * 100 : 50
+          return (
+            <div className="py-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
+                <span className="text-sm font-semibold text-white">
+                  Bitcoin (BTC)
+                </span>
+                <span className="ml-auto text-xs text-content-tertiary">
+                  {formatNumber(totalCapacity)} SATS total
+                </span>
+              </div>
+              <div className="pl-6">
+                <div className="grid grid-cols-3 items-center text-xs mb-1">
+                  <span className="flex items-center gap-1 text-purple-400 font-medium">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {formatBitcoinAmount(btcOut, bitcoinUnit)} {displayUnit}
+                  </span>
+                  <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                    BTC
+                  </span>
+                  <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                    {formatBitcoinAmount(btcIn, bitcoinUnit)} {displayUnit}
+                    <ArrowDownRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                    style={{ width: `${btcOutPct}%` }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                    style={{ width: `${btcInPct}%` }}
+                  />
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                </div>
+                <div className="grid grid-cols-3 text-[10px] mt-1">
+                  <span className="text-purple-400/70">Outbound</span>
+                  <span />
+                  <span className="text-right text-emerald-400/70">
+                    Inbound
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-content-secondary">
-                Outbound Liquidity
-              </span>
-              <span className="text-sm text-white font-medium">
-                {formatBitcoinAmount(order.client_balance_sat, bitcoinUnit)}{' '}
-                {displayUnit}
-              </span>
-            </div>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* RGB Asset Section */}
-        {hasAsset && totalAssetAmount > 0 && (
-          <div className="py-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <img
-                alt={assetTicker}
-                className="w-4 h-4 rounded-full"
-                src={assetIcon}
-              />
-              <span className="text-sm font-semibold text-white">
-                {assetTicker}
-                {assetName ? ` (${assetName})` : ''}
-              </span>
-            </div>
-            <div className="space-y-1.5 pl-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-content-secondary">
-                  Total Capacity
-                </span>
-                <span className="text-sm text-white font-medium">
-                  {totalAssetAmount.toLocaleString()} {assetTicker}
-                </span>
+        {hasAsset &&
+          totalAssetAmount > 0 &&
+          (() => {
+            const assetOutPct =
+              totalAssetAmount > 0
+                ? (clientAssetRaw / totalAssetAmount) * 100
+                : 50
+            const assetInPct =
+              totalAssetAmount > 0 ? (lspAssetRaw / totalAssetAmount) * 100 : 50
+            return (
+              <div className="py-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <img
+                    alt={assetTicker}
+                    className="w-4 h-4 rounded-full"
+                    src={assetIcon}
+                  />
+                  <span className="text-sm font-semibold text-white">
+                    {assetTicker}
+                    {assetName ? ` (${assetName})` : ''}
+                  </span>
+                  <span className="ml-auto text-xs text-content-tertiary">
+                    {totalAssetAmount.toLocaleString()} {assetTicker} total
+                  </span>
+                </div>
+                <div className="pl-6">
+                  <div className="grid grid-cols-3 items-center text-xs mb-1">
+                    <span className="flex items-center gap-1 text-purple-400 font-medium">
+                      <ArrowUpRight className="w-3 h-3" />
+                      {clientAssetRaw.toLocaleString()} {assetTicker}
+                    </span>
+                    <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                      {assetTicker}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                      {lspAssetRaw.toLocaleString()} {assetTicker}
+                      <ArrowDownRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                    <div
+                      className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                      style={{ width: `${assetOutPct}%` }}
+                    />
+                    <div
+                      className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                      style={{ width: `${assetInPct}%` }}
+                    />
+                    <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                  </div>
+                  <div className="grid grid-cols-3 text-[10px] mt-1">
+                    <span className="text-purple-400/70">Outbound</span>
+                    <span />
+                    <span className="text-right text-emerald-400/70">
+                      Inbound
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-content-secondary">
-                  Outbound Liquidity
-                </span>
-                <span className="text-sm text-white font-medium">
-                  {clientAssetRaw.toLocaleString()} {assetTicker}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+            )
+          })()}
 
         {/* Duration */}
         <div className="flex items-center justify-between py-4">

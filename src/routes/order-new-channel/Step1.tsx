@@ -268,12 +268,6 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
   return (
     <div className="w-full relative">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mt-4 mb-8">
-          <h3 className="text-3xl font-bold text-white">
-            {t('orderChannel.step1.title')}
-          </h3>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Left card: Connect New LSP */}
           <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl flex flex-col gap-4">

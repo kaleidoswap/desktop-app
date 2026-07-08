@@ -37,28 +37,26 @@ export const FeeSelector: React.FC<FeeSelectorProps> = ({
     { label: t('orderChannel.step3.feeCustom'), rate: 0, value: 'custom' },
   ]
   return (
-    <div className="space-y-3">
-      <label className="block text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
+    <div className="space-y-1">
+      <label className="text-xs font-medium text-content-secondary">
         {t('orderChannel.step3.feeRateLabel')}
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-4 gap-2">
         {feeRates.map((rate) => (
           <button
-            className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-sm transition-all duration-200 ${
+            className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors duration-200 border text-xs ${
               selectedFee === rate.value
-                ? 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100'
-                : 'border-border-subtle bg-surface-base/45 text-content-secondary hover:border-cyan-400/25 hover:text-content-primary'
+                ? 'bg-primary/10 border-primary text-primary'
+                : 'border-border-default hover:border-primary/50 text-content-secondary'
             }`}
             key={rate.value}
             onClick={() => onFeeChange(rate.value)}
             type="button"
           >
-            <div className="flex items-center gap-2">
-              {getFeeIcon(rate.value)}
-              <span>{rate.label}</span>
-            </div>
+            {getFeeIcon(rate.value)}
+            <span className="text-[10px]">{rate.label}</span>
             {rate.value !== 'custom' && (
-              <span>
+              <span className="text-[9px]">
                 {rate.rate} {t('orderChannel.feeUnit')}
               </span>
             )}

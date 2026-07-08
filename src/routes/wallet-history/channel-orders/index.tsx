@@ -22,10 +22,16 @@ import {
   Info,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { IconButton, Card, Select } from '../../../components/ui'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
+
+import { Card, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -220,8 +226,10 @@ const OrderDetailCard: React.FC<{
   const feePaid = bolt11Fee || onchainFee
   const delivery = getOrderDeliveryMetadata(orderData)
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+  return createPortal(
+    <div
+      className={`${getModalPositionClass()} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto pointer-events-auto`}
+    >
       <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-2xl max-w-3xl w-full my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border-default/70">
@@ -537,7 +545,8 @@ const OrderDetailCard: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -551,8 +560,10 @@ const DeleteConfirmationModal: React.FC<{
   const { t } = useTranslation()
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div
+      className={`${getModalPositionClass()} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
+    >
       <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-xl max-w-md w-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-default/70">
@@ -609,7 +620,8 @@ const DeleteConfirmationModal: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -762,29 +774,10 @@ export const Component = () => {
 
   const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery()
 
-  const uniqueAssetIds = Array.from(
-    new Set(
-      orders
-        .map((order) => {
-          try {
-            return JSON.parse(order.payload).asset_id as string | undefined
-          } catch {
-            return undefined
-          }
-        })
-        .filter((id): id is string => !!id)
-    )
-  )
-
-  const uniqueAssets = uniqueAssetIds.map((id) => {
-    const asset = (assetsData?.nia || []).find((a: any) => a.asset_id === id)
-    return {
-      id,
-      label: asset
-        ? `${asset.name} (${asset.ticker})`
-        : id.substring(0, 20) + '…',
-    }
-  })
+  const uniqueAssets = (assetsData?.nia || []).map((asset: any) => ({
+    id: asset.asset_id,
+    label: `${asset.name} (${asset.ticker})`,
+  }))
 
   const filteredOrders = orders.filter((order) => {
     if (!order.order_id.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -927,33 +920,33 @@ export const Component = () => {
         </div>
 
         <div className="relative group/cols shrink-0">
-          <IconButton
+          <button
             aria-label={t('components.walletHistory.channelOrders.editColumns')}
-            className="border-white/30 hover:border-white/50"
-            icon={<Settings className="w-4 h-4" />}
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors"
             onClick={() => setShowColumnSelector(!showColumnSelector)}
-            variant="outline"
-          />
+            type="button"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
           <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/cols:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
             {t('components.walletHistory.channelOrders.editColumns')}
           </div>
         </div>
 
         <div className="relative group/ref shrink-0">
-          <IconButton
+          <button
             aria-label="Refresh"
-            className="border-white/30 hover:border-white/50"
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={refreshing}
-            icon={
-              refreshing ? (
-                <LoaderIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )
-            }
             onClick={handleRefresh}
-            variant="outline"
-          />
+            type="button"
+          >
+            {refreshing ? (
+              <LoaderIcon className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </button>
           <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
             Refresh data
           </div>
@@ -1151,7 +1144,7 @@ export const Component = () => {
                       <div className="flex items-center justify-center gap-2">
                         <div className="relative group/btn">
                           <button
-                            className="flex items-center justify-center w-8 h-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                            className="p-1.5 rounded-md bg-transparent border border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/10 text-blue-400 hover:text-blue-300 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleViewDetails(order)
@@ -1167,7 +1160,7 @@ export const Component = () => {
                         </div>
                         <div className="relative group/btn">
                           <button
-                            className="flex items-center justify-center w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                            className="p-1.5 rounded-md bg-transparent border border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleDelete(order.order_id)

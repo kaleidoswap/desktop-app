@@ -8,7 +8,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -24,6 +24,7 @@ import {
   formatAssetAmountWithPrecision,
 } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
+import { ChannelDurationSelector } from '../../components/ChannelConfiguration'
 import {
   NewChannelFormSchema,
   TNewChannelForm,
@@ -31,6 +32,167 @@ import {
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 import 'react-toastify/dist/ReactToastify.css'
+
+const AssetSliders = ({
+  asset,
+  assetAmountInput,
+  assetOutboundPct,
+  maxAmount,
+  bitcoinUnit,
+  onAmountChange,
+  onOutboundChange,
+}: {
+  asset: NiaAsset
+  assetAmountInput: string
+  assetOutboundPct: number
+  maxAmount: number
+  bitcoinUnit: string
+  onAmountChange: (raw: number) => void
+  onOutboundChange: (pct: number) => void
+}) => {
+  const rawAmount = parseAssetAmountWithPrecision(
+    assetAmountInput || '0',
+    asset.ticker,
+    bitcoinUnit,
+    [asset]
+  )
+  const capacityPct =
+    maxAmount > 0
+      ? Math.max(0, Math.min(100, (rawAmount / maxAmount) * 100))
+      : 0
+  const outboundAmount = Math.round((rawAmount * assetOutboundPct) / 100)
+  const inboundAmount = Math.max(0, rawAmount - outboundAmount)
+
+  if (rawAmount <= 0) return null
+
+  return (
+    <>
+      {/* Channel Capacity — mirrors the text input above, like the BTC capacity slider */}
+      <div className="mt-4 px-1">
+        <div className="relative">
+          <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+              style={{ width: `${capacityPct}%` }}
+            />
+          </div>
+          <input
+            className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+            max={maxAmount}
+            min={0}
+            onChange={(e) => onAmountChange(Number(e.target.value))}
+            step={1}
+            type="range"
+            value={rawAmount}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+            style={{ left: `calc(${capacityPct}% - 8px)` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-content-tertiary mt-2">
+          <span>Min: 1 {asset.ticker}</span>
+          <span>
+            Max:{' '}
+            {formatAssetAmountWithPrecision(
+              maxAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            {asset.ticker}
+          </span>
+        </div>
+      </div>
+
+      {/* Outbound Balance — percentage of the above capacity */}
+      <div className="mt-4 px-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs text-content-secondary">
+            Outbound Balance
+          </span>
+          <span className="text-xs font-medium text-white">
+            {assetOutboundPct}%
+          </span>
+        </div>
+        <div className="relative">
+          <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+              style={{ width: `${assetOutboundPct}%` }}
+            />
+          </div>
+          <input
+            className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+            max={100}
+            min={0}
+            onChange={(e) => onOutboundChange(Number(e.target.value))}
+            step={1}
+            type="range"
+            value={assetOutboundPct}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+            style={{ left: `calc(${assetOutboundPct}% - 8px)` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-content-tertiary mt-2">
+          <span>
+            ↑{' '}
+            {formatAssetAmountWithPrecision(
+              outboundAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            out
+          </span>
+          <span>
+            {formatAssetAmountWithPrecision(
+              inboundAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            in ↓
+          </span>
+        </div>
+      </div>
+    </>
+  )
+}
+
+const AssetDropdownItem = ({
+  asset,
+  isSelected,
+  onSelect,
+}: {
+  asset: NiaAsset
+  isSelected: boolean
+  onSelect: () => void
+}) => {
+  const [iconSrc, setIconSrc] = useAssetIcon(asset.ticker, defaultIcon)
+  return (
+    <button
+      className={`w-full px-3 py-2 flex items-center gap-3 text-left text-sm transition-colors duration-150 ${isSelected ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
+      onClick={onSelect}
+      type="button"
+    >
+      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img
+          alt={asset.ticker}
+          className="w-full h-full object-cover rounded-full"
+          onError={() => setIconSrc(defaultIcon)}
+          src={iconSrc}
+        />
+      </div>
+      <div className="text-left">
+        <div className="font-medium">{asset.ticker}</div>
+        <div className="text-xs text-content-tertiary">{asset.name}</div>
+      </div>
+    </button>
+  )
+}
 
 interface Props {
   onBack: VoidFunction
@@ -80,6 +242,21 @@ export const Step2 = ({
   const [assetAmountInput, setAssetAmountInput] = useState('')
   const [customFeeRate, setCustomFeeRate] = useState<number>(1)
   const [isAssetDropdownOpen, setIsAssetDropdownOpen] = useState(false)
+  const [assetOutboundPct, setAssetOutboundPct] = useState<number>(50)
+  const assetDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        assetDropdownRef.current &&
+        !assetDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAssetDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const { bitcoinUnit } = useSettings()
 
@@ -341,12 +518,6 @@ export const Step2 = ({
 
   return (
     <form className="max-w-3xl mx-auto" onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('createChannel.step2.title')}
-        </h3>
-      </div>
-
       <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
         {/* PubKey display section */}
         <div className="mb-12">
@@ -363,6 +534,28 @@ export const Step2 = ({
             <label className="text-sm font-medium text-content-secondary">
               {t('createChannel.step2.capacityLabel')}
             </label>
+            <div className="flex items-center gap-1">
+              {[
+                { label: '100k', value: 100_000 },
+                { label: '250k', value: 250_000 },
+                { label: '500k', value: 500_000 },
+                { label: '1M', value: 1_000_000 },
+              ].map(({ label, value }) => (
+                <button
+                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                    value > maxCapacity
+                      ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
+                      : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                  }`}
+                  disabled={value > maxCapacity}
+                  key={label}
+                  onClick={() => handleCapacityChange(value.toString())}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="relative">
             <input
@@ -435,83 +628,66 @@ export const Step2 = ({
             {t('createChannel.step2.rgbAssetsTitle')}
           </h5>
 
-          <button
-            className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default hover:border-primary/50 transition-all duration-200 flex items-center justify-between text-left"
-            onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
-            type="button"
-          >
-            <div className="flex items-center gap-2">
-              {selectedAsset ? (
-                <>
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                    <img
-                      alt={selectedAsset.ticker}
-                      className="w-4 h-4"
-                      src={assetIconSrc}
-                    />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white text-sm">
-                      {selectedAsset.ticker}
-                    </div>
-                    <div className="text-xs text-content-secondary">
+          <div className="relative" ref={assetDropdownRef}>
+            <button
+              className={`w-full flex items-center gap-2 py-2 pl-3 pr-3 text-sm bg-surface-overlay/30 rounded-lg border text-white transition-all duration-200 focus:outline-none ${isAssetDropdownOpen ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border-default/50'}`}
+              onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
+              type="button"
+            >
+              <span className="flex-1 text-left">
+                {selectedAsset ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <img
+                        alt={selectedAsset.ticker}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={() => setAssetIconSrc(defaultIcon)}
+                        src={assetIconSrc}
+                      />
+                    </span>
+                    <span className="font-medium">{selectedAsset.ticker}</span>
+                    <span className="text-content-secondary text-xs">
                       {selectedAsset.name}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <span className="text-content-secondary text-sm">No Asset</span>
-              )}
-            </div>
-            <ChevronDown
-              className={`w-4 h-4 text-content-secondary transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-content-secondary">No Asset</span>
+                )}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-content-secondary flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-          {isAssetDropdownOpen && (
-            <div className="rounded-xl border border-border-default bg-surface-overlay shadow-lg overflow-hidden mt-1">
-              <div className="max-h-[220px] overflow-y-auto">
-                <button
-                  className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-white/5 text-content-secondary transition-colors duration-200 border-b border-border-default/50 text-sm"
-                  onClick={() => {
-                    handleAddAssetToggle(false)
-                    setIsAssetDropdownOpen(false)
-                  }}
-                  type="button"
-                >
-                  No Asset
-                </button>
-                {availableAssets.map((asset: NiaAsset) => (
+            {isAssetDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
+                <div className="max-h-[220px] overflow-y-auto">
                   <button
-                    className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-primary/10 transition-colors duration-200 text-sm"
-                    key={asset.asset_id}
+                    className={`w-full px-3 py-2 text-left text-sm transition-colors duration-150 border-b border-border-default/50 ${!selectedAsset ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
                     onClick={() => {
-                      handleAssetSelect(asset.asset_id)
-                      handleAddAssetToggle(true)
+                      handleAddAssetToggle(false)
                       setIsAssetDropdownOpen(false)
                     }}
                     type="button"
                   >
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <img
-                        alt={asset.ticker}
-                        className="w-3.5 h-3.5"
-                        src={defaultIcon}
-                      />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-medium text-white">
-                        {asset.ticker}
-                      </div>
-                      <div className="text-xs text-content-tertiary">
-                        {asset.name}
-                      </div>
-                    </div>
+                    No Asset
                   </button>
-                ))}
+                  {availableAssets.map((asset: NiaAsset) => (
+                    <AssetDropdownItem
+                      asset={asset}
+                      isSelected={selectedAsset?.asset_id === asset.asset_id}
+                      key={asset.asset_id}
+                      onSelect={() => {
+                        handleAssetSelect(asset.asset_id)
+                        handleAddAssetToggle(true)
+                        setIsAssetDropdownOpen(false)
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {selectedAsset && addAsset && (
             <div className="mt-6 space-y-4">
@@ -747,6 +923,39 @@ export const Step2 = ({
                             Min: 1 {selectedAsset.ticker}
                           </div>
 
+                          <AssetSliders
+                            asset={selectedAsset}
+                            assetAmountInput={assetAmountInput}
+                            assetOutboundPct={assetOutboundPct}
+                            bitcoinUnit={bitcoinUnit}
+                            maxAmount={
+                              maxAssetAmountMap[selectedAsset.asset_id] || 0
+                            }
+                            onAmountChange={(raw) => {
+                              const display = formatAssetAmountWithPrecision(
+                                raw,
+                                selectedAsset.ticker,
+                                bitcoinUnit,
+                                [selectedAsset]
+                              )
+                              setAssetAmountInput(display)
+                              setValue('assetAmount', raw)
+                              onFormUpdate({ assetAmount: raw })
+                            }}
+                            onOutboundChange={(pct) => {
+                              setAssetOutboundPct(pct)
+                              const raw = parseAssetAmountWithPrecision(
+                                assetAmountInput || '0',
+                                selectedAsset.ticker,
+                                bitcoinUnit,
+                                [selectedAsset]
+                              )
+                              const outbound = Math.round((raw * pct) / 100)
+                              setValue('assetAmount', outbound)
+                              onFormUpdate({ assetAmount: outbound })
+                            }}
+                          />
+
                           {formState.errors.assetAmount && (
                             <div className="text-sm text-red-400">
                               {formState.errors.assetAmount.message}
@@ -821,10 +1030,10 @@ export const Step2 = ({
 
         {/* Fee selection section */}
         <div className="mb-12">
-          <label className="block text-sm font-medium text-content-secondary mb-3">
-            Transaction Fee Rate
+          <label className="text-xs font-medium text-content-secondary">
+            Fee Rate
           </label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-2 mt-1">
             {(
               [
                 {
@@ -857,7 +1066,7 @@ export const Step2 = ({
               ] as const
             ).map(({ value, label, icon, rate }) => (
               <button
-                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-all duration-200 border text-xs ${
+                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors duration-200 border text-xs ${
                   selectedFee === value
                     ? 'bg-primary/10 border-primary text-primary'
                     : 'border-border-default hover:border-primary/50 text-content-secondary'
@@ -890,6 +1099,15 @@ export const Step2 = ({
               />
             </div>
           )}
+        </div>
+
+        {/* Channel Lock Duration */}
+        <div className="mb-12">
+          <ChannelDurationSelector
+            containerClassName="border-0 p-0"
+            onChange={(v) => onFormUpdate({ channelExpireBlocks: v })}
+            value={formData.channelExpireBlocks ?? 12960}
+          />
         </div>
 
         {/* Channel Privacy */}

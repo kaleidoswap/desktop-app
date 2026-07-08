@@ -1,4 +1,10 @@
-import { ArrowLeft, ArrowRight, Copy } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Copy,
+} from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -113,12 +119,6 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('createChannel.step3.channelDetails')}
-        </h3>
-      </div>
-
       {error && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-center">
           {error}
@@ -149,6 +149,89 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
             )}
           </div>
         </div>
+
+        {/* Liquidity */}
+        {(() => {
+          const outPct = 100
+          const inPct = 0
+          return (
+            <div className="py-4">
+              <span className="text-sm text-content-secondary block mb-3">
+                {t('createChannel.step3.initialLiquidity')}
+              </span>
+              {/* BTC row */}
+              <div className="mb-2">
+                <div className="grid grid-cols-3 items-center text-xs mb-1">
+                  <span className="flex items-center gap-1 text-purple-400 font-medium">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {formatNumber(formData.capacitySat)} sat
+                  </span>
+                  <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                    BTC
+                  </span>
+                  <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                    0 sat
+                    <ArrowDownRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                    style={{ width: `${outPct}%` }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                    style={{ width: `${inPct}%` }}
+                  />
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                </div>
+                <div className="grid grid-cols-3 text-[10px] text-content-tertiary mt-1">
+                  <span className="text-purple-400/70">Outbound</span>
+                  <span />
+                  <span className="text-right text-emerald-400/70">
+                    Inbound
+                  </span>
+                </div>
+              </div>
+              {/* RGB asset row */}
+              {isAssetChannel && (
+                <div className="mt-3">
+                  <div className="grid grid-cols-3 items-center text-xs mb-1">
+                    <span className="flex items-center gap-1 text-purple-400 font-medium">
+                      <ArrowUpRight className="w-3 h-3" />
+                      {formatAssetAmount} {formData.assetTicker}
+                    </span>
+                    <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                      {formData.assetTicker}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                      0 {formData.assetTicker}
+                      <ArrowDownRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                    <div
+                      className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                      style={{ width: `${outPct}%` }}
+                    />
+                    <div
+                      className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                      style={{ width: `${inPct}%` }}
+                    />
+                    <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                  </div>
+                  <div className="grid grid-cols-3 text-[10px] mt-1">
+                    <span className="text-purple-400/70">Outbound</span>
+                    <span />
+                    <span className="text-right text-emerald-400/70">
+                      Inbound
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Peer */}
         <div className="flex items-start justify-between py-4">

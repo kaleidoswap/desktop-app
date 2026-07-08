@@ -131,11 +131,15 @@ export const Step4: React.FC<StepProps> = ({
     listChannelsResponse?.data?.channels?.filter(
       (channel: any) => channel.ready
     ) || []
-  const outboundLiquidity = Math.max(
-    ...(channels.map(
-      (channel: any) => (channel.next_outbound_htlc_limit_msat || 0) / 1000
-    ) || [0])
-  )
+  const outboundLiquidity =
+    channels.length > 0
+      ? Math.max(
+          ...channels.map(
+            (channel: any) =>
+              (channel.next_outbound_htlc_limit_msat || 0) / 1000
+          )
+        )
+      : 0
   const vanillaChainBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
   const coloredChainBalance = btcBalanceResponse.data?.colored?.spendable || 0
   const onChainBalance = vanillaChainBalance + coloredChainBalance

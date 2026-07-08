@@ -141,7 +141,7 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
 
           {/* Pay Button */}
           <button
-            className="w-full px-6 py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 font-medium bg-primary hover:bg-primary-emphasis text-primary-foreground"
+            className="w-full px-6 py-4 rounded-full transition-all duration-200 flex items-center justify-center gap-3 font-medium bg-primary hover:bg-primary-emphasis text-primary-foreground"
             onClick={onPayClick}
           >
             <span>{paymentMethod === 'lightning' ? '⚡' : '₿'}</span>

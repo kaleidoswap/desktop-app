@@ -53,15 +53,15 @@ export const ChannelDurationSelector = <
     currentValue: number
     onSelect: (v: number) => void
   }) => (
-    <div className="flex gap-2">
+    <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1 w-fit">
       {options.map((opt) => {
         const isSelected = currentValue === opt.value
         return (
           <button
-            className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 border ${
+            className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
               isSelected
-                ? 'bg-primary/10 border-primary text-primary'
-                : 'border-border-default hover:border-primary/50 text-content-secondary'
+                ? 'bg-primary/15 text-primary border border-primary/30'
+                : 'text-content-secondary hover:text-white border border-transparent'
             }`}
             key={opt.value}
             onClick={() => onSelect(opt.value)}
