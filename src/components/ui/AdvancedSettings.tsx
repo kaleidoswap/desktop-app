@@ -22,9 +22,10 @@ export const AdvancedSettings = ({
       <button
         className={`w-full px-4 py-2.5 flex items-center justify-between text-left text-sm
           border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20
-          ${isOpen
-            ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
-            : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
+          ${
+            isOpen
+              ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
+              : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
           }`}
         onClick={() => setIsOpen(!isOpen)}
         type="button"

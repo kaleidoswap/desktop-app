@@ -52,8 +52,8 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
                     onClick={() => setShowContent('terms')}
                   >
                     Terms of Service
-                  </button>
-                  {' '}— including notices about the experimental nature of the app
+                  </button>{' '}
+                  — including notices about the experimental nature of the app
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -64,8 +64,8 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
                     onClick={() => setShowContent('privacy')}
                   >
                     Privacy Policy
-                  </button>
-                  {' '}— how we handle your data and privacy
+                  </button>{' '}
+                  — how we handle your data and privacy
                 </span>
               </li>
             </ul>

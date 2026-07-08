@@ -21,20 +21,26 @@ export const SkipMnemonicWarningModal = ({
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-status-danger/10 border border-status-danger/20 shrink-0">
             <AlertTriangle className="w-5 h-5 text-status-danger" />
           </div>
-          <h2 className="text-xl font-bold text-white">Skip Recovery Phrase?</h2>
+          <h2 className="text-xl font-bold text-white">
+            Skip Recovery Phrase?
+          </h2>
         </div>
 
         {/* Warning Content */}
         <div className="space-y-4 mb-6">
           <p className="text-content-secondary text-sm leading-relaxed">
             Without your recovery phrase, you will{' '}
-            <span className="text-status-danger font-semibold">permanently lose access</span>{' '}
-            to your wallet if your device is lost, data corrupted, or password forgotten.
+            <span className="text-status-danger font-semibold">
+              permanently lose access
+            </span>{' '}
+            to your wallet if your device is lost, data corrupted, or password
+            forgotten.
           </p>
 
           <div className="p-3 rounded-lg bg-status-warning/5 border border-status-warning/20">
             <p className="text-status-warning text-sm font-medium">
-              We strongly recommend writing down your recovery phrase and storing it in a secure location before continuing.
+              We strongly recommend writing down your recovery phrase and
+              storing it in a secure location before continuing.
             </p>
           </div>
         </div>

@@ -104,9 +104,7 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
         className="bg-surface-base text-white rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 max-w-lg w-full mx-4 overflow-hidden animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">
-          {children}
-        </div>
+        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">{children}</div>
       </div>
     </div>,
     getModalPortalTarget()
@@ -212,7 +210,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
               {account.name}
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}>
+              <span
+                className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}
+              >
                 {getNetworkDisplayName(account.network)}
               </span>
               <span className={`flex items-center ${nodeColor} text-sm`}>
@@ -1048,16 +1048,24 @@ const CopyField = ({ label, value }: { label: string; value: string }) => {
   }
   return (
     <div>
-      <label className="text-xs font-medium text-content-secondary uppercase tracking-wider">{label}</label>
+      <label className="text-xs font-medium text-content-secondary uppercase tracking-wider">
+        {label}
+      </label>
       <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border-default/50 bg-surface-overlay/30 group">
-        <span className="flex-1 text-sm text-white break-all font-mono">{value}</span>
+        <span className="flex-1 text-sm text-white break-all font-mono">
+          {value}
+        </span>
         <button
           className="shrink-0 p-1 rounded text-content-tertiary hover:text-white hover:bg-surface-high/60 transition-colors"
           onClick={handleCopy}
           title="Copy"
           type="button"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-primary" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
         </button>
       </div>
     </div>
@@ -1079,9 +1087,10 @@ const AccordionSection = ({
     <button
       className={`w-full px-4 py-2.5 flex items-center justify-between text-left text-sm
         border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20
-        ${isOpen
-          ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
-          : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
+        ${
+          isOpen
+            ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
+            : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
         }`}
       onClick={onToggle}
       type="button"
@@ -1231,9 +1240,6 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
     ? t('toolbar.modal.localNode')
     : t('toolbar.modal.remoteNode')
   const nodeColor = account.datapath ? 'text-green-400' : 'text-primary'
-  const bgColor = account.datapath
-    ? 'from-green-500/5 to-transparent'
-    : 'from-cyan/5 to-transparent'
 
   return (
     <div>
@@ -1300,10 +1306,14 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-white truncate">{account.name}</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}>
+            <span
+              className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium border ${getNetworkChipColor(account.network)}`}
+            >
               {getNetworkDisplayName(account.network)}
             </span>
-            <span className={`flex items-center gap-1 text-xs font-medium ${nodeColor}`}>
+            <span
+              className={`flex items-center gap-1 text-xs font-medium ${nodeColor}`}
+            >
               <NodeIcon size={11} />
               {nodeType}
             </span>
@@ -1318,8 +1328,14 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           onToggle={() => toggleSection('connection')}
           title={t('toolbar.modal.connectionDetails')}
         >
-          <CopyField label={t('toolbar.modal.nodeUrl')} value={account.node_url} />
-          <CopyField label={t('toolbar.modal.rpcConnection')} value={account.rpc_connection_url} />
+          <CopyField
+            label={t('toolbar.modal.nodeUrl')}
+            value={account.node_url}
+          />
+          <CopyField
+            label={t('toolbar.modal.rpcConnection')}
+            value={account.rpc_connection_url}
+          />
         </AccordionSection>
 
         {/* Service Endpoints Section */}
@@ -1328,8 +1344,14 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           onToggle={() => toggleSection('services')}
           title={t('toolbar.modal.serviceEndpoints')}
         >
-          <CopyField label={t('toolbar.modal.indexerUrl')} value={account.indexer_url} />
-          <CopyField label={t('toolbar.modal.rgbProxy')} value={account.proxy_endpoint} />
+          <CopyField
+            label={t('toolbar.modal.indexerUrl')}
+            value={account.indexer_url}
+          />
+          <CopyField
+            label={t('toolbar.modal.rgbProxy')}
+            value={account.proxy_endpoint}
+          />
         </AccordionSection>
 
         {/* Port Configuration Section - Only for Local Nodes */}
@@ -1339,9 +1361,18 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             onToggle={() => toggleSection('ports')}
             title={t('toolbar.modal.portConfiguration')}
           >
-            <CopyField label={t('toolbar.modal.daemonPort')} value={account.daemon_listening_port} />
-            <CopyField label={t('toolbar.modal.ldkPeerPort')} value={account.ldk_peer_listening_port} />
-            <CopyField label={t('toolbar.modal.dataPath')} value={account.datapath} />
+            <CopyField
+              label={t('toolbar.modal.daemonPort')}
+              value={account.daemon_listening_port}
+            />
+            <CopyField
+              label={t('toolbar.modal.ldkPeerPort')}
+              value={account.ldk_peer_listening_port}
+            />
+            <CopyField
+              label={t('toolbar.modal.dataPath')}
+              value={account.datapath}
+            />
           </AccordionSection>
         )}
       </div>
@@ -1400,7 +1431,9 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-8 -mt-8 mb-5 px-8 pt-8 pb-4">
         <div className="flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-status-danger" />
-          <h3 className="text-lg font-semibold text-white">{t('toolbar.delete.title')}</h3>
+          <h3 className="text-lg font-semibold text-white">
+            {t('toolbar.delete.title')}
+          </h3>
         </div>
         <button
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
@@ -1544,7 +1577,8 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
     }
   }
 
-  const labelClass = 'block text-xs font-medium text-content-secondary uppercase tracking-wider mb-1.5'
+  const labelClass =
+    'block text-xs font-medium text-content-secondary uppercase tracking-wider mb-1.5'
 
   return (
     <>
@@ -1552,7 +1586,9 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-divider/10 shrink-0 -mx-6 -mt-6 mb-4 px-6 pt-6 pb-4">
         <div className="flex items-center gap-3">
           <Settings className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-white">{t('toolbar.edit.title')}</h3>
+          <h3 className="text-lg font-semibold text-white">
+            {t('toolbar.edit.title')}
+          </h3>
         </div>
         <button
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
@@ -1566,12 +1602,16 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Basic fields — directly on bg */}
         <div>
-          <label className={labelClass}>{t('toolbar.edit.fields.nodeName')}</label>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.nodeName')}
+          </label>
           <Input disabled type="text" value={formData.name} />
         </div>
 
         <div>
-          <label className={labelClass}>{t('toolbar.edit.fields.nodeUrl')}</label>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.nodeUrl')}
+          </label>
           <Input
             onChange={(e) => handleInputChange('node_url', e.target.value)}
             placeholder="http://localhost:3000"
@@ -1581,9 +1621,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
         </div>
 
         <div>
-          <label className={labelClass}>{t('toolbar.edit.fields.rpcConnectionUrl')}</label>
+          <label className={labelClass}>
+            {t('toolbar.edit.fields.rpcConnectionUrl')}
+          </label>
           <Input
-            onChange={(e) => handleInputChange('rpc_connection_url', e.target.value)}
+            onChange={(e) =>
+              handleInputChange('rpc_connection_url', e.target.value)
+            }
             placeholder="http://localhost:3001/rpc"
             type="text"
             value={formData.rpc_connection_url}
@@ -1593,7 +1637,9 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
         {/* Advanced Settings accordion */}
         <AdvancedSettings>
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.indexerUrl')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.indexerUrl')}
+            </label>
             <Input
               onChange={(e) => handleInputChange('indexer_url', e.target.value)}
               placeholder="http://localhost:3002/api"
@@ -1603,9 +1649,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.rgbProxyEndpoint')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.rgbProxyEndpoint')}
+            </label>
             <Input
-              onChange={(e) => handleInputChange('proxy_endpoint', e.target.value)}
+              onChange={(e) =>
+                handleInputChange('proxy_endpoint', e.target.value)
+              }
               placeholder="http://localhost:3003/proxy"
               type="text"
               value={formData.proxy_endpoint}
@@ -1613,9 +1663,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.defaultMakerUrl')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.defaultMakerUrl')}
+            </label>
             <Input
-              onChange={(e) => handleInputChange('default_maker_url', e.target.value)}
+              onChange={(e) =>
+                handleInputChange('default_maker_url', e.target.value)
+              }
               placeholder="http://localhost:3004/maker"
               type="text"
               value={formData.default_maker_url}
@@ -1623,9 +1677,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.defaultLspUrl')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.defaultLspUrl')}
+            </label>
             <Input
-              onChange={(e) => handleInputChange('default_lsp_url', e.target.value)}
+              onChange={(e) =>
+                handleInputChange('default_lsp_url', e.target.value)
+              }
               placeholder="http://localhost:3005/lsp"
               type="text"
               value={formData.default_lsp_url}
@@ -1633,12 +1691,16 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.daemonListeningPort')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.daemonListeningPort')}
+            </label>
             <Input
               error={!!portErrors.daemon}
               max="65535"
               min="1024"
-              onChange={(e) => handleInputChange('daemon_listening_port', e.target.value)}
+              onChange={(e) =>
+                handleInputChange('daemon_listening_port', e.target.value)
+              }
               placeholder="3001"
               type="number"
               value={formData.daemon_listening_port}
@@ -1653,12 +1715,16 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </div>
 
           <div>
-            <label className={labelClass}>{t('toolbar.edit.fields.ldkPeerListeningPort')}</label>
+            <label className={labelClass}>
+              {t('toolbar.edit.fields.ldkPeerListeningPort')}
+            </label>
             <Input
               error={!!portErrors.ldk}
               max="65535"
               min="1024"
-              onChange={(e) => handleInputChange('ldk_peer_listening_port', e.target.value)}
+              onChange={(e) =>
+                handleInputChange('ldk_peer_listening_port', e.target.value)
+              }
               placeholder="9735"
               type="number"
               value={formData.ldk_peer_listening_port}
@@ -1674,7 +1740,9 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
 
           {account.datapath && (
             <div>
-              <label className={labelClass}>{t('toolbar.edit.fields.dataPath')}</label>
+              <label className={labelClass}>
+                {t('toolbar.edit.fields.dataPath')}
+              </label>
               <Input disabled type="text" value={formData.datapath} />
               <p className="text-xs text-content-secondary mt-1">
                 {t('toolbar.edit.fields.dataPathHint')}
@@ -1688,7 +1756,13 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           <Button
             className="w-full"
             disabled={isLoading}
-            icon={isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            icon={
+              isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )
+            }
             iconPosition="left"
             size="lg"
             type="submit"

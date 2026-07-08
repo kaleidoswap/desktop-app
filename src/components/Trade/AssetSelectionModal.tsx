@@ -62,10 +62,10 @@ const AssetOption = React.memo(
     return (
       <div
         className={twJoin(
-          'flex items-center justify-between p-4 rounded-lg border transition-all duration-200 cursor-pointer group',
-          'hover:bg-surface-high/30 hover:border-border-default/80',
+          'flex items-center justify-between p-4 rounded-xl border transition-colors duration-200 cursor-pointer group',
+          'hover:bg-primary/10 hover:border-primary/30',
           isSelected
-            ? 'bg-surface-high/60 border-border-default/80'
+            ? 'bg-primary/15 border-primary/40 ring-1 ring-primary/20'
             : 'bg-surface-overlay/50 border-border-default/50'
         )}
         onClick={onClick}
@@ -83,7 +83,7 @@ const AssetOption = React.memo(
                 {displayTicker}
               </span>
               {isSelected && (
-                <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30">
+                <span className="px-2 py-1 bg-primary/20 text-primary text-xs rounded-full border border-primary/30">
                   {t('trade.assetModal.selected')}
                 </span>
               )}
@@ -121,7 +121,7 @@ const AssetOption = React.memo(
           className={twJoin(
             'w-5 h-5 transition-all duration-200 flex-shrink-0',
             isSelected
-              ? 'text-blue-400'
+              ? 'text-primary'
               : 'text-content-tertiary group-hover:text-content-secondary'
           )}
         />
@@ -236,8 +236,8 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
     >
       <div
         className={twJoin(
-          'bg-surface-base backdrop-blur-md border border-border-default/50',
-          'rounded-2xl shadow-2xl shadow-black/30 overflow-hidden',
+          'bg-surface-base border border-border-subtle/50',
+          'rounded-3xl shadow-2xl shadow-black/20 overflow-hidden',
           'w-full max-w-2xl max-h-[80vh] flex flex-col',
           'animate-in fade-in-0 zoom-in-95 duration-300'
         )}
@@ -268,7 +268,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-content-secondary" />
             <input
-              className="w-full pl-10 pr-10 py-3 bg-surface-base/70 border border-border-default/50 rounded-xl text-white text-sm placeholder:text-content-tertiary focus:border-status-success focus:ring-2 focus:ring-status-success/20 focus:outline-none"
+              className="w-full pl-10 pr-10 py-3 bg-surface-base/70 border border-border-default/50 rounded-xl text-white text-sm placeholder:text-content-tertiary focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none"
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={displaySearchPlaceholder}
               ref={searchInputRef}
@@ -322,7 +322,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
                   <p className="text-sm">{t('trade.assetModal.searchHint')}</p>
                   {searchTerm && (
                     <button
-                      className="mt-3 text-sm text-status-success hover:text-status-success/80 underline"
+                      className="mt-3 text-sm text-primary hover:text-primary-emphasis underline"
                       onClick={clearSearch}
                     >
                       {t('trade.assetModal.clearSearch')}

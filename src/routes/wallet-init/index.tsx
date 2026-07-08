@@ -1024,10 +1024,10 @@ export const Component = () => {
   const renderCurrentStep = () => {
     const renderStepLayout = (
       title: string,
-      subtitle: string,
+      _subtitle: string,
       _icon: React.ReactNode,
       content: React.ReactNode,
-      onBack?: () => void
+      _onBack?: () => void
     ) => (
       <div className="flex flex-1 overflow-hidden">
         {/* Left decorative panel */}
@@ -1657,7 +1657,12 @@ interface NodeSetupFormProps {
   errors: string[]
 }
 
-const NodeSetupForm = ({ form, onSubmit, onBack, errors }: NodeSetupFormProps) => {
+const NodeSetupForm = ({
+  form,
+  onSubmit,
+  onBack,
+  errors,
+}: NodeSetupFormProps) => {
   const { t } = useTranslation()
   const selectedNetwork = form.watch('network')
 
@@ -1674,103 +1679,117 @@ const NodeSetupForm = ({ form, onSubmit, onBack, errors }: NodeSetupFormProps) =
   return (
     <div className="w-full">
       <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-          {errors.length > 0 && (
-            <Alert
-              icon={<AlertCircle className="w-4 h-4" />}
-              title={t('common.error')}
-              variant="error"
+        {errors.length > 0 && (
+          <Alert
+            icon={<AlertCircle className="w-4 h-4" />}
+            title={t('common.error')}
+            variant="error"
+          >
+            <ul className="text-xs space-y-1">
+              {errors.map((error, index) => (
+                <li className="flex items-center gap-1.5" key={index}>
+                  <span>•</span> {error}
+                </li>
+              ))}
+            </ul>
+          </Alert>
+        )}
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              className="block text-sm font-medium text-content-secondary"
+              htmlFor="name"
             >
-              <ul className="text-xs space-y-1">
-                {errors.map((error, index) => (
-                  <li className="flex items-center gap-1.5" key={index}>
-                    <span>•</span> {error}
-                  </li>
-                ))}
-              </ul>
-            </Alert>
-          )}
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-content-secondary" htmlFor="name">
-                {t('walletInit.setupStep.accountNameLabel')}
-              </label>
-              <Input
-                className="!py-2.5 text-sm"
-                id="name"
-                placeholder={t('walletInit.setupStep.accountNamePlaceholder')}
-                {...form.register('name', {
-                  required: t('walletInit.setupStep.accountNameRequired'),
-                })}
-                error={!!form.formState.errors.name}
-                suffixNode={
-                  <button
-                    className="text-content-tertiary hover:text-primary transition-colors"
-                    onClick={() =>
-                      form.setValue('name', generateRandomName(), {
-                        shouldValidate: true,
-                      })
-                    }
-                    title="Generate random name"
-                    type="button"
-                  >
-                    <Shuffle className="w-4 h-4" />
-                  </button>
-                }
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-              )}
-              <p className="text-xs text-content-tertiary">{t('walletInit.setupStep.accountNameDescription')}</p>
-            </div>
-
-            <NetworkSelector
-              className="mb-2"
-              onChange={(network) => form.setValue('network', network)}
-              selectedNetwork={selectedNetwork}
+              {t('walletInit.setupStep.accountNameLabel')}
+            </label>
+            <Input
+              className="!py-2.5 text-sm"
+              id="name"
+              placeholder={t('walletInit.setupStep.accountNamePlaceholder')}
+              {...form.register('name', {
+                required: t('walletInit.setupStep.accountNameRequired'),
+              })}
+              error={!!form.formState.errors.name}
+              suffixNode={
+                <button
+                  className="text-content-tertiary hover:text-primary transition-colors"
+                  onClick={() =>
+                    form.setValue('name', generateRandomName(), {
+                      shouldValidate: true,
+                    })
+                  }
+                  title="Generate random name"
+                  type="button"
+                >
+                  <Shuffle className="w-4 h-4" />
+                </button>
+              }
             />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.name.message}
+              </p>
+            )}
+            <p className="text-xs text-content-tertiary">
+              {t('walletInit.setupStep.accountNameDescription')}
+            </p>
           </div>
 
-          <AdvancedSettings>
-            <NetworkSettings form={form} />
+          <NetworkSelector
+            className="mb-2"
+            onChange={(network) => form.setValue('network', network)}
+            selectedNetwork={selectedNetwork}
+          />
+        </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-content-secondary" htmlFor="bearer_token">
-                {t('walletInit.setupStep.bearerTokenLabel')}
-              </label>
-              <Input
-                className="!py-2.5 text-sm"
-                id="bearer_token"
-                placeholder={t('walletInit.setupStep.bearerTokenPlaceholder')}
-                {...form.register('bearer_token')}
-                error={!!form.formState.errors.bearer_token}
-              />
-              {form.formState.errors.bearer_token && (
-                <p className="text-sm text-red-500">{form.formState.errors.bearer_token.message}</p>
-              )}
-              <p className="text-xs text-content-tertiary">{t('walletInit.setupStep.bearerTokenDescription')}</p>
-            </div>
-          </AdvancedSettings>
+        <AdvancedSettings>
+          <NetworkSettings form={form} />
 
-          <div className="flex justify-between items-center pt-6">
-            <button
-              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-              onClick={onBack}
-              type="button"
+          <div className="space-y-1.5">
+            <label
+              className="block text-sm font-medium text-content-secondary"
+              htmlFor="bearer_token"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back
-            </button>
-            <Button
-              icon={<ArrowRight className="w-4 h-4" />}
-              iconPosition="right"
-              size="lg"
-              type="submit"
-              variant="primary"
-            >
-              Set Password
-            </Button>
+              {t('walletInit.setupStep.bearerTokenLabel')}
+            </label>
+            <Input
+              className="!py-2.5 text-sm"
+              id="bearer_token"
+              placeholder={t('walletInit.setupStep.bearerTokenPlaceholder')}
+              {...form.register('bearer_token')}
+              error={!!form.formState.errors.bearer_token}
+            />
+            {form.formState.errors.bearer_token && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.bearer_token.message}
+              </p>
+            )}
+            <p className="text-xs text-content-tertiary">
+              {t('walletInit.setupStep.bearerTokenDescription')}
+            </p>
           </div>
+        </AdvancedSettings>
+
+        <div className="flex justify-between items-center pt-6">
+          <button
+            className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+            onClick={onBack}
+            type="button"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </button>
+          <Button
+            icon={<ArrowRight className="w-4 h-4" />}
+            iconPosition="right"
+            size="lg"
+            type="submit"
+            variant="primary"
+          >
+            Set Password
+          </Button>
+        </div>
       </form>
     </div>
   )

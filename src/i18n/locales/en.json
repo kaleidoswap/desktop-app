@@ -544,6 +544,7 @@
       "onlyKnownToParties": "Only known to parties",
       "rgbAssetChannel": "RGB Asset Channel",
       "rgbAssetInfo": "This channel will include both Bitcoin liquidity and RGB asset allocation. The RGB asset ({{ticker}}) will be allocated with {{amount}} units.",
+      "initialLiquidity": "Initial Liquidity",
       "back": "Back",
       "opening": "Opening...",
       "openChannel": "Open Channel"
@@ -628,7 +629,10 @@
     "title": "Close Channel",
     "confirmMessage": "Are you sure you want to close this channel?",
     "settleMessage": "Closing a channel will settle the current balance to your on-chain wallet.",
-    "forceClose": "Force close",
+    "cooperativeClose": "Cooperative Closing",
+    "forcedClose": "Forced Closing",
+    "recommendedLabel": "Recommended",
+    "forceClose": "Force Channel Closing",
     "useCautionLabel": "Use with caution",
     "forceCloseConditionsTitle": "Only use force close if:",
     "forceCloseCondition1": "The peer is offline or unresponsive",
@@ -643,8 +647,8 @@
     "forceCloseReason3": "May result in higher fees",
     "closingMessage": "Closing channel... Please wait",
     "processing": "Processing...",
-    "forceCloseChannel": "Force Close Channel",
-    "closeChannel": "Close Channel",
+    "forceCloseChannel": "Force Channel Closing",
+    "closeChannel": "Cooperate to Close Channel",
     "cancel": "Cancel",
     "successMessage": "Channel {{channelId}}... closing {{forceClose}} initiated successfully",
     "errorMessage": "Failed to close channel: {{error}}"
@@ -2122,7 +2126,7 @@
       "titleAny": "Deposit Any RGB Asset",
       "intro": "Choose your preferred deposit method and follow the steps below",
       "network": {
-        "onchain": "On-chain",
+        "onchain": "Onchain",
         "lightning": "Lightning",
         "requiresAsset": "Requires asset ID"
       },
@@ -3016,7 +3020,7 @@
       "totalExecutions": "Successful executions"
     },
     "orders": {
-      "activeTitle": "Active Limit Orders",
+      "activeTitle": "Planned Limit Orders",
       "historyTitle": "Filled & Closed Orders"
     },
     "empty": {

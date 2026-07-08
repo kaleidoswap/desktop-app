@@ -31,6 +31,11 @@ import {
 } from '../../slices/channel/channel.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
+const truncateMiddle = (str: string, head = 14, tail = 10): string =>
+  str.length <= head + tail + 1
+    ? str
+    : `${str.slice(0, head)}…${str.slice(-tail)}`
+
 interface Props {
   onNext: VoidFunction
   onBack: VoidFunction
@@ -270,12 +275,6 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-4 mb-8">
-        <h3 className="text-3xl font-bold text-white">
-          {t('createChannel.step1.title')}
-        </h3>
-      </div>
-
       {formError && (
         <div className="flex items-center gap-2 text-sm text-red-400 mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0" />
@@ -285,7 +284,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
 
       <div className="flex gap-6">
         {/* Left card: Connect New Peer */}
-        <div className="flex-1 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 flex flex-col gap-5">
+        <div className="flex-1 min-w-0 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6 flex flex-col gap-5">
           <h4 className="text-lg font-semibold text-white flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
             {t('createChannel.step1.connectNewPeer')}
@@ -298,16 +297,25 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
             </div>
             <div className="flex gap-3">
               <button
-                className="flex items-center gap-2 p-3 rounded-md border border-white/30 hover:border-white/50 hover:bg-white/5 transition-colors"
+                className="group flex flex-1 items-center gap-3 p-3 rounded-xl border border-white/20 hover:border-primary/50 hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isLoading}
                 onClick={fetchLspInfo}
                 type="button"
               >
                 <img
                   alt="KaleidoSwap"
-                  className="w-8 h-8"
+                  className="w-8 h-8 flex-shrink-0"
                   src={kaleidoswapPictogram}
                 />
+                <div className="min-w-0 text-left">
+                  <div className="text-sm font-medium text-white">
+                    KaleidoSwap LSP
+                  </div>
+                  <div className="text-xs text-content-secondary truncate">
+                    {t('closeChannelModal.recommendedLabel')}
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 ml-auto flex-shrink-0 text-content-tertiary group-hover:text-primary transition-colors" />
               </button>
             </div>
             {isLoading && (
@@ -389,7 +397,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
         </div>
 
         {/* Right card: Connected Peers */}
-        <div className="flex-1 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6">
+        <div className="flex-1 min-w-0 bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-6">
           <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Link className="w-5 h-5 text-primary" />
             {t('createChannel.step1.connectedPeers')}
@@ -437,7 +445,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-mono text-content-secondary truncate">
-                        {peer.pubkey}
+                        {truncateMiddle(peer.pubkey)}
                       </div>
                     </div>
                     {selectedFromConnected === peer.pubkey && (

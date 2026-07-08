@@ -3,11 +3,10 @@ import {
   XCircle,
   ArrowRight,
   RefreshCcw,
-  Home,
+  SlidersHorizontal,
   Copy,
   Clock,
   Info,
-  SlidersHorizontal,
 } from 'lucide-react'
 import type { CSSProperties } from 'react'
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
@@ -15,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { CHANNELS_PATH } from '../../app/router/paths'
+import { Button } from '../../components/ui'
 
 const SUCCESS_PARTICLES = [
   { angle: 0, color: '#15E99A', delay: 0.3, dist: 70 },
@@ -51,96 +51,12 @@ export const Step5 = ({
     if (orderId) copy(orderId)
   }
 
-  const statusConfig = {
-    error: {
-      bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/30',
-      buttonAction: () => (onRestart ? onRestart() : navigate(CHANNELS_PATH)),
-      buttonText: t('orderChannel.step4.errorButtonText'),
-      icon: <XCircle className="text-red-500 mb-6" size={80} />,
-      message: t('orderChannel.step4.errorMessage'),
-      title: t('orderChannel.step4.errorTitle'),
-    },
-    expired: {
-      bgColor: 'bg-yellow-500/10',
-      borderColor: 'border-yellow-500/30',
-      buttonAction: () => (onRestart ? onRestart() : navigate(CHANNELS_PATH)),
-      buttonText: t('orderChannel.step4.expiredButtonText'),
-      icon: <Clock className="text-yellow-500 mb-6" size={80} />,
-      message: t('orderChannel.step4.expiredMessage'),
-      title: t('orderChannel.step4.expiredTitle'),
-    },
-    pending: {
-      bgColor: 'bg-blue-500/10',
-      borderColor: 'border-blue-500/30',
-      buttonAction: () => window.location.reload(),
-      buttonText: t('orderChannel.step4.pendingButtonText'),
-      icon: <RefreshCcw className="text-blue-500 mb-6" size={80} />,
-      message: t('orderChannel.step4.pendingMessage'),
-      title: t('orderChannel.step4.pendingTitle'),
-    },
-    success: {
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/30',
-      buttonAction: () => navigate(successDestination),
-      buttonText: t('orderChannel.step4.successButtonText'),
-      icon: <CheckCircle className="text-green-500 mb-6" size={80} />,
-      message: t('orderChannel.step4.successMessage'),
-      title: t('orderChannel.step4.successTitle'),
-    },
-  }
-
-  const config = statusConfig[paymentStatus as keyof typeof statusConfig]
-
-  if (paymentStatus === 'expired') {
-    return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[70vh] text-white p-4">
-        <div className="w-full max-w-lg text-center">
-          {/* Icon with opaque yellow background */}
-          <div className="order-expired-circle mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-500/15">
-            <Clock className="text-yellow-500" size={44} />
-          </div>
-
-          <h3 className="text-2xl font-bold mb-3">
-            {t('orderChannel.step4.expiredTitle')}
-          </h3>
-          <p className="text-content-secondary mb-8 whitespace-nowrap">
-            {t('orderChannel.step4.expiredMessage')}
-          </p>
-
-          {/* Actions — Return to Channels (left) & Create New Order (right) */}
-          <div className="flex items-center justify-between">
-            <button
-              className="flex items-center gap-2 text-content-secondary hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-surface-overlay/50 text-sm"
-              onClick={() => navigate(CHANNELS_PATH)}
-              type="button"
-            >
-              <SlidersHorizontal size={16} />
-              {t('orderChannel.step4.returnToChannels')}
-            </button>
-            <button
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
-              onClick={() =>
-                onRestart ? onRestart() : navigate(CHANNELS_PATH)
-              }
-              type="button"
-            >
-              <RefreshCcw size={18} />
-              {t('orderChannel.step4.expiredButtonText')}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (paymentStatus === 'success') {
     return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[70vh] text-white p-4">
-        <div className="w-full max-w-lg text-center">
-          {/* Animated success icon (plays once) */}
-          <div className="relative mx-auto mb-6 h-20 w-20">
-            {/* Confetti burst */}
+      <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto">
+        <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default w-full">
+          {/* Animated success icon */}
+          <div className="relative mx-auto mb-5 h-14 w-14">
             {SUCCESS_PARTICLES.map((p, i) => (
               <span
                 className="order-success-particle"
@@ -155,13 +71,11 @@ export const Step5 = ({
                 }
               />
             ))}
-            {/* Ripple rings */}
             <span className="order-success-ring absolute inset-0 rounded-full bg-emerald-500/30" />
             <span className="order-success-ring-2 absolute inset-0 rounded-full border-2 border-emerald-400/40" />
-            {/* Circle + drawing checkmark */}
-            <div className="order-success-circle relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15">
+            <div className="order-success-circle relative flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
               <svg
-                className="h-11 w-11 text-emerald-500"
+                className="h-7 w-7 text-primary"
                 fill="none"
                 stroke="currentColor"
                 strokeLinecap="round"
@@ -174,24 +88,23 @@ export const Step5 = ({
             </div>
           </div>
 
-          <h3 className="text-2xl font-bold mb-3">
+          <h3 className="text-2xl font-bold text-white mb-4">
             {t('orderChannel.step4.successTitle')}
           </h3>
-          <p className="text-content-secondary mb-6 whitespace-nowrap">
+          <p className="text-content-secondary mb-8 text-sm">
             {t('orderChannel.step4.successMessage')}
           </p>
 
-          {/* Action — Go to Channels Page */}
-          <div className="flex justify-center">
-            <button
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
-              onClick={() => navigate(successDestination)}
-              type="button"
-            >
-              {t('orderChannel.step4.successButtonText')}
-              <ArrowRight size={18} />
-            </button>
-          </div>
+          <Button
+            fullWidth
+            icon={<ArrowRight className="w-4 h-4" />}
+            iconPosition="right"
+            onClick={() => navigate(successDestination)}
+            size="md"
+            variant="primary"
+          >
+            {t('orderChannel.step4.successButtonText')}
+          </Button>
         </div>
       </div>
     )
@@ -199,21 +112,19 @@ export const Step5 = ({
 
   if (paymentStatus === 'error') {
     return (
-      <div className="flex flex-col items-center justify-center w-full min-h-[70vh] text-white p-4">
-        <div className="w-full max-w-lg text-center">
-          {/* Icon with opaque red background */}
-          <div className="order-failed-circle mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-500/15">
-            <XCircle className="text-red-500" size={44} />
+      <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto">
+        <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default w-full">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+            <XCircle className="w-7 h-7 text-red-400" />
           </div>
 
-          <h3 className="text-2xl font-bold mb-3">
+          <h3 className="text-2xl font-bold text-white mb-4">
             {t('orderChannel.step4.errorTitle')}
           </h3>
-          <p className="text-content-secondary mb-6 whitespace-nowrap">
+          <p className="text-content-secondary mb-6 text-sm">
             {t('orderChannel.step4.errorMessage')}
           </p>
 
-          {/* Refund info — blue banner */}
           <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-left">
             <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-blue-200">
@@ -223,7 +134,6 @@ export const Step5 = ({
             </p>
           </div>
 
-          {/* Order ID — matches the flow's box style */}
           {orderId && (
             <div className="mb-8 rounded-xl border border-border-subtle bg-surface-overlay/60 p-3.5 text-left">
               <p className="text-sm font-medium text-content-primary mb-2.5">
@@ -252,69 +162,99 @@ export const Step5 = ({
             </div>
           )}
 
-          {/* Actions — Return to Channels (left) & Try Again (right) */}
           <div className="flex items-center justify-between">
             <button
-              className="flex items-center gap-2 text-content-secondary hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-surface-overlay/50 text-sm"
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
               onClick={() => navigate(CHANNELS_PATH)}
               type="button"
             >
-              <SlidersHorizontal size={16} />
+              <SlidersHorizontal className="w-3.5 h-3.5" />
               {t('orderChannel.step4.returnToChannels')}
             </button>
-            <button
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+            <Button
+              icon={<RefreshCcw className="w-4 h-4" />}
+              iconPosition="right"
               onClick={() =>
                 onRestart ? onRestart() : navigate(CHANNELS_PATH)
               }
-              type="button"
+              size="md"
+              variant="primary"
             >
-              <RefreshCcw size={18} />
               {t('orderChannel.step4.errorButtonText')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="flex flex-col items-center justify-center w-full text-white p-4">
-      <div
-        className={`${config.bgColor} border ${config.borderColor} rounded-xl shadow-2xl p-10 max-w-md w-full text-center`}
-      >
-        <div className="flex justify-center">{config.icon}</div>
-        <h3 className="text-3xl font-bold mb-4">{config.title}</h3>
-        <p className="text-lg text-content-secondary mb-6">{config.message}</p>
+  if (paymentStatus === 'expired') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto">
+        <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default w-full">
+          <div className="w-14 h-14 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
+            <Clock className="w-7 h-7 text-yellow-400" />
+          </div>
 
-        <button
-          className={`px-6 py-4 rounded-lg text-lg font-bold ${
-            paymentStatus === 'success'
-              ? 'bg-primary text-[#12131C] hover:bg-primary-emphasis'
-              : paymentStatus === 'error'
-                ? 'bg-red-600 hover:bg-red-700'
-                : paymentStatus === 'expired'
-                  ? 'bg-yellow-600 hover:bg-yellow-700'
-                  : 'bg-primary text-[#12131C] hover:bg-primary-emphasis'
-          } transition-colors w-full flex items-center justify-center shadow-lg`}
-          onClick={config.buttonAction}
-        >
-          {config.buttonText}
-          {paymentStatus === 'success' ? (
-            <ArrowRight className="ml-2" size={20} />
-          ) : (
-            <RefreshCcw className="ml-2" size={20} />
-          )}
-        </button>
+          <h3 className="text-2xl font-bold text-white mb-4">
+            {t('orderChannel.step4.expiredTitle')}
+          </h3>
+          <p className="text-content-secondary mb-8 text-sm">
+            {t('orderChannel.step4.expiredMessage')}
+          </p>
+
+          <div className="flex items-center justify-between">
+            <button
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+              onClick={() => navigate(CHANNELS_PATH)}
+              type="button"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              {t('orderChannel.step4.returnToChannels')}
+            </button>
+            <Button
+              icon={<RefreshCcw className="w-4 h-4" />}
+              iconPosition="right"
+              onClick={() =>
+                onRestart ? onRestart() : navigate(CHANNELS_PATH)
+              }
+              size="md"
+              variant="primary"
+            >
+              {t('orderChannel.step4.expiredButtonText')}
+            </Button>
+          </div>
+        </div>
       </div>
+    )
+  }
 
-      <button
-        className="mt-8 flex items-center gap-2 text-content-secondary hover:text-white transition-colors py-2 px-4 rounded-lg hover:bg-surface-overlay/50"
-        onClick={() => navigate(CHANNELS_PATH)}
-      >
-        <Home size={18} />
-        {t('orderChannel.step4.returnToChannels')}
-      </button>
+  // pending / unknown
+  return (
+    <div className="flex flex-col items-center justify-center p-8 max-w-lg mx-auto">
+      <div className="text-center mt-6 bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-border-default w-full">
+        <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-5">
+          <RefreshCcw className="w-7 h-7 text-primary animate-spin" />
+        </div>
+
+        <h3 className="text-2xl font-bold text-white mb-4">
+          {t('orderChannel.step4.pendingTitle')}
+        </h3>
+        <p className="text-content-secondary mb-8 text-sm">
+          {t('orderChannel.step4.pendingMessage')}
+        </p>
+
+        <Button
+          fullWidth
+          icon={<RefreshCcw className="w-4 h-4" />}
+          iconPosition="right"
+          onClick={() => window.location.reload()}
+          size="md"
+          variant="primary"
+        >
+          {t('orderChannel.step4.pendingButtonText')}
+        </Button>
+      </div>
     </div>
   )
 }

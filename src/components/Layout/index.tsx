@@ -193,6 +193,9 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
           className={`flex items-center py-3 px-4 flex-1 min-w-0
             ${isCollapsed ? 'justify-center' : 'justify-start space-x-4'}
           `}
+          onClick={() => {
+            if (isActive && hasSubMenu) setIsSubMenuOpen(true)
+          }}
           to={item.to ?? '#'}
         >
           <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
@@ -1359,6 +1362,11 @@ export const Layout = (props: Props) => {
               className="relative isolate flex-1 overflow-hidden p-6"
               id="content-area"
             >
+              {/* Portal target for modals — absolute inset-0 so modals cover only this area.
+                  When empty it must not intercept clicks on the content underneath; the
+                  `#modal-portal:empty` rule in styles.css disables pointer events until a
+                  modal is portaled in. */}
+              <div className="absolute inset-0 z-50" id="modal-portal" />
               {props.children}
             </div>
           </main>

@@ -139,7 +139,9 @@ export const RegtestConnectionSelector = ({
               {/* Selection indicator */}
               {isSelected && (
                 <div className="absolute top-3 right-3">
-                  <div className={`w-6 h-6 ${option.selectedColor.checkBg} rounded-full flex items-center justify-center`}>
+                  <div
+                    className={`w-6 h-6 ${option.selectedColor.checkBg} rounded-full flex items-center justify-center`}
+                  >
                     <Check className="w-4 h-4 text-surface-base" />
                   </div>
                 </div>
@@ -206,7 +208,8 @@ export const RegtestConnectionSelector = ({
       <div className="mt-4 flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
         <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
         <p className="text-xs text-blue-300">
-          Remote (Bitfinex Regtest) is ready to use immediately. Choose Local Regtest only if you're running your own regtest infrastructure.
+          Remote (Bitfinex Regtest) is ready to use immediately. Choose Local
+          Regtest only if you're running your own regtest infrastructure.
         </p>
       </div>
     </div>

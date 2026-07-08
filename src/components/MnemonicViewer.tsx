@@ -90,11 +90,11 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
-        <div className="max-h-[90vh] overflow-y-auto px-8 py-8">
+        <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
             <KeyRound className="w-6 h-6 text-primary" />

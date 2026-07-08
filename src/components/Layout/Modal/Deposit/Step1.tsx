@@ -105,7 +105,7 @@ export const Step1 = ({ onNext, onClose }: Props) => {
         {/* Asset Selector trigger */}
         <button
           className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default
-                   hover:border-primary/50 transition-all duration-200
+                   hover:border-primary/50 transition-colors duration-200
                    flex items-center justify-between text-left"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
@@ -241,7 +241,7 @@ export const Step1 = ({ onNext, onClose }: Props) => {
         {/* Continue Button */}
         <button
           className="w-full py-2.5 px-4 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900
-                   rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
+                   rounded-xl font-semibold transition-colors duration-200 shadow-md shadow-primary/20
                    flex items-center justify-center gap-2 text-sm"
           onClick={handleSubmit}
         >

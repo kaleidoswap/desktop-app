@@ -24,7 +24,9 @@ export const NetworkSettings = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className={fieldCls}>
-        <label className={labelCls} htmlFor="rpc_connection_url">RPC Connection URL</label>
+        <label className={labelCls} htmlFor="rpc_connection_url">
+          RPC Connection URL
+        </label>
         <Input
           className="!py-2.5 text-sm"
           id="rpc_connection_url"
@@ -35,12 +37,16 @@ export const NetworkSettings = ({
           error={!!form.formState.errors.rpc_connection_url}
         />
         {getErrorMessage(form.formState.errors.rpc_connection_url) && (
-          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.rpc_connection_url)}</p>
+          <p className="text-sm text-red-500">
+            {getErrorMessage(form.formState.errors.rpc_connection_url)}
+          </p>
         )}
       </div>
 
       <div className={fieldCls}>
-        <label className={labelCls} htmlFor="indexer_url">Indexer URL</label>
+        <label className={labelCls} htmlFor="indexer_url">
+          Indexer URL
+        </label>
         <Input
           className="!py-2.5 text-sm"
           id="indexer_url"
@@ -51,12 +57,16 @@ export const NetworkSettings = ({
           error={!!form.formState.errors.indexer_url}
         />
         {getErrorMessage(form.formState.errors.indexer_url) && (
-          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.indexer_url)}</p>
+          <p className="text-sm text-red-500">
+            {getErrorMessage(form.formState.errors.indexer_url)}
+          </p>
         )}
       </div>
 
       <div className={fieldCls}>
-        <label className={labelCls} htmlFor="proxy_endpoint">Proxy Endpoint</label>
+        <label className={labelCls} htmlFor="proxy_endpoint">
+          Proxy Endpoint
+        </label>
         <Input
           className="!py-2.5 text-sm"
           id="proxy_endpoint"
@@ -67,13 +77,17 @@ export const NetworkSettings = ({
           error={!!form.formState.errors.proxy_endpoint}
         />
         {getErrorMessage(form.formState.errors.proxy_endpoint) && (
-          <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.proxy_endpoint)}</p>
+          <p className="text-sm text-red-500">
+            {getErrorMessage(form.formState.errors.proxy_endpoint)}
+          </p>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className={fieldCls}>
-          <label className={labelCls} htmlFor="daemon_listening_port">Daemon Listening Port</label>
+          <label className={labelCls} htmlFor="daemon_listening_port">
+            Daemon Listening Port
+          </label>
           <Input
             className="!py-2.5 text-sm"
             id="daemon_listening_port"
@@ -84,12 +98,16 @@ export const NetworkSettings = ({
             error={!!form.formState.errors.daemon_listening_port}
           />
           {getErrorMessage(form.formState.errors.daemon_listening_port) && (
-            <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.daemon_listening_port)}</p>
+            <p className="text-sm text-red-500">
+              {getErrorMessage(form.formState.errors.daemon_listening_port)}
+            </p>
           )}
         </div>
 
         <div className={fieldCls}>
-          <label className={labelCls} htmlFor="ldk_peer_listening_port">LDK Peer Listening Port</label>
+          <label className={labelCls} htmlFor="ldk_peer_listening_port">
+            LDK Peer Listening Port
+          </label>
           <Input
             className="!py-2.5 text-sm"
             id="ldk_peer_listening_port"
@@ -100,7 +118,9 @@ export const NetworkSettings = ({
             error={!!form.formState.errors.ldk_peer_listening_port}
           />
           {getErrorMessage(form.formState.errors.ldk_peer_listening_port) && (
-            <p className="text-sm text-red-500">{getErrorMessage(form.formState.errors.ldk_peer_listening_port)}</p>
+            <p className="text-sm text-red-500">
+              {getErrorMessage(form.formState.errors.ldk_peer_listening_port)}
+            </p>
           )}
         </div>
       </div>

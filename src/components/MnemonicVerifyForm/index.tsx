@@ -111,10 +111,7 @@ export const MnemonicVerifyForm = ({
 
   return (
     <div className="w-full">
-      <form
-        className="space-y-5"
-        onSubmit={form.handleSubmit(handleSubmit)}
-      >
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-content-secondary mb-1.5">
@@ -249,7 +246,9 @@ export const MnemonicVerifyForm = ({
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back
               </button>
-            ) : <span />}
+            ) : (
+              <span />
+            )}
             <Button
               disabled={isSubmitting}
               icon={

@@ -87,7 +87,7 @@ export const LogoutButton: React.FC<{ onClick: () => void }> = ({
 
   return (
     <button
-      className="w-full px-4 py-3 flex items-center gap-3 bg-transparent hover:bg-surface-high/50 text-red-400 border border-white/20 hover:border-white/35 rounded-md transition-colors text-sm font-medium"
+      className="w-full px-4 py-3 flex items-center gap-3 bg-transparent hover:bg-surface-high/50 text-red-400 rounded-md transition-colors text-sm font-medium"
       onClick={onClick}
       type="button"
     >

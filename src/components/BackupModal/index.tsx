@@ -1,4 +1,4 @@
-import { Archive, Folder, Loader2, Save } from 'lucide-react'
+import { Archive, Folder, Loader2, Save, X } from 'lucide-react'
 import React from 'react'
 import { Controller } from 'react-hook-form'
 import { createPortal } from 'react-dom'
@@ -35,7 +35,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative">

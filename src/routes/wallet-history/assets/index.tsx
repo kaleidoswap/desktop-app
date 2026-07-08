@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import { IconButton, Card, Badge, Select, Button } from '../../../components/ui'
+import { Card, Badge, Select, Button } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -369,20 +369,19 @@ export const Component = () => {
         </div>
 
         <div className="relative group/ref shrink-0">
-          <IconButton
+          <button
             aria-label={t('assets.refresh')}
-            className="border-white/30 hover:border-white/50"
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={isRefreshing}
-            icon={
-              isRefreshing ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )
-            }
             onClick={refreshData}
-            variant="outline"
-          />
+            type="button"
+          >
+            {isRefreshing ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </button>
           <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
             Refresh data
           </div>

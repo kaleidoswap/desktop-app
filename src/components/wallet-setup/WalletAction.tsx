@@ -41,9 +41,7 @@ export const WalletAction: React.FC<WalletActionProps> = ({
               strokeWidth: 2.5,
             })}
           </div>
-          <h2 className="text-2xl font-bold text-white">
-            {title}
-          </h2>
+          <h2 className="text-2xl font-bold text-white">{title}</h2>
         </div>
         <p className="text-content-secondary text-sm leading-relaxed mb-6 flex-1">
           {description}

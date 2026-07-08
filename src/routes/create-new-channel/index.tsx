@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+import { ChannelWizardSteps } from '../../components/Channels/ChannelWizardSteps'
 
 import { CHANNELS_PATH } from '../../app/router/paths'
 import { FormError } from '../../components/FormError'
@@ -32,6 +33,7 @@ const initialFormState: TNewChannelForm = {
   assetId: '',
   assetTicker: '',
   capacitySat: MIN_CHANNEL_CAPACITY,
+  channelExpireBlocks: 12960,
   fee: 'medium',
   pubKeyAndAddress: '',
   public: true,
@@ -299,6 +301,16 @@ export const Component = () => {
           </div>
         ) : (
           <div>
+            <ChannelWizardSteps
+              className="mb-8"
+              current={step}
+              steps={[
+                t('createChannel.stepPeerConnection'),
+                t('createChannel.stepChannelSettings'),
+                t('createChannel.stepReviewConfirm'),
+                t('createChannel.stepComplete'),
+              ]}
+            />
             {step === 1 && (
               <Step1
                 formData={formData}
@@ -334,7 +346,7 @@ export const Component = () => {
               <Step4
                 error={channelOpeningError}
                 onFinish={() => navigate(returnTo ?? CHANNELS_PATH)}
-                onGoBack={() => setStep(1)}
+                onGoBack={() => setStep(3)}
                 onRetry={() => setStep(3)}
               />
             )}

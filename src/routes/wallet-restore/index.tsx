@@ -514,9 +514,13 @@ export const Component = () => {
                         error={!!form.formState.errors.name}
                       />
                       {form.formState.errors.name && (
-                        <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.name.message}
+                        </p>
                       )}
-                      <p className="text-xs text-content-tertiary">{t('walletRestore.accountNameDescription')}</p>
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.accountNameDescription')}
+                      </p>
                     </div>
 
                     <NetworkSelector
@@ -548,9 +552,13 @@ export const Component = () => {
                         </Button>
                       </div>
                       {form.formState.errors.backup_path && (
-                        <p className="text-sm text-red-500">{form.formState.errors.backup_path.message}</p>
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.backup_path.message}
+                        </p>
                       )}
-                      <p className="text-xs text-content-tertiary">{t('walletRestore.backupFileDescription')}</p>
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.backupFileDescription')}
+                      </p>
                     </div>
 
                     {/* Password */}
@@ -572,9 +580,13 @@ export const Component = () => {
                         error={!!form.formState.errors.password}
                       />
                       {form.formState.errors.password && (
-                        <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.password.message}
+                        </p>
                       )}
-                      <p className="text-xs text-content-tertiary">{t('walletRestore.passwordDescription')}</p>
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.passwordDescription')}
+                      </p>
                     </div>
 
                     <AdvancedSettings>

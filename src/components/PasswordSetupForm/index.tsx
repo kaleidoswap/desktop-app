@@ -1,4 +1,11 @@
-import { Eye, EyeOff, AlertCircle, Loader2, ArrowRight, ArrowLeft } from 'lucide-react'
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  ArrowLeft,
+} from 'lucide-react'
 import { useState } from 'react'
 import { UseFormReturn, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -71,10 +78,7 @@ export const PasswordSetupForm = ({
 
   return (
     <div className="w-full">
-      <form
-        className="space-y-5"
-        onSubmit={form.handleSubmit(handleSubmit)}
-      >
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
         {/* Password Field */}
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-content-secondary">
@@ -84,7 +88,9 @@ export const PasswordSetupForm = ({
             <input
               className={inputCls}
               disabled={isDisabled}
-              placeholder={t('components.passwordSetupForm.createPasswordPlaceholder')}
+              placeholder={t(
+                'components.passwordSetupForm.createPasswordPlaceholder'
+              )}
               type={isPasswordVisible ? 'text' : 'password'}
               {...form.register('password', {
                 minLength: {
@@ -113,14 +119,18 @@ export const PasswordSetupForm = ({
             <input
               className={inputCls}
               disabled={isDisabled}
-              placeholder={t('components.passwordSetupForm.confirmPasswordPlaceholder')}
+              placeholder={t(
+                'components.passwordSetupForm.confirmPasswordPlaceholder'
+              )}
               type={isPasswordVisible ? 'text' : 'password'}
               {...form.register('confirmPassword', {
                 minLength: {
                   message: t('components.passwordSetupForm.passwordMinLength'),
                   value: 8,
                 },
-                required: t('components.passwordSetupForm.passwordConfirmRequired'),
+                required: t(
+                  'components.passwordSetupForm.passwordConfirmRequired'
+                ),
                 validate: (value) =>
                   value === form.getValues('password') ||
                   t('components.passwordSetupForm.passwordsDoNotMatch'),
@@ -162,7 +172,10 @@ export const PasswordSetupForm = ({
                   (form.watch('password')?.length ?? 0) > 0,
               },
             ].map(({ label, met }) => (
-              <li className="flex items-center gap-1.5 text-content-secondary" key={label}>
+              <li
+                className="flex items-center gap-1.5 text-content-secondary"
+                key={label}
+              >
                 <span
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     met
@@ -204,7 +217,9 @@ export const PasswordSetupForm = ({
               <ArrowLeft className="w-3.5 h-3.5" />
               Back
             </button>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
           <Button
             disabled={isDisabled}
             icon={

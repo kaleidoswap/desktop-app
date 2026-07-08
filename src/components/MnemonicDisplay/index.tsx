@@ -1,4 +1,10 @@
-import { Copy, AlertCircle, ArrowRight, ArrowLeft, SkipForward } from 'lucide-react'
+import {
+  Copy,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  SkipForward,
+} from 'lucide-react'
 
 import { Button, Alert } from '../ui'
 
@@ -67,7 +73,9 @@ export const MnemonicDisplay = ({
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </button>
-        ) : <span />}
+        ) : (
+          <span />
+        )}
         <Button
           icon={<ArrowRight className="w-4 h-4" />}
           iconPosition="right"

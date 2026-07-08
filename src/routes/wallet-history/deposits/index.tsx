@@ -14,14 +14,7 @@ import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../app/store/hooks'
-import {
-  Button,
-  Badge,
-  Alert,
-  IconButton,
-  Card,
-  Select,
-} from '../../../components/ui'
+import { Button, Badge, Alert, Card, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -431,20 +424,19 @@ export const Component: React.FC = () => {
         </div>
 
         <div className="relative group/ref shrink-0">
-          <IconButton
+          <button
             aria-label={t('deposits.refresh')}
-            className="border-white/30 hover:border-white/50"
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={isRefreshing}
-            icon={
-              isRefreshing ? (
-                <LoaderIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )
-            }
             onClick={handleRefresh}
-            variant="outline"
-          />
+            type="button"
+          >
+            {isRefreshing ? (
+              <LoaderIcon className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </button>
           <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
             Refresh data
           </div>

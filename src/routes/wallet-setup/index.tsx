@@ -35,10 +35,7 @@ import {
   WalletAction,
   IconWrapper,
 } from '../../components/wallet-setup'
-import {
-  setAppMode,
-  type AppMode,
-} from '../../slices/settings/settings.slice'
+import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
 
 const MODE_OPTIONS: {
   mode: AppMode
@@ -239,7 +236,7 @@ export const Component = () => {
                 className="fade-in content-container"
                 id="wallet-setup-content"
               >
-                {(!nodeType || nodeType === 'remote') ? (
+                {!nodeType || nodeType === 'remote' ? (
                   <>
                     <div className="text-center mb-12 slide-in">
                       <div className="relative inline-flex mb-6">
@@ -252,7 +249,11 @@ export const Component = () => {
                           rounded-2xl shadow-2xl shadow-primary/20
                           relative z-10`}
                         >
-                          <img alt="KaleidoSwap" className="w-8 h-8 brightness-0 invert" src={logoIcon} />
+                          <img
+                            alt="KaleidoSwap"
+                            className="w-8 h-8 brightness-0 invert"
+                            src={logoIcon}
+                          />
                         </div>
                         {/* Green glow */}
                         <div className="absolute inset-0 bg-primary/10 rounded-2xl blur-xl scale-150 opacity-30 [animation:pulse_6s_ease-in-out_infinite]" />
@@ -309,7 +310,9 @@ export const Component = () => {
                               </h2>
                             </div>
                             <p className="text-content-secondary text-sm leading-relaxed">
-                              Run local AI models on this desktop. You can connect the app to a RGB Lightning node any time later.
+                              Run local AI models on this desktop. You can
+                              connect the app to a RGB Lightning node any time
+                              later.
                             </p>
                           </div>
                         </div>
@@ -328,7 +331,11 @@ export const Component = () => {
                             navigate(WALLET_REMOTE_PATH)
                           }}
                           recommended={true}
-                          title={selectedMode === 'both' ? 'Remote Node + Mind' : t('walletSetup.remoteNodeTitle')}
+                          title={
+                            selectedMode === 'both'
+                              ? 'Remote Node + Mind'
+                              : t('walletSetup.remoteNodeTitle')
+                          }
                         />
                         <NodeOption
                           description={t('walletSetup.localNodeDescription')}
@@ -337,7 +344,11 @@ export const Component = () => {
                             dispatch(setAppMode(selectedMode))
                             handleNodeTypeChange('local')
                           }}
-                          title={selectedMode === 'both' ? 'Local Node + Mind' : t('walletSetup.localNodeTitle')}
+                          title={
+                            selectedMode === 'both'
+                              ? 'Local Node + Mind'
+                              : t('walletSetup.localNodeTitle')
+                          }
                         />
                       </div>
                     )}
@@ -464,7 +475,9 @@ export const Component = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <WalletAction
                           description={t('walletSetup.createWalletDescription')}
-                          icon={<Wallet className="w-6 h-6 text-status-success" />}
+                          icon={
+                            <Wallet className="w-6 h-6 text-status-success" />
+                          }
                           onClick={() => navigateToWalletInit(WALLET_INIT_PATH)}
                           primary
                           title={t('walletSetup.createWalletTitle')}
@@ -490,7 +503,6 @@ export const Component = () => {
           </div>
         </div>
       </div>
-
 
       <SupportModal
         isOpen={showSupportModal}

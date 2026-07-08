@@ -1,4 +1,4 @@
-import { X, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
+import { X, AlertTriangle, AlertCircle, Loader2, Handshake } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -52,9 +52,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
         peer_pubkey: peerPubkey,
       })
 
-      // Check if the response contains an error
       if (response.error) {
-        // Type guard to check if it's a NodeApiError
         const isNodeApiError = (err: any): err is NodeApiError =>
           err && typeof err === 'object' && 'data' in err
 
@@ -90,9 +88,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
     }
   }
 
-  // Helper function to handle error messaging
   const handleErrorMessage = (errorMessage: string) => {
-    // Check if the error suggests a force close is needed
     const forceClosePatterns = [
       'force-close instead',
       'peer is disconnected',
@@ -124,166 +120,167 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
 
   return createPortal(
     <div
-      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
+      className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
       onMouseDown={handleBackdropClick}
     >
-      <div className="bg-surface-overlay rounded-lg p-6 max-w-md w-full shadow-xl border border-border-default/50">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-white">
-            {t('closeChannelModal.title')}
-          </h3>
-          <button
-            className="text-content-secondary hover:text-white p-1 rounded-full hover:bg-surface-high/50"
-            disabled={isClosing}
-            onClick={(e) => {
-              e.stopPropagation()
-              resetAndClose()
-            }}
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {suggestForceClose ? (
-          <div className="mb-5">
-            <div className="flex items-center p-4 text-amber-300 bg-amber-900/30 rounded-lg border border-amber-900/30 mb-4">
-              <AlertCircle className="h-5 w-5 mr-3 flex-shrink-0" />
-              <div>
-                <p className="font-medium">
-                  {t('closeChannelModal.cannotCloseCooperatively')}
-                </p>
-                <p className="text-sm mt-1">{error}</p>
-              </div>
-            </div>
-            <p className="text-content-secondary">
-              {t('closeChannelModal.forceCloseQuestion')}
-            </p>
-            <ul className="text-sm text-content-secondary space-y-1 list-disc pl-5 mt-2">
-              <li>{t('closeChannelModal.forceCloseReason1')}</li>
-              <li>{t('closeChannelModal.forceCloseReason2')}</li>
-              <li>{t('closeChannelModal.forceCloseReason3')}</li>
-            </ul>
+      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+        <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+            <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0" />
+            <h3 className="text-xl font-bold text-white flex-1">
+              {t('closeChannelModal.title')}
+            </h3>
+            <button
+              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+              disabled={isClosing}
+              onClick={(e) => {
+                e.stopPropagation()
+                resetAndClose()
+              }}
+              type="button"
+            >
+              <X size={18} />
+            </button>
           </div>
-        ) : (
-          <>
-            <div className="mb-4">
-              <p className="text-content-secondary">
-                {t('closeChannelModal.confirmMessage')}
-              </p>
-              <p className="text-content-secondary text-sm mt-2">
-                {t('closeChannelModal.settleMessage')}
-              </p>
-            </div>
 
-            <div className="mt-5 p-4 bg-surface-high/30 rounded-lg border border-border-default/30">
-              <div className="flex items-start mb-2">
-                <input
-                  checked={forceClose}
-                  className="mr-3 mt-1 h-4 w-4 accent-red-500 bg-surface-high rounded border-border-default focus:ring focus:ring-blue-500"
-                  disabled={isClosing}
-                  id="force-close"
-                  onChange={(e) => setForceClose(e.target.checked)}
-                  type="checkbox"
-                />
-                <div>
-                  <label
-                    className="font-medium text-white flex items-center"
-                    htmlFor="force-close"
-                  >
-                    {t('closeChannelModal.forceClose')}
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-red-900/40 text-red-300 rounded-full border border-red-900/40">
-                      {t('closeChannelModal.useCautionLabel')}
-                    </span>
-                  </label>
+          {suggestForceClose ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold text-amber-400">
+                    {t('closeChannelModal.cannotCloseCooperatively')}
+                  </p>
+                  <p className="text-xs text-amber-200/80">{error}</p>
                 </div>
               </div>
-
-              <div className="ml-7">
-                <p className="text-sm text-content-secondary mb-3">
-                  {t('closeChannelModal.forceCloseConditionsTitle')}
+              <p className="text-sm text-content-secondary">
+                {t('closeChannelModal.forceCloseQuestion')}
+              </p>
+              <ul className="text-xs text-content-secondary space-y-1.5 list-disc pl-5">
+                <li>{t('closeChannelModal.forceCloseReason1')}</li>
+                <li>{t('closeChannelModal.forceCloseReason2')}</li>
+                <li>{t('closeChannelModal.forceCloseReason3')}</li>
+              </ul>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <p className="text-sm text-content-secondary">
+                  {t('closeChannelModal.confirmMessage')}
                 </p>
-                <ul className="text-xs text-content-secondary space-y-2 list-disc pl-5">
-                  <li>{t('closeChannelModal.forceCloseCondition1')}</li>
-                  <li>{t('closeChannelModal.forceCloseCondition2')}</li>
-                  <li>{t('closeChannelModal.forceCloseCondition3')}</li>
-                </ul>
+                <p className="text-xs text-content-secondary">
+                  {t('closeChannelModal.settleMessage')}
+                </p>
+              </div>
 
-                <div className="mt-3 flex items-start text-xs">
-                  <AlertTriangle className="text-amber-400 mt-0.5 mr-2 h-4 w-4 flex-shrink-0" />
-                  <p className="text-amber-300">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Cooperative Closing card */}
+                <button
+                  className={`flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-colors disabled:opacity-50 ${
+                    !forceClose
+                      ? 'bg-status-success/10 border-status-success/40'
+                      : 'bg-surface-overlay/50 border-border-default/60 hover:border-border-default'
+                  }`}
+                  disabled={isClosing}
+                  onClick={() => setForceClose(false)}
+                  type="button"
+                >
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-status-success/20 text-status-success rounded-full border border-status-success/30 w-fit">
+                    {t('closeChannelModal.recommendedLabel')}
+                  </span>
+                  <span
+                    className={`text-sm font-semibold transition-colors ${!forceClose ? 'text-status-success' : 'text-white'}`}
+                  >
+                    {t('closeChannelModal.cooperativeClose')}
+                  </span>
+                  <p
+                    className={`text-xs leading-relaxed transition-colors ${!forceClose ? 'text-white/80' : 'text-content-secondary'}`}
+                  >
+                    {t('closeChannelModal.cooperativeCloseInfo')}
+                  </p>
+                </button>
+
+                {/* Forced Closing card */}
+                <button
+                  className={`flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-colors disabled:opacity-50 ${
+                    forceClose
+                      ? 'bg-red-500/10 border-red-500/40'
+                      : 'bg-surface-overlay/50 border-border-default/60 hover:border-border-default'
+                  }`}
+                  disabled={isClosing}
+                  onClick={() => setForceClose(true)}
+                  type="button"
+                >
+                  <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/15 text-red-300 rounded-full border border-red-500/25 w-fit">
+                    {t('closeChannelModal.useCautionLabel')}
+                  </span>
+                  <span
+                    className={`text-sm font-semibold transition-colors ${forceClose ? 'text-red-400' : 'text-white'}`}
+                  >
+                    {t('closeChannelModal.forcedClose')}
+                  </span>
+                  <p
+                    className={`text-xs leading-relaxed transition-colors ${forceClose ? 'text-white/80' : 'text-content-secondary'}`}
+                  >
                     {t('closeChannelModal.forceCloseWarning')}
                   </p>
-                </div>
+                </button>
               </div>
             </div>
+          )}
 
-            {!forceClose && (
-              <div className="mt-4 flex items-start text-xs">
-                <CheckCircle className="text-green-400 mt-0.5 mr-2 h-4 w-4 flex-shrink-0" />
-                <p className="text-green-300">
-                  {t('closeChannelModal.cooperativeCloseInfo')}
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
-        {error && !suggestForceClose && (
-          <div className="mt-4 p-3 bg-red-900/30 border border-red-900/30 rounded-lg text-red-300 text-sm">
-            <div className="flex items-start">
-              <AlertTriangle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-              <p>{error}</p>
+          {error && !suggestForceClose && (
+            <div className="mt-5 flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-red-300">{error}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {isClosing && (
-          <div className="mt-4 text-center">
-            <div className="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-blue-400 rounded-full"></div>
-            <p className="text-blue-300 text-sm mt-2">
-              {t('closeChannelModal.closingMessage')}
-            </p>
-          </div>
-        )}
+          {isClosing && (
+            <div className="mt-5 flex items-center justify-center gap-3 py-2">
+              <Loader2 className="w-4 h-4 text-primary animate-spin" />
+              <p className="text-sm text-content-secondary">
+                {t('closeChannelModal.closingMessage')}
+              </p>
+            </div>
+          )}
 
-        <div className="mt-6">
-          <button
-            className={`w-full px-4 py-2 rounded-lg flex items-center justify-center ${
-              isClosing ? 'opacity-70 cursor-not-allowed' : ''
-            } ${
-              suggestForceClose
-                ? 'bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-medium shadow-md'
-                : forceClose
-                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-md border border-red-700/30'
-                  : 'bg-primary hover:bg-primary-emphasis text-primary-foreground'
-            } active:bg-primary-emphasis transition-colors shadow-sm`}
-            disabled={isClosing}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleConfirm()
-            }}
-            type="button"
-          >
-            {isClosing ? (
-              <>
-                <span className="animate-spin mr-2">⟳</span>
-                {t('closeChannelModal.processing')}
-              </>
-            ) : suggestForceClose ? (
-              <>
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                {t('closeChannelModal.forceCloseChannel')}
-              </>
-            ) : forceClose ? (
-              <>
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                {t('closeChannelModal.forceClose')}
-              </>
-            ) : (
-              t('closeChannelModal.closeChannel')
-            )}
-          </button>
+          {/* Actions */}
+          <div className="pt-6 mt-2">
+            <button
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed
+                ${
+                  suggestForceClose
+                    ? 'bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white'
+                    : forceClose
+                      ? 'bg-red-600/80 hover:bg-red-600 text-white'
+                      : 'bg-[#15E99A] hover:bg-[#12C97E] text-gray-900'
+                }`}
+              disabled={isClosing}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleConfirm()
+              }}
+              type="button"
+            >
+              {isClosing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : suggestForceClose || forceClose ? (
+                <AlertTriangle className="w-4 h-4" />
+              ) : (
+                <Handshake className="w-4 h-4" />
+              )}
+              {isClosing
+                ? t('closeChannelModal.processing')
+                : suggestForceClose
+                  ? t('closeChannelModal.forceCloseChannel')
+                  : forceClose
+                    ? t('closeChannelModal.forceClose')
+                    : t('closeChannelModal.closeChannel')}
+            </button>
+          </div>
         </div>
       </div>
     </div>,

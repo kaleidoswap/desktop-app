@@ -517,6 +517,7 @@
       "onlyKnownToParties": "Conosciuto solo alle parti",
       "rgbAssetChannel": "Canale Asset RGB",
       "rgbAssetInfo": "Questo canale includerà sia liquidità Bitcoin che allocazione asset RGB. L'asset RGB ({{ticker}}) sarà allocato con {{amount}} unità.",
+      "initialLiquidity": "Liquidità Iniziale",
       "back": "Indietro",
       "opening": "Apertura...",
       "openChannel": "Apri Canale"
@@ -601,7 +602,10 @@
     "title": "Chiudi Canale",
     "confirmMessage": "Sei sicuro di voler chiudere questo canale?",
     "settleMessage": "La chiusura di un canale regolerà il saldo corrente sul tuo portafoglio on-chain.",
-    "forceClose": "Chiusura forzata",
+    "cooperativeClose": "Chiusura cooperativa",
+    "forcedClose": "Chiusura forzata",
+    "recommendedLabel": "Consigliata",
+    "forceClose": "Chiudi canale forzatamente",
     "useCautionLabel": "Usare con cautela",
     "forceCloseConditionsTitle": "Usa la chiusura forzata solo se:",
     "forceCloseCondition1": "Il peer è offline o non risponde",
@@ -616,8 +620,8 @@
     "forceCloseReason3": "Può comportare commissioni più elevate",
     "closingMessage": "Chiusura canale in corso... Attendere prego",
     "processing": "Elaborazione...",
-    "forceCloseChannel": "Chiudi Canale Forzatamente",
-    "closeChannel": "Chiudi Canale",
+    "forceCloseChannel": "Chiudi canale forzatamente",
+    "closeChannel": "Chiudi canale in modo cooperativo",
     "cancel": "Annulla",
     "successMessage": "Canale {{channelId}}... chiusura {{forceClose}} avviata con successo",
     "errorMessage": "Impossibile chiudere il canale: {{error}}"
@@ -3011,7 +3015,7 @@
       "totalExecutions": "Esecuzioni riuscite"
     },
     "orders": {
-      "activeTitle": "Ordini Limite Attivi",
+      "activeTitle": "Ordini Limite Pianificati",
       "historyTitle": "Ordini Eseguiti & Chiusi"
     },
     "empty": {
