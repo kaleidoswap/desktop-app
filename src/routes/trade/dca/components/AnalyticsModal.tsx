@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { X, BarChart2 } from 'lucide-react'
+import { createPortal } from 'react-dom'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../../helpers/modalPortal'
 
 export interface AnalyticsModalProps {
   isOpen: boolean
@@ -32,9 +38,11 @@ export function AnalyticsModal({
 
   if (!isOpen) return null
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm"
+      className={`${pos} inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="w-full max-w-lg bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden flex flex-col max-h-[90vh]">
@@ -49,7 +57,7 @@ export function AnalyticsModal({
             </h2>
           </div>
           <button
-            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
+            className="p-1.5 rounded-md text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
             onClick={onClose}
           >
             <X className="w-4 h-4" />
@@ -118,6 +126,7 @@ export function AnalyticsModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

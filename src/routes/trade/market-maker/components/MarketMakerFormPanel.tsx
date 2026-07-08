@@ -1,4 +1,4 @@
-import { ArrowDownUp, Clock, Copy, Wallet } from 'lucide-react'
+import { AlertTriangle, ArrowDownUp, Clock, Copy, Info } from 'lucide-react'
 import type { ChangeEvent } from 'react'
 import type { SubmitHandler, UseFormReturn } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -237,10 +237,10 @@ export const MarketMakerFormPanel = ({
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div
-                className={`w-1.5 h-1.5 rounded-full ${
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                   wsConnected
                     ? hasTradablePairs
-                      ? 'bg-emerald-400'
+                      ? 'bg-green shadow-lg shadow-green/50 animate-pulse'
                       : 'bg-amber-400 animate-pulse'
                     : 'bg-red-400 animate-pulse'
                 }`}
@@ -272,22 +272,11 @@ export const MarketMakerFormPanel = ({
             onSubmit={form.handleSubmit(onSubmit)}
           >
             {isUsingOnchainBalance && !hasTradableChannels(channels) && (
-              <div className="mb-2 p-2 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl backdrop-blur-sm">
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <span className="text-blue-400 text-xs">ℹ️</span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-blue-300 text-sm font-medium">
-                      {t('tradeMarketMaker.banners.tradingOnchain')}
-                    </p>
-                    <p className="text-blue-200/80 text-xs mt-1">
-                      {t('tradeMarketMaker.banners.noChannelsYet')}
-                    </p>
-                  </div>
-                </div>
+              <div className="mb-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-amber-200/90 text-xs leading-relaxed">
+                  {t('tradeMarketMaker.banners.noChannelsYet')}
+                </p>
               </div>
             )}
 
@@ -298,12 +287,12 @@ export const MarketMakerFormPanel = ({
                 <SwapInputField
                   asset={currentFromAsset}
                   assetOptions={fromAssetOptions}
-                  availableAmount={`${formatAmount(maxFromAmount, currentFromAsset)} ${displayAsset(currentFromAsset)}`}
-                  availableAmountLabel={
+                  availableAmount={
                     isUsingOnchainBalance
-                      ? t('tradeMarketMaker.form.onchainAvailable')
-                      : t('tradeMarketMaker.form.available')
+                      ? undefined
+                      : `${formatAmount(maxFromAmount, currentFromAsset)} ${displayAsset(currentFromAsset)}`
                   }
+                  availableAmountLabel={t('tradeMarketMaker.form.available')}
                   disabled={
                     !hasChannels ||
                     !hasTradablePairs ||
@@ -319,7 +308,6 @@ export const MarketMakerFormPanel = ({
                   minAmount={minFromAmount}
                   onAmountChange={onFromAmountChange}
                   onAssetChange={(value) => onAssetChange('fromAsset', value)}
-                  onRefresh={onMakerChange}
                   onSizeClick={onSizeClick}
                   selectedSize={selectedSize}
                   showMaxAmount={!!missingChannelAsset}
@@ -333,10 +321,10 @@ export const MarketMakerFormPanel = ({
 
               <div className="flex justify-center my-2 relative z-10">
                 <button
-                  className={`p-2 rounded-xl border transition-all duration-300 shadow-sm bg-surface-overlay ${
+                  className={`p-2 rounded-xl border transition-all duration-300 ${
                     hasChannels && hasTradablePairs && !isSwapInProgress
-                      ? 'border-border-default/60 hover:bg-surface-high hover:border-primary/50 hover:scale-110 cursor-pointer'
-                      : 'border-border-default/20 opacity-30 cursor-not-allowed'
+                      ? 'bg-status-success/15 hover:bg-status-success/25 border-status-success/30 hover:border-status-success/50 text-status-success hover:scale-110 cursor-pointer'
+                      : 'bg-surface-overlay border-border-default/20 text-content-secondary opacity-30 cursor-not-allowed'
                   }`}
                   onClick={() =>
                     hasChannels &&
@@ -346,7 +334,7 @@ export const MarketMakerFormPanel = ({
                   }
                   type="button"
                 >
-                  <ArrowDownUp className="w-5 h-5 text-content-secondary" />
+                  <ArrowDownUp className="w-5 h-5" />
                 </button>
               </div>
 
@@ -381,33 +369,17 @@ export const MarketMakerFormPanel = ({
               </div>
 
               {missingChannelAsset && (
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-500/15 to-blue-500/20 border border-blue-500/40 backdrop-blur-xl shadow-xl">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/8 to-blue-500/10"></div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-                  <div className="relative p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-blue-500/50 flex items-center justify-center mt-0.5">
-                        <Wallet className="w-3.5 h-3.5 text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-blue-300 font-semibold text-sm mb-1">
-                          {t('tradeMarketMaker.channelWarning.title', {
-                            asset: missingChannelAsset.asset,
-                          })}
-                        </h4>
-                        <p className="text-blue-200/90 text-sm leading-relaxed">
-                          {missingChannelAsset.isFromAsset
-                            ? t('tradeMarketMaker.channelWarning.sendMessage', {
-                                asset: missingChannelAsset.asset,
-                              })
-                            : t(
-                                'tradeMarketMaker.channelWarning.receiveMessage',
-                                { asset: missingChannelAsset.asset }
-                              )}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="mt-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-blue-200/90 text-xs leading-relaxed">
+                    {missingChannelAsset.isFromAsset
+                      ? t('tradeMarketMaker.channelWarning.sendMessage', {
+                          asset: missingChannelAsset.asset,
+                        })
+                      : t('tradeMarketMaker.channelWarning.receiveMessage', {
+                          asset: missingChannelAsset.asset,
+                        })}
+                  </p>
                 </div>
               )}
 

@@ -1,4 +1,4 @@
-import { TrendingUp, Clock, RefreshCw } from 'lucide-react'
+import { Clock, RefreshCw } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -134,7 +134,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
           <span className="text-white font-semibold">1</span>
           <AssetOption ticker={fromDisplayAsset} />
         </div>
-        <TrendingUp className="w-3 h-3 text-green-500 shrink-0" />
+        <span className="text-content-tertiary text-sm font-medium">=</span>
         <div className="flex items-center gap-1">
           <span
             className={`text-white font-semibold transition-all duration-300 ${
@@ -151,7 +151,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
       <div className="flex-1 flex items-center justify-end">
         {onRefresh && (
           <button
-            className="p-1 rounded-md hover:bg-surface-high/60 text-content-tertiary hover:text-content-secondary transition-all active:scale-95"
+            className="p-1 rounded-md bg-transparent hover:bg-surface-high/50 text-white border border-border-default transition-all active:scale-95"
             onClick={onRefresh}
             title={t('tradeMarketMaker.swap.refresh')}
             type="button"

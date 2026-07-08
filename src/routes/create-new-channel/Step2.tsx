@@ -1,15 +1,22 @@
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  Clock,
+  Rocket,
+  Settings,
+  Zap,
+} from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
-import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import { useEffect, useRef, useState } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
-import { twJoin } from 'tailwind-merge'
 import { z } from 'zod'
 
 import { useSettings } from '../../hooks/useSettings'
-import defaultIcon from '../../assets/rgb-symbol-color.svg'
+import defaultIcon from '../../assets/rgb-logo.svg'
 import { FormError } from '../../components/FormError'
-import { AssetSelectWithModal } from '../../components/Trade/AssetSelectWithModal'
 import { Button } from '../../components/ui'
 import { MAX_CHANNEL_CAPACITY, MIN_CHANNEL_CAPACITY } from '../../constants'
 import {
@@ -17,6 +24,7 @@ import {
   formatAssetAmountWithPrecision,
 } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
+import { ChannelDurationSelector } from '../../components/ChannelConfiguration'
 import {
   NewChannelFormSchema,
   TNewChannelForm,
@@ -24,6 +32,167 @@ import {
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 import 'react-toastify/dist/ReactToastify.css'
+
+const AssetSliders = ({
+  asset,
+  assetAmountInput,
+  assetOutboundPct,
+  maxAmount,
+  bitcoinUnit,
+  onAmountChange,
+  onOutboundChange,
+}: {
+  asset: NiaAsset
+  assetAmountInput: string
+  assetOutboundPct: number
+  maxAmount: number
+  bitcoinUnit: string
+  onAmountChange: (raw: number) => void
+  onOutboundChange: (pct: number) => void
+}) => {
+  const rawAmount = parseAssetAmountWithPrecision(
+    assetAmountInput || '0',
+    asset.ticker,
+    bitcoinUnit,
+    [asset]
+  )
+  const capacityPct =
+    maxAmount > 0
+      ? Math.max(0, Math.min(100, (rawAmount / maxAmount) * 100))
+      : 0
+  const outboundAmount = Math.round((rawAmount * assetOutboundPct) / 100)
+  const inboundAmount = Math.max(0, rawAmount - outboundAmount)
+
+  if (rawAmount <= 0) return null
+
+  return (
+    <>
+      {/* Channel Capacity — mirrors the text input above, like the BTC capacity slider */}
+      <div className="mt-4 px-1">
+        <div className="relative">
+          <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+              style={{ width: `${capacityPct}%` }}
+            />
+          </div>
+          <input
+            className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+            max={maxAmount}
+            min={0}
+            onChange={(e) => onAmountChange(Number(e.target.value))}
+            step={1}
+            type="range"
+            value={rawAmount}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+            style={{ left: `calc(${capacityPct}% - 8px)` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-content-tertiary mt-2">
+          <span>Min: 1 {asset.ticker}</span>
+          <span>
+            Max:{' '}
+            {formatAssetAmountWithPrecision(
+              maxAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            {asset.ticker}
+          </span>
+        </div>
+      </div>
+
+      {/* Outbound Balance — percentage of the above capacity */}
+      <div className="mt-4 px-1">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs text-content-secondary">
+            Outbound Balance
+          </span>
+          <span className="text-xs font-medium text-white">
+            {assetOutboundPct}%
+          </span>
+        </div>
+        <div className="relative">
+          <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+              style={{ width: `${assetOutboundPct}%` }}
+            />
+          </div>
+          <input
+            className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+            max={100}
+            min={0}
+            onChange={(e) => onOutboundChange(Number(e.target.value))}
+            step={1}
+            type="range"
+            value={assetOutboundPct}
+          />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+            style={{ left: `calc(${assetOutboundPct}% - 8px)` }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-content-tertiary mt-2">
+          <span>
+            ↑{' '}
+            {formatAssetAmountWithPrecision(
+              outboundAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            out
+          </span>
+          <span>
+            {formatAssetAmountWithPrecision(
+              inboundAmount,
+              asset.ticker,
+              bitcoinUnit,
+              [asset]
+            )}{' '}
+            in ↓
+          </span>
+        </div>
+      </div>
+    </>
+  )
+}
+
+const AssetDropdownItem = ({
+  asset,
+  isSelected,
+  onSelect,
+}: {
+  asset: NiaAsset
+  isSelected: boolean
+  onSelect: () => void
+}) => {
+  const [iconSrc, setIconSrc] = useAssetIcon(asset.ticker, defaultIcon)
+  return (
+    <button
+      className={`w-full px-3 py-2 flex items-center gap-3 text-left text-sm transition-colors duration-150 ${isSelected ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
+      onClick={onSelect}
+      type="button"
+    >
+      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <img
+          alt={asset.ticker}
+          className="w-full h-full object-cover rounded-full"
+          onError={() => setIconSrc(defaultIcon)}
+          src={iconSrc}
+        />
+      </div>
+      <div className="text-left">
+        <div className="font-medium">{asset.ticker}</div>
+        <div className="text-xs text-content-tertiary">{asset.name}</div>
+      </div>
+    </button>
+  )
+}
 
 interface Props {
   onBack: VoidFunction
@@ -40,7 +209,7 @@ interface FormFields {
   assetAmountDisplay: string // For display purposes with precision
   assetId: string
   assetTicker: string
-  fee: 'slow' | 'medium' | 'fast'
+  fee: 'slow' | 'medium' | 'fast' | 'custom'
   public: boolean
 }
 
@@ -66,12 +235,28 @@ export const Step2 = ({
   const { t } = useTranslation()
   const [maxCapacity, setMaxCapacity] = useState<number>(MAX_CHANNEL_CAPACITY)
   const [addAsset, setAddAsset] = useState<boolean>(false)
-  const [hasAvailableAssets, setHasAvailableAssets] = useState<boolean>(false)
   const [maxAssetAmountMap, setMaxAssetAmountMap] = useState<
     Record<string, number>
   >({})
   const [selectedAsset, setSelectedAsset] = useState<NiaAsset | null>(null)
   const [assetAmountInput, setAssetAmountInput] = useState('')
+  const [customFeeRate, setCustomFeeRate] = useState<number>(1)
+  const [isAssetDropdownOpen, setIsAssetDropdownOpen] = useState(false)
+  const [assetOutboundPct, setAssetOutboundPct] = useState<number>(50)
+  const assetDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        assetDropdownRef.current &&
+        !assetDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAssetDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const { bitcoinUnit } = useSettings()
 
@@ -100,7 +285,7 @@ export const Step2 = ({
     nodeApi.endpoints.listAssets.useLazyQuery()
   const [btcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
 
-  const { handleSubmit, setValue, control, watch, formState, clearErrors } =
+  const { handleSubmit, setValue, watch, formState, clearErrors } =
     useForm<FormFields>({
       criteriaMode: 'all',
       defaultValues: {
@@ -155,7 +340,6 @@ export const Step2 = ({
           (asset: any) => (asset.balance?.spendable ?? 0) > 0
         ) || []
 
-      setHasAvailableAssets(filteredAssets.length > 0)
       if (filteredAssets.length > 0) {
         const newMaxAssetAmountMap = filteredAssets.reduce(
           (acc: Record<string, number>, current: NiaAsset) => {
@@ -180,7 +364,6 @@ export const Step2 = ({
         setAddAsset(false)
       }
     } else {
-      setHasAvailableAssets(false)
       setAddAsset(false)
     }
   }, [takerAssetsResponse, formData.assetId])
@@ -196,10 +379,9 @@ export const Step2 = ({
   }
 
   const handleCapacityChange = (value: string) => {
-    // Don't enforce minimum values during typing
     const sanitized = value.replace(/[^0-9.]/g, '')
     if (sanitized === '') {
-      setValue('capacitySat', '')
+      setValue('capacitySat', '', { shouldDirty: true })
       onFormUpdate({ capacitySat: 0 })
       return
     }
@@ -207,20 +389,19 @@ export const Step2 = ({
     const numValue = parseFloat(sanitized)
     if (isNaN(numValue)) return
 
-    // Only enforce maximum constraint
     if (numValue > maxCapacity) {
-      setValue('capacitySat', maxCapacity.toString())
+      setValue('capacitySat', maxCapacity.toString(), { shouldDirty: true })
       onFormUpdate({ capacitySat: maxCapacity })
       return
     }
 
-    setValue('capacitySat', sanitized)
+    setValue('capacitySat', sanitized, { shouldDirty: true })
     onFormUpdate({ capacitySat: numValue })
   }
 
-  const handleFeeChange = (fee: 'slow' | 'medium' | 'fast') => {
+  const handleFeeChange = (fee: 'slow' | 'medium' | 'fast' | 'custom') => {
     setValue('fee', fee)
-    onFormUpdate({ fee })
+    if (fee !== 'custom') onFormUpdate({ fee })
   }
 
   const handleAssetSelect = (assetId: string) => {
@@ -325,6 +506,7 @@ export const Step2 = ({
       ...data,
       assetAmount: data.assetAmount || 0,
       capacitySat: parsedCapacity,
+      fee: data.fee === 'custom' ? 'slow' : data.fee,
     })
     onNext()
   }
@@ -336,18 +518,9 @@ export const Step2 = ({
 
   return (
     <form className="max-w-3xl mx-auto" onSubmit={handleSubmit(onSubmit)}>
-      <div className="text-center mt-16 mb-10">
-        <h3 className="text-3xl font-bold text-white mb-4">
-          {t('createChannel.step2.title')}
-        </h3>
-        <h4 className="text-xl text-content-secondary">
-          {t('createChannel.step2.subtitle')}
-        </h4>
-      </div>
-
       <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
         {/* PubKey display section */}
-        <div className="mb-8">
+        <div className="mb-12">
           <label className="block text-sm font-medium text-content-secondary mb-2">
             {t('createChannel.step2.openingWith')}
           </label>
@@ -356,32 +529,56 @@ export const Step2 = ({
           </div>
         </div>
 
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-content-secondary mb-2">
-            {t('createChannel.step2.capacityLabel')}
-            <span className="text-xs text-content-tertiary ml-2">
-              {t('createChannel.step2.capacityHint')}
-            </span>
-          </label>
-          <div className="flex items-center space-x-4">
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-content-secondary">
+              {t('createChannel.step2.capacityLabel')}
+            </label>
+            <div className="flex items-center gap-1">
+              {[
+                { label: '100k', value: 100_000 },
+                { label: '250k', value: 250_000 },
+                { label: '500k', value: 500_000 },
+                { label: '1M', value: 1_000_000 },
+              ].map(({ label, value }) => (
+                <button
+                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                    value > maxCapacity
+                      ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
+                      : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                  }`}
+                  disabled={value > maxCapacity}
+                  key={label}
+                  onClick={() => handleCapacityChange(value.toString())}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
             <input
-              className="flex-grow rounded bg-surface-elevated px-4 py-3 outline-none text-white"
+              className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
               onChange={(e) => handleCapacityChange(e.target.value)}
-              placeholder={t('createChannel.step2.capacityPlaceholder')}
+              placeholder="0"
               type="text"
               value={capacitySat ? formatNumber(parseFloat(capacitySat)) : ''}
             />
-            <span className="text-sm text-content-secondary">
-              {formatNumber(maxCapacity)} {t('createChannel.step2.max')}
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
+              SATS
             </span>
+          </div>
+          <div className="mt-1.5 text-xs text-content-tertiary">
+            {formatNumber(maxCapacity)} {t('createChannel.step2.max')}
           </div>
           {capacitySat && parseFloat(capacitySat) > 0 && (
             <div className="mt-4 px-1">
               <div className="relative">
                 {/* Filled track */}
-                <div className="relative h-2 rounded-full bg-surface-high/60 overflow-hidden">
+                <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-cyan/70 to-cyan transition-all duration-200"
+                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
                     style={{
                       width: `${Math.max(0, Math.min(100, ((parseFloat(capacitySat) - MIN_CHANNEL_CAPACITY) / (maxCapacity - MIN_CHANNEL_CAPACITY)) * 100))}%`,
                     }}
@@ -398,24 +595,22 @@ export const Step2 = ({
                 />
                 {/* Thumb */}
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-cyan shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
                   style={{
                     left: `calc(${Math.max(0, Math.min(100, ((parseFloat(capacitySat) - MIN_CHANNEL_CAPACITY) / (maxCapacity - MIN_CHANNEL_CAPACITY)) * 100))}% - 8px)`,
                   }}
                 />
               </div>
               <div className="flex justify-between text-xs text-content-tertiary mt-3">
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-content-tertiary" />
+                <span>
                   {t('createChannel.step2.minLabel', {
                     amount: formatNumber(MIN_CHANNEL_CAPACITY),
                   })}
                 </span>
-                <span className="flex items-center gap-1">
+                <span>
                   {t('createChannel.step2.maxLabel', {
                     amount: formatNumber(maxCapacity),
                   })}
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/60" />
                 </span>
               </div>
             </div>
@@ -428,180 +623,168 @@ export const Step2 = ({
         </div>
 
         {/* Asset section */}
-        <div className="border-t border-border-default/50 my-8"></div>
+        <div className="mb-12">
+          <h5 className="text-lg font-semibold text-white mb-3">
+            {t('createChannel.step2.rgbAssetsTitle')}
+          </h5>
 
-        {hasAvailableAssets ? (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h5 className="text-lg font-semibold text-white">
-                  {t('createChannel.step2.rgbAssetsTitle')}
-                </h5>
-                <p className="text-sm text-content-secondary mt-1">
-                  {t('createChannel.step2.rgbAssetsSubtitle')}
-                </p>
-              </div>
-              <button
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all
-                  ${
-                    addAsset
-                      ? 'bg-purple-600/20 border border-purple-500 text-white'
-                      : 'bg-surface-base/50 border border-border-default text-content-secondary hover:border-border-default hover:text-content-secondary'
-                  }`}
-                onClick={() => handleAddAssetToggle(!addAsset)}
-                type="button"
-              >
-                {addAsset
-                  ? t('createChannel.step2.removeAsset')
-                  : t('createChannel.step2.addAsset')}
-              </button>
-            </div>
+          <div className="relative" ref={assetDropdownRef}>
+            <button
+              className={`w-full flex items-center gap-2 py-2 pl-3 pr-3 text-sm bg-surface-overlay/30 rounded-lg border text-white transition-all duration-200 focus:outline-none ${isAssetDropdownOpen ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border-default/50'}`}
+              onClick={() => setIsAssetDropdownOpen(!isAssetDropdownOpen)}
+              type="button"
+            >
+              <span className="flex-1 text-left">
+                {selectedAsset ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <img
+                        alt={selectedAsset.ticker}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={() => setAssetIconSrc(defaultIcon)}
+                        src={assetIconSrc}
+                      />
+                    </span>
+                    <span className="font-medium">{selectedAsset.ticker}</span>
+                    <span className="text-content-secondary text-xs">
+                      {selectedAsset.name}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-content-secondary">No Asset</span>
+                )}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-content-secondary flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-            {addAsset && (
-              <div className="space-y-6">
-                <div className="bg-surface-base/50 p-6 rounded-lg">
-                  <label className="block text-sm font-medium text-content-secondary mb-3">
-                    {t('createChannel.step2.selectAsset')}
-                  </label>
-                  <Controller
-                    control={control}
-                    name="assetId"
-                    render={({ field }) => (
-                      <>
-                        <AssetSelectWithModal
-                          className="w-full"
-                          fieldLabel={t('createChannel.step2.chooseAsset')}
-                          onChange={(value) => {
-                            field.onChange(value)
-                            handleAssetSelect(value)
-                          }}
-                          options={availableAssets.map((a: NiaAsset) => ({
-                            assetId: a.asset_id,
-                            label: a.name,
-                            name: a.name,
-                            ticker: a.ticker,
-                            value: a.asset_id,
-                          }))}
-                          placeholder="Select an RGB asset"
-                          searchPlaceholder="Search by name, ticker or asset ID..."
-                          title="Select RGB Asset"
-                          value={field.value ?? ''}
-                        />
-
-                        {!field.value && addAsset && (
-                          <p className="text-xs text-yellow-500 mt-2">
-                            You must select an asset to proceed. If you don't
-                            want to add an asset, uncheck the "Add Asset"
-                            option.
-                          </p>
-                        )}
-                      </>
-                    )}
-                  />
+            {isAssetDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
+                <div className="max-h-[220px] overflow-y-auto">
+                  <button
+                    className={`w-full px-3 py-2 text-left text-sm transition-colors duration-150 border-b border-border-default/50 ${!selectedAsset ? 'text-primary bg-primary/10' : 'text-white hover:bg-surface-high/60'}`}
+                    onClick={() => {
+                      handleAddAssetToggle(false)
+                      setIsAssetDropdownOpen(false)
+                    }}
+                    type="button"
+                  >
+                    No Asset
+                  </button>
+                  {availableAssets.map((asset: NiaAsset) => (
+                    <AssetDropdownItem
+                      asset={asset}
+                      isSelected={selectedAsset?.asset_id === asset.asset_id}
+                      key={asset.asset_id}
+                      onSelect={() => {
+                        handleAssetSelect(asset.asset_id)
+                        handleAddAssetToggle(true)
+                        setIsAssetDropdownOpen(false)
+                      }}
+                    />
+                  ))}
                 </div>
+              </div>
+            )}
+          </div>
 
-                {selectedAsset && (
-                  <div className="bg-surface-base/50 p-6 rounded-lg space-y-4">
-                    {/* Enhanced Asset Amount Input */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        Asset Amount
-                      </label>
-
-                      {selectedAsset ? (
-                        <div className="space-y-4">
-                          {/* Asset Preview Card */}
-                          <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
-                            {/* Asset Header with Icon */}
-                            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border-default/50">
-                              <img
-                                alt={selectedAsset.ticker}
-                                className="w-10 h-10 rounded-full border-2 border-border-default/50"
-                                onError={() => setAssetIconSrc(defaultIcon)}
-                                src={assetIconSrc}
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg font-semibold text-white">
-                                    {selectedAsset.ticker}
-                                  </span>
-                                  <span className="text-sm text-content-secondary">
-                                    ({selectedAsset.name})
-                                  </span>
-                                </div>
-                                <div className="text-xs text-content-tertiary">
-                                  {selectedAsset.precision} decimal places
-                                </div>
+          {selectedAsset && addAsset && (
+            <div className="mt-6 space-y-4">
+              {selectedAsset && (
+                <div className="bg-surface-base/50 p-6 rounded-lg space-y-4">
+                  <div className="space-y-3">
+                    {selectedAsset ? (
+                      <div className="space-y-4">
+                        {/* Asset Preview Card */}
+                        <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
+                          {/* Asset Header with Icon */}
+                          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border-default/50">
+                            <img
+                              alt={selectedAsset.ticker}
+                              className="w-10 h-10 rounded-full border-2 border-border-default/50"
+                              onError={() => setAssetIconSrc(defaultIcon)}
+                              src={assetIconSrc}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg font-semibold text-white">
+                                  {selectedAsset.ticker}
+                                </span>
+                                <span className="text-sm text-content-secondary">
+                                  ({selectedAsset.name})
+                                </span>
                               </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Asset Info */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-content-secondary">
-                                    Full Asset ID:
-                                  </span>
-                                </div>
-                                <div
-                                  className="text-xs font-mono text-content-secondary break-all bg-surface-base/50 p-2 rounded border border-border-default/30"
-                                  title={selectedAsset.asset_id}
-                                >
-                                  {selectedAsset.asset_id}
-                                </div>
-                              </div>
-
-                              {/* Balance Info */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-content-secondary">
-                                    Available:
-                                  </span>
-                                  <span className="text-sm font-medium text-green-400">
-                                    {selectedAsset.balance
-                                      ? formatAssetAmountWithPrecision(
-                                          selectedAsset.balance.spendable,
-                                          selectedAsset.ticker,
-                                          bitcoinUnit,
-                                          [selectedAsset]
-                                        )
-                                      : '0'}{' '}
-                                    {selectedAsset.ticker}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-content-secondary">
-                                    Max for Channels:
-                                  </span>
-                                  <span className="text-sm text-blue-400 font-medium">
-                                    {formatAssetAmountWithPrecision(
-                                      maxAssetAmountMap[
-                                        selectedAsset.asset_id
-                                      ] || 0,
-                                      selectedAsset.ticker,
-                                      bitcoinUnit,
-                                      [selectedAsset]
-                                    )}{' '}
-                                    {selectedAsset.ticker}
-                                  </span>
-                                </div>
+                            <div className="flex flex-col gap-1 text-right shrink-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-content-secondary">
+                                  Available:
+                                </span>
+                                <span className="text-sm font-medium text-white">
+                                  {selectedAsset.balance
+                                    ? formatAssetAmountWithPrecision(
+                                        selectedAsset.balance.spendable,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
+                                    : '0'}{' '}
+                                  {selectedAsset.ticker}
+                                </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Amount Input */}
-                          <div className="space-y-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-content-secondary shrink-0">
+                              Full Asset ID:
+                            </span>
+                            <span className="text-xs font-mono text-content-tertiary break-all">
+                              {selectedAsset.asset_id}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Amount Input */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-content-secondary">
-                              Amount ({selectedAsset.ticker})
+                              Amount
                             </label>
+                            <div className="flex items-center gap-1">
+                              {[25, 50, 75, 100].map((pct) => (
+                                <button
+                                  className="px-2 py-0.5 rounded text-xs font-semibold border bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70 transition-colors"
+                                  key={pct}
+                                  onClick={() => {
+                                    const maxAmount =
+                                      maxAssetAmountMap[
+                                        selectedAsset.asset_id
+                                      ] || 0
+                                    const portion = maxAmount * (pct / 100)
+                                    const displayAmount =
+                                      formatAssetAmountWithPrecision(
+                                        portion,
+                                        selectedAsset.ticker,
+                                        bitcoinUnit,
+                                        [selectedAsset]
+                                      )
+                                    setAssetAmountInput(displayAmount)
+                                    setValue('assetAmount', portion)
+                                    onFormUpdate({ assetAmount: portion })
+                                  }}
+                                  type="button"
+                                >
+                                  {pct === 100 ? 'MAX' : `${pct}%`}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="relative">
                             <input
-                              className={twJoin(
-                                'w-full px-4 py-3 bg-surface-base/70 border rounded-xl',
-                                'text-white text-lg font-medium placeholder:text-content-tertiary',
-                                'border-border-default/50 hover:border-border-subtle/70',
-                                'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none',
-                                'transition-all duration-200'
-                              )}
+                              className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
                               inputMode="decimal"
                               onBlur={(e) => {
                                 // Only when user finishes typing, convert to proper format and validate
@@ -728,362 +911,267 @@ export const Step2 = ({
                                 // Prevent all other keys
                                 e.preventDefault()
                               }}
-                              placeholder={`0.${'0'.repeat(selectedAsset.precision)}`}
+                              placeholder="0"
                               type="text"
                               value={assetAmountInput}
                             />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/60 text-sm font-semibold pointer-events-none select-none tracking-wide">
+                              {selectedAsset.ticker}
+                            </span>
+                          </div>
+                          <div className="text-xs text-content-tertiary">
+                            Min: 1 {selectedAsset.ticker}
+                          </div>
 
-                            {/* Quick amount buttons */}
-                            <div className="flex gap-2">
-                              <button
-                                className={twJoin(
-                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                  'bg-surface-high/50 text-content-secondary hover:bg-surface-elevated/50 hover:text-white',
-                                  'border border-border-default/30 hover:border-border-subtle/50'
-                                )}
-                                onClick={() => {
-                                  setAssetAmountInput('')
-                                  setValue('assetAmount', 0)
-                                  onFormUpdate({ assetAmount: 0 })
-                                }}
-                                type="button"
-                              >
-                                Clear
-                              </button>
-                              <button
-                                className={twJoin(
-                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                  'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
-                                  'border border-blue-500/30 hover:border-blue-500/50'
-                                )}
-                                onClick={() => {
-                                  const maxAmount =
-                                    maxAssetAmountMap[selectedAsset.asset_id] ||
-                                    0
-                                  const displayAmount =
-                                    formatAssetAmountWithPrecision(
-                                      maxAmount * 0.25,
+                          <AssetSliders
+                            asset={selectedAsset}
+                            assetAmountInput={assetAmountInput}
+                            assetOutboundPct={assetOutboundPct}
+                            bitcoinUnit={bitcoinUnit}
+                            maxAmount={
+                              maxAssetAmountMap[selectedAsset.asset_id] || 0
+                            }
+                            onAmountChange={(raw) => {
+                              const display = formatAssetAmountWithPrecision(
+                                raw,
+                                selectedAsset.ticker,
+                                bitcoinUnit,
+                                [selectedAsset]
+                              )
+                              setAssetAmountInput(display)
+                              setValue('assetAmount', raw)
+                              onFormUpdate({ assetAmount: raw })
+                            }}
+                            onOutboundChange={(pct) => {
+                              setAssetOutboundPct(pct)
+                              const raw = parseAssetAmountWithPrecision(
+                                assetAmountInput || '0',
+                                selectedAsset.ticker,
+                                bitcoinUnit,
+                                [selectedAsset]
+                              )
+                              const outbound = Math.round((raw * pct) / 100)
+                              setValue('assetAmount', outbound)
+                              onFormUpdate({ assetAmount: outbound })
+                            }}
+                          />
+
+                          {formState.errors.assetAmount && (
+                            <div className="text-sm text-red-400">
+                              {formState.errors.assetAmount.message}
+                            </div>
+                          )}
+
+                          {/* Validation feedback and helper text */}
+                          <div className="space-y-1">
+                            {assetAmountInput && selectedAsset && (
+                              <div className="text-xs">
+                                {(() => {
+                                  const inputValue =
+                                    parseFloat(assetAmountInput) || 0
+                                  const rawInputAmount =
+                                    parseAssetAmountWithPrecision(
+                                      assetAmountInput,
                                       selectedAsset.ticker,
                                       bitcoinUnit,
                                       [selectedAsset]
                                     )
-                                  setAssetAmountInput(displayAmount)
-                                  setValue('assetAmount', maxAmount * 0.25)
-                                  onFormUpdate({
-                                    assetAmount: maxAmount * 0.25,
-                                  })
-                                }}
-                                type="button"
-                              >
-                                25%
-                              </button>
-                              <button
-                                className={twJoin(
-                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                  'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300',
-                                  'border border-blue-500/30 hover:border-blue-500/50'
-                                )}
-                                onClick={() => {
                                   const maxAmount =
                                     maxAssetAmountMap[selectedAsset.asset_id] ||
                                     0
-                                  const displayAmount =
-                                    formatAssetAmountWithPrecision(
-                                      maxAmount * 0.5,
-                                      selectedAsset.ticker,
-                                      bitcoinUnit,
-                                      [selectedAsset]
-                                    )
-                                  setAssetAmountInput(displayAmount)
-                                  setValue('assetAmount', maxAmount * 0.5)
-                                  onFormUpdate({ assetAmount: maxAmount * 0.5 })
-                                }}
-                                type="button"
-                              >
-                                50%
-                              </button>
-                              <button
-                                className={twJoin(
-                                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200',
-                                  'bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300',
-                                  'border border-green-500/30 hover:border-green-500/50'
-                                )}
-                                onClick={() => {
-                                  const maxAmount =
-                                    maxAssetAmountMap[selectedAsset.asset_id] ||
-                                    0
-                                  const displayAmount =
+                                  const maxDisplayAmount =
                                     formatAssetAmountWithPrecision(
                                       maxAmount,
                                       selectedAsset.ticker,
                                       bitcoinUnit,
                                       [selectedAsset]
                                     )
-                                  setAssetAmountInput(displayAmount)
-                                  setValue('assetAmount', maxAmount)
-                                  onFormUpdate({ assetAmount: maxAmount })
-                                }}
-                                type="button"
-                              >
-                                Max
-                              </button>
-                            </div>
 
-                            {formState.errors.assetAmount && (
-                              <div className="text-sm text-red-400">
-                                {formState.errors.assetAmount.message}
+                                  if (inputValue <= 0) {
+                                    return null
+                                  } else if (rawInputAmount > maxAmount) {
+                                    return (
+                                      <span className="text-red-400 flex items-center gap-1">
+                                        ⚠️ Exceeds maximum available (
+                                        {maxDisplayAmount}{' '}
+                                        {selectedAsset.ticker})
+                                      </span>
+                                    )
+                                  } else if (rawInputAmount > maxAmount * 0.9) {
+                                    return (
+                                      <span className="text-orange-400 flex items-center gap-1">
+                                        ⚡ Near maximum limit (
+                                        {maxDisplayAmount}{' '}
+                                        {selectedAsset.ticker})
+                                      </span>
+                                    )
+                                  } else {
+                                    return null
+                                  }
+                                })()}
                               </div>
                             )}
-
-                            {/* Validation feedback and helper text */}
-                            <div className="space-y-1">
-                              {assetAmountInput && selectedAsset && (
-                                <div className="text-xs">
-                                  {(() => {
-                                    const inputValue =
-                                      parseFloat(assetAmountInput) || 0
-                                    const rawInputAmount =
-                                      parseAssetAmountWithPrecision(
-                                        assetAmountInput,
-                                        selectedAsset.ticker,
-                                        bitcoinUnit,
-                                        [selectedAsset]
-                                      )
-                                    const maxAmount =
-                                      maxAssetAmountMap[
-                                        selectedAsset.asset_id
-                                      ] || 0
-                                    const maxDisplayAmount =
-                                      formatAssetAmountWithPrecision(
-                                        maxAmount,
-                                        selectedAsset.ticker,
-                                        bitcoinUnit,
-                                        [selectedAsset]
-                                      )
-
-                                    if (inputValue <= 0) {
-                                      return null
-                                    } else if (rawInputAmount > maxAmount) {
-                                      return (
-                                        <span className="text-red-400 flex items-center gap-1">
-                                          ⚠️ Exceeds maximum available (
-                                          {maxDisplayAmount}{' '}
-                                          {selectedAsset.ticker})
-                                        </span>
-                                      )
-                                    } else if (
-                                      rawInputAmount >
-                                      maxAmount * 0.9
-                                    ) {
-                                      return (
-                                        <span className="text-orange-400 flex items-center gap-1">
-                                          ⚡ Near maximum limit (
-                                          {maxDisplayAmount}{' '}
-                                          {selectedAsset.ticker})
-                                        </span>
-                                      )
-                                    } else {
-                                      return (
-                                        <span className="text-green-400 flex items-center gap-1">
-                                          ✅ Valid amount
-                                        </span>
-                                      )
-                                    }
-                                  })()}
-                                </div>
-                              )}
-                            </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="bg-surface-base/50 border border-border-default/50 rounded-xl p-6 text-center">
-                          <div className="text-content-secondary text-sm">
-                            Please select an asset first to enter an amount
-                          </div>
+                      </div>
+                    ) : (
+                      <div className="bg-surface-base/50 border border-border-default/50 rounded-xl p-6 text-center">
+                        <div className="text-content-secondary text-sm">
+                          Please select an asset first to enter an amount
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="mb-8 p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <div className="flex items-center justify-center text-yellow-500">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
-              </svg>
-              <p>
-                You do not have any spendable on-chain RGB assets to open a
-                channel with.
-              </p>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Fee selection section */}
-        <div className="border-t border-border-default/50 my-8"></div>
-
-        <div>
-          <label className="block text-sm font-medium text-content-secondary mb-4">
-            Transaction Fee Rate
+        <div className="mb-12">
+          <label className="text-xs font-medium text-content-secondary">
+            Fee Rate
           </label>
-          <div className="flex space-x-4">
-            {['slow', 'medium', 'fast'].map((speed) => (
+          <div className="grid grid-cols-4 gap-2 mt-1">
+            {(
+              [
+                {
+                  icon: <Clock className="w-4 h-4" />,
+                  label: 'Slow',
+                  rate: `${feeRates['slow']} sat/vB`,
+                  value: 'slow',
+                },
+                {
+                  icon: <Zap className="w-4 h-4" />,
+                  label: 'Normal',
+                  rate: `${feeRates['medium']} sat/vB`,
+                  value: 'medium',
+                },
+                {
+                  icon: <Rocket className="w-4 h-4" />,
+                  label: 'Fast',
+                  rate: `${feeRates['fast']} sat/vB`,
+                  value: 'fast',
+                },
+                {
+                  icon: <Settings className="w-4 h-4" />,
+                  label: 'Custom',
+                  rate:
+                    selectedFee === 'custom'
+                      ? `${customFeeRate} sat/vB`
+                      : 'set rate',
+                  value: 'custom',
+                },
+              ] as const
+            ).map(({ value, label, icon, rate }) => (
               <button
-                className={`flex-1 py-3 px-4 rounded-lg text-center transition-all
-                  ${
-                    selectedFee === speed
-                      ? 'bg-purple-600/20 border border-purple-500 text-white shadow-lg'
-                      : 'bg-surface-base/50 border border-border-default text-content-secondary hover:border-border-default hover:text-content-secondary'
-                  }`}
-                key={speed}
-                onClick={() =>
-                  handleFeeChange(speed as 'slow' | 'medium' | 'fast')
-                }
+                className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5 rounded-lg transition-colors duration-200 border text-xs ${
+                  selectedFee === value
+                    ? 'bg-primary/10 border-primary text-primary'
+                    : 'border-border-default hover:border-primary/50 text-content-secondary'
+                }`}
+                key={value}
+                onClick={() => handleFeeChange(value)}
                 type="button"
               >
-                <div className="font-medium capitalize">{speed}</div>
-                <div className="text-xs text-content-tertiary mt-1">
-                  {`${feeRates[speed]} sat/vB`}
-                </div>
+                {icon}
+                <span className="text-[10px]">{label}</span>
+                <span className="text-[9px]">{rate}</span>
               </button>
             ))}
           </div>
+
+          {selectedFee === 'custom' && (
+            <div className="mt-2 space-y-1 animate-fade-in">
+              <label className="text-xs font-medium text-content-secondary">
+                Custom Fee Rate
+              </label>
+              <input
+                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary/60 focus:ring-1 focus:ring-primary/30 focus:outline-none text-white text-sm"
+                min={0.1}
+                onChange={(e) =>
+                  setCustomFeeRate(parseFloat(e.target.value) || 1)
+                }
+                step={0.1}
+                type="number"
+                value={customFeeRate}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Channel Privacy section */}
-        <div className="border-t border-border-default/50 my-8"></div>
+        {/* Channel Lock Duration */}
+        <div className="mb-12">
+          <ChannelDurationSelector
+            containerClassName="border-0 p-0"
+            onChange={(v) => onFormUpdate({ channelExpireBlocks: v })}
+            value={formData.channelExpireBlocks ?? 12960}
+          />
+        </div>
 
+        {/* Channel Privacy */}
         <div>
-          <label className="block text-sm font-medium text-content-secondary mb-4">
-            Channel Privacy
-          </label>
-          <div className="bg-surface-base/50 p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <h5 className="text-white font-medium mb-1">
-                  {isPublic ? 'Public Channel' : 'Private Channel'}
-                </h5>
-                <p className="text-sm text-content-secondary">
-                  {isPublic
-                    ? 'Visible on the Lightning Network and can be used for routing payments'
-                    : 'Only known to the two parties and cannot be used for routing'}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-content-secondary">
+                {isPublic ? 'Public Channel' : 'Private Channel'}
+              </div>
+              {!isPublic && (
+                <p className="text-sm text-content-tertiary mt-1">
+                  Only known to the two parties and cannot be used for routing
                 </p>
-              </div>
+              )}
+              <p className="text-xs text-content-tertiary mt-2">
+                {t('components.createChannel.publicChannelsDesc')} route
+                payments for the network.{' '}
+                {t('components.createChannel.privateChannelsDesc')} without
+                network visibility.
+              </p>
+            </div>
 
-              {/* Toggle Switch */}
-              <button
-                aria-checked={isPublic}
-                aria-label="Toggle channel privacy"
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
-                  isPublic ? 'bg-purple-600' : 'bg-surface-elevated'
+            <button
+              aria-checked={isPublic}
+              aria-label="Toggle channel privacy"
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none flex-shrink-0 ml-4 ${
+                isPublic ? 'bg-primary' : 'bg-surface-elevated'
+              }`}
+              onClick={() => {
+                const newValue = !isPublic
+                setValue('public', newValue)
+                onFormUpdate({ public: newValue })
+              }}
+              role="switch"
+              type="button"
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isPublic ? 'translate-x-6' : 'translate-x-1'
                 }`}
-                onClick={() => {
-                  const newValue = !isPublic
-                  setValue('public', newValue)
-                  onFormUpdate({ public: newValue })
-                }}
-                role="switch"
-                type="button"
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPublic ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                  />
-                </svg>
-                <div className="text-sm text-blue-300">
-                  <strong>
-                    {t('components.createChannel.publicChannelsDesc')}
-                  </strong>{' '}
-                  route payments for the network.
-                  <strong>
-                    {t('components.createChannel.privateChannelsDesc')}
-                  </strong>{' '}
-                  without network visibility.
-                </div>
-              </div>
-            </div>
+              />
+            </button>
           </div>
         </div>
       </div>
 
       <div className="flex justify-between mt-8">
-        <Button
-          icon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M15 19l-7-7 7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-              />
-            </svg>
-          }
+        <button
+          className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
           onClick={onBack}
-          size="lg"
           type="button"
-          variant="secondary"
         >
+          <ArrowLeft className="w-3.5 h-3.5" />
           Back
-        </Button>
+        </button>
 
         <Button
-          icon={
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M9 5l7 7-7 7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-              />
-            </svg>
-          }
+          icon={<ArrowRight className="w-4 h-4" />}
           iconPosition="right"
           size="lg"
           type="submit"
           variant="primary"
         >
-          Next
+          Continue
         </Button>
       </div>
 

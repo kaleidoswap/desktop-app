@@ -55,7 +55,7 @@
     "overview": "Overview",
     "activate": "Activate {{name}}",
     "dashboard": "Dashboard",
-    "trade": "Trade",
+    "trade": "Trading",
     "history": "History",
     "liquidity": "Liquidity",
     "brain": "Brain",
@@ -76,17 +76,17 @@
     "expandSidebar": "Expand sidebar"
   },
   "channels": {
-    "pageTitle": "Lightning Wallet Dashboard",
+    "pageTitle": "Manage Channels",
     "lastUpdated": "Last updated: {{time}}",
     "loadingData": "Loading data...",
     "openChannel": "Open Channel",
     "buyChannel": "Buy Channel",
-    "createNewChannel": "Create New Channel",
-    "buyAChannel": "Buy a Channel",
+    "createNewChannel": "Open Channel",
+    "buyAChannel": "Buy Channel",
     "manageChannels": "Manage Channels",
     "refreshing": "Refreshing...",
     "refresh": "Refresh",
-    "totalBalance": "Total Balance",
+    "totalBalance": "Total Lightning Balance",
     "inboundLiquidity": "Inbound Liquidity",
     "outboundLiquidity": "Outbound Liquidity",
     "yourChannels": "Your Channels",
@@ -95,7 +95,7 @@
     "rgb": "RGB",
     "filter": "Filter",
     "filterBy": "Filter by:",
-    "sortBy": "Sort by:",
+    "sortBy": "Sort by",
     "clearAll": "Clear all",
     "clearFilters": "Clear Filters",
     "public": "Public",
@@ -139,7 +139,7 @@
     "title": "Settings",
     "subtitle": "Manage your node and application preferences",
     "applicationSettings": "Application Settings",
-    "generalSettings": "General Settings",
+    "generalSettings": "General",
     "capabilities": "Capabilities",
     "capabilitiesDescription": "Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.",
     "language": "Language",
@@ -153,7 +153,10 @@
     "themeLight": "Light",
     "lspUrl": "LSP URL",
     "lspUrlPlaceholder": "e.g., http://localhost:8000",
+    "lspUrlHint": "The LSP URL usually matches your default Maker URL.",
+    "matchMakerUrl": "Match default Maker URL",
     "makerSettings": "Maker Settings",
+    "makerLspSettings": "Maker & LSP Settings",
     "makerUrls": "Maker URLs",
     "additionalMakerUrls": "Additional Maker URLs",
     "addMakerUrl": "Add Maker URL",
@@ -349,7 +352,7 @@
     "deposits": "Deposits",
     "paymentsWithdrawals": "Withdrawals",
     "swaps": "Swaps",
-    "assets": "Assets",
+    "assets": "RGB Assets",
     "channelOrders": "Channel Orders"
   },
   "btcHistory": {
@@ -380,8 +383,9 @@
   "walletSetup": {
     "getHelpSupport": "Get Help & Support",
     "connectTitle": "Welcome to KaleidoSwap",
-    "connectSubtitle": "Choose how you want to get started — connect an RGB Lightning node, run the local AI brain, or both.",
-    "mindOnlyHint": "Run a local AI brain on this desktop — no node required. You can connect a node any time later.",
+    "welcomeTo": "Welcome to",
+    "connectSubtitle": "Choose between connecting an RGB Lightning node, run the local AI brain, or both.",
+    "mindOnlyHint": "Run a local AI on this desktop. You can connect a node any time later.",
     "openMind": "Open KaleidoMind",
     "remoteNodeTitle": "Remote Node",
     "remoteNodeDescription": "Connect to a hosted node or self-hosted instance. Recommended for most users and advanced setups.",
@@ -416,7 +420,7 @@
     "recommended": "Recommended"
   },
   "createChannel": {
-    "checkingBalance": "Checking balance...",
+    "checkingBalance": "Checking balance",
     "retry": "Retry",
     "goBack": "Go Back",
     "stepPeerConnection": "Peer Connection",
@@ -437,19 +441,19 @@
     "errorFetchBalance": "Failed to fetch balance",
     "errorOpenChannel": "Failed to open channel",
     "step1": {
-      "title": "Peer Connection - Step 1",
-      "subtitle": "Select from connected peers or enter new connection details.",
+      "title": "Peer Connection",
+      "subtitle": "",
       "connectedPeers": "Connected Peers",
       "loadingPeers": "Loading connected peers...",
       "noPeers": "No peers currently connected. You can connect to a new peer below.",
       "or": "or",
-      "connectNewPeer": "Connect to New Peer",
+      "connectNewPeer": "Connect New Peer",
+      "connectManually": "Connect manually",
       "placeholder": "Example: 039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735",
       "invalidPeerFormat": "Invalid peer format. Expected: <66-char-hex-pubkey>@hostname:port or valid pubkey",
       "helpText": "The connection string should be a 66-character hex public key, followed by @ symbol, then the host address, and port number (e.g. :9735)",
-      "suggestedNodes": "Select from Suggested Nodes",
+      "suggestedNodes": "Suggested Nodes",
       "loadingLsp": "Loading LSP information...",
-      "continue": "Continue",
       "connectDialog": {
         "title": "Connect to Peer",
         "message": "Would you like to connect to this peer before opening a channel?",
@@ -462,20 +466,21 @@
       "errorNoLspUrl": "No default LSP URL configured for network: {{network}}",
       "errorFetchLsp": "Failed to fetch LSP connection information",
       "errorInvalidPeerString": "Invalid peer connection string",
-      "errorConnectFailed": "Failed to connect to peer. Please try again."
+      "errorConnectFailed": "Failed to connect to peer. Please try again.",
+      "continue": "Configure Channel"
     },
     "step2": {
-      "title": "Open a Channel - Step 2",
-      "subtitle": "Configure your channel capacity and assets",
+      "title": "Configure Channel",
+      "subtitle": "",
       "openingWith": "Opening Channel with Node:",
-      "capacityLabel": "Channel Capacity (satoshis)",
-      "capacityHint": "(The amount of BTC you want to allocate to this channel)",
+      "capacityLabel": "Channel Capacity",
+      "capacityHint": "",
       "capacityPlaceholder": "Enter amount in sats",
       "max": "max",
       "minLabel": "Min: {{amount}}",
       "maxLabel": "Max: {{amount}}",
-      "rgbAssetsTitle": "RGB Assets",
-      "rgbAssetsSubtitle": "Add RGB assets to your channel for asset transfers",
+      "rgbAssetsTitle": "Add RGB Assets",
+      "rgbAssetsSubtitle": "",
       "removeAsset": "Remove Asset",
       "addAsset": "Add Asset",
       "selectAsset": "Select Asset",
@@ -509,7 +514,7 @@
       "privateDescription": "Only known to the two parties and cannot be used for routing",
       "privacyInfo": "Public channels are discoverable and can route payments for the network. Private channels provide direct connectivity without network visibility.",
       "back": "Back",
-      "next": "Next",
+      "next": "Review Details",
       "formError": "Please check the form for errors",
       "errorCapacityRequired": "Please enter a channel capacity.",
       "errorMinCapacity": "Channel capacity must be at least {{amount}} sats.",
@@ -526,7 +531,7 @@
       "rgbAsset": "RGB Asset",
       "bitcoin": "Bitcoin",
       "channelCapacity": "Channel Capacity",
-      "sat": "SAT",
+      "sat": "SATS",
       "connectedNode": "Connected Node",
       "nodeId": "Node ID:",
       "copyPubkey": "Copy full pubkey",
@@ -542,6 +547,7 @@
       "onlyKnownToParties": "Only known to parties",
       "rgbAssetChannel": "RGB Asset Channel",
       "rgbAssetInfo": "This channel will include both Bitcoin liquidity and RGB asset allocation. The RGB asset ({{ticker}}) will be allocated with {{amount}} units.",
+      "initialLiquidity": "Initial Liquidity",
       "back": "Back",
       "opening": "Opening...",
       "openChannel": "Open Channel"
@@ -550,7 +556,7 @@
       "failed": "Channel creation failed",
       "tryAgain": "Try Again",
       "goToChannels": "Go to Channels Page",
-      "success": "Channel successfully created!",
+      "success": "Channel creation completed",
       "successMessage": "The channel has been successfully created, you can now start trading."
     }
   },
@@ -626,7 +632,10 @@
     "title": "Close Channel",
     "confirmMessage": "Are you sure you want to close this channel?",
     "settleMessage": "Closing a channel will settle the current balance to your on-chain wallet.",
-    "forceClose": "Force close",
+    "cooperativeClose": "Cooperative Closing",
+    "forcedClose": "Forced Closing",
+    "recommendedLabel": "Recommended",
+    "forceClose": "Force Channel Closing",
     "useCautionLabel": "Use with caution",
     "forceCloseConditionsTitle": "Only use force close if:",
     "forceCloseCondition1": "The peer is offline or unresponsive",
@@ -641,8 +650,8 @@
     "forceCloseReason3": "May result in higher fees",
     "closingMessage": "Closing channel... Please wait",
     "processing": "Processing...",
-    "forceCloseChannel": "Force Close Channel",
-    "closeChannel": "Close Channel",
+    "forceCloseChannel": "Force Channel Closing",
+    "closeChannel": "Cooperate to Close Channel",
     "cancel": "Cancel",
     "successMessage": "Channel {{channelId}}... closing {{forceClose}} initiated successfully",
     "errorMessage": "Failed to close channel: {{error}}"
@@ -1211,7 +1220,7 @@
     "offChainUnavailableMessage": "Could not load Lightning payments. On-chain withdrawals are shown below."
   },
   "swaps": {
-    "title": "Swap History",
+    "title": "Swaps History",
     "loading": "Loading swap history...",
     "errorLoading": "Error Loading Data",
     "errorMessage": "There was an error loading your swap history. Please try again.",
@@ -1239,7 +1248,7 @@
     "refresh": "Refresh"
   },
   "assets": {
-    "title": "Asset Transfers",
+    "title": "RGB Assets History",
     "loading": "Loading transfers...",
     "refresh": "Refresh",
     "refreshing": "Refreshing...",
@@ -1247,6 +1256,8 @@
     "transactionIdCopied": "Transaction ID copied to clipboard",
     "recipientIdCopied": "Recipient ID copied to clipboard",
     "searchPlaceholder": "Search transactions...",
+    "allAssets": "All Assets",
+    "selectAsset": "Select an asset to view transfers",
     "allTypes": "All Types",
     "sent": "Sent",
     "received": "Received",
@@ -1408,10 +1419,10 @@
       "createNodeHint": "Create a new node to get started with Kaleidoswap"
     },
     "modal": {
-      "checkingNodeStatus": "Checking node status...",
-      "nodeAlreadyRunning": "Node is already running, switching context...",
-      "startingLocalNode": "Starting local node...",
-      "connectingRemoteNode": "Connecting to remote node...",
+      "checkingNodeStatus": "Checking node status",
+      "nodeAlreadyRunning": "Node is already running, switching context",
+      "startingLocalNode": "Starting local node",
+      "connectingRemoteNode": "Connecting to remote node",
       "unknownError": "An unknown error occurred while switching nodes",
       "localNode": "Local Node",
       "remoteNode": "Remote Node",
@@ -1489,7 +1500,7 @@
   },
   "orderChannel": {
     "step1": {
-      "title": "Buy a New Channel from LSP",
+      "title": "LSP Connection",
       "subtitle": "Connect to a Lightning Service Provider to get started",
       "howItWorks": "How Channel Opening Works",
       "step1Title": "You initiate a channel request",
@@ -1500,14 +1511,14 @@
       "step3Description": "Complete payment via Lightning or on-chain to fund the channel",
       "step4Title": "Channel opens automatically",
       "step4Description": "Once payment confirms, the LSP opens the channel with your node",
-      "lspServerUrl": "LSP Server URL",
+      "lspServerUrl": "Connect Manually",
       "lspUrlPlaceholder": "Enter LSP server URL",
       "selectKaleidoLsp": "Use Kaleidoswap LSP",
-      "checkingConnection": "Checking LSP Connection...",
+      "checkingConnection": "Checking LSP Connection",
       "alreadyConnectedMessage": "Already Connected to this LSP",
       "connectButton": "Connect to LSP",
       "cancelButton": "Cancel",
-      "continueButton": "Continue",
+      "continueButton": "Configure Channel",
       "modalTitle": "Connect to LSP?",
       "modalMessage": "This will connect to the Lightning Service Provider and fetch channel parameters.",
       "checkPeerFailed": "Failed to check peer connection status",
@@ -1518,7 +1529,7 @@
       "timeout": "Request timed out. The LSP server is not responding. Please check the URL and try again.",
       "networkError": "Network error. Please check your connection and the LSP URL.",
       "waitForConnectionUrl": "Please wait for LSP connection URL to be fetched",
-      "alreadyConnected": "Continue with LSP?",
+      "alreadyConnected": "Continue with connected LSP",
       "alreadyConnectedToast": "Already connected to LSP",
       "connectedSuccess": "Successfully connected to LSP",
       "kaleidoLspFetched": "Kaleidoswap LSP information fetched successfully",
@@ -1531,7 +1542,7 @@
       "lspReadyConnect": "LSP Ready to Connect",
       "alreadyConnectedInfo": "You are already connected to this LSP. Click below to proceed or fetch a different LSP to connect to it instead.",
       "lspReadyInfo": "LSP connection details loaded. Click below to connect and continue",
-      "connectionStringLabel": "LSP Connection String",
+      "connectionStringLabel": "Use Default",
       "connectionStringPlaceholder": "Connection string will appear here...",
       "connectionStringWaiting": "Waiting for LSP connection details...",
       "connectionStringInfo": "This unique connection URL identifies your LSP peer",
@@ -1555,7 +1566,7 @@
       "noDefaultLspUrl": "No default LSP URL configured for network: {{network}}"
     },
     "step2": {
-      "title": "Configure Your Channel",
+      "title": "Configure Channel",
       "subtitle": "Set up your channel parameters and capacity",
       "stepLabel": "Step {{current}} of {{total}}",
       "step1Label": "Connect",
@@ -1570,7 +1581,7 @@
       "assetAmount": "Asset Amount",
       "loading": "Loading...",
       "backButton": "Back",
-      "nextButton": "Next Step",
+      "nextButton": "Review Details",
       "fees": {
         "title": "Estimated Fees",
         "lspFee": "LSP Fee",
@@ -1592,8 +1603,12 @@
       "unexpectedError": "An unexpected error occurred. Please try again."
     },
     "step3": {
-      "title": "Complete Payment",
+      "title": "Channel Order",
       "subtitle": "Make your payment to open the channel",
+      "channelDetailsTitle": "Channel Details",
+      "continueToPayment": "Continue to Payment",
+      "sectionOrderReview": "Order Review",
+      "sectionPayment": "Payment",
       "loadingOrder": "Loading order details...",
       "errorInvalidOrder": "Error: Invalid order data",
       "stepLabel": "Step {{current}} of {{total}}",
@@ -1613,7 +1628,7 @@
       "expiresIn": "Expires in",
       "expired": "Expired",
       "waitingForPayment": "Waiting for payment...",
-      "paymentReceived": "Payment received!",
+      "paymentReceived": "Payment received",
       "processingPayment": "Processing payment...",
       "channelOpening": "Opening channel...",
       "backButton": "Back",
@@ -1691,10 +1706,11 @@
       "onchainTab": "⛓️ On-chain"
     },
     "step4": {
+      "paymentTitle": "Payment",
       "success": {
         "title": "Order Completed!",
         "message": "Your payment has been received and the channel is being opened.",
-        "buttonText": "Go to Channels Page",
+        "buttonText": "Go to Manage Channels",
         "channelOpening": "Channel opening in progress"
       },
       "error": {
@@ -1724,16 +1740,16 @@
       "returnToChannels": "Return to Channels",
       "errorButtonText": "Try Again",
       "errorMessage": "There was an issue with your payment. Please try again.",
-      "errorTitle": "Payment Failed",
+      "errorTitle": "Order Failed",
       "expiredButtonText": "Create New Order",
       "expiredMessage": "The order has expired. Please create a new order to continue.",
       "expiredTitle": "Order Expired",
       "pendingButtonText": "Check Status",
       "pendingMessage": "Your payment is being processed. This may take a few moments.",
       "pendingTitle": "Processing Payment",
-      "successButtonText": "Go to Channels Page",
-      "successMessage": "Your payment has been received and the channel is being opened.",
-      "successTitle": "Order Completed!",
+      "successButtonText": "Go to Manage Channels",
+      "successMessage": "Your payment has been received and the channel is in progress.",
+      "successTitle": "Order Completed",
       "channelProgress": "Channel Opening in Progress",
       "refundHeader": "About your payment:",
       "refundProcess": "An on-chain refund will be automatically processed",
@@ -1871,6 +1887,10 @@
     }
   },
   "tradeManual": {
+    "loading": {
+      "initializing": "Initializing Manual Swap",
+      "checkingBalance": "Checking wallet balance and requirements"
+    },
     "errors": {
       "initializationFailed": "Failed to initialize the manual swap component. Please try again."
     },
@@ -2109,7 +2129,7 @@
       "titleAny": "Deposit Any RGB Asset",
       "intro": "Choose your preferred deposit method and follow the steps below",
       "network": {
-        "onchain": "On-chain",
+        "onchain": "Onchain",
         "lightning": "Lightning",
         "requiresAsset": "Requires asset ID"
       },
@@ -2154,7 +2174,7 @@
         "noChannels": "Warning: No active Lightning channels found. Lightning deposits are unavailable.",
         "exceeds": "Amount exceeds maximum available: {{amount}} {{asset}}",
         "zeroAmountInfo": "Leave empty to create a zero-amount invoice where the payer decides the amount",
-        "btcPlaceholder": "Enter amount (optional)"
+        "btcPlaceholder": "Enter amount"
       },
       "bip21": {
         "badge": "Unified BIP21"
@@ -2235,7 +2255,7 @@
   },
   "tradeMarketMaker": {
     "loading": {
-      "checkingBalance": "Checking wallet balance and requirements...",
+      "checkingBalance": "Checking wallet balance and requirements",
       "verifyingChannels": "Verifying channel availability and liquidity...",
       "connectingMaker": "Connecting to market maker and fetching trading pairs...",
       "initializingInfrastructure": "Initializing trading infrastructure...",
@@ -2253,8 +2273,8 @@
     "form": {
       "youSend": "You Send",
       "youReceive": "You Receive (Estimated)",
-      "available": "Available:",
-      "onchainAvailable": "Onchain Available:",
+      "available": "Available",
+      "onchainAvailable": "Onchain Available",
       "canReceiveUpTo": "Can receive up to:",
       "status": "Status:",
       "channelNeeded": "Channel needed"
@@ -2310,7 +2330,7 @@
       "depositBitcoin": "Deposit Bitcoin",
       "noChannelsAvailable": "No Channels Available",
       "noChannelsMessage": "To start trading, you need to create a channel with some assets or buy one from a Lightning Service Provider.",
-      "createChannel": "Create Channel",
+      "createChannel": "Open Channel",
       "buyFromLSP": "Buy from LSP"
     },
     "toast": {
@@ -2356,7 +2376,7 @@
       "available": "Available Balance:"
     },
     "form": {
-      "addressPlaceholder": "Paste Bitcoin address, Lightning invoice, Lightning address, or RGB invoice",
+      "addressPlaceholder": "Paste Bitcoin address, LN invoice, LN address, or RGB invoice",
       "addressRequired": "Address or invoice is required",
       "analyzing": "Analyzing input…",
       "clear": "Clear",
@@ -2493,7 +2513,12 @@
         "withdrawalFailedDefault": "Withdrawal failed",
         "onchainExceedsBalance": "Withdrawal amount ({{amount}}) exceeds available balance ({{balance}})",
         "capacityToast": "Cannot proceed: Invoice amount ({{amount}} sats) exceeds your outbound capacity ({{capacity}} sats).",
-        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice."
+        "zeroAmountRequired": "Please enter an amount for this zero-amount invoice.",
+        "recipientNetworkMismatch": "This RGB invoice is for a different Bitcoin network than your wallet (your wallet is on {{network}}). Ask the recipient for an invoice generated on the same network and try again.",
+        "invalidRecipientId": "This RGB invoice's recipient ID is not valid (it must be a blinded UTXO or a script). Please double-check the invoice and ask the recipient to generate a new one.",
+        "invalidRecipientData": "The RGB invoice could not be read correctly. Please verify you pasted the full, unmodified invoice, or ask the recipient for a new one.",
+        "invalidTransportEndpoint": "The RGB transport (proxy) endpoint in this invoice is invalid or unreachable. Ask the recipient for an invoice with a valid transport endpoint, or check your proxy settings.",
+        "insufficientUtxos": "Not enough available UTXOs to complete this RGB payment. You may need to create new UTXOs before sending."
       },
       "warnings": {
         "invoiceAdjusted": "Warning: The invoice requested {{requested}} {{asset}} but your balance is only {{balance}} {{asset}}. Adjusted to maximum sendable amount.",
@@ -2619,6 +2644,15 @@
         "columns": "Columns",
         "selectColumns": "Select Columns",
         "resetToDefaults": "Reset to Defaults",
+        "editColumns": "Edit Columns",
+        "allAssets": "All Assets",
+        "allTypes": "All Types",
+        "typeBitcoin": "Bitcoin",
+        "typeRgbAsset": "RGB Asset",
+        "allStatuses": "All Statuses",
+        "statusCompleted": "Completed",
+        "statusFailed": "Failed",
+        "statusCreated": "Created",
         "refresh": "Refresh",
         "detailsModal": {
           "title": "Channel Order Details",
@@ -2843,7 +2877,7 @@
       "usdtLnBalance": "USDT LN balance"
     },
     "section": {
-      "balances": "Channel Balances",
+      "balances": "Channel Status",
       "pendingBadge": "pending",
       "pendingUsdtChannels": "Pending USDT channels",
       "pendingUsdtDescription": "Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.",
@@ -2989,7 +3023,7 @@
       "totalExecutions": "Successful executions"
     },
     "orders": {
-      "activeTitle": "Active Limit Orders",
+      "activeTitle": "Planned Limit Orders",
       "historyTitle": "Filled & Closed Orders"
     },
     "empty": {

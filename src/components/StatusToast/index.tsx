@@ -52,7 +52,7 @@ const SwapStatusContent: React.FC<{
     (swap.qty_from ?? 0) /
     Math.pow(
       10,
-      assets.find((asset) => asset.asset_id === swap.from_asset)?.precision || 8
+      assets.find((asset) => asset.asset_id === swap.from_asset)?.precision ?? 8
     )
   if (fromAssetTicker === 'BTC') {
     fromAssetQty /= 1000
@@ -67,7 +67,7 @@ const SwapStatusContent: React.FC<{
     (swap.qty_to ?? 0) /
     Math.pow(
       10,
-      assets.find((asset) => asset.asset_id === swap.to_asset)?.precision || 8
+      assets.find((asset) => asset.asset_id === swap.to_asset)?.precision ?? 8
     )
   if (toAssetTicker === 'BTC') {
     toAssetQty /= 1000

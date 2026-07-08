@@ -8,9 +8,15 @@ import {
   Check,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
+
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { formatNumberWithCommas } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import './animations.css'
@@ -208,81 +214,84 @@ export const AssetChannelSelector: React.FC<AssetChannelSelectorProps> = ({
       </div>
 
       {/* Custom amount modal */}
-      {showCustomModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCustomModal(false)
-          }}
-        >
-          <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-emerald-500/10">
-                  <PencilLine className="w-4 h-4 text-emerald-400" />
+      {showCustomModal &&
+        createPortal(
+          <div
+            className={`${getModalPositionClass()} inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm`}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowCustomModal(false)
+            }}
+          >
+            <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <PencilLine className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <h3 className="text-base font-bold text-white">
+                    Custom Amount
+                  </h3>
                 </div>
-                <h3 className="text-base font-bold text-white">
-                  Custom Amount
-                </h3>
+                <button
+                  className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
+                  onClick={() => setShowCustomModal(false)}
+                  type="button"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
-                onClick={() => setShowCustomModal(false)}
-                type="button"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            <p className="text-xs text-content-secondary mb-4">
-              Enter a specific asset amount for this channel.
-            </p>
-
-            <div className="relative mb-2">
-              <input
-                className="w-full bg-surface-overlay/80 border border-border-default/50 focus:border-emerald-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                min={0}
-                onChange={(e) => setModalDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') applyCustomAmount()
-                }}
-                placeholder="0"
-                ref={modalInputRef}
-                type="number"
-                value={modalDraft}
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-content-tertiary font-medium pointer-events-none">
-                {assetInfo.ticker}
-              </span>
-            </div>
-
-            {modalDraft && parseFloat(modalDraft) > 0 && (
-              <p className="text-xs text-emerald-400/80 mb-4">
-                ≈ {formatAssetAmount(parseFloat(modalDraft))} {assetInfo.ticker}
+              <p className="text-xs text-content-secondary mb-4">
+                Enter a specific asset amount for this channel.
               </p>
-            )}
 
-            <div className="flex gap-3 mt-5">
-              <button
-                className="flex-1 py-2.5 rounded-xl border border-border-default text-content-secondary hover:text-white hover:border-border-default text-sm font-semibold transition-all"
-                onClick={() => setShowCustomModal(false)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-bold shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                disabled={!modalDraft || parseFloat(modalDraft) <= 0}
-                onClick={applyCustomAmount}
-                type="button"
-              >
-                <Check className="w-4 h-4" />
-                Apply
-              </button>
+              <div className="relative mb-2">
+                <input
+                  className="w-full bg-surface-overlay/80 border border-border-default/50 focus:border-emerald-500/60 rounded-xl px-4 py-3 text-white text-lg font-bold outline-none transition-colors pr-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min={0}
+                  onChange={(e) => setModalDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') applyCustomAmount()
+                  }}
+                  placeholder="0"
+                  ref={modalInputRef}
+                  type="number"
+                  value={modalDraft}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-content-tertiary font-medium pointer-events-none">
+                  {assetInfo.ticker}
+                </span>
+              </div>
+
+              {modalDraft && parseFloat(modalDraft) > 0 && (
+                <p className="text-xs text-emerald-400/80 mb-4">
+                  ≈ {formatAssetAmount(parseFloat(modalDraft))}{' '}
+                  {assetInfo.ticker}
+                </p>
+              )}
+
+              <div className="flex gap-3 mt-5">
+                <button
+                  className="flex-1 py-2.5 rounded-lg border border-border-default text-content-secondary hover:text-white hover:border-border-default text-sm font-semibold transition-all"
+                  onClick={() => setShowCustomModal(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-bold shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={!modalDraft || parseFloat(modalDraft) <= 0}
+                  onClick={applyCustomAmount}
+                  type="button"
+                >
+                  <Check className="w-4 h-4" />
+                  Apply
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          getModalPortalTarget()
+        )}
 
       {/* Liquidity Distribution - Only show if onClientAssetAmountChange is provided */}
       {onClientAssetAmountChange && totalAssetAmount > 0 && (

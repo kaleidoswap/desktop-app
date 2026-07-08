@@ -1,5 +1,11 @@
 import { X } from 'lucide-react'
 import React, { ReactNode, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 
 export interface ModalProps {
   title?: string
@@ -55,9 +61,11 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-6xl',
   }
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
       onClick={onClose}
     >
       <div
@@ -77,8 +85,9 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="max-h-[80vh] overflow-auto">{children}</div>
+        <div className="max-h-[80vh] overflow-y-scroll">{children}</div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

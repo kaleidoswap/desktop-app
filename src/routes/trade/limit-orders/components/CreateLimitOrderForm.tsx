@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, ShoppingCart } from 'lucide-react'
 
+import { ORDER_CHANNEL_PATH } from '../../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
 import { createLimitOrder } from '../../../../slices/limitOrderSlice'
 import { getAssetId } from '../../../../slices/makerApi/makerApi.slice'
@@ -32,6 +34,7 @@ const EXPIRATION_OPTIONS: { label: string; value: number | null }[] = [
 export function CreateLimitOrderForm({ onCreated }: Props) {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const { bitcoinUnit } = useSettings()
 
   const tradingPairs = useAppSelector((s) => s.pairs.values)
@@ -205,6 +208,22 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
       .reduce((sum: number, ch: any) => sum + (ch.asset_local_amount ?? 0), 0)
   }, [spendingAssetData, channelsData, assetsData])
 
+  // True if spending asset has at least one ready channel; undefined while loading; false if no channel
+  const hasSpendingChannel = useMemo(() => {
+    if (!channelsData?.channels || !spendingAssetData) return undefined
+    const isBtc =
+      spendingAssetData.ticker.toUpperCase() === 'BTC' ||
+      spendingAssetData.id.toUpperCase() === 'BTC'
+    if (isBtc) return true
+    const nodeAsset = (assetsData?.nia ?? []).find(
+      (a: any) => a.ticker === spendingAssetData.ticker
+    )
+    const matchId = nodeAsset?.asset_id || spendingAssetData.id
+    return channelsData.channels.some(
+      (ch: any) => ch.asset_id === matchId && ch.ready
+    )
+  }, [channelsData, assetsData, spendingAssetData])
+
   // Both fromAmountRaw and spendingBalance are in raw units — direct comparison
   const insufficientBalance = useMemo(() => {
     if (spendingBalance === undefined || !fromAmountRaw || fromAmountRaw <= 0)
@@ -219,7 +238,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         asset_id: a.asset_id,
         is_active: true,
         name: a.name || '',
-        precision: a.precision || 8,
+        precision: a.precision ?? 8,
         ticker: a.ticker || '',
       })) || [],
     [assetsData]
@@ -389,6 +408,42 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
   const spendingAssetTickerForFormat = spendingAssetData?.ticker || ''
   const receivingAssetTickerForFormat = receivingAssetData?.ticker || ''
 
+  if (hasSpendingChannel === false) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+          <ShoppingCart className="w-8 h-8 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h4 className="text-base font-semibold text-white">
+            {t(
+              'limitOrders.noChannel.title',
+              'No {{asset}} Lightning channel',
+              { asset: spendingAssetData?.ticker ?? 'asset' }
+            )}
+          </h4>
+          <p className="text-sm text-content-secondary leading-relaxed max-w-xs">
+            {t(
+              'limitOrders.noChannel.description',
+              'You need a {{asset}} Lightning channel to place this limit order. Buy one to get started.',
+              { asset: spendingAssetData?.ticker ?? 'asset' }
+            )}
+          </p>
+        </div>
+        <button
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis"
+          onClick={() => navigate(ORDER_CHANNEL_PATH)}
+          type="button"
+        >
+          <ShoppingCart className="w-4 h-4" />
+          {t('limitOrders.noChannel.cta', 'Buy {{asset}} Channel', {
+            asset: spendingAssetData?.ticker ?? 'asset',
+          })}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
       <SwapInputField
@@ -420,6 +475,44 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
         useEnhancedSelector={true}
         value={fromAmountStr}
       />
+
+      {/* Suggested amounts for RGB assets */}
+      {spendingAssetData &&
+        spendingAssetData.ticker.toUpperCase() !== 'BTC' && (
+          <div className="flex items-center gap-2 flex-wrap -mt-3">
+            <span className="text-xs text-content-tertiary shrink-0">
+              {t('limitOrders.form.suggestedAmounts', 'Quick:')}
+            </span>
+            {[100, 500, 1_000, 5_000, 10_000].map((amt) => {
+              const rawAmt = wholeToRaw(
+                amt,
+                spendingAssetData.ticker,
+                spendingAssetData.precision ?? 6
+              )
+              const withinBalance =
+                spendingBalance === undefined || rawAmt <= spendingBalance
+              return (
+                <button
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-150 active:scale-95 ${
+                    withinBalance
+                      ? 'bg-surface-high/40 border-border-default/50 text-content-secondary hover:text-white hover:border-border-default cursor-pointer'
+                      : 'opacity-30 cursor-not-allowed bg-surface-high/20 border-border-default/30 text-content-tertiary'
+                  }`}
+                  disabled={!withinBalance}
+                  key={amt}
+                  onClick={() => {
+                    setFromAmountStr(String(amt))
+                    setLastEdited('from')
+                    setSelectedSize(undefined)
+                  }}
+                  type="button"
+                >
+                  {amt.toLocaleString()}
+                </button>
+              )
+            })}
+          </div>
+        )}
 
       <div className="flex justify-center -my-3 relative z-10">
         <button
@@ -465,7 +558,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
       {/* Target Limit Price */}
       <div className="bg-surface-overlay/70 rounded-xl border border-border-default/40 hover:border-border-default/60 transition-all duration-300">
         <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between">
-          <span className="text-xs font-semibold text-content-tertiary uppercase tracking-wider">
+          <span className="text-xs font-semibold text-white uppercase tracking-wider">
             {t('limitOrders.form.limitPrice', 'Limit Price')}
           </span>
           {selectedPair && currentPrice !== undefined && (
@@ -551,11 +644,13 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
       )}
 
       {/* Expiration */}
-      <div className="bg-surface-overlay/70 rounded-xl border border-border-default/40 p-4 space-y-3">
-        <label className="block text-xs font-semibold text-content-tertiary uppercase tracking-wider">
-          {t('limitOrders.form.expiration', 'Expiration')}
-        </label>
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-surface-overlay/70 rounded-xl border border-border-default/40 hover:border-border-default/60 transition-all duration-300">
+        <div className="px-4 py-2 border-b border-border-default/20">
+          <span className="text-xs font-semibold text-white uppercase tracking-wider">
+            {t('limitOrders.form.expiration', 'Expiration')}
+          </span>
+        </div>
+        <div className="px-4 py-3 flex flex-wrap gap-2">
           {EXPIRATION_OPTIONS.map((opt) => (
             <button
               className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
@@ -577,7 +672,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
 
       {/* Submit */}
       <button
-        className={`mt-4 w-full rounded-xl py-4 text-sm font-bold transition-all duration-200 shadow-sm ${
+        className={`mt-4 w-full rounded-lg py-4 text-sm font-bold transition-all duration-200 shadow-sm ${
           !selectedPair ||
           !limitPrice ||
           limitPrice <= 0 ||
@@ -585,9 +680,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
           fromAmountRaw <= 0 ||
           insufficientBalance
             ? 'bg-surface-elevated text-content-tertiary cursor-not-allowed border border-border-default/30'
-            : side === 'buy'
-              ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30'
-              : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/30'
+            : 'bg-primary hover:bg-primary-emphasis text-[#12131C]'
         }`}
         disabled={
           !selectedPair ||

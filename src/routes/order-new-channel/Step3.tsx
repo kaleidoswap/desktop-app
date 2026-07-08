@@ -1,592 +1,303 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Copy,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
-import { ArrowLeft } from 'lucide-react'
+import CopyToClipboard from 'react-copy-to-clipboard'
 
-import 'react-toastify/dist/ReactToastify.css'
-import {
-  PaymentSection,
-  WalletFundsCard,
-  OrderIdCard,
-} from '../../components/BuyChannelModal/components'
-import { useSettings } from '../../hooks/useSettings'
+import BitcoinLogo from '../../assets/bitcoin-logo.svg'
+import rgbIcon from '../../assets/rgb-logo.svg'
+import { Button, Card } from '../../components/ui'
+import { useAssetIcon } from '../../helpers/utils'
 import { formatBitcoinAmount } from '../../helpers/number'
+import { useSettings } from '../../hooks/useSettings'
 import { Lsps1CreateOrderResponse } from '../../slices/makerApi/makerApi.slice'
-import {
-  nodeApi,
-  NiaAsset,
-  NodeApiError,
-  SendPaymentResponse,
-} from '../../slices/nodeApi/nodeApi.slice'
+import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
+import { AssetInfo } from '../../utils/channelOrderUtils'
 
-import {
-  OrderSummary,
-  WalletConfirmationModal,
-  PaymentStatusDisplay,
-  OrderProcessingDisplay,
-  CountdownTimer,
-} from './components'
-
-interface StepProps {
-  onBack: () => void
-  onRestart?: () => void
+interface Props {
   order: Lsps1CreateOrderResponse | null
-  paymentStatus: 'success' | 'error' | 'expired' | null
   orderPayload?: any
-  paymentReceived?: boolean
-  isProcessingPayment?: boolean
-  detectedPaymentMethod?: 'lightning' | 'onchain' | null
+  assetInfo?: AssetInfo | null
+  onBack: () => void
+  onNext: () => void
 }
 
-const feeRates = [
-  { label: 'Slow', rate: 1, value: 'slow' },
-  { label: 'Normal', rate: 2, value: 'normal' },
-  { label: 'Fast', rate: 3, value: 'fast' },
-  { label: 'Custom', rate: 0, value: 'custom' },
-]
+const formatNumber = (num: number) =>
+  num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
-export const Step3: React.FC<StepProps> = ({
-  onBack,
-  onRestart,
+const formatDuration = (blocks: number) => {
+  if (blocks <= 4320) return '1 Month'
+  if (blocks <= 12960) return '3 Months'
+  return '6 Months'
+}
+
+const formatOrderId = (id: string) =>
+  id.length > 16 ? `${id.slice(0, 8)}...${id.slice(-8)}` : id
+
+export const Step3: React.FC<Props> = ({
   order,
-  paymentStatus,
   orderPayload,
-  paymentReceived = false,
-  isProcessingPayment = false,
-  detectedPaymentMethod = null,
+  assetInfo: assetInfoProp,
+  onBack,
+  onNext,
 }) => {
   const { t } = useTranslation()
-  const [paymentMethod, setPaymentMethod] = useState<'lightning' | 'onchain'>(
-    'lightning'
-  )
   const { bitcoinUnit } = useSettings()
+  const [fetchedAssetInfo, setFetchedAssetInfo] = useState<NiaAsset | null>(
+    null
+  )
+  const [getAssetList] = nodeApi.endpoints.listAssets.useLazyQuery()
 
-  type PaymentStateType =
-    | 'waiting'
-    | 'processing'
-    | 'success'
-    | 'error'
-    | 'expired'
-    | null
-  const [localPaymentState, setLocalPaymentState] =
-    useState<PaymentStateType>(null)
-  const [isOrderExpired, setIsOrderExpired] = useState(false)
-
-  const [btcBalance, btcBalanceResponse] =
-    nodeApi.endpoints.btcBalance.useLazyQuery()
-  const [listChannels, listChannelsResponse] =
-    nodeApi.endpoints.listChannels.useLazyQuery()
-  const [sendPayment] = nodeApi.endpoints.sendPayment.useMutation()
-  const [sendBtc] = nodeApi.endpoints.sendBtc.useMutation()
-  const [getAssetInfo] = nodeApi.endpoints.listAssets.useLazyQuery()
-  const [assetInfo, setAssetInfo] = useState<NiaAsset | null>(null)
-  const [selectedFee, setSelectedFee] = useState('normal')
-  const [customFee, setCustomFee] = useState(1.0)
-  const [showWalletConfirmation, setShowWalletConfirmation] = useState(false)
-  const [isProcessingWalletPayment, setIsProcessingWalletPayment] =
-    useState(false)
-  const [isLoadingData, setIsLoadingData] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  // Memoize the refresh function
-  const refreshData = useCallback(async () => {
-    if (!btcBalanceResponse.data || !listChannelsResponse.data) {
-      setIsLoadingData(true)
-    }
-
-    try {
-      await Promise.all([btcBalance(), listChannels()])
-    } finally {
-      setIsLoadingData(false)
-    }
-  }, [
-    btcBalance,
-    listChannels,
-    btcBalanceResponse.data,
-    listChannelsResponse.data,
-  ])
+  const assetTicker = assetInfoProp?.ticker || fetchedAssetInfo?.ticker || ''
+  const assetName = assetInfoProp?.name || fetchedAssetInfo?.name || ''
+  const [assetIcon] = useAssetIcon(assetTicker, rgbIcon)
 
   useEffect(() => {
-    if (isProcessingWalletPayment) return
-
-    refreshData()
-
-    const interval = setInterval(() => {
-      refreshData()
-    }, 15000)
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [refreshData, isProcessingWalletPayment])
-
-  useEffect(() => {
-    const fetchAssetInfo = async () => {
-      // Check both order and orderPayload for asset_id
-      const assetId = order?.asset_id || orderPayload?.asset_id
-
-      if (assetId) {
-        const result = await getAssetInfo()
+    if (assetInfoProp) return
+    const assetId = order?.asset_id || orderPayload?.asset_id
+    if (assetId) {
+      getAssetList().then((result) => {
         if (result.data) {
           const asset = result.data?.nia?.find(
             (a: any) => a.asset_id === assetId
           )
-          if (asset) {
-            setAssetInfo(asset)
-          }
+          if (asset) setFetchedAssetInfo(asset)
         }
-      }
+      })
     }
-    fetchAssetInfo()
-  }, [order?.asset_id, orderPayload?.asset_id, getAssetInfo])
+  }, [order?.asset_id, orderPayload?.asset_id, getAssetList, assetInfoProp])
 
-  // Calculate available liquidity
-  const channels =
-    listChannelsResponse?.data?.channels?.filter(
-      (channel: any) => channel.ready
-    ) || []
-  const outboundLiquidity = Math.max(
-    ...(channels.map(
-      (channel: any) => (channel.next_outbound_htlc_limit_msat || 0) / 1000
-    ) || [0])
-  )
-  const vanillaChainBalance = btcBalanceResponse.data?.vanilla?.spendable || 0
-  const coloredChainBalance = btcBalanceResponse.data?.colored?.spendable || 0
-  const onChainBalance = vanillaChainBalance + coloredChainBalance
-
-  // Check if the order is expired
-  useEffect(() => {
-    if (!order?.payment) return
-
-    const expiresAt =
-      order.payment.bolt11?.expires_at || order.payment.onchain?.expires_at
-    if (!expiresAt) return
-
-    const expiryDate = new Date(expiresAt)
-    const now = new Date()
-
-    if (now > expiryDate) {
-      setIsOrderExpired(true)
-      setLocalPaymentState('expired')
-      return
-    }
-
-    const timeToExpiry = expiryDate.getTime() - now.getTime()
-    const timerId = setTimeout(() => {
-      setIsOrderExpired(true)
-      setLocalPaymentState('expired')
-    }, timeToExpiry)
-
-    return () => clearTimeout(timerId)
-  }, [order?.payment?.bolt11?.expires_at, order?.payment?.onchain?.expires_at])
-
-  useEffect(() => {
-    if (order && !isOrderExpired && !localPaymentState && !paymentStatus) {
-      setLocalPaymentState('waiting')
-    }
-  }, [order, isOrderExpired, localPaymentState, paymentStatus])
-
-  useEffect(() => {
-    if (paymentStatus && paymentStatus !== localPaymentState) {
-      setLocalPaymentState(paymentStatus)
-    }
-  }, [paymentStatus, localPaymentState])
-
-  // Handle external payment detection (QR code payments)
-  useEffect(() => {
-    if (paymentReceived && localPaymentState === 'waiting') {
-      setLocalPaymentState('processing')
-    }
-  }, [paymentReceived, localPaymentState])
-
-  // Callback for when countdown expires
-  const handleCountdownExpiry = useCallback(() => {
-    setIsOrderExpired(true)
-    setLocalPaymentState('expired')
-  }, [])
-
-  // Function to handle wallet payment
-  const handleWalletPayment = async (method: 'lightning' | 'onchain') => {
-    setPaymentMethod(method)
-    setIsProcessingWalletPayment(true)
-    try {
-      if (method === 'lightning' && order?.payment?.bolt11) {
-        const result = await sendPayment({
-          invoice: order.payment.bolt11.invoice,
-        })
-
-        if ('error' in result) {
-          const error = result.error as NodeApiError
-          throw new Error(error.data.error)
-        }
-
-        const response = result.data as SendPaymentResponse
-
-        if (response.status === 'Failed') {
-          throw new Error(t('orderChannel.step3.lightningPaymentFailed'))
-        }
-
-        toast.success(t('orderChannel.step3.lightningSuccess'))
-        setLocalPaymentState('processing')
-      } else if (method === 'onchain' && order?.payment?.onchain) {
-        const feeRate =
-          selectedFee === 'custom'
-            ? customFee
-            : feeRates.find((rate) => rate.value === selectedFee)?.rate || 1
-
-        const result = await sendBtc({
-          address: order.payment.onchain.address,
-          amount: order.payment.onchain.order_total_sat,
-          fee_rate: Math.round(feeRate),
-        })
-
-        if ('error' in result) {
-          const error = result.error as NodeApiError
-          throw new Error(error.data.error)
-        }
-
-        toast.success(t('orderChannel.step3.onchainSuccess'))
-        setLocalPaymentState('processing')
-      }
-
-      setShowWalletConfirmation(false)
-    } catch (error) {
-      toast.error(
-        t('orderChannel.step3.paymentFailed', {
-          error:
-            error instanceof Error && error.message
-              ? error.message
-              : t('orderChannel.step3.unknownError'),
-        })
-      )
-      setLocalPaymentState('error')
-    } finally {
-      setIsProcessingWalletPayment(false)
-    }
-  }
-
-  const handleCopy = useCallback(() => {
+  const handleCopyOrderId = useCallback(() => {
     toast.success(t('orderChannel.paymentCopied'))
   }, [t])
 
-  const hasLightningOption = !!order?.payment?.bolt11
-  const hasOnchainOption = !!order?.payment?.onchain
-  const normalizedPaymentMethod =
-    paymentMethod === 'lightning' && !hasLightningOption
-      ? 'onchain'
-      : paymentMethod === 'onchain' && !hasOnchainOption
-        ? 'lightning'
-        : paymentMethod
-  const currentPayment =
-    normalizedPaymentMethod === 'lightning'
-      ? order?.payment?.bolt11
-      : order?.payment?.onchain
-  const amountSat =
-    order?.payment?.bolt11?.order_total_sat ||
-    order?.payment?.onchain?.order_total_sat ||
-    0
-  const expiryValue =
-    order?.payment?.bolt11?.expires_at || order?.payment?.onchain?.expires_at
-
-  useEffect(() => {
-    if (normalizedPaymentMethod !== paymentMethod) {
-      setPaymentMethod(normalizedPaymentMethod)
-    }
-  }, [normalizedPaymentMethod, paymentMethod])
-
-  useEffect(() => {
-    setLocalPaymentState(null)
-    setIsOrderExpired(false)
-    setShowWalletConfirmation(false)
-    setIsProcessingWalletPayment(false)
-  }, [order?.order_id])
-
-  useEffect(() => {
-    if (!showWalletConfirmation) return
-
-    contentRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    })
-  }, [showWalletConfirmation])
-
   if (!order) {
     return (
-      <div className="w-full">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-center items-center h-64">
-            <div className="bg-surface-overlay/50 backdrop-blur-sm p-8 rounded-xl border border-border-default/50">
-              <ClipLoader color={'#3B82F6'} loading={true} size={50} />
-              <span className="ml-4 text-content-secondary">
-                {t('orderChannel.step3.loadingOrder')}
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="max-w-lg mx-auto flex justify-center items-center h-64">
+        <span className="text-content-secondary">
+          {t('orderChannel.step3.loadingOrder')}
+        </span>
       </div>
     )
   }
 
-  if (!order.payment || (!order.payment.bolt11 && !order.payment.onchain)) {
-    return (
-      <div className="w-full">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col items-center justify-center h-64 text-white">
-            <h3 className="text-2xl font-semibold mb-4">
-              {t('orderChannel.step3.errorInvalidOrder')}
-            </h3>
-            <button
-              className="px-6 py-3 bg-surface-elevated text-white rounded-lg hover:bg-surface-high transition-colors font-medium"
-              onClick={onBack}
-            >
-              {t('orderChannel.step3.backButton')}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const displayUnit = bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit
+
+  const totalCapacity = order.lsp_balance_sat + order.client_balance_sat
+  const currentPayment = order.payment?.bolt11 || order.payment?.onchain
+  const amountSat = currentPayment?.order_total_sat || 0
+  const feeSat = currentPayment?.fee_total_sat || 0
+  const channelAmountSat = amountSat - feeSat
+  const hasAsset = !!(order.asset_id || orderPayload?.asset_id)
+  const lspAssetRaw =
+    order.lsp_asset_amount || orderPayload?.lsp_asset_amount || 0
+  const clientAssetRaw =
+    order.client_asset_amount || orderPayload?.client_asset_amount || 0
+  const totalAssetAmount = lspAssetRaw + clientAssetRaw
 
   return (
-    <div className="w-full relative">
-      <div className="max-w-5xl mx-auto space-y-5 relative" ref={contentRef}>
-        <div className="grid gap-2.5 md:grid-cols-3">
-          {[
-            {
-              complete: true,
-              label: t('orderChannel.step1.connectLsp'),
-              state: t('orderChannel.step1.completed'),
-              value: '01',
-            },
-            {
-              complete: true,
-              label: t('orderChannel.step2.step2Label'),
-              state: t('orderChannel.step1.completed'),
-              value: '02',
-            },
-            {
-              complete: false,
-              label: t('orderChannel.step3.step3Label'),
-              state: t('orderChannel.step1.currentStep'),
-              value: '03',
-            },
-          ].map((step) => (
-            <div
-              className={`rounded-xl border px-3.5 py-2.5 ${
-                step.complete
-                  ? 'border-emerald-400/20 bg-emerald-400/8'
-                  : 'border-blue-400/25 bg-blue-400/10'
-              }`}
-              key={step.value}
-            >
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${
-                    step.complete
-                      ? 'bg-emerald-400/15 text-emerald-300'
-                      : 'bg-blue-400/15 text-blue-300'
-                  }`}
+    <div className="max-w-lg mx-auto">
+      <Card className="mb-6 divide-y divide-border-default/40">
+        {/* Order ID */}
+        <div className="flex items-start justify-between py-4 first:pt-0">
+          <span className="text-sm text-content-secondary shrink-0 mr-4">
+            Order ID
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-sm text-white font-mono">
+              {formatOrderId(order.order_id)}
+            </span>
+            <div className="relative group/copy">
+              <CopyToClipboard onCopy={handleCopyOrderId} text={order.order_id}>
+                <button
+                  className="text-content-tertiary hover:text-white p-0.5 rounded transition-colors"
+                  type="button"
                 >
-                  {step.complete ? '✓' : step.value}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-content-primary truncate">
-                    {step.label}
-                  </p>
-                  <p className="text-[11px] text-content-tertiary">
-                    {step.state}
-                  </p>
-                </div>
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </CopyToClipboard>
+              <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/copy:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                Copy Order ID
               </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Payment Processing State */}
-        {(localPaymentState === 'processing' || isProcessingPayment) && (
-          <OrderProcessingDisplay
-            assetInfo={assetInfo}
-            bitcoinUnit={bitcoinUnit}
-            currentPayment={currentPayment}
-            order={order}
-            orderId={order?.order_id}
-            orderPayload={orderPayload}
-            paymentMethod={detectedPaymentMethod || normalizedPaymentMethod}
-          />
-        )}
-
-        {/* Payment Success State */}
-        {(localPaymentState === 'success' || paymentStatus === 'success') && (
-          <PaymentStatusDisplay
-            assetInfo={assetInfo}
-            bitcoinUnit={bitcoinUnit}
-            currentPayment={currentPayment}
-            onBack={onBack}
-            onRestart={onRestart}
-            order={order}
-            orderPayload={orderPayload}
-            paymentMethod={normalizedPaymentMethod}
-            status="success"
-          />
-        )}
-
-        {/* Payment Error State */}
-        {localPaymentState === 'error' && (
-          <PaymentStatusDisplay
-            assetInfo={assetInfo}
-            bitcoinUnit={bitcoinUnit}
-            currentPayment={currentPayment}
-            onBack={onBack}
-            onRestart={onRestart}
-            order={order}
-            orderPayload={orderPayload}
-            paymentMethod={normalizedPaymentMethod}
-            status="error"
-          />
-        )}
-
-        {/* Payment Expired State */}
-        {localPaymentState === 'expired' && (
-          <PaymentStatusDisplay
-            assetInfo={assetInfo}
-            bitcoinUnit={bitcoinUnit}
-            currentPayment={currentPayment}
-            onBack={onBack}
-            onRestart={onRestart}
-            order={order}
-            orderPayload={orderPayload}
-            paymentMethod={normalizedPaymentMethod}
-            status="expired"
-          />
-        )}
-
-        {/* Main Payment Interface */}
-        {localPaymentState !== 'processing' &&
-          localPaymentState !== 'success' &&
-          paymentStatus !== 'success' &&
-          localPaymentState !== 'error' &&
-          localPaymentState !== 'expired' &&
-          !isProcessingPayment && (
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-              <div className="flex flex-col gap-3.5">
-                <OrderIdCard
-                  copyLabel={t('orderChannel.step3.copyId', 'Copy ID')}
-                  onCopy={handleCopy}
-                  orderId={order.order_id}
-                />
-                <OrderSummary
-                  assetInfo={assetInfo}
-                  bitcoinUnit={bitcoinUnit}
-                  currentPayment={currentPayment}
-                  order={order}
-                  orderPayload={orderPayload}
-                />
+        {/* BTC Section */}
+        {(() => {
+          const btcOut = order.client_balance_sat
+          const btcIn = order.lsp_balance_sat
+          const btcTotal = btcOut + btcIn
+          const btcOutPct = btcTotal > 0 ? (btcOut / btcTotal) * 100 : 50
+          const btcInPct = btcTotal > 0 ? (btcIn / btcTotal) * 100 : 50
+          return (
+            <div className="py-4">
+              <div className="flex items-center gap-1.5 mb-3">
+                <img alt="Bitcoin" className="w-4 h-4" src={BitcoinLogo} />
+                <span className="text-sm font-semibold text-white">
+                  Bitcoin (BTC)
+                </span>
+                <span className="ml-auto text-xs text-content-tertiary">
+                  {formatNumber(totalCapacity)} SATS total
+                </span>
               </div>
-
-              <div>
-                <div className="rounded-[22px] border border-border-subtle bg-surface-base/80 p-5 shadow-[0_18px_60px_rgba(2,6,23,0.35)]">
-                  <PaymentSection
-                    amountDisplay={`${formatBitcoinAmount(amountSat, bitcoinUnit)} ${bitcoinUnit}`}
-                    countdown={
-                      expiryValue ? (
-                        <CountdownTimer
-                          expiresAt={expiryValue}
-                          onExpiry={handleCountdownExpiry}
-                        />
-                      ) : undefined
-                    }
-                    onCopy={handleCopy}
-                    paymentData={order.payment}
-                    text={{
-                      amountLabel: t('orderChannel.step3.amountToPay'),
-                      copyAddress: t('orderChannel.step3.copyAddress'),
-                      copyInvoice: t('orderChannel.step3.copyInvoice'),
-                      lightningAddressLabel: t('orderChannel.step3.lightning'),
-                      lightningAddressTitle: 'Lightning invoice',
-                      onchainAddressLabel: t('orderChannel.step3.onchain'),
-                      onchainAddressTitle: 'On-chain address',
-                      paymentDescription:
-                        'Use one QR for wallets that support both Lightning and on-chain, or copy the exact payment details below.',
-                      paymentEyebrow: 'Payment',
-                      paymentTitle: 'Scan or copy to fund this order',
-                      qrBadge: 'LN + On-chain',
-                      qrDescription:
-                        'Compatible wallets can choose the best route automatically.',
-                      qrTitle: 'Unified payment QR',
-                    }}
-                    walletSection={
-                      <WalletFundsCard
-                        actionLabel={t('orderChannel.step3.payWithWallet')}
-                        balances={[
-                          ...(hasLightningOption
-                            ? [
-                                {
-                                  label: t('orderChannel.step3.lightning'),
-                                  value: `${formatBitcoinAmount(
-                                    outboundLiquidity,
-                                    bitcoinUnit
-                                  )} ${bitcoinUnit}`,
-                                },
-                              ]
-                            : []),
-                          ...(hasOnchainOption
-                            ? [
-                                {
-                                  label: t('orderChannel.step3.onchain'),
-                                  value: `${formatBitcoinAmount(
-                                    onChainBalance,
-                                    bitcoinUnit
-                                  )} ${bitcoinUnit}`,
-                                },
-                              ]
-                            : []),
-                        ]}
-                        description="Open wallet payment options to review balances and send with Lightning or on-chain from one modal."
-                        isLoading={isLoadingData}
-                        loadingLabel={t('orderChannel.step3.loadingBalance')}
-                        onAction={() => setShowWalletConfirmation(true)}
-                        title={t('orderChannel.step3.payWithWallet')}
-                      />
-                    }
+              <div className="pl-6">
+                <div className="grid grid-cols-3 items-center text-xs mb-1">
+                  <span className="flex items-center gap-1 text-purple-400 font-medium">
+                    <ArrowUpRight className="w-3 h-3" />
+                    {formatBitcoinAmount(btcOut, bitcoinUnit)} {displayUnit}
+                  </span>
+                  <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                    BTC
+                  </span>
+                  <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                    {formatBitcoinAmount(btcIn, bitcoinUnit)} {displayUnit}
+                    <ArrowDownRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                    style={{ width: `${btcOutPct}%` }}
                   />
+                  <div
+                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                    style={{ width: `${btcInPct}%` }}
+                  />
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                </div>
+                <div className="grid grid-cols-3 text-[10px] mt-1">
+                  <span className="text-purple-400/70">Outbound</span>
+                  <span />
+                  <span className="text-right text-emerald-400/70">
+                    Inbound
+                  </span>
                 </div>
               </div>
             </div>
-          )}
+          )
+        })()}
 
-        {/* Footer */}
-        {localPaymentState !== 'processing' &&
-          localPaymentState !== 'success' &&
-          paymentStatus !== 'success' &&
-          !isProcessingPayment && (
-            <div className="flex justify-center mt-4">
-              <button
-                className="inline-flex items-center gap-2 rounded-xl border border-border-subtle bg-surface-overlay/60 px-4 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-border-default hover:text-content-primary"
-                onClick={onBack}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                {t('orderChannel.step3.backButton')}
-              </button>
+        {/* RGB Asset Section */}
+        {hasAsset &&
+          totalAssetAmount > 0 &&
+          (() => {
+            const assetOutPct =
+              totalAssetAmount > 0
+                ? (clientAssetRaw / totalAssetAmount) * 100
+                : 50
+            const assetInPct =
+              totalAssetAmount > 0 ? (lspAssetRaw / totalAssetAmount) * 100 : 50
+            return (
+              <div className="py-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <img
+                    alt={assetTicker}
+                    className="w-4 h-4 rounded-full"
+                    src={assetIcon}
+                  />
+                  <span className="text-sm font-semibold text-white">
+                    {assetTicker}
+                    {assetName ? ` (${assetName})` : ''}
+                  </span>
+                  <span className="ml-auto text-xs text-content-tertiary">
+                    {totalAssetAmount.toLocaleString()} {assetTicker} total
+                  </span>
+                </div>
+                <div className="pl-6">
+                  <div className="grid grid-cols-3 items-center text-xs mb-1">
+                    <span className="flex items-center gap-1 text-purple-400 font-medium">
+                      <ArrowUpRight className="w-3 h-3" />
+                      {clientAssetRaw.toLocaleString()} {assetTicker}
+                    </span>
+                    <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
+                      {assetTicker}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
+                      {lspAssetRaw.toLocaleString()} {assetTicker}
+                      <ArrowDownRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
+                    <div
+                      className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                      style={{ width: `${assetOutPct}%` }}
+                    />
+                    <div
+                      className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                      style={{ width: `${assetInPct}%` }}
+                    />
+                    <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
+                  </div>
+                  <div className="grid grid-cols-3 text-[10px] mt-1">
+                    <span className="text-purple-400/70">Outbound</span>
+                    <span />
+                    <span className="text-right text-emerald-400/70">
+                      Inbound
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+        {/* Duration */}
+        <div className="flex items-center justify-between py-4">
+          <span className="text-sm text-content-secondary">
+            Channel Lock Duration
+          </span>
+          <span className="text-white font-semibold">
+            {formatDuration(order.channel_expiry_blocks)}
+          </span>
+        </div>
+
+        {/* Total Cost */}
+        <div className="flex items-center justify-between py-4 last:pb-0">
+          <span className="text-sm text-content-secondary">Total Cost</span>
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-semibold">
+                {formatNumber(amountSat)} SATS
+              </span>
             </div>
-          )}
+            {channelAmountSat > 0 && (
+              <span className="text-xs text-content-secondary">
+                Channel amount: {formatNumber(channelAmountSat)} SATS
+              </span>
+            )}
+            {feeSat > 0 && (
+              <span className="text-xs text-content-secondary">
+                Service fee: {formatNumber(feeSat)} SATS
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
 
-        {/* Wallet Confirmation Modal */}
-        <WalletConfirmationModal
-          bitcoinUnit={bitcoinUnit}
-          customFee={customFee}
-          isOpen={showWalletConfirmation}
-          isProcessing={isProcessingWalletPayment}
-          lightningAmountSat={order.payment?.bolt11?.order_total_sat || 0}
-          onChainBalance={onChainBalance}
-          onClose={() => setShowWalletConfirmation(false)}
-          onCustomFeeChange={setCustomFee}
-          onFeeChange={setSelectedFee}
-          onPay={handleWalletPayment}
-          onchainAmountSat={order.payment?.onchain?.order_total_sat || 0}
-          outboundLiquidity={outboundLiquidity}
-          selectedFee={selectedFee}
-        />
+      <div className="flex justify-between mt-8">
+        <button
+          className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+          onClick={onBack}
+          type="button"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {t('orderChannel.step3.backButton')}
+        </button>
+        <Button
+          icon={<ArrowRight className="w-5 h-5" />}
+          iconPosition="right"
+          onClick={onNext}
+          size="lg"
+          variant="primary"
+        >
+          {t('orderChannel.step3.continueToPayment')}
+        </Button>
       </div>
     </div>
   )

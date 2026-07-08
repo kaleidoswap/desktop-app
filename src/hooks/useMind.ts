@@ -39,6 +39,14 @@ export interface UseMindResult {
   runtimeInstalled: boolean | null
   /** Live progress of the runtime download (null when not downloading). */
   runtimeProgress: RuntimeProgress | null
+  /**
+   * True for the whole duration of a startProvider() call, regardless of
+   * which page triggered it. `loading` only becomes non-null once the sidecar
+   * emits its first `provider_loading` event, which lags the request by a
+   * beat — without this flag, anything gated on "brain is off and not
+   * loading" (e.g. the offline-nudge modal) can flash open during that gap.
+   */
+  starting: boolean
   // actions
   refresh: () => Promise<void>
   /** Download + install the agent runtime on demand. */
@@ -87,6 +95,7 @@ export function useMind(): UseMindResult {
   const [runtimeInstalled, setRuntimeInstalled] = useState<boolean | null>(null)
   const [runtimeProgress, setRuntimeProgress] =
     useState<RuntimeProgress | null>(null)
+  const [starting, setStarting] = useState(false)
   // Auto-clear the confirm card when the sidecar's timeout declines it.
   const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -232,9 +241,14 @@ export function useMind(): UseMindResult {
   }, [])
 
   const startProvider = useCallback(async (modelId: string) => {
-    const st = await mindClient.startProvider(modelId)
-    setStatus(st)
-    setCapabilities(await mindClient.listCapabilities())
+    setStarting(true)
+    try {
+      const st = await mindClient.startProvider(modelId)
+      setStatus(st)
+      setCapabilities(await mindClient.listCapabilities())
+    } finally {
+      setStarting(false)
+    }
   }, [])
 
   const stopProvider = useCallback(async () => {
@@ -357,6 +371,7 @@ export function useMind(): UseMindResult {
     runtimeProgress,
     setSkillEnabled,
     startProvider,
+    starting,
     status,
     stopProvider,
   }

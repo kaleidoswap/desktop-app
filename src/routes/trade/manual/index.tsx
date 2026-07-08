@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  ArrowLeftRight,
   Lock,
   Unlock,
   Zap,
@@ -14,7 +15,6 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { useSettings } from '../../../hooks/useSettings'
-import { Loader } from '../../../components/Loader'
 // import { StatusToast } from '../../../components/StatusToast'
 import {
   NoChannelsMessage,
@@ -480,10 +480,32 @@ export const Component = () => {
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <TradeNav />
       </div>
-      <div className="container mx-auto w-full flex flex-col items-center justify-center py-2">
+      <div className="container mx-auto w-full flex flex-col items-center justify-center py-6">
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader />
+          <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+              <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+                <ArrowLeftRight className="relative z-10 w-10 h-10 text-[#15E99A]" />
+              </div>
+            </div>
+            <div className="text-center space-y-4 max-w-lg">
+              <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
+                {t(
+                  'tradeManual.loading.initializing',
+                  'Initializing Manual Swap'
+                )}
+              </p>
+              <p className="text-slate-300 text-base leading-relaxed">
+                {t(
+                  'tradeManual.loading.checkingBalance',
+                  'Checking wallet balance and requirements'
+                )}
+              </p>
+              <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+                <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
+              </div>
+            </div>
           </div>
         ) : !hasValidChannelsForTrading ? (
           renderNoChannelsMessage()

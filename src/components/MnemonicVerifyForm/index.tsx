@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { SubmitHandler, UseFormReturn } from 'react-hook-form'
 import { toast } from 'react-toastify'
@@ -13,12 +13,14 @@ export interface MnemonicVerifyFields {
 interface MnemonicVerifyFormProps {
   form: UseFormReturn<MnemonicVerifyFields>
   onSubmit: SubmitHandler<MnemonicVerifyFields>
+  onBack?: () => void
   errors: string[]
 }
 
 export const MnemonicVerifyForm = ({
   form,
   onSubmit,
+  onBack,
   errors,
 }: MnemonicVerifyFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -109,16 +111,7 @@ export const MnemonicVerifyForm = ({
 
   return (
     <div className="w-full">
-      <p className="text-content-secondary mb-6 leading-relaxed">
-        For your security, please enter your recovery phrase to confirm you've
-        saved it correctly. This step cannot be skipped.
-      </p>
-
-      {/* Form Section */}
-      <form
-        className="bg-surface-elevated/40 p-6 rounded-xl border border-white/5"
-        onSubmit={form.handleSubmit(handleSubmit)}
-      >
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-content-secondary mb-1.5">
@@ -126,10 +119,10 @@ export const MnemonicVerifyForm = ({
             </label>
             <div className="relative">
               <textarea
-                className="w-full min-h-[100px] rounded-lg border-2 border-border-default/50 
-                          bg-surface-overlay/30 px-4 py-2.5 text-content-secondary font-mono text-sm
-                          focus:border-cyan focus:ring-2 focus:ring-cyan/20 
-                          outline-none transition-all placeholder:text-content-tertiary"
+                className="w-full min-h-[100px] rounded-lg border border-border-default/50
+                          bg-surface-overlay/30 px-4 py-2.5 text-white font-mono text-sm
+                          focus:border-primary focus:ring-2 focus:ring-primary/20
+                          outline-none transition-shadow placeholder:text-content-tertiary"
                 placeholder="Enter your recovery phrase..."
                 {...form.register('mnemonic', {
                   required: 'Recovery phrase is required',
@@ -242,24 +235,37 @@ export const MnemonicVerifyForm = ({
             )}
           </div>
 
-          {/* Submit Button */}
-          <Button
-            className="w-full mt-4"
-            disabled={isSubmitting}
-            icon={
-              isSubmitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <ArrowRight className="w-4 h-4" />
-              )
-            }
-            iconPosition="right"
-            size="lg"
-            type="submit"
-            variant="primary"
-          >
-            {isSubmitting ? 'Verifying...' : 'Confirm Recovery Phrase'}
-          </Button>
+          {/* Footer: Back + Submit */}
+          <div className="flex justify-between items-center mt-6">
+            {onBack ? (
+              <button
+                className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                onClick={onBack}
+                type="button"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+            ) : (
+              <span />
+            )}
+            <Button
+              disabled={isSubmitting}
+              icon={
+                isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-4 h-4" />
+                )
+              }
+              iconPosition="right"
+              size="lg"
+              type="submit"
+              variant="primary"
+            >
+              {isSubmitting ? 'Verifying...' : 'Complete Setup'}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

@@ -1,7 +1,12 @@
 import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'react-toastify'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { Button, IconButton } from '../ui'
@@ -157,9 +162,11 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
   if (!isOpen) return null
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
+      className={`${pos} inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
       onClick={onClose}
     >
       <div
@@ -397,32 +404,23 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
         {/* Footer - Fixed */}
         <div className="px-6 py-4 border-t border-border-subtle/50 bg-surface-overlay/50 flex-shrink-0 sticky bottom-0 z-10 w-full">
-          <div className="flex justify-end space-x-3 w-full">
-            <Button
-              className="flex-1 max-w-[140px]"
-              disabled={isLoading}
-              onClick={onClose}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              className="flex-1 max-w-[160px]"
-              disabled={
-                isLoading ||
-                (btcBalanceData?.vanilla?.spendable !== undefined &&
-                  numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
-              }
-              icon={!isLoading ? <Zap size={18} /> : undefined}
-              isLoading={isLoading}
-              onClick={handleCreateUTXOs}
-              variant="primary"
-            >
-              Create UTXOs
-            </Button>
-          </div>
+          <Button
+            className="w-full"
+            disabled={
+              isLoading ||
+              (btcBalanceData?.vanilla?.spendable !== undefined &&
+                numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
+            }
+            icon={!isLoading ? <Zap size={18} /> : undefined}
+            isLoading={isLoading}
+            onClick={handleCreateUTXOs}
+            variant="primary"
+          >
+            Create UTXOs
+          </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

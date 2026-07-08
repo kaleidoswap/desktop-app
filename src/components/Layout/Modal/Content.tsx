@@ -5,12 +5,13 @@ import { WithdrawModalContent } from './Withdraw'
 
 interface Props {
   modal: Exclude<ReturnType<typeof uiSliceSeletors.modal>, 'none'>
+  onClose: () => void
 }
 export const Content = (props: Props) => {
   switch (props.modal.type) {
     case 'deposit':
-      return <DepositModalContent />
+      return <DepositModalContent onClose={props.onClose} />
     case 'withdraw':
-      return <WithdrawModalContent />
+      return <WithdrawModalContent onClose={props.onClose} />
   }
 }

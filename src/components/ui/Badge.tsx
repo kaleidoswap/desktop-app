@@ -7,6 +7,7 @@ export type BadgeVariant =
   | 'warning'
   | 'danger'
   | 'info'
+  | 'purple'
 export type BadgeSize = 'sm' | 'md' | 'lg'
 
 interface BadgeProps {
@@ -34,6 +35,7 @@ export const Badge: React.FC<BadgeProps> = ({
     default: 'bg-surface-high text-content-secondary',
     info: 'bg-primary/20 text-primary',
     primary: 'bg-blue-500/20 text-blue-500',
+    purple: 'bg-purple/20 text-purple',
     success: 'bg-green-500/20 text-green-500',
     warning: 'bg-amber-500/20 text-amber-500',
   }

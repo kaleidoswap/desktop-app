@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import {
   Plus,
   CalendarClock,
@@ -7,9 +8,18 @@ import {
   BarChart2,
   Info,
   X,
+  TrendingUp,
+  ShoppingCart,
 } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
-import { DcaBagIcon } from '../../../components/icons/DcaBagIcon'
+import { ORDER_CHANNEL_PATH } from '../../../app/router/paths'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
+
+import { IconButton } from '../../../components/ui'
 import { TradeNav } from '../../../components/Trade'
 
 import { useAppSelector } from '../../../app/store/hooks'
@@ -61,43 +71,43 @@ function CreateOrderModal({
   onClose: () => void
 }) {
   const { t } = useTranslation()
-  return (
+  const pos = getModalPositionClass()
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm"
+      className={`${pos} inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-md bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
-        {/* Modal header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-              <DcaBagIcon className="h-[1.125rem] w-[1.125rem]" />
+      <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-xl w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto pointer-events-auto">
+          <div className="flex items-center justify-between pb-4 border-b border-divider/10 mb-6">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-6 h-6 text-primary flex-shrink-0" />
+              <h3 className="text-xl font-bold text-white">
+                {t('dca.createOrder', 'New DCA Order')}
+              </h3>
             </div>
-            <h2 className="text-sm font-semibold text-content-primary">
-              {t('dca.createOrder', 'New DCA Order')}
-            </h2>
+            <button
+              className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
+              onClick={onClose}
+              type="button"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            className="p-1.5 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        {/* Modal body */}
-        <div className="p-5">
           <CreateDcaForm
             currentBtcPrice={currentBtcPrice}
             onCreated={onClose}
           />
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
 export const Component = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('active')
   const [showModal, setShowModal] = useState(false)
   const [showGetUsdt, setShowGetUsdt] = useState(false)
@@ -214,10 +224,7 @@ export const Component = () => {
       s + (ch.asset_remote_amount ?? 0) / Math.pow(10, usdtPrecision),
     0
   )
-  const btcChannelUsdValue =
-    currentBtcPrice != null
-      ? (totalBtcSats / 100_000_000) * currentBtcPrice
-      : undefined
+  const hasRgbChannels = readyChannels.some((ch: any) => ch.asset_id)
 
   const isRefreshing = isChannelsFetching || isAssetsFetching
   const handleRefresh = () =>
@@ -278,11 +285,11 @@ export const Component = () => {
 
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-4 py-6">
         <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
-          <section className="h-full overflow-hidden rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+          <section className="h-full overflow-hidden rounded-2xl border border-border-default/60 bg-surface-overlay shadow-xl p-5">
             <div className="flex h-full flex-col">
               <div className="flex items-start justify-between gap-4">
                 <div className="max-w-xs">
-                  <h1 className="text-2xl font-bold text-white tracking-tight">
+                  <h1 className="text-xl font-bold text-white">
                     {t('dca.title', 'DCA Orders')}
                   </h1>
                   <p className="mt-2 text-sm leading-relaxed text-content-secondary">
@@ -293,7 +300,7 @@ export const Component = () => {
                 </div>
 
                 <button
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors"
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-[#12131C] transition-colors"
                   onClick={() => setShowModal(true)}
                   title={t('dca.createOrder', 'New DCA Order')}
                 >
@@ -357,7 +364,7 @@ export const Component = () => {
 
               <div className="flex items-center justify-between">
                 <button
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 px-2.5 text-xs font-semibold text-white transition-colors"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 px-2.5 text-xs font-semibold text-white transition-colors"
                   onClick={() => setInfoOpen((v) => !v)}
                   title={t('dca.howItWorks.title', 'How DCA works')}
                 >
@@ -374,226 +381,249 @@ export const Component = () => {
             </div>
           </section>
 
-          <section className="h-full rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+          <section className="h-full rounded-2xl border border-border-default/60 bg-surface-overlay shadow-xl p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-content-primary">
                 {t('dca.section.balances', 'Channel Balances')}
               </h2>
-              <button
-                className="rounded-md p-1 text-content-secondary transition-colors hover:bg-surface-elevated hover:text-content-primary disabled:opacity-50"
+              <IconButton
+                aria-label={t('dca.refreshAmounts', 'Refresh')}
                 disabled={isRefreshing}
+                icon={
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+                  />
+                }
                 onClick={handleRefresh}
-                title={t('dca.refreshAmounts', 'Refresh')}
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-                />
-              </button>
+                variant="outline"
+              />
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2.5">
-              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-default/50 bg-surface-elevated/40 px-3.5 py-3">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">
-                  BTC value
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-content-primary">
-                  {btcChannelUsdValue != null
-                    ? formatPrice(btcChannelUsdValue)
-                    : '—'}
-                </p>
-              </div>
-              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-default/50 bg-surface-elevated/40 px-3.5 py-3">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">
-                  Ready channels
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-content-primary">
-                  {readyChannels.length}
-                </p>
-              </div>
-              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-default/50 bg-surface-elevated/40 px-3.5 py-3">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">
-                  USDT spendable
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-content-primary">
-                  {formatUsdt(usdtLnOut)} USDT
-                </p>
-              </div>
-              <div className="min-w-[132px] flex-1 rounded-2xl border border-border-default/50 bg-surface-elevated/40 px-3.5 py-3">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/60">
-                  {t(
+            <div className="mt-4 grid grid-cols-3 gap-2.5">
+              {[
+                {
+                  label: 'USDT spendable',
+                  value: `${formatUsdt(usdtLnOut)} USDT`,
+                },
+                {
+                  label: t(
+                    'dca.section.readyUsdtChannels',
+                    'Ready USDT channels'
+                  ),
+                  value: String(usdtChannels.length),
+                },
+                {
+                  label: t(
                     'dca.section.pendingUsdtChannels',
                     'Pending USDT channels'
-                  )}
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-content-primary">
-                  {pendingUsdtChannels.length}
-                </p>
-              </div>
+                  ),
+                  value: String(pendingUsdtChannels.length),
+                },
+              ].map(({ label, value }) => (
+                <div
+                  className="rounded-2xl border border-border-default/50 bg-surface-base/35 px-3.5 py-3 flex flex-col justify-between"
+                  key={label}
+                >
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-white/60 leading-snug">
+                    {label}
+                  </p>
+                  <p className="mt-3 text-sm font-semibold text-content-primary">
+                    {value}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <div className="mt-5 space-y-5">
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AssetIcon
-                      alt="BTC"
-                      className="h-4 w-4 rounded-full"
-                      src={bitcoinLogo}
-                    />
-                    <span className="text-sm font-semibold text-content-primary">
-                      BTC LN
-                    </span>
-                  </div>
-                  <span className="text-sm font-semibold text-content-primary">
-                    {formatSats(totalBtcSats)} sats
-                  </span>
+              {!hasRgbChannels ? (
+                /* ── No RGB channels: prompt to buy ── */
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-border-subtle/50 bg-surface-elevated/30 py-6 px-4 text-center">
+                  <p className="text-sm text-content-secondary">
+                    {t(
+                      'dca.noRgbChannels.description',
+                      'You need a USDT Lightning channel to run DCA orders.'
+                    )}
+                  </p>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis"
+                    onClick={() => navigate(ORDER_CHANNEL_PATH)}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    {t('dca.noRgbChannels.cta', 'Buy USDT in Channel')}
+                  </button>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-amber-400/20 flex">
-                  {totalBtcSats > 0 ? (
-                    <>
-                      <div
-                        className="h-full bg-amber-400"
-                        style={{
-                          width: `${(btcLnOut / totalBtcSats) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="h-full bg-amber-400/40"
-                        style={{
-                          width: `${(btcLnIn / totalBtcSats) * 100}%`,
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="h-full w-full bg-surface-overlay/20" />
-                  )}
-                </div>
-                <div className="flex justify-between text-[11px] text-content-secondary">
-                  <span title="Outbound (Spendable)">
-                    Out: {formatSats(btcLnOut)}
-                  </span>
-                  <span title="Inbound (Receivable)">
-                    In: {formatSats(btcLnIn)}
-                  </span>
-                </div>
-                <button
-                  className="mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 text-sm font-semibold text-amber-300 transition-colors hover:bg-amber-400/20"
-                  onClick={() => {
-                    setBuyModalProps({
-                      defaultCapacitySat: '500000',
-                      defaultClientBalanceSat: '20000',
-                    })
-                    setShowGetBtc(true)
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('dca.receiveBtcLn', 'Receive BTC/LN')}
-                </button>
-              </div>
-
-              <div className="space-y-2.5 border-t border-border-subtle/50 pt-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AssetIcon
-                      alt="USDT"
-                      className="h-4 w-4 rounded-full"
-                      src={tetherLogo}
-                    />
-                    <span className="text-sm font-semibold text-content-primary">
-                      USDT LN
-                    </span>
-                  </div>
-                  <span className="text-sm font-semibold text-content-primary">
-                    {formatUsdt(usdtLnOut + usdtLnIn)} USDT
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-cyan-400/20 flex">
-                  {usdtLnOut + usdtLnIn > 0 ? (
-                    <>
-                      <div
-                        className="h-full bg-cyan-400"
-                        style={{
-                          width: `${(usdtLnOut / (usdtLnOut + usdtLnIn)) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="h-full bg-cyan-400/40"
-                        style={{
-                          width: `${(usdtLnIn / (usdtLnOut + usdtLnIn)) * 100}%`,
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="h-full w-full bg-surface-overlay/20" />
-                  )}
-                </div>
-                <div className="flex justify-between text-[11px] text-content-secondary">
-                  <span title="Outbound (Spendable)">
-                    Out: {formatUsdt(usdtLnOut)}
-                  </span>
-                  <span title="Inbound (Receivable)">
-                    In: {formatUsdt(usdtLnIn)}
-                  </span>
-                </div>
-                {pendingUsdtChannels.length > 0 && (
-                  <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold text-amber-200">
-                        {t(
-                          'dca.section.pendingUsdtTitle',
-                          'New USDT channel pending'
-                        )}
-                      </span>
-                      <span className="rounded-full border border-amber-400/30 bg-amber-400/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
-                        {pendingUsdtChannels.length}{' '}
-                        {t('dca.section.pendingBadge', 'pending')}
+              ) : (
+                /* ── Has RGB channels: show balances + add-liquidity buttons ── */
+                <>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AssetIcon
+                          alt="BTC"
+                          className="h-4 w-4 rounded-full"
+                          src={bitcoinLogo}
+                        />
+                        <span className="text-sm font-semibold text-content-primary">
+                          BTC LN
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-content-primary">
+                        {formatSats(totalBtcSats)} sats
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-amber-100/80">
-                      {t(
-                        'dca.section.pendingUsdtDescription',
-                        'Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.'
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-amber-400/20 flex">
+                      {totalBtcSats > 0 ? (
+                        <>
+                          <div
+                            className="h-full bg-amber-400"
+                            style={{
+                              width: `${(btcLnOut / totalBtcSats) * 100}%`,
+                            }}
+                          />
+                          <div
+                            className="h-full bg-amber-400/40"
+                            style={{
+                              width: `${(btcLnIn / totalBtcSats) * 100}%`,
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <div className="h-full w-full bg-surface-overlay/20" />
                       )}
-                    </p>
+                    </div>
+                    <div className="flex justify-between text-[11px] text-content-secondary">
+                      <span title="Outbound (Spendable)">
+                        Out: {formatSats(btcLnOut)}
+                      </span>
+                      <span title="Inbound (Receivable)">
+                        In: {formatSats(btcLnIn)}
+                      </span>
+                    </div>
+                    <button
+                      className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 px-2.5 text-xs font-semibold text-white transition-colors"
+                      onClick={() => {
+                        setBuyModalProps({
+                          defaultCapacitySat: '500000',
+                          defaultClientBalanceSat: '20000',
+                        })
+                        setShowGetBtc(true)
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('dca.receiveBtcLn', 'Receive BTC/LN')}
+                    </button>
                   </div>
-                )}
-                <button
-                  className="mt-2 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 text-sm font-semibold text-cyan-300 transition-colors hover:bg-cyan-400/20"
-                  onClick={() => {
-                    if (usdtAsset) {
-                      setBuyModalProps({
-                        defaultCapacitySat: '500000',
-                        defaultClientBalanceSat: '20000',
-                        defaultTotalAssetAmount: '100',
-                        preselectedAsset: {
-                          amount: 100,
-                          assetId: usdtAsset.asset_id || '',
-                        },
-                      })
-                      setShowGetBtc(true)
-                    } else {
-                      setShowGetUsdt(true)
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('dca.addUsdtLn', 'Add USDT/LN')}
-                </button>
-              </div>
+
+                  <div className="space-y-2.5 border-t border-border-subtle/50 pt-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AssetIcon
+                          alt="USDT"
+                          className="h-4 w-4 rounded-full"
+                          src={tetherLogo}
+                        />
+                        <span className="text-sm font-semibold text-content-primary">
+                          USDT LN
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-content-primary">
+                        {formatUsdt(usdtLnOut + usdtLnIn)} USDT
+                      </span>
+                    </div>
+                    <div
+                      className="h-2 w-full overflow-hidden rounded-full flex"
+                      style={{ background: 'rgba(38,161,123,0.2)' }}
+                    >
+                      {usdtLnOut + usdtLnIn > 0 ? (
+                        <>
+                          <div
+                            className="h-full"
+                            style={{
+                              background: '#26A17B',
+                              width: `${(usdtLnOut / (usdtLnOut + usdtLnIn)) * 100}%`,
+                            }}
+                          />
+                          <div
+                            className="h-full"
+                            style={{
+                              background: 'rgba(38,161,123,0.4)',
+                              width: `${(usdtLnIn / (usdtLnOut + usdtLnIn)) * 100}%`,
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <div className="h-full w-full bg-surface-overlay/20" />
+                      )}
+                    </div>
+                    <div className="flex justify-between text-[11px] text-content-secondary">
+                      <span title="Outbound (Spendable)">
+                        Out: {formatUsdt(usdtLnOut)}
+                      </span>
+                      <span title="Inbound (Receivable)">
+                        In: {formatUsdt(usdtLnIn)}
+                      </span>
+                    </div>
+                    {pendingUsdtChannels.length > 0 && (
+                      <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-semibold text-amber-200">
+                            {t(
+                              'dca.section.pendingUsdtTitle',
+                              'New USDT channel pending'
+                            )}
+                          </span>
+                          <span className="rounded-full border border-amber-400/30 bg-amber-400/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-200">
+                            {pendingUsdtChannels.length}{' '}
+                            {t('dca.section.pendingBadge', 'pending')}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-[11px] leading-relaxed text-amber-100/80">
+                          {t(
+                            'dca.section.pendingUsdtDescription',
+                            'Your new USDT Lightning channel is on the way and will appear in the spendable balance once confirmed.'
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 px-2.5 text-xs font-semibold text-white transition-colors"
+                      onClick={() => {
+                        if (usdtAsset) {
+                          setBuyModalProps({
+                            defaultCapacitySat: '500000',
+                            defaultClientBalanceSat: '20000',
+                            defaultTotalAssetAmount: '100',
+                            preselectedAsset: {
+                              amount: 100,
+                              assetId: usdtAsset.asset_id || '',
+                            },
+                          })
+                          setShowGetBtc(true)
+                        } else {
+                          setShowGetUsdt(true)
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('dca.addUsdtLn', 'Add USDT/LN')}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </section>
         </div>
 
-        <section className="min-h-[420px] rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+        <section className="min-h-[420px] rounded-2xl border border-border-subtle bg-surface-overlay p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-content-primary">
               {tab === 'active'
                 ? t('dca.orders.activeTitle', 'Scheduled DCA Orders')
                 : t('dca.orders.historyTitle', 'Executed & Closed Orders')}
             </h2>
-            <div className="flex gap-1 rounded-xl bg-surface-overlay/50 p-1">
+            <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
               <button
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   tab === 'active'
                     ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-content-secondary hover:text-white border border-transparent'
@@ -609,7 +639,7 @@ export const Component = () => {
                 </span>
               </button>
               <button
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   tab === 'history'
                     ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-content-secondary hover:text-white border border-transparent'
@@ -631,7 +661,7 @@ export const Component = () => {
             {displayedOrders.length === 0 ? (
               <div className="flex min-h-[300px] flex-col items-center justify-center space-y-3 rounded-2xl border border-dashed border-border-subtle bg-surface-base/40 px-6 text-center">
                 <div className="rounded-2xl bg-surface-overlay/50 p-4 text-content-secondary">
-                  <DcaBagIcon className="h-8 w-8" />
+                  <TrendingUp className="h-8 w-8" />
                 </div>
                 <p className="text-sm font-medium text-content-secondary">
                   {tab === 'active'
@@ -640,7 +670,7 @@ export const Component = () => {
                 </p>
                 {tab === 'active' && (
                   <button
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 py-2 text-sm font-semibold text-gray-900 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary hover:bg-primary-emphasis px-4 py-2 text-sm font-semibold text-[#12131C] transition-colors"
                     onClick={() => setShowModal(true)}
                   >
                     <Plus className="h-4 w-4" />

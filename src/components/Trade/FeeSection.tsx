@@ -120,7 +120,7 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
           >
-            <span className="text-xs font-medium text-content-tertiary uppercase tracking-wider">
+            <span className="text-xs font-medium text-white uppercase tracking-wider">
               {t('trade.feeSection.title')}
             </span>
             <div className="flex items-center gap-2">
@@ -217,18 +217,11 @@ export const FeeSection: React.FC<FeeSectionProps> = ({
             </div>
 
             {/* Compact Important Notice */}
-            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <div className="flex items-start gap-2">
-                <div className="w-1 h-1 rounded-full bg-primary mt-1.5"></div>
-                <div className="flex-1">
-                  <p className="text-content-secondary text-xs font-medium mb-1">
-                    {t('trade.feeSection.feeDeduction')}
-                  </p>
-                  <p className="text-content-tertiary text-xs leading-relaxed">
-                    {t('trade.feeSection.feeDeductionDesc')}
-                  </p>
-                </div>
-              </div>
+            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-blue-200/80 text-xs leading-relaxed">
+                {t('trade.feeSection.feeDeductionDesc')}
+              </p>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { Copy, Plus } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
@@ -258,7 +259,7 @@ export const Component = () => {
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-content-primary">
-          App Connections (NWC)
+          App Connections
         </h1>
         <p className="text-content-secondary mt-1">
           Connect external apps to this wallet over Nostr Wallet Connect
@@ -298,14 +299,31 @@ export const Component = () => {
         }
         title="Service status"
       >
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+        <div className="space-y-3 text-sm">
+          <div className="space-y-1">
             <span className="text-content-secondary">
               Wallet service identity
             </span>
-            <span className="font-mono text-content-primary break-all text-right">
-              {npub ?? '—'}
-            </span>
+            <div className="relative mt-1">
+              <input
+                className="w-full font-mono text-xs text-content-primary bg-surface-overlay/50 border border-border-default/50 rounded-lg px-3 py-2 pr-9 outline-none truncate"
+                readOnly
+                value={npub ?? '—'}
+              />
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary transition-colors flex-shrink-0"
+                onClick={() => {
+                  if (npub) {
+                    navigator.clipboard.writeText(npub)
+                    toast.success('Copied to clipboard')
+                  }
+                }}
+                title="Copy npub"
+                type="button"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
           <p className="text-content-tertiary">
             Scope: Bitcoin Lightning only. RGB-asset support over NWC is not yet
@@ -318,6 +336,8 @@ export const Component = () => {
         action={
           <Button
             disabled={!running}
+            icon={<Plus className="w-4 h-4" />}
+            iconPosition="right"
             onClick={() => setShowAdd(true)}
             size="sm"
             variant="primary"

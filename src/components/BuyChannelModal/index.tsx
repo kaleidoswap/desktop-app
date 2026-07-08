@@ -1,5 +1,6 @@
 import { X, Clock } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
@@ -38,6 +39,10 @@ import {
 } from '../../utils/channelOrderUtils'
 import { persistChannelOrder } from '../../utils/channelOrderPersistence'
 import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
+import {
   FeeBreakdownDisplay,
   ChannelDurationSelector,
 } from '../ChannelConfiguration'
@@ -45,7 +50,7 @@ import {
 import { LiquidityCard, LiquiditySlider } from '../Liquidity'
 import { AssetSelectWithModal } from '../Trade/AssetSelectWithModal'
 import bitcoinLogo from '../../assets/bitcoin-logo.svg'
-import rgbIcon from '../../assets/rgb-symbol-color.svg'
+import rgbIcon from '../../assets/rgb-logo.svg'
 
 import {
   QuoteDisplay,
@@ -736,6 +741,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         if (orderId && orderPayload) {
           try {
             await persistChannelOrder({
+              fallbackAccessToken: accessToken,
               order,
               orderId,
               orderPayload,
@@ -769,6 +775,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         if (orderId && orderPayload) {
           try {
             await persistChannelOrder({
+              fallbackAccessToken: accessToken,
               order,
               orderId,
               orderPayload,
@@ -808,10 +815,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto px-4 py-8 flex items-center justify-center">
+  const pos = getModalPositionClass()
+
+  return createPortal(
+    <div
+      className={`${pos} inset-0 z-50 overflow-y-auto px-4 py-8 flex items-center justify-center`}
+    >
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+        className={`${pos} inset-0 bg-black/80 backdrop-blur-sm`}
         onClick={handleClose}
       />
       <div
@@ -1327,14 +1338,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               {/* Actions */}
               <div className="flex gap-3 pt-1">
                 <button
-                  className="flex-1 px-4 py-2.5 bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white rounded-xl font-semibold transition-colors text-sm"
+                  className="flex-1 px-4 py-2.5 bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white rounded-lg font-semibold transition-colors text-sm"
                   onClick={handleClose}
                   type="button"
                 >
                   {t('components.buyChannelModal.cancel')}
                 </button>
                 <button
-                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors text-sm disabled:bg-content-tertiary disabled:text-content-primary/70 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-medium transition-colors text-sm disabled:bg-content-tertiary disabled:text-content-primary/70 disabled:cursor-not-allowed"
                   disabled={
                     loading ||
                     (shouldFetchQuote &&
@@ -1367,6 +1378,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

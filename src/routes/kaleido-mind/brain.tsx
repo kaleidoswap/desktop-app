@@ -144,7 +144,7 @@ export const Component: React.FC = () => {
               <>
                 <select
                   className="rounded-lg border border-border-default bg-surface-overlay px-2.5 py-2 text-sm text-content-primary focus:border-primary focus:outline-none disabled:opacity-50"
-                  disabled={!!loading}
+                  disabled={!!loading || mind.starting}
                   onChange={(e) => setSelectedModel(e.target.value)}
                   value={startModelId}
                 >
@@ -156,18 +156,19 @@ export const Component: React.FC = () => {
                 </select>
                 <button
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-50"
-                  disabled={!startModelId || !!loading}
+                  disabled={!startModelId || !!loading || mind.starting}
                   onClick={() =>
-                    startModelId && mind.startProvider(startModelId)
+                    startModelId &&
+                    mind.startProvider(startModelId).catch(() => {})
                   }
                   type="button"
                 >
-                  {loading ? (
+                  {loading || mind.starting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Play className="h-4 w-4" />
                   )}
-                  {loading ? 'Starting…' : 'Start brain'}
+                  {loading || mind.starting ? 'Starting…' : 'Start brain'}
                 </button>
               </>
             ) : (

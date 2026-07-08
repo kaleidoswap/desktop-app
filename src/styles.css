@@ -1,69 +1,68 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'kaleido-ui/css';
+
+/* App-specific Tailwind theme (legacy palette, spacing, animations, keyframes). */
+@config '../tailwind.config.js';
+
+/* Tell Tailwind v4 where to scan for class names. */
+@source './**/*.{ts,tsx}';
+
+/* Class-based dark mode — the app toggles `.dark` / `.light` on <html>
+   (see ThemeProvider). Make the `dark:` variant follow the `.dark` class
+   instead of the OS `prefers-color-scheme`. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Self-hosted brand fonts (Satoshi display + Geist Mono) ──────────────────
+   Replaces the previous Google-hosted Mulish. Satoshi ships no 600/800 cut, so
+   semibold (600) maps onto Bold and 800 onto Black to keep weights crisp
+   without faux-bold synthesis. Fonts live in /public/fonts. */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.ttf') format('truetype');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Black.ttf') format('truetype');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
-  /* ── Design tokens: dark (default) ── */
-  :root,
-  .dark {
-    /* Body is notably darker than cards — creates clear depth without full-black */
-    --color-surface-base: 18 19 28; /* #12131C — deepest bg, sidebar */
-    --color-surface-raised: 24 25 36; /* #181924 — page body bg */
-    --color-surface-overlay: 36 38 56; /* #242638 — card bg (~14 lighter than body) */
-    --color-surface-elevated: 50 52 72; /* #323448 — sections inside cards */
-    --color-surface-high: 66 68 90; /* #42445A — hover/active highlights */
-    --color-primary: 21 233 154; /* #15E99A */
-    --color-primary-emphasis: 18 201 126; /* #12C97E */
-    --color-primary-foreground: 18 19 28;
-    --color-secondary: 139 92 246; /* #8B5CF6 */
-    --color-secondary-emphasis: 124 58 237;
-    --color-secondary-foreground: 255 255 255;
-    --color-content-primary: 232 233 242; /* #E8E9F2 — slightly cool white */
-    --color-content-secondary: 142 146 172; /* #8E92AC */
-    --color-content-tertiary: 88 92 116; /* #585C74 */
-    --color-content-inverse: 18 19 28;
-    --color-border-subtle: 40 42 60; /* #282A3C */
-    --color-border-default: 54 56 76; /* #36384C */
-    --color-border-strong: 21 233 154;
-    --color-status-success: 34 197 94;
-    --color-status-danger: 248 113 113;
-    --color-status-warning: 245 158 11;
-    --color-status-info: 56 189 248;
-  }
-
-  /* ── Design tokens: light ── */
-  .light {
-    /* Cards = white on a cool-gray page for clear depth */
-    --color-surface-base: 218 220 234; /* #DADCEA — sidebar/deep backgrounds */
-    --color-surface-raised: 234 236 248; /* #EAECF8 — page body bg */
-    --color-surface-overlay: 255 255 255; /* #FFFFFF — card bg (white) */
-    --color-surface-elevated: 246 247 253; /* #F6F7FD — sections inside cards */
-    --color-surface-high: 228 230 246; /* #E4E6F6 — hover/active highlights */
-    --color-primary: 23 181 129; /* #17B581 */
-    --color-primary-emphasis: 19 138 100; /* #138A64 */
-    --color-primary-foreground: 255 255 255;
-    --color-secondary: 111 50 255; /* #6F32FF */
-    --color-secondary-emphasis: 90 31 229; /* #5A1FE5 */
-    --color-secondary-foreground: 255 255 255;
-    --color-content-primary: 18 19 30; /* #12131E */
-    --color-content-secondary: 70 74 105; /* #464A69 */
-    --color-content-tertiary: 118 122 152; /* #767A98 */
-    --color-content-inverse: 255 255 255;
-    --color-border-subtle: 218 220 238; /* #DADCEE */
-    --color-border-default: 200 203 224; /* #C8CBE0 */
-    --color-border-strong: 23 181 129;
-    --color-status-success: 22 163 74;
-    --color-status-danger: 220 38 38;
-    --color-status-warning: 217 119 6;
-    --color-status-info: 2 132 199;
-  }
+  /* Design tokens (surface / content / border / status / primary / secondary /
+     divider) and Satoshi typography now come from kaleido-ui/css via @theme.
+     App-specific base styles follow. */
 
   /* ── Light mode: override explicit text-white to use dark content color ── */
   /* This handles legacy text-white classes that haven't been migrated yet.  */
   /* Elements using text-primary-foreground / text-secondary-foreground are  */
   /* unaffected since those tokens are already correct for each theme.       */
   .light .text-white {
-    color: rgb(var(--color-content-primary));
+    color: rgb(var(--app-content-primary));
   }
 
   .dark {
@@ -76,13 +75,15 @@
 
   html {
     @apply antialiased;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-surface-raised text-content-primary font-sans;
+    overflow-x: hidden;
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-surface-base) / 0.8)
-      rgb(var(--color-surface-base) / 0.3);
+    scrollbar-color: rgb(var(--app-surface-base) / 0.8)
+      rgb(var(--app-surface-base) / 0.3);
   }
 
   /* Global scrollbar styling */
@@ -92,18 +93,40 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: rgb(var(--color-surface-base) / 0.3);
+    background: rgb(var(--app-surface-base) / 0.3);
     border-radius: 8px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgb(var(--color-surface-base) / 0.8);
+    background: rgb(var(--app-surface-base) / 0.8);
     border-radius: 8px;
-    border: 1px solid rgb(var(--color-primary) / 0.1);
+    border: 1px solid rgb(var(--app-primary) / 0.1);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--color-primary) / 0.2);
+    background: rgb(var(--app-primary) / 0.2);
+  }
+
+  /* Interactive elements define their own colored focus states (border + ring).
+     Tailwind's `outline-none` only paints a transparent outline, which in the
+     Tauri WebKit runtime can still leave a stray light focus ring on click.
+     Truly remove the default outline so the intended green focus/active effect
+     shows directly — on tabs, buttons, and text inputs alike. */
+  button:focus,
+  button:focus-visible,
+  [role='button']:focus,
+  [role='button']:focus-visible,
+  [role='tab']:focus,
+  [role='tab']:focus-visible,
+  a:focus,
+  a:focus-visible,
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none;
   }
 
   /* Ensure app fits on smaller screens */
@@ -179,8 +202,8 @@
   /* Custom scrollbar class for specific elements */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgb(var(--color-surface-base) / 0.8)
-      rgb(var(--color-surface-base) / 0.3);
+    scrollbar-color: rgb(var(--app-surface-base) / 0.8)
+      rgb(var(--app-surface-base) / 0.3);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -188,19 +211,58 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgb(var(--color-surface-base) / 0.3);
+    background: rgb(var(--app-surface-base) / 0.3);
     border-radius: 8px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgb(var(--color-surface-base) / 0.8);
+    background: rgb(var(--app-surface-base) / 0.8);
     border-radius: 8px;
-    border: 1px solid rgb(var(--color-primary) / 0.1);
+    border: 1px solid rgb(var(--app-primary) / 0.1);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--color-primary) / 0.2);
+    background: rgb(var(--app-primary) / 0.2);
   }
+}
+
+/* Global press animation — outside @layer so it overrides transition-colors utilities */
+button {
+  transition: all 150ms ease;
+}
+button:not([disabled]):hover {
+  transform: scale(1.02);
+}
+button:not([disabled]):active {
+  transform: scale(0.98);
+}
+
+/* Modal portal target: when no modal is mounted the empty overlay must not
+   intercept clicks/scrolls on the content behind it. As soon as a modal is
+   portaled in, `:empty` no longer matches and pointer events return to normal. */
+#modal-portal:empty {
+  pointer-events: none;
+}
+
+/* Modals portal into #modal-portal, which fills #content-area — a region shorter
+   than the viewport that clips its overflow. Modal scroll wrappers cap their
+   height in viewport units (max-h-[85vh]/[90vh]); on windows under ~1000px tall
+   that exceeds the content area and the modal (header / footer actions) gets
+   clipped. Cap the scroll region to the space actually available below the top
+   bar so it scrolls internally instead. The `.overflow-y-scroll` class is used
+   only by these modal wrappers — nested lists/dropdowns use `.overflow-y-auto`. */
+#modal-portal .overflow-y-scroll {
+  max-height: calc(100vh - 7rem);
+}
+
+/* Icon-only action buttons — override global scale with explicit center origin to prevent lateral drift */
+button.icon-action:not([disabled]):hover {
+  transform: scale(1.08);
+  transform-origin: center center;
+}
+button.icon-action:not([disabled]):active {
+  transform: scale(0.95);
+  transform-origin: center center;
 }
 
 /* Animations */
@@ -350,6 +412,28 @@
   animation: shimmer 2s infinite;
 }
 
+/* Purple ripple expand-and-fade */
+@keyframes ripplePurple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.animate-ripple-1 {
+  animation: ripplePurple 2.4s ease-out infinite;
+}
+.animate-ripple-2 {
+  animation: ripplePurple 2.4s ease-out 0.8s infinite;
+}
+.animate-ripple-3 {
+  animation: ripplePurple 2.4s ease-out 1.6s infinite;
+}
+
 /* Active indicator pulse */
 .active-indicator {
   position: relative;
@@ -432,4 +516,206 @@
 
 .price-update-indicator {
   animation: priceUpdate 0.6s ease-in-out;
+}
+
+/* Splash-style loading line (matches public/splashscreen.html progress-fill) */
+@keyframes splashLoading {
+  0% {
+    width: 0;
+    opacity: 1;
+  }
+  50% {
+    width: 100%;
+    opacity: 0.5;
+  }
+  100% {
+    width: 0;
+    opacity: 1;
+  }
+}
+
+.splash-progress-fill {
+  background: linear-gradient(90deg, #15e99a, #9365ff);
+  animation: splashLoading 2s ease-in-out infinite;
+}
+
+/* Order Completed success animation (plays once on mount) */
+@keyframes orderSuccessPop {
+  0% {
+    transform: scale(0) rotate(-12deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.18) rotate(4deg);
+    opacity: 1;
+  }
+  72% {
+    transform: scale(0.94) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes orderSuccessRipple {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes orderSuccessCheck {
+  0% {
+    stroke-dashoffset: 30;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes orderSuccessParticle {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle))
+      translateY(calc(-0.35 * var(--dist))) scale(1);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle))
+      translateY(calc(-1 * var(--dist))) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes orderSuccessGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px 8px rgba(16, 185, 129, 0.45);
+  }
+}
+
+.order-success-circle {
+  animation:
+    orderSuccessPop 0.65s cubic-bezier(0.22, 1, 0.36, 1) both,
+    orderSuccessGlow 2.8s ease-in-out 1s infinite;
+}
+
+.order-success-ring {
+  animation: orderSuccessRipple 1.1s ease-out 0.15s both;
+}
+
+.order-success-ring-2 {
+  animation: orderSuccessRipple 1.2s ease-out 0.55s both;
+}
+
+.order-success-check {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: orderSuccessCheck 0.55s ease-out 0.55s forwards;
+}
+
+.order-success-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  animation: orderSuccessParticle 1.5s cubic-bezier(0.18, 0.7, 0.3, 1) both;
+  animation-delay: var(--delay);
+}
+
+/* Expired — gentle scale pulse, like a ticking clock */
+@keyframes orderExpiredPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+  }
+  50% {
+    transform: scale(1.07);
+    box-shadow: 0 0 22px 6px rgba(234, 179, 8, 0.35);
+  }
+}
+
+.order-expired-circle {
+  animation: orderExpiredPulse 2.2s ease-in-out infinite;
+}
+
+/* Failed — red glow fade, no scale */
+@keyframes orderFailedGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: 0 0 24px 8px rgba(239, 68, 68, 0.38);
+  }
+}
+
+.order-failed-circle {
+  animation: orderFailedGlow 3.4s ease-in-out infinite;
+}
+
+/* ZapOff button hover pulse — scale + opacity, plays while hovered */
+@keyframes zapPulse {
+  0%,
+  100% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+}
+
+.close-channel-btn:hover .zap-icon {
+  animation: zapPulse 0.7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Close Channel button hover pulse — red bg + text, stays in bounds */
+@keyframes closeChannelPulse {
+  0%,
+  100% {
+    background-color: rgba(239, 68, 68, 0.08);
+    color: rgb(248, 113, 113);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.18);
+    color: rgb(252, 165, 165);
+  }
+}
+
+.close-channel-btn:hover {
+  animation: closeChannelPulse 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-success-circle,
+  .order-success-ring,
+  .order-success-ring-2,
+  .order-success-check,
+  .order-success-particle,
+  .order-expired-circle,
+  .order-failed-circle {
+    animation: none;
+  }
+  .order-success-check {
+    stroke-dashoffset: 0;
+  }
+  .order-success-particle {
+    opacity: 0;
+  }
 }

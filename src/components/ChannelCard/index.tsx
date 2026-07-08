@@ -2,22 +2,27 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   X,
+  Globe,
   Lock,
-  Unlock,
   Info,
   Copy,
   CheckCheck,
+  ZapOff,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { useSettings } from '../../hooks/useSettings'
-import defaultRgbIcon from '../../assets/rgb-symbol-color.svg'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
+import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { useAssetIcon } from '../../helpers/utils'
 import { CloseChannelModal } from '../CloseChannelModal'
-import { LiquidityBar } from '../Liquidity'
 
 interface InfoModalProps {
   isOpen: boolean
@@ -27,19 +32,22 @@ interface InfoModalProps {
   bitcoinUnit: string
 }
 
+const truncateMiddle = (str: string, start = 10, end = 10): string => {
+  if (str.length <= start + end + 3) return str
+  return `${str.slice(0, start)}…${str.slice(-end)}`
+}
+
 const CopyableValue: React.FC<{ value: string }> = ({ value }) => {
   const { copied, copy } = useCopyToClipboard()
 
-  const handleCopy = () => copy(value)
-
   return (
-    <div className="flex items-start gap-2">
-      <span className="font-mono text-white/90 break-all text-xs leading-relaxed flex-1">
-        {value}
-      </span>
+    <div className="relative mt-1">
+      <div className="bg-surface-base/50 px-3 py-2 pr-9 rounded-lg border border-border-default/30 font-mono text-xs text-white/90 break-all leading-relaxed">
+        {truncateMiddle(value)}
+      </div>
       <button
-        className="flex-shrink-0 text-content-tertiary hover:text-white transition-colors mt-0.5"
-        onClick={handleCopy}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-white transition-colors"
+        onClick={() => copy(value)}
         title={copied ? 'Copied!' : 'Copy'}
         type="button"
       >
@@ -53,7 +61,7 @@ const CopyableValue: React.FC<{ value: string }> = ({ value }) => {
   )
 }
 
-const InfoModal: React.FC<InfoModalProps> = ({
+export const InfoModal: React.FC<InfoModalProps> = ({
   isOpen,
   onClose,
   channel,
@@ -85,6 +93,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
     | { separator: string }
 
   const infoRows: InfoRow[] = [
+    { separator: 'LSP' },
     { label: 'Status', mono: false, value: channel.status },
     {
       label: 'Capacity',
@@ -156,90 +165,100 @@ const InfoModal: React.FC<InfoModalProps> = ({
     )
   }
 
-  return (
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-surface-overlay rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-border-default/40 overflow-hidden">
-        {/* Header */}
-        <div className="flex justify-between items-center px-5 py-4 border-b border-border-default/30">
-          <div>
-            <h3 className="text-base font-semibold text-white">
-              {t('channelCard.infoModal.title')}
-            </h3>
-            <p className="text-xs text-content-tertiary mt-0.5 font-mono">
-              {channel.peer_alias || channel.peer_pubkey.slice(0, 16) + '…'}
-            </p>
-          </div>
-          <button
-            className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-            }}
-            type="button"
-          >
-            <X size={18} />
-          </button>
-        </div>
+  const pos = getModalPositionClass()
 
-        {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-1">
-          {infoRows.map((row, index) => {
-            if ('separator' in row) {
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
+      onMouseDown={handleBackdropClick}
+    >
+      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+        <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+            <Info className="w-6 h-6 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-xl font-bold text-white">
+                {t('channelCard.infoModal.title')}
+              </h3>
+            </div>
+            <button
+              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
+              type="button"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Info rows */}
+          <div className="space-y-0">
+            {infoRows.map((row, index) => {
+              if ('separator' in row) {
+                return (
+                  <div
+                    className="flex items-center gap-2 pt-5 pb-2"
+                    key={`sep-${index}`}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-content-tertiary/70">
+                      {row.separator}
+                    </span>
+                    <div className="flex-1 h-px bg-divider/20" />
+                  </div>
+                )
+              }
+
+              if (row.copyable) {
+                return (
+                  <div
+                    className="py-2.5 border-b border-divider/10 last:border-0"
+                    key={index}
+                  >
+                    <span className="text-xs text-content-secondary">
+                      {row.label}
+                    </span>
+                    <CopyableValue value={row.value} />
+                  </div>
+                )
+              }
+
               return (
                 <div
-                  className="flex items-center gap-2 pt-4 pb-2 first:pt-0"
-                  key={`sep-${index}`}
+                  className="flex items-start justify-between gap-4 py-2.5 border-b border-divider/10 last:border-0"
+                  key={index}
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-widest text-content-tertiary/70">
-                    {row.separator}
+                  <span className="text-xs text-content-secondary flex-shrink-0 w-28 mt-0.5">
+                    {row.label}
                   </span>
-                  <div className="flex-1 h-px bg-border-default/30" />
+                  <span className="text-xs font-medium text-white/90 text-right">
+                    {row.value}
+                  </span>
                 </div>
               )
-            }
+            })}
+          </div>
 
-            return (
-              <div
-                className="flex items-start justify-between gap-4 py-2.5 border-b border-border-default/20 last:border-0"
-                key={index}
-              >
-                <span className="text-xs text-content-secondary flex-shrink-0 w-28 mt-0.5">
-                  {row.label}
-                </span>
-                <div className="text-right min-w-0 flex-1">
-                  {row.copyable ? (
-                    <CopyableValue value={row.value} />
-                  ) : (
-                    <span
-                      className={`text-xs font-medium text-white/90 ${row.mono ? 'font-mono' : ''}`}
-                    >
-                      {row.value}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-3 border-t border-border-default/30">
-          <button
-            className="w-full py-2 rounded-lg bg-surface-high hover:bg-surface-elevated text-sm text-white transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              onClose()
-            }}
-            type="button"
-          >
-            {t('common.close')}
-          </button>
+          {/* Actions */}
+          <div className="flex justify-end pt-6">
+            <button
+              className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium"
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose()
+              }}
+              type="button"
+            >
+              <X className="w-4 h-4" />
+              {t('common.close')}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -291,13 +310,15 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
   const isUsable = channel.is_usable
 
   return (
-    <div className="group bg-surface-base/80 hover:bg-surface-overlay/70 text-white rounded-xl shadow-md border border-border-default/30 hover:border-border-default/50 transition-all duration-200 relative overflow-hidden flex flex-col">
+    <div className="group group/ch bg-surface-base/35 hover:bg-surface-base/50 text-white rounded-xl border border-border-default/50 hover:border-border-default transition-colors duration-200 relative overflow-hidden flex flex-col">
       {/* Status bar */}
       <div
         className={`absolute top-0 left-0 w-full h-[2px] ${
-          isUsable
-            ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
-            : 'bg-gradient-to-r from-transparent via-red-500/50 to-transparent'
+          !isReady
+            ? 'bg-gradient-to-r from-transparent via-amber-400/60 to-transparent'
+            : isUsable
+              ? 'bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent'
+              : 'bg-gradient-to-r from-transparent via-red-500/50 to-transparent'
         }`}
       />
 
@@ -305,6 +326,15 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       <div className="flex items-start justify-between px-4 pt-5 pb-3 gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                isReady
+                  ? isUsable
+                    ? 'bg-emerald-400'
+                    : 'bg-red-400'
+                  : 'bg-amber-400 animate-pulse'
+              }`}
+            />
             {/* Peer name */}
             <span className="font-semibold text-sm text-white truncate max-w-[150px]">
               {channel.peer_alias || channel.peer_pubkey.slice(0, 10) + '…'}
@@ -335,7 +365,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             {/* Public/Private */}
             <span className="flex items-center gap-0.5 text-[10px] text-content-tertiary">
               {isPublic ? (
-                <Unlock className="h-2.5 w-2.5" />
+                <Globe className="h-2.5 w-2.5" />
               ) : (
                 <Lock className="h-2.5 w-2.5" />
               )}
@@ -355,114 +385,121 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         {/* Capacity */}
         <div className="text-right flex-shrink-0">
           <div className="text-[10px] text-content-tertiary mb-0.5">
-            {t('channelCard.labels.capacity')}
+            {`Capacity (${bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit})`}
           </div>
           <div className="font-mono text-sm font-semibold text-white/90">
             {formatBitcoinAmount(channel.capacity_sat, bitcoinUnit)}
           </div>
-          <div className="text-[10px] text-content-tertiary">{bitcoinUnit}</div>
         </div>
       </div>
 
       {/* Liquidity sections */}
       <div className="px-4 pb-3 flex flex-col gap-2 flex-1">
         {/* Bitcoin liquidity */}
-        <div className="rounded-lg bg-surface-overlay/40 p-2.5">
-          <div className="flex justify-between items-center mb-1.5">
-            <div className="flex items-center gap-1 text-[10px] text-amber-400/90">
-              <AssetIcon className="h-3 w-3" ticker="BTC" />
-              <span className="font-medium">BTC</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px]">
-              <span className="flex items-center gap-0.5 text-amber-300/80">
-                <ArrowUpRight className="h-3 w-3" />
-                <span className="font-mono">
-                  {formatBitcoinAmount(
-                    channel.outbound_balance_msat / 1000,
-                    bitcoinUnit
-                  )}
+        {(() => {
+          const out = channel.outbound_balance_msat / 1000
+          const inb = channel.inbound_balance_msat / 1000
+          const total = out + inb
+          const outPct = total > 0 ? (out / total) * 100 : 50
+          const inPct = total > 0 ? (inb / total) * 100 : 50
+          return (
+            <div className="rounded-lg bg-surface-overlay/40 p-2.5">
+              {/* Section header: asset + amounts */}
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] text-amber-400/90">
+                  <AssetIcon className="h-3.5 w-3.5" ticker="BTC" />
+                  <span className="font-semibold">BTC</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <span className="flex items-center gap-0.5 text-[#9365FF]">
+                    <ArrowUpRight className="h-3 w-3" />
+                    {formatBitcoinAmount(out, bitcoinUnit)}
+                  </span>
+                  <span className="text-content-tertiary/40">/</span>
+                  <span className="flex items-center gap-0.5 text-emerald-400">
+                    <ArrowDownRight className="h-3 w-3" />
+                    {formatBitcoinAmount(inb, bitcoinUnit)}
+                  </span>
+                </div>
+              </div>
+              <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
+                <div
+                  className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                  style={{ width: `${outPct}%` }}
+                />
+                <div
+                  className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                  style={{ width: `${inPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
+                <span className="text-[#9365FF]/70">
+                  {t('channelCard.labels.outbound')}
                 </span>
-              </span>
-              <span className="text-content-tertiary/40">/</span>
-              <span className="flex items-center gap-0.5 text-blue-300/80">
-                <ArrowDownRight className="h-3 w-3" />
-                <span className="font-mono">
-                  {formatBitcoinAmount(
-                    channel.inbound_balance_msat / 1000,
-                    bitcoinUnit
-                  )}
+                <span className="text-emerald-400/70">
+                  {t('channelCard.labels.inbound')}
                 </span>
-              </span>
+              </div>
             </div>
-          </div>
-          <LiquidityBar
-            inbound={channel.inbound_balance_msat / 1000}
-            inboundColor="bg-blue-500"
-            inboundLabel={formatBitcoinAmount(
-              channel.inbound_balance_msat / 1000,
-              bitcoinUnit
-            )}
-            outbound={channel.outbound_balance_msat / 1000}
-            outboundColor="bg-yellow-500"
-            outboundLabel={formatBitcoinAmount(
-              channel.outbound_balance_msat / 1000,
-              bitcoinUnit
-            )}
-            showSummary={false}
-            trackClassName="h-2.5 border-0 bg-surface-overlay p-0"
-          />
-          <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
-            <span>{t('channelCard.labels.outbound')}</span>
-            <span>{t('channelCard.labels.inbound')}</span>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* RGB Asset liquidity */}
-        {isRgbChannel && asset && (
-          <div className="rounded-lg bg-surface-overlay/40 p-2.5">
-            <div className="flex justify-between items-center mb-1.5">
-              <div className="flex items-center gap-1 text-[10px] text-lime-300/90">
-                <AssetIcon className="h-3 w-3" ticker={asset.ticker} />
-                <span className="font-medium">{asset.ticker}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px]">
-                <span className="flex items-center gap-0.5 text-lime-300/80">
-                  <ArrowUpRight className="h-3 w-3" />
-                  <span className="font-mono">
-                    {formatAssetAmount(channel.asset_local_amount)}
+        {isRgbChannel &&
+          asset &&
+          (() => {
+            const out = channel.asset_local_amount
+            const inb = channel.asset_remote_amount
+            const total = out + inb
+            const outPct = total > 0 ? (out / total) * 100 : 50
+            const inPct = total > 0 ? (inb / total) * 100 : 50
+            return (
+              <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-purple-800/20">
+                {/* Section header: asset + amounts */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5 text-[11px] text-lime-300/90">
+                    <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
+                    <span className="font-semibold">{asset.ticker}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span className="flex items-center gap-0.5 text-lime-300">
+                      <ArrowUpRight className="h-3 w-3" />
+                      {formatAssetAmount(out)}
+                    </span>
+                    <span className="text-content-tertiary/40">/</span>
+                    <span className="flex items-center gap-0.5 text-emerald-400">
+                      <ArrowDownRight className="h-3 w-3" />
+                      {formatAssetAmount(inb)}
+                    </span>
+                  </div>
+                </div>
+                <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
+                  <div
+                    className="absolute left-0 top-0 h-full bg-lime-300 rounded-l-full"
+                    style={{ width: `${outPct}%` }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 h-full bg-emerald-600 rounded-r-full"
+                    style={{ width: `${inPct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
+                  <span className="text-lime-300/70">
+                    {t('channelCard.labels.outbound')}
                   </span>
-                </span>
-                <span className="text-content-tertiary/40">/</span>
-                <span className="flex items-center gap-0.5 text-emerald-400/80">
-                  <ArrowDownRight className="h-3 w-3" />
-                  <span className="font-mono">
-                    {formatAssetAmount(channel.asset_remote_amount)}
+                  <span className="text-emerald-400/70">
+                    {t('channelCard.labels.inbound')}
                   </span>
-                </span>
+                </div>
               </div>
-            </div>
-            <LiquidityBar
-              inbound={channel.asset_remote_amount}
-              inboundColor="bg-emerald-700"
-              inboundLabel={formatAssetAmount(channel.asset_remote_amount)}
-              outbound={channel.asset_local_amount}
-              outboundColor="bg-lime-300"
-              outboundLabel={formatAssetAmount(channel.asset_local_amount)}
-              showSummary={false}
-              trackClassName="h-2.5 border-0 bg-surface-overlay p-0"
-            />
-            <div className="flex justify-between text-[9px] text-content-tertiary/0 group-hover:text-content-tertiary/50 transition-colors mt-1">
-              <span>{t('channelCard.labels.outbound')}</span>
-              <span>{t('channelCard.labels.inbound')}</span>
-            </div>
-          </div>
-        )}
+            )
+          })()}
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-border-default/20">
+      <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-border-default/30">
         <button
-          className="flex-1 min-w-0 py-1.5 rounded-lg bg-surface-overlay/60 hover:bg-surface-high/70 transition-colors text-xs text-content-secondary hover:text-content-primary border border-border-default/20 hover:border-border-default/40 flex items-center justify-center gap-1"
+          className="flex-1 min-w-0 py-1.5 rounded-lg bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center justify-center gap-1.5"
           onClick={(e) => {
             e.stopPropagation()
             setIsInfoModalOpen(true)
@@ -473,14 +510,14 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           <span className="truncate">{t('channelCard.buttons.details')}</span>
         </button>
         <button
-          className="flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
+          className="close-channel-btn flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
           onClick={(e) => {
             e.stopPropagation()
             setIsCloseModalOpen(true)
           }}
           type="button"
         >
-          <X className="h-3.5 w-3.5 flex-shrink-0" />
+          <ZapOff className="zap-icon h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate">{t('channelCard.buttons.close')}</span>
         </button>
       </div>

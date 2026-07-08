@@ -62,7 +62,10 @@ export function LiquiditySlider({
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-border-subtle/70 bg-surface-base/35 px-3 py-2">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
+            <span
+              className={twJoin('h-1.5 w-1.5 rounded-full', outboundColor)}
+            />
             {inputLabel}
           </div>
           {showInput && unit !== undefined ? (
@@ -102,7 +105,7 @@ export function LiquiditySlider({
                   type="number"
                   value={isFocused.current ? inputText : clamped}
                 />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-tertiary">
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-content-tertiary border-l border-border-default/60 pl-3 h-5 flex items-center">
                   {unit}
                 </span>
               </div>
@@ -121,8 +124,11 @@ export function LiquiditySlider({
           )}
         </div>
         <div className="rounded-xl border border-border-subtle/70 bg-surface-base/35 px-3 py-2 text-right">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
+          <div className="flex items-center justify-end gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-tertiary">
             Can receive
+            <span
+              className={twJoin('h-1.5 w-1.5 rounded-full', inboundColor)}
+            />
           </div>
           <div className="mt-1 text-sm font-semibold text-content-primary">
             {inboundLabel}
@@ -131,25 +137,6 @@ export function LiquiditySlider({
       </div>
 
       <div className="rounded-2xl border border-border-subtle/70 bg-surface-base/30 px-3 py-4">
-        <div className="mb-3 flex items-center justify-between gap-3 text-[11px]">
-          <div className="min-w-0">
-            <span className="font-semibold uppercase tracking-[0.14em] text-content-tertiary">
-              Outbound
-            </span>
-            <span className="ml-2 font-semibold text-content-primary">
-              {outboundLabel}
-            </span>
-          </div>
-          <div className="min-w-0 text-right">
-            <span className="font-semibold uppercase tracking-[0.14em] text-content-tertiary">
-              Inbound
-            </span>
-            <span className="ml-2 font-semibold text-content-primary">
-              {inboundLabel}
-            </span>
-          </div>
-        </div>
-
         <div className="relative">
           <div className="absolute left-0 right-0 top-1/2 h-3 -translate-y-1/2 overflow-hidden rounded-full border border-border-subtle/60 bg-surface-overlay/75 p-[3px]">
             <div className="flex h-full overflow-hidden rounded-full bg-surface-base/50">

@@ -2,12 +2,14 @@ import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Folder,
   ArrowLeftRight,
   AlertCircle,
+  Loader2,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
@@ -26,8 +28,8 @@ import { Spinner } from '../../components/Spinner'
 import {
   Button,
   Alert,
-  FormField,
   Input,
+  Modal,
   PasswordInput,
   AdvancedSettings,
   NetworkSettings,
@@ -104,8 +106,6 @@ const StatusModal = ({
     }
   }, [autoClose, isOpen, onClose, autoCloseDelay])
 
-  if (!isOpen) return null
-
   const getModalConfig = () => {
     switch (type) {
       case ModalType.SUCCESS:
@@ -138,40 +138,28 @@ const StatusModal = ({
   const config = getModalConfig()
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div
-        className={`max-w-md w-full rounded-xl shadow-2xl ${config.bgColor} border ${config.borderColor} p-6`}
-      >
-        <div className="flex items-start gap-4">
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" title={title}>
+      <div className="p-5 space-y-4">
+        <div className="flex items-start gap-3">
           <div className="shrink-0 mt-0.5">{config.icon}</div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-content-primary mb-1.5">
-              {title}
-            </h3>
-            <p className="text-content-secondary text-sm mb-3">{message}</p>
+          <p className="text-content-secondary text-sm">{message}</p>
+        </div>
 
-            {details && (
-              <div className="mb-4">
-                <div className="bg-surface-base rounded-lg p-3 max-h-48 overflow-y-auto text-sm text-content-secondary font-mono border border-border-default/50 custom-scrollbar">
-                  <p className="whitespace-pre-wrap break-words">{details}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-emphasis text-white text-sm font-medium transition-colors"
-                onClick={onClose}
-              >
-                {type === ModalType.SUCCESS
-                  ? t('walletRestore.continue')
-                  : t('walletRestore.close')}
-              </button>
-            </div>
+        {details && (
+          <div className="bg-surface-elevated rounded-lg p-3 max-h-40 overflow-y-auto text-xs text-content-secondary font-mono border border-border-default/50">
+            <p className="whitespace-pre-wrap break-words">{details}</p>
           </div>
+        )}
+
+        <div className="flex justify-end pt-1">
+          <Button onClick={onClose} variant="primary">
+            {type === ModalType.SUCCESS
+              ? t('walletRestore.continue')
+              : t('walletRestore.close')}
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -228,11 +216,9 @@ export const Component = () => {
   const closeModal = () => {
     setModalState((prev) => ({ ...prev, isOpen: false }))
 
-    // Navigate if it was a success modal
     if (modalState.type === ModalType.SUCCESS) {
       navigate(WALLET_DASHBOARD_PATH)
     } else if (modalState.type === ModalType.ERROR) {
-      // On error, go back to the first step
       setCurrentStep('backup-selection')
       setIsStartingNode(false)
     }
@@ -262,7 +248,6 @@ export const Component = () => {
   }
 
   const onSubmit = async (data: FormData) => {
-    // Prevent multiple submissions
     if (isStartingNode || isSubmitting.current) return
 
     isSubmitting.current = true
@@ -275,7 +260,6 @@ export const Component = () => {
         return
       }
 
-      // Validate required fields
       if (!data.backup_path) {
         setAdditionalErrors([t('walletRestore.selectBackupFile')])
         isSubmitting.current = false
@@ -428,6 +412,8 @@ export const Component = () => {
     }
   }
 
+  const labelCls = 'block text-sm font-medium text-content-secondary'
+
   return (
     <Layout>
       <div className="flex flex-1 overflow-hidden">
@@ -446,15 +432,6 @@ export const Component = () => {
                   <ArrowLeftRight className="w-7 h-7 text-primary" />
                 </div>
               </div>
-            </div>
-            {/* Title + subtitle */}
-            <div className="text-center space-y-2">
-              <h2 className="text-lg font-bold text-content-primary">
-                {t('walletRestore.title')}
-              </h2>
-              <p className="text-xs text-content-secondary leading-relaxed">
-                {t('walletRestore.subtitle')}
-              </p>
             </div>
             {/* Step progress */}
             <div className="w-full space-y-1.5">
@@ -492,150 +469,160 @@ export const Component = () => {
             </div>
           </div>
         </div>
+
         {/* Right content panel */}
         <div className="flex flex-col flex-1 overflow-hidden bg-surface-raised">
-          <div className="flex items-center px-6 py-4 border-b border-border-subtle shrink-0">
-            <button
-              className="flex items-center gap-2 text-sm text-content-secondary hover:text-content-primary transition-colors"
-              onClick={() => navigate(WALLET_SETUP_PATH)}
-              type="button"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="max-w-2xl mx-auto px-6 py-8">
-              {/* Mobile header */}
-              <div className="md:hidden mb-6">
-                <h1 className="text-2xl font-bold text-content-primary mb-1">
+            <div className="max-w-2xl mx-auto px-6 py-6">
+              <div className="text-center mt-4 mb-8">
+                <h3 className="text-3xl font-bold text-white">
                   {t('walletRestore.title')}
-                </h1>
-                <p className="text-sm text-content-secondary">
-                  {t('walletRestore.subtitle')}
-                </p>
+                </h3>
               </div>
 
               {currentStep === 'backup-selection' && (
-                <div className="max-w-2xl mx-auto">
-                  <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <div className="space-y-6">
-                      {additionalErrors.length > 0 && (
-                        <Alert
-                          icon={<AlertCircle className="w-5 h-5" />}
-                          title={t('common.error')}
-                          variant="error"
-                        >
-                          <ul className="text-sm space-y-1">
-                            {additionalErrors.map((error, index) => (
-                              <li
-                                className="flex items-center gap-2"
-                                key={index}
-                              >
-                                <span>•</span> {error}
-                              </li>
-                            ))}
-                          </ul>
-                        </Alert>
-                      )}
-
-                      <FormField
-                        description={t('walletRestore.accountNameDescription')}
-                        error={form.formState.errors.name?.message}
-                        htmlFor="name"
-                        label={t('walletRestore.accountName')}
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                  <div className="space-y-5">
+                    {additionalErrors.length > 0 && (
+                      <Alert
+                        icon={<AlertCircle className="w-5 h-5" />}
+                        title={t('common.error')}
+                        variant="error"
                       >
-                        <Input
-                          id="name"
-                          placeholder={t(
-                            'walletRestore.accountNamePlaceholder'
-                          )}
-                          {...form.register('name', {
-                            required: t('walletRestore.accountNameRequired'),
-                          })}
-                          error={!!form.formState.errors.name}
-                        />
-                      </FormField>
+                        <ul className="text-sm space-y-1">
+                          {additionalErrors.map((error, index) => (
+                            <li className="flex items-center gap-2" key={index}>
+                              <span>•</span> {error}
+                            </li>
+                          ))}
+                        </ul>
+                      </Alert>
+                    )}
 
-                      <NetworkSelector
-                        className="mb-2"
-                        onChange={(network) =>
-                          form.setValue('network', network)
-                        }
-                        selectedNetwork={form.watch('network')}
+                    {/* Account Name */}
+                    <div className="space-y-1.5">
+                      <label className={labelCls} htmlFor="name">
+                        {t('walletRestore.accountName')}
+                      </label>
+                      <Input
+                        className="!py-2.5 text-sm"
+                        id="name"
+                        placeholder={t('walletRestore.accountNamePlaceholder')}
+                        {...form.register('name', {
+                          required: t('walletRestore.accountNameRequired'),
+                        })}
+                        error={!!form.formState.errors.name}
                       />
+                      {form.formState.errors.name && (
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.name.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.accountNameDescription')}
+                      </p>
+                    </div>
 
-                      <FormField
-                        description={t('walletRestore.backupFileDescription')}
-                        error={form.formState.errors.backup_path?.message}
-                        htmlFor="backup_path"
-                        label={t('walletRestore.backupFile')}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Input
-                            error={!!form.formState.errors.backup_path}
-                            id="backup_path"
-                            placeholder={t(
-                              'walletRestore.backupFilePlaceholder'
-                            )}
-                            readOnly
-                            value={form.watch('backup_path')}
-                          />
-                          <Button
-                            className="flex-shrink-0"
-                            onClick={handleSelectBackupFile}
-                            type="button"
-                            variant="outline"
-                          >
-                            <Folder className="w-5 h-5" />
-                          </Button>
-                        </div>
-                      </FormField>
+                    <NetworkSelector
+                      onChange={(network) => form.setValue('network', network)}
+                      selectedNetwork={form.watch('network')}
+                    />
 
-                      <FormField
-                        description={t('walletRestore.passwordDescription')}
-                        error={form.formState.errors.password?.message}
-                        htmlFor="password"
-                        label={t('walletRestore.password')}
-                      >
-                        <PasswordInput
-                          id="password"
-                          isVisible={isPasswordVisible}
-                          onToggleVisibility={() =>
-                            setIsPasswordVisible(!isPasswordVisible)
-                          }
-                          placeholder={t('walletRestore.passwordPlaceholder')}
-                          {...form.register('password', {
-                            required: t('walletRestore.passwordRequired'),
-                          })}
-                          error={!!form.formState.errors.password}
+                    {/* Backup File */}
+                    <div className="space-y-1.5">
+                      <label className={labelCls} htmlFor="backup_path">
+                        {t('walletRestore.backupFile')}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          className="!py-2.5 text-sm"
+                          error={!!form.formState.errors.backup_path}
+                          id="backup_path"
+                          placeholder={t('walletRestore.backupFilePlaceholder')}
+                          readOnly
+                          value={form.watch('backup_path')}
                         />
-                      </FormField>
-
-                      <AdvancedSettings>
-                        <NetworkSettings form={form} />
-                      </AdvancedSettings>
+                        <Button
+                          className="flex-shrink-0"
+                          onClick={handleSelectBackupFile}
+                          type="button"
+                          variant="outline"
+                        >
+                          <Folder className="w-5 h-5" />
+                        </Button>
+                      </div>
+                      {form.formState.errors.backup_path && (
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.backup_path.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.backupFileDescription')}
+                      </p>
                     </div>
 
-                    <div className="pt-6">
-                      <Button
-                        className="w-full"
-                        disabled={isStartingNode || isSubmitting.current}
-                        size="lg"
-                        type="submit"
-                      >
-                        {isStartingNode ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <Spinner size="sm" />
-                            {t('walletRestore.restoring')}
-                          </span>
+                    {/* Password */}
+                    <div className="space-y-1.5">
+                      <label className={labelCls} htmlFor="password">
+                        {t('walletRestore.password')}
+                      </label>
+                      <PasswordInput
+                        className="!py-2.5 text-sm"
+                        id="password"
+                        isVisible={isPasswordVisible}
+                        onToggleVisibility={() =>
+                          setIsPasswordVisible(!isPasswordVisible)
+                        }
+                        placeholder={t('walletRestore.passwordPlaceholder')}
+                        {...form.register('password', {
+                          required: t('walletRestore.passwordRequired'),
+                        })}
+                        error={!!form.formState.errors.password}
+                      />
+                      {form.formState.errors.password && (
+                        <p className="text-sm text-red-500">
+                          {form.formState.errors.password.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-content-tertiary">
+                        {t('walletRestore.passwordDescription')}
+                      </p>
+                    </div>
+
+                    <AdvancedSettings>
+                      <NetworkSettings form={form} />
+                    </AdvancedSettings>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-6">
+                    <button
+                      className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                      onClick={() => navigate(WALLET_SETUP_PATH)}
+                      type="button"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      Back
+                    </button>
+                    <Button
+                      disabled={isStartingNode || isSubmitting.current}
+                      icon={
+                        isStartingNode ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          t('walletRestore.restoreWallet')
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
+                          <ArrowRight className="w-4 h-4" />
+                        )
+                      }
+                      iconPosition="right"
+                      size="lg"
+                      type="submit"
+                      variant="primary"
+                    >
+                      {isStartingNode
+                        ? t('walletRestore.restoring')
+                        : t('walletRestore.restoreWallet')}
+                    </Button>
+                  </div>
+                </form>
               )}
 
               {currentStep === 'restoration' && (

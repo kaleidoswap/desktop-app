@@ -1,9 +1,14 @@
 import { Plus, Loader, Zap, Wallet, Paintbrush } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { CREATEUTXOS_PATH } from '../../app/router/paths'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { formatBitcoinAmount } from '../../helpers/number'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { getAssignmentAmount } from '../../utils/rgbUtils'
@@ -210,10 +215,12 @@ export const UTXOManagementModal = ({
     },
   ]
 
-  return (
+  const pos = getModalPositionClass()
+
+  return createPortal(
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20"
-      onClick={handleBackdropClick}
+      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20`}
+      onMouseDown={handleBackdropClick}
     >
       <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-4xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
@@ -265,7 +272,7 @@ export const UTXOManagementModal = ({
         </div>
 
         <button
-          className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl 
+          className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg 
                    font-medium transition-colors flex items-center justify-center gap-2"
           onClick={handleCreateUTXOs}
         >
@@ -367,6 +374,7 @@ export const UTXOManagementModal = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

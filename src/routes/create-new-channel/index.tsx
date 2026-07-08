@@ -1,7 +1,10 @@
 import { AlertTriangle, Wallet } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { ChannelsNav } from '../../components/Channels/ChannelsNav'
+import { ChannelWizardSteps } from '../../components/Channels/ChannelWizardSteps'
 
 import { CHANNELS_PATH } from '../../app/router/paths'
 import { FormError } from '../../components/FormError'
@@ -30,6 +33,7 @@ const initialFormState: TNewChannelForm = {
   assetId: '',
   assetTicker: '',
   capacitySat: MIN_CHANNEL_CAPACITY,
+  channelExpireBlocks: 12960,
   fee: 'medium',
   pubKeyAndAddress: '',
   public: true,
@@ -40,7 +44,19 @@ export const Component = () => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [feeRates, setFeeRates] = useState(DEFAULT_FEE_RATES)
   const [formError, setFormError] = useState<string | null>(null)
-  const [formData, setFormData] = useState<TNewChannelForm>(initialFormState)
+
+  const location = useLocation()
+  const navState = (location.state ?? {}) as {
+    preselectedAssetId?: string
+    returnTo?: string
+  }
+  const preselectedAssetId = navState.preselectedAssetId
+  const returnTo = navState.returnTo
+
+  const [formData, setFormData] = useState<TNewChannelForm>({
+    ...initialFormState,
+    assetId: preselectedAssetId ?? '',
+  })
 
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
@@ -210,11 +226,16 @@ export const Component = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
-        <div className="flex justify-center items-center h-64">
-          <Spinner color="#8FD5EA" overlay={false} size={120} />
-          <div className="ml-4 text-content-secondary">
-            {t('createChannel.checkingBalance')}
+      <div className="w-full min-h-full text-white">
+        <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+          <ChannelsNav />
+        </div>
+        <div className="container mx-auto px-4 py-6 max-w-3xl animate-fade-in">
+          <div className="flex flex-col justify-center items-center h-64 gap-4">
+            <Spinner color="#15E99A" overlay={false} size={48} />
+            <div className="text-content-secondary text-sm">
+              {t('createChannel.checkingBalance')}
+            </div>
           </div>
         </div>
       </div>
@@ -223,124 +244,31 @@ export const Component = () => {
 
   if (error) {
     return (
-      <div className="bg-gradient-to-b from-gray-900 to-gray-950 py-8 px-6 rounded-xl border border-border-subtle/50 shadow-xl w-full text-white">
-        <div className="text-center">
-          <FormError message={error} />
-          <button
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            onClick={() => window.location.reload()}
-          >
-            {t('createChannel.retry')}
-          </button>
+      <div className="w-full min-h-full text-white">
+        <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+          <ChannelsNav />
+        </div>
+        <div className="container mx-auto px-4 py-6 max-w-3xl animate-fade-in">
+          <div className="text-center">
+            <FormError message={error} />
+            <button
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis transition-colors"
+              onClick={() => window.location.reload()}
+            >
+              {t('createChannel.retry')}
+            </button>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <>
-      <div className="container mx-auto px-4 py-6 max-w-3xl text-white">
-        {/* Step Progress Indicator */}
-        {!insufficientBalance && (
-          <div className="flex justify-between mb-4">
-            <div className="flex items-center">
-              <div
-                className={`w-8 h-8 ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
-              >
-                1
-              </div>
-              <div className="ml-2">
-                <p className="font-medium text-white text-sm">
-                  {t('createChannel.stepPeerConnection')}
-                </p>
-                <p className="text-xs text-content-secondary">
-                  {step === 1
-                    ? t('createChannel.currentStep')
-                    : step > 1
-                      ? t('createChannel.completed')
-                      : t('createChannel.pending')}
-                </p>
-              </div>
-            </div>
-            <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-surface-high">
-                <div
-                  className={`h-1 bg-primary transition-all duration-300 ${step > 1 ? 'w-full' : 'w-0'}`}
-                ></div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <div
-                className={`w-8 h-8 ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
-              >
-                2
-              </div>
-              <div className="ml-2">
-                <p className="font-medium text-white text-sm">
-                  {t('createChannel.stepChannelSettings')}
-                </p>
-                <p className="text-xs text-content-secondary">
-                  {step === 2
-                    ? t('createChannel.currentStep')
-                    : step > 2
-                      ? t('createChannel.completed')
-                      : t('createChannel.pending')}
-                </p>
-              </div>
-            </div>
-            <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-surface-high">
-                <div
-                  className={`h-1 bg-primary transition-all duration-300 ${step > 2 ? 'w-full' : 'w-0'}`}
-                ></div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <div
-                className={`w-8 h-8 ${step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-high text-content-secondary'} rounded-full flex items-center justify-center font-bold text-sm`}
-              >
-                3
-              </div>
-              <div className="ml-2">
-                <p className="font-medium text-white text-sm">
-                  {t('createChannel.stepReviewConfirm')}
-                </p>
-                <p className="text-xs text-content-secondary">
-                  {step === 3
-                    ? t('createChannel.currentStep')
-                    : step > 3
-                      ? t('createChannel.completed')
-                      : t('createChannel.pending')}
-                </p>
-              </div>
-            </div>
-            <div className="flex-1 mx-2 mt-5">
-              <div className="h-1 bg-surface-high">
-                <div
-                  className={`h-1 bg-primary transition-all duration-300 ${step > 3 ? 'w-full' : 'w-0'}`}
-                ></div>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <div
-                className={`w-8 h-8 ${step >= 4 ? 'bg-green-500' : 'bg-surface-high'} rounded-full flex items-center justify-center text-white font-bold text-sm`}
-              >
-                4
-              </div>
-              <div className="ml-2">
-                <p className="font-medium text-white text-sm">
-                  {t('createChannel.stepComplete')}
-                </p>
-                <p className="text-xs text-content-secondary">
-                  {step === 4
-                    ? t('createChannel.currentStep')
-                    : t('createChannel.pending')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
+    <div className="w-full min-h-full text-white">
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <ChannelsNav />
+      </div>
+      <div className="container mx-auto px-4 py-6 max-w-5xl animate-fade-in">
         {insufficientBalance ? (
           <div className="flex flex-col items-center justify-center p-10 animate-fadeIn">
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
@@ -373,11 +301,20 @@ export const Component = () => {
           </div>
         ) : (
           <div>
+            <ChannelWizardSteps
+              className="mb-8"
+              current={step}
+              steps={[
+                t('createChannel.stepPeerConnection'),
+                t('createChannel.stepChannelSettings'),
+                t('createChannel.stepReviewConfirm'),
+                t('createChannel.stepComplete'),
+              ]}
+            />
             {step === 1 && (
               <Step1
                 formData={formData}
                 formError={formError}
-                infoMessage={t('createChannel.infoMessage')}
                 onBack={() => navigate(CHANNELS_PATH)}
                 onFormUpdate={handleFormUpdate}
                 onNext={() => setStep(2)}
@@ -408,7 +345,8 @@ export const Component = () => {
             {step === 4 && (
               <Step4
                 error={channelOpeningError}
-                onFinish={() => navigate(CHANNELS_PATH)}
+                onFinish={() => navigate(returnTo ?? CHANNELS_PATH)}
+                onGoBack={() => setStep(3)}
                 onRetry={() => setStep(3)}
               />
             )}
@@ -426,6 +364,6 @@ export const Component = () => {
         operationType={utxoModalProps.operationType}
         retryFunction={utxoModalProps.retryFunction}
       />
-    </>
+    </div>
   )
 }

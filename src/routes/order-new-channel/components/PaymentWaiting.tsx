@@ -47,7 +47,7 @@ export const PaymentWaiting: React.FC<PaymentWaitingProps> = ({
               {t('orderChannel.step3.paymentStatus')}
             </h4>
             <div className="flex items-center ml-auto">
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2"></div>
               <span className="text-blue-400 text-sm">
                 {t('orderChannel.step3.waitingForPayment')}
               </span>

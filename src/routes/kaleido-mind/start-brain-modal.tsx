@@ -1,7 +1,8 @@
 // A prompt that pops up whenever you're in the Mind section and the brain is
-// offline, offering to start the latest model in one tap. Rendered by the Mind
-// layout so it covers every Mind sub-page; dismissible, and auto-closes once the
-// brain comes online (or while it's loading).
+// offline, offering to start the latest model in one tap. Mounted for the whole
+// Mind layout (kept mounted across sub-tab navigation so `dismissed` persists,
+// suppressed only on the chat route via the `suppressed` prop); dismissible,
+// and auto-closes once the brain comes online (or while it's loading).
 
 import { Cpu, Play, Rocket } from 'lucide-react'
 import React, { useState } from 'react'
@@ -14,14 +15,14 @@ import type { UseMindResult } from '../../hooks/useMind'
 /** Remembers the last model you started, so "the latest" is the one you used. */
 export const LAST_MODEL_KEY = 'kaleido-mind.last-model.v1'
 
-export const StartBrainModal: React.FC<{ mind: UseMindResult }> = ({
-  mind,
-}) => {
+export const StartBrainModal: React.FC<{
+  mind: UseMindResult
+  suppressed?: boolean
+}> = ({ mind, suppressed = false }) => {
   const navigate = useNavigate()
-  const { status, installed, loading } = mind
+  const { status, installed, loading, starting } = mind
   const providerOn = status?.on === true
   const [dismissed, setDismissed] = useState(false)
-  const [starting, setStarting] = useState(false)
   const [selected, setSelected] = useState('')
 
   // "Latest" = the model you last ran (persisted), else the first installed
@@ -40,20 +41,26 @@ export const StartBrainModal: React.FC<{ mind: UseMindResult }> = ({
   const activeModel = installed.find((m) => m.id === modelId)
 
   // Show once the sidecar has reported status (avoid flashing during boot) and
-  // the brain is off, idle, not mid-start, and not dismissed this visit.
+  // the brain is off, idle, not mid-start, not dismissed this visit, and not on
+  // the chat route (which has its own inline launcher).
   const open =
-    status !== null && !providerOn && !loading && !starting && !dismissed
+    status !== null &&
+    !providerOn &&
+    !loading &&
+    !starting &&
+    !dismissed &&
+    !suppressed
 
   const start = () => {
     if (!modelId) return
-    setStarting(true)
     try {
       localStorage.setItem(LAST_MODEL_KEY, modelId)
     } catch {
       /* ignore */
     }
-    // loading/providerOn flips → modal stays closed. On failure, allow a retry.
-    void mind.startProvider(modelId).catch(() => setStarting(false))
+    // mind.starting flips false again on failure, which reopens this modal
+    // (status/loading are still "off") so the user can retry.
+    void mind.startProvider(modelId).catch(() => {})
   }
 
   return (
@@ -81,18 +88,39 @@ export const StartBrainModal: React.FC<{ mind: UseMindResult }> = ({
                 <span className="mb-1 block text-xs text-content-tertiary">
                   Model
                 </span>
-                <select
-                  className="w-full rounded-lg border border-border-default bg-surface-overlay px-3 py-2 text-sm text-content-primary focus:border-primary focus:outline-none"
-                  onChange={(e) => setSelected(e.target.value)}
-                  value={modelId}
-                >
-                  {installed.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.displayName || m.id}
-                      {m.id === lastId ? ' · last used' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-sm text-content-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(e) => setSelected(e.target.value)}
+                    value={modelId}
+                  >
+                    {installed.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.displayName || m.id}
+                        {m.id === lastId ? ' · last used' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Cpu className="h-4 w-4 text-content-tertiary" />
+                  </div>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg
+                      className="h-4 w-4 text-content-tertiary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M19 9l-7 7-7-7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </div>
+                </div>
               </label>
             )}
             <div className="flex gap-2">

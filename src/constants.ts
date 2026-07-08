@@ -5,7 +5,7 @@ export const MSATS_PER_SAT = 1000
 export const RGB_HTLC_MIN_SAT = 3000
 export const DEFAULT_UTXO_SIZE = 3000
 export const KALEIDOSWAP_LSP_URL = 'http://localhost:8000'
-export const DEFAULT_RGB_ICON = 'rgb-symbol-color.svg'
+export const DEFAULT_RGB_ICON = 'rgb-logo.svg'
 export const COIN_ICON_URL =
   'https://raw.githubusercontent.com/kaleidoswap/coinmarketcap-icons-cryptos/refs/heads/main/icons/'
 
@@ -23,7 +23,7 @@ const NETWORK_DISPLAY_NAMES: Record<string, string> = {
 export const getNetworkDisplayName = (network: string): string =>
   NETWORK_DISPLAY_NAMES[network] ?? network
 
-export type RegtestConnectionType = 'local' | 'bitfinex'
+export type RegtestConnectionType = 'local' | 'bitfinex' | 'docker'
 
 // Error constants
 export const ERROR_NOT_ENOUGH_UNCOLORED =

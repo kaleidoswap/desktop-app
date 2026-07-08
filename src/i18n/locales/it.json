@@ -57,7 +57,7 @@
     "loadingData": "Caricamento dati...",
     "openChannel": "Apri Canale",
     "buyChannel": "Acquista Canale",
-    "createNewChannel": "Crea Nuovo Canale",
+    "createNewChannel": "Open Channel",
     "buyAChannel": "Acquista un Canale",
     "manageChannels": "Gestisci Canali",
     "refreshing": "Aggiornamento...",
@@ -517,6 +517,7 @@
       "onlyKnownToParties": "Conosciuto solo alle parti",
       "rgbAssetChannel": "Canale Asset RGB",
       "rgbAssetInfo": "Questo canale includerà sia liquidità Bitcoin che allocazione asset RGB. L'asset RGB ({{ticker}}) sarà allocato con {{amount}} unità.",
+      "initialLiquidity": "Liquidità Iniziale",
       "back": "Indietro",
       "opening": "Apertura...",
       "openChannel": "Apri Canale"
@@ -601,7 +602,10 @@
     "title": "Chiudi Canale",
     "confirmMessage": "Sei sicuro di voler chiudere questo canale?",
     "settleMessage": "La chiusura di un canale regolerà il saldo corrente sul tuo portafoglio on-chain.",
-    "forceClose": "Chiusura forzata",
+    "cooperativeClose": "Chiusura cooperativa",
+    "forcedClose": "Chiusura forzata",
+    "recommendedLabel": "Consigliata",
+    "forceClose": "Chiudi canale forzatamente",
     "useCautionLabel": "Usare con cautela",
     "forceCloseConditionsTitle": "Usa la chiusura forzata solo se:",
     "forceCloseCondition1": "Il peer è offline o non risponde",
@@ -616,8 +620,8 @@
     "forceCloseReason3": "Può comportare commissioni più elevate",
     "closingMessage": "Chiusura canale in corso... Attendere prego",
     "processing": "Elaborazione...",
-    "forceCloseChannel": "Chiudi Canale Forzatamente",
-    "closeChannel": "Chiudi Canale",
+    "forceCloseChannel": "Chiudi canale forzatamente",
+    "closeChannel": "Chiudi canale in modo cooperativo",
     "cancel": "Annulla",
     "successMessage": "Canale {{channelId}}... chiusura {{forceClose}} avviata con successo",
     "errorMessage": "Impossibile chiudere il canale: {{error}}"
@@ -2510,7 +2514,12 @@
         "onchainExceedsBalance": "L'importo del prelievo ({{amount}}) supera il saldo disponibile ({{balance}})",
         "capacityToast": "Impossibile procedere: L'importo della fattura ({{amount}} sats) supera la tua capacità in uscita ({{capacity}} sats).",
         "lightningSendPayment": "Pagamento Lightning fallito: {{error}}",
-        "zeroAmountRequired": "Inserisci un importo per questa fattura a importo zero."
+        "zeroAmountRequired": "Inserisci un importo per questa fattura a importo zero.",
+        "recipientNetworkMismatch": "Questo invoice RGB è per una rete Bitcoin diversa da quella del tuo wallet (il tuo wallet è su {{network}}). Chiedi al destinatario un invoice generato sulla stessa rete e riprova.",
+        "invalidRecipientId": "L'ID destinatario di questo invoice RGB non è valido (deve essere un UTXO blinded o uno script). Verifica l'invoice e chiedi al destinatario di generarne uno nuovo.",
+        "invalidRecipientData": "Non è stato possibile leggere correttamente l'invoice RGB. Verifica di aver incollato l'invoice completo e integro, oppure chiedine uno nuovo al destinatario.",
+        "invalidTransportEndpoint": "L'endpoint di trasporto (proxy) RGB in questo invoice non è valido o non è raggiungibile. Chiedi al destinatario un invoice con un endpoint valido, o controlla le impostazioni del proxy.",
+        "insufficientUtxos": "Non ci sono abbastanza UTXO disponibili per completare questo pagamento RGB. Potrebbe essere necessario creare nuovi UTXO prima di inviare."
       },
       "warnings": {
         "invoiceAdjusted": "Avviso: La fattura richiedeva {{requested}} {{asset}} ma il tuo saldo è solo {{balance}} {{asset}}. Aggiustato all'importo massimo inviabile.",
@@ -3006,7 +3015,7 @@
       "totalExecutions": "Esecuzioni riuscite"
     },
     "orders": {
-      "activeTitle": "Ordini Limite Attivi",
+      "activeTitle": "Ordini Limite Pianificati",
       "historyTitle": "Ordini Eseguiti & Chiusi"
     },
     "empty": {

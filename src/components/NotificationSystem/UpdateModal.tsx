@@ -272,7 +272,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                         y1="0%"
                         y2="100%"
                       >
-                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="0%" stopColor="#9365FF" />
                         <stop offset="100%" stopColor="#6366f1" />
                       </linearGradient>
                     </defs>
@@ -385,13 +385,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             </p>
             <div className="flex gap-3">
               <button
-                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all duration-200 border border-white/20"
+                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-200 border border-white/20"
                 onClick={() => setError(null)}
               >
                 {t('updaterModal.error.retry')}
               </button>
               <button
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg"
                 onClick={onClose}
               >
                 {t('common.close')}
@@ -462,7 +462,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
             <div className="space-y-3">
               <button
-                className="w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-lg hover:shadow-amber-500/25 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                className="w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-lg hover:shadow-amber-500/25 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
                 disabled={isInstalling}
                 onClick={handleInstall}
               >
@@ -480,7 +480,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 )}
               </button>
               <button
-                className="w-full px-6 py-3 text-amber-200/80 hover:text-white transition-all duration-200 rounded-xl hover:bg-white/10 border border-transparent hover:border-amber-400/30"
+                className="w-full px-6 py-3 text-amber-200/80 hover:text-white transition-all duration-200 rounded-lg hover:bg-white/10 border border-transparent hover:border-amber-400/30"
                 disabled={isInstalling}
                 onClick={onClose}
               >
