@@ -1,24 +1,48 @@
-## [Version 0.5.0] - 2026-06-21
+## [Version 0.5.0] - 2026-07-08
 
 > ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
 
 ### 🚀 Features
-- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`)
+- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`), now including a **Windows (win-x64)** agent runtime alongside macOS and Linux
 - **Trade by chat**: Ask "buy 1 USDT on KaleidoSwap" and the agent quotes the maker and runs the full atomic swap (quote → init → whitelist → execute) behind a single confirmation gate showing the real numbers
 - **Buy a Lightning channel by chat**: Order inbound BTC liquidity or a new RGB asset channel (USDT/XAUT) pre-loaded via the LSP, as a one-confirmation flow
 - **Agent tab (autonomy)**: Schedule the agent to run optimizer tasks (portfolio, DCA-style) with risk limits and a dry-run default; review recent runs and costs
 - **Stop button**: Cancel an in-flight chat turn at any time — the running on-device inference is aborted immediately and the turn ends cleanly
 - **Live tool activity + reasoning**: Watch the model's tool calls (balances, channels, quotes) render as typed result cards, and optionally expand its `<think>` reasoning
 - **Wallet & node tools over MCP**: The agent reads balances, channels, and quotes, and drafts payments/swaps through the KaleidoSwap MCP server, with every spend gated by explicit confirmation
+- **Change Password**: Change your node password directly from Settings via a safe lock → changepassword → unlock sequence
+- **Docker regtest connect preset**: One-click connection preset for a local Docker regtest node, streamlining local development and testing
+- **All RGB asset schemas**: Wallet and trading surfaces now show every RGB asset schema (NIA, CFA, UDA, IFA), not just NIA
+- **Faster on-chain deposits**: The deposit flow opens straight to a freshly generated BTC address, shown immediately, with the asset step kept for RGB flows
 
 ### 🔧 Improvements
-- **Redesigned buy-channel flow**: Cleaner channel summary and payment-review UI with richer states and clearer cost breakdowns
+- **Tailwind v4 + kaleido-ui design tokens**: Migrated the frontend to Tailwind v4 and adopted the shared kaleido-ui design-token system for consistent theming across the app
+- **History redesign**: Reworked filters, sidebar navigation, and visual consistency across all history sections; zero-amount Lightning invoices are hidden from the deposits list by default
+- **Redesigned Deposit & Withdraw modals**: Cleaner deposit/withdraw modals with an updated global asset logo treatment
+- **Redesigned buy-channel flow**: Cleaner channel summary and payment-review UI with richer states and clearer cost breakdowns, plus Market Maker navigation polish
+- **General UI polish**: Refreshed splash screen branding, channel cards, DCA and Limit Order surfaces, buttons, modals, support modal, and notification panel
+- **Consolidated Maker & LSP configuration**: Unified Maker and LSP URL configuration in Settings
+- **"Max via Lightning" deposit**: The Lightning deposit max now reflects the maximum HTLC limit across channels
+- **Onboarding readability**: Improved recovery-phrase readability during onboarding
+- **KaleidoMind polish**: Styled the model pickers, fixed a modal race condition, and restyled the start screen
 - **Mind runtime v0.7.0**: Updated the bundled provider (`@kaleidorg/mind-provider ^0.6.3`) and MCP (`kaleido-mcp ^0.2.1`) so chat trading and the stop button work end to end
 - **SDK migration**: Moved to `kaleido-sdk ^0.1.11` (BitcoinNetwork node/api split, TransferKind enum, refresh defaults)
+- **Removed Auto Time-Lock**: Dropped the Auto Time-Lock setting to simplify node configuration
 
 ### 🐛 Bug Fixes
 - **Chat swap quote failed validation**: "buy 1 USDT" hit an MCP input-validation error because the swap recipe sent the wrong argument names; the quote tool now derives layers and accepts a buy-side amount, and the recipe emits the correct fields
 - **Chat stalled on extraction cancel/timeout**: A cancelled or timed-out slot-extraction inference on small models no longer fails the whole request — it degrades to deterministic parsing for requests the app already understands
+- **Node reconnection**: The app now reconnects automatically and faster when the node connection drops
+- **Locked remote node handling**: A locked node (HTTP 403) is treated as locked, not as an auth failure, so account creation and connection no longer fail against a locked remote node
+- **Asset precision of 0**: Respect an explicitly configured asset precision of `0` (`||` → `??`) instead of falling back to a default
+- **Clearer error classification**: Distinguish RGB/SDK validation errors from connectivity failures for more accurate messaging
+- **Order history hygiene**: Stop persisting empty or failed channel orders to history
+- **Expanded channel card**: Restored the expanded channel card with BTC/RGB icons
+- **No false restart prompt**: Settings no longer shows a spurious "restart required" prompt
+- **Trade page & dashboard fixes**: Assorted fixes across the trade page and dashboard
+
+### 🏗️ Infrastructure
+- **Windows KaleidoMind runtime build**: The `build-mind-assets` CI workflow now builds and publishes the `win-x64` agent runtime tarball, fixing the 404 Windows users hit on first enable. Includes Windows-specific bundling fixes: resolving `npm.cmd`, running npm via shell (Node 24 `.cmd`-spawn EINVAL), extracting the Node `.zip` with System32 `bsdtar`, and a `sha256sum`/`shasum -a 256` checksum fallback
 
 ## [Version 0.4.0] - 2026-04-15
 
