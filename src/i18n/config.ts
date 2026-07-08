@@ -9,6 +9,7 @@ import es from './locales/es.json'
 import fr from './locales/fr.json'
 import it from './locales/it.json'
 import ja from './locales/ja.json'
+import ko from './locales/ko.json'
 import zh from './locales/zh.json'
 
 // Define available languages
@@ -19,6 +20,7 @@ export const LANGUAGES = {
   fr: { flag: '🇫🇷', name: 'Français' },
   it: { flag: '🇮🇹', name: 'Italiano' },
   ja: { flag: '🇯🇵', name: '日本語' },
+  ko: { flag: '🇰🇷', name: '한국어' },
   zh: { flag: '🇨🇳', name: '中文' },
 } as const
 
@@ -32,6 +34,7 @@ const resources = {
   fr: { translation: fr },
   it: { translation: it },
   ja: { translation: ja },
+  ko: { translation: ko },
   zh: { translation: zh },
 }
 
