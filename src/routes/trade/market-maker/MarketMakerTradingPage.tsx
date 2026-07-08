@@ -3477,6 +3477,7 @@ export const Component = () => {
                   onSubmit={onSubmit}
                   onSwapAssets={onSwapAssets}
                   onToAmountChange={handleToAmountChange}
+                  onchainBtcBalance={onchainBtcBalance}
                   quoteResponse={quoteResponse}
                   selectedPair={selectedPair}
                   selectedSize={selectedSize}
