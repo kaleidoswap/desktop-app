@@ -41,19 +41,23 @@ export const MnemonicDisplay = ({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {mnemonic.map((word, i) => (
           <div
-            className="flex items-center p-2.5 bg-surface-overlay/50 rounded-lg
-                       border border-border-default/50 text-content-secondary"
+            className="flex items-center gap-2.5 px-3 py-2.5 bg-surface-raised rounded-lg
+                       border border-border-subtle hover:border-primary/40 transition-colors"
             key={i}
           >
-            <span className="text-content-tertiary text-xs mr-2">{i + 1}.</span>
-            <span className="font-medium text-sm">{word}</span>
+            <span className="w-5 shrink-0 text-right text-xs font-mono tabular-nums text-content-tertiary">
+              {i + 1}
+            </span>
+            <span className="font-semibold text-sm text-content-primary tracking-wide">
+              {word}
+            </span>
           </div>
         ))}
       </div>
 
       {/* Copy Button */}
       <Button
-        className="text-primary border-primary/20 hover:bg-primary/10"
+        className="w-full text-primary border-primary/20 hover:bg-primary/10"
         icon={<Copy className="w-4 h-4" />}
         onClick={onCopy}
         size="md"
