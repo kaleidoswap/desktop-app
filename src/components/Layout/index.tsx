@@ -1025,6 +1025,14 @@ export const Layout = (props: Props) => {
                     })}
                   </button>
                 </div>
+
+                <p className="mt-4 flex items-center gap-2 text-xs text-content-tertiary">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {t('nodeReachability.autoRetrying', {
+                    defaultValue:
+                      'Reconnecting automatically — this will clear as soon as the node responds.',
+                  })}
+                </p>
               </div>
             </div>
           </div>

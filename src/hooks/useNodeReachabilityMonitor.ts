@@ -7,7 +7,12 @@ import { useNotification } from '../components/NotificationSystem'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
 import { setNodeReachability } from '../slices/node/node.slice'
 
-const POLLING_INTERVAL_MS = 10_000
+// While the node is healthy we poll gently to save resources; once it drops
+// (or on startup, while reachability is still 'unknown') we poll aggressively
+// so the app reconnects automatically within a few seconds instead of waiting
+// for the next slow tick or a manual retry.
+const HEALTHY_POLLING_INTERVAL_MS = 10_000
+const RECONNECT_POLLING_INTERVAL_MS = 3_000
 const FAILURE_THRESHOLD = 2
 
 const getErrorMessage = (error: unknown) => {
@@ -72,8 +77,16 @@ export const useNodeReachabilityMonitor = ({
     removeNotificationRef.current = removeNotification
   }, [addNotification, removeNotification])
 
+  // Poll fast whenever the node isn't confirmed reachable (unreachable, or the
+  // initial 'unknown' state) so reconnection happens automatically and quickly.
+  const pollingInterval = skip
+    ? 0
+    : reachability === 'reachable'
+      ? HEALTHY_POLLING_INTERVAL_MS
+      : RECONNECT_POLLING_INTERVAL_MS
+
   const nodeInfo = nodeApi.useNodeInfoQuery(undefined, {
-    pollingInterval: skip ? 0 : POLLING_INTERVAL_MS,
+    pollingInterval,
     refetchOnFocus: true,
     refetchOnReconnect: true,
     skip,
