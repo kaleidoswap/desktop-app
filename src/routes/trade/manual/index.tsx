@@ -480,7 +480,7 @@ export const Component = () => {
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <TradeNav />
       </div>
-      <div className="container mx-auto w-full flex flex-col items-center justify-center py-2">
+      <div className="container mx-auto w-full flex flex-col items-center justify-center py-6">
         {isLoading ? (
           <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
             <div className="relative">

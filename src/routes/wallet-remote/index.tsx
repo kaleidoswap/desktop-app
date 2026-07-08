@@ -9,6 +9,7 @@ import { toast } from 'react-toastify'
 import {
   WALLET_DASHBOARD_PATH,
   WALLET_SETUP_PATH,
+  WALLET_UNLOCK_PATH,
 } from '../../app/router/paths'
 import { useAppDispatch } from '../../app/store/hooks'
 import { Layout } from '../../components/Layout'
@@ -105,10 +106,13 @@ export const Component = () => {
 
         // Handle regtest connection type selection
         if (value.network === 'Regtest' && value.regtestConnectionType) {
-          networkKey =
-            value.regtestConnectionType === 'local'
-              ? 'LocalRegtest'
-              : 'BitfinexRegtest'
+          if (value.regtestConnectionType === 'local') {
+            networkKey = 'LocalRegtest'
+          } else if (value.regtestConnectionType === 'docker') {
+            networkKey = 'LocalDockerRegtest'
+          } else {
+            networkKey = 'BitfinexRegtest'
+          }
         }
 
         const defaults = NETWORK_DEFAULTS[networkKey]
@@ -125,6 +129,12 @@ export const Component = () => {
             'node_url',
             `http://localhost:${defaults.daemon_listening_port}`
           )
+          // The maker docker stack ships a fixed regtest wallet password —
+          // prefill it so the node started by `make start-channels` unlocks
+          // out of the box.
+          if (value.regtestConnectionType === 'docker') {
+            form.setValue('password', 'password')
+          }
         }
       }
     })
@@ -187,7 +197,35 @@ export const Component = () => {
 
       clearTimeout(timeoutId)
 
+      // A genuine authentication failure comes back as 401 from the node's
+      // auth layer ("Missing or invalid credentials").
+      if (response.status === 401) {
+        setConnectionError({
+          details: t('walletRemote.authenticationFailedDetails'),
+          message: t('walletRemote.authenticationFailed'),
+          type: 'auth',
+        })
+        toast.error(t('walletRemote.authenticationFailedToast'))
+        return
+      }
+
       if (response.status === 403) {
+        // rgb-lightning-node returns 403 for a LOCKED node — that is not an
+        // auth problem: the node is reachable and gets unlocked on the next
+        // step. Only treat a non-locked 403 as an auth failure.
+        let lockedNode = false
+        try {
+          const body = await response.clone().json()
+          lockedNode =
+            body?.name === 'LockedNode' || /is locked/i.test(body?.error ?? '')
+        } catch {
+          // body not JSON — fall through to the auth error below
+        }
+        if (lockedNode) {
+          setConnectionSuccess(true)
+          toast.success(t('walletRemote.connectionSuccessToast'))
+          return
+        }
         setConnectionError({
           details: t('walletRemote.authenticationFailedDetails'),
           message: t('walletRemote.authenticationFailed'),
@@ -291,6 +329,9 @@ export const Component = () => {
     setIsConnecting(true)
     setConnectionStep('testing')
     setConnectionError(null)
+    // The node reachable-but-locked case (403): create the account, then send
+    // the user to the unlock screen rather than the dashboard.
+    let lockedNode = false
 
     // Auto-generate a unique account name if one already exists
     try {
@@ -332,7 +373,20 @@ export const Component = () => {
 
       clearTimeout(timeoutId)
 
+      // rgb-lightning-node returns 403 for a LOCKED (but reachable) node and
+      // 401 for a genuine auth failure. A locked node is fine here — the
+      // account is created now and the node is unlocked on the next step.
       if (response.status === 403) {
+        try {
+          const body = await response.clone().json()
+          lockedNode =
+            body?.name === 'LockedNode' || /is locked/i.test(body?.error ?? '')
+        } catch {
+          // body not JSON — treat as a non-locked 403 (auth error) below
+        }
+      }
+
+      if (response.status === 401 || (response.status === 403 && !lockedNode)) {
         setConnectionError({
           details: t('walletRemote.authenticationFailedDetails'),
           message: t('walletRemote.authenticationFailed'),
@@ -370,7 +424,7 @@ export const Component = () => {
         return
       }
 
-      if (!response.ok) {
+      if (!response.ok && !lockedNode) {
         setConnectionError({
           details: t('walletRemote.connectionTestFailedDetails', {
             status: response.status,
@@ -390,21 +444,27 @@ export const Component = () => {
         return
       }
 
-      // Test if response is valid JSON
-      try {
-        await response.json()
+      // A locked node is reachable — proceed to create the account. Otherwise
+      // confirm the node returned valid nodeinfo JSON.
+      if (lockedNode) {
         setConnectionStep('creating')
         toast.success(t('walletRemote.connectionSuccessCreating'))
-      } catch (jsonError) {
-        setConnectionError({
-          details: t('walletRemote.invalidResponseFormatDetails'),
-          message: t('walletRemote.invalidResponseFormat'),
-          type: 'connection',
-        })
-        toast.error(t('walletRemote.invalidResponseToast'))
-        setIsConnecting(false)
-        setConnectionStep('idle')
-        return
+      } else {
+        try {
+          await response.json()
+          setConnectionStep('creating')
+          toast.success(t('walletRemote.connectionSuccessCreating'))
+        } catch (jsonError) {
+          setConnectionError({
+            details: t('walletRemote.invalidResponseFormatDetails'),
+            message: t('walletRemote.invalidResponseFormat'),
+            type: 'connection',
+          })
+          toast.error(t('walletRemote.invalidResponseToast'))
+          setIsConnecting(false)
+          setConnectionStep('idle')
+          return
+        }
       }
     } catch (error: any) {
       setIsConnecting(false)
@@ -452,10 +512,13 @@ export const Component = () => {
 
       // Handle regtest connection type selection
       if (data.network === 'Regtest' && data.regtestConnectionType) {
-        networkKey =
-          data.regtestConnectionType === 'local'
-            ? 'LocalRegtest'
-            : 'BitfinexRegtest'
+        if (data.regtestConnectionType === 'local') {
+          networkKey = 'LocalRegtest'
+        } else if (data.regtestConnectionType === 'docker') {
+          networkKey = 'LocalDockerRegtest'
+        } else {
+          networkKey = 'BitfinexRegtest'
+        }
       }
 
       const networkDefaults = NETWORK_DEFAULTS[networkKey]
@@ -482,8 +545,9 @@ export const Component = () => {
 
       setConnectionStep('finalizing')
 
-      // Navigate to dashboard after successful connection
-      navigate(WALLET_DASHBOARD_PATH)
+      // A locked node must be unlocked first; an already-unlocked node goes
+      // straight to the dashboard.
+      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
 
       // Insert account
       await invoke('insert_account', {
@@ -528,18 +592,20 @@ export const Component = () => {
 
   const selectedNetwork = form.watch('network')
   const regtestConnectionType = form.watch('regtestConnectionType')
+  // Both 'local' and 'docker' target a localhost node; only 'bitfinex' is remote.
+  const isLocalRegtest =
+    regtestConnectionType === 'local' || regtestConnectionType === 'docker'
   const nodeUrlDescription =
     selectedNetwork === 'Regtest'
       ? t('walletRemote.nodeUrlDescriptionRegtest', {
-          type:
-            regtestConnectionType === 'local'
-              ? t('walletRemote.regtestTypeLocal')
-              : t('walletRemote.regtestTypeBitfinex'),
+          type: isLocalRegtest
+            ? t('walletRemote.regtestTypeLocal')
+            : t('walletRemote.regtestTypeBitfinex'),
         })
       : t('walletRemote.nodeUrlDescription')
   const nodeUrlPlaceholder =
     selectedNetwork === 'Regtest'
-      ? regtestConnectionType === 'local'
+      ? isLocalRegtest
         ? t('walletRemote.nodeUrlPlaceholderRegtest')
         : t('walletRemote.nodeUrlPlaceholderBitfinex')
       : t('walletRemote.nodeUrlPlaceholder')

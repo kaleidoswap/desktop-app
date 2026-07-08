@@ -1,49 +1,91 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Target, Clock, BarChart2, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Target, Clock, BarChart2, X, ShoppingCart } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
+import { ORDER_CHANNEL_PATH, TRADE_LIMIT_PATH } from '../../../app/router/paths'
 import { useAppSelector } from '../../../app/store/hooks'
+import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 import { CreateLimitOrderForm } from './components/CreateLimitOrderForm'
 import { LimitOrderCard } from './components/LimitOrderCard'
 
 type Tab = 'active' | 'history'
 
-function CreateOrderModal({ onClose }: { onClose: () => void }) {
+function CreateOrderModal({
+  hasUsdtChannel,
+  onClose,
+}: {
+  hasUsdtChannel: boolean
+  onClose: () => void
+}) {
   const { t } = useTranslation()
-  return (
+  const navigate = useNavigate()
+  const pos = getModalPositionClass()
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/80 backdrop-blur-md"
+      className={`${pos} inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg max-h-[calc(100vh-2rem)] bg-surface-elevated border border-border-default shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8)] rounded-3xl overflow-hidden p-[1px] flex flex-col">
-        <div className="bg-surface-base rounded-[calc(1.5rem-1px)] flex flex-col min-h-0">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border-default/50 bg-surface-overlay/30 shrink-0">
+      <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto pointer-events-auto">
+          <div className="flex items-center justify-between pb-4 border-b border-divider/10 mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
-                <Target className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-content-primary">
-                  {t('limitOrders.createOrder', 'New Limit Order')}
-                </h2>
-                <p className="text-xs text-content-tertiary mt-0.5">
-                  Set target prices for automatic execution
-                </p>
-              </div>
+              <Target className="w-6 h-6 text-primary flex-shrink-0" />
+              <h3 className="text-xl font-bold text-white">
+                {t('limitOrders.createOrder', 'New Limit Order')}
+              </h3>
             </div>
             <button
-              className="p-2 rounded-xl text-content-secondary hover:text-content-primary hover:bg-surface-elevated transition-colors border border-transparent hover:border-border-default/50"
+              className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
               onClick={onClose}
+              type="button"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="p-6 overflow-y-auto overscroll-contain">
+
+          {!hasUsdtChannel ? (
+            <div className="flex flex-col items-center gap-5 py-4 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <ShoppingCart className="w-7 h-7 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-base font-semibold text-white">
+                  {t('limitOrders.noChannel.title', 'USDT Channel Required')}
+                </p>
+                <p className="text-sm text-content-secondary leading-relaxed max-w-sm mx-auto">
+                  {t(
+                    'limitOrders.noChannel.description',
+                    'You need a USDT Lightning channel to place limit orders. Buy one to get started.'
+                  )}
+                </p>
+              </div>
+              <button
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-[#12131C] transition-colors"
+                onClick={() => {
+                  onClose()
+                  navigate(ORDER_CHANNEL_PATH, {
+                    state: { returnTo: TRADE_LIMIT_PATH },
+                  })
+                }}
+                type="button"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {t('limitOrders.noChannel.cta', 'Buy USDT Channel')}
+              </button>
+            </div>
+          ) : (
             <CreateLimitOrderForm onCreated={onClose} />
-          </div>
+          )}
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 
@@ -53,6 +95,24 @@ export const LimitOrdersView = () => {
   const [showModal, setShowModal] = useState(false)
 
   const orders = useAppSelector((s) => s.limitOrders.orders)
+
+  const { data: channelsData } = nodeApi.endpoints.listChannels.useQuery(
+    undefined,
+    { pollingInterval: 30_000 }
+  )
+  const { data: assetsData } = nodeApi.endpoints.listAssets.useQuery(
+    undefined,
+    { pollingInterval: 60_000 }
+  )
+  const readyChannels = (channelsData?.channels ?? []).filter(
+    (ch: any) => ch.ready
+  )
+  const usdtAsset = (assetsData?.nia ?? []).find(
+    (a: any) => a.ticker === 'USDT'
+  )
+  const hasUsdtChannel = usdtAsset
+    ? readyChannels.some((ch: any) => ch.asset_id === usdtAsset.asset_id)
+    : false
 
   const activeOrders = orders.filter(
     (o) => o.status === 'active' || o.status === 'paused'
@@ -75,15 +135,20 @@ export const LimitOrdersView = () => {
 
   return (
     <>
-      {showModal && <CreateOrderModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <CreateOrderModal
+          hasUsdtChannel={hasUsdtChannel}
+          onClose={() => setShowModal(false)}
+        />
+      )}
 
-      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-4 py-6">
         {/* Hero section */}
-        <section className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+        <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay p-5">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div className="max-w-2xl">
-                <h1 className="text-3xl font-semibold text-content-primary">
+                <h1 className="text-xl font-bold text-white">
                   {t('limitOrders.title', 'Limit Orders')}
                 </h1>
                 <p className="mt-2 text-sm leading-relaxed text-content-secondary">
@@ -95,7 +160,7 @@ export const LimitOrdersView = () => {
               </div>
 
               <button
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-[#12131C] transition-colors"
                 onClick={() => setShowModal(true)}
                 title={t('limitOrders.createOrder', 'New Limit Order')}
               >
@@ -140,7 +205,7 @@ export const LimitOrdersView = () => {
         </section>
 
         {/* Order list */}
-        <section className="min-h-[420px] rounded-3xl border border-border-subtle bg-surface-overlay p-5">
+        <section className="min-h-[420px] rounded-2xl border border-border-subtle bg-surface-overlay p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-content-primary">
               {tab === 'active'
@@ -150,9 +215,9 @@ export const LimitOrdersView = () => {
                     'Filled & Closed Orders'
                   )}
             </h2>
-            <div className="flex gap-1 rounded-xl bg-surface-overlay/50 p-1">
+            <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1">
               <button
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   tab === 'active'
                     ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-content-secondary hover:text-white border border-transparent'
@@ -160,7 +225,7 @@ export const LimitOrdersView = () => {
                 onClick={() => setTab('active')}
               >
                 <Clock className="h-3.5 w-3.5" />
-                {t('limitOrders.tabs.active', 'Active')}
+                {t('limitOrders.tabs.active', 'Planned')}
                 <span
                   className={`text-xs ${tab === 'active' ? 'text-primary' : 'text-white/60'}`}
                 >
@@ -168,7 +233,7 @@ export const LimitOrdersView = () => {
                 </span>
               </button>
               <button
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none focus-visible:outline-none ${
                   tab === 'history'
                     ? 'bg-primary/15 text-primary border border-primary/30'
                     : 'text-content-secondary hover:text-white border border-transparent'
@@ -199,7 +264,7 @@ export const LimitOrdersView = () => {
                 </p>
                 {tab === 'active' && (
                   <button
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 py-2 text-sm font-semibold text-gray-900 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary hover:bg-primary-emphasis px-4 py-2 text-sm font-semibold text-[#12131C] transition-colors"
                     onClick={() => setShowModal(true)}
                   >
                     <Plus className="h-4 w-4" />

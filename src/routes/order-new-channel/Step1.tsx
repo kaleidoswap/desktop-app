@@ -4,18 +4,25 @@ import {
   Link,
   Copy,
   ArrowRight,
-  CheckCircle,
-  AlertCircle,
   Loader2,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 import { toast } from 'react-toastify'
 
 import { RootState } from '../../app/store'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
+import { Spinner } from '../../components/Spinner'
+import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
 import kaleidoswapPictogram from '../../assets/logo.svg'
 import { makerApi } from '../../slices/makerApi/makerApi.slice'
@@ -26,171 +33,133 @@ interface Props {
   onNext: (data: { connectionUrl: string; success: boolean }) => void
 }
 
-const ConnectPopup: React.FC<{
-  onClose: () => void
-  onConfirm: () => void
-  connectionUrl: string
-  isAlreadyConnected: boolean
-  t: any
-}> = ({ onClose, onConfirm, connectionUrl, isAlreadyConnected, t }) => {
-  if (typeof document === 'undefined') return null
-
-  return createPortal(
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 sm:p-8 rounded-2xl border border-border-default/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center gap-4 mb-6">
-            {isAlreadyConnected ? (
-              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="text-green-400" size={28} />
-              </div>
-            ) : (
-              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <Link className="text-blue-400" size={28} />
-              </div>
-            )}
-            <h3 className="text-2xl font-bold text-white">
-              {isAlreadyConnected
-                ? t('orderChannel.step1.alreadyConnected')
-                : t('orderChannel.step1.modalTitle')}
-            </h3>
-          </div>
-
-          {isAlreadyConnected ? (
-            <div className="mb-6 p-4 bg-green-900/20 border border-green-700/50 rounded-xl">
-              <div className="flex items-start gap-3">
-                <CheckCircle
-                  className="text-green-400 flex-shrink-0 mt-0.5"
-                  size={20}
-                />
-                <div>
-                  <p className="font-semibold text-green-300 mb-1">
-                    {t('orderChannel.step1.alreadyConnectedMessage')}
-                  </p>
-                  <p className="text-sm text-green-200/80">
-                    {t('orderChannel.step1.alreadyConnectedPopup')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="mb-6 text-content-secondary text-lg">
-              {t('orderChannel.step1.establishConnection')}
-            </p>
-          )}
-
-          <div className="mb-6 p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
-            <p className="text-xs text-content-secondary mb-2 font-semibold uppercase tracking-wide">
-              {t('orderChannel.step1.lspConnectionLabel')}
-            </p>
-            <p className="text-sm text-content-secondary break-all font-mono">
-              {connectionUrl}
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              className="flex-1 px-6 py-3 bg-surface-high hover:bg-surface-elevated text-white rounded-lg transition-all duration-200 font-semibold transform active:scale-95"
-              onClick={onClose}
-            >
-              {t('orderChannel.step1.cancelButton')}
-            </button>
-            <button
-              className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-lg font-semibold transition-all duration-200 transform active:scale-95 shadow-lg shadow-primary/20"
-              onClick={onConfirm}
-            >
-              {isAlreadyConnected
-                ? t('orderChannel.step1.continueButton')
-                : t('orderChannel.step1.connectButton')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 export const Step1: React.FC<Props> = ({ onNext }) => {
   const { t } = useTranslation()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
-  const [showConnectPopup, setShowConnectPopup] = useState(false)
-  const [isAlreadyConnected, setIsAlreadyConnected] = useState(false)
-  const [connectionUrl, setConnectionUrl] = useState('')
+
+  // Left card: manual fetch
   const [tempLspUrl, setTempLspUrl] = useState('')
+  const [manualConnectionUrl, setManualConnectionUrl] = useState('')
+  const [isLoadingManual, setIsLoadingManual] = useState(false)
+
+  // Right card: KaleidoSwap default
+  const [kaleidoApiUrl, setKaleidoApiUrl] = useState('')
+  const [kaleidoConnectionUrl, setKaleidoConnectionUrl] = useState('')
+  const [isLoadingKaleido, setIsLoadingKaleido] = useState(false)
+  const [kaleidoError, setKaleidoError] = useState<string | null>(null)
+  const [selectedLspConnectionUrl, setSelectedLspConnectionUrl] = useState('')
+
+  const [isConnecting, setIsConnecting] = useState(false)
+
   const [getInfo] = makerApi.endpoints.get_info.useLazyQuery()
   const [connectPeer] = nodeApi.endpoints.connectPeer.useMutation()
   const [listPeers] = nodeApi.endpoints.listPeers.useLazyQuery()
-  const [getNetworkInfo] = nodeApi.useLazyNodeInfoQuery()
+  const [getNetworkInfo] = nodeApi.endpoints.networkInfo.useLazyQuery()
 
   const dispatch = useAppDispatch()
   const currentAccount = useAppSelector(
     (state: RootState) => state.nodeSettings.data
   )
-  // Use maker URL as source of truth since that's what the API uses
   const lspUrl =
     currentAccount.default_maker_url || currentAccount.default_lsp_url
 
-  const checkPeerConnection = useCallback(
-    async (connectionUrl: string): Promise<boolean> => {
+  // Auto-load KaleidoSwap LSP on mount
+  useEffect(() => {
+    const initKaleido = async () => {
+      setIsLoadingKaleido(true)
+      setKaleidoError(null)
       try {
-        const pubkey = connectionUrl.split('@')[0]
-        const peersResponse = await listPeers().unwrap()
-        if (peersResponse?.peers) {
-          const isConnected = peersResponse.peers.some(
-            (peer: any) => peer.pubkey === pubkey
-          )
-          setIsAlreadyConnected(isConnected)
-          return isConnected
+        const networkInfo = (await getNetworkInfo().unwrap()) as any
+        if (!networkInfo?.network) {
+          throw new Error(t('orderChannel.step1.networkInfoNotAvailable'))
         }
-        return false
-      } catch (error) {
-        toast.error(t('orderChannel.step1.checkPeerFailed'))
-        console.error('Failed to check peer connection status:', error)
-        return false
-      }
-    },
-    [listPeers]
-  )
 
-  const fetchLspInfo = useCallback(async () => {
-    if (!tempLspUrl || !tempLspUrl.trim()) {
-      return
+        const network = Object.keys(NETWORK_DEFAULTS).find(
+          (key) =>
+            key.toLowerCase() === String(networkInfo.network).toLowerCase()
+        )
+        if (!network) {
+          throw new Error(
+            t('orderChannel.step1.unsupportedNetwork', {
+              network: networkInfo.network,
+            })
+          )
+        }
+
+        const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
+        if (!defaultLspUrl) {
+          throw new Error(
+            t('orderChannel.step1.noDefaultLspUrl', {
+              network: networkInfo.network,
+            })
+          )
+        }
+
+        setKaleidoApiUrl(defaultLspUrl)
+
+        dispatch(
+          nodeSettingsActions.setNodeSettings({
+            ...currentAccount,
+            default_lsp_url: defaultLspUrl,
+            default_maker_url: defaultLspUrl,
+          })
+        )
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        const response = await getInfo().unwrap()
+        if (response.lsp_connection_url) {
+          setKaleidoConnectionUrl(response.lsp_connection_url)
+        } else {
+          throw new Error(t('orderChannel.step1.lspUrlMissing'))
+        }
+      } catch (error: any) {
+        const msg =
+          error instanceof Error
+            ? error.message
+            : t('orderChannel.step1.kaleidoLspFailed')
+        setKaleidoError(msg)
+      } finally {
+        setIsLoadingKaleido(false)
+      }
     }
 
-    setIsLoading(true)
-    setConnectionUrl('')
-    setIsAlreadyConnected(false)
-    setShowConnectPopup(false)
+    initKaleido()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const fetchManualLspInfo = useCallback(async () => {
+    if (!tempLspUrl.trim()) return
+
+    setIsLoadingManual(true)
+    setManualConnectionUrl('')
 
     try {
-      // Update Redux store with the new LSP URL first so getInfo uses it
       if (tempLspUrl !== lspUrl) {
         dispatch(
           nodeSettingsActions.setNodeSettings({
             ...currentAccount,
             default_lsp_url: tempLspUrl,
-            default_maker_url: tempLspUrl, // Also update maker URL for API calls
+            default_maker_url: tempLspUrl,
           })
         )
-        // Wait a bit for the Redux update to propagate
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
 
       const response = await getInfo().unwrap()
       if (response.lsp_connection_url) {
-        setConnectionUrl(response.lsp_connection_url)
-        // Just check connection status silently, don't show popup
-        await checkPeerConnection(response.lsp_connection_url)
+        setManualConnectionUrl(response.lsp_connection_url)
         toast.success(t('orderChannel.step1.lspFetchSuccess'))
       } else {
         toast.error(t('orderChannel.step1.lspUrlMissing'))
+        // Revert Redux
+        dispatch(
+          nodeSettingsActions.setNodeSettings({
+            ...currentAccount,
+            default_lsp_url: lspUrl,
+            default_maker_url: lspUrl,
+          })
+        )
       }
     } catch (error: any) {
-      console.error('Error fetching LSP info:', error)
-
-      // Check if it's a timeout error
       let errorMessage = t('orderChannel.step1.lspFetchFailed')
       if (
         error?.status === 'TIMEOUT_ERROR' ||
@@ -201,549 +170,276 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         errorMessage = t('orderChannel.step1.timeout')
       } else if (error?.status === 'FETCH_ERROR') {
         errorMessage = t('orderChannel.step1.networkError')
+      } else if (error instanceof Error) {
+        errorMessage = error.message
       }
-
       toast.error(errorMessage)
-
-      // Revert to previous LSP URL on error
-      if (tempLspUrl !== lspUrl) {
-        dispatch(
-          nodeSettingsActions.setNodeSettings({
-            ...currentAccount,
-            default_lsp_url: lspUrl,
-            default_maker_url: lspUrl, // Also revert maker URL
-          })
-        )
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }, [
-    tempLspUrl,
-    lspUrl,
-    getInfo,
-    checkPeerConnection,
-    dispatch,
-    currentAccount,
-  ])
-
-  // Initial check on mount
-  useEffect(() => {
-    const initializeComponent = async () => {
-      setIsInitializing(true)
-      setTempLspUrl(lspUrl)
-
-      // If we have a default LSP URL, check connection
-      if (lspUrl && lspUrl.trim()) {
-        try {
-          const response = await getInfo().unwrap()
-          if (response.lsp_connection_url) {
-            setConnectionUrl(response.lsp_connection_url)
-            const isConnected = await checkPeerConnection(
-              response.lsp_connection_url
-            )
-
-            // If already connected, show popup asking if user wants to proceed
-            if (isConnected) {
-              setShowConnectPopup(true)
-            }
-          }
-        } catch (error: any) {
-          console.error('Error during initialization:', error)
-          // Don't show a toast on initialization error - user can try again manually
-        }
-      }
-
-      setIsInitializing(false)
-    }
-
-    initializeComponent()
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const handleNext = async () => {
-    if (connectionUrl) {
-      setShowConnectPopup(true)
-    } else {
-      toast.error(t('orderChannel.step1.waitForConnectionUrl'))
-    }
-  }
-
-  const handleConnect = async () => {
-    setShowConnectPopup(false)
-    if (isAlreadyConnected) {
-      toast.info(t('orderChannel.step1.alreadyConnectedToast'), {
-        autoClose: 2000,
-      })
-      onNext({ connectionUrl, success: true })
-      return
-    }
-    setIsLoading(true)
-    try {
-      const response = await connectPeer({
-        peer_pubkey_and_addr: connectionUrl,
-      })
-      if ('error' in response) {
-        const error = response.error as FetchBaseQueryError
-        const errorMessage =
-          error.data && typeof error.data === 'object' && 'error' in error.data
-            ? String(error.data.error)
-            : 'Failed to connect to peer'
-        throw new Error(errorMessage)
-      }
-
-      // LSP URL was already updated when fetching info, connection succeeded
-      toast.success(t('orderChannel.step1.connectedSuccess'))
-      onNext({ connectionUrl, success: true })
-    } catch (error) {
-      toast.error(`${error}`)
-      setShowConnectPopup(false)
-      // Keep the URL even on connection failure - user might want to retry
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleKaleidoswapSelect = async () => {
-    setIsLoading(true)
-    try {
-      const networkInfo = (await getNetworkInfo().unwrap()) as any
-
-      if (!networkInfo?.network) {
-        throw new Error(t('orderChannel.step1.networkInfoNotAvailable'))
-      }
-
-      // Match the node's network to a NETWORK_DEFAULTS key case-insensitively
-      // (e.g. "SignetCustom"/"signetcustom" both resolve to the "SignetCustom" key)
-      const network = Object.keys(NETWORK_DEFAULTS).find(
-        (key) => key.toLowerCase() === String(networkInfo.network).toLowerCase()
-      )
-
-      if (!network) {
-        throw new Error(
-          t('orderChannel.step1.unsupportedNetwork', {
-            network: networkInfo.network,
-          })
-        )
-      }
-
-      const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
-      if (!defaultLspUrl) {
-        throw new Error(
-          t('orderChannel.step1.noDefaultLspUrl', {
-            network: networkInfo.network,
-          })
-        )
-      }
-
-      setTempLspUrl(defaultLspUrl)
-
-      // Reset connection state
-      setConnectionUrl('')
-      setIsAlreadyConnected(false)
-      setShowConnectPopup(false)
-
-      // Update Redux store with the new LSP URL
+      // Revert Redux
       dispatch(
         nodeSettingsActions.setNodeSettings({
           ...currentAccount,
-          default_lsp_url: defaultLspUrl,
-          default_maker_url: defaultLspUrl, // Also update maker URL for API calls
+          default_lsp_url: lspUrl,
+          default_maker_url: lspUrl,
         })
       )
-      // Wait a bit for the Redux update to propagate
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const response = await getInfo().unwrap()
-      if (response.lsp_connection_url) {
-        setConnectionUrl(response.lsp_connection_url)
-        // Just check connection status silently, don't show popup
-        await checkPeerConnection(response.lsp_connection_url)
-        toast.success(t('orderChannel.step1.kaleidoLspFetched'))
-      } else {
-        toast.error(t('orderChannel.step1.lspUrlMissing'))
-      }
-    } catch (error: any) {
-      // Check if it's a timeout error
-      let errorMessage = t('orderChannel.step1.kaleidoLspFailed')
-      if (
-        error?.status === 'TIMEOUT_ERROR' ||
-        (error?.error &&
-          typeof error.error === 'string' &&
-          error.error.includes('timeout'))
-      ) {
-        errorMessage = t('orderChannel.step1.timeout')
-      } else if (error?.status === 'FETCH_ERROR') {
-        errorMessage = t('orderChannel.step1.networkError')
-      }
-
-      toast.error(errorMessage)
     } finally {
-      setIsLoading(false)
+      setIsLoadingManual(false)
     }
+  }, [tempLspUrl, lspUrl, getInfo, dispatch, currentAccount, t])
+
+  const connectAndProceed = useCallback(
+    async (connectionUrl: string) => {
+      setIsConnecting(true)
+      try {
+        const pubkey = connectionUrl.split('@')[0]
+        const peersResp = await listPeers().unwrap()
+        const isConnected = peersResp?.peers?.some(
+          (p: any) => p.pubkey === pubkey
+        )
+        if (!isConnected) {
+          const result = await connectPeer({
+            peer_pubkey_and_addr: connectionUrl,
+          })
+          if ('error' in result) {
+            const error = result.error as FetchBaseQueryError
+            const msg =
+              error.data &&
+              typeof error.data === 'object' &&
+              'error' in error.data
+                ? String(error.data.error)
+                : t('orderChannel.step1.failedToConnectPeer')
+            throw new Error(msg)
+          }
+          toast.success(t('orderChannel.step1.connectedSuccess'))
+        }
+        onNext({ connectionUrl, success: true })
+      } catch (error) {
+        toast.error(`${error}`)
+      } finally {
+        setIsConnecting(false)
+      }
+    },
+    [connectPeer, listPeers, onNext, t]
+  )
+
+  const handleManualContinue = () => {
+    if (!manualConnectionUrl) return
+    connectAndProceed(manualConnectionUrl)
   }
 
-  const handleDefaultLspUrlChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    // Just update the temp URL
-    setTempLspUrl(e.target.value)
-    // Reset connection state when URL changes
-    setConnectionUrl('')
-    setIsAlreadyConnected(false)
+  const handleKaleidoContinue = () => {
+    if (!selectedLspConnectionUrl) return
+    if (kaleidoApiUrl) {
+      dispatch(
+        nodeSettingsActions.setNodeSettings({
+          ...currentAccount,
+          default_lsp_url: kaleidoApiUrl,
+          default_maker_url: kaleidoApiUrl,
+        })
+      )
+    }
+    connectAndProceed(selectedLspConnectionUrl)
   }
 
-  const handleFetchLspInfo = async () => {
-    await fetchLspInfo()
-  }
-
-  const getButtonState = () => {
-    if (isLoading) {
-      return {
-        className: 'opacity-50 cursor-not-allowed',
-        disabled: true,
-        text: t('orderChannel.step1.connecting'),
-      }
-    }
-    if (!connectionUrl) {
-      return {
-        className:
-          'opacity-50 cursor-not-allowed bg-gradient-to-r from-gray-500 to-gray-600',
-        disabled: true,
-        text: t('orderChannel.step1.waitingForLspUrl'),
-      }
-    }
-    if (isAlreadyConnected) {
-      return {
-        className: 'bg-primary hover:bg-primary-emphasis text-[#12131C]',
-        disabled: false,
-        text: t('orderChannel.step1.continueWithConnectedLsp'),
-      }
-    }
-    return {
-      className: 'bg-primary hover:bg-primary-emphasis text-[#12131C]',
-      disabled: false,
-      text: t('orderChannel.step1.connectButton'),
-    }
-  }
+  const ContinueButton = ({
+    enabled,
+    onClick,
+    className = '',
+  }: {
+    enabled: boolean
+    onClick: () => void
+    className?: string
+  }) => (
+    <button
+      className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md font-semibold transition-all duration-200 text-sm ${className} ${
+        enabled
+          ? 'bg-primary hover:bg-primary-emphasis text-[#12131C] active:scale-95'
+          : 'bg-primary/30 text-[#12131C]/50 cursor-not-allowed'
+      }`}
+      disabled={!enabled}
+      onClick={onClick}
+      type="button"
+    >
+      {t('orderChannel.step1.continueButton')}
+      <ArrowRight className="w-4 h-4" />
+    </button>
+  )
 
   return (
     <div className="w-full relative">
-      {/* Initial Loading Overlay */}
-      {isInitializing && (
-        <div className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-2xl">
-          <div className="text-center">
-            <Loader2 className="w-16 h-16 text-blue-400 animate-spin mx-auto mb-4" />
-            <p className="text-white text-lg font-semibold">
-              {t('orderChannel.step1.checkingConnection')}
-            </p>
-            <p className="text-content-secondary text-sm mt-2">
-              {t('orderChannel.step1.verifyingConnection')}
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-white mb-3">
-            {t('orderChannel.step1.title')}
-          </h2>
-          <p className="text-content-secondary text-lg">
-            {t('orderChannel.step1.subtitle')}
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="flex justify-between items-center mb-8 px-4">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-gray-900 font-bold shadow-lg shadow-primary/50">
-              1
-            </div>
-            <div className="ml-3">
-              <p className="font-semibold text-white">
-                {t('orderChannel.step1.connectLsp')}
-              </p>
-              <p className="text-xs text-primary">
-                {t('orderChannel.step1.currentStep')}
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 mx-4 mt-2">
-            <div className="h-1.5 bg-surface-high/50 rounded-full overflow-hidden">
-              <div className="h-full bg-primary w-0 transition-all duration-500"></div>
-            </div>
-          </div>
-          <div className="flex items-center opacity-40">
-            <div className="w-10 h-10 bg-surface-high rounded-full flex items-center justify-center text-white font-bold">
-              2
-            </div>
-            <div className="ml-3">
-              <p className="font-semibold text-white">
-                {t('orderChannel.step2.step2Label')}
-              </p>
-              <p className="text-xs text-content-secondary">
-                {t('orderChannel.step1.setParameters')}
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 mx-4 mt-2">
-            <div className="h-1.5 bg-surface-high/50 rounded-full"></div>
-          </div>
-          <div className="flex items-center opacity-40">
-            <div className="w-10 h-10 bg-surface-high rounded-full flex items-center justify-center text-white font-bold">
-              3
-            </div>
-            <div className="ml-3">
-              <p className="font-semibold text-white">
-                {t('orderChannel.step3.step3Label')}
-              </p>
-              <p className="text-xs text-content-secondary">
-                {t('orderChannel.step1.completeSetup')}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Connection Status Banner */}
-        {connectionUrl && (
-          <div
-            className={`mb-6 p-5 rounded-xl border-2 transition-all duration-300 ${
-              isAlreadyConnected
-                ? 'bg-green-900/20 border-green-600/50 shadow-lg shadow-green-900/20'
-                : 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/10'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              {isAlreadyConnected ? (
-                <CheckCircle className="w-8 h-8 text-green-400 flex-shrink-0" />
-              ) : isLoading ? (
-                <Loader2 className="w-8 h-8 text-primary flex-shrink-0 animate-spin" />
-              ) : (
-                <AlertCircle className="w-8 h-8 text-primary flex-shrink-0" />
-              )}
-              <div className="flex-1">
-                <h3
-                  className={`text-lg font-semibold ${
-                    isAlreadyConnected ? 'text-green-300' : 'text-primary'
-                  }`}
-                >
-                  {isAlreadyConnected
-                    ? `✓ ${t('orderChannel.step1.alreadyConnectedMessage')}`
-                    : t('orderChannel.step1.lspReadyConnect')}
-                </h3>
-                <p
-                  className={`text-sm mt-1 ${
-                    isAlreadyConnected ? 'text-green-200/80' : 'text-primary/80'
-                  }`}
-                >
-                  {isAlreadyConnected
-                    ? t('orderChannel.step1.alreadyConnectedInfo')
-                    : t('orderChannel.step1.lspReadyInfo')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Info Card */}
-        <div className="border border-white/30 p-6 rounded-xl mb-6">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-6 h-6 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-white mb-2">
-                {t('orderChannel.step1.howItWorks')}
-              </h3>
-              <div className="space-y-2 text-content-secondary">
-                <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">1.</span>
-                  <span>{t('orderChannel.step1.step1Description')}</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">2.</span>
-                  <span>{t('orderChannel.step1.step2Description')}</span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">3.</span>
-                  <span>{t('orderChannel.step1.step3Description')}</span>
-                </p>
-              </div>
-              <p className="mt-4 text-sm text-content-secondary border-t border-white/10 pt-4">
-                {t('orderChannel.infoMessage')}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* LSP URL Configuration */}
-          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-lg font-semibold text-white flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
-                {t('orderChannel.step1.lspServerUrl')}
-              </label>
+          {/* Left card: Connect New LSP */}
+          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl flex flex-col gap-4">
+            <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" />
+              Connect New LSP
+            </h4>
+
+            <div className="flex flex-col flex-1 gap-3">
+              <div className="text-sm text-content-secondary">
+                LSP server URL
+              </div>
+              <input
+                className="w-full bg-surface-overlay/50 text-white px-3 py-2 rounded-xl border border-border-default focus:border-primary focus:outline-none transition-colors text-sm placeholder:text-content-tertiary"
+                onChange={(e) => {
+                  setTempLspUrl(e.target.value)
+                  setManualConnectionUrl('')
+                }}
+                placeholder="https://..."
+                value={tempLspUrl}
+              />
+
+              <Button
+                className="border-white/30 hover:border-white/50"
+                disabled={isLoadingManual || !tempLspUrl.trim()}
+                fullWidth
+                icon={
+                  isLoadingManual ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Globe className="w-4 h-4" />
+                  )
+                }
+                onClick={fetchManualLspInfo}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {isLoadingManual
+                  ? t('orderChannel.step1.fetching')
+                  : t('orderChannel.step1.fetchLspInfo')}
+              </Button>
+
+              {manualConnectionUrl && (
+                <>
+                  <div className="border-t border-border-default/50" />
+                  <div className="relative">
+                    <textarea
+                      className="w-full bg-surface-base/50 text-white px-3 py-2 pr-10 rounded-xl border border-border-default focus:border-primary focus:outline-none transition-colors h-24 resize-none font-mono text-xs placeholder:text-content-tertiary"
+                      readOnly
+                      value={manualConnectionUrl}
+                    />
+                    <CopyToClipboard
+                      onCopy={() =>
+                        toast.success(t('orderChannel.orderCopy'), {
+                          autoClose: 2000,
+                          position: 'bottom-right',
+                        })
+                      }
+                      text={manualConnectionUrl}
+                    >
+                      <button
+                        className="absolute right-2 top-2 p-1.5 bg-surface-high/80 hover:bg-surface-elevated rounded-md transition-all duration-150 hover:scale-[1.05] active:scale-[0.95] group"
+                        title={t('orderChannel.step1.copyToClipboard')}
+                        type="button"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-content-secondary group-hover:text-white transition-colors" />
+                      </button>
+                    </CopyToClipboard>
+                  </div>
+                </>
+              )}
+
+              <ContinueButton
+                className="mt-auto"
+                enabled={!!manualConnectionUrl}
+                onClick={handleManualContinue}
+              />
             </div>
-            <div className="space-y-3">
-              <div className="relative">
-                <input
-                  className="w-full bg-surface-base/50 text-white px-4 py-3 rounded-lg border border-border-default focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all"
-                  onChange={(e) => handleDefaultLspUrlChange(e)}
-                  placeholder={t('orderChannel.step1.lspUrlPlaceholder')}
-                  value={tempLspUrl}
+          </div>
+
+          {/* Right card: Connected LSP */}
+          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl flex flex-col gap-4">
+            <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Link className="w-5 h-5 text-primary" />
+              Connected LSP
+            </h4>
+
+            {isLoadingKaleido ? (
+              <div className="flex-1 flex items-center justify-center h-40">
+                <Spinner color="#15E99A" overlay={false} size={32} />
+              </div>
+            ) : kaleidoError ? (
+              <div className="flex-1 flex flex-col gap-4">
+                <p className="text-sm text-red-400">{kaleidoError}</p>
+                <ContinueButton enabled={false} onClick={() => {}} />
+              </div>
+            ) : (
+              <div className="flex flex-col flex-1 gap-3">
+                <div className="border-t border-border-default/40" />
+                <div
+                  className={`rounded-lg border p-3 flex flex-col gap-3 cursor-pointer transition-all duration-200 ${
+                    selectedLspConnectionUrl === kaleidoConnectionUrl
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border-default hover:border-primary/50'
+                  }`}
+                  onClick={() =>
+                    setSelectedLspConnectionUrl(
+                      selectedLspConnectionUrl === kaleidoConnectionUrl
+                        ? ''
+                        : kaleidoConnectionUrl
+                    )
+                  }
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      alt="KaleidoSwap"
+                      className="w-8 h-8 flex-shrink-0"
+                      src={kaleidoswapPictogram}
+                    />
+                    <span className="text-sm font-medium text-white flex-1">
+                      KaleidoSwap LSP
+                    </span>
+                    <div className="relative group/disc flex-shrink-0">
+                      <button
+                        className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLspConnectionUrl('')
+                        }}
+                        type="button"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/disc:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+                        Deselect LSP
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-border-default bg-surface-high/50">
+                    <div className="text-xs text-content-secondary font-mono break-all">
+                      {kaleidoApiUrl}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-border-default bg-surface-high/50">
+                    <div className="text-xs text-content-secondary font-mono break-all">
+                      {kaleidoConnectionUrl}
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-border-default/40" />
+
+                <ContinueButton
+                  className="mt-auto"
+                  enabled={!!selectedLspConnectionUrl}
+                  onClick={handleKaleidoContinue}
                 />
               </div>
-
-              <button
-                className={`w-full bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-                  isLoading || !tempLspUrl.trim()
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                disabled={isLoading || !tempLspUrl.trim()}
-                onClick={handleFetchLspInfo}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{t('orderChannel.step1.fetching')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Globe className="w-4 h-4" />
-                    <span>{t('orderChannel.step1.fetchLspInfo')}</span>
-                  </>
-                )}
-              </button>
-
-              <p className="text-sm text-content-secondary">
-                {t('orderChannel.step1.enterLspInstructions')}
-              </p>
-            </div>
-
-            {/* Kaleidoswap LSP Button */}
-            <div className="mt-4 pt-4 border-t border-border-default/50">
-              <button
-                className={`w-full bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 p-4 rounded-lg transition-all duration-200 focus:outline-none ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                disabled={isLoading}
-                onClick={handleKaleidoswapSelect}
-                title={t('orderChannel.step1.useDefaultKaleidoLsp')}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <img
-                    alt="KaleidoSwap"
-                    className="w-10 h-10"
-                    src={kaleidoswapPictogram}
-                  />
-                  <span className="text-sm font-medium text-white">
-                    {t('orderChannel.step1.useDefaultKaleidoLsp')}
-                  </span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* LSP Connection String */}
-          <div className="bg-surface-overlay/80 backdrop-blur-sm p-6 rounded-xl border border-border-default/50 shadow-xl">
-            <label className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Link className="w-5 h-5 text-primary" />
-              {t('orderChannel.step1.connectionStringLabel')}
-            </label>
-            <div className="relative">
-              <textarea
-                className="w-full bg-surface-base/50 text-white px-4 py-3 pr-12 rounded-lg border border-border-default focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none transition-all h-32 resize-none font-mono text-sm"
-                placeholder={t(
-                  'orderChannel.step1.connectionStringPlaceholder'
-                )}
-                readOnly
-                value={
-                  connectionUrl ||
-                  t('orderChannel.step1.connectionStringWaiting')
-                }
-              />
-              {connectionUrl && (
-                <CopyToClipboard
-                  onCopy={() =>
-                    toast.success(t('orderChannel.orderCopy'), {
-                      autoClose: 2000,
-                      position: 'bottom-right',
-                    })
-                  }
-                  text={connectionUrl}
-                >
-                  <button
-                    className="absolute right-3 top-3 p-2 bg-surface-high/80 hover:bg-surface-elevated rounded-lg transition-colors group"
-                    title={t('orderChannel.step1.copyToClipboard')}
-                    type="button"
-                  >
-                    <Copy className="w-4 h-4 text-content-secondary group-hover:text-white transition-colors" />
-                  </button>
-                </CopyToClipboard>
-              )}
-            </div>
-            <p className="mt-3 text-sm text-content-secondary">
-              {t('orderChannel.step1.connectionStringInfo')}
-            </p>
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <div className="flex justify-center">
-          <button
-            className={`
-              group px-10 py-4 rounded-xl text-lg font-bold
-              transition-all duration-300
-              focus:ring-4 focus:ring-offset-2 focus:ring-offset-gray-900 focus:outline-none
-              flex items-center justify-center gap-3 min-w-[280px]
-              ${getButtonState().disabled ? 'cursor-not-allowed' : ''}
-              ${getButtonState().className}
-              ${!getButtonState().disabled && !isLoading ? 'shadow-lg' : ''}
-            `}
-            disabled={getButtonState().disabled}
-            onClick={handleNext}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>{getButtonState().text}</span>
-              </>
-            ) : (
-              <>
-                <span>{getButtonState().text}</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </>
             )}
-          </button>
+          </div>
         </div>
       </div>
 
-      {showConnectPopup && (
-        <ConnectPopup
-          connectionUrl={connectionUrl}
-          isAlreadyConnected={isAlreadyConnected}
-          onClose={() => setShowConnectPopup(false)}
-          onConfirm={handleConnect}
-          t={t}
-        />
-      )}
+      {isConnecting &&
+        createPortal(
+          <div
+            className={`${getModalPositionClass()} inset-0 z-[200] flex items-center justify-center bg-black/60`}
+          >
+            <Spinner color="#15E99A" overlay={false} size={48} />
+          </div>,
+          getModalPortalTarget()
+        )}
     </div>
   )
 }

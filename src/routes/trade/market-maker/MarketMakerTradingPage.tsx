@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { getKaleidoClient } from '../../../api/client'
@@ -11,10 +11,12 @@ import {
   onQuoteResponse,
   webSocketService,
 } from '../../../app/hubs/websocketService'
-import { CREATE_NEW_CHANNEL_PATH } from '../../../app/router/paths'
+import {
+  CREATE_NEW_CHANNEL_PATH,
+  ORDER_CHANNEL_PATH,
+} from '../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
 import { useSettings } from '../../../hooks/useSettings'
-import { BuyChannelModal } from '../../../components/BuyChannelModal'
 import { SwapConfirmation } from '../../../components/SwapConfirmation'
 import { SwapRecap } from '../../../components/SwapRecap'
 import {
@@ -132,6 +134,7 @@ export const Component = () => {
 
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const form = useForm<Fields>({
     defaultValues: {
@@ -203,7 +206,6 @@ export const Component = () => {
   const [swapRecapDetails, setSwapRecapDetails] =
     useState<SwapDetailsType | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [showBuyChannelModal, setShowBuyChannelModal] = useState(false)
 
   // Add state for quote validity tracking
   const [hasValidQuote, setHasValidQuote] = useState(false)
@@ -2921,9 +2923,9 @@ export const Component = () => {
     // If using onchain balance (no channels), create a channel order instead of a regular swap
     if (isUsingOnchainBalance && !hasTradableChannels(channels)) {
       logger.info(
-        'User is buying asset with onchain balance - opening channel order modal'
+        'User is buying asset with onchain balance - opening Buy Channel page'
       )
-      setShowBuyChannelModal(true)
+      goToBuyChannel()
       toast.info(t('tradeMarketMaker.toast.channelOrderCreating'))
       return
     }
@@ -2936,7 +2938,7 @@ export const Component = () => {
         toast.warning(t('tradeMarketMaker.error.pleaseWaitChannelConfirmation'))
         return
       }
-      setShowBuyChannelModal(true)
+      goToBuyChannel()
       toast.info(
         t('tradeMarketMaker.toast.createAssetChannel', {
           asset: missingChannelAsset.asset,
@@ -2947,7 +2949,7 @@ export const Component = () => {
 
     // If user has no channels at all (shouldn't reach here due to earlier checks)
     if (!hasTradableChannels(channels)) {
-      setShowBuyChannelModal(true)
+      goToBuyChannel()
       toast.info(t('tradeMarketMaker.toast.needChannelToTrade'))
       return
     }
@@ -3156,9 +3158,58 @@ export const Component = () => {
     navigate(CREATE_NEW_CHANNEL_PATH)
   }, [navigate])
 
+  // Determine which asset (if any) to preselect on the Buy Channel page
+  const resolvePreselectedAssetId = useCallback((): string | undefined => {
+    if (missingChannelAsset) {
+      return missingChannelAsset.assetId
+    }
+
+    const toAsset = form.getValues().toAsset
+    const fromAsset = form.getValues().fromAsset
+
+    const channelAssetIds = new Set(
+      channels
+        .filter((c) => c.ready)
+        .map((c) => c.asset_id)
+        .filter((id): id is string => id !== null)
+    )
+    channelAssetIds.add('BTC')
+
+    if (
+      toAsset !== 'BTC' &&
+      !channelAssetIds.has(selectedPair?.quote_asset_id || '')
+    ) {
+      return selectedPair?.quote_asset_id || undefined
+    }
+
+    if (
+      fromAsset !== 'BTC' &&
+      !channelAssetIds.has(selectedPair?.base_asset_id || '')
+    ) {
+      return selectedPair?.base_asset_id || undefined
+    }
+
+    if (toAsset && toAsset !== 'BTC') {
+      return selectedPair?.quote_asset_id || undefined
+    }
+
+    return undefined
+  }, [missingChannelAsset, form, channels, selectedPair])
+
+  // Navigate to the full Buy Channel page with the asset preselected,
+  // remembering where to return after the order completes / is cancelled.
+  const goToBuyChannel = useCallback(() => {
+    navigate(ORDER_CHANNEL_PATH, {
+      state: {
+        preselectedAssetId: resolvePreselectedAssetId(),
+        returnTo: location.pathname,
+      },
+    })
+  }, [navigate, resolvePreselectedAssetId, location.pathname])
+
   const handleBuyChannelAction = useCallback(() => {
-    setShowBuyChannelModal(true)
-  }, [])
+    goToBuyChannel()
+  }, [goToBuyChannel])
 
   // Determine what to show based on loading phase and validation state
   const shouldShowNoChannelsMessage =
@@ -3448,77 +3499,6 @@ export const Component = () => {
           swapDetails={swapRecapDetails}
         />
       )}
-
-      <BuyChannelModal
-        isOpen={showBuyChannelModal}
-        onClose={() => setShowBuyChannelModal(false)}
-        onSuccess={() => {
-          setShowBuyChannelModal(false)
-          toast.success(t('tradeMarketMaker.toast.channelCreatedSuccess'))
-          setTimeout(() => {
-            refreshChannelsAndAmounts()
-          }, 1000)
-        }}
-        preselectedAsset={(() => {
-          // Use the missingChannelAsset state if available
-          if (missingChannelAsset) {
-            const amount = missingChannelAsset.isFromAsset
-              ? parseFloat(form.getValues().from || '0')
-              : parseFloat(form.getValues().to || '0')
-
-            return {
-              amount: amount,
-              assetId: missingChannelAsset.assetId,
-            }
-          }
-
-          const toAsset = form.getValues().toAsset
-          const fromAsset = form.getValues().fromAsset
-          const toAmount = parseFloat(form.getValues().to || '0')
-
-          // Check which asset is missing and preselect it
-          const channelAssetIds = new Set(
-            channels
-              .filter((c) => c.ready)
-              .map((c) => c.asset_id)
-              .filter((id): id is string => id !== null)
-          )
-          channelAssetIds.add('BTC')
-
-          // If receiving asset is missing, preselect it
-          if (
-            toAsset !== 'BTC' &&
-            !channelAssetIds.has(selectedPair?.quote_asset_id || '')
-          ) {
-            return {
-              amount: toAmount,
-              assetId: selectedPair?.quote_asset_id || toAsset,
-            }
-          }
-
-          // If sending asset is missing, preselect it
-          if (
-            fromAsset !== 'BTC' &&
-            !channelAssetIds.has(selectedPair?.base_asset_id || '')
-          ) {
-            const fromAmount = parseFloat(form.getValues().from || '0')
-            return {
-              amount: fromAmount,
-              assetId: selectedPair?.base_asset_id || fromAsset,
-            }
-          }
-
-          // Fallback to toAsset if it's not BTC
-          if (toAsset && toAsset !== 'BTC') {
-            return {
-              amount: toAmount,
-              assetId: selectedPair?.quote_asset_id || toAsset,
-            }
-          }
-
-          return undefined
-        })()}
-      />
     </div>
   )
 }

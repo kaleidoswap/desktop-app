@@ -47,7 +47,7 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
   if (!hasBalanceData) {
     return (
       <div className="flex items-center justify-center gap-3 p-8">
-        <ClipLoader color="#3B82F6" size={24} />
+        <ClipLoader color="#15E99A" size={24} />
         <span className="text-content-secondary">
           {t('orderChannel.step3.loadingBalance')}
         </span>
@@ -141,7 +141,7 @@ export const WalletPaymentSection: React.FC<WalletPaymentSectionProps> = ({
 
           {/* Pay Button */}
           <button
-            className="w-full px-6 py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 font-medium bg-primary hover:bg-primary-emphasis text-primary-foreground"
+            className="w-full px-6 py-4 rounded-full transition-all duration-200 flex items-center justify-center gap-3 font-medium bg-primary hover:bg-primary-emphasis text-primary-foreground"
             onClick={onPayClick}
           >
             <span>{paymentMethod === 'lightning' ? '⚡' : '₿'}</span>

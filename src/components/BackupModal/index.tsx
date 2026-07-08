@@ -1,7 +1,10 @@
-import { Folder, Loader2 } from 'lucide-react'
+import { Archive, Folder, Loader2, Save, X } from 'lucide-react'
 import React from 'react'
 import { Controller } from 'react-hook-form'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+
+import { getModalPortalTarget } from '../../helpers/modalPortal'
 
 interface BackupModalProps {
   showModal: boolean
@@ -30,86 +33,113 @@ export const BackupModal: React.FC<BackupModalProps> = ({
 
   if (!showModal) return null
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-surface-overlay p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-content-primary">
-          {t('backupModal.title')}
-        </h2>
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-1">
-              {t('backupModal.backupFilePath')}
-            </label>
-            <div className="flex">
-              <input
-                className="flex-grow px-3 py-2 text-content-primary bg-surface-high border border-border-default rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary"
-                onChange={(e) => setValue('backupPath', e.target.value)}
-                type="text"
-                value={backupPath}
-              />
-              <button
-                className="px-3 py-2 bg-primary text-content-inverse rounded-r-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                onClick={onSelectFolder}
-                type="button"
-              >
-                <Folder className="w-5 h-5" />
-              </button>
-            </div>
-            {formState.errors.backupPath && (
-              <p className="mt-1 text-sm text-status-danger">
-                {t('backupModal.invalidBackupPath')}
-              </p>
-            )}
-          </div>
-          <Controller
-            control={control}
-            name="nodePassword"
-            render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-content-secondary mb-1">
-                  {t('backupModal.nodePassword')}
-                </label>
-                <input
-                  {...field}
-                  className="w-full px-3 py-2 text-content-primary bg-surface-high border border-border-default rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder={t('backupModal.nodePasswordPlaceholder')}
-                  type="password"
-                />
-              </div>
-            )}
-          />
-          {isBackupInProgress && (
-            <div className="mt-4">
-              <div className="flex items-center justify-center mb-2">
-                <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              </div>
-              <p className="text-content-primary text-center">
-                {t('backupModal.backupInProgressMessage')}
-                <br />
-                {t('backupModal.backupLockedMessage')}
-              </p>
-            </div>
-          )}
-          <div className="flex justify-between space-x-4 pt-6">
+  return createPortal(
+    <div
+      className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative">
+        <div className="max-h-[85vh] overflow-y-auto px-8 py-8">
+          {/* Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
+            <Archive className="w-6 h-6 text-primary" />
+            <h3 className="text-xl font-bold text-white flex-1">
+              {t('backupModal.title')}
+            </h3>
             <button
-              className="flex-1 px-4 py-2 bg-surface-elevated text-content-primary rounded-md hover:bg-surface-high border border-border-default focus:outline-none focus:ring-2 focus:ring-border-strong disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isBackupInProgress}
+              className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
               onClick={onClose}
               type="button"
             >
-              {t('backupModal.cancel')}
-            </button>
-            <button
-              className="flex-1 px-4 py-2 bg-primary text-content-inverse rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isBackupInProgress}
-              type="submit"
-            >
-              {t('backupModal.createBackup')}
+              <X size={18} />
             </button>
           </div>
-        </form>
+
+          {/* Form */}
+          <form className="space-y-4" onSubmit={onSubmit}>
+            {/* Backup path */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                {t('backupModal.backupFilePath')}
+              </label>
+              <div className="flex items-center bg-surface-overlay/50 rounded-xl border border-border-default focus-within:border-primary/60 transition-colors">
+                <input
+                  className="flex-1 min-w-0 px-3 py-2.5 bg-transparent focus:outline-none text-white placeholder:text-content-tertiary text-sm"
+                  onChange={(e) => setValue('backupPath', e.target.value)}
+                  type="text"
+                  value={backupPath}
+                />
+                <button
+                  className="px-3 py-2.5 text-primary hover:text-white hover:bg-primary/20 border-l border-border-default transition-colors rounded-r-xl"
+                  onClick={onSelectFolder}
+                  type="button"
+                >
+                  <Folder className="w-4 h-4" />
+                </button>
+              </div>
+              {formState.errors.backupPath && (
+                <p className="text-xs text-status-danger">
+                  {t('backupModal.invalidBackupPath')}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <Controller
+              control={control}
+              name="nodePassword"
+              render={({ field }) => (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                    {t('backupModal.nodePassword')}
+                  </label>
+                  <input
+                    {...field}
+                    className="w-full px-3 py-2.5 bg-surface-overlay/50 rounded-xl border border-border-default focus:border-primary/60 focus:outline-none text-white placeholder:text-content-tertiary text-sm transition-colors"
+                    placeholder={t('backupModal.nodePasswordPlaceholder')}
+                    type="password"
+                  />
+                </div>
+              )}
+            />
+
+            {/* Progress */}
+            {isBackupInProgress && (
+              <div className="flex flex-col items-center gap-2 py-3 px-4 bg-primary/10 border border-primary/20 rounded-xl">
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                <p className="text-sm text-content-primary text-center">
+                  {t('backupModal.backupInProgressMessage')}
+                </p>
+                <p className="text-xs text-content-secondary text-center">
+                  {t('backupModal.backupLockedMessage')}
+                </p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2">
+              <button
+                className="flex items-center gap-1.5 px-4 py-2.5 text-content-secondary hover:text-content-primary transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isBackupInProgress}
+                onClick={onClose}
+                type="button"
+              >
+                <X className="w-4 h-4" />
+                {t('backupModal.cancel')}
+              </button>
+              <button
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isBackupInProgress}
+                type="submit"
+              >
+                <Save className="w-4 h-4" />
+                {t('backupModal.createBackup')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }

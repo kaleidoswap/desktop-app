@@ -102,7 +102,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       {/* Header row: label | available amount + refresh | size chips */}
       <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between gap-2">
         {/* Label */}
-        <span className="text-xs font-semibold text-content-tertiary uppercase tracking-wider shrink-0">
+        <span className="text-xs font-semibold text-white uppercase tracking-wider shrink-0">
           {label}
         </span>
 
@@ -120,7 +120,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               </span>
               {onRefresh && (
                 <button
-                  className="p-1.5 hover:bg-primary/10 rounded-lg transition-colors text-content-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-1 rounded-md bg-transparent hover:bg-surface-high/50 text-white border border-border-default transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={disabled}
                   onClick={onRefresh}
                   title={t('trade.swapInput.refreshAmounts')}
@@ -142,7 +142,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                   className={`px-2 py-0.5 rounded text-xs font-semibold border transition-all duration-150 active:scale-95 ${
                     selectedSize === pct
                       ? 'bg-primary/25 border-primary/50 text-primary'
-                      : 'bg-surface-high/40 border-border-default/30 text-content-tertiary hover:text-white hover:border-border-default/60'
+                      : 'bg-surface-high/40 border-border-default/50 text-content-secondary hover:text-white hover:border-border-default'
                   } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                   disabled={disabled}
                   key={pct}
@@ -186,7 +186,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
                 type="text"
                 value={value}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
                 {getDisplayAsset(asset)}
               </span>
             </div>

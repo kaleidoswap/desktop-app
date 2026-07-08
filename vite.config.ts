@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { execSync } from 'child_process'
 import { fileURLToPath } from 'url'
@@ -25,6 +26,7 @@ export default defineConfig(async () => {
   return {
     plugins: [
       react(),
+      tailwindcss(),
       nodePolyfills({
         // To exclude specific polyfills, add them to this list.
         exclude: [
@@ -49,6 +51,9 @@ export default defineConfig(async () => {
       },
       port: 1420,
       strictPort: true,
+      watch: {
+        ignored: ['**/src-tauri/target/**'],
+      },
     },
     // 3. to make use of `TAURI_DEBUG` and other env variables
     // https://tauri.studio/v1/api/config#buildconfig.beforedevcommand

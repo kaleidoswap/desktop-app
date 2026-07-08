@@ -1,12 +1,14 @@
 import React from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import CopyToClipboard from 'react-copy-to-clipboard'
-import { Copy, QrCode } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import type { ReactNode } from 'react'
 
 import { formatNumberWithCommas } from '../../../helpers/number'
+import BitcoinLogo from '../../../assets/bitcoin-logo.svg'
+import LightningLogo from '../../../assets/lightning-logo.svg'
 
 interface PaymentSectionText {
   amountLabel: string
@@ -85,12 +87,12 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
       text?.onchainAddressTitle ||
       t('components.buyChannelModal.onchainAddress'),
     paymentDescription:
-      text?.paymentDescription ||
+      text?.paymentDescription ??
       t('components.buyChannelModal.paymentDescription'),
     paymentEyebrow:
-      text?.paymentEyebrow || t('components.buyChannelModal.paymentEyebrow'),
+      text?.paymentEyebrow ?? t('components.buyChannelModal.paymentEyebrow'),
     paymentTitle:
-      text?.paymentTitle || t('components.buyChannelModal.paymentTitle'),
+      text?.paymentTitle ?? t('components.buyChannelModal.paymentTitle'),
     qrBadge: text?.qrBadge || t('components.buyChannelModal.unifiedQrBadge'),
     qrDescription:
       text?.qrDescription ||
@@ -98,123 +100,135 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
     qrTitle: text?.qrTitle || t('components.buyChannelModal.unifiedQrTitle'),
   }
 
+  const hasHeader = !!(
+    labels.paymentEyebrow ||
+    labels.paymentTitle ||
+    labels.paymentDescription
+  )
+
   return (
     <div className="min-w-0 space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
-            {labels.paymentEyebrow}
-          </p>
-          <h3 className="mt-2 text-xl font-semibold text-content-primary">
-            {labels.paymentTitle}
-          </h3>
-          <p className="mt-2 text-sm text-content-secondary">
-            {labels.paymentDescription}
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 lg:items-end">
-          <div className="w-fit rounded-xl border border-border-subtle bg-surface-overlay/60 px-3 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-content-tertiary">
+        {hasHeader && (
+          <div className="min-w-0">
+            {labels.paymentEyebrow && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
+                {labels.paymentEyebrow}
+              </p>
+            )}
+            {labels.paymentTitle && (
+              <h3 className="mt-2 text-xl font-semibold text-content-primary">
+                {labels.paymentTitle}
+              </h3>
+            )}
+            {labels.paymentDescription && (
+              <p className="mt-2 text-sm text-content-secondary">
+                {labels.paymentDescription}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex items-stretch gap-4 w-full">
+          <div className="shrink-0 rounded-xl border border-border-subtle bg-surface-overlay/60 px-3 py-2">
+            <p className="text-sm font-medium text-content-primary">
               {labels.amountLabel}
             </p>
-            <p className="mt-1 text-lg font-semibold text-amber-300">
-              {amountDisplay || `${formatNumberWithCommas(amountSat)} sats`}
+            <p className="mt-1 text-lg font-semibold text-white">
+              {amountDisplay || `${formatNumberWithCommas(amountSat)} SATS`}
             </p>
           </div>
-          {countdown && <div className="w-full lg:w-fit">{countdown}</div>}
+          {countdown && <div className="flex-1">{countdown}</div>}
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-stretch">
+        {/* Left: QR code */}
         {bip21URI && (
-          <div className="rounded-[22px] border border-border-subtle bg-surface-overlay/50 p-4 h-full flex flex-col">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-400/12 text-blue-200">
-                <QrCode className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-medium text-content-primary">
-                    {labels.qrTitle}
-                  </p>
-                  <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200">
-                    {labels.qrBadge}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-content-secondary">
-                  {labels.qrDescription}
-                </p>
-              </div>
+          <div className="rounded-[22px] border border-border-subtle bg-surface-overlay/50 p-4 flex flex-col items-center justify-center">
+            <p className="text-sm font-medium text-content-primary mb-3">
+              {labels.qrTitle}
+            </p>
+            <div className="w-full max-w-[200px] rounded-2xl bg-white p-3 shadow-lg">
+              <QRCodeSVG
+                size={256}
+                style={{ display: 'block', height: 'auto', width: '100%' }}
+                value={bip21URI}
+              />
             </div>
-
-            <div className="mt-4 flex flex-1 items-center justify-center">
-              <div className="w-full max-w-[200px] rounded-2xl bg-white p-3 shadow-lg">
-                <QRCodeSVG
-                  size={256}
-                  style={{ display: 'block', height: 'auto', width: '100%' }}
-                  value={bip21URI}
-                />
-              </div>
-            </div>
+            <span
+              className="mt-3 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80"
+              style={{
+                background:
+                  'linear-gradient(to right, rgba(249,115,22,0.15), rgba(234,179,8,0.15))',
+                border: '1px solid rgba(249,115,22,0.25)',
+              }}
+            >
+              Onchain + LN
+            </span>
           </div>
         )}
 
-        {walletSection && <div className="h-full">{walletSection}</div>}
-      </div>
-
-      <div className="space-y-4">
-        <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-          {bolt11Invoice && (
-            <div className="min-w-0 rounded-[18px] border border-cyan-400/18 bg-cyan-400/6 p-3.5">
-              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
-                    {labels.lightningAddressTitle}
-                  </p>
-                  <p className="mt-1.5 text-sm font-medium text-cyan-100">
-                    {labels.lightningAddressLabel}
-                  </p>
-                </div>
-                <CopyToClipboard onCopy={copySuccess} text={bolt11Invoice}>
-                  <button className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-base/70 px-2 py-1 text-[11px] font-medium text-content-primary transition-colors hover:border-cyan-400/40 hover:text-cyan-200">
-                    <Copy className="h-3 w-3" />
-                    {labels.copyInvoice}
+        {/* Right: Onchain + Lightning stacked */}
+        <div className="flex flex-col gap-4">
+          {onchainAddress && (
+            <div className="min-w-0 rounded-xl border border-border-subtle bg-surface-overlay/60 p-3.5 flex-1">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <img alt="Bitcoin" className="w-3.5 h-3.5" src={BitcoinLogo} />
+                <p className="text-sm font-medium text-content-primary">
+                  Onchain address
+                </p>
+              </div>
+              <div className="flex items-start gap-2 rounded-xl border border-border-subtle bg-surface-base/45 px-3 py-2.5">
+                <p className="flex-1 font-mono text-[11px] leading-5 text-content-primary break-all">
+                  {onchainAddress}
+                </p>
+                <CopyToClipboard onCopy={copySuccess} text={onchainAddress}>
+                  <button
+                    className="shrink-0 mt-0.5 text-content-tertiary hover:text-white transition-colors"
+                    type="button"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
                   </button>
                 </CopyToClipboard>
               </div>
-
-              <p className="mt-3 max-h-24 overflow-auto break-all rounded-2xl border border-border-subtle bg-surface-base/45 px-3 py-2.5 font-mono text-[11px] leading-5 text-content-primary">
-                {bolt11Invoice}
-              </p>
             </div>
           )}
 
-          {onchainAddress && (
-            <div className="min-w-0 rounded-[18px] border border-amber-400/18 bg-amber-400/6 p-3.5">
-              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-content-tertiary">
-                    {labels.onchainAddressTitle}
-                  </p>
-                  <p className="mt-1.5 text-sm font-medium text-amber-100">
-                    {labels.onchainAddressLabel}
-                  </p>
-                </div>
-                <CopyToClipboard onCopy={copySuccess} text={onchainAddress}>
-                  <button className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border-subtle bg-surface-base/70 px-2 py-1 text-[11px] font-medium text-content-primary transition-colors hover:border-amber-400/40 hover:text-amber-200">
-                    <Copy className="h-3 w-3" />
-                    {labels.copyAddress}
+          {bolt11Invoice && (
+            <div className="min-w-0 rounded-xl border border-border-subtle bg-surface-overlay/60 p-3.5 flex-1">
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <img
+                  alt="Lightning"
+                  className="w-3.5 h-3.5"
+                  src={LightningLogo}
+                />
+                <p className="text-sm font-medium text-content-primary">
+                  Lightning invoice
+                </p>
+              </div>
+              <div className="flex items-start gap-2 rounded-xl border border-border-subtle bg-surface-base/45 px-3 py-2.5">
+                <p className="flex-1 font-mono text-[11px] leading-5 text-content-primary break-all">
+                  {bolt11Invoice.length > 70
+                    ? bolt11Invoice.slice(0, 30) +
+                      '...' +
+                      bolt11Invoice.slice(-30)
+                    : bolt11Invoice}
+                </p>
+                <CopyToClipboard onCopy={copySuccess} text={bolt11Invoice}>
+                  <button
+                    className="shrink-0 mt-0.5 text-content-tertiary hover:text-white transition-colors"
+                    type="button"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
                   </button>
                 </CopyToClipboard>
               </div>
-
-              <p className="mt-3 max-h-24 overflow-auto break-all rounded-2xl border border-border-subtle bg-surface-base/45 px-3 py-2.5 font-mono text-[11px] leading-5 text-content-primary">
-                {onchainAddress}
-              </p>
             </div>
           )}
         </div>
       </div>
+
+      {walletSection && <div>{walletSection}</div>}
     </div>
   )
 }

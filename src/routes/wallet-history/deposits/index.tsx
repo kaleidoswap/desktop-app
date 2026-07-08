@@ -1,16 +1,20 @@
 import Decimal from 'decimal.js'
 import {
+  Coins,
+  LayoutGrid,
+  Calendar,
   Link as Chain,
   Zap,
   RefreshCw,
   Loader as LoaderIcon,
   Search,
+  Download,
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useAppSelector } from '../../../app/store/hooks'
-import { Button, Badge, Alert, IconButton, Card } from '../../../components/ui'
+import { Button, Badge, Alert, Card, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -87,9 +91,21 @@ export const Component: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <LoaderIcon className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-content-secondary">{t('deposits.loading')}</p>
+      <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+          <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+            <Download className="relative z-10 w-10 h-10 text-[#15E99A]" />
+          </div>
+        </div>
+        <div className="text-center space-y-4 max-w-lg">
+          <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
+            {t('deposits.loading')}
+          </p>
+          <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+            <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -173,12 +189,30 @@ export const Component: React.FC = () => {
     }
   )
 
+  // Zero-amount BTC Lightning invoice (an unpaid receive invoice — e.g. the
+  // one auto-created when the deposit screen opens). These are hidden from the
+  // list by default and only shown via the "Pending invoices" filter.
+  const isZeroAmountLnInvoice = (d: DepositWithTimestamp) =>
+    d.type === 'off-chain' &&
+    !d.rgbAssetId &&
+    parseFloat(d.satAmount || '0') === 0
+
   const filteredDeposits = allDeposits.filter(
     (deposit: DepositWithTimestamp) => {
+      if (statusFilter !== 'pending-invoice' && isZeroAmountLnInvoice(deposit))
+        return false
       if (typeFilter !== 'all' && deposit.type !== typeFilter) return false
       if (assetFilter !== 'all' && assetLabel(deposit) !== assetFilter)
         return false
-      if (statusFilter !== 'all') {
+      if (statusFilter === 'pending-invoice') {
+        // Unpaid, zero-amount Lightning invoices generated to receive BTC.
+        const isPendingZeroInvoice =
+          deposit.type === 'off-chain' &&
+          (deposit.status ?? '').toLowerCase() === 'pending' &&
+          !deposit.rgbAssetId &&
+          parseFloat(deposit.satAmount || '0') === 0
+        if (!isPendingZeroInvoice) return false
+      } else if (statusFilter !== 'all') {
         const depositStatus = deposit.status ?? 'Completed'
         if (depositStatus.toLowerCase() !== statusFilter.toLowerCase())
           return false
@@ -336,133 +370,75 @@ export const Component: React.FC = () => {
 
   return (
     <Card className="bg-surface-overlay/50 border border-border-default/50">
-      <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-green-500/10">
-            <Chain className="h-6 w-6 text-green-500" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-content-secondary" />
+            </div>
+            <input
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('deposits.searchPlaceholder')}
+              type="text"
+              value={searchTerm}
+            />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            {t('deposits.title')}
-          </h2>
-        </div>
 
-        <IconButton
-          aria-label={t('deposits.refresh')}
-          disabled={isRefreshing}
-          icon={
-            isRefreshing ? (
-              <LoaderIcon className="w-5 h-5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-5 h-5" />
-            )
-          }
-          onClick={handleRefresh}
-          variant="outline"
-        />
-      </div>
+          <Select
+            icon={<Coins className="h-4 w-4" />}
+            onChange={(val) => setAssetFilter(val as any)}
+            options={[
+              { label: t('deposits.allAssets'), value: 'all' },
+              ...uniqueAssets.map((asset) => ({ label: asset, value: asset })),
+            ]}
+            value={assetFilter}
+          />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-content-secondary" />
-          </div>
-          <input
-            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t('deposits.searchPlaceholder')}
-            type="text"
-            value={searchTerm}
+          <Select
+            icon={<LayoutGrid className="h-4 w-4" />}
+            onChange={(val) => setTypeFilter(val as any)}
+            options={[
+              { label: t('deposits.allTypes'), value: 'all' },
+              { label: t('deposits.onChain'), value: 'on-chain' },
+              { label: t('deposits.offChain'), value: 'off-chain' },
+            ]}
+            value={typeFilter}
+          />
+
+          <Select
+            icon={<Calendar className="h-4 w-4" />}
+            onChange={(val) => setStatusFilter(val as any)}
+            options={[
+              { label: t('deposits.allStatuses'), value: 'all' },
+              { label: t('deposits.completed'), value: 'Completed' },
+              { label: t('deposits.pending'), value: 'Pending' },
+              { label: t('deposits.failed'), value: 'Failed' },
+              {
+                label: t('deposits.pendingInvoices', 'Pending invoices'),
+                value: 'pending-invoice',
+              },
+            ]}
+            value={statusFilter}
           />
         </div>
 
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            onChange={(e) => setTypeFilter(e.target.value as any)}
-            value={typeFilter}
+        <div className="relative group/ref shrink-0">
+          <button
+            aria-label={t('deposits.refresh')}
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isRefreshing}
+            onClick={handleRefresh}
+            type="button"
           >
-            <option value="all">{t('deposits.allTypes')}</option>
-            <option value="on-chain">{t('deposits.onChain')}</option>
-            <option value="off-chain">{t('deposits.offChain')}</option>
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Chain className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            onChange={(e) => setAssetFilter(e.target.value)}
-            value={assetFilter}
-          >
-            <option value="all">{t('deposits.allAssets')}</option>
-            {uniqueAssets.map((asset) => (
-              <option key={asset} value={asset}>
-                {asset}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Zap className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-3 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-            onChange={(e) => setStatusFilter(e.target.value)}
-            value={statusFilter}
-          >
-            <option value="all">{t('deposits.allStatuses')}</option>
-            <option value="Completed">{t('deposits.completed')}</option>
-            <option value="Pending">{t('deposits.pending')}</option>
-            <option value="Failed">{t('deposits.failed')}</option>
-          </select>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
+            {isRefreshing ? (
+              <LoaderIcon className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </button>
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+            Refresh data
           </div>
         </div>
       </div>
@@ -514,9 +490,7 @@ export const Component: React.FC = () => {
         </div>
       ) : (
         <Table
-          className=""
           columns={tableColumns}
-          containerClassName=""
           data={filteredDeposits}
           emptyState={
             <div className="text-center py-8 text-content-secondary bg-surface-overlay/30 rounded-lg border border-border-default">
@@ -546,8 +520,6 @@ export const Component: React.FC = () => {
             </div>
           }
           gridClassName="grid-cols-6"
-          minWidth=""
-          rowClassName={(_row, _i) => ''}
         />
       )}
     </Card>

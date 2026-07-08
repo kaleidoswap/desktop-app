@@ -1,5 +1,5 @@
-import { Info } from 'lucide-react'
 import React from 'react'
+import { Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { formatNumberWithCommas } from '../../helpers/number'
@@ -43,24 +43,20 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
 
   return (
     <div className={containerClassName}>
-      <h3 className="text-lg font-semibold text-content-primary mb-3 flex items-center gap-2">
-        <Info className="w-5 h-5 text-primary" />
+      <div className="text-sm font-medium text-white mb-3">
         {showGrandTotal && additionalCosts.length > 0
           ? t('channelConfiguration.feeBreakdown.totalCostBreakdown')
           : t('channelConfiguration.feeBreakdown.estimatedCosts')}
-        {isLoading && (
-          <span className="ml-2 text-sm text-content-secondary">
-            {t('channelConfiguration.feeBreakdown.calculating')}
-          </span>
-        )}
-      </h3>
+      </div>
       <div className="space-y-2">
         {/* Channel Fees */}
         <div className="flex justify-between text-sm items-center">
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.setupFee')}
           </span>
-          {fees ? (
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
+          ) : fees ? (
             <span className="text-content-primary font-medium">
               {formatNumberWithCommas(fees.setup_fee.toString())} sats
             </span>
@@ -72,7 +68,9 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.capacityFee')}
           </span>
-          {fees ? (
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
+          ) : fees ? (
             <span className="text-content-primary font-medium">
               {formatNumberWithCommas(fees.capacity_fee.toString())} sats
             </span>
@@ -84,7 +82,9 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           <span className="text-content-secondary">
             {t('channelConfiguration.feeBreakdown.durationFee')}
           </span>
-          {fees ? (
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
+          ) : fees ? (
             <span className="text-content-primary font-medium">
               {formatNumberWithCommas(fees.duration_fee.toString())} sats
             </span>
@@ -111,7 +111,9 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           <span className="text-content-secondary font-medium">
             {t('channelConfiguration.feeBreakdown.channelFees')}
           </span>
-          {fees ? (
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
+          ) : fees ? (
             <span className="text-content-primary font-semibold">
               {formatNumberWithCommas(fees.total_fee.toString())} sats
             </span>
@@ -145,7 +147,9 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
             <span className="text-content-primary font-bold text-base">
               {t('channelConfiguration.feeBreakdown.totalPayment')}
             </span>
-            {fees ? (
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
+            ) : fees ? (
               <span className="text-primary font-bold text-base">
                 {formatNumberWithCommas(calculateGrandTotal().toString())} sats
               </span>
@@ -155,12 +159,6 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           </div>
         )}
       </div>
-
-      {!showGrandTotal && (
-        <div className="mt-4 text-xs text-content-secondary">
-          <p>{t('channelConfiguration.feeBreakdown.feeExplanation')}</p>
-        </div>
-      )}
     </div>
   )
 }

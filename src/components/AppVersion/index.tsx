@@ -1,5 +1,5 @@
 import { getName, getVersion } from '@tauri-apps/api/app'
-import { GitCommit, Calendar, Package } from 'lucide-react'
+import { Package, Info } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -147,48 +147,45 @@ export const AppVersion: React.FC<AppVersionProps> = ({
 
   if (showDetailed) {
     return (
-      <div className={`bg-white/5 rounded-lg p-4 ${className}`}>
-        <div className="flex items-center gap-2 mb-3">
-          <Package className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-medium text-white">App Information</h3>
+      <div className={className}>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
+          <Info className="w-5 h-5 text-primary flex-shrink-0" />
+          <h2 className="text-base font-bold text-white">App Information</h2>
         </div>
-
-        <div className="space-y-3 text-xs">
-          <div className="flex justify-between items-center">
-            <span className="text-content-secondary">Version:</span>
-            <span className="font-mono text-white bg-primary/20 px-2 py-1 rounded">
+        <div className="p-4 space-y-1.5">
+          <div className="flex justify-between gap-4 text-sm">
+            <span className="text-content-secondary">Version</span>
+            <span className="font-mono text-content-primary">
               v{versionInfo.version}
             </span>
           </div>
 
           {versionInfo.commit && (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 text-content-secondary">
-                <GitCommit className="w-3 h-3" />
-                <span>{t('components.appVersion.commit')}</span>
-              </div>
-              <span className="font-mono text-white bg-surface-elevated/30 px-2 py-1 rounded">
+            <div className="flex justify-between gap-4 text-sm">
+              <span className="text-content-secondary">
+                {t('components.appVersion.commit')}
+              </span>
+              <span className="font-mono text-content-primary">
                 {formatCommit(versionInfo.commit)}
               </span>
             </div>
           )}
 
           {versionInfo.buildDate && (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 text-content-secondary">
-                <Calendar className="w-3 h-3" />
-                <span>{t('components.appVersion.built')}</span>
-              </div>
-              <span className="text-white">
+            <div className="flex justify-between gap-4 text-sm">
+              <span className="text-content-secondary">
+                {t('components.appVersion.built')}
+              </span>
+              <span className="text-content-primary">
                 {formatDate(versionInfo.buildDate)}
               </span>
             </div>
           )}
 
           {versionInfo.environment && (
-            <div className="flex justify-between items-center">
-              <span className="text-content-secondary">Environment:</span>
-              <span className="capitalize text-white bg-amber-600/30 px-2 py-1 rounded text-xs">
+            <div className="flex justify-between gap-4 text-sm">
+              <span className="text-content-secondary">Environment</span>
+              <span className="capitalize text-content-primary">
                 {versionInfo.environment}
               </span>
             </div>

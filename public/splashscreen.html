@@ -43,10 +43,9 @@
 
         .particle {
             position: absolute;
-            background: linear-gradient(var(--primary-light), var(--primary));
             border-radius: 50%;
-            filter: blur(8px);
-            opacity: 0.2;
+            filter: blur(60px);
+            opacity: 0.07;
             animation: float 20s infinite linear;
         }
 
@@ -66,13 +65,6 @@
             flex-direction: column;
             align-items: center;
             padding: 3.5rem;
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(24px);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 
-                0 24px 48px -12px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
             width: 480px;
             max-width: 90vw;
             animation: appear 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -244,28 +236,27 @@
         const particles = document.getElementById('particles');
         const particleCount = 8;
 
+        const colors = ['#6F32FF', '#15E99A', '#4F1FCC', '#0FB87A', '#8B5CF6', '#10D98A'];
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
-            
-            // Random size between 100px and 300px
-            const size = Math.random() * 200 + 100;
+
+            const size = Math.random() * 260 + 140;
             particle.style.width = `${size}px`;
             particle.style.height = `${size}px`;
-            
-            // Random starting position
+
+            particle.style.background = colors[i % colors.length];
+
             particle.style.left = `${Math.random() * 100}%`;
             particle.style.top = `${Math.random() * 100}%`;
-            
-            // Random movement
+
             const moveX = (Math.random() - 0.5) * 100;
             const moveY = (Math.random() - 0.5) * 100;
             particle.style.setProperty('--move-x', `${moveX}%`);
             particle.style.setProperty('--move-y', `${moveY}%`);
-            
-            // Random delay
+
             particle.style.animationDelay = `${-Math.random() * 20}s`;
-            
+
             particles.appendChild(particle);
         }
     </script>

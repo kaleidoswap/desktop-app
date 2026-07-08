@@ -13,7 +13,13 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../helpers/modalPortal'
 
 interface SupportModalProps {
   isOpen: boolean
@@ -88,10 +94,14 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
     setExpandedIssue(null)
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+  const pos = getModalPositionClass()
+  return createPortal(
+    <div
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto`}
+      onClick={onClose}
+    >
       <div
-        className="bg-surface-base border border-divider/20 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+        className="bg-surface-base border border-divider/20 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-scroll custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -123,7 +133,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
               <div className="grid gap-4">
                 {/* Documentation */}
                 <div
-                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() =>
                     openExternalLink('https://docs.kaleidoswap.com')
                   }
@@ -146,7 +156,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
                 {/* FAQ */}
                 <div
-                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() =>
                     openExternalLink(
                       'https://docs.kaleidoswap.com/desktop-app/faq'
@@ -171,7 +181,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
                 {/* Telegram */}
                 <div
-                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() => openExternalLink('https://t.me/kaleidoswap')}
                 >
                   <div className="flex items-center gap-4">
@@ -192,7 +202,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
                 {/* GitHub */}
                 <div
-                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() =>
                     openExternalLink(
                       'https://github.com/kaleidoswap/desktop-app'
@@ -217,7 +227,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
 
                 {/* Troubleshooting */}
                 <div
-                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-all duration-200 hover:-translate-y-1 group"
+                  className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() => setActiveSection('troubleshoot')}
                 >
                   <div className="flex items-center gap-4">
@@ -351,7 +361,8 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getModalPortalTarget()
   )
 }
 

@@ -1,4 +1,11 @@
-import { Search, ChevronDown, Plus, ArrowRight, Download } from 'lucide-react'
+import {
+  Search,
+  ChevronDown,
+  Plus,
+  ArrowRight,
+  Download,
+  X,
+} from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +19,7 @@ import { getAllRgbAssets } from '../../../../utils/rgbUtils'
 
 interface Props {
   onNext: (assetId?: string) => void
+  onClose: () => void
 }
 
 interface Asset {
@@ -21,7 +29,7 @@ interface Asset {
   icon?: string
 }
 
-export const Step1 = ({ onNext }: Props) => {
+export const Step1 = ({ onNext, onClose }: Props) => {
   const modal = useAppSelector(uiSliceSeletors.modal) as DepositModal
   const [assetId, setAssetId] = useState<string>(modal.assetId ?? BTC_ASSET_ID)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -78,9 +86,16 @@ export const Step1 = ({ onNext }: Props) => {
     <div>
       <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
         <Download className="w-6 h-6 text-primary" />
-        <h3 className="text-xl font-bold text-white">
+        <h3 className="text-xl font-bold text-white flex-1">
           {t('depositModal.title', 'Deposit')}
         </h3>
+        <button
+          className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <div className="space-y-3 max-w-xl mx-auto">
@@ -90,7 +105,7 @@ export const Step1 = ({ onNext }: Props) => {
         {/* Asset Selector trigger */}
         <button
           className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default
-                   hover:border-primary/50 transition-all duration-200
+                   hover:border-primary/50 transition-colors duration-200
                    flex items-center justify-between text-left"
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
@@ -226,7 +241,7 @@ export const Step1 = ({ onNext }: Props) => {
         {/* Continue Button */}
         <button
           className="w-full py-2.5 px-4 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900
-                   rounded-xl font-semibold transition-all duration-200 shadow-md shadow-primary/20
+                   rounded-xl font-semibold transition-colors duration-200 shadow-md shadow-primary/20
                    flex items-center justify-center gap-2 text-sm"
           onClick={handleSubmit}
         >

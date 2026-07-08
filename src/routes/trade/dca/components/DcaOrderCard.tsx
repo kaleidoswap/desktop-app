@@ -185,7 +185,7 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
   const triggerReached = priceGapPct != null && priceGapPct <= 0
 
   return (
-    <div className="bg-surface-overlay/50 border border-border-default/50 rounded-2xl shadow-sm overflow-hidden hover:bg-surface-overlay/80 hover:border-border-default transition-all duration-300">
+    <div className="bg-surface-base/35 border border-border-default/50 rounded-2xl shadow-sm overflow-hidden hover:bg-surface-base/50 hover:border-border-default transition-all duration-300">
       {/* ── Row 1: header ──────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 px-4 pt-3.5 pb-3">
         {/* Left: icon + type + amount */}

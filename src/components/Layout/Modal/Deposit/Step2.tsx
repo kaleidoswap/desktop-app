@@ -9,6 +9,7 @@ import {
   Loader,
   RefreshCw,
   Wallet,
+  X,
   Zap,
   Link as ChainIcon,
   AlertTriangle,
@@ -41,14 +42,14 @@ import {
 interface Props {
   assetId?: string
   onBack: VoidFunction
+  onClose: () => void
   onNext: VoidFunction
 }
 
 const MSATS_PER_SAT = 1000
-const RGB_HTLC_MIN_SAT = 3000
 const SATOSHIS_PER_BTC = 100_000_000
 
-export const Step2 = ({ assetId, onBack, onNext }: Props) => {
+export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const isBtc = assetId === BTC_ASSET_ID
 
   // Network toggle only used for RGB assets
@@ -227,24 +228,18 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
   const calculateMaxDepositAmount = useCallback(
     (asset: string): number => {
       if (asset === 'BTC') {
+        // The most a single Lightning payment can carry is the largest HTLC
+        // limit across all channels. This bound is Lightning-only; on-chain
+        // deposits are unlimited.
         if (channels.length === 0) {
           return 0
         }
 
-        const channelHtlcLimits = channels.map(
+        const htlcLimitsSats = channels.map(
           (c: Channel) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
         )
 
-        if (
-          channelHtlcLimits.length === 0 ||
-          Math.max(...channelHtlcLimits) <= 0
-        ) {
-          return 0
-        }
-
-        const maxHtlcLimit = Math.max(...channelHtlcLimits)
-        const maxDepositableAmount = maxHtlcLimit - RGB_HTLC_MIN_SAT
-        return Math.max(0, maxDepositableAmount)
+        return Math.max(0, Math.max(...htlcLimitsSats))
       } else {
         const assetChannels = channels.filter(
           (c: Channel) => c.asset_id === asset && c.is_usable
@@ -591,45 +586,6 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     }
   }
 
-  const NetworkOption = ({
-    type,
-    icon: Icon,
-    label,
-  }: {
-    type: 'on-chain' | 'lightning'
-    icon: any
-    label: string
-  }) => {
-    const isDisabled = type === 'lightning' && !assetId
-
-    return (
-      <button
-        className={`
-          flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5
-          rounded-xl transition-all duration-200 border-2
-          ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
-          ${
-            network === type
-              ? type === 'lightning'
-                ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400'
-                : 'bg-violet-500/15 border-violet-500 text-violet-400'
-              : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'
-          }
-        `}
-        disabled={isDisabled}
-        onClick={() => !isDisabled && setNetwork(type)}
-      >
-        <Icon className="w-5 h-5" />
-        <span className="font-medium text-sm">{label}</span>
-        {isDisabled && (
-          <span className="text-xs text-content-tertiary">
-            {t('depositModal.step2.network.requiresAsset')}
-          </span>
-        )}
-      </button>
-    )
-  }
-
   const getStatusColor = () => {
     if (!invoiceStatus) return 'text-content-secondary'
     switch (invoiceStatus.status) {
@@ -669,23 +625,44 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
     <div>
       <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
         <Download className="w-6 h-6 text-primary" />
-        <h3 className="text-xl font-bold text-white">{titleText}</h3>
+        <h3 className="text-xl font-bold text-white flex-1">{titleText}</h3>
+        <button
+          className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <div className="space-y-3">
         {/* Network Selection - Only for RGB assets */}
         {!isBtc && (
-          <div className="flex gap-2">
-            <NetworkOption
-              icon={ChainIcon}
-              label={t('depositModal.step2.network.onchain')}
-              type="on-chain"
-            />
-            <NetworkOption
-              icon={Zap}
-              label={t('depositModal.step2.network.lightning')}
-              type="lightning"
-            />
+          <div className="flex gap-2 p-0.5">
+            {(['on-chain', 'lightning'] as const).map((type) => {
+              const isDisabled = type === 'lightning' && !assetId
+              const Icon = type === 'lightning' ? Zap : ChainIcon
+              const label = t(
+                `depositModal.step2.network.${type === 'on-chain' ? 'onchain' : 'lightning'}`
+              )
+              return (
+                <button
+                  className={`flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5 rounded-xl transition-colors duration-200 border-2 ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${network === type ? (type === 'lightning' ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400' : 'bg-violet-500/15 border-violet-500 text-violet-400') : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'}`}
+                  disabled={isDisabled}
+                  key={type}
+                  onClick={() => setNetwork(type)}
+                  type="button"
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium text-sm">{label}</span>
+                  {isDisabled && (
+                    <span className="text-xs text-content-tertiary">
+                      {t('depositModal.step2.network.requiresAsset')}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
 
@@ -783,7 +760,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
               {maxDepositAmount > 0 && (
                 <p className="text-xs text-content-secondary pt-0.5">
-                  Max: {formatAmount(maxDepositAmount, 'BTC')}{' '}
+                  {t(
+                    'depositModal.step2.amount.maxLightning',
+                    'Max via Lightning'
+                  )}
+                  : {formatAmount(maxDepositAmount, 'BTC')}{' '}
                   {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
                 </p>
               )}
@@ -840,7 +821,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
               </div>
             )}
 
-            {address ? (
+            {onchainAddress || lnInvoiceStr ? (
               <div className="space-y-4 animate-fadeIn">
                 {/* Payment Status */}
                 {invoiceStatus && (
@@ -915,7 +896,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   <div
                     className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                                 flex items-center justify-between group hover:border-primary/50
-                                transition-all duration-200"
+                                transition-colors duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                       <img
@@ -945,7 +926,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   <div
                     className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                                 flex items-center justify-between group hover:border-primary/50
-                                transition-all duration-200"
+                                transition-colors duration-200"
                   >
                     <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                       <img
@@ -970,7 +951,11 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                   </div>
                 )}
               </div>
-            ) : null}
+            ) : (
+              <div className="flex justify-center py-10">
+                <Loader className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
           </>
         )}
 
@@ -1185,7 +1170,7 @@ export const Step2 = ({ assetId, onBack, onNext }: Props) => {
                 <div
                   className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
                               flex items-center justify-between group hover:border-primary/50
-                              transition-all duration-200"
+                              transition-colors duration-200"
                 >
                   <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
                     <img

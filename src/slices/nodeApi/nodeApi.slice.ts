@@ -55,6 +55,7 @@ import type {
   SignMessageResponse,
   SignMessageRequest,
   UnlockRequest,
+  ChangePasswordRequest,
   KeysendResponse,
   KeysendRequest,
   ListPeersResponse,
@@ -149,6 +150,11 @@ export const nodeApi = createApi({
 
     btcBalance: builder.query<BtcBalanceResponse, void>({
       queryFn: queryFn((w, _: void) => w.getBtcBalance()),
+    }),
+
+    // Node requires the wallet to be LOCKED before this succeeds.
+    changePassword: builder.mutation<void, ChangePasswordRequest>({
+      queryFn: queryFn((w, args) => w.changePassword(args)),
     }),
 
     closeChannel: builder.mutation<void, CloseChannelRequest>({
@@ -340,6 +346,7 @@ export const {
   useAssetBalanceQuery,
   useBackupMutation,
   useBtcBalanceQuery,
+  useChangePasswordMutation,
   useCloseChannelMutation,
   useConnectPeerMutation,
   useCreateUtxosMutation,

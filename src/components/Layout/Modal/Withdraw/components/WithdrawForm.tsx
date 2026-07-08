@@ -161,7 +161,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
         <input
           className={`w-full px-3 py-2 bg-surface-overlay/50 border ${
             error ? 'border-red-500' : 'border-border-default'
-          } rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/60 transition-all duration-200 text-white text-sm ${onMax ? 'pr-14' : ''}`}
+          } rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/60 transition-colors duration-200 text-white text-sm ${onMax ? 'pr-14' : ''}`}
           onBlur={handleBlur}
           onChange={handleChange}
           onFocus={handleFocus}
@@ -540,7 +540,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                     <input
                       className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default
                              focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
-                             placeholder:text-content-tertiary transition-all duration-200 text-sm"
+                             placeholder:text-content-tertiary transition-colors duration-200 text-sm"
                       inputMode="numeric"
                       onChange={(e) => {
                         const value = e.target.value.replace(/[^\d]/g, '')
@@ -605,7 +605,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
               </label>
               <button
                 className="w-full p-3 bg-surface-overlay/50 rounded-xl border border-border-default
-                        hover:border-primary/50 transition-all duration-200
+                        hover:border-primary/50 transition-colors duration-200
                         flex items-center justify-between text-left text-sm text-white"
                 onClick={() => setShowAssetDropdown(!showAssetDropdown)}
                 type="button"
@@ -1010,7 +1010,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       render={({ field }) => (
                         <button
                           className={`py-1.5 px-2 flex flex-col items-center justify-center gap-0.5
-                                  rounded-lg transition-all duration-200 border text-xs
+                                  rounded-lg transition-colors duration-200 border text-xs
                                   ${
                                     field.value === fee.value
                                       ? 'bg-primary/10 border-primary text-primary'

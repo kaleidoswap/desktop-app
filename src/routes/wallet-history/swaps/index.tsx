@@ -1,5 +1,7 @@
 import {
-  ArrowDownUp,
+  Coins,
+  LayoutGrid,
+  ArrowLeftRight,
   ArrowRight,
   RefreshCw,
   Loader,
@@ -11,7 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { RootState } from '../../../app/store'
-import { Button, IconButton, Badge, Card, Alert } from '../../../components/ui'
+import { Button, Badge, Card, Alert, Select } from '../../../components/ui'
 import {
   Table,
   renderCopyableField,
@@ -211,9 +213,21 @@ export const Component: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <Loader className="w-12 h-12 animate-spin text-blue-500" />
-        <p className="text-content-secondary">{t('swaps.loading')}</p>
+      <div className="flex flex-col justify-center items-center min-h-[60vh] gap-6">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
+          <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
+            <ArrowLeftRight className="relative z-10 w-10 h-10 text-[#15E99A]" />
+          </div>
+        </div>
+        <div className="text-center space-y-4 max-w-lg">
+          <p className="text-white font-bold text-xl bg-gradient-to-r from-white via-emerald-100 to-green-100 bg-clip-text text-transparent">
+            {t('swaps.loading')}
+          </p>
+          <div className="w-80 h-2 bg-slate-800/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-600/40 shadow-inner">
+            <div className="splash-progress-fill h-full rounded-full shadow-lg"></div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -237,139 +251,69 @@ export const Component: React.FC = () => {
 
   return (
     <Card className="bg-surface-overlay/50 border border-border-default/50">
-      <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-blue-500/10">
-            <ArrowDownUp className="h-6 w-6 text-blue-500" />
+      <div className="flex items-center gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-content-secondary" />
+            </div>
+            <input
+              className="block w-full pl-9 pr-3 py-2 text-sm border border-border-default/50 rounded-lg bg-surface-overlay/30 text-white transition-all duration-200 placeholder-content-secondary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={t('swaps.searchPlaceholder')}
+              type="text"
+              value={searchTerm}
+            />
           </div>
-          <h2 className="text-xl font-bold text-white">{t('swaps.title')}</h2>
-        </div>
 
-        <IconButton
-          aria-label={t('swaps.refresh')}
-          disabled={isRefreshing}
-          icon={
-            isRefreshing ? (
-              <Loader className="w-5 h-5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-5 h-5" />
-            )
-          }
-          onClick={handleRefresh}
-          variant="outline"
-        />
-      </div>
+          <Select
+            icon={<Coins className="h-4 w-4" />}
+            onChange={(val) => setAssetFilter(val as any)}
+            options={[
+              { label: t('swaps.allAssets'), value: 'all' },
+              ...uniqueAssets.map((asset) => ({ label: asset, value: asset })),
+            ]}
+            value={assetFilter}
+          />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-content-secondary" />
-          </div>
-          <input
-            className="block w-full pl-9 pr-3 py-2 border border-border-default rounded-lg bg-surface-overlay text-white placeholder-content-secondary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t('swaps.searchPlaceholder')}
-            type="text"
-            value={searchTerm}
+          <Select
+            icon={<LayoutGrid className="h-4 w-4" />}
+            onChange={(val) => setTypeFilter(val as any)}
+            options={[
+              { label: t('swaps.allTypes'), value: 'all' },
+              { label: t('swaps.maker'), value: 'maker' },
+              { label: t('swaps.taker'), value: 'taker' },
+            ]}
+            value={typeFilter}
+          />
+
+          <Select
+            icon={<Calendar className="h-4 w-4" />}
+            onChange={(val) => setStatusFilter(val as any)}
+            options={[
+              { label: t('swaps.allStatuses'), value: 'all' },
+              ...Object.values(SwapStatus).map((s) => ({ label: s, value: s })),
+            ]}
+            value={statusFilter}
           />
         </div>
 
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => setTypeFilter(e.target.value)}
-            value={typeFilter}
+        <div className="relative group/ref shrink-0">
+          <button
+            aria-label={t('swaps.refresh')}
+            className="p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isRefreshing}
+            onClick={handleRefresh}
+            type="button"
           >
-            <option value="all">{t('swaps.allTypes')}</option>
-            <option value="maker">{t('swaps.maker')}</option>
-            <option value="taker">{t('swaps.taker')}</option>
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <ArrowDownUp className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => setStatusFilter(e.target.value)}
-            value={statusFilter}
-          >
-            <option value="all">{t('swaps.allStatuses')}</option>
-            {Object.values(SwapStatus).map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Calendar className="h-4 w-4 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-          </div>
-        </div>
-
-        <div className="relative">
-          <select
-            className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => setAssetFilter(e.target.value)}
-            value={assetFilter}
-          >
-            <option value="all">{t('swaps.allAssets')}</option>
-            {uniqueAssets.map((asset) => (
-              <option key={asset} value={asset}>
-                {asset}
-              </option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <ArrowDownUp className="h-4 w-4 rotate-90 text-content-secondary" />
-          </div>
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-            <svg
-              className="h-4 w-4 text-content-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M19 9l-7 7-7-7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
+            {isRefreshing ? (
+              <Loader className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+          </button>
+          <div className="absolute bottom-full mb-1.5 right-0 bg-surface-high text-content-primary text-[10px] rounded-md py-0.5 px-1.5 opacity-0 group-hover/ref:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-default/40 shadow-lg z-20">
+            Refresh data
           </div>
         </div>
       </div>

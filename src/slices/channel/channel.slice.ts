@@ -9,6 +9,7 @@ export const NewChannelFormSchema = z.object({
   capacitySat: z
     .number()
     .max(MAX_CHANNEL_CAPACITY, 'Maximum amount is 100000000 satoshis'),
+  channelExpireBlocks: z.number().optional().default(12960),
   fee: z.enum(['slow', 'medium', 'fast']),
   pubKeyAndAddress: z.string().refine((value) => {
     // Allow pubkey-only format (66 hex chars) OR full format pubkey@host:port

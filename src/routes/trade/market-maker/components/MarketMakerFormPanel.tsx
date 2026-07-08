@@ -287,12 +287,12 @@ export const MarketMakerFormPanel = ({
                 <SwapInputField
                   asset={currentFromAsset}
                   assetOptions={fromAssetOptions}
-                  availableAmount={`${formatAmount(maxFromAmount, currentFromAsset)} ${displayAsset(currentFromAsset)}`}
-                  availableAmountLabel={
+                  availableAmount={
                     isUsingOnchainBalance
-                      ? t('tradeMarketMaker.form.onchainAvailable')
-                      : t('tradeMarketMaker.form.available')
+                      ? undefined
+                      : `${formatAmount(maxFromAmount, currentFromAsset)} ${displayAsset(currentFromAsset)}`
                   }
+                  availableAmountLabel={t('tradeMarketMaker.form.available')}
                   disabled={
                     !hasChannels ||
                     !hasTradablePairs ||

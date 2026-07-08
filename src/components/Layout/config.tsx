@@ -6,8 +6,9 @@ import {
   MessageSquare,
   Github,
   Plus,
+  PlusCircle,
   ShoppingCart,
-  Activity,
+  SlidersHorizontal,
   Settings,
   Store,
   Zap,
@@ -26,6 +27,10 @@ import {
   ArrowLeftRight,
   Radio,
   LayoutDashboard,
+  Download,
+  Upload,
+  Coins,
+  ArrowDownUp,
 } from 'lucide-react'
 import React from 'react'
 
@@ -55,7 +60,6 @@ import {
   ORDER_CHANNEL_PATH,
   KALEIDO_MIND_PATH,
   KALEIDO_MIND_BRAIN_PATH,
-  KALEIDO_MIND_AGENT_PATH,
 } from '../../app/router/paths'
 
 // Define types for navigation items
@@ -107,11 +111,6 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             to: TRADE_MANUAL_PATH,
           },
           {
-            icon: <Radio className="w-4 h-4" />,
-            label: t('navigation.nostrP2P', 'Nostr P2P'),
-            to: TRADE_NOSTR_P2P_PATH,
-          },
-          {
             icon: <TrendingUp className="h-4 w-4" />,
             label: t('navigation.dca', 'DCA'),
             to: TRADE_DCA_PATH,
@@ -121,6 +120,11 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             label: t('navigation.limitOrders', 'Limit Orders'),
             to: TRADE_LIMIT_PATH,
           },
+          {
+            disabled: true,
+            icon: <Radio className="w-4 h-4" />,
+            label: t('navigation.nostrP2P', 'Nostr P2P'),
+          },
         ],
         to: TRADE_MARKET_MAKER_PATH,
       },
@@ -128,7 +132,34 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         icon: <Clock className="w-5 h-5" />,
         label: t('navigation.history'),
         matchPath: WALLET_HISTORY_PATH,
-        to: WALLET_HISTORY_PATH,
+        subMenu: [
+          {
+            icon: <Download className="w-4 h-4" />,
+            label: t('history.deposits'),
+            to: WALLET_HISTORY_DEPOSITS_PATH,
+          },
+          {
+            icon: <Upload className="w-4 h-4" />,
+            label: t('history.paymentsWithdrawals'),
+            to: WALLET_HISTORY_WITHDRAWALS_PATH,
+          },
+          {
+            icon: <ArrowLeftRight className="w-4 h-4" />,
+            label: t('history.swaps'),
+            to: WALLET_HISTORY_TRADES_PATH,
+          },
+          {
+            icon: <Coins className="w-4 h-4" />,
+            label: t('history.assets'),
+            to: WALLET_HISTORY_ASSETS_PATH,
+          },
+          {
+            icon: <ArrowDownUp className="w-4 h-4" />,
+            label: t('history.channelOrders'),
+            to: WALLET_HISTORY_CHANNEL_ORDERS_PATH,
+          },
+        ],
+        to: WALLET_HISTORY_DEPOSITS_PATH,
       },
       {
         icon: <Droplets className="w-5 h-5" />,
@@ -136,12 +167,12 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         matchPath: CHANNELS_PATH,
         subMenu: [
           {
-            icon: <Activity className="w-4 h-4" />,
+            icon: <SlidersHorizontal className="w-4 h-4" />,
             label: t('channels.manageChannels'),
             to: CHANNELS_PATH,
           },
           {
-            icon: <Plus className="w-4 h-4" />,
+            icon: <PlusCircle className="w-4 h-4" />,
             label: t('channels.createNewChannel'),
             to: CREATE_NEW_CHANNEL_PATH,
           },
@@ -153,7 +184,7 @@ export const getNavSections = (t: TFunction): NavSection[] => [
           {
             disabled: true,
             icon: <Tag className="w-4 h-4" />,
-            label: t('liquidity.sell', 'Sell'),
+            label: t('liquidity.sellChannels', 'Sell Channels'),
           },
         ],
         to: CHANNELS_PATH,
@@ -175,15 +206,15 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             to: KALEIDO_MIND_PATH,
           },
           {
-            icon: <Bot className="w-4 h-4" />,
-            label: t('navigation.agent', 'Agent'),
-            to: KALEIDO_MIND_AGENT_PATH,
-          },
-          {
             // Brain hosts Models + Skills management inline.
             icon: <LayoutDashboard className="w-4 h-4" />,
             label: t('navigation.brain', 'Brain'),
             to: KALEIDO_MIND_BRAIN_PATH,
+          },
+          {
+            disabled: true,
+            icon: <Bot className="w-4 h-4" />,
+            label: t('navigation.agent', 'Agent'),
           },
         ],
         to: KALEIDO_MIND_PATH,
@@ -256,18 +287,13 @@ export const getUserMenuItems = (t: TFunction) => [
   },
   {
     icon: <LinkIcon className="w-4 h-4" />,
-    label: t('navigation.nwc', 'App Connections (NWC)'),
+    label: t('navigation.nwc', 'App Connections'),
     to: NWC_PATH,
   },
   {
     action: 'backup',
     icon: <HardDriveDownload className="w-4 h-4" />,
     label: t('settings.backupWallet'),
-  },
-  {
-    action: 'support',
-    icon: <HelpCircle className="w-4 h-4" />,
-    label: t('navigation.helpSupport'),
   },
 ]
 
@@ -310,63 +336,63 @@ export const SUPPORT_RESOURCES = getSupportResources(
 // Page configuration mapping
 export const getPageConfig = (t: TFunction) => ({
   [CHANNELS_PATH]: {
-    icon: <Activity className="w-5 h-5" />,
-    title: t('navigation.channels'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [CREATE_NEW_CHANNEL_PATH]: {
-    icon: <Plus className="w-5 h-5" />,
-    title: t('channels.createNewChannel'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [NWC_PATH]: {
     icon: <LinkIcon className="w-5 h-5" />,
-    title: t('navigation.nwc', 'App Connections (NWC)'),
+    title: t('navigation.nwc', 'App Connections'),
   },
   [ORDER_CHANNEL_PATH]: {
-    icon: <ShoppingCart className="w-5 h-5" />,
-    title: t('channels.buyAChannel'),
+    icon: <Droplets className="w-5 h-5" />,
+    title: t('navigation.liquidity', 'Liquidity'),
   },
   [SETTINGS_PATH]: {
     icon: <Settings className="w-5 h-5" />,
     title: t('navigation.settings'),
   },
   [TRADE_DCA_PATH]: {
-    icon: <TrendingUp className="h-4 w-4" />,
-    title: t('navigation.dca', 'DCA'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_LIMIT_PATH]: {
-    icon: <Target className="h-4 w-4" />,
-    title: t('navigation.limitOrders', 'Limit Orders'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_MANUAL_PATH]: {
-    icon: <ArrowLeftRight className="h-4 w-4" />,
-    title: t('navigation.manualSwaps'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_MARKET_MAKER_PATH]: {
-    icon: <Store className="h-4 w-4" />,
-    title: t('navigation.marketMaker'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_NOSTR_P2P_PATH]: {
-    icon: <Radio className="h-4 w-4" />,
-    title: t('navigation.nostrP2P', 'Nostr P2P'),
+    icon: <Zap className="w-5 h-5" />,
+    title: t('navigation.trading', 'Trading'),
   },
   [TRADE_PATH]: {
     icon: <Zap className="w-5 h-5" />,
-    title: t('navigation.trade'),
+    title: t('navigation.trading', 'Trading'),
   },
   [WALLET_DASHBOARD_PATH]: {
     icon: <Home className="w-5 h-5" />,
     title: t('navigation.dashboard'),
   },
   [WALLET_HISTORY_ASSETS_PATH]: {
-    icon: <Activity className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_CHANNEL_ORDERS_PATH]: {
-    icon: <ShoppingCart className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_DEPOSITS_PATH]: {
-    icon: <ArrowDownLeft className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_PATH]: {
@@ -374,11 +400,11 @@ export const getPageConfig = (t: TFunction) => ({
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_TRADES_PATH]: {
-    icon: <Zap className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
   [WALLET_HISTORY_WITHDRAWALS_PATH]: {
-    icon: <ArrowUpRight className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     title: t('navigation.history'),
   },
 })
