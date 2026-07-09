@@ -85,7 +85,13 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
           )
         }
 
-        const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
+        // Prefer the LSP/maker the user configured in Settings; the network
+        // default is only a fallback for accounts that have none. Overwriting
+        // it here reconnected the user to a different LSP than they chose.
+        const defaultLspUrl =
+          currentAccount.default_maker_url ||
+          currentAccount.default_lsp_url ||
+          NETWORK_DEFAULTS[network].default_lsp_url
         if (!defaultLspUrl) {
           throw new Error(
             t('orderChannel.step1.noDefaultLspUrl', {
@@ -96,14 +102,18 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
 
         setKaleidoApiUrl(defaultLspUrl)
 
-        dispatch(
-          nodeSettingsActions.setNodeSettings({
-            ...currentAccount,
-            default_lsp_url: defaultLspUrl,
-            default_maker_url: defaultLspUrl,
-          })
-        )
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        // Only rewrite the store when the base URL actually needs to change,
+        // so we don't clobber the user's configured maker connection.
+        if (currentAccount.default_maker_url !== defaultLspUrl) {
+          dispatch(
+            nodeSettingsActions.setNodeSettings({
+              ...currentAccount,
+              default_lsp_url: defaultLspUrl,
+              default_maker_url: defaultLspUrl,
+            })
+          )
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
 
         const response = await getInfo().unwrap()
         if (response.lsp_connection_url) {

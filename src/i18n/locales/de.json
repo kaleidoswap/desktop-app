@@ -897,7 +897,9 @@
       "assetExceedsMax": "Betrag überschreitet das Maximum von {{amount}} {{ticker}}. Bitte gültigen Wert eingeben.",
       "adjustmentsMade": "Einige Werte wurden angepasst, um die Anforderungen zu erfüllen.",
       "formError": "Im Formular ist ein Fehler aufgetreten. Bitte Eingaben prüfen.",
-      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte erneut versuchen."
+      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte erneut versuchen.",
+      "noAsset": "Kein Asset",
+      "moreAssets": "+{{count}} weitere"
     },
     "step3": {
       "title": "Zahlung abschließen",
