@@ -1559,7 +1559,9 @@
       "assetExceedsMax": "L'importo supera il limite massimo di {{amount}} {{ticker}}. Inserisci un importo valido.",
       "adjustmentsMade": "Alcuni valori sono stati adattati per rispettare i requisiti.",
       "formError": "Errore nei dati del form. Controlla gli input.",
-      "unexpectedError": "Si è verificato un errore imprevisto. Riprova."
+      "unexpectedError": "Si è verificato un errore imprevisto. Riprova.",
+      "noAsset": "Nessun asset",
+      "moreAssets": "+{{count}} altri"
     },
     "step3": {
       "title": "Completa il Pagamento",

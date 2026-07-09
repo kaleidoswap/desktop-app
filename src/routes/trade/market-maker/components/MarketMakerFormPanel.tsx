@@ -63,6 +63,7 @@ interface MarketMakerFormPanelProps {
   maxToAmount: number
   minFromAmount: number
   missingChannelAsset: MissingChannelAsset | null
+  onchainBtcBalance: number
   onAssetChange: (field: 'fromAsset' | 'toAsset', value: string) => void
   onCopyError: (text: string) => void
   onFromAmountChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -111,6 +112,7 @@ export const MarketMakerFormPanel = ({
   maxToAmount,
   minFromAmount,
   missingChannelAsset,
+  onchainBtcBalance,
   onAssetChange,
   onCopyError,
   onFromAmountChange,
@@ -289,10 +291,16 @@ export const MarketMakerFormPanel = ({
                   assetOptions={fromAssetOptions}
                   availableAmount={
                     isUsingOnchainBalance
-                      ? undefined
+                      ? `${formatAmount(onchainBtcBalance, currentFromAsset)} ${displayAsset(currentFromAsset)}`
                       : `${formatAmount(maxFromAmount, currentFromAsset)} ${displayAsset(currentFromAsset)}`
                   }
-                  availableAmountLabel={t('tradeMarketMaker.form.available')}
+                  availableAmountLabel={
+                    isUsingOnchainBalance
+                      ? t('tradeMarketMaker.form.onchainAvailable', {
+                          defaultValue: 'Onchain Available',
+                        })
+                      : t('tradeMarketMaker.form.available')
+                  }
                   disabled={
                     !hasChannels ||
                     !hasTradablePairs ||

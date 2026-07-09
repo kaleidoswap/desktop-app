@@ -8,7 +8,10 @@
 
 **Kaleidoswap** is an open-source desktop application for decentralized, trustless trading of digital assets over the Bitcoin Lightning Network using the **RGB protocol**. By integrating seamlessly with an [RGB Lightning Node](https://github.com/RGB-Tools/rgb-lightning-node), the app enables multi-asset trading without intermediaries—giving you sovereignty over your funds.
 
+KaleidoSwap also ships with **Kaleido Mind**, an optional built-in AI assistant that lets you interact with your wallet in plain language—asking questions and carrying out actions such as buying assets, requesting channels, and swapping. You can run the app as **Node**, **Mind**, or both, switchable from **Settings → Capabilities**.
+
 - **Alpha Software Caution**: This software is still in alpha. Swaps may fail or get stuck, and **mainnet usage is not recommended**.  
+- **Platform Note**: Kaleido Mind depends on a local AI runtime and **may not be available on Windows yet**. All trading and node features work normally without it—run the app in **Node** mode if Mind is unavailable on your platform.
 - **Documentation**: Visit [docs.kaleidoswap.com](https://docs.kaleidoswap.com) for comprehensive guides and additional details.
 
 ## Table of Contents
@@ -60,6 +63,8 @@
 - **Tray and Background Operation**: Keep the app running in the background while the local node stays active.
 - **Multi-language UI**: Use the app in multiple supported languages through the built-in i18n system.
 - **Node Backup**: Secure node data backups directly from the settings.
+- **Kaleido Mind (AI Assistant)**: Chat with your wallet to get help and perform actions—buy assets, request channels, and swap—through a conversational interface. *(Depends on a local AI runtime; may not be available on Windows yet.)*
+- **Flexible Capability Modes**: Run KaleidoSwap as Node only, Mind only, or both, switchable from Settings → Capabilities.
 
 ## Supported Networks
 
@@ -133,6 +138,8 @@ gpg: Good signature from "Walter Maffione <your-email>"
    Use [vcpkg](https://github.com/microsoft/vcpkg) to install libraries like **openssl** and **sqlite3**.
 3. **MSVC for C++ Linking**  
    Ensure **Microsoft Visual C++** is installed (usually via Visual Studio or Build Tools).
+4. **Kaleido Mind on Windows**  
+   The built-in **Kaleido Mind** AI assistant relies on a local AI runtime that may not be supported on Windows yet. Trading and node features are unaffected—run the app in **Node** mode (Settings → Capabilities) if Mind is unavailable.
 
 #### Linux-Specific Instructions
 

@@ -1,11 +1,4 @@
-import {
-  Search,
-  ChevronDown,
-  Plus,
-  ArrowRight,
-  Download,
-  X,
-} from 'lucide-react'
+import { Search, Plus, ArrowRight, Download, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,6 +6,7 @@ import { useAppSelector } from '../../../../app/store/hooks'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
 import rgbLogo from '../../../../assets/rgb-logo.svg'
 import { BTC_ASSET_ID } from '../../../../constants'
+import { useAssetIcon } from '../../../../helpers/utils'
 import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { DepositModal, uiSliceSeletors } from '../../../../slices/ui/ui.slice'
 import { getAllRgbAssets } from '../../../../utils/rgbUtils'
@@ -29,10 +23,56 @@ interface Asset {
   icon?: string
 }
 
+// How many asset icons to show inline before collapsing the rest behind "+".
+const INLINE_LIMIT = 5
+
+const AssetIconButton = ({
+  asset,
+  selected,
+  onClick,
+}: {
+  asset: Asset
+  selected: boolean
+  onClick: () => void
+}) => {
+  const [icon, setIcon] = useAssetIcon(
+    asset.ticker,
+    asset.asset_id === BTC_ASSET_ID ? btcLogo : rgbLogo
+  )
+
+  return (
+    <button
+      className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 shrink-0 w-[76px]
+        ${
+          selected
+            ? 'border-primary bg-primary/10'
+            : 'border-border-subtle bg-surface-overlay/50 hover:border-primary/40'
+        }`}
+      onClick={onClick}
+      title={asset.name || asset.ticker}
+      type="button"
+    >
+      <div className="w-10 h-10 rounded-full bg-surface-high/60 flex items-center justify-center overflow-hidden">
+        <img
+          alt={asset.ticker}
+          className="w-7 h-7 object-contain"
+          onError={() =>
+            setIcon(asset.asset_id === BTC_ASSET_ID ? btcLogo : rgbLogo)
+          }
+          src={icon}
+        />
+      </div>
+      <span className="text-xs font-medium text-white truncate max-w-[64px]">
+        {asset.ticker}
+      </span>
+    </button>
+  )
+}
+
 export const Step1 = ({ onNext, onClose }: Props) => {
   const modal = useAppSelector(uiSliceSeletors.modal) as DepositModal
   const [assetId, setAssetId] = useState<string>(modal.assetId ?? BTC_ASSET_ID)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isNewAsset, setIsNewAsset] = useState(false)
   const { t } = useTranslation()
@@ -51,27 +91,41 @@ export const Step1 = ({ onNext, onClose }: Props) => {
     })),
   ]
 
-  const filteredAssets = allAssets.filter(
+  const selectedAsset = allAssets.find((a) => a.asset_id === assetId)
+
+  // Keep BTC first, then surface the currently selected asset so it stays
+  // visible in the inline row even when it would otherwise fall behind "+".
+  const orderedAssets =
+    selectedAsset && assetId !== BTC_ASSET_ID
+      ? [
+          allAssets[0],
+          selectedAsset,
+          ...allAssets.slice(1).filter((a) => a.asset_id !== assetId),
+        ]
+      : allAssets
+
+  const hasMore = orderedAssets.length > INLINE_LIMIT
+  const inlineAssets = hasMore
+    ? orderedAssets.slice(0, INLINE_LIMIT - 1)
+    : orderedAssets
+
+  const filteredAssets = orderedAssets.filter(
     (asset) =>
       asset.ticker.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.asset_id.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const selectedAsset = allAssets.find((a) => a.asset_id === assetId)
-
-  const handleAssetSelect = (asset: Asset | null) => {
-    if (asset) {
-      setAssetId(asset.asset_id)
-      setIsNewAsset(false)
-    }
-    setIsDropdownOpen(false)
+  const handleAssetSelect = (asset: Asset) => {
+    setAssetId(asset.asset_id)
+    setIsNewAsset(false)
+    setIsExpanded(false)
   }
 
   const handleAddNewAsset = () => {
     setIsNewAsset(true)
     setAssetId('')
-    setIsDropdownOpen(false)
+    setIsExpanded(false)
   }
 
   const handleSubmit = useCallback(() => {
@@ -102,116 +156,112 @@ export const Step1 = ({ onNext, onClose }: Props) => {
         <p className="text-content-secondary text-sm">
           {t('depositModal.step1.title')}
         </p>
-        {/* Asset Selector trigger */}
-        <button
-          className="w-full p-2.5 bg-surface-overlay/50 rounded-xl border border-border-default
-                   hover:border-primary/50 transition-colors duration-200
-                   flex items-center justify-between text-left"
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        >
-          <div className="flex items-center gap-2">
-            {selectedAsset && !isNewAsset ? (
-              <>
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                  {selectedAsset.asset_id === BTC_ASSET_ID ? (
-                    <img alt="Bitcoin" className="w-4 h-4" src={btcLogo} />
-                  ) : (
-                    <img alt="RGB Asset" className="w-4 h-4" src={rgbLogo} />
-                  )}
-                </div>
-                <div>
-                  <div className="font-medium text-white text-sm">
-                    {selectedAsset.ticker}
-                  </div>
-                  <div className="text-xs text-content-secondary">
-                    {selectedAsset.name || 'Asset'}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <span className="text-content-secondary text-sm">
-                {isNewAsset
-                  ? t('depositModal.step1.newAssetLabel')
-                  : t('depositModal.step1.selectorPlaceholder')}
+
+        {/* Inline asset icons — show the few directly, collapse the rest behind "+" */}
+        <div className="flex flex-wrap gap-2">
+          {inlineAssets.map((asset) => (
+            <AssetIconButton
+              asset={asset}
+              key={asset.asset_id}
+              onClick={() => handleAssetSelect(asset)}
+              selected={!isNewAsset && asset.asset_id === assetId}
+            />
+          ))}
+
+          {hasMore && (
+            <button
+              className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-dashed transition-all duration-200 shrink-0 w-[76px]
+                ${
+                  isExpanded
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border-default text-content-secondary hover:border-primary/40 hover:text-primary'
+                }`}
+              onClick={() => setIsExpanded((v) => !v)}
+              type="button"
+            >
+              <div className="w-10 h-10 rounded-full bg-surface-high/60 flex items-center justify-center">
+                <Plus className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium">
+                {t('depositModal.step1.more', {
+                  count: orderedAssets.length - inlineAssets.length,
+                  defaultValue: 'More',
+                })}
               </span>
+            </button>
+          )}
+
+          {/* Always available: receive a brand-new RGB asset (generic invoice) */}
+          <button
+            className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-dashed transition-all duration-200 shrink-0 w-[76px]
+              ${
+                isNewAsset
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-primary/40 text-primary hover:bg-primary/10'
+              }`}
+            onClick={handleAddNewAsset}
+            title={t('depositModal.step1.newAssetInfo')}
+            type="button"
+          >
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+              <img
+                alt="RGB asset"
+                className="w-7 h-7 object-contain"
+                src={rgbLogo}
+              />
+            </div>
+            <span className="text-xs font-medium">
+              {t('depositModal.step1.newAssetLabel')}
+            </span>
+          </button>
+        </div>
+
+        {/* Expanded slider — searchable, horizontally scrollable strip of all assets */}
+        {isExpanded && (
+          <div className="rounded-xl border border-border-default bg-surface-overlay p-3 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />
+              <input
+                autoFocus
+                className="w-full pl-10 pr-4 py-1.5 bg-surface-base/50 rounded-lg border border-border-default
+                         text-white placeholder:text-content-tertiary focus:border-primary
+                         focus:outline-none text-sm"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('depositModal.step1.searchPlaceholder')}
+                type="text"
+                value={searchQuery}
+              />
+            </div>
+
+            {filteredAssets.length === 0 ? (
+              <div className="py-3 text-center text-content-tertiary text-sm">
+                {t('depositModal.step1.noResults', { query: searchQuery })}
+              </div>
+            ) : (
+              <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
+                {filteredAssets.map((asset) => (
+                  <div className="snap-start" key={asset.asset_id}>
+                    <AssetIconButton
+                      asset={asset}
+                      onClick={() => handleAssetSelect(asset)}
+                      selected={!isNewAsset && asset.asset_id === assetId}
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          <ChevronDown
-            className={`w-4 h-4 text-content-secondary transition-transform duration-200
-            ${isDropdownOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
+        )}
 
-        {/* Inline list panel — no absolute positioning to avoid overflow-hidden clipping */}
-        {isDropdownOpen && (
-          <div className="rounded-xl border border-border-default bg-surface-overlay shadow-lg overflow-hidden">
-            <div className="p-2 border-b border-border-default">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />
-                <input
-                  autoFocus
-                  className="w-full pl-10 pr-4 py-1.5 bg-surface-base/50 rounded-lg border border-border-default
-                           text-white placeholder:text-content-tertiary focus:border-primary
-                           focus:outline-none text-sm"
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('depositModal.step1.searchPlaceholder')}
-                  type="text"
-                  value={searchQuery}
-                />
-              </div>
-            </div>
-
-            <div className="max-h-[220px] overflow-y-auto custom-scrollbar">
-              <button
-                className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-primary/10
-                         text-primary transition-colors duration-200 border-b border-border-default text-sm"
-                onClick={handleAddNewAsset}
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('depositModal.step1.addNewAsset')}</span>
-              </button>
-
-              {filteredAssets.length === 0 ? (
-                <div className="p-3 text-center text-content-tertiary text-sm">
-                  {t('depositModal.step1.noResults', { query: searchQuery })}
-                </div>
-              ) : (
-                filteredAssets.map((asset) => (
-                  <button
-                    className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-primary/10
-                             transition-colors duration-200 text-sm"
-                    key={asset.asset_id}
-                    onClick={() => handleAssetSelect(asset)}
-                  >
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      {asset.asset_id === BTC_ASSET_ID ? (
-                        <img alt="Bitcoin" className="w-4 h-4" src={btcLogo} />
-                      ) : (
-                        <img
-                          alt="RGB Asset"
-                          className="w-4 h-4"
-                          src={rgbLogo}
-                        />
-                      )}
-                    </div>
-                    <div className="text-left flex-1 min-w-0">
-                      <div className="font-medium text-white flex items-center justify-between">
-                        <span>{asset.ticker}</span>
-                        {asset.asset_id === assetId && (
-                          <span className="text-primary text-xs bg-primary/10 px-1.5 py-0.5 rounded-lg ml-2">
-                            {t('depositModal.step1.selected')}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-content-secondary truncate">
-                        {asset.name || t('depositModal.step1.genericAsset')}
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
+        {/* Selected asset summary */}
+        {selectedAsset && !isNewAsset && (
+          <p className="text-xs text-content-secondary">
+            {t('depositModal.step1.selected')}:{' '}
+            <span className="text-white font-medium">
+              {selectedAsset.ticker}
+            </span>
+            {selectedAsset.name ? ` · ${selectedAsset.name}` : ''}
+          </p>
         )}
 
         {/* New Asset Input */}
@@ -227,7 +277,7 @@ export const Step1 = ({ onNext, onClose }: Props) => {
                 {t('depositModal.step1.assetIdLabel')}
               </label>
               <input
-                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default 
+                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default
                          focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
                          placeholder:text-content-tertiary text-sm"
                 onChange={(e) => setAssetId(e.target.value)}

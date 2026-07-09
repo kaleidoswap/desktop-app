@@ -1558,7 +1558,9 @@
       "assetExceedsMax": "数量超过最大限制 {{amount}} {{ticker}}。请在继续之前输入有效数量。",
       "adjustmentsMade": "某些值已调整以满足要求。",
       "formError": "表单数据出现错误。请检查您的输入。",
-      "unexpectedError": "发生意外错误。请重试。"
+      "unexpectedError": "发生意外错误。请重试。",
+      "noAsset": "无资产",
+      "moreAssets": "+{{count}} 更多"
     },
     "step3": {
       "title": "完成支付",

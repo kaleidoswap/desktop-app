@@ -1600,7 +1600,9 @@
       "assetExceedsMax": "Amount exceeds maximum limit of {{amount}} {{ticker}}. Please enter a valid amount before proceeding.",
       "adjustmentsMade": "Some values were adjusted to meet requirements.",
       "formError": "There was an error with the form data. Please check your inputs.",
-      "unexpectedError": "An unexpected error occurred. Please try again."
+      "unexpectedError": "An unexpected error occurred. Please try again.",
+      "noAsset": "No Asset",
+      "moreAssets": "+{{count}} more"
     },
     "step3": {
       "title": "Channel Order",
