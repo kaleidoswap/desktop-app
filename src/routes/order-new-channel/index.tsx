@@ -11,8 +11,10 @@ import {
   ArrowLeftRight,
   ArrowRight,
   CheckCircle,
+  Copy,
   Loader2,
 } from 'lucide-react'
+import CopyToClipboard from 'react-copy-to-clipboard'
 import { toast } from 'react-toastify'
 
 import { RootState } from '../../app/store'
@@ -106,22 +108,35 @@ export const Component = () => {
             })
           )
 
-        const defaultLspUrl = NETWORK_DEFAULTS[network].default_lsp_url
-        if (!defaultLspUrl)
+        // Respect the LSP/maker the user configured in Settings; only fall
+        // back to the hardcoded network default when the account has none.
+        // Previously this always overwrote the stored URL with the network
+        // default, silently reconnecting the user to a different LSP than the
+        // one they selected.
+        const lspUrl =
+          currentAccount.default_maker_url ||
+          currentAccount.default_lsp_url ||
+          NETWORK_DEFAULTS[network].default_lsp_url
+        if (!lspUrl)
           throw new Error(
             t('orderChannel.step1.noDefaultLspUrl', {
               network: networkInfo.network,
             })
           )
 
-        dispatch(
-          nodeSettingsActions.setNodeSettings({
-            ...currentAccount,
-            default_lsp_url: defaultLspUrl,
-            default_maker_url: defaultLspUrl,
-          })
-        )
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        // The SDK client keys its base URL off default_maker_url, so only
+        // touch the store when it isn't already pointing at the chosen LSP.
+        // This avoids clobbering the user's configured maker connection.
+        if (currentAccount.default_maker_url !== lspUrl) {
+          dispatch(
+            nodeSettingsActions.setNodeSettings({
+              ...currentAccount,
+              default_lsp_url: lspUrl,
+              default_maker_url: lspUrl,
+            })
+          )
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
 
         const info = await getInfoRequest().unwrap()
         if (!info.lsp_connection_url) {
@@ -134,7 +149,7 @@ export const Component = () => {
         // step and jump straight to channel configuration.
         const lspIsMaker =
           !!currentAccount.default_maker_url &&
-          currentAccount.default_maker_url === defaultLspUrl
+          currentAccount.default_maker_url === lspUrl
         if (lspIsMaker) {
           try {
             const lspPubkey = info.lsp_connection_url.split('@')[0]
@@ -482,6 +497,21 @@ export const Component = () => {
     </div>
   )
 
+  // LSP the order is being placed with — surfaced on every wizard step so the
+  // user always knows which node they're buying a channel from.
+  const lspApiUrl =
+    currentAccount.default_maker_url || currentAccount.default_lsp_url || ''
+  let lspHost = lspApiUrl
+  try {
+    lspHost = lspApiUrl ? new URL(lspApiUrl).host : ''
+  } catch {
+    /* not a parseable URL — fall back to the raw value */
+  }
+  const lspPubkey = lspConfirmUrl ? lspConfirmUrl.split('@')[0] : ''
+  const lspPubkeyShort = lspPubkey
+    ? `${lspPubkey.slice(0, 8)}…${lspPubkey.slice(-6)}`
+    : ''
+
   return (
     <div className="w-full min-h-full text-white">
       {showLspConfirm &&
@@ -570,6 +600,52 @@ export const Component = () => {
             ]}
           />
         </div>
+        {step >= 2 && lspHost && (
+          <div className="mx-auto mb-5 flex w-full max-w-2xl justify-center">
+            <div
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-border-subtle/60 bg-surface-overlay/50 py-1 pl-3 pr-1.5"
+              title={lspConfirmUrl || lspApiUrl}
+            >
+              <span className="relative flex h-1.5 w-1.5 flex-shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-success/70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-success" />
+              </span>
+              <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
+                {t('orderChannel.lspLabel', 'LSP')}
+              </span>
+              <span className="truncate text-xs font-medium text-white">
+                {lspHost}
+              </span>
+              {lspPubkeyShort && (
+                <span className="hidden flex-shrink-0 font-mono text-[11px] text-content-tertiary sm:inline">
+                  {lspPubkeyShort}
+                </span>
+              )}
+              {lspConfirmUrl && (
+                <CopyToClipboard
+                  onCopy={() =>
+                    toast.success(
+                      t('orderChannel.lspCopied', 'LSP connection copied'),
+                      { autoClose: 2000, position: 'bottom-right' }
+                    )
+                  }
+                  text={lspConfirmUrl}
+                >
+                  <button
+                    className="flex-shrink-0 rounded-full p-1 text-content-tertiary transition-colors hover:bg-surface-overlay hover:text-white"
+                    title={t(
+                      'orderChannel.lspCopyTitle',
+                      'Copy connection URL'
+                    )}
+                    type="button"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </CopyToClipboard>
+              )}
+            </div>
+          </div>
+        )}
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
             <Spinner color="#15E99A" overlay={false} size={50} />

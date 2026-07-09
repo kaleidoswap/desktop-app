@@ -288,12 +288,18 @@ export const Step2: React.FC<Props> = ({
     setAddAsset(true)
     setValue('assetId', asset.asset_id)
     if (preselectedAssetAmount && preselectedAssetAmount > 0) {
-      // The intended amount is what the user is buying — i.e. their client-side
-      // balance. Seed the total ("Amount") to match so the client slider is
-      // available and the quote is fetched for that amount.
-      const amount = String(preselectedAssetAmount)
-      setValue('lspAssetAmount', amount)
-      setValue('clientAssetAmount', amount)
+      // The intended amount is what the user is buying → their client-side
+      // balance. Default the channel's total asset capacity to the asset's max
+      // (as the old Buy Channel modal did) so there's inbound headroom, while
+      // keeping total ≥ the amount being bought.
+      const assetMaxTotal = asset.max_channel_amount
+        ? asset.max_channel_amount / Math.pow(10, asset.precision)
+        : preselectedAssetAmount
+      setValue(
+        'lspAssetAmount',
+        String(Math.max(assetMaxTotal, preselectedAssetAmount))
+      )
+      setValue('clientAssetAmount', String(preselectedAssetAmount))
     }
   }, [preselectedAssetId, preselectedAssetAmount, assetMap, setValue])
 
