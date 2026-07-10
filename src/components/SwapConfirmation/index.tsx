@@ -132,7 +132,7 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
         </div>
 
         <div className="p-6 border-t border-border-subtle">
-          <div className="flex gap-4">
+          <div className="flex items-center justify-between gap-4">
             <button
               className="px-3 py-2 text-content-secondary hover:text-white transition-colors
                        flex items-center gap-2 hover:bg-surface-overlay/50 rounded-lg"
@@ -143,7 +143,7 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
               Cancel
             </button>
             <button
-              className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis
+              className="px-6 py-3 bg-primary hover:bg-primary-emphasis
                        disabled:opacity-60 text-primary-foreground rounded-lg font-medium
                        transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={isLoading}
