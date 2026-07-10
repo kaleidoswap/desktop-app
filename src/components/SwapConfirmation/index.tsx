@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { ArrowRight, X, Zap } from 'lucide-react'
 import React from 'react'
 import { createPortal } from 'react-dom'
 
@@ -58,7 +58,10 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
       >
         <div className="p-6 border-b border-border-subtle">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              Confirm Swap
+            </h3>
             <button
               className="p-2 hover:bg-surface-overlay rounded-lg transition-colors"
               onClick={onClose}
@@ -131,22 +134,28 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
         <div className="p-6 border-t border-border-subtle">
           <div className="flex gap-4">
             <button
-              className="flex-1 px-6 py-3 border border-border-default text-content-secondary 
-                       rounded-lg hover:bg-surface-overlay transition-colors"
+              className="px-4 py-3 border border-border-default text-content-secondary
+                       rounded-lg hover:bg-surface-overlay transition-colors flex items-center justify-center"
               onClick={onClose}
               type="button"
             >
-              Cancel
+              <X className="w-4 h-4" />
             </button>
             <button
               className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis
                        disabled:opacity-60 text-primary-foreground rounded-lg font-medium
-                       transition-colors disabled:cursor-not-allowed"
+                       transition-colors disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={isLoading}
               onClick={onConfirm}
               type="button"
             >
-              {isLoading ? 'Confirming...' : 'Confirm Swap'}
+              {isLoading ? (
+                'Confirming...'
+              ) : (
+                <>
+                  Confirm Swap <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         </div>
