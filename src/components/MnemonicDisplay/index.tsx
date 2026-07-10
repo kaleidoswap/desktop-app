@@ -1,6 +1,6 @@
 import {
   Copy,
-  AlertCircle,
+  AlertTriangle,
   ArrowRight,
   ArrowLeft,
   SkipForward,
@@ -26,11 +26,7 @@ export const MnemonicDisplay = ({
   return (
     <div className="w-full space-y-5">
       {/* Warning Message */}
-      <Alert
-        icon={<AlertCircle className="w-5 h-5" />}
-        title="Important"
-        variant="warning"
-      >
+      <Alert icon={<AlertTriangle className="w-5 h-5" />} variant="warning">
         <p className="text-sm">
           Never share your recovery phrase with anyone. Store it securely
           offline. Anyone with access to this phrase can control your wallet.
@@ -94,7 +90,7 @@ export const MnemonicDisplay = ({
       {/* Skip Button */}
       {onSkip && (
         <Button
-          className="w-full text-content-secondary border-border-default/50 hover:bg-surface-overlay/50 hover:text-content-secondary hover:border-border-default"
+          className="w-full border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white"
           icon={<SkipForward className="w-4 h-4" />}
           onClick={onSkip}
           size="md"

@@ -10,6 +10,7 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle,
+  ChevronDown,
   ChevronRight,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -205,7 +206,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                   className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() =>
                     openExternalLink(
-                      'https://github.com/kaleidoswap/desktop-app'
+                      'https://github.com/kaleidoswap/desktop-app/issues'
                     )
                   }
                 >
@@ -252,10 +253,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
           {activeSection === 'troubleshoot' && (
             <div className="space-y-5">
               <button
-                className="flex items-center gap-2 text-primary hover:underline mb-4"
+                className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm mb-4"
                 onClick={goBack}
               >
-                <ChevronRight className="w-4 h-4 rotate-180" />
+                <ChevronRight className="w-3.5 h-3.5 rotate-180" />
                 <span>{t('supportModal.backToSupport')}</span>
               </button>
 
@@ -284,20 +285,21 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                           </p>
                         </div>
                       </div>
-                      <button className="p-1 text-content-secondary hover:text-white transition-colors">
-                        {expandedIssue === index ? (
+                      {expandedIssue === index ? (
+                        <button className="p-1 text-content-secondary hover:text-white transition-colors">
                           <X className="w-5 h-5" />
-                        ) : (
-                          <span className="text-primary">
-                            {t('supportModal.viewSolutions')}
-                          </span>
-                        )}
-                      </button>
+                        </button>
+                      ) : (
+                        <button className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm">
+                          <span>{t('supportModal.viewSolutions')}</span>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {expandedIssue === index && (
                       <div className="px-5 pb-5 pt-2 border-t border-divider/20 bg-surface-base/30">
-                        <h4 className="text-sm font-semibold text-primary mb-3">
+                        <h4 className="text-sm font-semibold text-white mb-3">
                           {t('supportModal.solutions')}
                         </h4>
                         <ul className="space-y-2">

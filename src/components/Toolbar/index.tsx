@@ -1261,7 +1261,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
       {loadingState && (
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-primary shrink-0" />
+            <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />
             <p className="text-primary font-medium">{loadingState.message}</p>
           </div>
         </div>

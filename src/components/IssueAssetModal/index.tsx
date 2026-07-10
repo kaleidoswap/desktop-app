@@ -1,16 +1,12 @@
-import { X } from 'lucide-react'
+import { Plus, Loader, Info, X } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
-import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../helpers/modalPortal'
 import { useUtxoErrorHandler } from '../../hooks/useUtxoErrorHandler'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { CreateUTXOModal } from '../CreateUTXOModal'
+import { Modal } from '../ui/Modal'
 
 interface IssueAssetModalProps {
   onClose: () => void
@@ -33,34 +29,22 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
 
   const [issueAsset] = nodeApi.endpoints.issueNiaAsset.useMutation()
 
-  // Calculate the actual amount that will be issued with decimal places
   const actualAmount = useMemo(() => {
     if (
       !amount ||
       isNaN(Number(amount)) ||
       !precision ||
       isNaN(Number(precision))
-    ) {
+    )
       return '0'
-    }
-
-    // Convert to base units (add zeros based on precision)
-    const baseAmount = Number(amount) * Math.pow(10, Number(precision))
-    return baseAmount.toString()
+    return (Number(amount) * Math.pow(10, Number(precision))).toString()
   }, [amount, precision])
 
-  // Format preview amount with decimal places
   const previewAmount = useMemo(() => {
-    if (!amount || isNaN(Number(amount))) {
-      return '0'
-    }
-
-    // Clamp precision between 0 and 10
+    if (!amount || isNaN(Number(amount))) return '0'
     let safePrecision = Number(precision)
     if (isNaN(safePrecision) || safePrecision < 0) safePrecision = 0
     if (safePrecision > 10) safePrecision = 10
-
-    // Display with appropriate decimal places
     return Number(amount).toFixed(safePrecision)
   }, [amount, precision])
 
@@ -76,22 +60,18 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
     try {
       await issueAssetOperation()
       toast.success(t('issueAssetModal.success'))
       onSuccess()
       onClose()
     } catch (error: any) {
-      // Check if it's a UTXO-related error
       const wasHandled = handleApiError(
         error,
         'issuance',
         0,
         issueAssetOperation
       )
-
-      // Only show toast for errors that weren't handled by the UTXO modal
       if (!wasHandled) {
         toast.error(
           error?.data?.error ||
@@ -105,32 +85,36 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
     }
   }
 
-  const pos = getModalPositionClass()
+  const inputClass =
+    'w-full bg-surface-overlay/50 text-white px-4 py-2.5 rounded-lg border border-border-default ' +
+    'focus:border-primary/50 focus:ring-1 focus:ring-primary/20 focus:outline-none text-sm placeholder-content-tertiary'
 
-  return createPortal(
+  return (
     <>
-      <div
-        className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
-        onClick={onClose}
-      >
-        <div
-          className="bg-surface-overlay rounded-xl border border-border-default p-6 w-full max-w-md"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">
+      <Modal isOpen onClose={onClose} size="sm">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-divider/10">
+          <div className="flex items-center gap-3">
+            <Plus className="w-5 h-5 text-primary" />
+            <h3 className="text-xl font-semibold text-white">
               {t('issueAssetModal.title')}
-            </h2>
-            <button
-              className="p-2 hover:bg-surface-high rounded-lg transition-colors"
-              onClick={onClose}
-            >
-              <X className="w-5 h-5 text-content-secondary" />
-            </button>
+            </h3>
           </div>
+          <button
+            aria-label="Close modal"
+            className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-            <p className="text-blue-400 text-sm">{t('issueAssetModal.note')}</p>
+        {/* Body */}
+        <div className="p-6 space-y-5">
+          {/* Info banner */}
+          <div className="flex items-start gap-3 rounded-lg bg-blue-500/10 border border-blue-500/20 p-4">
+            <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-300">{t('issueAssetModal.note')}</p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
@@ -139,7 +123,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 {t('issueAssetModal.tickerLabel')}
               </label>
               <input
-                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
+                className={inputClass}
                 maxLength={5}
                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                 placeholder={t('issueAssetModal.tickerPlaceholder')}
@@ -154,7 +138,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 {t('issueAssetModal.nameLabel')}
               </label>
               <input
-                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
+                className={inputClass}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('issueAssetModal.namePlaceholder')}
                 required
@@ -168,7 +152,7 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 {t('issueAssetModal.amountLabel')}
               </label>
               <input
-                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
+                className={inputClass}
                 min="0"
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={t('issueAssetModal.amountPlaceholder')}
@@ -183,13 +167,11 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
                 {t('issueAssetModal.precisionLabel')}
               </label>
               <input
-                className="w-full bg-surface-base border border-border-default rounded-lg px-4 py-2 text-white"
+                className={inputClass}
                 max="18"
                 min="0"
                 onChange={(e) => {
-                  // removing fraction inputs
-                  const val = e.target.value
-                  const floored = Math.floor(Number(val))
+                  const floored = Math.floor(Number(e.target.value))
                   setPrecision(String(floored))
                 }}
                 placeholder={t('issueAssetModal.precisionPlaceholder')}
@@ -207,27 +189,32 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
             </div>
 
             {amount && (
-              <p className="mt-2 text-sm text-content-secondary">
+              <p className="text-sm text-content-secondary">
                 {t('issueAssetModal.previewPrefix')}{' '}
                 <span className="text-white font-medium">{previewAmount}</span>
               </p>
             )}
+
             <button
-              className="w-full px-6 py-3 bg-primary hover:bg-primary-emphasis
-                       text-primary-foreground rounded-lg font-medium transition-colors
-                       disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 bg-primary hover:bg-primary-emphasis
+                       text-primary-foreground rounded-lg text-sm font-semibold transition-colors
+                       disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               disabled={isLoading}
               type="submit"
             >
+              {isLoading ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
               {isLoading
                 ? t('issueAssetModal.submitting')
                 : t('issueAssetModal.submit')}
             </button>
           </form>
         </div>
-      </div>
+      </Modal>
 
-      {/* UTXO Modal for handling UTXO-related errors */}
       <CreateUTXOModal
         channelCapacity={utxoModalProps.channelCapacity}
         error={utxoModalProps.error}
@@ -237,7 +224,6 @@ export const IssueAssetModal: React.FC<IssueAssetModalProps> = ({
         operationType={utxoModalProps.operationType}
         retryFunction={utxoModalProps.retryFunction}
       />
-    </>,
-    getModalPortalTarget()
+    </>
   )
 }
