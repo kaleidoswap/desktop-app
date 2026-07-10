@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Save, SkipForward } from 'lucide-react'
 
 import { Button, Modal } from '../ui'
 
@@ -47,6 +47,7 @@ export const SkipMnemonicWarningModal = ({
         <div className="flex flex-col gap-2.5">
           <Button
             className="w-full bg-red-600/80 hover:bg-red-600 text-white border-transparent"
+            icon={<SkipForward className="w-4 h-4" />}
             onClick={onConfirm}
             size="lg"
             variant="outline"
@@ -55,6 +56,7 @@ export const SkipMnemonicWarningModal = ({
           </Button>
           <Button
             className="w-full border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white"
+            icon={<Save className="w-4 h-4" />}
             onClick={onCancel}
             size="lg"
             variant="outline"
