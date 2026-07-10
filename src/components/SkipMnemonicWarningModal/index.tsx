@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Save, SkipForward } from 'lucide-react'
 
 import { Button, Modal } from '../ui'
 
@@ -27,15 +27,13 @@ export const SkipMnemonicWarningModal = ({
         {/* Warning Content */}
         <div className="space-y-4 mb-6">
           <p className="text-content-secondary text-sm leading-relaxed">
-            Without your recovery phrase, you will{' '}
-            <span className="text-status-danger font-semibold">
-              permanently lose access
-            </span>{' '}
-            to your wallet if your device is lost, data corrupted, or password
+            Without your recovery phrase, you will permanently lose access to
+            your wallet if your device is lost, data corrupted, or password
             forgotten.
           </p>
 
-          <div className="p-3 rounded-lg bg-status-warning/5 border border-status-warning/20">
+          <div className="p-3 rounded-lg bg-status-warning/5 border border-status-warning/20 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-status-warning shrink-0 mt-0.5" />
             <p className="text-status-warning text-sm font-medium">
               We strongly recommend writing down your recovery phrase and
               storing it in a secure location before continuing.
@@ -45,16 +43,17 @@ export const SkipMnemonicWarningModal = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2.5">
-          <Button
-            className="w-full bg-red-600/80 hover:bg-red-600 text-white border-transparent"
+          <button
+            className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-white text-sm font-medium shadow-md flex items-center justify-center gap-2"
             onClick={onConfirm}
-            size="lg"
-            variant="outline"
+            type="button"
           >
+            <SkipForward className="w-4 h-4" />
             Skip Anyway
-          </Button>
+          </button>
           <Button
             className="w-full border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white"
+            icon={<Save className="w-4 h-4" />}
             onClick={onCancel}
             size="lg"
             variant="outline"
