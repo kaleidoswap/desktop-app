@@ -690,7 +690,7 @@ export const Component = () => {
                       icon={<BookOpen className="w-4 h-4" />}
                       onClick={() =>
                         openUrl(
-                          'https://docs.kaleidoswap.com/setup/remote-node'
+                          'https://docs.kaleidoswap.com/desktop-app/getting-started/node-hosting'
                         )
                       }
                       size="sm"

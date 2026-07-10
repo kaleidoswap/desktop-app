@@ -159,7 +159,7 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                   className="bg-surface-overlay/50 border border-divider/20 rounded-xl p-4 cursor-pointer hover:bg-surface-elevated/30 transition-colors duration-200 group"
                   onClick={() =>
                     openExternalLink(
-                      'https://docs.kaleidoswap.com/desktop-app/faq'
+                      'https://docs.kaleidoswap.com/desktop-app/support/faq'
                     )
                   }
                 >

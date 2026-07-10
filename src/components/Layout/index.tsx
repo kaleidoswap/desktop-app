@@ -1,4 +1,3 @@
-import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import Decimal from 'decimal.js'
@@ -30,10 +29,10 @@ import {
 } from '../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
+import { isBtcWalletTx } from '../../helpers/walletHistoryUtils'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
-import { setNodeReachability } from '../../slices/node/node.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import {
   setAppMode,
@@ -48,6 +47,7 @@ import { useDcaScheduler } from '../../hooks/useDcaScheduler'
 import { useLimitOrderScheduler } from '../../hooks/useLimitOrderScheduler'
 import { useNwcAutostart } from '../../hooks/useNwcAutostart'
 import { useNodeReachabilityMonitor } from '../../hooks/useNodeReachabilityMonitor'
+import { useNodeReconnect } from '../../hooks/useNodeReconnect'
 import { LogoutModal, LogoutButton } from '../LogoutModal'
 import { useNotification } from '../NotificationSystem'
 import { ShutdownAnimation } from '../ShutdownAnimation'
@@ -71,43 +71,6 @@ import { LayoutModal } from './Modal'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const DEFAULT_TOAST_AUTO_CLOSE_MS = 5000
-
-const getNodeErrorMessage = (error: unknown) => {
-  if (!error) return 'Unknown node connection error'
-  if (typeof error === 'string') return error
-
-  if (typeof error === 'object' && error !== null) {
-    if ('error' in error && typeof error.error === 'string') {
-      return error.error
-    }
-
-    if ('data' in error) {
-      const data = error.data
-      if (typeof data === 'string') return data
-      if (typeof data === 'object' && data !== null && 'error' in data) {
-        return String(data.error)
-      }
-    }
-  }
-
-  return String(error)
-}
-
-const isNodeReachabilityError = (error: FetchBaseQueryError) => {
-  if (error.status === 'FETCH_ERROR' || error.status === 'TIMEOUT_ERROR') {
-    return true
-  }
-
-  const message = getNodeErrorMessage(error).toLowerCase()
-  return (
-    message.includes('failed to fetch') ||
-    message.includes('load failed') ||
-    message.includes('network') ||
-    message.includes('timeout') ||
-    message.includes('connection refused') ||
-    message.includes('connection reset')
-  )
-}
 
 interface Props {
   className?: string
@@ -349,6 +312,7 @@ const UserProfile = ({
   const accountName = useAppSelector((state) => state.nodeSettings.data.name)
   const nodeSettingsData = useAppSelector((state) => state.nodeSettings.data)
   const nodeReachability = useAppSelector((state) => state.node.reachability)
+  const { reconnect, isReconnecting } = useNodeReconnect()
   const isNodeReachable =
     nodeReachability === 'reachable' ||
     (nodeReachability === 'unknown' && nodeInfo.isSuccess)
@@ -504,6 +468,41 @@ const UserProfile = ({
             </div>
           )}
 
+          {/* Node configured but not reachable — offer a manual reconnect
+              without waiting for the auto-retry / blocking overlay. */}
+          {hasNode && !isNodeReachable && (
+            <div className="py-1 border-b border-divider/20">
+              <button
+                className="w-full px-4 py-3 flex items-center space-x-3 cursor-pointer
+                          hover:bg-gradient-to-r hover:from-primary/10 hover:to-transparent
+                          transition-all duration-200 group
+                          disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isReconnecting}
+                onClick={() => {
+                  reconnect()
+                }}
+                type="button"
+              >
+                <div className="text-primary transition-transform duration-200 group-hover:scale-110">
+                  {isReconnecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </div>
+                <span className="text-sm font-medium group-hover:text-white">
+                  {isReconnecting
+                    ? t('userProfile.reconnecting', {
+                        defaultValue: 'Reconnecting…',
+                      })
+                    : t('userProfile.reconnect', {
+                        defaultValue: 'Reconnect node',
+                      })}
+                </span>
+              </button>
+            </div>
+          )}
+
           <div className="py-1">
             {USER_MENU_ITEMS.map((item) => (
               <div
@@ -546,8 +545,10 @@ export const Layout = (props: Props) => {
   const [isChannelMenuOpen, setIsChannelMenuOpen] = useState(false)
   const [isTransactionMenuOpen, setIsTransactionMenuOpen] = useState(false)
   const [isSupportMenuOpen, setIsSupportMenuOpen] = useState(false)
-  const [isRetryingNodeConnection, setIsRetryingNodeConnection] =
-    useState(false)
+  const {
+    reconnect: retryNodeConnection,
+    isReconnecting: isRetryingNodeConnection,
+  } = useNodeReconnect()
 
   const [showSupportModal, setShowSupportModal] = useState(false)
 
@@ -742,7 +743,7 @@ export const Layout = (props: Props) => {
         (data?.transactions || [])
           .filter(
             (tx: any) =>
-              tx.transaction_type === 'User' &&
+              isBtcWalletTx(tx.transaction_type) &&
               new Decimal(tx.received ?? 0).minus(tx.sent ?? 0).gt(0)
           )
           .map((tx: any) => ({
@@ -842,36 +843,6 @@ export const Layout = (props: Props) => {
         type: type as ModalActionType,
       })
     )
-  }
-
-  const handleRetryNodeConnection = async () => {
-    setIsRetryingNodeConnection(true)
-    try {
-      const result = await dispatch(
-        nodeApi.endpoints.nodeInfo.initiate(undefined, {
-          forceRefetch: true,
-          subscribe: false,
-        })
-      )
-
-      if ('error' in result && result.error) {
-        const error = result.error as FetchBaseQueryError
-
-        if (isNodeReachabilityError(error)) {
-          dispatch(
-            setNodeReachability({
-              error: getNodeErrorMessage(error),
-              status: 'unreachable',
-            })
-          )
-          return
-        }
-      }
-
-      dispatch(setNodeReachability({ status: 'reachable' }))
-    } finally {
-      setIsRetryingNodeConnection(false)
-    }
   }
 
   const handleKeepRunningInBackground = async () => {
@@ -1002,7 +973,9 @@ export const Layout = (props: Props) => {
                   <button
                     className="px-4 py-3 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60 flex items-center justify-center gap-2"
                     disabled={isRetryingNodeConnection}
-                    onClick={handleRetryNodeConnection}
+                    onClick={() => {
+                      retryNodeConnection()
+                    }}
                   >
                     {isRetryingNodeConnection ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

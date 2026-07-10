@@ -647,8 +647,16 @@ export const Component = () => {
           </div>
         )}
         {loading && (
-          <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+          <div className="absolute inset-0 z-50 flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-surface-base/85 backdrop-blur-sm">
             <Spinner color="#15E99A" overlay={false} size={50} />
+            <div className="text-center">
+              <p className="text-base font-semibold text-white">
+                {t('orderChannel.creatingOrder')}
+              </p>
+              <p className="mt-1 text-sm text-content-secondary">
+                {t('orderChannel.creatingOrderHint')}
+              </p>
+            </div>
           </div>
         )}
         {showBackConfirmation && <BackConfirmationModal />}
