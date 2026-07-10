@@ -21,9 +21,7 @@ export const SkipMnemonicWarningModal = ({
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-status-danger/10 border border-status-danger/20 shrink-0">
             <AlertTriangle className="w-5 h-5 text-status-danger" />
           </div>
-          <h2 className="text-xl font-bold text-white">
-            Skip Recovery Phrase?
-          </h2>
+          <h2 className="text-xl font-bold text-white">Skip Recovery Phrase</h2>
         </div>
 
         {/* Warning Content */}
@@ -48,20 +46,20 @@ export const SkipMnemonicWarningModal = ({
         {/* Action Buttons */}
         <div className="flex flex-col gap-2.5">
           <Button
-            className="w-full"
-            onClick={onCancel}
-            size="lg"
-            variant="primary"
-          >
-            Go Back and Save Recovery Phrase
-          </Button>
-          <Button
-            className="w-full border-status-danger/30 text-status-danger hover:bg-status-danger/10 hover:border-status-danger/50"
+            className="w-full bg-red-600/80 hover:bg-red-600 text-white border-transparent"
             onClick={onConfirm}
             size="lg"
             variant="outline"
           >
             Skip Anyway
+          </Button>
+          <Button
+            className="w-full border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white"
+            onClick={onCancel}
+            size="lg"
+            variant="outline"
+          >
+            Save Recovery Phrase
           </Button>
         </div>
 

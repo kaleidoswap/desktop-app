@@ -393,7 +393,7 @@ export const Component: React.FC = () => {
                   }`}
                   onClick={() => setActiveTab('bitcoin')}
                 >
-                  <Bitcoin className="h-3.5 w-3.5 text-primary" />
+                  <Bitcoin className="h-3.5 w-3.5" />
                   {t('channels.bitcoin')}
                   <span
                     className={`text-xs ${activeTab === 'bitcoin' ? 'text-primary' : 'text-white/60'}`}

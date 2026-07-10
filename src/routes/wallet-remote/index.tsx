@@ -997,7 +997,7 @@ export const Component = () => {
                       <div className="pt-3 space-y-3">
                         {/* Test Connection Button */}
                         <Button
-                          className="w-full"
+                          className="w-full border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white"
                           disabled={isTestingConnection || isConnecting}
                           icon={
                             isTestingConnection ? (
