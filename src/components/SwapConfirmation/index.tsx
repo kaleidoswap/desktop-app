@@ -134,12 +134,13 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
         <div className="p-6 border-t border-border-subtle">
           <div className="flex gap-4">
             <button
-              className="px-4 py-3 border border-border-default text-content-secondary
-                       rounded-lg hover:bg-surface-overlay transition-colors flex items-center justify-center"
+              className="px-6 py-3 border border-border-default text-content-secondary
+                       rounded-lg hover:bg-surface-overlay transition-colors flex items-center justify-center gap-2"
               onClick={onClose}
               type="button"
             >
               <X className="w-4 h-4" />
+              Cancel
             </button>
             <button
               className="flex-1 px-6 py-3 bg-primary hover:bg-primary-emphasis
