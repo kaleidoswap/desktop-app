@@ -8,7 +8,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -84,6 +84,44 @@ export const WalletConfirmationModal: React.FC<
   const [selectedMethod, setSelectedMethod] = useState<
     'lightning' | 'onchain' | null
   >(null)
+  // Whether the user has explicitly picked a method — once they have, we stop
+  // overriding their choice with the auto-default.
+  const [hasUserSelected, setHasUserSelected] = useState(false)
+
+  // Pre-select a sensible default when the modal opens: prefer Lightning, but
+  // fall back to whichever method the user can actually afford (a brand-new
+  // node has no outbound liquidity yet, so on-chain is often the only payable
+  // option). Re-evaluated as balances load, until the user picks manually.
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedMethod(null)
+      setHasUserSelected(false)
+      return
+    }
+    if (hasUserSelected) return
+    const lnAvailable = lightningAmountSat > 0
+    const chainAvailable = onchainAmountSat > 0
+    const lnAffordable = outboundLiquidity >= lightningAmountSat
+    const chainAffordable = onChainBalance >= onchainAmountSat
+    const preferred =
+      lnAvailable && lnAffordable
+        ? 'lightning'
+        : chainAvailable && chainAffordable
+          ? 'onchain'
+          : lnAvailable
+            ? 'lightning'
+            : chainAvailable
+              ? 'onchain'
+              : null
+    setSelectedMethod(preferred)
+  }, [
+    isOpen,
+    hasUserSelected,
+    lightningAmountSat,
+    onchainAmountSat,
+    outboundLiquidity,
+    onChainBalance,
+  ])
 
   if (!isOpen) return null
   if (typeof document === 'undefined') return null
@@ -103,6 +141,7 @@ export const WalletConfirmationModal: React.FC<
         : false
 
   const handleCardClick = (method: 'lightning' | 'onchain') => {
+    setHasUserSelected(true)
     setSelectedMethod((prev) => (prev === method ? null : method))
   }
 

@@ -32,10 +32,12 @@ jobs:
           - runner: ubuntu-22.04
             platform: linux
             arch: x64
-          # Built natively on a Windows runner. @qvac engines bundle their
-          # win32-x64 `.bare` prebuilds in-package (not as os/cpu-split optional
-          # deps), so NPM_OS/NPM_CPU don't gate them — a native runner also
-          # grabs the correct node.exe via fetchNode().
+          # Built natively on a Windows runner (grabs the correct node.exe via
+          # fetchNode()). @qvac engines bundle their win32-x64 `.bare` prebuilds
+          # in-package, but `bare-runtime` IS an os/cpu-split optional dep — the
+          # bundle script normalizes NPM_OS 'win' → npm's 'win32' so npm doesn't
+          # silently skip bare-runtime-win32-x64, and fails the build if it's
+          # missing anyway.
           - runner: windows-latest
             platform: win
             arch: x64

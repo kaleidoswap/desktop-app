@@ -49,6 +49,19 @@ export const formatAssetAmount = (
     })
 }
 
+// On-chain transaction types that are NOT plain BTC deposits/withdrawals:
+// `RgbSend` (an RGB-colored asset send) and `CreateUtxos` (internal UTXO
+// creation for RGB). RGB asset movements are surfaced in the Assets history
+// instead, so they are excluded from BTC deposit/withdraw history. Every other
+// type (`Incoming`, `SendBtc`, `Drain`, and the legacy `User`) is treated as a
+// BTC wallet movement; its direction is derived from the net sent/received
+// amount, which keeps this correct across node `transaction_type` renames.
+const NON_BTC_WALLET_TX_TYPES = new Set(['RgbSend', 'CreateUtxos'])
+
+export const isBtcWalletTx = (
+  transactionType: string | null | undefined
+): boolean => !NON_BTC_WALLET_TX_TYPES.has(transactionType ?? '')
+
 export const resolveAssetInfo = (
   assetId: string | null | undefined,
   listAssetsData: any

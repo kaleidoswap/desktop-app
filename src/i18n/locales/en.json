@@ -132,6 +132,8 @@
     "noNode": "No node connected",
     "tapToConnect": "Tap to connect",
     "connectNode": "Connect a node",
+    "reconnect": "Reconnect node",
+    "reconnecting": "Reconnecting…",
     "logout": "Logout",
     "settings": "Settings"
   },
@@ -1499,6 +1501,8 @@
     }
   },
   "orderChannel": {
+    "creatingOrder": "Creating your order…",
+    "creatingOrderHint": "Contacting the LSP to reserve your channel. This can take a few seconds.",
     "step1": {
       "title": "LSP Connection",
       "subtitle": "Connect to a Lightning Service Provider to get started",
@@ -1568,6 +1572,13 @@
     "step2": {
       "title": "Configure Channel",
       "subtitle": "Set up your channel parameters and capacity",
+      "intro": {
+        "title": "Configure your channel",
+        "stepCapacity": "Choose the total channel capacity — the larger it is, the more you can send and receive.",
+        "stepOutbound": "Set how much starts on your side (outbound, ready to send). The rest is inbound — what you can receive.",
+        "stepAsset": "Optionally add an RGB asset and pick how long the channel stays open.",
+        "stepReview": "Check the total cost breakdown at the bottom, then continue to review and pay."
+      },
       "stepLabel": "Step {{current}} of {{total}}",
       "step1Label": "Connect",
       "step2Label": "Configure",
