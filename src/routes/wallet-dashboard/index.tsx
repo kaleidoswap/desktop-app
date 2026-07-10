@@ -747,8 +747,10 @@ export const Component = () => {
                             <span className="text-content-secondary font-medium truncate">
                               {ch.peer_alias || ch.peer_pubkey?.slice(0, 10)}…
                             </span>
-                            {asset && (
+                            {asset ? (
                               <ChannelAssetBadge ticker={asset.ticker} />
+                            ) : (
+                              <ChannelAssetBadge ticker="BTC" />
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -766,7 +768,7 @@ export const Component = () => {
 
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
-                          <div className="flex items-center justify-between text-[10px] mb-0.5">
+                          <div className="max-h-0 overflow-hidden group-hover/ch:max-h-8 transition-all duration-200 flex items-center justify-between text-[10px] mb-0.5">
                             <span className="flex items-center gap-1 text-content-secondary font-medium">
                               <BtcIcon className="w-3 h-3" />
                               BTC
@@ -802,7 +804,7 @@ export const Component = () => {
                             />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
-                          <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                          <div className="max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200 flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                             <span className="text-[#9365FF]/70">Outbound</span>
                             <span className="text-emerald-400/70">Inbound</span>
                           </div>
@@ -811,7 +813,7 @@ export const Component = () => {
                         {/* Asset liquidity bar (if RGB channel) */}
                         {asset && (
                           <div>
-                            <div className="flex items-center justify-between text-[10px] mb-0.5">
+                            <div className="max-h-0 overflow-hidden group-hover/ch:max-h-8 transition-all duration-200 flex items-center justify-between text-[10px] mb-0.5">
                               <BarAssetLabel ticker={asset.ticker} />
                               <span className="flex items-center gap-1 font-mono">
                                 <span className="flex items-center gap-0.5 text-purple-400">
@@ -838,7 +840,7 @@ export const Component = () => {
                               />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
-                            <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                            <div className="max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200 flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                               <span className="text-[#9365FF]/70">
                                 Outbound
                               </span>
