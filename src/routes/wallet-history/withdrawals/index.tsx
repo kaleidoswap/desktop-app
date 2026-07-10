@@ -25,6 +25,7 @@ import {
   formatBitcoinAmount,
   formatAssetAmount,
   resolveAssetInfo,
+  isBtcWalletTx,
 } from '../../../helpers/walletHistoryUtils'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
 
@@ -54,7 +55,7 @@ export const Component: React.FC = () => {
     refetch: refetchPayments,
   } = nodeApi.endpoints.listPayments.useQuery()
 
-  const isLoading = transactionsLoading && paymentsLoading
+  const isLoading = transactionsLoading || paymentsLoading
   const isTxError = transactionsError && !transactionsLoading
   const isPaymentsError = paymentsError && !paymentsLoading
   const isError = isTxError && isPaymentsError
@@ -134,7 +135,7 @@ export const Component: React.FC = () => {
     (transactionsData?.transactions || [])
       .filter(
         (tx: any) =>
-          tx.transaction_type === 'User' &&
+          isBtcWalletTx(tx.transaction_type) &&
           new Decimal(tx.sent ?? 0).minus(tx.received ?? 0).gt(0)
       )
       .map((tx: any) => ({
@@ -346,9 +347,6 @@ export const Component: React.FC = () => {
                     <>
                       <span className="font-medium">
                         {withdrawal.rgbAssetLabel}
-                      </span>
-                      <span className="text-xs text-content-secondary">
-                        {bitcoinUnit}
                       </span>
                       {withdrawal.rgbAssetId && (
                         <div className="flex items-center">

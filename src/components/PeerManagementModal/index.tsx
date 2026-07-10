@@ -1,14 +1,10 @@
 import { Users, Plus, Loader, X, Link as LinkIcon, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../helpers/modalPortal'
+import { Modal } from '../ui/Modal'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface PeerManagementModalProps {
@@ -63,56 +59,46 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
     }
   }
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
-
-  const pos = getModalPositionClass()
-
-  return createPortal(
-    <div
-      className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 pt-20`}
-      onMouseDown={handleBackdropClick}
-    >
-      <div className="bg-surface-base rounded-2xl border border-border-subtle p-6 max-w-2xl w-full m-4 max-h-[calc(100vh-120px)] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-blue-500" />
-            <h2 className="text-2xl font-bold text-white">
-              {t('peerManagement.title')}
-            </h2>
-          </div>
-          <button
-            className="text-content-secondary hover:text-white transition-colors"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5" />
-          </button>
+  return (
+    <Modal isOpen onClose={onClose} size="md">
+      <div className="flex items-center justify-between p-4 border-b border-divider/10">
+        <div className="flex items-center gap-3">
+          <Users className="w-5 h-5 text-primary" />
+          <h3 className="text-xl font-semibold text-white">
+            {t('peerManagement.title')}
+          </h3>
         </div>
+        <button
+          aria-label="Close modal"
+          className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
+          onClick={onClose}
+        >
+          <X size={20} />
+        </button>
+      </div>
 
+      <div className="p-6 space-y-6">
         {showConnectForm ? (
-          <form className="mb-6" onSubmit={handleSubmit(handleConnect)}>
+          <form onSubmit={handleSubmit(handleConnect)}>
             <div className="flex gap-3">
               <input
                 {...register('peerAddress')}
-                className="flex-1 bg-surface-overlay border border-border-default rounded-xl px-4 py-3 text-white
-                         placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="flex-1 bg-surface-overlay border border-border-default rounded-lg px-4 py-2.5 text-sm text-white
+                         placeholder-content-tertiary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                 placeholder={t('peerManagement.peerPlaceholder')}
                 type="text"
               />
               <button
                 className="px-4 py-2 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
-                         font-medium transition-colors flex items-center gap-2"
+                         text-sm font-medium transition-colors flex items-center gap-2"
                 type="submit"
               >
                 <LinkIcon className="w-4 h-4" />
                 {t('peerManagement.connect')}
               </button>
               <button
-                className="px-4 py-2 bg-surface-overlay hover:bg-surface-high text-content-secondary
-                         rounded-lg font-medium transition-colors"
+                className="px-4 py-2 text-content-secondary hover:text-white hover:bg-surface-overlay/50
+                         rounded-lg text-sm font-medium transition-colors"
                 onClick={() => setShowConnectForm(false)}
                 type="button"
               >
@@ -122,25 +108,25 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
           </form>
         ) : (
           <button
-            className="w-full mb-6 px-4 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
-                     font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-lg
+                     text-sm font-medium transition-colors flex items-center justify-center gap-2"
             onClick={() => setShowConnectForm(true)}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4" />
             {t('peerManagement.connectToPeer')}
           </button>
         )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader className="w-6 h-6 animate-spin text-blue-500" />
+            <Loader className="w-5 h-5 animate-spin text-primary" />
           </div>
         ) : peersData?.peers && peersData.peers.length > 0 ? (
           <div className="space-y-3">
             {peersData.peers.map((peer: any) => (
               <div
-                className="bg-surface-overlay/50 rounded-xl border border-border-default p-4
-                         flex items-center gap-3 justify-between group hover:border-red-500/20 hover:bg-red-500/5"
+                className="bg-surface-overlay/50 rounded-lg border border-border-default p-4
+                         flex items-center gap-3 justify-between group hover:border-red-500/20 hover:bg-red-500/5 transition-colors"
                 key={peer.pubkey}
               >
                 <div className="w-8 h-8 rounded-full bg-surface-high flex items-center justify-center flex-shrink-0 border border-border-default/60">
@@ -169,12 +155,11 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-content-secondary">
+          <div className="text-center py-8 text-content-secondary text-sm">
             {t('peerManagement.noPeers')}
           </div>
         )}
       </div>
-    </div>,
-    getModalPortalTarget()
+    </Modal>
   )
 }

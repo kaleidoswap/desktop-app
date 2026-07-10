@@ -5,6 +5,7 @@ import {
   X,
   Bell,
   Download,
+  MailOpen,
 } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -247,11 +248,14 @@ const NotificationPanel: React.FC<{
             <Bell className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold text-white">Notifications</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-5">
             <button
-              className="text-sm text-content-secondary hover:text-white"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border
+                         border-white/30 hover:border-white/50 bg-transparent hover:bg-surface-high/50
+                         text-white transition-colors"
               onClick={onClearAll}
             >
+              <MailOpen className="w-4 h-4" />
               Clear all
             </button>
             <button

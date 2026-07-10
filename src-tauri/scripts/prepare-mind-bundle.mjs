@@ -115,6 +115,14 @@ function reset() {
   writeFileSync(join(out, '.gitkeep'), '')
 }
 
+// npm matches --os against packages' `"os"` fields, which use Node's
+// process.platform values — on Windows that's `win32`, NOT the `win` shorthand
+// the tarball/Node-dist naming uses. Passing --os=win makes npm silently skip
+// every win32-gated optional dep (bare-runtime-win32-x64 → "Could not load the
+// Bare runtime binary" at model load), so normalize it here.
+const npmOs = process.env.NPM_OS === 'win' ? 'win32' : process.env.NPM_OS
+const npmCpu = process.env.NPM_CPU
+
 // Install npm `deps` into `<out>/<name>` as a self-contained, prod-only tree.
 // npm's default hoisted layout puts each dep's own files at
 // `<name>/node_modules/<pkg>/…`, which is what main.rs probes for.
@@ -132,9 +140,30 @@ function installFromNpm(name, deps) {
   // NPM_OS / NPM_CPU force npm to fetch the TARGET platform's prebuilt native
   // packages (e.g. the macOS runner is arm64 but also builds the x64 target).
   const npmArgs = ['install', '--omit=dev', '--no-audit', '--no-fund']
-  if (process.env.NPM_OS) npmArgs.push(`--os=${process.env.NPM_OS}`)
-  if (process.env.NPM_CPU) npmArgs.push(`--cpu=${process.env.NPM_CPU}`)
+  if (npmOs) npmArgs.push(`--os=${npmOs}`)
+  if (npmCpu) npmArgs.push(`--cpu=${npmCpu}`)
   run(NPM, npmArgs, dir, { shell: isWin })
+}
+
+// os/cpu-split optional deps fail SILENTLY when the platform filter mismatches
+// (that's how the win32 Bare runtime went missing). For each such runtime the
+// tree relies on, require the platform package outright — a loud build failure
+// beats shipping a bundle that aborts at model load on users' machines.
+function assertPlatformRuntimes(name) {
+  const nm = join(out, name, 'node_modules')
+  const os = npmOs ?? process.platform
+  const cpu = npmCpu ?? process.arch
+  for (const runtime of ['bare-runtime']) {
+    if (!existsSync(join(nm, runtime))) continue // not in this tree at all
+    const plat = join(nm, `${runtime}-${os}-${cpu}`)
+    if (!existsSync(plat)) {
+      throw new Error(
+        `${name}: ${runtime} is installed but its platform package ` +
+          `${runtime}-${os}-${cpu} is missing from node_modules — npm's ` +
+          `--os/--cpu filter likely skipped it; the bundle would crash at runtime`
+      )
+    }
+  }
 }
 
 // Delete the unused @qvac engines (DROP_ENGINES) and unused top-level native
@@ -235,6 +264,7 @@ installFromNpm('provider', {
   '@kaleidorg/mind-provider': PROVIDER_VERSION,
   '@qvac/sdk': QVAC_VERSION,
 })
+assertPlatformRuntimes('provider')
 pruneEngines('provider')
 // After pruning engines, the default worker would crash importing them — swap in
 // a worker that registers only the LLM plugin we kept.
