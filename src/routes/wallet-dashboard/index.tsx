@@ -70,15 +70,14 @@ const BtcIcon: React.FC<{ className?: string }> = ({
 
 const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
   const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
-  const isUsdt = ticker === 'USDT'
+  const isBtc = ticker === 'BTC'
   return (
     <span
       className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
-        isUsdt
-          ? 'bg-[#26A17B]/10 border border-[#26A17B]/20'
+        isBtc
+          ? 'text-amber-400 bg-amber-400/10 border border-amber-400/20'
           : 'text-secondary bg-secondary/10 border border-secondary/20'
       }`}
-      style={isUsdt ? { color: '#26A17B' } : {}}
     >
       <img
         alt={ticker}
@@ -93,19 +92,15 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
 
 const BarAssetLabel: React.FC<{ ticker: string }> = ({ ticker }) => {
   const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
-  const isUsdt = ticker === 'USDT'
   return (
-    <span
-      className="flex items-center justify-center gap-1 font-medium"
-      style={isUsdt ? { color: '#26A17B' } : {}}
-    >
+    <span className="flex items-center gap-1 text-content-secondary font-medium">
       <img
         alt={ticker}
         className="w-3 h-3 rounded-full object-contain"
         onError={() => setImgSrc(defaultRgbIcon)}
         src={imgSrc}
       />
-      <span className={isUsdt ? '' : 'text-content-secondary'}>{ticker}</span>
+      <span>{ticker}</span>
     </span>
   )
 }
@@ -747,10 +742,9 @@ export const Component = () => {
                             <span className="text-content-secondary font-medium truncate">
                               {ch.peer_alias || ch.peer_pubkey?.slice(0, 10)}…
                             </span>
-                            {asset ? (
+                            <ChannelAssetBadge ticker="BTC" />
+                            {asset && (
                               <ChannelAssetBadge ticker={asset.ticker} />
-                            ) : (
-                              <ChannelAssetBadge ticker="BTC" />
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">

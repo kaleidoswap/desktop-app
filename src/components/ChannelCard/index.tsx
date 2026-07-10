@@ -374,13 +374,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
             {/* RGB badge */}
             {isRgbChannel && asset && (
-              <span
-                className={`flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${
-                  asset.ticker === 'USDT'
-                    ? 'bg-[#26A17B]/10 text-[#26A17B] border border-[#26A17B]/30'
-                    : 'bg-purple-900/30 text-purple-300 border border-purple-800/30'
-                }`}
-              >
+              <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-800/30">
                 <AssetIcon className="h-2.5 w-2.5" ticker={asset.ticker} />
                 {asset.ticker}
               </span>
@@ -463,16 +457,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-purple-800/20">
                 {/* Section header: logo+ticker left, amounts right */}
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <div
-                    className="flex items-center gap-1.5 text-[11px]"
-                    style={asset.ticker === 'USDT' ? { color: '#26A17B' } : {}}
-                  >
+                  <div className="flex items-center gap-1.5 text-[11px] text-content-secondary">
                     <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
-                    <span
-                      className={`font-semibold ${asset.ticker === 'USDT' ? '' : 'text-content-secondary'}`}
-                    >
-                      {asset.ticker}
-                    </span>
+                    <span className="font-semibold">{asset.ticker}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono">
                     <span className="flex items-center gap-0.5 text-[#9365FF]">
