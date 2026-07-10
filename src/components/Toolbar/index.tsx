@@ -1051,7 +1051,7 @@ const CopyField = ({ label, value }: { label: string; value: string }) => {
       <label className="text-xs font-medium text-content-secondary uppercase tracking-wider">
         {label}
       </label>
-      <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border-default/50 bg-surface-overlay/30 group">
+      <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border-default/50 bg-surface-base group">
         <span className="flex-1 text-sm text-white break-all font-mono">
           {value}
         </span>
@@ -1089,7 +1089,7 @@ const AccordionSection = ({
         border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20
         ${
           isOpen
-            ? 'border-primary bg-surface-elevated/60 shadow-[0_0_10px_rgba(21,233,154,0.15)] rounded-b-none'
+            ? 'border-border-default/50 bg-surface-overlay/50 rounded-b-none'
             : 'border-border-default/50 bg-surface-overlay/30 hover:bg-surface-overlay/50 hover:border-border-default/70'
         }`}
       onClick={onToggle}
@@ -1101,7 +1101,7 @@ const AccordionSection = ({
       />
     </button>
     {isOpen && (
-      <div className="p-4 border border-t-0 border-primary/50 rounded-b-lg bg-surface-elevated/60 space-y-3">
+      <div className="p-4 border border-t-0 border-border-default/50 rounded-b-lg bg-surface-overlay/30 space-y-3">
         {children}
       </div>
     )}
