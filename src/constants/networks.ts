@@ -70,8 +70,8 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
   },
   SignetCustom: {
     daemon_listening_port: '3001',
-    default_lsp_url: 'https://api.signet.kaleidoswap.com/',
-    default_maker_url: 'https://api.signet.kaleidoswap.com/',
+    default_lsp_url: 'https://api.mutinynet2.kaleidoswap.com/',
+    default_maker_url: 'https://api.mutinynet2.kaleidoswap.com/',
     indexer_url: 'https://esplora.signet.kaleidoswap.com',
     ldk_peer_listening_port: '9735',
     proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',
@@ -87,4 +87,21 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
     proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',
     rpc_connection_url: 'user:password@electrum.iriswallet.com:18332',
   },
+}
+
+// Mutinynet (SignetCustom) has two interchangeable public endpoints. A fresh
+// node is seeded with BOTH so the user can switch the default in Settings; the
+// first entry (mutinynet2) is the default — it matches
+// NETWORK_DEFAULTS.SignetCustom.default_maker_url / default_lsp_url.
+export const SIGNET_CUSTOM_MAKER_URLS = [
+  'https://api.mutinynet2.kaleidoswap.com/',
+  'https://api.signet.kaleidoswap.com/',
+]
+
+// The maker URLs to seed a brand-new node's config with. Mutinynet ships both
+// endpoints (see above); every other network seeds just its single default.
+export const getDefaultMakerUrls = (network: string): string[] => {
+  if (network === 'SignetCustom') return [...SIGNET_CUSTOM_MAKER_URLS]
+  const url = NETWORK_DEFAULTS[network]?.default_maker_url
+  return url ? [url] : []
 }

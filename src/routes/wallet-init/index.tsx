@@ -50,7 +50,7 @@ import {
 import { UnlockingProgress } from '../../components/UnlockingProgress'
 import kaleidoswapPictogram from '../../assets/logo.svg'
 import { BitcoinNetwork } from '../../constants'
-import { NETWORK_DEFAULTS } from '../../constants/networks'
+import { NETWORK_DEFAULTS, getDefaultMakerUrls } from '../../constants/networks'
 import { buildLocalNodeUrl } from '../../api/client'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
@@ -279,7 +279,7 @@ export const Component = () => {
           default_maker_url: defaultMakerUrl,
           indexer_url: data.indexer_url,
           ldk_peer_listening_port: data.ldk_peer_listening_port,
-          maker_urls: [defaultMakerUrl],
+          maker_urls: getDefaultMakerUrls(data.network),
           name: data.name,
           network: data.network,
           node_url: buildLocalNodeUrl(data.daemon_listening_port),
@@ -325,7 +325,7 @@ export const Component = () => {
       ldk_peer_listening_port: nodeSetupForm.getValues(
         'ldk_peer_listening_port'
       ),
-      maker_urls: [defaultMakerUrl],
+      maker_urls: getDefaultMakerUrls(network),
       name: accountName,
       network,
       node_url: buildLocalNodeUrl(daemonPort),
@@ -880,7 +880,7 @@ export const Component = () => {
       indexerUrl: nodeSetupForm.getValues('indexer_url'),
       language: 'en',
       ldkPeerListeningPort: nodeSetupForm.getValues('ldk_peer_listening_port'),
-      makerUrls: defaultMakerUrl,
+      makerUrls: getDefaultMakerUrls(network).join(','),
       name: accountName,
       network,
       nodeUrl: buildLocalNodeUrl(

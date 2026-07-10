@@ -1,9 +1,9 @@
-## [Version 0.5.0] - 2026-07-08
+## [Version 0.5.0] - 2026-07-10
 
 > ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
 
 ### 🚀 Features
-- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.0`), now including a **Windows (win-x64)** agent runtime alongside macOS and Linux
+- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.1`), now including a **Windows (win-x64)** agent runtime alongside macOS and Linux
 - **Trade by chat**: Ask "buy 1 USDT on KaleidoSwap" and the agent quotes the maker and runs the full atomic swap (quote → init → whitelist → execute) behind a single confirmation gate showing the real numbers
 - **Buy a Lightning channel by chat**: Order inbound BTC liquidity or a new RGB asset channel (USDT/XAUT) pre-loaded via the LSP, as a one-confirmation flow
 - **Agent tab (autonomy)**: Schedule the agent to run optimizer tasks (portfolio, DCA-style) with risk limits and a dry-run default; review recent runs and costs
@@ -21,11 +21,12 @@
 - **Redesigned Deposit & Withdraw modals**: Cleaner deposit/withdraw modals with an updated global asset logo treatment
 - **Redesigned buy-channel flow**: Cleaner channel summary and payment-review UI with richer states and clearer cost breakdowns, plus Market Maker navigation polish
 - **General UI polish**: Refreshed splash screen branding, channel cards, DCA and Limit Order surfaces, buttons, modals, support modal, and notification panel
+- **Modal & control standardization**: Refactored the Peer Management, UTXO Management, and Issue Asset modals onto the shared `Modal` component with consistent inputs, filter tabs, fee selectors, and info banners; embedded Create Colored UTXOs as a step within UTXO management; swapped native `<select>`s for the shared `Select`; standardized the notification "Clear All", Skip Recovery Phrase, mnemonic display, and Test Connection button treatments; and replaced the node-switching alert icon with a spinner
 - **Consolidated Maker & LSP configuration**: Unified Maker and LSP URL configuration in Settings
 - **"Max via Lightning" deposit**: The Lightning deposit max now reflects the maximum HTLC limit across channels
 - **Onboarding readability**: Improved recovery-phrase readability during onboarding
 - **KaleidoMind polish**: Styled the model pickers, fixed a modal race condition, and restyled the start screen
-- **Mind runtime v0.7.0**: Updated the bundled provider (`@kaleidorg/mind-provider ^0.6.3`) and MCP (`kaleido-mcp ^0.2.1`) so chat trading and the stop button work end to end
+- **Mind runtime v0.7.1**: Updated the bundled provider (`@kaleidorg/mind-provider ^0.6.3`) and MCP (`kaleido-mcp ^0.2.1`) so chat trading and the stop button work end to end; the win-x64 runtime now ships the Bare runtime binary
 - **SDK migration**: Moved to `kaleido-sdk ^0.1.11` (BitcoinNetwork node/api split, TransferKind enum, refresh defaults)
 - **Removed Auto Time-Lock**: Dropped the Auto Time-Lock setting to simplify node configuration
 
@@ -40,9 +41,11 @@
 - **Expanded channel card**: Restored the expanded channel card with BTC/RGB icons
 - **No false restart prompt**: Settings no longer shows a spurious "restart required" prompt
 - **Trade page & dashboard fixes**: Assorted fixes across the trade page and dashboard
+- **KaleidoMind won't start on Windows**: The win-x64 agent runtime was published without its Bare runtime binary (`bare-runtime-win32-x64`), so QVAC aborted at model load with "Could not load the Bare runtime binary for win32-x64". The bundle now installs the platform package (npm's `--os` needs `win32`, not `win`) and the CI build fails outright if any platform runtime is missing
+- **BTC deposit/withdrawal history was empty**: History filtered on a `transaction_type` of `User`, which the node's enum never emits; it now classifies on-chain movements by excluding RGB transaction types and derives direction from the net sent/received amount, and shows the loader while either query is still in flight
 
 ### 🏗️ Infrastructure
-- **Windows KaleidoMind runtime build**: The `build-mind-assets` CI workflow now builds and publishes the `win-x64` agent runtime tarball, fixing the 404 Windows users hit on first enable. Includes Windows-specific bundling fixes: resolving `npm.cmd`, running npm via shell (Node 24 `.cmd`-spawn EINVAL), extracting the Node `.zip` with System32 `bsdtar`, and a `sha256sum`/`shasum -a 256` checksum fallback
+- **Windows KaleidoMind runtime build**: The `build-mind-assets` CI workflow now builds and publishes the `win-x64` agent runtime tarball, fixing the 404 Windows users hit on first enable. Includes Windows-specific bundling fixes: resolving `npm.cmd`, running npm via shell (Node 24 `.cmd`-spawn EINVAL), extracting the Node `.zip` with System32 `bsdtar`, a `sha256sum`/`shasum -a 256` checksum fallback, normalizing npm's `--os` to `win32` so the Bare runtime platform package is installed, and a build-time guard that fails if any platform runtime package is missing
 
 ## [Version 0.4.0] - 2026-04-15
 

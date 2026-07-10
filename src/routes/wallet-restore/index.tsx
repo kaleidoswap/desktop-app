@@ -36,7 +36,7 @@ import {
 } from '../../components/ui'
 import { buildLocalNodeUrl } from '../../api/client'
 import { BitcoinNetwork } from '../../constants'
-import { NETWORK_DEFAULTS } from '../../constants/networks'
+import { NETWORK_DEFAULTS, getDefaultMakerUrls } from '../../constants/networks'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForNodeReady } from '../../utils/nodeState'
@@ -305,7 +305,7 @@ export const Component = () => {
             default_maker_url: defaultMakerUrl,
             indexer_url: data.indexer_url,
             ldk_peer_listening_port: data.ldk_peer_listening_port,
-            maker_urls: [defaultMakerUrl],
+            maker_urls: getDefaultMakerUrls(data.network),
             name: data.name,
             network: data.network,
             node_url: buildLocalNodeUrl(data.daemon_listening_port),
@@ -345,7 +345,7 @@ export const Component = () => {
             indexerUrl: data.indexer_url,
             language: 'en',
             ldkPeerListeningPort: data.ldk_peer_listening_port,
-            makerUrls: defaultMakerUrl,
+            makerUrls: getDefaultMakerUrls(data.network).join(','),
             name: data.name,
             network: data.network,
             nodeUrl: buildLocalNodeUrl(data.daemon_listening_port),

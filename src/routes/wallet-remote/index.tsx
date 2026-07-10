@@ -40,7 +40,7 @@ import {
   NetworkSettings,
 } from '../../components/ui'
 import { BitcoinNetwork, RegtestConnectionType } from '../../constants'
-import { NETWORK_DEFAULTS } from '../../constants/networks'
+import { NETWORK_DEFAULTS, getDefaultMakerUrls } from '../../constants/networks'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 
 interface Fields {
@@ -547,7 +547,7 @@ export const Component = () => {
           default_maker_url: defaultMakerUrl,
           indexer_url: data.indexer_url,
           ldk_peer_listening_port: data.ldk_peer_listening_port,
-          maker_urls: [defaultMakerUrl],
+          maker_urls: getDefaultMakerUrls(networkKey),
           name: data.name,
           network: data.network,
           node_url: data.node_url,
@@ -574,7 +574,7 @@ export const Component = () => {
         language: 'en',
         // Empty for remote nodes
         ldkPeerListeningPort: '',
-        makerUrls: defaultMakerUrl,
+        makerUrls: getDefaultMakerUrls(networkKey).join(','),
         name: data.name,
         network: data.network,
         nodeUrl: data.node_url,
