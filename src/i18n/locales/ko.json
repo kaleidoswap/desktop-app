@@ -98,6 +98,7 @@
     "sortBy": "정렬 기준",
     "clearAll": "모두 지우기",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "public": "공개",
     "private": "비공개",
     "balanced": "균형",
@@ -378,6 +379,7 @@
     "noTransactions": "Bitcoin 거래를 찾을 수 없습니다.",
     "noTxFiltered": "필터와 일치하는 거래가 없습니다.",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "viewExplorer": "탐색기에서 보기"
   },
   "walletSetup": {
@@ -1177,6 +1179,7 @@
     "allStatuses": "모든 상태",
     "noDepositsFiltered": "필터와 일치하는 입금이 없습니다.",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "noDeposits": "입금이 없습니다.",
     "refresh": "새로 고침",
     "onChainUnavailable": "온체인 데이터를 사용할 수 없음",
@@ -1211,6 +1214,7 @@
     "allStatuses": "모든 상태",
     "noWithdrawalsFiltered": "필터 조건에 맞는 출금 내역이 없습니다.",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "noWithdrawals": "출금 내역이 없습니다.",
     "refresh": "새로고침",
     "onChainUnavailable": "온체인 데이터를 사용할 수 없습니다",
@@ -1243,6 +1247,7 @@
     "allAssets": "모든 자산",
     "noSwapsFiltered": "필터와 일치하는 스왑을 찾을 수 없습니다.",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "noSwaps": "스왑을 찾을 수 없습니다.",
     "refresh": "새로 고침"
   },
@@ -1270,6 +1275,7 @@
     "noTransfersFiltered": "검색 조건과 일치하는 전송 내역이 없습니다",
     "noTransfers": "이 자산에 대한 전송 내역이 없습니다",
     "clearFilters": "필터 지우기",
+    "allChannels": "All Channels",
     "transactionDetails": "거래 세부 정보",
     "transactionIdLabel": "거래 ID:",
     "amountLabel": "금액:",

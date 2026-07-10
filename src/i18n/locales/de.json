@@ -74,6 +74,7 @@
     "sortBy": "Sortieren nach:",
     "clearAll": "Alle löschen",
     "clearFilters": "Filter löschen",
+    "allChannels": "All Channels",
     "public": "Öffentlich",
     "private": "Privat",
     "balanced": "Ausgeglichen",
@@ -2049,6 +2050,7 @@
     "noTransactions": "Keine Bitcoin-Transaktionen gefunden.",
     "noTxFiltered": "Keine Transaktionen entsprechen den Filtern.",
     "clearFilters": "Filter zurücksetzen",
+    "allChannels": "All Channels",
     "viewExplorer": "Im Explorer ansehen"
   },
   "walletSetup": {
@@ -2513,6 +2515,7 @@
     "allStatuses": "Alle Status",
     "noDepositsFiltered": "Keine Einzahlungen entsprechen deinen Filtern.",
     "clearFilters": "Filter löschen",
+    "allChannels": "All Channels",
     "noDeposits": "Keine Einzahlungen gefunden.",
     "refresh": "Aktualisieren",
     "onChainUnavailable": "On-chain data unavailable",
@@ -2547,6 +2550,7 @@
     "allStatuses": "Alle Status",
     "noWithdrawalsFiltered": "Keine Auszahlungen entsprechen deinen Filtern.",
     "clearFilters": "Filter löschen",
+    "allChannels": "All Channels",
     "noWithdrawals": "Keine Auszahlungen gefunden.",
     "refresh": "Aktualisieren",
     "onChainUnavailable": "On-chain data unavailable",
@@ -2579,6 +2583,7 @@
     "allAssets": "Alle Assets",
     "noSwapsFiltered": "Keine Swaps entsprechen deinen Filtern.",
     "clearFilters": "Filter löschen",
+    "allChannels": "All Channels",
     "noSwaps": "Keine Swaps gefunden.",
     "refresh": "Aktualisieren"
   },
@@ -2604,6 +2609,7 @@
     "noTransfersFiltered": "Keine Transfers entsprechen deiner Suche.",
     "noTransfers": "Keine Transfers für dieses Asset gefunden.",
     "clearFilters": "Filter löschen",
+    "allChannels": "All Channels",
     "transactionDetails": "Transaktionsdetails",
     "transactionIdLabel": "Transaktions-ID:",
     "amountLabel": "Betrag:",

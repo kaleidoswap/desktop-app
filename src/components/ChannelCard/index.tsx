@@ -509,9 +509,20 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-t border-border-default/30">
+      <div className="flex items-center justify-between gap-1.5 px-4 py-2.5 border-t border-border-default/30">
         <button
-          className="flex-1 min-w-0 py-1.5 rounded-lg bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center justify-center gap-1.5"
+          className="flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsCloseModalOpen(true)
+          }}
+          type="button"
+        >
+          <ZapOff className="h-3.5 w-3.5 flex-shrink-0" />
+          <span>{t('channelCard.buttons.close')}</span>
+        </button>
+        <button
+          className="flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-transparent hover:bg-surface-high/50 transition-colors text-xs text-white border border-white/30 hover:border-white/50 flex items-center justify-center gap-1.5"
           onClick={(e) => {
             e.stopPropagation()
             setIsInfoModalOpen(true)
@@ -519,18 +530,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           type="button"
         >
           <Info className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{t('channelCard.buttons.details')}</span>
-        </button>
-        <button
-          className="close-channel-btn flex-shrink-0 py-1.5 px-2.5 rounded-lg bg-red-900/20 hover:bg-red-900/35 transition-colors text-xs text-red-300/80 hover:text-red-300 border border-red-900/20 hover:border-red-800/40 flex items-center justify-center gap-1"
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsCloseModalOpen(true)
-          }}
-          type="button"
-        >
-          <ZapOff className="zap-icon h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{t('channelCard.buttons.close')}</span>
+          <span>{t('channelCard.buttons.details')}</span>
         </button>
       </div>
 

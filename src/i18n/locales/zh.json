@@ -74,6 +74,7 @@
     "sortBy": "排序：",
     "clearAll": "清除全部",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "public": "公开",
     "private": "私有",
     "balanced": "平衡",
@@ -352,6 +353,7 @@
     "noTransactions": "未找到比特币交易。",
     "noTxFiltered": "没有交易符合筛选条件。",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "viewExplorer": "在浏览器中查看"
   },
   "walletSetup": {
@@ -1038,6 +1040,7 @@
     "allStatuses": "所有状态",
     "noDepositsFiltered": "未找到符合筛选条件的存款。",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "noDeposits": "未找到存款。",
     "refresh": "刷新",
     "onChainUnavailable": "On-chain data unavailable",
@@ -1072,6 +1075,7 @@
     "allStatuses": "所有状态",
     "noWithdrawalsFiltered": "未找到符合筛选条件的提款。",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "noWithdrawals": "未找到提款。",
     "refresh": "刷新",
     "onChainUnavailable": "On-chain data unavailable",
@@ -1104,6 +1108,7 @@
     "allAssets": "所有资产",
     "noSwapsFiltered": "未找到符合筛选条件的交换。",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "noSwaps": "未找到交换。",
     "refresh": "刷新"
   },
@@ -1129,6 +1134,7 @@
     "noTransfersFiltered": "未找到符合您搜索条件的转账",
     "noTransfers": "未找到此资产的转账",
     "clearFilters": "清除筛选",
+    "allChannels": "All Channels",
     "transactionDetails": "交易详情",
     "transactionIdLabel": "交易ID：",
     "amountLabel": "数量：",

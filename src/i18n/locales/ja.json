@@ -74,6 +74,7 @@
     "sortBy": "並び替え：",
     "clearAll": "すべてクリア",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "public": "公開",
     "private": "プライベート",
     "balanced": "バランス良好",
@@ -2055,6 +2056,7 @@
     "noTransactions": "ビットコイン取引が見つかりません。",
     "noTxFiltered": "フィルターに一致する取引がありません。",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "viewExplorer": "エクスプローラーで表示"
   },
   "walletSetup": {
@@ -2519,6 +2521,7 @@
     "allStatuses": "すべてのステータス",
     "noDepositsFiltered": "フィルターに一致する入金が見つかりません。",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "noDeposits": "入金が見つかりません。",
     "refresh": "更新",
     "onChainUnavailable": "On-chain data unavailable",
@@ -2553,6 +2556,7 @@
     "allStatuses": "すべてのステータス",
     "noWithdrawalsFiltered": "フィルターに一致する出金が見つかりません。",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "noWithdrawals": "出金が見つかりません。",
     "refresh": "更新",
     "onChainUnavailable": "On-chain data unavailable",
@@ -2585,6 +2589,7 @@
     "allAssets": "すべてのアセット",
     "noSwapsFiltered": "フィルターに一致するスワップが見つかりません。",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "noSwaps": "スワップが見つかりません。",
     "refresh": "更新"
   },
@@ -2610,6 +2615,7 @@
     "noTransfersFiltered": "検索条件に一致する転送が見つかりません",
     "noTransfers": "このアセットの転送が見つかりません",
     "clearFilters": "フィルターをクリア",
+    "allChannels": "All Channels",
     "transactionDetails": "トランザクション詳細",
     "transactionIdLabel": "トランザクションID：",
     "amountLabel": "金額：",
