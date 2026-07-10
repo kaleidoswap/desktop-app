@@ -620,7 +620,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
               />
               <div className="flex justify-between text-[10px] text-content-tertiary font-medium px-1">
                 <span>-90%</span>
-                <span>
+                <span className="text-white">
                   {limitPrice && currentPrice
                     ? (limitPrice >= currentPrice ? '+' : '') +
                       ((limitPrice / currentPrice - 1) * 100).toFixed(1) +
