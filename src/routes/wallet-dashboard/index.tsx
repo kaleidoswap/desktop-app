@@ -849,7 +849,7 @@ export const Component = () => {
                         <div className="overflow-hidden max-h-0 group-hover/ch:max-h-10 transition-all duration-200">
                           <div className="flex items-center justify-between pt-2 mt-1 border-t border-border-default/30">
                             <button
-                              className="flex items-center gap-1 text-[10px] text-content-tertiary hover:text-red-400 hover:bg-red-500/10 px-1.5 py-0.5 rounded transition-colors"
+                              className="flex items-center gap-1 text-[10px] text-red-300/80 hover:text-red-300 bg-red-900/20 hover:bg-red-900/35 border border-red-900/20 hover:border-red-800/40 px-2 py-0.5 rounded-md transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setCloseChannelTarget({

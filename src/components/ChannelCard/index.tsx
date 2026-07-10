@@ -371,14 +371,6 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               )}
               <span>{isPublic ? 'Public' : 'Private'}</span>
             </span>
-
-            {/* RGB badge */}
-            {isRgbChannel && asset && (
-              <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-800/30">
-                <AssetIcon className="h-2.5 w-2.5" ticker={asset.ticker} />
-                {asset.ticker}
-              </span>
-            )}
           </div>
         </div>
 
@@ -406,7 +398,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             <div className="rounded-lg bg-surface-overlay/40 p-2.5">
               {/* Section header: asset + amounts */}
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-1.5 text-[11px] text-amber-400/90">
+                <div className="flex items-center gap-1.5 text-[11px] text-content-secondary">
                   <AssetIcon className="h-3.5 w-3.5" ticker="BTC" />
                   <span className="font-semibold">BTC</span>
                 </div>
