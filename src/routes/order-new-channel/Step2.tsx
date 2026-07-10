@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, ArrowRight, ChevronDown } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, Info } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -702,435 +702,467 @@ export const Step2: React.FC<Props> = ({
             <Spinner color="#15E99A" overlay={false} size={48} />
           </div>
         ) : (
-          <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
-            {/* Channel Capacity */}
-            <div className="mb-12">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm font-medium text-content-secondary">
-                    {t('orderChannel.step2.channelCapacity')}
-                  </label>
-                  <InfoHint content="The total size of the channel, in sats. A larger capacity lets you send and receive more, but costs more on-chain to open." />
-                </div>
-                <div className="flex items-center gap-1">
-                  {[
-                    { label: '100k', value: 100_000 },
-                    { label: '250k', value: 250_000 },
-                    { label: '500k', value: 500_000 },
-                    { label: '1M', value: 1_000_000 },
-                  ].map(({ label, value }) => (
-                    <button
-                      className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
-                        value > effectiveMaxCapacity
-                          ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
-                          : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
-                      }`}
-                      disabled={value > effectiveMaxCapacity}
-                      key={label}
-                      onClick={() => handleCapacityChange(value.toString())}
-                      type="button"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+          <>
+            {/* Guidance — tell the user what this step is for and what to do */}
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold text-white">
+                  {t('orderChannel.step2.intro.title')}
+                </p>
+                <ol className="list-decimal space-y-1 pl-4 text-xs text-content-secondary marker:text-content-tertiary">
+                  <li>{t('orderChannel.step2.intro.stepCapacity')}</li>
+                  <li>{t('orderChannel.step2.intro.stepOutbound')}</li>
+                  <li>{t('orderChannel.step2.intro.stepAsset')}</li>
+                  <li>{t('orderChannel.step2.intro.stepReview')}</li>
+                </ol>
               </div>
-              <div className="relative">
-                <input
-                  className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
-                  onChange={(e) => handleCapacityChange(e.target.value)}
-                  placeholder="0"
-                  type="text"
-                  value={
-                    currentCapacity > 0 ? formatNumber(currentCapacity) : ''
-                  }
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
-                  SATS
-                </span>
-              </div>
-              {currentCapacity > 0 && (
-                <div className="mt-4 px-1">
-                  <div className="relative">
-                    <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
-                      <div
-                        className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                    <input
-                      className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                      max={effectiveMaxCapacity}
-                      min={effectiveMinCapacity}
-                      onChange={(e) => handleCapacityChange(e.target.value)}
-                      step={1000}
-                      type="range"
-                      value={currentCapacity}
-                    />
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                      style={{
-                        left: `calc(${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}% - 8px)`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-content-tertiary mt-3">
-                    <span>Min: {formatNumber(effectiveMinCapacity)} sats</span>
-                    <span>Max: {formatNumber(effectiveMaxCapacity)} sats</span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Outbound Balance — how many sats are yours to send at open */}
-            <div className="mb-12">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm font-medium text-content-secondary">
-                    Outbound Balance
-                  </label>
-                  <InfoHint content="How many sats start on your side, ready to send the moment the channel opens. The rest is inbound — what you can receive." />
-                </div>
-                {maxOutbound > 0 && (
+            <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
+              {/* Channel Capacity */}
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-content-secondary">
+                      {t('orderChannel.step2.channelCapacity')}
+                    </label>
+                    <InfoHint content="The total size of the channel, in sats. A larger capacity lets you send and receive more, but costs more on-chain to open." />
+                  </div>
                   <div className="flex items-center gap-1">
-                    {[25, 50, 75, 100].map((pct) => (
+                    {[
+                      { label: '100k', value: 100_000 },
+                      { label: '250k', value: 250_000 },
+                      { label: '500k', value: 500_000 },
+                      { label: '1M', value: 1_000_000 },
+                    ].map(({ label, value }) => (
                       <button
-                        className="px-2 py-0.5 rounded text-xs font-semibold border bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70 transition-colors"
-                        key={pct}
-                        onClick={() => {
-                          const amount = Math.floor(maxOutbound * (pct / 100))
-                          setValue(
-                            'clientBalanceSat',
-                            Math.min(
-                              Math.max(amount, minOutbound),
-                              maxOutbound
-                            ).toString()
-                          )
-                        }}
+                        className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                          value > effectiveMaxCapacity
+                            ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
+                            : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                        }`}
+                        disabled={value > effectiveMaxCapacity}
+                        key={label}
+                        onClick={() => handleCapacityChange(value.toString())}
                         type="button"
                       >
-                        {pct === 100 ? 'MAX' : `${pct}%`}
+                        {label}
                       </button>
                     ))}
                   </div>
-                )}
-              </div>
-              <LiquiditySlider
-                inboundColor="bg-emerald-500"
-                inboundLabel={`${formatNumber(Math.max(0, currentCapacity - btcOut))} sats`}
-                inputFocusClass="focus:border-primary"
-                inputHint="Type the exact BTC amount you want available to send once the channel is live."
-                inputLabel="Available to send now"
-                inputTextClass="text-white"
-                max={maxOutbound}
-                maxLabel={`Max: ${formatNumber(maxOutbound)} sats`}
-                min={minOutbound}
-                minLabel={`Min: ${formatNumber(minOutbound)} sats`}
-                onChange={(val) =>
-                  setValue('clientBalanceSat', Math.round(val).toString())
-                }
-                outboundColor="bg-[#9365FF]"
-                outboundLabel={`${formatNumber(btcOut)} sats`}
-                step={currentCapacity >= 1000000 ? 10000 : 1000}
-                thumbBorderClass="border-[#9365FF]"
-                unit="sats"
-                value={btcOut}
-              />
-            </div>
-
-            {/* Add RGB Asset */}
-            <div className="mb-12">
-              <h5 className="text-lg font-semibold text-white mb-3">
-                Add RGB Asset
-              </h5>
-
-              <div
-                className="flex flex-wrap items-center gap-2"
-                ref={assetDropdownRef}
-              >
-                {/* BTC-only (no RGB asset) */}
-                <button
-                  className={assetChipClass(!selectedAsset)}
-                  onClick={() => selectAsset(null)}
-                  type="button"
-                >
-                  {t('orderChannel.step2.noAsset')}
-                </button>
-
-                {/* First N assets as one-click chips */}
-                {visibleAssets.map((asset) => (
-                  <AssetChip
-                    asset={asset}
-                    isSelected={selectedAsset?.asset_id === asset.asset_id}
-                    key={asset.asset_id}
-                    onSelect={() => selectAsset(asset)}
+                </div>
+                <div className="relative">
+                  <input
+                    className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
+                    onChange={(e) => handleCapacityChange(e.target.value)}
+                    placeholder="0"
+                    type="text"
+                    value={
+                      currentCapacity > 0 ? formatNumber(currentCapacity) : ''
+                    }
                   />
-                ))}
-
-                {/* Remaining assets collapsed into a compact dropdown */}
-                {overflowAssets.length > 0 && (
-                  <div className="relative">
-                    <button
-                      className={assetChipClass(
-                        isAssetDropdownOpen ||
-                          overflowAssets.some(
-                            (a) => a.asset_id === selectedAsset?.asset_id
-                          )
-                      )}
-                      onClick={() =>
-                        setIsAssetDropdownOpen(!isAssetDropdownOpen)
-                      }
-                      type="button"
-                    >
-                      {t('orderChannel.step2.moreAssets', {
-                        count: overflowAssets.length,
-                        defaultValue: '+{{count}} more',
-                      })}
-                      <ChevronDown
-                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
-                      />
-                    </button>
-
-                    {isAssetDropdownOpen && (
-                      <div className="absolute z-50 mt-1 min-w-[220px] rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
-                        <div className="max-h-[220px] overflow-y-auto">
-                          {overflowAssets.map((asset) => (
-                            <BuyAssetDropdownItem
-                              asset={asset}
-                              isSelected={
-                                selectedAsset?.asset_id === asset.asset_id
-                              }
-                              key={asset.asset_id}
-                              onSelect={() => selectAsset(asset)}
-                            />
-                          ))}
-                        </div>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
+                    SATS
+                  </span>
+                </div>
+                {currentCapacity > 0 && (
+                  <div className="mt-4 px-1">
+                    <div className="relative">
+                      <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+                        <div
+                          className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+                          style={{
+                            width: `${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}%`,
+                          }}
+                        />
                       </div>
-                    )}
+                      <input
+                        className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+                        max={effectiveMaxCapacity}
+                        min={effectiveMinCapacity}
+                        onChange={(e) => handleCapacityChange(e.target.value)}
+                        step={1000}
+                        type="range"
+                        value={currentCapacity}
+                      />
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
+                        style={{
+                          left: `calc(${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}% - 8px)`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-content-tertiary mt-3">
+                      <span>
+                        Min: {formatNumber(effectiveMinCapacity)} sats
+                      </span>
+                      <span>
+                        Max: {formatNumber(effectiveMaxCapacity)} sats
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {selectedAsset && addAsset && assetInfo && (
-                <div className="mt-6">
-                  <div className="bg-surface-base/50 p-6 rounded-lg space-y-4">
-                    <div className="space-y-3">
-                      <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
-                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border-default/50">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border-default/50">
-                            <img
-                              alt={selectedAsset.ticker}
-                              className="w-5 h-5"
-                              onError={() => setSelectedAssetIcon(rgbIcon)}
-                              src={selectedAssetIcon}
-                            />
+              {/* Outbound Balance — how many sats are yours to send at open */}
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-sm font-medium text-content-secondary">
+                      Outbound Balance
+                    </label>
+                    <InfoHint content="How many sats start on your side, ready to send the moment the channel opens. The rest is inbound — what you can receive." />
+                  </div>
+                  {maxOutbound > 0 && (
+                    <div className="flex items-center gap-1">
+                      {[25, 50, 75, 100].map((pct) => (
+                        <button
+                          className="px-2 py-0.5 rounded text-xs font-semibold border bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70 transition-colors"
+                          key={pct}
+                          onClick={() => {
+                            const amount = Math.floor(maxOutbound * (pct / 100))
+                            setValue(
+                              'clientBalanceSat',
+                              Math.min(
+                                Math.max(amount, minOutbound),
+                                maxOutbound
+                              ).toString()
+                            )
+                          }}
+                          type="button"
+                        >
+                          {pct === 100 ? 'MAX' : `${pct}%`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <LiquiditySlider
+                  inboundColor="bg-emerald-500"
+                  inboundLabel={`${formatNumber(Math.max(0, currentCapacity - btcOut))} sats`}
+                  inputFocusClass="focus:border-primary"
+                  inputHint="Type the exact BTC amount you want available to send once the channel is live."
+                  inputLabel="Available to send now"
+                  inputTextClass="text-white"
+                  max={maxOutbound}
+                  maxLabel={`Max: ${formatNumber(maxOutbound)} sats`}
+                  min={minOutbound}
+                  minLabel={`Min: ${formatNumber(minOutbound)} sats`}
+                  onChange={(val) =>
+                    setValue('clientBalanceSat', Math.round(val).toString())
+                  }
+                  outboundColor="bg-[#9365FF]"
+                  outboundLabel={`${formatNumber(btcOut)} sats`}
+                  step={currentCapacity >= 1000000 ? 10000 : 1000}
+                  thumbBorderClass="border-[#9365FF]"
+                  unit="sats"
+                  value={btcOut}
+                />
+              </div>
+
+              {/* Add RGB Asset */}
+              <div className="mb-12">
+                <h5 className="text-lg font-semibold text-white mb-3">
+                  Add RGB Asset
+                </h5>
+
+                <div
+                  className="flex flex-wrap items-center gap-2"
+                  ref={assetDropdownRef}
+                >
+                  {/* BTC-only (no RGB asset) */}
+                  <button
+                    className={assetChipClass(!selectedAsset)}
+                    onClick={() => selectAsset(null)}
+                    type="button"
+                  >
+                    {t('orderChannel.step2.noAsset')}
+                  </button>
+
+                  {/* First N assets as one-click chips */}
+                  {visibleAssets.map((asset) => (
+                    <AssetChip
+                      asset={asset}
+                      isSelected={selectedAsset?.asset_id === asset.asset_id}
+                      key={asset.asset_id}
+                      onSelect={() => selectAsset(asset)}
+                    />
+                  ))}
+
+                  {/* Remaining assets collapsed into a compact dropdown */}
+                  {overflowAssets.length > 0 && (
+                    <div className="relative">
+                      <button
+                        className={assetChipClass(
+                          isAssetDropdownOpen ||
+                            overflowAssets.some(
+                              (a) => a.asset_id === selectedAsset?.asset_id
+                            )
+                        )}
+                        onClick={() =>
+                          setIsAssetDropdownOpen(!isAssetDropdownOpen)
+                        }
+                        type="button"
+                      >
+                        {t('orderChannel.step2.moreAssets', {
+                          count: overflowAssets.length,
+                          defaultValue: '+{{count}} more',
+                        })}
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isAssetDropdownOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+
+                      {isAssetDropdownOpen && (
+                        <div className="absolute z-50 mt-1 min-w-[220px] rounded-lg border border-border-default/50 bg-blue-darker shadow-xl overflow-hidden">
+                          <div className="max-h-[220px] overflow-y-auto">
+                            {overflowAssets.map((asset) => (
+                              <BuyAssetDropdownItem
+                                asset={asset}
+                                isSelected={
+                                  selectedAsset?.asset_id === asset.asset_id
+                                }
+                                key={asset.asset_id}
+                                onSelect={() => selectAsset(asset)}
+                              />
+                            ))}
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-semibold text-white">
-                                {selectedAsset.ticker}
-                              </span>
-                              <span className="text-sm text-content-secondary">
-                                ({selectedAsset.name})
-                              </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {selectedAsset && addAsset && assetInfo && (
+                  <div className="mt-6">
+                    <div className="bg-surface-base/50 p-6 rounded-lg space-y-4">
+                      <div className="space-y-3">
+                        <div className="bg-surface-overlay/50 rounded-xl p-4 border border-border-default/50">
+                          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border-default/50">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border-default/50">
+                              <img
+                                alt={selectedAsset.ticker}
+                                className="w-5 h-5"
+                                onError={() => setSelectedAssetIcon(rgbIcon)}
+                                src={selectedAssetIcon}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg font-semibold text-white">
+                                  {selectedAsset.ticker}
+                                </span>
+                                <span className="text-sm text-content-secondary">
+                                  ({selectedAsset.name})
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-xs text-content-tertiary font-mono truncate">
-                          {selectedAsset.asset_id}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <label className="text-sm font-medium text-content-secondary">
-                              Amount
-                            </label>
-                            <InfoHint content="Total amount of this asset the channel will hold. Set how much starts on your side below — that portion is what you're buying." />
+                          <div className="text-xs text-content-tertiary font-mono truncate">
+                            {selectedAsset.asset_id}
                           </div>
-                          {assetPresetsCalc.length > 0 && (
-                            <div className="flex items-center gap-1">
-                              {assetPresetsCalc.map((preset) => (
-                                <button
-                                  className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
-                                    Math.abs(
-                                      parseFloat(lspAssetAmount || '0') - preset
-                                    ) < 0.001
-                                      ? 'bg-primary/10 border-primary text-primary'
-                                      : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
-                                  }`}
-                                  key={preset}
-                                  onClick={() =>
-                                    setValue(
-                                      'lspAssetAmount',
-                                      preset.toString()
-                                    )
-                                  }
-                                  type="button"
-                                >
-                                  {preset}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
 
-                        <div className="relative">
-                          <input
-                            className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
-                            onChange={(e) => {
-                              const val = e.target.value
-                              if (val === '' || /^[\d.]*$/.test(val)) {
-                                const re =
-                                  assetInfo.precision > 0
-                                    ? new RegExp(
-                                        `^\\d*\\.?\\d{0,${assetInfo.precision}}$`
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <label className="text-sm font-medium text-content-secondary">
+                                Amount
+                              </label>
+                              <InfoHint content="Total amount of this asset the channel will hold. Set how much starts on your side below — that portion is what you're buying." />
+                            </div>
+                            {assetPresetsCalc.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                {assetPresetsCalc.map((preset) => (
+                                  <button
+                                    className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                                      Math.abs(
+                                        parseFloat(lspAssetAmount || '0') -
+                                          preset
+                                      ) < 0.001
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                                    }`}
+                                    key={preset}
+                                    onClick={() =>
+                                      setValue(
+                                        'lspAssetAmount',
+                                        preset.toString()
                                       )
-                                    : /^\d*$/
-                                if (re.test(val))
-                                  setValue('lspAssetAmount', val)
-                              }
-                            }}
-                            placeholder="0"
-                            type="text"
-                            value={lspAssetAmount}
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/60 text-sm font-semibold pointer-events-none select-none tracking-wide">
-                            {selectedAsset.ticker}
-                          </span>
-                        </div>
+                                    }
+                                    type="button"
+                                  >
+                                    {preset}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Channel Capacity slider — synced with lspAssetAmount input above, shown only when value > 0 */}
-                        {parseFloat(lspAssetAmount || '0') > 0 &&
-                          assetMax > assetMin && (
-                            <div className="mt-4 px-1">
-                              <div className="relative">
-                                <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+                          <div className="relative">
+                            <input
+                              className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
+                              onChange={(e) => {
+                                const val = e.target.value
+                                if (val === '' || /^[\d.]*$/.test(val)) {
+                                  const re =
+                                    assetInfo.precision > 0
+                                      ? new RegExp(
+                                          `^\\d*\\.?\\d{0,${assetInfo.precision}}$`
+                                        )
+                                      : /^\d*$/
+                                  if (re.test(val))
+                                    setValue('lspAssetAmount', val)
+                                }
+                              }}
+                              placeholder="0"
+                              type="text"
+                              value={lspAssetAmount}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/60 text-sm font-semibold pointer-events-none select-none tracking-wide">
+                              {selectedAsset.ticker}
+                            </span>
+                          </div>
+
+                          {/* Channel Capacity slider — synced with lspAssetAmount input above, shown only when value > 0 */}
+                          {parseFloat(lspAssetAmount || '0') > 0 &&
+                            assetMax > assetMin && (
+                              <div className="mt-4 px-1">
+                                <div className="relative">
+                                  <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
+                                    <div
+                                      className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+                                      style={{
+                                        width: `${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <input
+                                    className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
+                                    max={assetMax}
+                                    min={assetMin}
+                                    onChange={(e) =>
+                                      setValue('lspAssetAmount', e.target.value)
+                                    }
+                                    step={Math.max(
+                                      1,
+                                      (assetMax - assetMin) / 100
+                                    )}
+                                    type="range"
+                                    value={parseFloat(lspAssetAmount || '0')}
+                                  />
                                   <div
-                                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
+                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
                                     style={{
-                                      width: `${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}%`,
+                                      left: `calc(${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}% - 8px)`,
                                     }}
                                   />
                                 </div>
-                                <input
-                                  className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                                  max={assetMax}
-                                  min={assetMin}
-                                  onChange={(e) =>
-                                    setValue('lspAssetAmount', e.target.value)
-                                  }
-                                  step={Math.max(
-                                    1,
-                                    (assetMax - assetMin) / 100
-                                  )}
-                                  type="range"
-                                  value={parseFloat(lspAssetAmount || '0')}
-                                />
-                                <div
-                                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                                  style={{
-                                    left: `calc(${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}% - 8px)`,
-                                  }}
-                                />
+                                <div className="flex justify-between text-xs text-content-tertiary mt-2">
+                                  <span>
+                                    Min: {assetMin} {selectedAsset.ticker}
+                                  </span>
+                                  <span>
+                                    Max: {assetMax} {selectedAsset.ticker}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex justify-between text-xs text-content-tertiary mt-2">
-                                <span>
-                                  Min: {assetMin} {selectedAsset.ticker}
-                                </span>
-                                <span>
-                                  Max: {assetMax} {selectedAsset.ticker}
-                                </span>
-                              </div>
+                            )}
+
+                          {/* Outbound Balance — how much of the asset is yours to send at open (drives the quote) */}
+                          {parseFloat(lspAssetAmount || '0') > 0 && (
+                            <div className="mt-4">
+                              <LiquiditySlider
+                                inboundColor="bg-emerald-500"
+                                inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                                inputFocusClass="focus:border-primary"
+                                inputHint={`Type the exact ${selectedAsset.ticker} amount you want available to send immediately after funding.`}
+                                inputLabel="Available to send now"
+                                inputTextClass="text-white"
+                                max={parseFloat(lspAssetAmount) || 0}
+                                maxLabel={`Max: ${parseFloat(lspAssetAmount) || 0} ${selectedAsset.ticker}`}
+                                min={0}
+                                minLabel={`0 ${selectedAsset.ticker}`}
+                                onChange={(val) =>
+                                  setValue('clientAssetAmount', val.toString())
+                                }
+                                outboundColor="bg-[#9365FF]"
+                                outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
+                                step={
+                                  (parseFloat(lspAssetAmount) || 0) >= 1000
+                                    ? 10
+                                    : assetInfo.precision > 0
+                                      ? 1 / assetFactor
+                                      : 1
+                                }
+                                thumbBorderClass="border-[#9365FF]"
+                                unit={selectedAsset.ticker}
+                                value={parseFloat(clientAssetAmount) || 0}
+                              />
                             </div>
                           )}
 
-                        {/* Outbound Balance — how much of the asset is yours to send at open (drives the quote) */}
-                        {parseFloat(lspAssetAmount || '0') > 0 && (
-                          <div className="mt-4">
-                            <LiquiditySlider
-                              inboundColor="bg-emerald-500"
-                              inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
-                              inputFocusClass="focus:border-primary"
-                              inputHint={`Type the exact ${selectedAsset.ticker} amount you want available to send immediately after funding.`}
-                              inputLabel="Available to send now"
-                              inputTextClass="text-white"
-                              max={parseFloat(lspAssetAmount) || 0}
-                              maxLabel={`Max: ${parseFloat(lspAssetAmount) || 0} ${selectedAsset.ticker}`}
-                              min={0}
-                              minLabel={`0 ${selectedAsset.ticker}`}
-                              onChange={(val) =>
-                                setValue('clientAssetAmount', val.toString())
-                              }
-                              outboundColor="bg-[#9365FF]"
-                              outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
-                              step={
-                                (parseFloat(lspAssetAmount) || 0) >= 1000
-                                  ? 10
-                                  : assetInfo.precision > 0
-                                    ? 1 / assetFactor
-                                    : 1
-                              }
-                              thumbBorderClass="border-[#9365FF]"
-                              unit={selectedAsset.ticker}
-                              value={parseFloat(clientAssetAmount) || 0}
-                            />
-                          </div>
-                        )}
-
-                        {clientAssetAmount &&
-                          parseFloat(clientAssetAmount) > 0 && (
-                            <AssetQuoteDisplay
-                              assetInfo={assetInfo}
-                              quote={quote}
-                              quoteError={quoteError}
-                              quoteLoading={quoteLoading}
-                            />
-                          )}
+                          {clientAssetAmount &&
+                            parseFloat(clientAssetAmount) > 0 && (
+                              <AssetQuoteDisplay
+                                assetInfo={assetInfo}
+                                quote={quote}
+                                quoteError={quoteError}
+                                quoteLoading={quoteLoading}
+                              />
+                            )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
+
+              {/* Channel Duration */}
+              <div className="mb-12">
+                <ChannelDurationSelector
+                  containerClassName="border-0 p-0"
+                  control={control}
+                  maxExpiryBlocks={lspOptions?.max_channel_expiry_blocks}
+                  onChange={(value) => setValue('channelExpireBlocks', value)}
+                  theme="dark"
+                  value={channelExpireBlocks}
+                />
+              </div>
+
+              {/* Fee breakdown — mirror the old Buy Channel modal: show the LSP
+                fees, the liquidity you're funding, any asset purchase, and the
+                aggregated total the user will actually pay. */}
+              {(fees || isLoadingFees) && (
+                <FeeBreakdownDisplay
+                  additionalCosts={[
+                    {
+                      amount: btcOut,
+                      label: t('components.buyChannelModal.yourLiquidity'),
+                    },
+                    ...(quote &&
+                    clientAssetAmount &&
+                    parseFloat(clientAssetAmount) > 0
+                      ? [
+                          {
+                            amount: getQuoteFromAmount(quote) / 1000,
+                            className: 'text-primary font-medium',
+                            label: t(
+                              'components.buyChannelModal.assetPurchase'
+                            ),
+                          },
+                        ]
+                      : []),
+                  ]}
+                  containerClassName="bg-surface-base/50 border border-border-default/30 rounded-xl p-4"
+                  fees={fees}
+                  isLoading={isLoadingFees}
+                  showGrandTotal
+                />
               )}
             </div>
-
-            {/* Channel Duration */}
-            <div className="mb-12">
-              <ChannelDurationSelector
-                containerClassName="border-0 p-0"
-                control={control}
-                maxExpiryBlocks={lspOptions?.max_channel_expiry_blocks}
-                onChange={(value) => setValue('channelExpireBlocks', value)}
-                theme="dark"
-                value={channelExpireBlocks}
-              />
-            </div>
-
-            {/* Fee breakdown */}
-            {(fees || isLoadingFees) && (
-              <FeeBreakdownDisplay
-                additionalCosts={[
-                  ...(quote &&
-                  clientAssetAmount &&
-                  parseFloat(clientAssetAmount) > 0
-                    ? [
-                        {
-                          amount: getQuoteFromAmount(quote) / 1000,
-                          className: 'text-primary font-medium',
-                          label: t('components.buyChannelModal.assetPurchase'),
-                        },
-                      ]
-                    : []),
-                ]}
-                containerClassName="bg-surface-base/50 border border-border-default/30 rounded-xl p-4"
-                fees={fees}
-                isLoading={isLoadingFees}
-              />
-            )}
-          </div>
+          </>
         )}
 
         {/* Actions */}

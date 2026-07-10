@@ -217,11 +217,19 @@ export const Component = () => {
     0
   )
 
+  // Treat the pre-trigger (uninitialized) window as loading too. These are lazy
+  // queries, so on first mount — before refreshData() fires them — RTK reports
+  // isLoading=false with no data yet. Without this the balance would flash "0"
+  // before the first fetch resolves; we want a loading placeholder instead.
   const isLoading =
+    btcBalanceResponse.isUninitialized ||
+    listChannelsResponse.isUninitialized ||
     (btcBalanceResponse.isLoading && !btcBalanceResponse.data) ||
     (listChannelsResponse.isLoading && !listChannelsResponse.data)
 
-  const isAssetsLoading = assetsResponse.isLoading && !assetsResponse.data
+  const isAssetsLoading =
+    assetsResponse.isUninitialized ||
+    (assetsResponse.isLoading && !assetsResponse.data)
 
   const liquidityTotal = totalInboundLiquidity + totalOutboundLiquidity
   const outboundPct =
