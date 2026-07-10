@@ -374,7 +374,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
             {/* RGB badge */}
             {isRgbChannel && asset && (
-              <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-800/30">
+              <span
+                className={`flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                  asset.ticker === 'USDT'
+                    ? 'bg-[#26A17B]/10 text-[#26A17B] border border-[#26A17B]/30'
+                    : 'bg-purple-900/30 text-purple-300 border border-purple-800/30'
+                }`}
+              >
                 <AssetIcon className="h-2.5 w-2.5" ticker={asset.ticker} />
                 {asset.ticker}
               </span>
@@ -455,36 +461,42 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             const inPct = total > 0 ? (inb / total) * 100 : 50
             return (
               <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-purple-800/20">
-                {/* Section header: asset + amounts */}
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-1.5 text-[11px] text-lime-300/90">
+                {/* Section header: outbound | logo+ticker | inbound */}
+                <div className="grid grid-cols-3 items-center mb-1.5">
+                  <span className="flex items-center gap-0.5 text-[10px] font-mono text-[#9365FF]">
+                    <ArrowUpRight className="h-3 w-3" />
+                    {formatAssetAmount(out)}
+                  </span>
+                  <span
+                    className="flex items-center justify-center gap-1 text-[11px] font-semibold"
+                    style={asset.ticker === 'USDT' ? { color: '#26A17B' } : {}}
+                  >
                     <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
-                    <span className="font-semibold">{asset.ticker}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                    <span className="flex items-center gap-0.5 text-lime-300">
-                      <ArrowUpRight className="h-3 w-3" />
-                      {formatAssetAmount(out)}
+                    <span
+                      className={
+                        asset.ticker === 'USDT' ? '' : 'text-content-secondary'
+                      }
+                    >
+                      {asset.ticker}
                     </span>
-                    <span className="text-content-tertiary/40">/</span>
-                    <span className="flex items-center gap-0.5 text-emerald-400">
-                      <ArrowDownRight className="h-3 w-3" />
-                      {formatAssetAmount(inb)}
-                    </span>
-                  </div>
+                  </span>
+                  <span className="flex items-center justify-end gap-0.5 text-[10px] font-mono text-emerald-400">
+                    {formatAssetAmount(inb)}
+                    <ArrowDownRight className="h-3 w-3" />
+                  </span>
                 </div>
                 <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-lime-300 rounded-l-full"
+                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
                     style={{ width: `${outPct}%` }}
                   />
                   <div
-                    className="absolute right-0 top-0 h-full bg-emerald-600 rounded-r-full"
+                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
                     style={{ width: `${inPct}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                  <span className="text-lime-300/70">
+                  <span className="text-[#9365FF]/70">
                     {t('channelCard.labels.outbound')}
                   </span>
                   <span className="text-emerald-400/70">

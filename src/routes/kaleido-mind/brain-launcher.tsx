@@ -20,6 +20,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { KALEIDO_MIND_MODELS_PATH } from '../../app/router/paths'
+import { Select } from '../../components/ui/Select'
 import type { UseMindResult } from '../../hooks/useMind'
 
 import { gb, labelForPhase } from './shared'
@@ -245,39 +246,15 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
 
       <div className="mt-5 space-y-3">
         {installed.length > 1 && (
-          <div className="relative">
-            <select
-              className="appearance-none w-full pl-9 pr-8 py-2 border border-border-default rounded-lg bg-surface-overlay text-sm text-content-primary focus:outline-none focus:ring-2 focus:ring-primary"
-              onChange={(e) => setSelected(e.target.value)}
-              value={modelId}
-            >
-              {installed.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.displayName || m.id}
-                  {m.id === lastId ? ' · last used' : ''}
-                </option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Cpu className="h-4 w-4 text-content-tertiary" />
-            </div>
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <svg
-                className="h-4 w-4 text-content-tertiary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 9l-7 7-7-7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </div>
+          <Select
+            icon={<Cpu className="h-4 w-4" />}
+            onChange={(val) => setSelected(val)}
+            options={installed.map((m) => ({
+              label: `${m.displayName || m.id}${m.id === lastId ? ' · last used' : ''}`,
+              value: m.id,
+            }))}
+            value={modelId}
+          />
         )}
         <button
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3.5 py-2.5 text-sm font-semibold text-surface-base transition-all hover:bg-primary-emphasis active:scale-95 disabled:opacity-50"

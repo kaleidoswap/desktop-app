@@ -146,6 +146,12 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     }
   }, [isBtc])
 
+  // Auto-generate address on mount for non-BTC flows
+  useEffect(() => {
+    if (isBtc) return
+    generateAddress()
+  }, [])
+
   // When BTC amount changes, regenerate LN invoice with new amount
   useEffect(() => {
     if (!isBtc) return
@@ -1235,17 +1241,13 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
             className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
                      text-primary-foreground rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
             disabled={loading}
-            onClick={address ? onNext : generateAddress}
+            onClick={onNext}
           >
             {loading ? (
               <Loader className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <span>
-                  {address
-                    ? t('depositModal.common.finish')
-                    : t('depositModal.step2.actions.generateAddressCta')}
-                </span>
+                <span>{t('depositModal.common.finish')}</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}

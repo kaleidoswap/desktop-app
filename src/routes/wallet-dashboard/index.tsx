@@ -70,8 +70,16 @@ const BtcIcon: React.FC<{ className?: string }> = ({
 
 const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
   const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
+  const isUsdt = ticker === 'USDT'
   return (
-    <span className="flex items-center gap-1 text-[10px] font-bold text-secondary bg-secondary/10 border border-secondary/20 px-1.5 py-0.5 rounded flex-shrink-0">
+    <span
+      className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
+        isUsdt
+          ? 'bg-[#26A17B]/10 border border-[#26A17B]/20'
+          : 'text-secondary bg-secondary/10 border border-secondary/20'
+      }`}
+      style={isUsdt ? { color: '#26A17B' } : {}}
+    >
       <img
         alt={ticker}
         className="w-3 h-3 rounded-full object-contain"
@@ -79,6 +87,25 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
         src={imgSrc}
       />
       {ticker}
+    </span>
+  )
+}
+
+const BarAssetLabel: React.FC<{ ticker: string }> = ({ ticker }) => {
+  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
+  const isUsdt = ticker === 'USDT'
+  return (
+    <span
+      className="flex items-center justify-center gap-1 font-medium"
+      style={isUsdt ? { color: '#26A17B' } : {}}
+    >
+      <img
+        alt={ticker}
+        className="w-3 h-3 rounded-full object-contain"
+        onError={() => setImgSrc(defaultRgbIcon)}
+        src={imgSrc}
+      />
+      <span className={isUsdt ? '' : 'text-content-secondary'}>{ticker}</span>
     </span>
   )
 }
@@ -739,7 +766,7 @@ export const Component = () => {
 
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
-                          <div className="grid grid-cols-3 items-center text-[10px] mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
+                          <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
                             <span className="flex items-center gap-0.5 text-purple-400">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount(
@@ -747,7 +774,8 @@ export const Component = () => {
                                 bitcoinUnit
                               )}
                             </span>
-                            <span className="text-center text-content-secondary font-medium">
+                            <span className="flex items-center justify-center gap-1 text-content-secondary font-medium">
+                              <BtcIcon className="w-3 h-3" />
                               BTC
                             </span>
                             <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
@@ -769,7 +797,7 @@ export const Component = () => {
                             />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
-                          <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
+                          <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                             <span className="text-[#9365FF]/70">Outbound</span>
                             <span />
                             <span className="text-right text-emerald-400/70">
@@ -781,14 +809,12 @@ export const Component = () => {
                         {/* Asset liquidity bar (if RGB channel) */}
                         {asset && (
                           <div>
-                            <div className="grid grid-cols-3 items-center text-[10px] mb-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
+                            <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
                               <span className="flex items-center gap-0.5 text-purple-400">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
                                 {ch.asset_local_amount || 0}
                               </span>
-                              <span className="text-center text-lime-300/60 font-medium">
-                                {asset.ticker}
-                              </span>
+                              <BarAssetLabel ticker={asset.ticker} />
                               <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
                                 {ch.asset_remote_amount || 0}
                                 <ArrowDownRight className="w-2.5 h-2.5" />
@@ -805,7 +831,7 @@ export const Component = () => {
                               />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
-                            <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5 max-h-0 overflow-hidden group-hover/ch:max-h-4 transition-all duration-200">
+                            <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                               <span className="text-[#9365FF]/70">
                                 Outbound
                               </span>
