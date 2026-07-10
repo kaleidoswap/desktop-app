@@ -313,7 +313,7 @@ export const getSupportResources = (t: TFunction) => [
     description: t('support.faqDesc'),
     icon: <HelpCircle className="w-4 h-4" />,
     name: t('support.faq'),
-    url: 'https://docs.kaleidoswap.com/desktop-app/faq',
+    url: 'https://docs.kaleidoswap.com/desktop-app/support/faq',
   },
   {
     description: t('support.telegramGroupDesc'),

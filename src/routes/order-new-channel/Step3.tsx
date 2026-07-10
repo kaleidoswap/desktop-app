@@ -7,6 +7,7 @@ import {
   Copy,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 import CopyToClipboard from 'react-copy-to-clipboard'
 
@@ -79,10 +80,13 @@ export const Step3: React.FC<Props> = ({
 
   if (!order) {
     return (
-      <div className="max-w-lg mx-auto flex justify-center items-center h-64">
-        <span className="text-content-secondary">
-          {t('orderChannel.step3.loadingOrder')}
-        </span>
+      <div className="max-w-lg mx-auto flex min-h-[40vh] items-center justify-center">
+        <div className="flex items-center gap-4 rounded-xl border border-border-default/50 bg-surface-overlay/50 px-8 py-6 backdrop-blur-sm">
+          <ClipLoader color="#15E99A" loading size={32} />
+          <span className="text-content-secondary">
+            {t('orderChannel.step3.loadingOrder')}
+          </span>
+        </div>
       </div>
     )
   }

@@ -32,7 +32,9 @@ export const RemoteNodeInfo: React.FC = () => {
               className="border-primary/30 text-primary hover:bg-primary/10"
               icon={<ExternalLink className="w-3.5 h-3.5" />}
               onClick={() =>
-                openUrl('https://docs.kaleidoswap.com/desktop-app/node-hosting')
+                openUrl(
+                  'https://docs.kaleidoswap.com/desktop-app/getting-started/node-hosting'
+                )
               }
               size="sm"
               variant="outline"
