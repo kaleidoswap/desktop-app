@@ -766,24 +766,29 @@ export const Component = () => {
 
                         {/* BTC liquidity bar */}
                         <div className="mb-1.5">
-                          <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
-                            <span className="flex items-center gap-0.5 text-purple-400">
-                              <ArrowUpRight className="w-2.5 h-2.5" />
-                              {formatBitcoinAmount(
-                                (ch.outbound_balance_msat || 0) / 1000,
-                                bitcoinUnit
-                              )}
-                            </span>
-                            <span className="flex items-center justify-center gap-1 text-content-secondary font-medium">
+                          <div className="flex items-center justify-between text-[10px] mb-0.5">
+                            <span className="flex items-center gap-1 text-content-secondary font-medium">
                               <BtcIcon className="w-3 h-3" />
                               BTC
                             </span>
-                            <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
-                              {formatBitcoinAmount(
-                                (ch.inbound_balance_msat || 0) / 1000,
-                                bitcoinUnit
-                              )}
-                              <ArrowDownRight className="w-2.5 h-2.5" />
+                            <span className="flex items-center gap-1 font-mono">
+                              <span className="flex items-center gap-0.5 text-purple-400">
+                                <ArrowUpRight className="w-2.5 h-2.5" />
+                                {formatBitcoinAmount(
+                                  (ch.outbound_balance_msat || 0) / 1000,
+                                  bitcoinUnit
+                                )}
+                              </span>
+                              <span className="text-content-tertiary/40">
+                                /
+                              </span>
+                              <span className="flex items-center gap-0.5 text-emerald-400">
+                                {formatBitcoinAmount(
+                                  (ch.inbound_balance_msat || 0) / 1000,
+                                  bitcoinUnit
+                                )}
+                                <ArrowDownRight className="w-2.5 h-2.5" />
+                              </span>
                             </span>
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
@@ -797,27 +802,29 @@ export const Component = () => {
                             />
                             <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                           </div>
-                          <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                          <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                             <span className="text-[#9365FF]/70">Outbound</span>
-                            <span />
-                            <span className="text-right text-emerald-400/70">
-                              Inbound
-                            </span>
+                            <span className="text-emerald-400/70">Inbound</span>
                           </div>
                         </div>
 
                         {/* Asset liquidity bar (if RGB channel) */}
                         {asset && (
                           <div>
-                            <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
-                              <span className="flex items-center gap-0.5 text-purple-400">
-                                <ArrowUpRight className="w-2.5 h-2.5" />
-                                {ch.asset_local_amount || 0}
-                              </span>
+                            <div className="flex items-center justify-between text-[10px] mb-0.5">
                               <BarAssetLabel ticker={asset.ticker} />
-                              <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
-                                {ch.asset_remote_amount || 0}
-                                <ArrowDownRight className="w-2.5 h-2.5" />
+                              <span className="flex items-center gap-1 font-mono">
+                                <span className="flex items-center gap-0.5 text-purple-400">
+                                  <ArrowUpRight className="w-2.5 h-2.5" />
+                                  {ch.asset_local_amount || 0}
+                                </span>
+                                <span className="text-content-tertiary/40">
+                                  /
+                                </span>
+                                <span className="flex items-center gap-0.5 text-emerald-400">
+                                  {ch.asset_remote_amount || 0}
+                                  <ArrowDownRight className="w-2.5 h-2.5" />
+                                </span>
                               </span>
                             </div>
                             <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
@@ -831,12 +838,11 @@ export const Component = () => {
                               />
                               <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
                             </div>
-                            <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
+                            <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-0.5">
                               <span className="text-[#9365FF]/70">
                                 Outbound
                               </span>
-                              <span />
-                              <span className="text-right text-emerald-400/70">
+                              <span className="text-emerald-400/70">
                                 Inbound
                               </span>
                             </div>

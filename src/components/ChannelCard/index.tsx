@@ -461,29 +461,30 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             const inPct = total > 0 ? (inb / total) * 100 : 50
             return (
               <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-purple-800/20">
-                {/* Section header: outbound | logo+ticker | inbound */}
-                <div className="grid grid-cols-3 items-center mb-1.5">
-                  <span className="flex items-center gap-0.5 text-[10px] font-mono text-[#9365FF]">
-                    <ArrowUpRight className="h-3 w-3" />
-                    {formatAssetAmount(out)}
-                  </span>
-                  <span
-                    className="flex items-center justify-center gap-1 text-[11px] font-semibold"
+                {/* Section header: logo+ticker left, amounts right */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div
+                    className="flex items-center gap-1.5 text-[11px]"
                     style={asset.ticker === 'USDT' ? { color: '#26A17B' } : {}}
                   >
                     <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
                     <span
-                      className={
-                        asset.ticker === 'USDT' ? '' : 'text-content-secondary'
-                      }
+                      className={`font-semibold ${asset.ticker === 'USDT' ? '' : 'text-content-secondary'}`}
                     >
                       {asset.ticker}
                     </span>
-                  </span>
-                  <span className="flex items-center justify-end gap-0.5 text-[10px] font-mono text-emerald-400">
-                    {formatAssetAmount(inb)}
-                    <ArrowDownRight className="h-3 w-3" />
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span className="flex items-center gap-0.5 text-[#9365FF]">
+                      <ArrowUpRight className="h-3 w-3" />
+                      {formatAssetAmount(out)}
+                    </span>
+                    <span className="text-content-tertiary/40">/</span>
+                    <span className="flex items-center gap-0.5 text-emerald-400">
+                      <ArrowDownRight className="h-3 w-3" />
+                      {formatAssetAmount(inb)}
+                    </span>
+                  </div>
                 </div>
                 <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
                   <div
