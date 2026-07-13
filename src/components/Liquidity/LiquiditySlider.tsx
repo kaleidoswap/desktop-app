@@ -47,6 +47,31 @@ export function LiquiditySlider({
   const clamped = Math.min(safeMax, Math.max(min, value))
   const outPct = ((clamped - min) / range) * 100
 
+  // Quick-select amounts spanning the [min, max] range (input mode only). Each
+  // is snapped to `step` and clamped, so tapping one always yields a valid
+  // amount; typed values are clamped on change/blur below.
+  const decimals =
+    step && step < 1
+      ? Math.min(8, Math.max(0, Math.round(-Math.log10(step))))
+      : 0
+  const abbreviateAmount = (n: number) => {
+    if (n >= 1_000_000) return `${+(n / 1_000_000).toFixed(2)}M`
+    if (n >= 10_000) return `${Math.round(n / 1000)}K`
+    return n.toLocaleString(undefined, { maximumFractionDigits: decimals })
+  }
+  const quickAmounts = Array.from(
+    new Set(
+      [0.25, 0.5, 0.75].map((pct) => {
+        const raw = min + range * pct
+        const stepped = step ? Math.round(raw / step) * step : raw
+        return Math.min(
+          safeMax,
+          Math.max(min, Number(stepped.toFixed(decimals)))
+        )
+      })
+    )
+  ).filter((amount) => amount > min && amount < safeMax)
+
   // Local string state so intermediate typing (e.g. "1." or "0.0") isn't destroyed
   const [inputText, setInputText] = useState(clamped.toString())
   const isFocused = useRef(false)
@@ -120,6 +145,20 @@ export function LiquiditySlider({
           ) : (
             <div className="mt-1 text-sm font-semibold text-content-primary">
               {outboundLabel}
+            </div>
+          )}
+          {showInput && unit !== undefined && quickAmounts.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {quickAmounts.map((amount) => (
+                <button
+                  className="rounded-md border border-border-default/50 bg-surface-overlay/40 px-2 py-0.5 text-[11px] font-semibold text-content-secondary transition-colors hover:border-border-default hover:text-content-primary"
+                  key={amount}
+                  onClick={() => onChange(amount)}
+                  type="button"
+                >
+                  {abbreviateAmount(amount)}
+                </button>
+              ))}
             </div>
           )}
         </div>

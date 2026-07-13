@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { formatNumberWithCommas } from '../../helpers/number'
 import { ChannelFees } from '../../slices/makerApi/makerApi.slice'
+import { InfoHint } from '../ui'
 
 interface FeeBreakdownDisplayProps {
   fees: ChannelFees | null
@@ -13,6 +14,7 @@ interface FeeBreakdownDisplayProps {
     label: string
     amount: number
     className?: string
+    hint?: string
   }>
   containerClassName?: string
 }
@@ -51,8 +53,14 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
       <div className="space-y-2">
         {/* Channel Fees */}
         <div className="flex justify-between text-sm items-center">
-          <span className="text-content-secondary">
+          <span className="text-content-secondary flex items-center gap-1.5">
             {t('channelConfiguration.feeBreakdown.setupFee')}
+            <InfoHint
+              content={t('channelConfiguration.feeBreakdown.setupFeeHint', {
+                defaultValue:
+                  'One-time fee the LSP charges to open the channel on-chain.',
+              })}
+            />
           </span>
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
@@ -65,8 +73,14 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           )}
         </div>
         <div className="flex justify-between text-sm items-center">
-          <span className="text-content-secondary">
+          <span className="text-content-secondary flex items-center gap-1.5">
             {t('channelConfiguration.feeBreakdown.capacityFee')}
+            <InfoHint
+              content={t('channelConfiguration.feeBreakdown.capacityFeeHint', {
+                defaultValue:
+                  'Scales with channel size — larger inbound liquidity costs more to provision.',
+              })}
+            />
           </span>
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
@@ -79,8 +93,14 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
           )}
         </div>
         <div className="flex justify-between text-sm items-center">
-          <span className="text-content-secondary">
+          <span className="text-content-secondary flex items-center gap-1.5">
             {t('channelConfiguration.feeBreakdown.durationFee')}
+            <InfoHint
+              content={t('channelConfiguration.feeBreakdown.durationFeeHint', {
+                defaultValue:
+                  'Covers how long the LSP keeps the channel open — longer leases cost more.',
+              })}
+            />
           </span>
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin text-content-tertiary" />
@@ -128,8 +148,11 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
             className={`flex justify-between text-sm ${cost.className || ''}`}
             key={index}
           >
-            <span className={cost.className ? '' : 'text-content-secondary'}>
+            <span
+              className={`flex items-center gap-1.5 ${cost.className ? '' : 'text-content-secondary'}`}
+            >
               {cost.label}
+              {cost.hint && <InfoHint content={cost.hint} />}
             </span>
             <span
               className={
@@ -157,6 +180,16 @@ export const FeeBreakdownDisplay: React.FC<FeeBreakdownDisplayProps> = ({
               <SkeletonBar wide />
             )}
           </div>
+        )}
+
+        {/* Footnote — clarify what the total actually covers */}
+        {showGrandTotal && fees && (
+          <p className="pt-2 text-[11px] leading-relaxed text-content-tertiary">
+            {t('channelConfiguration.feeBreakdown.totalNote', {
+              defaultValue:
+                'Total includes the LSP fees above plus the liquidity you fund yourself. On-chain amounts are estimates and may vary with network fees at open time.',
+            })}
+          </p>
         )}
       </div>
     </div>

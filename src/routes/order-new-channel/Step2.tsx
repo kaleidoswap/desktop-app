@@ -14,7 +14,11 @@ import {
   ChannelDurationSelector,
 } from '../../components/ChannelConfiguration'
 import { FormError } from '../../components/FormError'
-import { AssetQuoteDisplay, LiquiditySlider } from '../../components/Liquidity'
+import {
+  AssetQuoteDisplay,
+  LiquidityCard,
+  LiquiditySlider,
+} from '../../components/Liquidity'
 import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
 import {
   getQuoteFromAmount,
@@ -31,6 +35,7 @@ import { makerApi, ChannelFees } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { AssetInfo, LspOptions } from '../../utils/channelOrderUtils'
 
+import bitcoinLogo from '../../assets/bitcoin-logo.svg'
 import rgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 
@@ -719,154 +724,146 @@ export const Step2: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="bg-surface-overlay/50 backdrop-blur-sm rounded-xl border border-border-default/50 p-8">
-              {/* Channel Capacity */}
-              <div className="mb-12">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm font-medium text-content-secondary">
-                      {t('orderChannel.step2.channelCapacity')}
-                    </label>
-                    <InfoHint content="The total size of the channel, in sats. A larger capacity lets you send and receive more, but costs more on-chain to open." />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[
-                      { label: '100k', value: 100_000 },
-                      { label: '250k', value: 250_000 },
-                      { label: '500k', value: 500_000 },
-                      { label: '1M', value: 1_000_000 },
-                    ].map(({ label, value }) => (
-                      <button
-                        className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
-                          value > effectiveMaxCapacity
-                            ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
-                            : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
-                        }`}
-                        disabled={value > effectiveMaxCapacity}
-                        key={label}
-                        onClick={() => handleCapacityChange(value.toString())}
-                        type="button"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="relative">
-                  <input
-                    className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
-                    onChange={(e) => handleCapacityChange(e.target.value)}
-                    placeholder="0"
-                    type="text"
-                    value={
-                      currentCapacity > 0 ? formatNumber(currentCapacity) : ''
-                    }
+            <div className="space-y-4">
+              {/* BTC liquidity — capacity + outbound in the shared LiquidityCard */}
+              <LiquidityCard
+                icon={
+                  <img
+                    alt="BTC"
+                    className="h-5 w-5 rounded-full"
+                    src={bitcoinLogo}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
-                    SATS
-                  </span>
-                </div>
-                {currentCapacity > 0 && (
-                  <div className="mt-4 px-1">
-                    <div className="relative">
-                      <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
-                        <div
-                          className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
-                          style={{
-                            width: `${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}%`,
-                          }}
-                        />
-                      </div>
-                      <input
-                        className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                        max={effectiveMaxCapacity}
-                        min={effectiveMinCapacity}
-                        onChange={(e) => handleCapacityChange(e.target.value)}
-                        step={1000}
-                        type="range"
-                        value={currentCapacity}
-                      />
-                      <div
-                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                        style={{
-                          left: `calc(${Math.max(0, Math.min(100, ((currentCapacity - effectiveMinCapacity) / Math.max(1, effectiveMaxCapacity - effectiveMinCapacity)) * 100))}% - 8px)`,
-                        }}
-                      />
+                }
+                meta={
+                  <div className="rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-right">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-100/70">
+                      {t('orderChannel.step2.channelCapacity')}
                     </div>
-                    <div className="flex justify-between text-xs text-content-tertiary mt-3">
-                      <span>
-                        Min: {formatNumber(effectiveMinCapacity)} sats
-                      </span>
-                      <span>
-                        Max: {formatNumber(effectiveMaxCapacity)} sats
-                      </span>
+                    <div className="mt-0.5 text-sm font-semibold text-violet-50">
+                      {formatNumber(currentCapacity)} sats
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Outbound Balance — how many sats are yours to send at open */}
-              <div className="mb-12">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm font-medium text-content-secondary">
-                      Outbound Balance
-                    </label>
-                    <InfoHint content="How many sats start on your side, ready to send the moment the channel opens. The rest is inbound — what you can receive." />
-                  </div>
-                  {maxOutbound > 0 && (
+                }
+                title="BTC Liquidity"
+                tone="violet"
+              >
+                {/* Channel Capacity */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-content-secondary">
+                        {t('orderChannel.step2.channelCapacity')}
+                      </label>
+                      <InfoHint content="The total size of the channel, in sats. A larger capacity lets you send and receive more, but costs more on-chain to open." />
+                    </div>
                     <div className="flex items-center gap-1">
-                      {[25, 50, 75, 100].map((pct) => (
+                      {[
+                        { label: '100k', value: 100_000 },
+                        { label: '250k', value: 250_000 },
+                        { label: '500k', value: 500_000 },
+                        { label: '1M', value: 1_000_000 },
+                      ].map(({ label, value }) => (
                         <button
-                          className="px-2 py-0.5 rounded text-xs font-semibold border bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70 transition-colors"
-                          key={pct}
-                          onClick={() => {
-                            const amount = Math.floor(maxOutbound * (pct / 100))
-                            setValue(
-                              'clientBalanceSat',
-                              Math.min(
-                                Math.max(amount, minOutbound),
-                                maxOutbound
-                              ).toString()
-                            )
-                          }}
+                          className={`px-2 py-0.5 rounded text-xs font-semibold border transition-colors ${
+                            value > effectiveMaxCapacity
+                              ? 'opacity-30 cursor-not-allowed bg-surface-high/40 border-border-default/40 text-content-secondary'
+                              : 'bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70'
+                          }`}
+                          disabled={value > effectiveMaxCapacity}
+                          key={label}
+                          onClick={() => handleCapacityChange(value.toString())}
                           type="button"
                         >
-                          {pct === 100 ? 'MAX' : `${pct}%`}
+                          {label}
                         </button>
                       ))}
                     </div>
-                  )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      className="w-full pl-4 pr-20 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none"
+                      onChange={(e) => handleCapacityChange(e.target.value)}
+                      placeholder="0"
+                      type="text"
+                      value={
+                        currentCapacity > 0 ? formatNumber(currentCapacity) : ''
+                      }
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary/50 text-sm font-semibold pointer-events-none select-none tracking-wide border-l border-border-default/60 pl-3 h-6 flex items-center">
+                      SATS
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[11px] text-content-tertiary">
+                    Min: {formatNumber(effectiveMinCapacity)} · Max:{' '}
+                    {formatNumber(effectiveMaxCapacity)} sats
+                  </p>
                 </div>
-                <LiquiditySlider
-                  inboundColor="bg-emerald-500"
-                  inboundLabel={`${formatNumber(Math.max(0, currentCapacity - btcOut))} sats`}
-                  inputFocusClass="focus:border-primary"
-                  inputHint="Type the exact BTC amount you want available to send once the channel is live."
-                  inputLabel="Available to send now"
-                  inputTextClass="text-white"
-                  max={maxOutbound}
-                  maxLabel={`Max: ${formatNumber(maxOutbound)} sats`}
-                  min={minOutbound}
-                  minLabel={`Min: ${formatNumber(minOutbound)} sats`}
-                  onChange={(val) =>
-                    setValue('clientBalanceSat', Math.round(val).toString())
-                  }
-                  outboundColor="bg-[#9365FF]"
-                  outboundLabel={`${formatNumber(btcOut)} sats`}
-                  step={currentCapacity >= 1000000 ? 10000 : 1000}
-                  thumbBorderClass="border-[#9365FF]"
-                  unit="sats"
-                  value={btcOut}
-                />
-              </div>
 
-              {/* Add RGB Asset */}
-              <div className="mb-12">
-                <h5 className="text-lg font-semibold text-white mb-3">
-                  Add RGB Asset
-                </h5>
+                {/* Outbound Balance — how many sats are yours to send at open */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm font-medium text-content-secondary">
+                        Outbound Balance
+                      </label>
+                      <InfoHint content="How many sats start on your side, ready to send the moment the channel opens. The rest is inbound — what you can receive." />
+                    </div>
+                    {maxOutbound > 0 && (
+                      <div className="flex items-center gap-1">
+                        {[25, 50, 75, 100].map((pct) => (
+                          <button
+                            className="px-2 py-0.5 rounded text-xs font-semibold border bg-surface-high/40 border-border-default/40 text-content-secondary hover:text-white hover:border-border-default/70 transition-colors"
+                            key={pct}
+                            onClick={() => {
+                              const amount = Math.floor(
+                                maxOutbound * (pct / 100)
+                              )
+                              setValue(
+                                'clientBalanceSat',
+                                Math.min(
+                                  Math.max(amount, minOutbound),
+                                  maxOutbound
+                                ).toString()
+                              )
+                            }}
+                            type="button"
+                          >
+                            {pct === 100 ? 'MAX' : `${pct}%`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <LiquiditySlider
+                    inboundColor="bg-[#C4B5FD]/70"
+                    inboundLabel={`${formatNumber(Math.max(0, currentCapacity - btcOut))} sats`}
+                    inputFocusClass="focus:border-primary"
+                    inputHint="Type the exact BTC amount you want available to send once the channel is live."
+                    inputLabel="Available to send now"
+                    inputTextClass="text-white"
+                    max={maxOutbound}
+                    maxLabel={`Max: ${formatNumber(maxOutbound)} sats`}
+                    min={minOutbound}
+                    minLabel={`Min: ${formatNumber(minOutbound)} sats`}
+                    onChange={(val) =>
+                      setValue('clientBalanceSat', Math.round(val).toString())
+                    }
+                    outboundColor="bg-[#9365FF]"
+                    outboundLabel={`${formatNumber(btcOut)} sats`}
+                    step={currentCapacity >= 1000000 ? 10000 : 1000}
+                    thumbBorderClass="border-[#9365FF]"
+                    unit="sats"
+                    value={btcOut}
+                  />
+                </div>
+              </LiquidityCard>
 
+              {/* RGB asset — its own green LiquidityCard */}
+              <LiquidityCard
+                icon={<img alt="RGB" className="h-5 w-5" src={rgbIcon} />}
+                title="Add RGB Asset"
+                tone="emerald"
+              >
                 <div
                   className="flex flex-wrap items-center gap-2"
                   ref={assetDropdownRef}
@@ -1025,61 +1022,16 @@ export const Step2: React.FC<Props> = ({
                             </span>
                           </div>
 
-                          {/* Channel Capacity slider — synced with lspAssetAmount input above, shown only when value > 0 */}
-                          {parseFloat(lspAssetAmount || '0') > 0 &&
-                            assetMax > assetMin && (
-                              <div className="mt-4 px-1">
-                                <div className="relative">
-                                  <div className="relative h-2 rounded-full bg-secondary/20 overflow-hidden">
-                                    <div
-                                      className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-200"
-                                      style={{
-                                        width: `${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}%`,
-                                      }}
-                                    />
-                                  </div>
-                                  <input
-                                    className="absolute inset-0 w-full opacity-0 cursor-pointer h-2"
-                                    max={assetMax}
-                                    min={assetMin}
-                                    onChange={(e) =>
-                                      setValue('lspAssetAmount', e.target.value)
-                                    }
-                                    step={Math.max(
-                                      1,
-                                      (assetMax - assetMin) / 100
-                                    )}
-                                    type="range"
-                                    value={parseFloat(lspAssetAmount || '0')}
-                                  />
-                                  <div
-                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-lg shadow-primary/30 pointer-events-none transition-all duration-200"
-                                    style={{
-                                      left: `calc(${Math.max(0, Math.min(100, ((parseFloat(lspAssetAmount || '0') - assetMin) / (assetMax - assetMin)) * 100))}% - 8px)`,
-                                    }}
-                                  />
-                                </div>
-                                <div className="flex justify-between text-xs text-content-tertiary mt-2">
-                                  <span>
-                                    Min: {assetMin} {selectedAsset.ticker}
-                                  </span>
-                                  <span>
-                                    Max: {assetMax} {selectedAsset.ticker}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
                           {/* Outbound Balance — how much of the asset is yours to send at open (drives the quote) */}
                           {parseFloat(lspAssetAmount || '0') > 0 && (
                             <div className="mt-4">
                               <LiquiditySlider
-                                inboundColor="bg-emerald-500"
+                                inboundColor="bg-[#6EE7B7]/60"
                                 inboundLabel={`${Math.max(0, (parseFloat(lspAssetAmount) || 0) - (parseFloat(clientAssetAmount) || 0)).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
-                                inputFocusClass="focus:border-primary"
+                                inputFocusClass="focus:border-emerald-400"
                                 inputHint={`Type the exact ${selectedAsset.ticker} amount you want available to send immediately after funding.`}
                                 inputLabel="Available to send now"
-                                inputTextClass="text-white"
+                                inputTextClass="text-emerald-300"
                                 max={parseFloat(lspAssetAmount) || 0}
                                 maxLabel={`Max: ${parseFloat(lspAssetAmount) || 0} ${selectedAsset.ticker}`}
                                 min={0}
@@ -1087,7 +1039,7 @@ export const Step2: React.FC<Props> = ({
                                 onChange={(val) =>
                                   setValue('clientAssetAmount', val.toString())
                                 }
-                                outboundColor="bg-[#9365FF]"
+                                outboundColor="bg-[#10B981]"
                                 outboundLabel={`${(parseFloat(clientAssetAmount) || 0).toFixed(assetInfo.precision > 0 ? 2 : 0)} ${selectedAsset.ticker}`}
                                 step={
                                   (parseFloat(lspAssetAmount) || 0) >= 1000
@@ -1096,7 +1048,7 @@ export const Step2: React.FC<Props> = ({
                                       ? 1 / assetFactor
                                       : 1
                                 }
-                                thumbBorderClass="border-[#9365FF]"
+                                thumbBorderClass="border-emerald-400"
                                 unit={selectedAsset.ticker}
                                 value={parseFloat(clientAssetAmount) || 0}
                               />
@@ -1117,10 +1069,10 @@ export const Step2: React.FC<Props> = ({
                     </div>
                   </div>
                 )}
-              </div>
+              </LiquidityCard>
 
               {/* Channel Duration */}
-              <div className="mb-12">
+              <div className="mt-4">
                 <ChannelDurationSelector
                   containerClassName="border-0 p-0"
                   control={control}

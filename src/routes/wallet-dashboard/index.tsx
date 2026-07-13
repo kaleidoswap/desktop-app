@@ -91,23 +91,28 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
   )
 }
 
+// Ticker only — the icon already appears in the channel's header badge
+// (ChannelAssetBadge), so repeating it inside the bar would duplicate it.
 const BarAssetLabel: React.FC<{ ticker: string }> = ({ ticker }) => {
-  const [imgSrc, setImgSrc] = useAssetIcon(ticker, defaultRgbIcon)
   const isUsdt = ticker === 'USDT'
   return (
     <span
-      className="flex items-center justify-center gap-1 font-medium"
+      className="flex items-center justify-center font-medium"
       style={isUsdt ? { color: '#26A17B' } : {}}
     >
-      <img
-        alt={ticker}
-        className="w-3 h-3 rounded-full object-contain"
-        onError={() => setImgSrc(defaultRgbIcon)}
-        src={imgSrc}
-      />
       <span className={isUsdt ? '' : 'text-content-secondary'}>{ticker}</span>
     </span>
   )
+}
+
+// Format an RGB asset base amount into display units using its precision
+// (amounts from the node are integers scaled by 10^precision).
+const formatAssetUnits = (amount: number, precision: number): string => {
+  const factor = Math.pow(10, precision)
+  return (amount / factor).toLocaleString(undefined, {
+    maximumFractionDigits: precision,
+    minimumFractionDigits: 0,
+  })
 }
 
 export const Component = () => {
@@ -764,10 +769,10 @@ export const Component = () => {
                           </div>
                         </div>
 
-                        {/* BTC liquidity bar */}
+                        {/* BTC liquidity bar — purple, collapsed (no out/in labels) */}
                         <div className="mb-1.5">
                           <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
-                            <span className="flex items-center gap-0.5 text-purple-400">
+                            <span className="flex items-center gap-0.5 text-[#9365FF]">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount(
                                 (ch.outbound_balance_msat || 0) / 1000,
@@ -778,7 +783,7 @@ export const Component = () => {
                               <BtcIcon className="w-3 h-3" />
                               BTC
                             </span>
-                            <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
+                            <span className="flex items-center gap-0.5 text-[#C4B5FD] justify-end">
                               {formatBitcoinAmount(
                                 (ch.inbound_balance_msat || 0) / 1000,
                                 bitcoinUnit
@@ -792,53 +797,41 @@ export const Component = () => {
                               style={{ width: `${btcOutPct}%` }}
                             />
                             <div
-                              className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                              className="absolute right-0 top-0 h-full bg-[#C4B5FD] rounded-r-full"
                               style={{ width: `${btcInPct}%` }}
                             />
-                            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
-                          </div>
-                          <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
-                            <span className="text-[#9365FF]/70">Outbound</span>
-                            <span />
-                            <span className="text-right text-emerald-400/70">
-                              Inbound
-                            </span>
                           </div>
                         </div>
 
-                        {/* Asset liquidity bar (if RGB channel) */}
+                        {/* Asset liquidity bar (if RGB) — green, collapsed */}
                         {asset && (
                           <div>
                             <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
-                              <span className="flex items-center gap-0.5 text-purple-400">
+                              <span className="flex items-center gap-0.5 text-[#10B981]">
                                 <ArrowUpRight className="w-2.5 h-2.5" />
-                                {ch.asset_local_amount || 0}
+                                {formatAssetUnits(
+                                  ch.asset_local_amount || 0,
+                                  asset.precision ?? 0
+                                )}
                               </span>
                               <BarAssetLabel ticker={asset.ticker} />
-                              <span className="flex items-center gap-0.5 text-emerald-400 justify-end">
-                                {ch.asset_remote_amount || 0}
+                              <span className="flex items-center gap-0.5 text-[#6EE7B7] justify-end">
+                                {formatAssetUnits(
+                                  ch.asset_remote_amount || 0,
+                                  asset.precision ?? 0
+                                )}
                                 <ArrowDownRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                             <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                               <div
-                                className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                                className="absolute left-0 top-0 h-full bg-[#10B981] rounded-l-full"
                                 style={{ width: `${assetOutPct}%` }}
                               />
                               <div
-                                className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                                className="absolute right-0 top-0 h-full bg-[#6EE7B7] rounded-r-full"
                                 style={{ width: `${assetInPct}%` }}
                               />
-                              <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-surface-high/80" />
-                            </div>
-                            <div className="grid grid-cols-3 text-[8px] font-semibold uppercase tracking-wider mt-0.5">
-                              <span className="text-[#9365FF]/70">
-                                Outbound
-                              </span>
-                              <span />
-                              <span className="text-right text-emerald-400/70">
-                                Inbound
-                              </span>
                             </div>
                           </div>
                         )}

@@ -399,9 +399,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
         </div>
       </div>
 
-      {/* Liquidity sections */}
+      {/* Liquidity sections — BTC = purple, RGB = green (out darker, in lighter) */}
       <div className="px-4 pb-3 flex flex-col gap-2 flex-1">
-        {/* Bitcoin liquidity */}
+        {/* Bitcoin liquidity — purple */}
         {(() => {
           const out = channel.outbound_balance_msat / 1000
           const inb = channel.inbound_balance_msat / 1000
@@ -412,7 +412,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             <div className="rounded-lg bg-surface-overlay/40 p-2.5">
               {/* Section header: asset + amounts */}
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-1.5 text-[11px] text-amber-400/90">
+                <div className="flex items-center gap-1.5 text-[11px] text-[#9365FF]">
                   <AssetIcon className="h-3.5 w-3.5" ticker="BTC" />
                   <span className="font-semibold">BTC</span>
                 </div>
@@ -422,7 +422,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                     {formatBitcoinAmount(out, bitcoinUnit)}
                   </span>
                   <span className="text-content-tertiary/40">/</span>
-                  <span className="flex items-center gap-0.5 text-emerald-400">
+                  <span className="flex items-center gap-0.5 text-[#C4B5FD]">
                     <ArrowDownRight className="h-3 w-3" />
                     {formatBitcoinAmount(inb, bitcoinUnit)}
                   </span>
@@ -434,15 +434,15 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                   style={{ width: `${outPct}%` }}
                 />
                 <div
-                  className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                  className="absolute right-0 top-0 h-full bg-[#C4B5FD] rounded-r-full"
                   style={{ width: `${inPct}%` }}
                 />
               </div>
               <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                <span className="text-[#9365FF]/70">
+                <span className="text-[#9365FF]/80">
                   {t('channelCard.labels.outbound')}
                 </span>
-                <span className="text-emerald-400/70">
+                <span className="text-[#C4B5FD]">
                   {t('channelCard.labels.inbound')}
                 </span>
               </div>
@@ -450,7 +450,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           )
         })()}
 
-        {/* RGB Asset liquidity */}
+        {/* RGB Asset liquidity — green, same header layout as BTC */}
         {isRgbChannel &&
           asset &&
           (() => {
@@ -460,15 +460,11 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             const outPct = total > 0 ? (out / total) * 100 : 50
             const inPct = total > 0 ? (inb / total) * 100 : 50
             return (
-              <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-purple-800/20">
-                {/* Section header: outbound | logo+ticker | inbound */}
-                <div className="grid grid-cols-3 items-center mb-1.5">
-                  <span className="flex items-center gap-0.5 text-[10px] font-mono text-[#9365FF]">
-                    <ArrowUpRight className="h-3 w-3" />
-                    {formatAssetAmount(out)}
-                  </span>
-                  <span
-                    className="flex items-center justify-center gap-1 text-[11px] font-semibold"
+              <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-emerald-800/20">
+                {/* Section header: logo+ticker | amounts — mirrors the BTC block */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div
+                    className="flex items-center gap-1.5 text-[11px] font-semibold"
                     style={asset.ticker === 'USDT' ? { color: '#26A17B' } : {}}
                   >
                     <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
@@ -479,27 +475,34 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                     >
                       {asset.ticker}
                     </span>
-                  </span>
-                  <span className="flex items-center justify-end gap-0.5 text-[10px] font-mono text-emerald-400">
-                    {formatAssetAmount(inb)}
-                    <ArrowDownRight className="h-3 w-3" />
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span className="flex items-center gap-0.5 text-[#10B981]">
+                      <ArrowUpRight className="h-3 w-3" />
+                      {formatAssetAmount(out)}
+                    </span>
+                    <span className="text-content-tertiary/40">/</span>
+                    <span className="flex items-center gap-0.5 text-[#6EE7B7]">
+                      <ArrowDownRight className="h-3 w-3" />
+                      {formatAssetAmount(inb)}
+                    </span>
+                  </div>
                 </div>
                 <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                    className="absolute left-0 top-0 h-full bg-[#10B981] rounded-l-full"
                     style={{ width: `${outPct}%` }}
                   />
                   <div
-                    className="absolute right-0 top-0 h-full bg-emerald-500 rounded-r-full"
+                    className="absolute right-0 top-0 h-full bg-[#6EE7B7] rounded-r-full"
                     style={{ width: `${inPct}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                  <span className="text-[#9365FF]/70">
+                  <span className="text-[#10B981]/90">
                     {t('channelCard.labels.outbound')}
                   </span>
-                  <span className="text-emerald-400/70">
+                  <span className="text-[#6EE7B7]">
                     {t('channelCard.labels.inbound')}
                   </span>
                 </div>

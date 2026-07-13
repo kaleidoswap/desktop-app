@@ -1079,17 +1079,17 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   />
                 }
                 meta={
-                  <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-right">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100/70">
+                  <div className="rounded-xl border border-violet-400/20 bg-violet-400/10 px-3 py-1.5 text-right">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-100/70">
                       Channel capacity
                     </div>
-                    <div className="mt-0.5 text-sm font-semibold text-amber-50">
+                    <div className="mt-0.5 text-sm font-semibold text-violet-50">
                       {formatNumberWithCommas(currentCapacity)} sats
                     </div>
                   </div>
                 }
                 title="BTC Liquidity"
-                tone="amber"
+                tone="violet"
               >
                 <div className="space-y-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-content-secondary">
@@ -1154,9 +1154,10 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                 </div>
 
                 <LiquiditySlider
-                  inboundColor="bg-blue-400/50"
+                  inboundColor="bg-[#C4B5FD]/70"
                   inboundLabel={formatNumberWithCommas(btcIn) + ' sats'}
                   inputHint="Type the exact BTC amount you want available to send right away."
+                  inputTextClass="text-white"
                   max={Math.min(
                     currentCapacity,
                     lspOptions?.max_initial_client_balance_sat ||
@@ -1166,9 +1167,10 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                   onChange={(val) =>
                     setValue('clientBalanceSat', Math.round(val).toString())
                   }
-                  outboundColor="bg-amber-400"
+                  outboundColor="bg-[#9365FF]"
                   outboundLabel={formatNumberWithCommas(btcOut) + ' sats'}
-                  thumbBorderClass="border-amber-400"
+                  thumbBorderClass="border-[#9365FF]"
+                  unit="sats"
                   value={btcOut}
                 />
               </LiquidityCard>
@@ -1178,17 +1180,17 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                 <LiquidityCard
                   icon={<img alt="RGB" className="h-5 w-5" src={rgbIcon} />}
                   meta={
-                    <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-right">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/70">
+                    <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-right">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100/70">
                         Asset capacity
                       </div>
-                      <div className="mt-0.5 text-sm font-semibold text-cyan-50">
+                      <div className="mt-0.5 text-sm font-semibold text-emerald-50">
                         {usdtTotal.toFixed(2)} {assetMap[assetId].ticker}
                       </div>
                     </div>
                   }
                   title={`${assetMap[assetId].name} (${assetMap[assetId].ticker})`}
-                  tone="cyan"
+                  tone="emerald"
                 >
                   {/* Total capacity presets */}
                   <div>
@@ -1235,7 +1237,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     </div>
                     {(showCustomAssetCapacity || isCustomAssetTotal) && (
                       <input
-                        className="mt-2 w-full px-3 py-2 bg-surface-overlay rounded-xl border border-border-default focus:border-cyan-400 text-white text-sm outline-none"
+                        className="mt-2 w-full px-3 py-2 bg-surface-overlay rounded-xl border border-border-default focus:border-emerald-400 text-white text-sm outline-none"
                         max={assetMax}
                         min={0}
                         onChange={(e) => {
@@ -1252,23 +1254,23 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                     )}
                   </div>
 
-                  {/* Asset liquidity slider (bar + slider merged) */}
+                  {/* Asset liquidity slider (bar + slider merged) — green */}
                   <LiquiditySlider
-                    inboundColor="bg-sky-400/35"
+                    inboundColor="bg-[#6EE7B7]/60"
                     inboundLabel={`${usdtIn.toFixed(2)} ${assetMap[assetId].ticker}`}
-                    inputFocusClass="focus:border-cyan-400"
+                    inputFocusClass="focus:border-emerald-400"
                     inputHint={`Type the exact ${assetMap[assetId].ticker} amount you want available immediately.`}
                     inputLabel="Available to send now"
-                    inputTextClass="text-cyan-300"
+                    inputTextClass="text-emerald-300"
                     max={usdtTotal || assetMax}
                     min={0}
                     onChange={(val) =>
                       setValue('clientAssetAmount', val.toString())
                     }
-                    outboundColor="bg-cyan-400"
+                    outboundColor="bg-[#10B981]"
                     outboundLabel={`${usdtOut.toFixed(2)} ${assetMap[assetId].ticker}`}
                     step={1 / assetFactor}
-                    thumbBorderClass="border-cyan-300"
+                    thumbBorderClass="border-emerald-400"
                     unit={assetMap[assetId].ticker}
                     value={usdtOut}
                   />
@@ -1314,7 +1316,14 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                       ? [
                           {
                             amount: getQuoteFromAmount(quote) / 1000,
-                            className: 'text-cyan-300 font-medium',
+                            className: 'text-emerald-300 font-medium',
+                            hint: t(
+                              'components.buyChannelModal.assetPurchaseHint',
+                              {
+                                defaultValue:
+                                  'Cost to buy the RGB asset that starts on your side of the channel.',
+                              }
+                            ),
                             label: t(
                               'components.buyChannelModal.assetPurchase'
                             ),
@@ -1322,6 +1331,13 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
                           {
                             amount: parseInt(
                               clientBalanceSat.replace(/[^0-9]/g, '') || '0'
+                            ),
+                            hint: t(
+                              'components.buyChannelModal.yourLiquidityHint',
+                              {
+                                defaultValue:
+                                  'Your own sats placed on your side at open — spendable right away, not a fee.',
+                              }
                             ),
                             label: t(
                               'components.buyChannelModal.yourLiquidity'
