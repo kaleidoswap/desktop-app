@@ -58,12 +58,7 @@ export const Step4: React.FC<StepProps> = ({
   const { bitcoinUnit } = useSettings()
 
   type PaymentStateType =
-    | 'waiting'
-    | 'processing'
-    | 'success'
-    | 'error'
-    | 'expired'
-    | null
+    'waiting' | 'processing' | 'success' | 'error' | 'expired' | null
   const [localPaymentState, setLocalPaymentState] =
     useState<PaymentStateType>(null)
   const [isOrderExpired, setIsOrderExpired] = useState(false)

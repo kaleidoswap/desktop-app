@@ -52,8 +52,7 @@ interface ConnectionStability {
  */
 // Reverse quote callback — avoids global event coupling between WS service and trade page.
 let _onQuoteResponseCallback:
-  | ((quote: any, direction: 'from' | 'to') => void)
-  | null = null
+  ((quote: any, direction: 'from' | 'to') => void) | null = null
 export const onQuoteResponse = (
   cb: ((quote: any, direction: 'from' | 'to') => void) | null
 ): void => {

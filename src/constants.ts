@@ -10,11 +10,7 @@ export const COIN_ICON_URL =
   'https://raw.githubusercontent.com/kaleidoswap/coinmarketcap-icons-cryptos/refs/heads/main/icons/'
 
 export type BitcoinNetwork =
-  | 'Regtest'
-  | 'Testnet'
-  | 'Mainnet'
-  | 'Signet'
-  | 'SignetCustom'
+  'Regtest' | 'Testnet' | 'Mainnet' | 'Signet' | 'SignetCustom'
 
 const NETWORK_DISPLAY_NAMES: Record<string, string> = {
   SignetCustom: 'Mutinynet',

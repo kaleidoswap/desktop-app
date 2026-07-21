@@ -60,8 +60,7 @@ const getOrderDeliveryMetadata = (
   orderData?: Lsps1CreateOrderResponse
 ): OrderDeliveryMetadata =>
   (orderData as
-    | (Lsps1CreateOrderResponse & OrderDeliveryMetadata)
-    | undefined) || {}
+    (Lsps1CreateOrderResponse & OrderDeliveryMetadata) | undefined) || {}
 
 const getAvailableColumns = (t: any) => [
   {

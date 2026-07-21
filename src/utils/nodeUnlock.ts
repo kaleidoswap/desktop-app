@@ -4,10 +4,7 @@ export interface NodeInfoResponseLike {
 }
 
 export type UnlockNodeOutcome =
-  | 'already-unlocked'
-  | 'cancelled'
-  | 'needs-init'
-  | 'unlocked'
+  'already-unlocked' | 'cancelled' | 'needs-init' | 'unlocked'
 
 interface VerifyUnlockedNodeOptions {
   getNodeInfo: () => Promise<NodeInfoResponseLike>

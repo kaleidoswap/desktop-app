@@ -1,13 +1,7 @@
 import React, { ReactNode } from 'react'
 
 export type BadgeVariant =
-  | 'default'
-  | 'primary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'purple'
+  'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'purple'
 export type BadgeSize = 'sm' | 'md' | 'lg'
 
 interface BadgeProps {
