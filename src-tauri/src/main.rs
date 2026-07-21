@@ -957,7 +957,7 @@ async fn nwc_start_service(
     nwc: tauri::State<'_, Arc<NwcManager>>,
     state: tauri::State<'_, CurrentAccount>,
 ) -> Result<(), String> {
-    let (account_id, network, node_url) = {
+    let (account_id, network, node_url, proxy_endpoint) = {
         let current = state.0.read().unwrap();
         let account = current
             .as_ref()
@@ -966,6 +966,7 @@ async fn nwc_start_service(
             account.id,
             account.network.clone(),
             account.node_url.clone(),
+            account.proxy_endpoint.clone(),
         )
     };
 
@@ -973,6 +974,7 @@ async fn nwc_start_service(
         account_id,
         network,
         node_url,
+        proxy_endpoint,
         relays: Vec::new(),
     })
     .await

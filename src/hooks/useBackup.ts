@@ -78,7 +78,6 @@ export const useBackup = ({
         bitcoind_rpc_username: rpcConfig.username,
         indexer_url: nodeSettings.indexer_url,
         password,
-        proxy_endpoint: nodeSettings.proxy_endpoint,
       }).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
@@ -166,7 +165,6 @@ export const useBackup = ({
       bitcoind_rpc_username: rpcConfig.username,
       indexer_url: nodeSettings.indexer_url,
       password: data.nodePassword,
-      proxy_endpoint: nodeSettings.proxy_endpoint,
     }).unwrap()
     toast.success('Backup successful')
   }

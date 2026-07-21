@@ -1209,8 +1209,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
 
             // Check if recipient is witness type and provide witness_data
             let witnessData:
-              | { amount_sat: number; blinding?: number }
-              | undefined = undefined
+              { amount_sat: number; blinding?: number } | undefined = undefined
             if (decodedRgbInvoice.recipient_type === 'Witness') {
               // For witness recipients, we need to provide witness_data
               // The amount_sat is the Bitcoin amount (in sats) to send to the recipient
@@ -1230,6 +1229,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               decodedRgbInvoice.asset_id || pendingData.asset_id
             res = await sendRgb({
               donation: pendingData.donation || false,
+              expiration_timestamp: Math.floor(Date.now() / 1000) + 86400,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[
@@ -1256,6 +1256,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             }
             res = await sendRgb({
               donation: pendingData.donation || false,
+              expiration_timestamp: Math.floor(Date.now() / 1000) + 86400,
               fee_rate:
                 pendingData.fee_rate !== 'custom'
                   ? feeEstimations[

@@ -233,7 +233,6 @@ export const Component = () => {
             bitcoind_rpc_username: rpcConfig.username,
             indexer_url: nodeSettings.indexer_url,
             password: data.password,
-            proxy_endpoint: nodeSettings.proxy_endpoint,
           })
             .unwrap()
             .then(() => undefined),
