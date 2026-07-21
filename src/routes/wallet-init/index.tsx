@@ -110,12 +110,7 @@ interface NodeSetupFields {
 }
 
 type SetupStep =
-  | 'terms'
-  | 'setup'
-  | 'password'
-  | 'mnemonic'
-  | 'verify'
-  | 'unlock'
+  'terms' | 'setup' | 'password' | 'mnemonic' | 'verify' | 'unlock'
 
 export const Component = () => {
   const { t } = useTranslation()

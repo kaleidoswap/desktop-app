@@ -19,6 +19,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
+import { useAppSelector } from '../../../../app/store/hooks'
 import { useSettings } from '../../../../hooks/useSettings'
 import btcLogo from '../../../../assets/bitcoin-logo.svg'
 import lightningLogo from '../../../../assets/lightning-logo.svg'
@@ -74,6 +75,9 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
   const { t } = useTranslation()
 
   const { bitcoinUnit } = useSettings()
+  const transportEndpoint = useAppSelector(
+    (state) => state.nodeSettings.data.proxy_endpoint
+  )
   const [addressQuery] = nodeApi.useLazyAddressQuery()
   const [lnInvoice] = nodeApi.useLnInvoiceMutation()
   const [rgbInvoice] = nodeApi.useRgbInvoiceMutation()
@@ -445,6 +449,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
       if (assignment) {
         requestBody.assignment = assignment
+      }
+
+      if (transportEndpoint) {
+        requestBody.transport_endpoints = [transportEndpoint]
       }
 
       const res = await rgbInvoice(requestBody)

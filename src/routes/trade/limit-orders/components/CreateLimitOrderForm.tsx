@@ -104,8 +104,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
     )
     if (!pair) return { pair: null, side: null }
     const side = (getAssetId(pair.base) === fromAsset ? 'sell' : 'buy') as
-      | 'buy'
-      | 'sell'
+      'buy' | 'sell'
     return { pair, side }
   }, [activePairs, fromAsset, toAsset])
 

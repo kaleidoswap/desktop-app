@@ -175,6 +175,8 @@ export const Component = () => {
         return 'danger'
       case 'WaitingConfirmations':
       case 'WaitingCounterparty':
+      case 'WaitingSafeHeight':
+      case 'WaitingBroadcast':
         return 'warning'
       default:
         return 'default'

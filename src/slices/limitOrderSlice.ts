@@ -2,11 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 export type LimitOrderSide = 'buy' | 'sell'
 export type LimitOrderStatus =
-  | 'active'
-  | 'paused'
-  | 'filled'
-  | 'expired'
-  | 'cancelled'
+  'active' | 'paused' | 'filled' | 'expired' | 'cancelled'
 
 export interface LimitOrderExecution {
   id: string

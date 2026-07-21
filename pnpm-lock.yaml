@@ -66,8 +66,8 @@ importers:
         specifier: ^8.2.1
         version: 8.2.1
       kaleido-sdk:
-        specifier: ^0.1.13
-        version: 0.1.13(typescript@5.9.3)
+        specifier: ^0.1.15
+        version: 0.1.15(typescript@5.9.3)
       kaleido-ui:
         specifier: ^0.1.92
         version: 0.1.92(clsx@2.1.1)(react-dom@18.3.1(react@18.3.1))(react-native-svg@15.15.5(react-native@0.86.0(@babel/core@7.29.7)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1))(react-native@0.86.0(@babel/core@7.29.7)(@types/react@18.3.31)(react@18.3.1))(react@18.3.1)(tailwind-merge@1.14.0)
@@ -2816,8 +2816,8 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
-  kaleido-sdk@0.1.13:
-    resolution: {integrity: sha512-TfL4cj8OMx9ZnzXIbchIhGe5iExR3ztBunmY05TaYxroEF4t8YZpyT0eaRYQXkBojVvmj69bzk9pTaPCkQAp6A==}
+  kaleido-sdk@0.1.15:
+    resolution: {integrity: sha512-Nlypo6+rXq6DvPEbNou89wGuXcObkyvxo1tPCCLxfME9ytAa1//Z/hn2RyUMbPieS3jvUeMiJcb0ZfAiftN2ew==}
     engines: {node: '>=18.0.0'}
 
   kaleido-ui@0.1.92:
@@ -7275,7 +7275,7 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
-  kaleido-sdk@0.1.13(typescript@5.9.3):
+  kaleido-sdk@0.1.15(typescript@5.9.3):
     dependencies:
       nostr-tools: 2.23.9(typescript@5.9.3)
       openapi-fetch: 0.15.2

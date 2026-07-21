@@ -83,6 +83,8 @@ pub struct StartConfig {
     pub network: String,
     /// Base URL of the embedded RLN, e.g. `http://127.0.0.1:3001`.
     pub node_url: String,
+    /// The account's RGB proxy endpoint, advertised on RGB invoices.
+    pub proxy_endpoint: String,
     /// Relays the service connects to / advertises. Empty → [`DEFAULT_RELAYS`].
     pub relays: Vec<String>,
 }
@@ -94,6 +96,7 @@ struct ServiceCtx {
     client: Client,
     http: reqwest::Client,
     node_url: String,
+    proxy_endpoint: String,
     network: String,
     account_id: i32,
     app_handle: Option<AppHandle>,
@@ -206,6 +209,7 @@ impl NwcManager {
             client: client.clone(),
             http: reqwest::Client::new(),
             node_url: cfg.node_url,
+            proxy_endpoint: cfg.proxy_endpoint,
             network: cfg.network,
             account_id: cfg.account_id,
             app_handle: self.app_handle.lock().unwrap().clone(),
@@ -642,7 +646,21 @@ async fn dispatch_rln(
             rln_post::<serde_json::Value>(ctx, "/listassets", body).await
         }
         "rln_asset_balance" => rln_post::<serde_json::Value>(ctx, "/assetbalance", obj()).await,
-        "rln_rgb_invoice" => rln_post::<serde_json::Value>(ctx, "/rgbinvoice", obj()).await,
+        "rln_rgb_invoice" => {
+            // RLN requires expiration_timestamp + a non-empty transport_endpoints.
+            let mut body = obj();
+            if body.get("expiration_timestamp").is_none() {
+                let exp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs() + 3600)
+                    .unwrap_or(0);
+                body["expiration_timestamp"] = serde_json::json!(exp);
+            }
+            if body.get("transport_endpoints").is_none() && !ctx.proxy_endpoint.is_empty() {
+                body["transport_endpoints"] = serde_json::json!([ctx.proxy_endpoint]);
+            }
+            rln_post::<serde_json::Value>(ctx, "/rgbinvoice", body).await
+        }
         // Lightning invoice. /lninvoice accepts an optional `asset_id` + `asset_amount`
         // to mint an RGB-over-Lightning invoice (the client supplies amt_msat etc).
         "rln_ln_invoice" => rln_post::<serde_json::Value>(ctx, "/lninvoice", obj()).await,

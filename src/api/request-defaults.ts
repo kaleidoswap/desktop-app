@@ -23,10 +23,7 @@ export const DEFAULT_SKIP_SYNC = false
  * is no longer part of this union — sendRgb is sent without skip_sync.
  */
 export type SkipSyncRequest =
-  | SendBtcRequest
-  | CreateUtxosRequest
-  | RefreshRequest
-  | FailTransfersRequest
+  SendBtcRequest | CreateUtxosRequest | RefreshRequest | FailTransfersRequest
 
 /**
  * Ensure skip_sync is present in requests that require it

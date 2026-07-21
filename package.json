@@ -39,7 +39,7 @@
     "decimal.js": "^10.6.0",
     "i18next": "^25.10.10",
     "i18next-browser-languagedetector": "^8.2.1",
-    "kaleido-sdk": "^0.1.13",
+    "kaleido-sdk": "^0.1.15",
     "kaleido-ui": "^0.1.92",
     "lucide-react": "^0.575.0",
     "minidenticons": "^4.2.1",

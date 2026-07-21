@@ -63,8 +63,7 @@ import { transformSdkError } from './errors'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 export type ApiResult<T> =
-  | { data: T; error?: never }
-  | { data?: never; error: FetchBaseQueryError }
+  { data: T; error?: never } | { data?: never; error: FetchBaseQueryError }
 
 export type CreateUtxosInput = Omit<CreateUtxosRequest, 'skip_sync'>
 export type LNInvoiceInput = Omit<LNInvoiceRequest, 'expiry_sec'>
@@ -76,7 +75,10 @@ export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync' | 'filter'>>
 export type SendBtcInput = Omit<SendBtcRequest, 'skip_sync'>
 // SendRgbRequest no longer carries skip_sync as of kaleido-sdk 0.1.8.
 export type SendRgbInput = SendRgbRequest
-export type RgbInvoiceInput = Omit<RgbInvoiceRequest, 'min_confirmations'>
+export type RgbInvoiceInput = Omit<
+  RgbInvoiceRequest,
+  'min_confirmations' | 'expiration_timestamp'
+>
 
 export class NodeApiWrapper {
   constructor(private readonly client: RlnClient) {}
@@ -275,7 +277,11 @@ export class NodeApiWrapper {
     request: RgbInvoiceInput
   ): Promise<ApiResult<RgbInvoiceResponse>> {
     return this.execute(() =>
-      this.client.createRgbInvoice({ ...request, min_confirmations: 1 })
+      this.client.createRgbInvoice({
+        ...request,
+        expiration_timestamp: Math.floor(Date.now() / 1000) + 3600,
+        min_confirmations: 1,
+      })
     )
   }
 
