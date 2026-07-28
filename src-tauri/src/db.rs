@@ -804,6 +804,119 @@ pub fn add_nwc_spend(
     )
 }
 
+/// Identifies the budget window charged by an atomic NWC spend reservation.
+pub struct NwcSpendReservation {
+    client_pubkey: String,
+    amount_msat: i64,
+    budget_renews_at: Option<i64>,
+}
+
+/// Atomically check and reserve spend against a connection's current budget.
+///
+/// The immediate transaction ensures concurrent requests using separate SQLite
+/// connections cannot both observe the same `spent_msat` value. An unlimited
+/// connection still records the reservation, preserving existing spend
+/// accounting if a budget is configured later.
+pub fn reserve_nwc_spend(
+    client_pubkey: &str,
+    amount_msat: i64,
+    now: i64,
+) -> Result<Option<NwcSpendReservation>, rusqlite::Error> {
+    let mut conn = Connection::open(get_db_path())?;
+    reserve_nwc_spend_on(&mut conn, client_pubkey, amount_msat, now)
+}
+
+fn reserve_nwc_spend_on(
+    conn: &mut Connection,
+    client_pubkey: &str,
+    amount_msat: i64,
+    now: i64,
+) -> Result<Option<NwcSpendReservation>, rusqlite::Error> {
+    if amount_msat < 0 {
+        return Ok(None);
+    }
+
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let state: Option<(Option<i64>, i64, Option<i64>, bool)> = tx
+        .query_row(
+            "SELECT budget_msat, spent_msat, budget_renews_at, enabled
+             FROM NwcConnections
+             WHERE client_pubkey = ?1",
+            [client_pubkey],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get::<_, i64>(3)? != 0,
+                ))
+            },
+        )
+        .optional()?;
+    let Some((budget_msat, stored_spent_msat, budget_renews_at, true)) = state else {
+        return Ok(None);
+    };
+    let budget_expired = budget_renews_at.is_some_and(|renews_at| renews_at <= now);
+    let spent_msat = if budget_expired { 0 } else { stored_spent_msat };
+
+    if budget_msat.is_some_and(|budget| amount_msat > budget.saturating_sub(spent_msat)) {
+        return Ok(None);
+    }
+    let Some(reserved_msat) = spent_msat.checked_add(amount_msat) else {
+        return Ok(None);
+    };
+
+    let updated = tx.execute(
+        "UPDATE NwcConnections
+         SET spent_msat = ?1,
+             budget_renews_at = CASE WHEN ?2 THEN NULL ELSE budget_renews_at END,
+             last_used_at = ?3
+         WHERE client_pubkey = ?4 AND enabled = 1",
+        rusqlite::params![reserved_msat, budget_expired, now, client_pubkey],
+    )?;
+    if updated != 1 {
+        return Ok(None);
+    }
+    tx.commit()?;
+    Ok(Some(NwcSpendReservation {
+        client_pubkey: client_pubkey.to_string(),
+        amount_msat,
+        budget_renews_at: if budget_expired {
+            None
+        } else {
+            budget_renews_at
+        },
+    }))
+}
+
+/// Release a previously reserved spend after a definitively failed request.
+///
+/// The renewal marker ensures an old request cannot subtract a reservation
+/// from a newer budget window.
+pub fn release_nwc_spend(reservation: &NwcSpendReservation) -> Result<bool, rusqlite::Error> {
+    let conn = Connection::open(get_db_path())?;
+    release_nwc_spend_on(&conn, reservation)
+}
+
+fn release_nwc_spend_on(
+    conn: &Connection,
+    reservation: &NwcSpendReservation,
+) -> Result<bool, rusqlite::Error> {
+    let updated = conn.execute(
+        "UPDATE NwcConnections
+         SET spent_msat = spent_msat - ?1
+         WHERE client_pubkey = ?2
+           AND budget_renews_at IS ?3
+           AND spent_msat >= ?1",
+        rusqlite::params![
+            reservation.amount_msat,
+            reservation.client_pubkey,
+            reservation.budget_renews_at
+        ],
+    )?;
+    Ok(updated == 1)
+}
+
 /// Touch `last_used_at` without recording spend (non-payment requests).
 pub fn touch_nwc_connection(client_pubkey: &str, now: i64) -> Result<usize, rusqlite::Error> {
     let conn = Connection::open(get_db_path())?;
@@ -832,4 +945,133 @@ pub fn get_nwc_service_secret(account_id: i32) -> Result<Option<String>, rusqlit
 
 pub fn set_nwc_service_secret(account_id: i32, secret_hex: &str) -> Result<usize, rusqlite::Error> {
     set_app_setting(&format!("nwc_service_secret_{account_id}"), secret_hex)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Barrier};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn concurrent_rln_send_btc_requests_cannot_reserve_the_same_budget() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after the unix epoch")
+            .as_nanos();
+        let db_path = std::env::temp_dir().join(format!(
+            "kaleidoswap-nwc-budget-{}-{unique}.sqlite",
+            std::process::id()
+        ));
+        let setup = Connection::open(&db_path).expect("test database should open");
+        setup
+            .execute_batch(
+                "CREATE TABLE NwcConnections (
+                    client_pubkey TEXT PRIMARY KEY NOT NULL,
+                    budget_msat INTEGER,
+                    spent_msat INTEGER NOT NULL DEFAULT 0,
+                    budget_renews_at INTEGER,
+                    enabled INTEGER NOT NULL DEFAULT 1,
+                    last_used_at INTEGER
+                );
+                INSERT INTO NwcConnections
+                    (client_pubkey, budget_msat, spent_msat, budget_renews_at, enabled)
+                VALUES ('concurrent-client', 1000, 0, 200, 1);",
+            )
+            .expect("test connection should be inserted");
+        drop(setup);
+
+        let barrier = Arc::new(Barrier::new(2));
+        let sendbtc_calls = Arc::new(AtomicUsize::new(0));
+        let threads: Vec<_> = (0..2)
+            .map(|_| {
+                let barrier = Arc::clone(&barrier);
+                let sendbtc_calls = Arc::clone(&sendbtc_calls);
+                let db_path = db_path.clone();
+                std::thread::spawn(move || {
+                    let mut conn =
+                        Connection::open(db_path).expect("concurrent test database should open");
+                    barrier.wait();
+                    let reservation =
+                        reserve_nwc_spend_on(&mut conn, "concurrent-client", 1000, 123)
+                            .expect("reservation should not fail at the database layer");
+                    if reservation.is_some() {
+                        // `dispatch_rln` calls /sendbtc only after this gate.
+                        sendbtc_calls.fetch_add(1, Ordering::SeqCst);
+                    }
+                    reservation
+                })
+            })
+            .collect();
+        let attempts: Vec<_> = threads
+            .into_iter()
+            .map(|thread| thread.join().expect("reservation thread should not panic"))
+            .collect();
+
+        assert_eq!(
+            attempts
+                .iter()
+                .filter(|reservation| reservation.is_some())
+                .count(),
+            1,
+            "only one request may reserve the one-send budget"
+        );
+        assert_eq!(
+            sendbtc_calls.load(Ordering::SeqCst),
+            1,
+            "only the request with a durable reservation may call /sendbtc"
+        );
+
+        let verify = Connection::open(&db_path).expect("test database should reopen");
+        let spent_msat: i64 = verify
+            .query_row(
+                "SELECT spent_msat FROM NwcConnections WHERE client_pubkey = ?1",
+                ["concurrent-client"],
+                |row| row.get(0),
+            )
+            .expect("recorded spend should be readable");
+        assert_eq!(spent_msat, 1000);
+
+        let reservation = attempts
+            .into_iter()
+            .flatten()
+            .next()
+            .expect("one request should hold the reservation");
+        verify
+            .execute(
+                "UPDATE NwcConnections
+                 SET spent_msat = 1000, budget_renews_at = NULL
+                 WHERE client_pubkey = ?1",
+                ["concurrent-client"],
+            )
+            .expect("a new budget window should be simulated");
+        assert!(
+            !release_nwc_spend_on(&verify, &reservation)
+                .expect("old reservation reconciliation should query successfully"),
+            "an old request must not release spend from a newer budget window"
+        );
+        let current_window_spent_msat: i64 = verify
+            .query_row(
+                "SELECT spent_msat FROM NwcConnections WHERE client_pubkey = ?1",
+                ["concurrent-client"],
+                |row| row.get(0),
+            )
+            .expect("new-window spend should be readable");
+        assert_eq!(current_window_spent_msat, 1000);
+
+        let current_window_reservation = NwcSpendReservation {
+            client_pubkey: "concurrent-client".to_string(),
+            amount_msat: 1000,
+            budget_renews_at: None,
+        };
+        assert!(
+            release_nwc_spend_on(&verify, &current_window_reservation)
+                .expect("current reservation reconciliation should succeed"),
+            "a definitively failed request may release its own reservation"
+        );
+
+        drop(verify);
+        std::fs::remove_file(db_path).expect("test database should be removable");
+    }
 }

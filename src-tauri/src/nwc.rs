@@ -14,8 +14,8 @@
 //! the `nostr+walletconnect://` URI) which the service authorizes individually
 //! with per-connection method allowlists + spend budget.
 //!
-//! Scope (v1): BTC Lightning only — standard NIP-47 has no notion of RGB
-//! assets. RGB-asset support is a possible future `kaleido_*` extension.
+//! Standard NIP-47 covers BTC Lightning; the namespaced `rln_*` contract adds
+//! explicitly permissioned RGB, on-chain, and node operations.
 
 use nostr::nips::{nip04, nip44, nip47};
 use nostr::JsonUtil;
@@ -51,7 +51,7 @@ pub const SUPPORTED_METHODS: [&str; 7] = [
 /// NWC envelope/encryption/auth but expose RGB + node features beyond standard
 /// NIP-47. Each is a thin authenticated proxy to a fixed RLN endpoint; the
 /// client controls only the request body, never the path.
-pub const RLN_METHODS: [&str; 12] = [
+pub const RLN_METHODS: [&str; 21] = [
     "rln_node_info",
     "rln_list_assets",
     "rln_asset_balance",
@@ -63,7 +63,16 @@ pub const RLN_METHODS: [&str; 12] = [
     "rln_get_address",
     "rln_decode_ln_invoice",
     "rln_send_btc",
+    "rln_btc_balance",
+    "rln_list_transfers",
+    "rln_list_transactions",
     "rln_list_payments",
+    "rln_list_swaps",
+    "rln_invoice_status",
+    "rln_get_payment",
+    "rln_refresh_transfers",
+    "rln_list_unspents",
+    "rln_estimate_fee",
 ];
 
 /// How long to poll RLN for a payment preimage before giving up (seconds).
@@ -418,7 +427,7 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
             .get("params")
             .cloned()
             .unwrap_or(serde_json::Value::Null);
-        let result = dispatch_rln(&ctx, &method_str, params).await;
+        let result = dispatch_rln(&ctx, &connection, &method_str, params).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
         let _ = respond_json(&ctx, &event, &client_pubkey, &method_str, result, enc).await;
     } else {
@@ -618,9 +627,14 @@ async fn respond_json(
 /// per method; the client only controls the body.
 async fn dispatch_rln(
     ctx: &ServiceCtx,
+    connection: &db::NwcConnection,
     method: &str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, nip47::NIP47Error> {
+    if let Some(call) = verified_rln_call(method, &params)? {
+        return execute_verified_rln_call(ctx, call).await;
+    }
+
     let obj = || {
         if params.is_object() {
             params.clone()
@@ -631,12 +645,47 @@ async fn dispatch_rln(
     match method {
         "rln_node_info" => rln_get::<serde_json::Value>(ctx, "/nodeinfo").await,
         "rln_list_channels" => rln_get::<serde_json::Value>(ctx, "/listchannels").await,
-        "rln_list_payments" => rln_get::<serde_json::Value>(ctx, "/listpayments").await,
         "rln_get_address" => rln_post::<serde_json::Value>(ctx, "/address", obj()).await,
         "rln_decode_ln_invoice" => {
             rln_post::<serde_json::Value>(ctx, "/decodelninvoice", obj()).await
         }
-        "rln_send_btc" => rln_post::<serde_json::Value>(ctx, "/sendbtc", obj()).await,
+        "rln_send_btc" => {
+            let body = obj();
+            let amount_msat = authorize_custom_btc_spend(connection, &body)?;
+            let reservation =
+                db::reserve_nwc_spend(&connection.client_pubkey, amount_msat, now_secs()).map_err(
+                    |e| {
+                        err(
+                            nip47::ErrorCode::Internal,
+                            format!("Failed to reserve NWC spending budget: {e}"),
+                        )
+                    },
+                )?;
+            let Some(reservation) = reservation else {
+                return Err(err(
+                    nip47::ErrorCode::QuotaExceeded,
+                    "Payment exceeds the connection's spending budget",
+                ));
+            };
+
+            match rln_send_btc(ctx, body).await {
+                Ok(response) => Ok(response),
+                Err(failure) => {
+                    if failure.definitively_failed {
+                        match db::release_nwc_spend(&reservation) {
+                            Ok(true) => {}
+                            Ok(false) => log::warn!(
+                                "[NWC] could not release failed rln_send_btc budget reservation"
+                            ),
+                            Err(e) => log::warn!(
+                                "[NWC] failed to release rln_send_btc budget reservation: {e}"
+                            ),
+                        }
+                    }
+                    Err(failure.error)
+                }
+            }
+        }
         "rln_list_assets" => {
             // RLN requires `filter_asset_schemas`; default to all schemas.
             let mut body = obj();
@@ -668,11 +717,378 @@ async fn dispatch_rln(
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
         }
         "rln_send_asset" => rln_post::<serde_json::Value>(ctx, "/sendrgb", obj()).await,
+        // Anything not contract-locked above is explicitly unsupported.
         _ => Err(err(
             nip47::ErrorCode::NotImplemented,
             format!("Unknown method '{method}'"),
         )),
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RlnVerb {
+    Get,
+    Post,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RlnResponseSchema {
+    BtcBalance,
+    ArrayEnvelope(&'static str),
+    Swaps,
+    InvoiceStatus,
+    Payment,
+    ObjectEnvelope(&'static str),
+    FeeEstimate,
+}
+
+#[derive(Debug, PartialEq)]
+struct RlnCall {
+    verb: RlnVerb,
+    path: &'static str,
+    body: Option<serde_json::Value>,
+    response: RlnResponseSchema,
+}
+
+/// Build only calls whose RLN 0.8 verb, path, defaults, and response envelope
+/// have been verified against kaleidoswap/rgb-lightning-node v0.8.0
+/// (794214fb) and the installed kaleido-sdk 0.1.15.
+fn verified_rln_call(
+    method: &str,
+    params: &serde_json::Value,
+) -> Result<Option<RlnCall>, nip47::NIP47Error> {
+    let object_params = || {
+        if params.is_object() {
+            params.clone()
+        } else {
+            serde_json::json!({})
+        }
+    };
+
+    let call = match method {
+        "rln_btc_balance" => {
+            let mut body = object_params();
+            if body.get("skip_sync").is_none() {
+                body["skip_sync"] = serde_json::json!(false);
+            }
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/btcbalance",
+                body: Some(body),
+                response: RlnResponseSchema::BtcBalance,
+            }
+        }
+        "rln_list_transfers" => {
+            let body = object_params();
+            require_rln_string(&body, "asset_id", method)?;
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/listtransfers",
+                body: Some(body),
+                response: RlnResponseSchema::ArrayEnvelope("transfers"),
+            }
+        }
+        "rln_list_transactions" => {
+            let mut body = object_params();
+            if body.get("skip_sync").is_none() {
+                body["skip_sync"] = serde_json::json!(false);
+            }
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/listtransactions",
+                body: Some(body),
+                response: RlnResponseSchema::ArrayEnvelope("transactions"),
+            }
+        }
+        "rln_list_payments" => RlnCall {
+            verb: RlnVerb::Get,
+            path: "/listpayments",
+            body: None,
+            response: RlnResponseSchema::ArrayEnvelope("payments"),
+        },
+        "rln_list_swaps" => RlnCall {
+            verb: RlnVerb::Get,
+            path: "/listswaps",
+            body: None,
+            response: RlnResponseSchema::Swaps,
+        },
+        "rln_invoice_status" => {
+            let body = object_params();
+            require_rln_string(&body, "invoice", method)?;
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/invoicestatus",
+                body: Some(body),
+                response: RlnResponseSchema::InvoiceStatus,
+            }
+        }
+        "rln_get_payment" => {
+            let body = object_params();
+            require_rln_string(&body, "payment_hash", method)?;
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/getpayment",
+                body: Some(body),
+                response: RlnResponseSchema::Payment,
+            }
+        }
+        "rln_refresh_transfers" => {
+            let mut body = object_params();
+            if body.get("filter").is_none() {
+                body["filter"] = serde_json::json!([]);
+            }
+            if body.get("skip_sync").is_none() {
+                body["skip_sync"] = serde_json::json!(false);
+            }
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/refreshtransfers",
+                body: Some(body),
+                response: RlnResponseSchema::ObjectEnvelope("transfers"),
+            }
+        }
+        "rln_list_unspents" => {
+            let mut body = object_params();
+            if body.get("settled_only").is_none() {
+                body["settled_only"] = serde_json::json!(false);
+            }
+            if body.get("skip_sync").is_none() {
+                body["skip_sync"] = serde_json::json!(false);
+            }
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/listunspents",
+                body: Some(body),
+                response: RlnResponseSchema::ArrayEnvelope("unspents"),
+            }
+        }
+        "rln_estimate_fee" => {
+            let body = object_params();
+            let valid_blocks = body
+                .get("blocks")
+                .and_then(serde_json::Value::as_u64)
+                .is_some_and(|blocks| blocks <= u16::MAX as u64);
+            if !valid_blocks {
+                return Err(err(
+                    nip47::ErrorCode::Other,
+                    "Method 'rln_estimate_fee' requires an unsigned 16-bit 'blocks' value",
+                ));
+            }
+            RlnCall {
+                verb: RlnVerb::Post,
+                path: "/estimatefee",
+                body: Some(body),
+                response: RlnResponseSchema::FeeEstimate,
+            }
+        }
+        _ => return Ok(None),
+    };
+    Ok(Some(call))
+}
+
+async fn execute_verified_rln_call(
+    ctx: &ServiceCtx,
+    call: RlnCall,
+) -> Result<serde_json::Value, nip47::NIP47Error> {
+    let response = match (call.verb, call.body) {
+        (RlnVerb::Get, _) => rln_get::<serde_json::Value>(ctx, call.path).await?,
+        (RlnVerb::Post, Some(body)) => rln_post::<serde_json::Value>(ctx, call.path, body).await?,
+        (RlnVerb::Post, None) => {
+            return Err(err(
+                nip47::ErrorCode::Internal,
+                format!("RLN contract error: POST {} has no body", call.path),
+            ))
+        }
+    };
+    validate_rln_response(call.response, &response)?;
+    Ok(response)
+}
+
+fn invalid_rln_response(message: impl Into<String>) -> nip47::NIP47Error {
+    err(
+        nip47::ErrorCode::Internal,
+        format!("RLN response violated its v0.8 schema: {}", message.into()),
+    )
+}
+
+fn require_rln_string(
+    body: &serde_json::Value,
+    field: &str,
+    method: &str,
+) -> Result<(), nip47::NIP47Error> {
+    match body.get(field).and_then(serde_json::Value::as_str) {
+        Some(value) if !value.is_empty() => Ok(()),
+        _ => Err(err(
+            nip47::ErrorCode::Other,
+            format!("Method '{method}' requires a non-empty '{field}' string"),
+        )),
+    }
+}
+
+fn validate_rln_response(
+    schema: RlnResponseSchema,
+    response: &serde_json::Value,
+) -> Result<(), nip47::NIP47Error> {
+    let root = response
+        .as_object()
+        .ok_or_else(|| invalid_rln_response("expected an object"))?;
+
+    match schema {
+        RlnResponseSchema::BtcBalance => {
+            for wallet_name in ["vanilla", "colored"] {
+                let wallet = root
+                    .get(wallet_name)
+                    .and_then(serde_json::Value::as_object)
+                    .ok_or_else(|| {
+                        invalid_rln_response(format!("'{wallet_name}' must be an object"))
+                    })?;
+                for balance_name in ["settled", "future", "spendable"] {
+                    if wallet
+                        .get(balance_name)
+                        .and_then(serde_json::Value::as_u64)
+                        .is_none()
+                    {
+                        return Err(invalid_rln_response(format!(
+                            "'{wallet_name}.{balance_name}' must be an unsigned integer"
+                        )));
+                    }
+                }
+            }
+        }
+        RlnResponseSchema::ArrayEnvelope(field) => {
+            if root
+                .get(field)
+                .and_then(serde_json::Value::as_array)
+                .is_none()
+            {
+                return Err(invalid_rln_response(format!("'{field}' must be an array")));
+            }
+        }
+        RlnResponseSchema::Swaps => {
+            for field in ["maker", "taker"] {
+                if root
+                    .get(field)
+                    .and_then(serde_json::Value::as_array)
+                    .is_none()
+                {
+                    return Err(invalid_rln_response(format!("'{field}' must be an array")));
+                }
+            }
+        }
+        RlnResponseSchema::InvoiceStatus => {
+            let status = root
+                .get("status")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| invalid_rln_response("'status' must be a string"))?;
+            if !["Pending", "Succeeded", "Failed", "Expired"].contains(&status) {
+                return Err(invalid_rln_response(format!(
+                    "unknown invoice status '{status}'"
+                )));
+            }
+        }
+        RlnResponseSchema::Payment => {
+            let payment = root
+                .get("payment")
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| invalid_rln_response("'payment' must be an object"))?;
+
+            for nullable_field in ["amt_msat", "asset_amount", "asset_id", "preimage"] {
+                if !payment.contains_key(nullable_field) {
+                    return Err(invalid_rln_response(format!(
+                        "'payment.{nullable_field}' is required"
+                    )));
+                }
+            }
+            for string_field in ["payment_hash", "payee_pubkey"] {
+                if payment
+                    .get(string_field)
+                    .and_then(serde_json::Value::as_str)
+                    .is_none()
+                {
+                    return Err(invalid_rln_response(format!(
+                        "'payment.{string_field}' must be a string"
+                    )));
+                }
+            }
+            if payment
+                .get("inbound")
+                .and_then(serde_json::Value::as_bool)
+                .is_none()
+            {
+                return Err(invalid_rln_response("'payment.inbound' must be a boolean"));
+            }
+            for timestamp_field in ["created_at", "updated_at"] {
+                if payment
+                    .get(timestamp_field)
+                    .and_then(serde_json::Value::as_u64)
+                    .is_none()
+                {
+                    return Err(invalid_rln_response(format!(
+                        "'payment.{timestamp_field}' must be an unsigned integer"
+                    )));
+                }
+            }
+            let status = payment
+                .get("status")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| invalid_rln_response("'payment.status' must be a string"))?;
+            if !["Pending", "Succeeded", "Failed"].contains(&status) {
+                return Err(invalid_rln_response(format!(
+                    "unknown payment status '{status}'"
+                )));
+            }
+        }
+        RlnResponseSchema::ObjectEnvelope(field) => {
+            if root
+                .get(field)
+                .and_then(serde_json::Value::as_object)
+                .is_none()
+            {
+                return Err(invalid_rln_response(format!("'{field}' must be an object")));
+            }
+        }
+        RlnResponseSchema::FeeEstimate => {
+            if root
+                .get("fee_rate")
+                .and_then(serde_json::Value::as_f64)
+                .is_none()
+            {
+                return Err(invalid_rln_response("'fee_rate' must be a number"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Validate and normalize an RLN on-chain BTC spend for NWC budget accounting.
+///
+/// RLN's `/sendbtc` amount is denominated in sats while the connection budget
+/// is stored in millisatoshis. A budgeted request with an absent or invalid
+/// amount is denied instead of being forwarded without accounting. The actual
+/// budget check is performed by the atomic database reservation.
+fn authorize_custom_btc_spend(
+    connection: &db::NwcConnection,
+    body: &serde_json::Value,
+) -> Result<i64, nip47::NIP47Error> {
+    let invalid_amount = || {
+        let code = if connection.budget_msat.is_some() {
+            nip47::ErrorCode::QuotaExceeded
+        } else {
+            nip47::ErrorCode::Other
+        };
+        err(
+            code,
+            "Cannot account for rln_send_btc: a valid sat amount is required",
+        )
+    };
+    let amount_sat = body
+        .get("amount")
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(invalid_amount)?;
+    let amount_msat = amount_sat.checked_mul(1000).ok_or_else(invalid_amount)?;
+    let recorded_msat = i64::try_from(amount_msat).map_err(|_| invalid_amount())?;
+
+    Ok(recorded_msat)
 }
 
 // ---------------------------------------------------------------------------
@@ -702,6 +1118,60 @@ async fn rln_post<T: DeserializeOwned>(
     resp.json::<T>()
         .await
         .map_err(|e| err(nip47::ErrorCode::Internal, format!("RLN decode error: {e}")))
+}
+
+struct RlnSendBtcFailure {
+    error: nip47::NIP47Error,
+    definitively_failed: bool,
+}
+
+fn is_definitive_send_btc_http_failure(status: reqwest::StatusCode) -> bool {
+    status.is_client_error() && status != reqwest::StatusCode::REQUEST_TIMEOUT
+}
+
+/// Send an on-chain payment while distinguishing failures that prove the node
+/// rejected the request from outcomes where it may already have broadcast.
+///
+/// Connection/build failures and explicit client-error rejections are
+/// definitive. Timeouts (including HTTP 408), interrupted request/response
+/// bodies, 5xx responses, and invalid success bodies are ambiguous, so their
+/// budget reservations remain charged.
+async fn rln_send_btc(
+    ctx: &ServiceCtx,
+    body: serde_json::Value,
+) -> Result<serde_json::Value, RlnSendBtcFailure> {
+    let path = "/sendbtc";
+    let url = format!("{}{}", ctx.node_url, path);
+    let resp = ctx.http.post(&url).json(&body).send().await.map_err(|e| {
+        let definitively_failed = e.is_builder() || e.is_connect();
+        RlnSendBtcFailure {
+            error: err(
+                nip47::ErrorCode::Internal,
+                format!("RLN request failed: {e}"),
+            ),
+            definitively_failed,
+        }
+    })?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let definitively_failed = is_definitive_send_btc_http_failure(status);
+        let text = resp.text().await.unwrap_or_default();
+        return Err(RlnSendBtcFailure {
+            error: err(
+                nip47::ErrorCode::Internal,
+                format!("RLN {path} returned {status}: {text}"),
+            ),
+            definitively_failed,
+        });
+    }
+
+    resp.json::<serde_json::Value>()
+        .await
+        .map_err(|e| RlnSendBtcFailure {
+            error: err(nip47::ErrorCode::Internal, format!("RLN decode error: {e}")),
+            definitively_failed: false,
+        })
 }
 
 async fn rln_get<T: DeserializeOwned>(
@@ -1082,4 +1552,256 @@ async fn rln_list_transactions(
         items.truncate(limit as usize);
     }
     Ok(items)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn connection_with_budget(budget_msat: Option<i64>, spent_msat: i64) -> db::NwcConnection {
+        db::NwcConnection {
+            id: 1,
+            account_id: 1,
+            name: "test".to_string(),
+            client_pubkey: "client".to_string(),
+            client_secret: "secret".to_string(),
+            relays_json: "[]".to_string(),
+            methods_json: "[]".to_string(),
+            budget_msat,
+            spent_msat,
+            budget_renews_at: None,
+            enabled: true,
+            created_at: 0,
+            last_used_at: None,
+        }
+    }
+
+    #[test]
+    fn custom_btc_spend_defers_budget_check_to_atomic_reservation() {
+        let connection = connection_with_budget(Some(1_500), 500);
+
+        let amount_msat =
+            authorize_custom_btc_spend(&connection, &serde_json::json!({ "amount": 2 }))
+                .expect("the stale connection snapshot must not make the quota decision");
+
+        assert_eq!(amount_msat, 2_000);
+    }
+
+    #[test]
+    fn budgeted_custom_btc_spend_cannot_omit_its_amount() {
+        let connection = connection_with_budget(Some(1_000), 0);
+
+        let error = authorize_custom_btc_spend(&connection, &serde_json::json!({}))
+            .expect_err("a missing amount must not bypass budget accounting");
+
+        assert_eq!(error.code, nip47::ErrorCode::QuotaExceeded);
+    }
+
+    #[test]
+    fn custom_btc_spend_rejects_msat_conversion_overflow() {
+        let connection = connection_with_budget(None, 0);
+
+        let error =
+            authorize_custom_btc_spend(&connection, &serde_json::json!({ "amount": u64::MAX }))
+                .expect_err("sats-to-msats conversion must not wrap");
+
+        assert_eq!(error.code, nip47::ErrorCode::Other);
+    }
+
+    #[test]
+    fn send_btc_failure_classification_is_conservative() {
+        assert!(is_definitive_send_btc_http_failure(
+            reqwest::StatusCode::BAD_REQUEST
+        ));
+        assert!(!is_definitive_send_btc_http_failure(
+            reqwest::StatusCode::REQUEST_TIMEOUT
+        ));
+        assert!(!is_definitive_send_btc_http_failure(
+            reqwest::StatusCode::INTERNAL_SERVER_ERROR
+        ));
+    }
+
+    #[test]
+    fn rln_btc_balance_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_btc_balance", &serde_json::json!({}))
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/btcbalance");
+        assert_eq!(call.body, Some(serde_json::json!({ "skip_sync": false })));
+        assert!(validate_rln_response(
+            call.response,
+            &serde_json::json!({
+                "vanilla": { "settled": 1, "future": 2, "spendable": 3 },
+                "colored": { "settled": 4, "future": 5, "spendable": 6 }
+            })
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn rln_list_transfers_uses_verified_rln_0_8_contract() {
+        let body = serde_json::json!({ "asset_id": "rgb:asset" });
+        let call = verified_rln_call("rln_list_transfers", &body)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/listtransfers");
+        assert_eq!(call.body, Some(body));
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "transfers": [] })).is_ok()
+        );
+        assert!(verified_rln_call("rln_list_transfers", &serde_json::json!({})).is_err());
+    }
+
+    #[test]
+    fn rln_list_transactions_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_list_transactions", &serde_json::json!({}))
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/listtransactions");
+        assert_eq!(call.body, Some(serde_json::json!({ "skip_sync": false })));
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "transactions": [] }))
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn rln_list_payments_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_list_payments", &serde_json::Value::Null)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Get);
+        assert_eq!(call.path, "/listpayments");
+        assert_eq!(call.body, None);
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "payments": [] })).is_ok()
+        );
+    }
+
+    #[test]
+    fn rln_list_swaps_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_list_swaps", &serde_json::Value::Null)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Get);
+        assert_eq!(call.path, "/listswaps");
+        assert_eq!(call.body, None);
+        assert!(validate_rln_response(
+            call.response,
+            &serde_json::json!({ "maker": [], "taker": [] })
+        )
+        .is_ok());
+        assert!(validate_rln_response(call.response, &serde_json::json!({ "swaps": [] })).is_err());
+    }
+
+    #[test]
+    fn rln_invoice_status_uses_verified_rln_0_8_contract() {
+        let body = serde_json::json!({ "invoice": "lnbc1invoice" });
+        let call = verified_rln_call("rln_invoice_status", &body)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/invoicestatus");
+        assert_eq!(call.body, Some(body));
+        for status in ["Pending", "Succeeded", "Failed", "Expired"] {
+            assert!(
+                validate_rln_response(call.response, &serde_json::json!({ "status": status }))
+                    .is_ok()
+            );
+        }
+        assert!(verified_rln_call("rln_invoice_status", &serde_json::json!({})).is_err());
+    }
+
+    #[test]
+    fn rln_get_payment_uses_verified_rln_0_8_contract() {
+        let body = serde_json::json!({ "payment_hash": "00".repeat(32) });
+        let call = verified_rln_call("rln_get_payment", &body)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/getpayment");
+        assert_eq!(call.body, Some(body));
+        assert!(validate_rln_response(
+            call.response,
+            &serde_json::json!({
+                "payment": {
+                    "amt_msat": 1000,
+                    "asset_amount": null,
+                    "asset_id": null,
+                    "payment_hash": "00".repeat(32),
+                    "inbound": false,
+                    "status": "Succeeded",
+                    "created_at": 1,
+                    "updated_at": 2,
+                    "payee_pubkey": "02".repeat(33),
+                    "preimage": null
+                }
+            })
+        )
+        .is_ok());
+        assert!(verified_rln_call("rln_get_payment", &serde_json::json!({})).is_err());
+    }
+
+    #[test]
+    fn rln_refresh_transfers_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_refresh_transfers", &serde_json::json!({}))
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/refreshtransfers");
+        assert_eq!(
+            call.body,
+            Some(serde_json::json!({ "filter": [], "skip_sync": false }))
+        );
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "transfers": {} })).is_ok()
+        );
+    }
+
+    #[test]
+    fn rln_list_unspents_uses_verified_rln_0_8_contract() {
+        let call = verified_rln_call("rln_list_unspents", &serde_json::json!({}))
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/listunspents");
+        assert_eq!(
+            call.body,
+            Some(serde_json::json!({
+                "settled_only": false,
+                "skip_sync": false
+            }))
+        );
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "unspents": [] })).is_ok()
+        );
+    }
+
+    #[test]
+    fn rln_estimate_fee_uses_verified_rln_0_8_contract() {
+        let body = serde_json::json!({ "blocks": 6 });
+        let call = verified_rln_call("rln_estimate_fee", &body)
+            .expect("route preparation should succeed")
+            .expect("route should be implemented");
+
+        assert_eq!(call.verb, RlnVerb::Post);
+        assert_eq!(call.path, "/estimatefee");
+        assert_eq!(call.body, Some(body));
+        assert!(
+            validate_rln_response(call.response, &serde_json::json!({ "fee_rate": 1.5 })).is_ok()
+        );
+        assert!(verified_rln_call("rln_estimate_fee", &serde_json::json!({})).is_err());
+    }
 }

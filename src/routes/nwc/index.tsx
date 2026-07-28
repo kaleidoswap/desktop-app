@@ -35,11 +35,22 @@ interface NwcActivity {
 }
 
 /** All methods the Rust service implements. */
-const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
+const ALL_METHODS: {
+  id: string
+  label: string
+  payment: boolean
+  unlimitedAsset?: boolean
+  write?: boolean
+}[] = [
   // Standard NIP-47 (Bitcoin Lightning)
   { id: 'get_info', label: 'Get node info', payment: false },
   { id: 'get_balance', label: 'Get balance', payment: false },
-  { id: 'make_invoice', label: 'Create invoices', payment: false },
+  {
+    id: 'make_invoice',
+    label: 'Create invoices',
+    payment: false,
+    write: true,
+  },
   { id: 'lookup_invoice', label: 'Look up invoices', payment: false },
   { id: 'list_transactions', label: 'List transactions', payment: false },
   { id: 'pay_invoice', label: 'Pay invoices', payment: true },
@@ -48,41 +59,90 @@ const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
   { id: 'rln_node_info', label: 'RLN node info', payment: false },
   { id: 'rln_list_assets', label: 'List RGB assets', payment: false },
   { id: 'rln_asset_balance', label: 'RGB asset balance', payment: false },
-  { id: 'rln_rgb_invoice', label: 'Create RGB invoices', payment: false },
+  {
+    id: 'rln_rgb_invoice',
+    label: 'Create RGB invoices',
+    payment: false,
+    write: true,
+  },
   {
     id: 'rln_ln_invoice',
     label: 'Create RGB Lightning invoices',
     payment: false,
+    write: true,
   },
   {
     id: 'rln_decode_rgb_invoice',
     label: 'Decode RGB invoices',
     payment: false,
   },
-  { id: 'rln_send_asset', label: 'Send RGB assets', payment: true },
+  {
+    id: 'rln_send_asset',
+    label: 'Send RGB assets (unlimited asset quantity)',
+    payment: true,
+    unlimitedAsset: true,
+    // This permission is intentionally explicit: a sats budget does not cap asset quantity.
+  },
   { id: 'rln_list_channels', label: 'List channels', payment: false },
-  { id: 'rln_get_address', label: 'Get on-chain address', payment: false },
+  {
+    id: 'rln_get_address',
+    label: 'Create on-chain address',
+    payment: false,
+    write: true,
+  },
+  {
+    id: 'rln_decode_ln_invoice',
+    label: 'Decode Lightning invoices',
+    payment: false,
+  },
+  { id: 'rln_send_btc', label: 'Send on-chain BTC', payment: true },
+  { id: 'rln_btc_balance', label: 'BTC wallet balances', payment: false },
+  { id: 'rln_list_transfers', label: 'List RGB transfers', payment: false },
+  {
+    id: 'rln_list_transactions',
+    label: 'List on-chain transactions',
+    payment: false,
+  },
+  {
+    id: 'rln_list_payments',
+    label: 'List Lightning payments',
+    payment: false,
+  },
+  { id: 'rln_list_swaps', label: 'List swaps', payment: false },
+  { id: 'rln_invoice_status', label: 'Get invoice status', payment: false },
+  { id: 'rln_get_payment', label: 'Get Lightning payment', payment: false },
+  {
+    id: 'rln_refresh_transfers',
+    label: 'Refresh RGB transfers',
+    payment: false,
+    write: true,
+  },
+  { id: 'rln_list_unspents', label: 'List unspents', payment: false },
+  { id: 'rln_estimate_fee', label: 'Estimate on-chain fees', payment: false },
 ]
 
 const DEFAULT_METHODS = [
   'get_info',
   'get_balance',
-  'make_invoice',
   'lookup_invoice',
   'list_transactions',
-  'pay_invoice',
-  // RGB extensions — enabled by default so wallets (e.g. rate) can detect the
-  // node as an RGB Lightning Node and list/transact assets without the user
-  // having to hand-pick these.
+  // Safe RLN reads are enabled by default. State changes and every spend remain
+  // explicit permissions selected by the user.
   'rln_node_info',
   'rln_list_assets',
   'rln_asset_balance',
-  'rln_rgb_invoice',
-  'rln_ln_invoice',
   'rln_decode_rgb_invoice',
-  'rln_send_asset',
   'rln_list_channels',
-  'rln_get_address',
+  'rln_decode_ln_invoice',
+  'rln_btc_balance',
+  'rln_list_transfers',
+  'rln_list_transactions',
+  'rln_list_payments',
+  'rln_list_swaps',
+  'rln_invoice_status',
+  'rln_get_payment',
+  'rln_list_unspents',
+  'rln_estimate_fee',
 ]
 
 const SATS_PER_BTC = 100_000_000
@@ -326,8 +386,7 @@ export const Component = () => {
             </div>
           </div>
           <p className="text-content-tertiary">
-            Scope: Bitcoin Lightning only. RGB-asset support over NWC is not yet
-            available.
+            Scope: Bitcoin and explicitly permissioned RGB/node operations.
           </p>
         </div>
       </Card>
@@ -474,10 +533,23 @@ export const Component = () => {
                     type="checkbox"
                   />
                   <span>{m.label}</span>
-                  {m.payment && (
+                  {m.unlimitedAsset ? (
                     <Badge size="sm" variant="warning">
-                      spends funds
+                      unlimited asset spend
                     </Badge>
+                  ) : m.payment ? (
+                    <Badge size="sm" variant="warning">
+                      spends sats
+                    </Badge>
+                  ) : m.write ? (
+                    <Badge size="sm" variant="warning">
+                      changes wallet
+                    </Badge>
+                  ) : null}
+                  {m.unlimitedAsset && (
+                    <span className="text-xs text-content-tertiary">
+                      sats budget does not cap asset quantity
+                    </span>
                   )}
                 </label>
               ))}
@@ -495,11 +567,12 @@ export const Component = () => {
               value={budgetSats}
             />
             <p className="text-xs text-content-tertiary mt-1">
-              Caps total outgoing payments for this connection
+              Caps BTC-denominated outgoing payments for this connection
               {budgetSats && Number(budgetSats) > 0
                 ? ` (${(Number(budgetSats) / SATS_PER_BTC).toFixed(8)} BTC)`
                 : ''}
-              .
+              . RGB asset quantity is unlimited when its separate permission is
+              enabled.
             </p>
           </div>
 
