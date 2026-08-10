@@ -1148,9 +1148,7 @@
     "unknownTestError": "An unknown error occurred while testing the connection.",
     "unknownConnectionError": "An unknown error occurred while connecting to the node.",
     "unexpectedError": "Unexpected error",
-    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (Bitfinex regtest)",
     "regtestTypeLocal": "local",
-    "regtestTypeBitfinex": "Bitfinex",
     "connectionFailed": "Connection failed"
   },
   "deposits": {
