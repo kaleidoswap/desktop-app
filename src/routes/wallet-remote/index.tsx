@@ -93,17 +93,17 @@ export const Component = () => {
     defaultValues: {
       authToken: '',
       daemon_listening_port:
-        NETWORK_DEFAULTS.BitfinexRegtest.daemon_listening_port,
-      indexer_url: NETWORK_DEFAULTS.BitfinexRegtest.indexer_url,
+        NETWORK_DEFAULTS.SignetCustom.daemon_listening_port,
+      indexer_url: NETWORK_DEFAULTS.SignetCustom.indexer_url,
       ldk_peer_listening_port:
-        NETWORK_DEFAULTS.BitfinexRegtest.ldk_peer_listening_port,
+        NETWORK_DEFAULTS.SignetCustom.ldk_peer_listening_port,
       name: t('walletRemote.accountNamePlaceholder'),
-      network: 'Regtest',
-      node_url: `http://localhost:${NETWORK_DEFAULTS.BitfinexRegtest.daemon_listening_port}`,
+      network: 'SignetCustom',
+      node_url: `http://localhost:${NETWORK_DEFAULTS.SignetCustom.daemon_listening_port}`,
       password: t('walletRemote.passwordPlaceholder'),
-      proxy_endpoint: NETWORK_DEFAULTS.BitfinexRegtest.proxy_endpoint,
-      regtestConnectionType: 'bitfinex',
-      rpc_connection_url: NETWORK_DEFAULTS.BitfinexRegtest.rpc_connection_url,
+      proxy_endpoint: NETWORK_DEFAULTS.SignetCustom.proxy_endpoint,
+      regtestConnectionType: 'docker',
+      rpc_connection_url: NETWORK_DEFAULTS.SignetCustom.rpc_connection_url,
       useAuth: false,
     },
   })
@@ -119,13 +119,10 @@ export const Component = () => {
 
         // Handle regtest connection type selection
         if (value.network === 'Regtest' && value.regtestConnectionType) {
-          if (value.regtestConnectionType === 'local') {
-            networkKey = 'LocalRegtest'
-          } else if (value.regtestConnectionType === 'docker') {
-            networkKey = 'LocalDockerRegtest'
-          } else {
-            networkKey = 'BitfinexRegtest'
-          }
+          networkKey =
+            value.regtestConnectionType === 'local'
+              ? 'LocalRegtest'
+              : 'LocalDockerRegtest'
         }
 
         const defaults = NETWORK_DEFAULTS[networkKey]
@@ -161,7 +158,7 @@ export const Component = () => {
 
     if (currentNetwork === 'Regtest' && currentRegtestType) {
       const networkKey =
-        currentRegtestType === 'local' ? 'LocalRegtest' : 'BitfinexRegtest'
+        currentRegtestType === 'local' ? 'LocalRegtest' : 'LocalDockerRegtest'
       const defaults = NETWORK_DEFAULTS[networkKey]
 
       if (defaults) {
@@ -525,13 +522,10 @@ export const Component = () => {
 
       // Handle regtest connection type selection
       if (data.network === 'Regtest' && data.regtestConnectionType) {
-        if (data.regtestConnectionType === 'local') {
-          networkKey = 'LocalRegtest'
-        } else if (data.regtestConnectionType === 'docker') {
-          networkKey = 'LocalDockerRegtest'
-        } else {
-          networkKey = 'BitfinexRegtest'
-        }
+        networkKey =
+          data.regtestConnectionType === 'local'
+            ? 'LocalRegtest'
+            : 'LocalDockerRegtest'
       }
 
       const networkDefaults = NETWORK_DEFAULTS[networkKey]
@@ -605,22 +599,15 @@ export const Component = () => {
 
   const selectedNetwork = form.watch('network')
   const regtestConnectionType = form.watch('regtestConnectionType')
-  // Both 'local' and 'docker' target a localhost node; only 'bitfinex' is remote.
-  const isLocalRegtest =
-    regtestConnectionType === 'local' || regtestConnectionType === 'docker'
   const nodeUrlDescription =
     selectedNetwork === 'Regtest'
       ? t('walletRemote.nodeUrlDescriptionRegtest', {
-          type: isLocalRegtest
-            ? t('walletRemote.regtestTypeLocal')
-            : t('walletRemote.regtestTypeBitfinex'),
+          type: t('walletRemote.regtestTypeLocal'),
         })
       : t('walletRemote.nodeUrlDescription')
   const nodeUrlPlaceholder =
     selectedNetwork === 'Regtest'
-      ? isLocalRegtest
-        ? t('walletRemote.nodeUrlPlaceholderRegtest')
-        : t('walletRemote.nodeUrlPlaceholderBitfinex')
+      ? t('walletRemote.nodeUrlPlaceholderRegtest')
       : t('walletRemote.nodeUrlPlaceholder')
 
   return (

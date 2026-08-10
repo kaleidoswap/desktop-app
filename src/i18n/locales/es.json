@@ -1237,9 +1237,7 @@
     "unknownTestError": "Ocurrió un error desconocido al probar la conexión.",
     "unknownConnectionError": "Ocurrió un error desconocido al conectar al nodo.",
     "unexpectedError": "Error inesperado",
-    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (regtest de Bitfinex)",
     "regtestTypeLocal": "local",
-    "regtestTypeBitfinex": "Bitfinex",
     "connectionFailed": "Conexión fallida"
   },
   "mnemonicViewer": {

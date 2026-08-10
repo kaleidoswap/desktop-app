@@ -1,4 +1,4 @@
-import { Info, Server, Globe, Check, Container } from 'lucide-react'
+import { Info, Server, Check, Container } from 'lucide-react'
 import { useState } from 'react'
 
 import { RegtestConnectionType } from '../../constants'
@@ -31,34 +31,9 @@ interface ConnectionOption {
 
 const connectionOptions: ConnectionOption[] = [
   {
-    badge: 'Recommended',
-    badgeVariant: 'info',
-    description:
-      'Connect to the shared Bitfinex regtest infrastructure (Recommended)',
-    details: [
-      'Uses electrum.rgbtools.org:50041',
-      'Connects to regtest-bitcoind.rgbtools.org:80',
-      'Shared infrastructure, no setup required',
-      'Ready to use out of the box',
-    ],
-    icon: <Globe className="w-5 h-5" />,
-    selectedColor: {
-      bg: 'bg-primary/10',
-      border: 'border-primary',
-      checkBg: 'bg-primary',
-      iconBg: 'bg-primary/20',
-      iconText: 'text-primary',
-      shadow: 'shadow-[0_0_10px_rgba(21,233,154,0.15)]',
-      titleText: 'text-primary',
-    },
-    title: 'Remote (Bitfinex Regtest)',
-    type: 'bitfinex',
-  },
-  {
     badge: 'Docker',
     badgeVariant: 'purple',
-    description:
-      'Connect to a node started by the kaleidoswap-maker Docker stack',
+    description: 'Connect to a node started by the maker Docker stack',
     details: [
       'Node on localhost:3001',
       'Backends via docker hostnames (bitcoind / esplora)',
@@ -208,8 +183,9 @@ export const RegtestConnectionSelector = ({
       <div className="mt-4 flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
         <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
         <p className="text-xs text-blue-300">
-          Remote (Bitfinex Regtest) is ready to use immediately. Choose Local
-          Regtest only if you're running your own regtest infrastructure.
+          Local Docker Regtest works out of the box with the maker Docker stack.
+          Choose Local Regtest only if you're running your own regtest
+          infrastructure.
         </p>
       </div>
     </div>

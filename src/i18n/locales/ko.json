@@ -1145,9 +1145,7 @@
     "unknownTestError": "연결 테스트 중 알 수 없는 오류가 발생했습니다.",
     "unknownConnectionError": "노드에 연결하는 중 알 수 없는 오류가 발생했습니다.",
     "unexpectedError": "예기치 않은 오류",
-    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (Bitfinex regtest)",
     "regtestTypeLocal": "로컬",
-    "regtestTypeBitfinex": "Bitfinex",
     "connectionFailed": "연결 실패"
   },
   "deposits": {
