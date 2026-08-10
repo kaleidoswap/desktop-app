@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
-import { parseRpcUrl } from '../helpers/utils'
+import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../helpers/unlock'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
 
 interface BackupFormFields {
@@ -68,17 +68,13 @@ export const useBackup = ({
 
   const attemptUnlock = async (password: string) => {
     try {
-      const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
-      await unlock({
-        announce_addresses: [],
-        announce_alias: 'kaleidoswap-desktop',
-        bitcoind_rpc_host: rpcConfig.host,
-        bitcoind_rpc_password: rpcConfig.password,
-        bitcoind_rpc_port: rpcConfig.port,
-        bitcoind_rpc_username: rpcConfig.username,
-        indexer_url: nodeSettings.indexer_url,
-        password,
-      }).unwrap()
+      await unlock(
+        buildUnlockRequest({
+          announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+          nodeSettings,
+          password,
+        })
+      ).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
       console.error('Unlock attempt failed:', err)
@@ -155,17 +151,13 @@ export const useBackup = ({
   }
 
   const handleSuccessfulBackup = async (data: BackupFormFields) => {
-    const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
-    await unlock({
-      announce_addresses: [],
-      announce_alias: 'kaleidoswap-desktop',
-      bitcoind_rpc_host: rpcConfig.host,
-      bitcoind_rpc_password: rpcConfig.password,
-      bitcoind_rpc_port: rpcConfig.port,
-      bitcoind_rpc_username: rpcConfig.username,
-      indexer_url: nodeSettings.indexer_url,
-      password: data.nodePassword,
-    }).unwrap()
+    await unlock(
+      buildUnlockRequest({
+        announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+        nodeSettings,
+        password: data.nodePassword,
+      })
+    ).unwrap()
     toast.success('Backup successful')
   }
 
