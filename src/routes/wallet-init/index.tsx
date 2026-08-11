@@ -52,7 +52,7 @@ import kaleidoswapPictogram from '../../assets/logo.svg'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS, getDefaultMakerUrls } from '../../constants/networks'
 import { buildLocalNodeUrl } from '../../api/client'
-import { parseRpcUrl } from '../../helpers/utils'
+import { buildUnlockRequest } from '../../helpers/unlock'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
@@ -668,20 +668,14 @@ export const Component = () => {
     return mnemonic.split(' ')
   }
 
-  const buildUnlockRequest = (password: string) => {
-    const rpcConfig = parseRpcUrl(nodeSetupForm.getValues('rpc_connection_url'))
-
-    return {
-      announce_addresses: [],
-      bitcoind_rpc_host: rpcConfig.host,
-      bitcoind_rpc_password: rpcConfig.password,
-      bitcoind_rpc_port: rpcConfig.port,
-      bitcoind_rpc_username: rpcConfig.username,
-      indexer_url: nodeSetupForm.getValues('indexer_url'),
+  const buildUnlockRequestFromForm = (password: string) =>
+    buildUnlockRequest({
+      nodeSettings: {
+        indexer_url: nodeSetupForm.getValues('indexer_url'),
+        rpc_connection_url: nodeSetupForm.getValues('rpc_connection_url'),
+      },
       password,
-      proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
-    }
-  }
+    })
 
   const unlockNodeUntilReady = async (password: string): Promise<void> => {
     const outcome = await unlockNodeWithRetry({
@@ -694,7 +688,7 @@ export const Component = () => {
       }),
       onLongUnlock: setUnlockStatusMessage,
       unlock: () =>
-        unlock(buildUnlockRequest(password))
+        unlock(buildUnlockRequestFromForm(password))
           .unwrap()
           .then(() => undefined),
       unlockLabel: 'Node unlock',

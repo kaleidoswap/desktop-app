@@ -31,6 +31,10 @@ import {
   PasswordInput,
 } from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
+import {
+  buildUnlockRequest,
+  DESKTOP_ANNOUNCE_ALIAS,
+} from '../../helpers/unlock'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
@@ -212,7 +216,6 @@ export const Component = () => {
         // Non-network errors (403 locked, 401, etc.) are fine — proceed to unlock
       }
 
-      const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
       const outcome = await unlockNodeWithRetry({
         getNodeInfo: () => nodeInfo(),
         invalidPasswordMessage: t('walletUnlock.invalidPassword'),
@@ -224,16 +227,13 @@ export const Component = () => {
         }),
         onLongUnlock: setUnlockStatusMessage,
         unlock: () =>
-          unlock({
-            announce_addresses: [],
-            announce_alias: 'kaleidoswap-desktop',
-            bitcoind_rpc_host: rpcConfig.host,
-            bitcoind_rpc_password: rpcConfig.password,
-            bitcoind_rpc_port: rpcConfig.port,
-            bitcoind_rpc_username: rpcConfig.username,
-            indexer_url: nodeSettings.indexer_url,
-            password: data.password,
-          })
+          unlock(
+            buildUnlockRequest({
+              announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+              nodeSettings,
+              password: data.password,
+            })
+          )
             .unwrap()
             .then(() => undefined),
         unlockLabel: 'Wallet unlock',
