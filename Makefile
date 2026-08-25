@@ -6,6 +6,10 @@ ROOT_DIR = $(CURDIR)
 ARCH = $(shell uname -m)
 OS = $(shell uname -s)
 REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
+# Pinned rgb-lightning-node version (tag or commit) bundled with the app.
+# Bump this together with any unlock/API changes; override with
+# `make release RLN_VERSION=vX.Y.Z` to test another version.
+RLN_VERSION ?= v0.9.0
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
 BIN_DIR = $(ROOT_DIR)/bin
 
@@ -21,12 +25,12 @@ all: check_dependencies check_cargo_env debug
 
 clone_repo:
 	@if [ ! -d "$(PROJECT_NAME)" ]; then \
-		git clone $(REPO_URL) --recurse-submodules --shallow-submodules; \
+		git clone $(REPO_URL) --branch $(RLN_VERSION) --recurse-submodules --shallow-submodules; \
 	fi
 
 update_repo:
 	@if [ -d "$(PROJECT_NAME)" ]; then \
-		cd $(PROJECT_DIR) && git pull && git submodule update --init --recursive; \
+		cd $(PROJECT_DIR) && git fetch --tags origin && git checkout $(RLN_VERSION) && git submodule update --init --recursive; \
 	else \
 		$(MAKE) clone_repo; \
 	fi
