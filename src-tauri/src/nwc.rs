@@ -127,11 +127,17 @@ impl NwcManager {
     }
 
     pub fn set_app_handle(&self, handle: AppHandle) {
-        *self.app_handle.lock().unwrap() = Some(handle);
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handle);
     }
 
     pub fn is_running(&self) -> bool {
-        self.inner.lock().unwrap().is_some()
+        self.inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_some()
     }
 
     /// The bech32 npub of the running service, if any.
@@ -212,7 +218,11 @@ impl NwcManager {
             proxy_endpoint: cfg.proxy_endpoint,
             network: cfg.network,
             account_id: cfg.account_id,
-            app_handle: self.app_handle.lock().unwrap().clone(),
+            app_handle: self
+                .app_handle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone(),
         };
 
         // Spawn the notification loop. Each request is handled in its own task
@@ -242,16 +252,33 @@ impl NwcManager {
             log::info!("[NWC] service stopped");
         });
 
-        *self.service_pubkey.lock().unwrap() = Some(service_pubkey);
-        *self.relays.lock().unwrap() = relays;
-        *self.inner.lock().unwrap() = Some(RunningService { client, task });
+        *self
+            .service_pubkey
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(service_pubkey);
+        *self
+            .relays
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = relays;
+        *self
+            .inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(RunningService { client, task });
         Ok(())
     }
 
     /// Stop the NWC service. Safe to call when not running.
     pub async fn stop(&self) {
-        let running = self.inner.lock().unwrap().take();
-        *self.service_pubkey.lock().unwrap() = None;
+        let running = self
+            .inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        *self
+            .service_pubkey
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
         if let Some(running) = running {
             running.client.shutdown().await;
             running.task.abort();
@@ -272,7 +299,11 @@ impl NwcManager {
             .lock()
             .unwrap()
             .ok_or_else(|| "NWC service is not running".to_string())?;
-        let relays = self.relays.lock().unwrap().clone();
+        let relays = self
+            .relays
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
 
         // Fresh per-connection client key (the "secret" handed to the app).
         let client_keys = Keys::generate();

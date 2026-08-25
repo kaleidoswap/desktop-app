@@ -115,8 +115,14 @@ fn main() {
             let nwc_manager = Arc::clone(&nwc_manager);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
-                    node_process.lock().unwrap().set_window(main_window.clone());
-                    docker_manager.lock().unwrap().set_window(main_window);
+                    node_process
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .set_window(main_window.clone());
+                    docker_manager
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .set_window(main_window);
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
                 nwc_manager.set_app_handle(app.handle().clone());
@@ -124,7 +130,7 @@ fn main() {
                 // when the frontend detects the node is unlocked.
                 // DCA scheduler is started lazily via dca_start_scheduler
                 // when the frontend detects the node is unlocked.
-                db::init();
+                db::init()?;
 
                 // The agent runtime (provider + MCP + Node) isn't bundled in the
                 // installer — it's downloaded on demand into app data the first
@@ -376,7 +382,9 @@ async fn start_node(
 
 #[tauri::command]
 fn stop_node(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> Result<(), String> {
-    let node_process = node_process.lock().unwrap();
+    let node_process = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if node_process.is_running() {
         node_process.stop();
         Ok(())
@@ -479,7 +487,9 @@ fn delete_account(
     println!("Attempting to delete account: {}", name);
 
     // Stop the node if it's running
-    let node_process = node_process.lock().unwrap();
+    let node_process = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if node_process.is_running() {
         println!("Stopping node for account: {}", name);
         node_process.stop();
@@ -516,13 +526,20 @@ fn set_current_account(
         .find(|a| a.name == account_name)
         .ok_or_else(|| "Account not found".to_string())?;
 
-    *state.0.write().unwrap() = Some(account.clone());
+    *state
+        .0
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(account.clone());
     Ok(account)
 }
 
 #[tauri::command]
 fn get_current_account(state: tauri::State<CurrentAccount>) -> Option<db::Account> {
-    state.0.read().unwrap().clone()
+    state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
 }
 
 #[tauri::command]
@@ -539,7 +556,9 @@ fn get_node_logs(
     page: u32,
     page_size: u32,
 ) -> Result<NodeLogsResponse, String> {
-    let node_process = node_process.lock().unwrap();
+    let node_process = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let all_logs = node_process.get_logs();
     let total = all_logs.len() as u32;
 
@@ -560,7 +579,10 @@ async fn save_logs_to_file(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
     file_path: String,
 ) -> Result<(), String> {
-    node_process.lock().unwrap().save_logs_to_file(&file_path)
+    node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .save_logs_to_file(&file_path)
 }
 
 #[tauri::command]
@@ -568,7 +590,9 @@ fn is_node_running(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
     account_name: Option<String>,
 ) -> bool {
-    let node_process = node_process.lock().unwrap();
+    let node_process = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(account_name) = account_name {
         node_process.is_running_for_account(&account_name)
     } else {
@@ -580,12 +604,18 @@ fn is_node_running(
 fn get_running_node_account(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
 ) -> Option<String> {
-    node_process.lock().unwrap().get_current_account()
+    node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get_current_account()
 }
 
 #[tauri::command]
 fn get_node_state(node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>) -> rgb_node::NodeState {
-    node_process.lock().unwrap().get_state()
+    node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get_state()
 }
 
 #[tauri::command]
@@ -626,7 +656,10 @@ fn check_ports_available(ports: Vec<String>) -> Result<HashMap<String, bool>, St
 fn get_running_node_ports(
     node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>,
 ) -> HashMap<String, String> {
-    node_process.lock().unwrap().get_running_node_ports()
+    node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get_running_node_ports()
 }
 
 #[tauri::command]
@@ -650,7 +683,9 @@ fn stop_node_by_account(
     node_process: tauri::State<Arc<Mutex<rgb_node::NodeProcess>>>,
     account_name: String,
 ) -> Result<(), String> {
-    let node_process = node_process.lock().unwrap();
+    let node_process = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     node_process.stop_by_account(&account_name)
 }
 
@@ -781,7 +816,10 @@ fn insert_channel_order(
     #[allow(non_snake_case)] createdAt: String,
 ) -> Result<usize, String> {
     // Get current account
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account.as_ref().ok_or_else(|| {
         "No account is currently selected. Please select an account first.".to_string()
     })?;
@@ -795,7 +833,10 @@ fn get_channel_orders(
     state: tauri::State<CurrentAccount>,
 ) -> Result<Vec<db::ChannelOrder>, String> {
     // Get current account
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account_id = current_account.as_ref().map(|account| account.id);
 
     db::get_channel_orders(account_id).map_err(|e| e.to_string())
@@ -807,7 +848,10 @@ fn delete_channel_order(
     #[allow(non_snake_case)] orderId: String,
 ) -> Result<usize, String> {
     // Get current account
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account.as_ref().ok_or_else(|| {
         "No account is currently selected. Please select an account first.".to_string()
     })?;
@@ -900,7 +944,10 @@ fn store_encrypted_mnemonic(
 
 #[tauri::command]
 fn dca_get_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<String>, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -913,7 +960,10 @@ fn dca_upsert_order(
     order_id: String,
     payload: String,
 ) -> Result<usize, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -925,7 +975,10 @@ fn dca_delete_order(
     state: tauri::State<CurrentAccount>,
     order_id: String,
 ) -> Result<usize, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -958,7 +1011,10 @@ async fn nwc_start_service(
     state: tauri::State<'_, CurrentAccount>,
 ) -> Result<(), String> {
     let (account_id, network, node_url, proxy_endpoint) = {
-        let current = state.0.read().unwrap();
+        let current = state
+            .0
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let account = current
             .as_ref()
             .ok_or_else(|| "No account is currently selected.".to_string())?;
@@ -1070,7 +1126,10 @@ fn dca_order_executed(
 
 #[tauri::command]
 fn limit_get_orders(state: tauri::State<CurrentAccount>) -> Result<Vec<String>, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -1083,7 +1142,10 @@ fn limit_upsert_order(
     order_id: String,
     payload: String,
 ) -> Result<usize, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -1095,7 +1157,10 @@ fn limit_delete_order(
     state: tauri::State<CurrentAccount>,
     order_id: String,
 ) -> Result<usize, String> {
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account selected".to_string())?;
@@ -1112,7 +1177,10 @@ fn get_decrypted_mnemonic(
     password: String,
 ) -> Result<String, String> {
     // Get current account
-    let current_account = state.0.read().unwrap();
+    let current_account = state
+        .0
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let account = current_account
         .as_ref()
         .ok_or_else(|| "No account is currently selected.".to_string())?;
@@ -1181,6 +1249,8 @@ async fn start_docker_node(
 fn stop_docker_node(
     docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
 ) -> Result<(), String> {
-    let dm = docker_manager.lock().unwrap();
+    let dm = docker_manager
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     dm.stop()
 }

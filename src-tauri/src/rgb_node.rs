@@ -71,8 +71,14 @@ impl NodeProcess {
     }
 
     pub fn set_window(&self, window: WebviewWindow) {
-        *self.window.lock().unwrap() = Some(window.clone());
-        *self.app_handle.lock().unwrap() = Some(window.app_handle().clone());
+        *self
+            .window
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window.clone());
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window.app_handle().clone());
     }
 
     /// Check if a port is available
@@ -1080,7 +1086,10 @@ impl NodeProcess {
             path
         } else {
             // In production mode, get the resource path from the app handle
-            let app_handle = self.app_handle.lock().unwrap();
+            let app_handle = self
+                .app_handle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let app_handle = app_handle.as_ref().ok_or_else(|| {
                 "App handle not set. Make sure to call set_window first.".to_string()
             })?;

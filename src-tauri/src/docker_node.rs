@@ -120,8 +120,14 @@ impl DockerNodeManager {
     }
 
     pub fn set_window(&self, window: WebviewWindow) {
-        *self.app_handle.lock().unwrap() = Some(window.app_handle().clone());
-        *self.window.lock().unwrap() = Some(window);
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window.app_handle().clone());
+        *self
+            .window
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window);
     }
 
     // ------------------------------------------------------------------
@@ -741,7 +747,10 @@ impl DockerNodeManager {
 
         // Spawn monitoring thread
         let (tx, rx) = channel();
-        *self.control_sender.lock().unwrap() = Some(tx);
+        *self
+            .control_sender
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(tx);
 
         let state_for_thread = Arc::clone(&self.state);
         let logs_for_thread = Arc::clone(&self.logs);

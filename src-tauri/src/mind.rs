@@ -49,7 +49,10 @@ impl MindProcess {
     }
 
     pub fn is_running(&self) -> bool {
-        let mut guard = self.child.lock().unwrap();
+        let mut guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         match guard.as_mut() {
             Some(child) => match child.try_wait() {
                 Ok(Some(_)) => false, // exited
@@ -66,7 +69,10 @@ impl MindProcess {
         // Hold the child lock for the entire check-and-spawn to prevent a race
         // where two concurrent callers both observe is_running()==false and each
         // try to spawn, producing multiple visible console windows on Windows.
-        let mut child_guard = self.child.lock().unwrap();
+        let mut child_guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let already_running = match child_guard.as_mut() {
             Some(c) => matches!(c.try_wait(), Ok(None)),
             None => false,
@@ -172,7 +178,10 @@ impl MindProcess {
         let stdout = child.stdout.take().ok_or("no stdout on sidecar")?;
         let stderr = child.stderr.take().ok_or("no stderr on sidecar")?;
 
-        *self.stdin.lock().unwrap() = Some(child_stdin);
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(child_stdin);
         *child_guard = Some(child);
         drop(child_guard);
 
@@ -217,7 +226,10 @@ impl MindProcess {
     /// Write one JSON command line to the sidecar's stdin.
     pub fn send(&self, app: &AppHandle, payload: &serde_json::Value) -> Result<(), String> {
         self.ensure_started(app)?;
-        let mut guard = self.stdin.lock().unwrap();
+        let mut guard = self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let stdin = guard.as_mut().ok_or("sidecar stdin not available")?;
         let mut line = serde_json::to_string(payload).map_err(|e| e.to_string())?;
         line.push('\n');
@@ -230,8 +242,16 @@ impl MindProcess {
 
     /// Kill the sidecar (best-effort) and drop the pipes.
     pub fn stop(&self) {
-        *self.stdin.lock().unwrap() = None;
-        if let Some(mut child) = self.child.lock().unwrap().take() {
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        if let Some(mut child) = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
             let _ = child.kill();
             let _ = child.wait();
         }

@@ -53,7 +53,10 @@ impl DcaScheduler {
     }
 
     pub fn set_app_handle(&self, handle: AppHandle) {
-        *self.app_handle.lock().unwrap() = Some(handle);
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handle);
     }
 
     pub fn set_orders(&self, orders: Vec<DcaOrderInfo>) {
@@ -64,11 +67,17 @@ impl DcaScheduler {
                 o.id, o.order_type, o.status, o.interval_secs, o.last_executed_at, o.trigger_price_usd
             );
         }
-        *self.orders.write().unwrap() = orders;
+        *self
+            .orders
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = orders;
     }
 
     pub fn update_last_executed(&self, order_id: &str, timestamp: u64) {
-        let mut orders = self.orders.write().unwrap();
+        let mut orders = self
+            .orders
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(order) = orders.iter_mut().find(|o| o.id == order_id) {
             order.last_executed_at = Some(timestamp);
             println!(
@@ -80,7 +89,10 @@ impl DcaScheduler {
 
     pub fn start(&self) {
         {
-            let mut running = self.running.lock().unwrap();
+            let mut running = self
+                .running
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             if *running {
                 println!("[DCA] scheduler already running, skipping start");
                 return;
@@ -105,7 +117,9 @@ impl DcaScheduler {
 
             loop {
                 {
-                    let is_running = running.lock().unwrap();
+                    let is_running = running
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
                     if !*is_running {
                         println!("[DCA] scheduler stopping");
                         break;
@@ -122,7 +136,9 @@ impl DcaScheduler {
                     .as_secs();
 
                 let triggers: Vec<DcaTriggerPayload> = {
-                    let orders_guard = orders.read().unwrap();
+                    let orders_guard = orders
+                        .read()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
                     println!(
                         "[DCA] checking {} active orders at t={}",
                         orders_guard.len(),
@@ -137,7 +153,9 @@ impl DcaScheduler {
 
                 println!("[DCA] {} trigger(s) to emit", triggers.len());
                 if !triggers.is_empty() {
-                    let handle_guard = app_handle.lock().unwrap();
+                    let handle_guard = app_handle
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
                     match handle_guard.as_ref() {
                         Some(handle) => {
                             for trigger in triggers {
@@ -162,7 +180,10 @@ impl DcaScheduler {
     }
 
     pub fn stop(&self) {
-        *self.running.lock().unwrap() = false;
+        *self
+            .running
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = false;
     }
 }
 
