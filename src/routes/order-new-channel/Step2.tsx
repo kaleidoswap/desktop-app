@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 import * as z from 'zod'
 
-import { useAppDispatch } from '../../app/store/hooks'
 import { Button, InfoHint } from '../../components/ui'
 import { Spinner } from '../../components/Spinner'
 import {
@@ -27,7 +26,6 @@ import {
 } from '../../hooks/useAssetChannelQuote'
 import { formatNumberWithCommas } from '../../helpers/number'
 import {
-  orderChannelSliceActions,
   OrderChannelFormSchema,
   TChannelRequestForm,
 } from '../../slices/channel/orderChannel.slice'
@@ -138,7 +136,6 @@ export const Step2: React.FC<Props> = ({
   preselectedAssetAmount,
 }) => {
   const { t } = useTranslation()
-  const dispatch = useAppDispatch()
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
   const [addAsset, setAddAsset] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -530,7 +527,6 @@ export const Step2: React.FC<Props> = ({
 
       try {
         OrderChannelFormSchema.parse(submissionData)
-        dispatch(orderChannelSliceActions.setChannelRequestForm(submissionData))
         onNext(submissionData, selectedAsset)
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -579,9 +575,6 @@ export const Step2: React.FC<Props> = ({
               autoClose: 3000,
               position: 'bottom-right',
             })
-            dispatch(
-              orderChannelSliceActions.setChannelRequestForm(adjustedData)
-            )
             onNext(adjustedData, selectedAsset)
             return
           }
@@ -595,7 +588,6 @@ export const Step2: React.FC<Props> = ({
       addAsset,
       onNext,
       parseAssetAmount,
-      dispatch,
       setValue,
       effectiveMinCapacity,
       lspOptions,
