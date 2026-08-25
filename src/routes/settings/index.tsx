@@ -67,6 +67,7 @@ import {
 } from '../../slices/priceApi/priceApi.slice'
 
 import { TerminalLogDisplay } from './TerminalLogDisplay'
+import { logger } from '../../utils/logger'
 
 interface FormFields {
   bitcoinUnit: string
@@ -196,7 +197,7 @@ export const Component: React.FC = () => {
 
     try {
       setIsLoadingLogs(true)
-      console.log('Fetching logs with params:', { currentPage, maxLogEntries })
+      logger.debug('Fetching logs with params:', { currentPage, maxLogEntries })
 
       const result = await invoke<{ logs: string[]; total: number }>(
         'get_node_logs',
@@ -206,7 +207,7 @@ export const Component: React.FC = () => {
         }
       )
 
-      console.log('Received logs:', result)
+      logger.debug('Received logs:', result)
 
       if (result && Array.isArray(result.logs)) {
         setNodeLogs(result.logs)
@@ -215,11 +216,11 @@ export const Component: React.FC = () => {
         setLogsFetchRetries(0)
         setIsLogsFetchDisabled(false)
       } else {
-        console.error('Invalid logs format received:', result)
+        logger.error('Invalid logs format received:', result)
         toast.error('Invalid logs format received from server')
       }
     } catch (error) {
-      console.error('Failed to fetch node logs:', error)
+      logger.error('Failed to fetch node logs:', error)
       toast.error(
         `Failed to load logs: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -229,7 +230,7 @@ export const Component: React.FC = () => {
       setLogsFetchRetries(newRetryCount)
 
       if (newRetryCount >= maxLogsFetchRetries) {
-        console.warn(
+        logger.warn(
           'Too many log fetch failures, disabling polling for 2 minutes'
         )
         setIsLogsFetchDisabled(true)
@@ -254,7 +255,7 @@ export const Component: React.FC = () => {
         setCurrentPage(1)
         await fetchNodeLogs()
       } catch (error) {
-        console.error('Error loading initial data:', error)
+        logger.error('Error loading initial data:', error)
       } finally {
         setIsLoading(false)
       }

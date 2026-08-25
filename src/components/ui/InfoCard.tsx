@@ -1,6 +1,7 @@
 import { Copy } from 'lucide-react'
 import React, { ReactNode } from 'react'
 import { toast } from 'react-toastify'
+import { logger } from '../../utils/logger'
 
 interface InfoCardProps {
   icon: ReactNode
@@ -28,7 +29,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     if (!copyText) return
 
     navigator.clipboard.writeText(copyText).catch((err) => {
-      console.error('Failed to copy: ', err)
+      logger.error('Failed to copy: ', err)
     })
 
     toast.success(copySuccessMessage || 'Copied to clipboard')

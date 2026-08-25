@@ -46,6 +46,7 @@ import { Step3 } from './Step3'
 import { Step4 } from './Step4'
 import { Step5 } from './Step5'
 import 'react-toastify/dist/ReactToastify.css'
+import { logger } from '../../utils/logger'
 
 export const Component = () => {
   const { t } = useTranslation()
@@ -259,7 +260,7 @@ export const Component = () => {
           throw new Error('Form data is incomplete or missing')
         }
 
-        console.log('Starting create order request with data:', data)
+        logger.debug('Starting create order request with data:', data)
 
         // Get node info and refund address
         const nodeInfoResponse = await nodeInfoRequest()
@@ -279,7 +280,7 @@ export const Component = () => {
           )
         }
 
-        console.log('Node info retrieved successfully:', {
+        logger.debug('Node info retrieved successfully:', {
           addressRefund,
           clientPubKey,
         })
@@ -295,11 +296,11 @@ export const Component = () => {
         } = data
 
         // Get LSP info to validate against constraints
-        console.log('Fetching LSP info...')
+        logger.debug('Fetching LSP info...')
         const infoResponse = await getInfoRequest()
 
         if (infoResponse.error) {
-          console.error('Failed to get LSP info:', infoResponse.error)
+          logger.error('Failed to get LSP info:', infoResponse.error)
           throw new Error(
             'Could not connect to LSP server. Please check the LSP server URL and ensure it is accessible.'
           )
@@ -308,7 +309,7 @@ export const Component = () => {
         const lspOptions = infoResponse.data?.options
         let assets: AssetInfo[] = []
 
-        console.log('LSP info retrieved successfully:', infoResponse.data)
+        logger.debug('LSP info retrieved successfully:', infoResponse.data)
 
         // Safely extract assets array
         if (
@@ -363,14 +364,14 @@ export const Component = () => {
         })
 
         // Log the payload for the request
-        console.log('Payload for create order request:', payload)
+        logger.debug('Payload for create order request:', payload)
 
-        console.log('Sending create order request to LSP...')
+        logger.debug('Sending create order request to LSP...')
         const channelResponse = await createOrderRequest(payload)
-        console.log('Create order request completed, response received')
+        logger.debug('Create order request completed, response received')
 
         if (channelResponse.error) {
-          console.error('Create order error details:', {
+          logger.error('Create order error details:', {
             error: channelResponse.error,
             payload: payload,
             timestamp: new Date().toISOString(),
@@ -379,8 +380,8 @@ export const Component = () => {
           const errorMessage = formatRtkQueryError(channelResponse.error as any)
           throw new Error(errorMessage)
         } else {
-          console.log('Request of channel created successfully!')
-          console.log('Response:', channelResponse.data)
+          logger.debug('Request of channel created successfully!')
+          logger.debug('Response:', channelResponse.data)
           const orderId: string = channelResponse.data?.order_id || ''
           if (!orderId) {
             throw new Error('Could not get order id from server response')
@@ -394,7 +395,7 @@ export const Component = () => {
           setStep(3)
         }
       } catch (error) {
-        console.error('Error creating channel order:', error)
+        logger.error('Error creating channel order:', error)
         toast.error(
           error instanceof Error
             ? error.message

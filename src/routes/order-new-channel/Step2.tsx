@@ -38,6 +38,7 @@ import rgbIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 
 import 'react-toastify/dist/ReactToastify.css'
+import { logger } from '../../utils/logger'
 
 interface Props {
   onNext: (data: TChannelRequestForm, asset?: AssetInfo | null) => void
@@ -666,7 +667,7 @@ export const Step2: React.FC<Props> = ({
         const response = await estimateFeesRequest(request)
         if (response.data) setFees(response.data)
       } catch (error) {
-        console.error('Error fetching fees:', error)
+        logger.error('Error fetching fees:', error)
       } finally {
         setIsLoadingFees(false)
       }

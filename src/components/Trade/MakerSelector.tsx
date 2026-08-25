@@ -9,6 +9,7 @@ import { webSocketService } from '../../app/hubs/websocketService'
 import { useAppSelector } from '../../app/store/hooks'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import { logger } from '../../utils/logger'
 
 interface MakerSelectorProps {
   onMakerChange: () => Promise<void>
@@ -71,7 +72,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
             }
           }, 2000)
         } catch (reconnectError) {
-          console.error('Error during reconnection:', reconnectError)
+          logger.error('Error during reconnection:', reconnectError)
           toast.warning(t('trade.maker.reconnecting'), {
             autoClose: 2000,
             toastId: 'maker-reconnection-progress',
@@ -79,7 +80,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         }
       }, 500)
     } catch (error) {
-      console.error('Failed to change maker:', error)
+      logger.error('Failed to change maker:', error)
       toast.error(t('trade.maker.changeFailed'), {
         autoClose: 5000,
         toastId: 'maker-change-failed',
@@ -157,7 +158,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
         })
       }
     } catch (error) {
-      console.error('Failed to refresh connection:', error)
+      logger.error('Failed to refresh connection:', error)
       toast.error(t('trade.maker.reconnectionFailed'), {
         autoClose: 5000,
         toastId: 'maker-refresh-connection-failed',

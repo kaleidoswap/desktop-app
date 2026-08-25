@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 
 import { Button, Card } from '../../components/ui'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 interface FormFields {
   up_to: boolean
@@ -87,7 +88,7 @@ export const Component = () => {
           slow: Math.round(slowFee.fee_rate ?? 1),
         })
       } catch (e) {
-        console.error(e)
+        logger.error(e)
       }
     }
 

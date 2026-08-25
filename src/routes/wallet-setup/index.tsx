@@ -36,6 +36,7 @@ import {
   IconWrapper,
 } from '../../components/wallet-setup'
 import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
+import { logger } from '../../utils/logger'
 
 const MODE_OPTIONS: {
   mode: AppMode
@@ -101,7 +102,7 @@ export const Component = () => {
           setLocalNodeMode('native')
         }
       } catch (error) {
-        console.error('Failed to check local node capabilities:', error)
+        logger.error('Failed to check local node capabilities:', error)
         // Fallback: check each backend separately
         try {
           const supported = await invoke<boolean>('is_local_node_supported')

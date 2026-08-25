@@ -7,6 +7,7 @@ import { useSettings } from '../../hooks/useSettings'
 import { useAssetIcon } from '../../helpers/utils'
 import { nodeApi, SwapDetails } from '../../slices/nodeApi/nodeApi.slice'
 import { useNotification } from '../NotificationSystem'
+import { logger } from '../../utils/logger'
 
 const formatAmount = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -228,7 +229,7 @@ export const StatusToast: React.FC<{
 
           // Auto-remove successful or expired swaps
           if (['Succeeded', 'Expired'].includes(swap.status ?? '')) {
-            console.log('auto-removing swap', paymentHash)
+            logger.debug('auto-removing swap', paymentHash)
             autoRemoveTimeoutsRef.current[paymentHash] = setTimeout(() => {
               if (swapStates.current[paymentHash]) {
                 removeNotification(swapStates.current[paymentHash].id)

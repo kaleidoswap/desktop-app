@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { logger } from '../../utils/logger'
 
 interface UpdateModalProps {
   isOpen: boolean
@@ -67,37 +68,37 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
     // Add timeout protection like the old Updater - but with better error handling
     const timeoutId = setTimeout(() => {
-      console.log('Update timeout - resetting state after 5 minutes')
+      logger.debug('Update timeout - resetting state after 5 minutes')
       setError(t('updaterModal.errors.timeout'))
       setIsInstalling(false)
       setCompleted(false)
     }, 300000) // 5 minutes timeout
 
     try {
-      console.log('Starting update installation...', {
+      logger.debug('Starting update installation...', {
         timestamp: new Date().toISOString(),
         version: update.version,
       })
 
       await update.downloadAndInstall((event) => {
-        console.log(
+        logger.debug(
           'Download event received:',
           event.event,
           'data' in event ? event.data : 'no data'
         )
         switch (event.event) {
           case 'Started':
-            console.log('Download started event')
+            logger.debug('Download started event')
             if ('data' in event && event.data) {
               setContentLength(event.data.contentLength)
               setDownloaded(0)
-              console.log(
+              logger.debug(
                 `Update download started, content length: ${event.data.contentLength} bytes (${((event.data.contentLength || 0) / 1024 / 1024).toFixed(2)} MB)`
               )
             }
             break
           case 'Progress':
-            console.log(
+            logger.debug(
               'Download progress event:',
               'data' in event ? event.data : 'no data'
             )
@@ -108,7 +109,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                 const progress = contentLength
                   ? Math.round((newDownloaded / contentLength) * 100)
                   : 0
-                console.log(
+                logger.debug(
                   `Downloaded chunk: ${event.data.chunkLength} bytes, Total: ${newDownloaded} bytes (${progress}%)`
                 )
                 return newDownloaded
@@ -116,10 +117,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             }
             break
           case 'Finished':
-            console.log('Download finished event')
+            logger.debug('Download finished event')
             clearTimeout(timeoutId)
             // Clear the skipped version since update is being installed
-            console.log(
+            logger.debug(
               'Update download finished - will restart application in 2 seconds'
             )
 
@@ -129,7 +130,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
             // Automatically restart the application after download completes
             setTimeout(() => {
-              console.log('Restarting application...')
+              logger.debug('Restarting application...')
               relaunch()
             }, 2000) // 2 second delay to show completion state
             break
@@ -137,11 +138,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
       })
 
       // Fallback: If we reach here without getting a 'Finished' event, assume success
-      console.log(
+      logger.debug(
         'Update installation function completed, checking if UI needs fallback update'
       )
       if (!completed) {
-        console.log(
+        logger.debug(
           'No Finished event received, assuming update completed successfully'
         )
         clearTimeout(timeoutId)
@@ -149,13 +150,13 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         setIsInstalling(false)
 
         setTimeout(() => {
-          console.log('Restarting application via fallback...')
+          logger.debug('Restarting application via fallback...')
           relaunch()
         }, 2000)
       }
-      console.log('Download and install completed successfully')
+      logger.debug('Download and install completed successfully')
     } catch (err) {
-      console.error('Download/install error:', err)
+      logger.error('Download/install error:', err)
       clearTimeout(timeoutId)
       const errorMessage =
         err instanceof Error ? err.message : 'Unknown error occurred'
@@ -339,7 +340,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
                     <button
                       className="w-full px-4 py-2 text-purple-200/60 hover:text-purple-100 text-xs transition-all duration-200 rounded-lg hover:bg-white/10"
                       onClick={() => {
-                        console.log('User cancelled update')
+                        logger.debug('User cancelled update')
                         setIsInstalling(false)
                         setCompleted(false)
                         setError(t('updaterModal.errors.cancelled'))

@@ -39,6 +39,7 @@ import {
   Channel,
   AssignmentFungible,
 } from '../../../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../../../utils/logger'
 
 interface Props {
   assetId?: string
@@ -485,11 +486,11 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         setAddress(res.data.invoice)
         setRecipientId(res.data.recipient_id)
       } else {
-        console.error('RGB invoice response missing data:', res)
+        logger.error('RGB invoice response missing data:', res)
         toast.error(t('depositModal.step2.toasts.rgbInvoiceInvalid'))
       }
     } catch (error) {
-      console.error('Error generating RGB invoice:', error)
+      logger.error('Error generating RGB invoice:', error)
       toast.error(t('depositModal.step2.toasts.rgbInvoiceUnknown'))
     }
   }
