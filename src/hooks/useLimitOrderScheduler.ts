@@ -68,7 +68,7 @@ function extractErrorText(err: unknown): string {
   return String(err)
 }
 
-function normalizeLimitError(err: unknown) {
+export function normalizeLimitError(err: unknown) {
   const rawMessage = extractErrorText(err)
   const message = rawMessage
     .replace(/^[A-Za-z]*Error:\s*/i, '')
@@ -152,7 +152,7 @@ function sendNotification(title: string, body: string) {
  * Determine the layer for a given asset based on its trading pair endpoint data.
  * BTC uses BTC_LN, RGB assets use RGB_LN.
  */
-function getAssetLayer(
+export function getAssetLayer(
   ticker: string,
   assetId: string,
   pairs: TradingPair[]
