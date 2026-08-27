@@ -647,6 +647,14 @@ async fn respond_json(
 /// Dispatch an `rln_` extension method to its fixed RLN endpoint, forwarding the
 /// raw JSON body and returning the raw JSON response. The path is server-chosen
 /// per method; the client only controls the body.
+/// Default RGB invoice/send expiration: one hour from now.
+fn default_expiration_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() + 3600)
+        .unwrap_or(0)
+}
+
 async fn dispatch_rln(
     ctx: &ServiceCtx,
     method: &str,
@@ -681,13 +689,15 @@ async fn dispatch_rln(
             // RLN requires expiration_timestamp + a non-empty transport_endpoints.
             let mut body = obj();
             if body.get("expiration_timestamp").is_none() {
-                let exp = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_secs() + 3600)
-                    .unwrap_or(0);
-                body["expiration_timestamp"] = serde_json::json!(exp);
+                body["expiration_timestamp"] = serde_json::json!(default_expiration_timestamp());
             }
-            if body.get("transport_endpoints").is_none() && !ctx.proxy_endpoint.is_empty() {
+            if body.get("transport_endpoints").is_none() {
+                if ctx.proxy_endpoint.is_empty() {
+                    return Err(err(
+                        nip47::ErrorCode::Internal,
+                        "transport_endpoints missing and no RGB proxy endpoint is configured",
+                    ));
+                }
                 body["transport_endpoints"] = serde_json::json!([ctx.proxy_endpoint]);
             }
             rln_post::<serde_json::Value>(ctx, "/rgbinvoice", body).await
@@ -698,7 +708,38 @@ async fn dispatch_rln(
         "rln_decode_rgb_invoice" => {
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
         }
-        "rln_send_asset" => rln_post::<serde_json::Value>(ctx, "/sendrgb", obj()).await,
+        "rln_send_asset" => {
+            // /sendrgb has the same RLN 0.8.0+ requirements as /rgbinvoice:
+            // expiration_timestamp on the request and transport_endpoints on
+            // every recipient in recipient_map.
+            let mut body = obj();
+            if body.get("expiration_timestamp").is_none() {
+                body["expiration_timestamp"] = serde_json::json!(default_expiration_timestamp());
+            }
+            if let Some(map) = body
+                .get_mut("recipient_map")
+                .and_then(|m| m.as_object_mut())
+            {
+                for recipients in map.values_mut() {
+                    let Some(list) = recipients.as_array_mut() else {
+                        continue;
+                    };
+                    for recipient in list {
+                        if recipient.get("transport_endpoints").is_some() {
+                            continue;
+                        }
+                        if ctx.proxy_endpoint.is_empty() {
+                            return Err(err(
+                                nip47::ErrorCode::Internal,
+                                "recipient is missing transport_endpoints and no RGB proxy endpoint is configured",
+                            ));
+                        }
+                        recipient["transport_endpoints"] = serde_json::json!([ctx.proxy_endpoint]);
+                    }
+                }
+            }
+            rln_post::<serde_json::Value>(ctx, "/sendrgb", body).await
+        }
         _ => Err(err(
             nip47::ErrorCode::NotImplemented,
             format!("Unknown method '{method}'"),
