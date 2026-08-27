@@ -144,7 +144,7 @@ impl NwcManager {
     pub fn service_npub(&self) -> Option<String> {
         self.service_pubkey
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .as_ref()
             .and_then(|pk| pk.to_bech32().ok())
     }
@@ -297,7 +297,7 @@ impl NwcManager {
         let service_pubkey = self
             .service_pubkey
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .ok_or_else(|| "NWC service is not running".to_string())?;
         let relays = self
             .relays
@@ -647,7 +647,6 @@ async fn respond_json(
 /// Dispatch an `rln_` extension method to its fixed RLN endpoint, forwarding the
 /// raw JSON body and returning the raw JSON response. The path is server-chosen
 /// per method; the client only controls the body.
-/// Default RGB invoice/send expiration: one hour from now.
 fn default_expiration_timestamp() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -709,9 +708,8 @@ async fn dispatch_rln(
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
         }
         "rln_send_asset" => {
-            // /sendrgb has the same RLN 0.8.0+ requirements as /rgbinvoice:
-            // expiration_timestamp on the request and transport_endpoints on
-            // every recipient in recipient_map.
+            // Like /rgbinvoice, RLN requires expiration_timestamp, plus
+            // transport_endpoints on every recipient in recipient_map.
             let mut body = obj();
             if body.get("expiration_timestamp").is_none() {
                 body["expiration_timestamp"] = serde_json::json!(default_expiration_timestamp());

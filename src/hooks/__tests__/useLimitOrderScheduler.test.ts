@@ -143,7 +143,7 @@ let hookHandle: { rerender: () => void; unmount: () => void } | null = null
 
 const mountScheduler = async () => {
   hookHandle = renderHook(() => useLimitOrderScheduler())
-  await flush() // let order hydration settle
+  await flush()
   return hookHandle
 }
 
@@ -305,7 +305,7 @@ describe('useLimitOrderScheduler', () => {
     await tick()
 
     expect(pollQuoteCalls()).toHaveLength(1)
-    expect(mocks.getQuote).toHaveBeenCalledTimes(1) // price poll only
+    expect(mocks.getQuote).toHaveBeenCalledTimes(1)
     expect(mocks.initSwap).not.toHaveBeenCalled()
   })
 
@@ -442,14 +442,14 @@ describe('useLimitOrderScheduler', () => {
 
   it('rejects execution when the quoted price slips past the limit', async () => {
     dbOrders = [makeOrder({ limitPrice: 100_000 })]
-    pollPrice = 99_000 // triggers
+    pollPrice = 99_000
     execQuoteResponse = makeExecQuote(104_000) // 4% above the buy limit
     await mountScheduler()
     await tick()
 
     expect(mocks.initSwap).not.toHaveBeenCalled()
     const order = mocks.state.limitOrders.orders[0]
-    expect(order.status).toBe('active') // retried on a later tick
+    expect(order.status).toBe('active')
     expect(order.executions[0].status).toBe('failed')
     expect(order.executions[0].error).toContain('Slippage too high: 4.00%')
   })

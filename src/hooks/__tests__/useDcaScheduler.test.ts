@@ -136,7 +136,7 @@ let hookHandle: { rerender: () => void; unmount: () => void } | null = null
 
 const mountScheduler = async () => {
   hookHandle = renderHook(() => useDcaScheduler())
-  await flush() // let order hydration settle
+  await flush()
   return hookHandle
 }
 
@@ -357,7 +357,6 @@ describe('useDcaScheduler', () => {
     dbOrders = [makeScheduledOrder({ lastExecutedAt: Date.now() })]
     await mountScheduler()
 
-    // 30 minutes of ticks on a 1h interval order
     await tick(30 * 60 * 1000)
     expect(mocks.getQuote).not.toHaveBeenCalled()
   })
@@ -414,12 +413,10 @@ describe('useDcaScheduler', () => {
     await tick()
     expect(mocks.getQuote).toHaveBeenCalledTimes(1)
 
-    // Success updated lastExecutedAt, so further ticks within the hour are idle
     await tick()
     await tick()
     expect(mocks.getQuote).toHaveBeenCalledTimes(1)
 
-    // ...but one interval later it runs again
     await tick(61 * 60 * 1000)
     expect(mocks.getQuote).toHaveBeenCalledTimes(2)
   })
@@ -496,7 +493,7 @@ describe('useDcaScheduler', () => {
     expect(mocks.initSwap).not.toHaveBeenCalled()
     expect(mocks.execSwap).not.toHaveBeenCalled()
     const order = mocks.state.dca.orders[0]
-    expect(order.status).toBe('active') // stays active for a retry
+    expect(order.status).toBe('active')
     expect(order.executions[0].status).toBe('failed')
     expect(order.executions[0].error).toContain('Slippage too high')
   })
@@ -505,7 +502,7 @@ describe('useDcaScheduler', () => {
     dbOrders = [makeScheduledOrder()]
     mocks.getQuote.mockReturnValue(new Promise(() => {})) // never resolves
     await mountScheduler()
-    await tick() // starts the execution, quote pending
+    await tick()
     await tick(15_000) // quote timeout fires
 
     const order = mocks.state.dca.orders[0]
@@ -538,7 +535,7 @@ describe('useDcaScheduler', () => {
       })
     )
     await mountScheduler()
-    await tick() // tick 1 starts execution; quote stays pending
+    await tick()
 
     // Re-triggers while the execution is in flight: queued once, deduped after
     executeOrderManually('dca-1')
@@ -549,7 +546,6 @@ describe('useDcaScheduler', () => {
 
     resolveQuote({ data: makeQuote(100, 100_000) })
     await flush()
-    // The single queued duplicate runs once after the first completes
     expect(mocks.getQuote).toHaveBeenCalledTimes(2)
   })
 

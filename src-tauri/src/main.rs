@@ -1055,7 +1055,7 @@ fn nwc_create_connection(
     let account_id = state
         .0
         .read()
-        .unwrap()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
         .as_ref()
         .map(|a| a.id)
         .ok_or_else(|| "No account is currently selected.".to_string())?;
@@ -1070,7 +1070,7 @@ fn nwc_list_connections(
     let account_id = state
         .0
         .read()
-        .unwrap()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
         .as_ref()
         .map(|a| a.id)
         .ok_or_else(|| "No account is currently selected.".to_string())?;
@@ -1089,7 +1089,7 @@ fn nwc_revoke_connection(state: tauri::State<CurrentAccount>, id: i32) -> Result
     let account_id = state
         .0
         .read()
-        .unwrap()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
         .as_ref()
         .map(|a| a.id)
         .ok_or_else(|| "No account is currently selected.".to_string())?;

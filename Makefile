@@ -6,9 +6,8 @@ ROOT_DIR = $(CURDIR)
 ARCH = $(shell uname -m)
 OS = $(shell uname -s)
 REPO_URL = https://github.com/kaleidoswap/rgb-lightning-node
-# Pinned rgb-lightning-node version (tag or commit) bundled with the app.
-# Bump this together with any unlock/API changes; override with
-# `make release RLN_VERSION=vX.Y.Z` to test another version.
+# rgb-lightning-node release bundled with the app; bump together with any
+# unlock/API changes.
 RLN_VERSION ?= v0.9.0
 PROJECT_DIR = $(ROOT_DIR)/$(PROJECT_NAME)
 BIN_DIR = $(ROOT_DIR)/bin
