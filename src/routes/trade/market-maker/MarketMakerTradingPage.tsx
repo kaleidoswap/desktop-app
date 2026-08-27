@@ -706,7 +706,6 @@ export const Component = () => {
   const [listChannels] = nodeApi.endpoints.listChannels.useLazyQuery()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [whitelistTrade] = nodeApi.useWhitelistTradeMutation()
-  // const [getPairs] = makerApi.useLazyGetPairsQuery()
   const [initSwap] = makerApi.endpoints.initSwap.useLazyQuery()
   const [execSwap] = makerApi.endpoints.execSwap.useLazyQuery()
   const [btcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()

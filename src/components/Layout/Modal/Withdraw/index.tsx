@@ -1158,7 +1158,6 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          // if ('error' in res) check removed as unwrap throws
           toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
             progressStyle: { background: '#3B82F6' },
           })

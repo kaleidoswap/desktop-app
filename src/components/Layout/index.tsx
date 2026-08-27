@@ -1220,36 +1220,6 @@ export const Layout = (props: Props) => {
                     <HelpCircle className="w-5 h-5" />
                   </button>
 
-                  {/* Manual update check button */}
-                  {/* <button
-                    aria-label="Check for updates"
-                    className={`relative p-2 rounded-md hover:bg-surface-overlay transition-colors ${
-                      hasUpdateNotification
-                        ? 'text-amber-400 hover:text-amber-300'
-                        : 'text-content-secondary hover:text-white'
-                    }`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      console.log(
-                        `[${new Date().toISOString()}] Update button clicked, hasSkippedUpdate =`,
-                        ', hasUpdateNotification =',
-                        hasUpdateNotification
-                      )
-                      checkForUpdates()
-                    }}
-                    title={
-                      hasUpdateNotification
-                        ? 'Update available - check notifications'
-                        : 'Check for updates'
-                    }
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    {hasUpdateNotification && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                    )}
-                  </button> */}
-
                   {/* Notifications bell */}
                   <button
                     aria-label="Toggle notifications"
