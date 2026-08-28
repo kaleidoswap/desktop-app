@@ -34,9 +34,7 @@ fn default_base_dir() -> PathBuf {
         .join(".kaleido")
 }
 
-// ---------------------------------------------------------------------------
 // Configuration structs
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DockerSpawnConfig {
@@ -79,18 +77,14 @@ pub struct DockerEnvironment {
     pub network: String,
 }
 
-// ---------------------------------------------------------------------------
 // Control message for monitoring thread
-// ---------------------------------------------------------------------------
 
 #[derive(Debug)]
 enum ControlMessage {
     Stop,
 }
 
-// ---------------------------------------------------------------------------
 // DockerNodeManager
-// ---------------------------------------------------------------------------
 
 #[allow(dead_code)]
 pub struct DockerNodeManager {
@@ -130,9 +124,7 @@ impl DockerNodeManager {
             .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window);
     }
 
-    // ------------------------------------------------------------------
     // State management (mirrors NodeProcess patterns)
-    // ------------------------------------------------------------------
 
     pub fn get_state(&self) -> NodeState {
         match self.state.read() {
@@ -190,9 +182,7 @@ impl DockerNodeManager {
         }
     }
 
-    // ------------------------------------------------------------------
     // Docker availability & environment discovery
-    // ------------------------------------------------------------------
 
     /// Well-known directories where Docker binaries live.
     /// Bundled macOS / Linux apps inherit a minimal PATH (often just
@@ -231,11 +221,8 @@ impl DockerNodeManager {
         std::env::join_paths(parts).unwrap_or(current)
     }
 
-    /// Resolve the full path to the `docker` binary.
-    /// `Command::new("docker")` uses the *current* process PATH to find
-    /// the binary, which in a bundled app is too narrow.  We probe
-    /// well-known directories ourselves so the binary is found even when
-    /// `/usr/local/bin` is not in PATH.
+    /// Resolve the full path to the `docker` binary. `Command::new("docker")`
+    /// searches the current process PATH, which is too narrow in a bundled app.
     fn resolve_docker_bin() -> OsString {
         for dir in Self::docker_search_dirs() {
             let candidate = dir.join("docker");
@@ -247,11 +234,8 @@ impl DockerNodeManager {
         OsString::from("docker")
     }
 
-    /// Create a `Command` for the docker binary.
-    /// - Resolves the binary via well-known paths (so the *binary itself*
-    ///   is found even with a minimal PATH).
-    /// - Sets an enriched PATH on the child process so that Docker's own
-    ///   helpers (`docker-credential-desktop`, etc.) are also reachable.
+    /// Create a `Command` for the docker binary, resolved via well-known paths
+    /// and given an enriched PATH so Docker's own helpers are reachable too.
     fn docker_command() -> Command {
         let mut cmd = Command::new(Self::resolve_docker_bin());
         cmd.env("PATH", Self::enriched_path());
@@ -290,10 +274,8 @@ impl DockerNodeManager {
         cmd.status().map(|s| s.success()).unwrap_or(false)
     }
 
-    /// Format an account name into a Docker environment name.
-    /// Mirrors the frontend `formatAccountName` logic: lowercase, replace
-    /// non-alphanumeric with hyphens, collapse consecutive hyphens, strip
-    /// leading/trailing hyphens, then prefix with `kaleidoswap-`.
+    /// Format an account name into a Docker environment name. Mirrors the
+    /// frontend `formatAccountName`, then prefixes with `kaleidoswap-`.
     fn format_env_name(account_name: &str) -> String {
         let mut formatted = String::new();
         for ch in account_name.to_lowercase().chars() {
@@ -456,9 +438,7 @@ impl DockerNodeManager {
         envs
     }
 
-    // ------------------------------------------------------------------
     // Environment creation (compose YAML generation)
-    // ------------------------------------------------------------------
 
     /// Create a new Docker environment — generates docker-compose.yml
     pub fn create_environment(
@@ -630,9 +610,7 @@ impl DockerNodeManager {
         Value::Mapping(root)
     }
 
-    // ------------------------------------------------------------------
     // Docker Compose commands
-    // ------------------------------------------------------------------
 
     fn run_compose(compose_dir: &Path, args: &[&str]) -> Result<std::process::Output, String> {
         let mut cmd = Self::docker_command();
@@ -656,9 +634,7 @@ impl DockerNodeManager {
         Ok(output.status.success())
     }
 
-    // ------------------------------------------------------------------
     // Node lifecycle
-    // ------------------------------------------------------------------
 
     /// Start the Docker node for a given environment
     pub fn start(
@@ -876,9 +852,7 @@ impl DockerNodeManager {
         Ok(lines)
     }
 
-    // ------------------------------------------------------------------
     // Internal helpers
-    // ------------------------------------------------------------------
 
     fn add_log(&self, msg: &str) {
         if let Ok(mut logs) = self.logs.lock() {
@@ -925,9 +899,7 @@ impl DockerNodeManager {
         }
     }
 
-    /// Probe the node's HTTP endpoint for readiness
-    /// Probe the node's HTTP endpoint for readiness.
-    /// Returns true if the node responds (200 = unlocked, 403 = locked but running).
+    /// Probe the node's HTTP endpoint: 200 = unlocked, 403 = locked but running.
     fn probe_http(daemon_port: u16) -> bool {
         reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(2))

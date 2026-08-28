@@ -10,9 +10,7 @@ interface CardProps {
   noPadding?: boolean
 }
 
-/**
- * A standard card component with consistent styling
- */
+/** A standard card component with consistent styling */
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
@@ -44,9 +42,7 @@ export const Card: React.FC<CardProps> = ({
   )
 }
 
-/**
- * A card with hover effects
- */
+/** A card with hover effects */
 export const HoverCard: React.FC<CardProps> = (props) => {
   return (
     <Card

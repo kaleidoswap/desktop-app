@@ -1,25 +1,19 @@
 //! KaleidoMind sidecar bridge.
 //!
-//! Supervises the `@kaleidorg/mind-provider` Node sidecar (apps/provider) and
-//! relays its line-delimited JSON protocol (see apps/provider/src/protocol.ts):
-//!   - Commands  (Tauri → sidecar) are written to the child's stdin.
-//!   - Events    (sidecar → Tauri) are read from stdout and re-emitted to the
-//!     webview as the `mind-event` Tauri event (the JSON is forwarded verbatim).
-//!   - stderr is human-readable diagnostics → forwarded to the Tauri log.
+//! Supervises the `@kaleidorg/mind-provider` Node sidecar and relays its
+//! line-delimited JSON protocol (apps/provider/src/protocol.ts): commands go to
+//! the child's stdin, stdout events are re-emitted verbatim as the `mind-event`
+//! Tauri event, stderr goes to the Tauri log. Rust stays a transparent pipe —
+//! all protocol/model logic lives in TS.
 //!
-//! Rust stays a transparent pipe; all protocol/model logic lives in TS. The
-//! sidecar runs the QVAC model, the P2P provider (for phone delegation), skills
-//! and MCP tools.
+//! Launch resolution order:
+//!   1. `$KALEIDO_MIND_CMD` (+ optional space-separated `$KALEIDO_MIND_ARGS`)
+//!   2. `node <dir>/dist/index.js`, if that build exists
+//!   3. `pnpm start` with cwd = `<dir>`
 //!
-//! Sidecar launch is resolved in this order:
-//!   1. `$KALEIDO_MIND_CMD` (+ optional `$KALEIDO_MIND_ARGS`, space-separated)
-//!   2. `node <dir>/dist/index.js`        if that build exists
-//!   3. `pnpm start` with cwd = `<dir>`    (runs `tsx src/index.ts`)
-//!
-//! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` (override), the on-demand
-//! runtime downloaded into app data (mind_runtime), or a dev sibling-path guess.
-//! Resolution happens at start time and is passed to the child via cmd.env —
-//! we never mutate this process's own environment.
+//! `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR`, the downloaded runtime
+//! (mind_runtime), or a dev sibling-path guess. Resolved at start time and
+//! passed to the child via cmd.env — never by mutating our own environment.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;

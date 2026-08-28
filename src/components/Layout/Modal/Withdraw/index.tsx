@@ -1211,9 +1211,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             let witnessData:
               { amount_sat: number; blinding?: number } | undefined = undefined
             if (decodedRgbInvoice.recipient_type === 'Witness') {
-              // For witness recipients, we need to provide witness_data
-              // The amount_sat is the Bitcoin amount (in sats) to send to the recipient
-              // This amount will be used for the witness UTXO
+              // Witness recipients need witness_data: the sats funding the witness UTXO.
               const witnessAmountSat = pendingData.witness_amount_sat || 1200
               if (!witnessAmountSat || witnessAmountSat < 512) {
                 throw new Error(

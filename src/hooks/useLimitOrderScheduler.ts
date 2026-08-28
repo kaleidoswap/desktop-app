@@ -373,9 +373,7 @@ export function useLimitOrderScheduler() {
       try {
         const pairs = tradingPairsRef.current || []
 
-        // Determine from/to based on side
-        // Buy: spending quote asset to get base asset
-        // Sell: spending base asset to get quote asset
+        // Buy spends the quote asset for the base asset; sell is the reverse.
         const fromAssetId =
           order.side === 'buy' ? order.quoteAssetId : order.baseAssetId
         const fromTicker =
@@ -388,9 +386,7 @@ export function useLimitOrderScheduler() {
         const fromLayer = getAssetLayer(fromTicker, fromAssetId, pairs)
         const toLayer = getAssetLayer(toTicker, toAssetId, pairs)
 
-        // Calculate raw from_amount
-        // For buy: from_amount is in quote asset = amount * limitPrice (in quote precision units)
-        // For sell: from_amount is the base asset amountRaw
+        // Buy: amount * limitPrice in quote precision. Sell: the base amountRaw.
         const fromAmountRaw =
           order.side === 'buy'
             ? order.amountRaw // Already computed as quote amount in precision units

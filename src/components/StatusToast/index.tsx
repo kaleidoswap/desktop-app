@@ -269,9 +269,6 @@ export const StatusToast: React.FC<{
         state.status
       )
 
-      // Remove the notification if:
-      // 1. The swap no longer exists in the data AND
-      // 2. Either it's not in a final status OR it's been dismissed
       if (!swapExists && (!isFinalStatus || state.dismissed)) {
         removeNotification(state.id)
         delete swapStates.current[hash]

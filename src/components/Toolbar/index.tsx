@@ -778,10 +778,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             timeoutMs: 90000,
           })
 
-          // Decide destination from real node API status:
-          // - unlocked: dashboard
-          // - locked: unlock
-          // - uninitialized: setup
+          // Destination follows the real node API status.
           let destination:
             | typeof WALLET_DASHBOARD_PATH
             | typeof WALLET_UNLOCK_PATH

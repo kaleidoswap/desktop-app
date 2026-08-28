@@ -40,7 +40,9 @@ export interface ChatMsg {
   text: string
   /** The model's `<think>` reasoning for an assistant turn, shown collapsed. */
   thinking?: string
-  /** Tools the agent invoked this turn, in arrival order (cards + live pills). */
+  /**
+   * Tools the agent invoked this turn, in arrival order (cards + live pills).
+   */
   toolEvents?: ChatToolEvent[]
   /** Contextual next-step cards proposed by the agent after this reply. */
   followups?: SuggestedAction[]

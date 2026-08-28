@@ -42,9 +42,7 @@ export const debouncedQuoteRequest = (
   }, delay)
 }
 
-/**
- * Clear any pending debounced quote requests
- */
+/** Clear any pending debounced quote requests */
 export const clearDebouncedQuoteRequest = () => {
   if (globalDebouncedQuoteTimer) {
     clearTimeout(globalDebouncedQuoteTimer)
@@ -55,17 +53,6 @@ export const clearDebouncedQuoteRequest = () => {
 /**
  * Creates a function to handle requesting quotes from the market maker
  * with built-in debouncing and duplicate request prevention
- *
- * @param form Form instance from react-hook-form
- * @param parseAssetAmount Function to parse asset amount
- * @param assets List of NiaAsset objects
- * @param tradingPairs List of trading pairs from market maker (needed for asset mapping)
- * @param setIsQuoteLoading Function to set quote loading state
- * @param setIsToAmountLoading Function to set to amount loading state
- * @param hasValidQuote Optional function to check if there's already a valid quote
- * @param maxFromAmount Maximum amount that can be sent
- * @param minFromAmount Minimum amount that can be sent
- * @returns A function that can be called to request a quote
  */
 export const createQuoteRequestHandler = (
   form: UseFormReturn<Fields>,
@@ -207,11 +194,7 @@ export const createQuoteRequestHandler = (
   }
 }
 
-/**
- * Helper function to actually send the quote request
- *
- * @param direction 'from' sends from_amount, 'to' sends to_amount (reverse quote)
- */
+/** Helper function to actually send the quote request */
 const sendQuoteRequest = async (
   fromAssetTicker: string,
   toAssetTicker: string,
@@ -219,11 +202,10 @@ const sendQuoteRequest = async (
   assets: NiaAsset[],
   tradingPairs: TradingPair[],
   t?: TFunction,
-  direction: 'from' | 'to' = 'from'
+  direction: 'from' | 'to' = 'from' // 'to' sends to_amount (reverse quote)
 ) => {
-  // We use asset tickers in the UI, but need to send asset IDs to the websocket
-  // Get the actual asset IDs to send in the request
-  // Now using trading pairs to support assets the user doesn't own yet
+  // The UI uses tickers but the websocket needs asset IDs; trading pairs are
+  // consulted too so assets the user doesn't own yet still resolve.
   const fromAssetId = mapTickerToAssetId(fromAssetTicker, tradingPairs)
   const toAssetId = mapTickerToAssetId(toAssetTicker, tradingPairs)
 
@@ -400,12 +382,7 @@ export const createReverseQuoteRequestHandler = (
   }
 }
 
-/**
- * Starts a timer to request quotes periodically
- *
- * @param requestQuote Function to request a quote
- * @param intervalMs Interval in milliseconds (default: 15000)
- */
+/** Starts a timer to request quotes periodically */
 export const startQuoteRequestTimer = (
   requestQuote: () => Promise<void>,
   intervalMs: number = 15000 // Increased from 10000ms to 15000ms for less aggressive refreshing
@@ -419,9 +396,7 @@ export const startQuoteRequestTimer = (
   quoteRequestTimer = setInterval(requestQuote, intervalMs)
 }
 
-/**
- * Stops the quote request timer
- */
+/** Stops the quote request timer */
 export const stopQuoteRequestTimer = (): void => {
   if (quoteRequestTimer) {
     clearInterval(quoteRequestTimer)
@@ -432,12 +407,6 @@ export const stopQuoteRequestTimer = (): void => {
 /**
  * Creates a function to handle form amount changes and request a quote
  * with debouncing to avoid excessive requests while typing
- *
- * @param requestQuote Function to request a quote
- * @param setIsQuoteLoading Function to set quote loading state
- * @param setIsToAmountLoading Function to set to amount loading state
- * @param hasValidQuote Optional function to check if there's already a valid quote
- * @returns A function that can be called when the form amount changes
  */
 export const createAmountChangeQuoteHandler = (
   requestQuote: () => Promise<void>,

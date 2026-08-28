@@ -6,9 +6,7 @@ import { NiaAsset } from '../slices/nodeApi/nodeApi.slice'
 export const SATOSHIS_PER_BTC = 100000000
 export const MSATS_PER_SAT = 1000
 
-/**
- * Get the locale code for number formatting based on the current language
- */
+/** Get the locale code for number formatting based on the current language */
 export const getNumberLocale = (): string => {
   const language = i18n.language || 'en'
 
@@ -151,10 +149,6 @@ export const formatNumberInput = (value: string, precision: number): string => {
 
 /**
  * Gets the precision for a given asset based on its ticker and bitcoin unit setting
- * @param asset The asset ticker
- * @param bitcoinUnit The bitcoin unit (BTC or SAT)
- * @param assets List of assets with precision information
- * @returns The precision value for the asset
  */
 export const getAssetPrecision = (
   asset: string,
@@ -202,14 +196,7 @@ export const getBitcoinPrecision = (bitcoinUnit: string): number => {
   }
 }
 
-/**
- * Formats an amount for a specific asset with proper precision
- * @param amount The amount to format (in base units)
- * @param asset The asset ticker
- * @param bitcoinUnit The bitcoin unit (BTC or SAT)
- * @param assets List of assets with precision information
- * @returns Formatted amount string
- */
+/** Formats an amount for a specific asset with proper precision */
 export const formatAssetAmountWithPrecision = (
   amount: number,
   asset: string,
@@ -241,14 +228,7 @@ export const formatAssetAmountWithPrecision = (
   }).format(parseFloat(formattedAmount))
 }
 
-/**
- * Parses a string amount for a specific asset with proper precision
- * @param amount The amount string to parse (display format)
- * @param asset The asset ticker
- * @param bitcoinUnit The bitcoin unit (BTC or SAT)
- * @param assets List of assets with precision information
- * @returns Parsed amount as a number (in base units)
- */
+/** Parses a string amount for a specific asset with proper precision */
 export const parseAssetAmountWithPrecision = (
   amount: string | undefined | null,
   asset: string,
@@ -287,13 +267,7 @@ export const parseAssetAmountWithPrecision = (
   }
 }
 
-/**
- * Calculates the exchange rate between two assets
- * @param price The price from the feed
- * @param size The size from the feed (optional in newer versions)
- * @param isInverted Whether the pair is inverted from the user's perspective
- * @returns The calculated exchange rate
- */
+/** Calculates the exchange rate between two assets */
 export const calculateExchangeRate = (
   price: number,
   size?: number,
@@ -304,12 +278,7 @@ export const calculateExchangeRate = (
   return isInverted ? 1 / rate : rate
 }
 
-/**
- * Formats an exchange rate with appropriate precision
- * @param rate The exchange rate to format
- * @param precision The precision to use for formatting
- * @returns Formatted exchange rate string
- */
+/** Formats an exchange rate with appropriate precision */
 export const formatExchangeRate = (rate: number, precision: number): string => {
   const locale = getNumberLocale()
   const adjustedPrecision = precision > 4 ? precision : 4
@@ -321,32 +290,19 @@ export const formatExchangeRate = (rate: number, precision: number): string => {
   }).format(rate)
 }
 
-/**
- * Gets the display asset name based on the asset ticker and bitcoin unit
- * @param asset The asset ticker
- * @param bitcoinUnit The bitcoin unit (BTC or SAT)
- * @returns The display asset name
- */
+/** Gets the display asset name based on the asset ticker and bitcoin unit */
 export const getDisplayAsset = (asset: string, bitcoinUnit: string): string => {
   return asset === 'BTC' && bitcoinUnit === 'SAT' ? 'SAT' : asset
 }
 
-/**
- * Formats a number with commas for thousands separator
- * @param value The number to format
- * @returns The formatted number string
- */
+/** Formats a number with commas for thousands separator */
 export const formatNumberWithCommas = (value: string | number): string => {
   const parts = value.toString().split('.')
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   return parts.join('.')
 }
 
-/**
- * Parses a formatted number string to a plain number string
- * @param value The formatted number string (can be undefined, null, or string)
- * @returns The plain number string
- *  */
+/** Parses a formatted number string to a plain number string */
 export const parseNumberWithCommas = (
   value: string | undefined | null
 ): string => {
@@ -358,13 +314,6 @@ export const parseNumberWithCommas = (
 
 /**
  * Calculates and formats the exchange rate for display, handling inversion, precision, and bitcoin units.
- * @param fromAsset The asset being sent
- * @param toAsset The asset being received
- * @param price The price value (from WebSocket)
- * @param selectedPair The selected trading pair (with base/quote info)
- * @param bitcoinUnit The bitcoin unit (BTC, SAT, etc.)
- * @param getAssetPrecision Function to get asset precision
- * @returns Formatted exchange rate string
  */
 export const calculateAndFormatRate = (
   fromAsset: string,
@@ -410,9 +359,7 @@ export const calculateAndFormatRate = (
         ? rate * SATOSHIS_PER_BTC
         : rate
 
-  // Determine the appropriate precision for display
-  // For small rates (< 0.01), use more precision
-  // For large rates, use less precision but at least 2 decimal places
+  // Small rates (< 0.01) get more decimals; large rates at least 2.
   const displayPrecision =
     adjustedRate < 0.01
       ? Math.min(Math.max(fromPrecision, toPrecision), 8)

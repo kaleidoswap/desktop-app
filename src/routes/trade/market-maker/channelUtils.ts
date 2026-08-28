@@ -1,11 +1,7 @@
 import { Channel } from './types'
 import { logger } from '../../../utils/logger'
 
-/**
- * Checks if a single channel is considered tradable
- * @param channel The channel to check
- * @returns boolean indicating if the channel is tradable
- */
+/** Checks if a single channel is considered tradable */
 export const isTradableChannel = (channel: Channel): boolean => {
   return (
     // Channel must be ready
@@ -20,36 +16,22 @@ export const isTradableChannel = (channel: Channel): boolean => {
   )
 }
 
-/**
- * Checks if there are any tradable channels in the provided array
- * @param channels Array of channels to check
- * @returns boolean indicating if there's at least one tradable channel
- */
+/** Checks if there are any tradable channels in the provided array */
 export const hasTradableChannels = (channels: Channel[]): boolean => {
   return channels.some((channel) => isTradableChannel(channel))
 }
 
-/**
- * Filters the provided array to only include tradable channels
- * @param channels Array of channels to filter
- * @returns Array containing only tradable channels
- */
+/** Filters the provided array to only include tradable channels */
 export const getTradableChannels = (channels: Channel[]): Channel[] => {
   return channels.filter((channel) => isTradableChannel(channel))
 }
 
-/**
- * Counts the number of tradable channels in the provided array
- * @param channels Array of channels to count from
- * @returns Number of tradable channels
- */
+/** Counts the number of tradable channels in the provided array */
 export const countTradableChannels = (channels: Channel[]): number => {
   return getTradableChannels(channels).length
 }
 
-/**
- * Channel diagnostics interface for reporting channel status
- */
+/** Channel diagnostics interface for reporting channel status */
 export interface ChannelDiagnostics {
   totalChannels: number
   tradableChannels: number
@@ -58,11 +40,7 @@ export interface ChannelDiagnostics {
   channelsWithAssetId: number
 }
 
-/**
- * Gets diagnostic information about the tradable channels
- * @param channels Array of channels to analyze
- * @returns Object with diagnostic counts
- */
+/** Gets diagnostic information about the tradable channels */
 export const getTradableChannelDiagnostics = (
   channels: Channel[]
 ): ChannelDiagnostics => {
@@ -85,11 +63,7 @@ let lastLoggedDiagnostics: string | null = null
 let lastLogTime = 0
 const LOG_THROTTLE_MS = 5000 // Only log every 5 seconds
 
-/**
- * Logs diagnostic information about the tradable channels
- * @param channels Array of channels to analyze and log
- * @param force Force logging even if throttled
- */
+/** Logs diagnostic information about the tradable channels */
 export const logChannelDiagnostics = (
   channels: Channel[],
   force = false
@@ -118,11 +92,7 @@ export const logChannelDiagnostics = (
   logger.info(`- Channels with asset ID: ${diagnostics.channelsWithAssetId}`)
 }
 
-/**
- * Formats a channel diagnostics message for error reporting
- * @param channels Array of channels to analyze
- * @returns String message explaining the state of channels
- */
+/** Formats a channel diagnostics message for error reporting */
 export const getChannelDiagnosticsMessage = (channels: Channel[]): string => {
   const diagnostics = getTradableChannelDiagnostics(channels)
 
@@ -149,12 +119,7 @@ export const getChannelDiagnosticsMessage = (channels: Channel[]): string => {
   return `${diagnostics.tradableChannels} tradable channels available.`
 }
 
-/**
- * Checks if a specific asset has at least one ready channel
- * @param channels Array of channels to check
- * @param assetId The asset ID to check for
- * @returns boolean indicating if there's at least one ready channel for the asset
- */
+/** Checks if a specific asset has at least one ready channel */
 export const hasReadyChannelForAsset = (
   channels: Channel[],
   assetId: string | null
@@ -167,9 +132,6 @@ export const hasReadyChannelForAsset = (
 
 /**
  * Checks if a specific asset has channels but all are unconfirmed (not ready)
- * @param channels Array of channels to check
- * @param assetId The asset ID to check for
- * @returns boolean indicating if there are channels but none are ready
  */
 export const hasOnlyUnconfirmedChannelsForAsset = (
   channels: Channel[],
@@ -186,12 +148,7 @@ export const hasOnlyUnconfirmedChannelsForAsset = (
   return assetChannels.every((c) => !c.ready)
 }
 
-/**
- * Gets the count of ready channels for a specific asset
- * @param channels Array of channels to check
- * @param assetId The asset ID to check for
- * @returns Number of ready channels for the asset
- */
+/** Gets the count of ready channels for a specific asset */
 export const getReadyChannelCountForAsset = (
   channels: Channel[],
   assetId: string | null
@@ -202,12 +159,7 @@ export const getReadyChannelCountForAsset = (
   return assetChannels.filter((c) => c.ready).length
 }
 
-/**
- * Gets all channels for a specific asset
- * @param channels Array of channels to filter
- * @param assetId The asset ID to filter by
- * @returns Array of channels for the specific asset
- */
+/** Gets all channels for a specific asset */
 export const getChannelsForAsset = (
   channels: Channel[],
   assetId: string | null
@@ -216,9 +168,7 @@ export const getChannelsForAsset = (
   return channels.filter((c) => c.asset_id === assetId)
 }
 
-/**
- * Interface for asset channel status
- */
+/** Interface for asset channel status */
 export interface AssetChannelStatus {
   assetId: string
   hasChannels: boolean
@@ -228,12 +178,7 @@ export interface AssetChannelStatus {
   allUnconfirmed: boolean
 }
 
-/**
- * Gets detailed channel status for a specific asset
- * @param channels Array of channels to analyze
- * @param assetId The asset ID to check
- * @returns Detailed status object for the asset's channels
- */
+/** Gets detailed channel status for a specific asset */
 export const getAssetChannelStatus = (
   channels: Channel[],
   assetId: string | null

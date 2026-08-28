@@ -654,9 +654,7 @@ pub fn get_encrypted_mnemonic(
     Ok(result.flatten())
 }
 
-// ---------------------------------------------------------------------------
 // App Settings (key-value store)
-// ---------------------------------------------------------------------------
 
 #[allow(dead_code)]
 pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
@@ -676,9 +674,7 @@ pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error>
     )
 }
 
-// ---------------------------------------------------------------------------
 // NWC connections (Nostr Wallet Connect)
-// ---------------------------------------------------------------------------
 
 const NWC_COLUMNS: &str = "id, account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at, last_used_at";
 

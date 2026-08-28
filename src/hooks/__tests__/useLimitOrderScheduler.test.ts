@@ -93,7 +93,9 @@ const PAIR = {
 
 /** Orders returned by the mocked `limit_get_orders` Tauri command. */
 let dbOrders: LimitOrder[] = []
-/** Display price returned by the polling quote (converted to raw internally). */
+/**
+ * Display price returned by the polling quote (converted to raw internally).
+ */
 let pollPrice: number
 /** Response returned for the execution-sized quote request. */
 let execQuoteResponse: any

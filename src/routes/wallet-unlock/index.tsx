@@ -197,9 +197,7 @@ export const Component = () => {
     setUnlockStatusMessage(null)
 
     try {
-      // Quick reachability check before starting the retry loop.
-      // If the node is completely unreachable, fail fast with a clear message
-      // instead of retrying for minutes.
+      // Fail fast on an unreachable node instead of retrying for minutes.
       try {
         await withTimeout(nodeInfo(), 8000, 'Node reachability check')
       } catch (preCheckError: any) {

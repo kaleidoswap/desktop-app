@@ -109,7 +109,9 @@ const makePriceTargetOrder = (overrides: Partial<DcaOrder> = {}): DcaOrder => ({
   ...overrides,
 })
 
-/** Build a quote whose received sats exactly match expectation (0% slippage). */
+/**
+ * Build a quote whose received sats exactly match expectation (0% slippage).
+ */
 const makeQuote = (amountUsdt: number, priceBtcUsdt: number) => ({
   fee: { fee_asset: 'BTC', final_fee: 21_000 },
   from_asset: { asset_id: USDT_ASSET_ID },

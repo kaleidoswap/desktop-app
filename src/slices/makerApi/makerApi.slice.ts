@@ -149,9 +149,7 @@ export const normalizePair = (pair: TradingPair): TradingPair => {
   }
 }
 
-/**
- * Normalize an array of pairs from API response.
- */
+/** Normalize an array of pairs from API response. */
 export const normalizePairs = (pairs: TradingPair[]): TradingPair[] => {
   return pairs.map(normalizePair)
 }

@@ -5,15 +5,7 @@ import { formatNumberInput } from '../../../helpers/number'
 
 import { Fields } from './types'
 
-/**
- * Creates a handler function for from amount changes
- *
- * @param form Form instance from react-hook-form
- * @param getAssetPrecision Function to get asset precision
- * @param setDebouncedFromAmount Optional function to set debounced from amount
- * @param maxAmount Optional maximum amount allowed (in base units)
- * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
- */
+/** Creates a handler function for from amount changes */
 export const createFromAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
@@ -98,14 +90,7 @@ export const createFromAmountChangeHandler = (
   }
 }
 
-/**
- * Creates a handler function for to amount changes
- *
- * @param form Form instance from react-hook-form
- * @param getAssetPrecision Function to get asset precision
- * @param maxAmount Optional maximum amount allowed (in base units)
- * @param bitcoinUnit Optional bitcoin unit (BTC or SAT)
- */
+/** Creates a handler function for to amount changes */
 export const createToAmountChangeHandler = (
   form: UseFormReturn<Fields>,
   getAssetPrecision: (asset: string) => number,
@@ -180,11 +165,7 @@ export const createToAmountChangeHandler = (
   }
 }
 
-/**
- * Format a number with commas for better display (like 1,000,000)
- *
- * @param value Number to format
- */
+/** Format a number with commas for better display (like 1,000,000) */
 export const formatNumberWithCommas = (value: number | string): string => {
   if (typeof value === 'string' && !value) return ''
 
@@ -196,11 +177,7 @@ export const formatNumberWithCommas = (value: number | string): string => {
   return numValue.toLocaleString('en-US')
 }
 
-/**
- * Parse a display value with commas back to a numeric string format
- *
- * @param value Display value with commas
- */
+/** Parse a display value with commas back to a numeric string format */
 export const parseFormattedNumber = (value: string): string => {
   // Remove all non-numeric characters except decimal point
   return value.replace(/[^\d.]/g, '')

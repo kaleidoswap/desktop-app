@@ -4,9 +4,7 @@ import { NiaAsset } from './types'
 
 import { mapAssetIdToTicker, isAssetId } from './assetUtils'
 
-/**
- * Error message constants for asset conflicts
- */
+/** Error message constants for asset conflicts */
 export const createAssetConflictMessages = (t: TFunction) => ({
   CONFLICT_WARNING: (ticker: string) =>
     t('tradeMarketMaker.assetConflict.warning', { ticker }),
@@ -119,9 +117,7 @@ export const parseAmountValidationError = (
   return null
 }
 
-/**
- * Gets a validation error message for the current form state
- */
+/** Gets a validation error message for the current form state */
 export const getValidationError = (
   fromAmount: number,
   _toAmount: number,
@@ -210,11 +206,7 @@ export const getValidationError = (
   return null
 }
 
-/**
- * Gets a specific validation error for a given field
- * @param field The field name
- * @param errors The current validation errors
- */
+/** Gets a specific validation error for a given field */
 export const getFieldError = (
   field: string,
   errors: Record<string, any>

@@ -31,9 +31,7 @@ interface Channel {
 
 const MSATS_PER_SAT = 1000
 
-/**
- * Gets the minimum order size for a specific asset from the trading pair
- */
+/** Gets the minimum order size for a specific asset from the trading pair */
 const getMinOrderSizeForAsset = async (
   asset: string,
   selectedPair: TradingPair | null
@@ -78,9 +76,7 @@ export const findComplementaryAsset = (
   return pair.base_asset === asset ? pair.quote_asset : pair.base_asset
 }
 
-/**
- * Creates a handler for asset change events
- */
+/** Creates a handler for asset change events */
 export const createAssetChangeHandler = (
   form: any,
   tradablePairs: TradingPair[],
@@ -266,9 +262,7 @@ export const createAssetChangeHandler = (
   }
 }
 
-/**
- * Creates a handler for swapping assets
- */
+/** Creates a handler for swapping assets */
 export const createSwapAssetsHandler = (
   selectedPair: TradingPair | null,
   form: any,
@@ -325,8 +319,7 @@ export const createSwapAssetsHandler = (
           selectedPair
         )
 
-        // Convert display-unit parsedToAmount to raw units for comparison with
-        // minOrderSize and newMaxAmount (which are both in raw units).
+        // To raw units for comparison with minOrderSize/newMaxAmount.
         // e.g. USDT precision=6: display 0.06 → raw 60,000
         const newFromPrecision = getAssetPrecision
           ? getAssetPrecision(toAsset)
@@ -471,9 +464,6 @@ export const getAvailableAssetTickers = (
  * Validates trading pairs to ensure no ticker conflicts exist
  * A ticker conflict occurs when the same ticker (e.g., "USDT") has different asset IDs
  * This indicates different assets with the same ticker, which should not be traded
- *
- * @param pairs Array of trading pairs to validate
- * @returns Object containing valid pairs and any conflicts found
  */
 export const validateTradingPairs = (
   pairs: TradingPair[]
@@ -580,10 +570,7 @@ export const validateTradingPairs = (
   return { conflicts, validPairs }
 }
 
-/**
- * Logs detailed information about asset conflicts for debugging
- * @param conflicts Array of conflicts detected
- */
+/** Logs detailed information about asset conflicts for debugging */
 export const logAssetConflicts = (
   conflicts: Array<{
     ticker: string
@@ -614,12 +601,7 @@ export const logAssetConflicts = (
   logger.warn(`=== END CONFLICT REPORT ===\n`)
 }
 
-/**
- * Checks if a trading pair is safe to trade (no asset conflicts)
- * @param pair The trading pair to check
- * @param allPairs All available trading pairs to check against
- * @returns True if the pair is safe to trade, false if there are conflicts
- */
+/** Checks if a trading pair is safe to trade (no asset conflicts) */
 export const isPairSafeToTrade = (
   pair: TradingPair,
   allPairs: TradingPair[]
@@ -634,12 +616,7 @@ export const isPairSafeToTrade = (
   )
 }
 
-/**
- * Gets all asset conflicts for a specific ticker
- * @param ticker The ticker to check for conflicts
- * @param allPairs All available trading pairs
- * @returns Array of asset IDs that conflict for this ticker, or empty array if no conflicts
- */
+/** Gets all asset conflicts for a specific ticker */
 export const getAssetConflictsForTicker = (
   ticker: string,
   allPairs: TradingPair[]
@@ -649,9 +626,7 @@ export const getAssetConflictsForTicker = (
   return conflict ? conflict.assetIds : []
 }
 
-/**
- * Creates a handler for fetching and setting trading pairs using the SDK
- */
+/** Creates a handler for fetching and setting trading pairs using the SDK */
 export const createFetchAndSetPairsHandler = (
   getClient: () => any, // Returns KaleidoClient
   dispatch: (action: any) => void,
@@ -828,11 +803,6 @@ export const createFetchAndSetPairsHandler = (
  * Maps an asset ID to its ticker symbol
  * This is crucial for UI display, as users should see tickers not asset IDs
  * Now also checks trading pairs to support assets the user doesn't own yet
- *
- * @param assetId The full asset ID (e.g., "rgb:Dg!Mttpk-NSLmSJF-iDdTsdE-mnAg5$V-KqWib!Y-kkWETBE")
- * @param assets List of assets to map from
- * @param tradingPairs Optional trading pairs to also check for asset mapping
- * @returns The ticker symbol (e.g., "USDT") or a shortened version of the asset ID if not found
  */
 export const mapAssetIdToTicker = (
   assetId: string,
@@ -890,10 +860,6 @@ export const mapAssetIdToTicker = (
  * Maps a ticker symbol to its full asset ID
  * This is needed for WebSocket communication where we must use asset IDs
  * ONLY uses trading pairs from the maker - ensures we only trade maker's supported assets
- *
- * @param ticker The ticker symbol (e.g., "USDT")
- * @param tradingPairs Trading pairs from the maker
- * @returns The full asset ID or the original ticker if not found
  */
 export const mapTickerToAssetId = (
   ticker: string,
@@ -926,9 +892,6 @@ export const mapTickerToAssetId = (
 /**
  * Checks if a string is likely an asset ID rather than a ticker
  * Used to determine if we need to convert for display
- *
- * @param assetString The string to check
- * @returns True if it appears to be an asset ID
  */
 export const isAssetId = (assetString: string): boolean => {
   // Guard against undefined/null
@@ -949,9 +912,7 @@ export const isAssetId = (assetString: string): boolean => {
   return false
 }
 
-/**
- * Get default maker URLs including reliable fallbacks
- */
+/** Get default maker URLs including reliable fallbacks */
 export const getDefaultMakerUrls = (primaryUrl: string): string[] => {
   const urls = [primaryUrl]
 
@@ -963,17 +924,13 @@ export const getDefaultMakerUrls = (primaryUrl: string): string[] => {
     urls.push('http://localhost:8000')
   }
 
-  // Add other reliable fallbacks (only include known working URLs)
-  // Note: Only add URLs that are generally accessible and working
-  // Staging/regtest APIs that are frequently down should not be included here
+  // Only add URLs that are reliably reachable — not staging/regtest APIs.
 
   // Remove duplicates and return
   return [...new Set(urls)]
 }
 
-/**
- * Quick health check for a maker URL to test basic connectivity
- */
+/** Quick health check for a maker URL to test basic connectivity */
 export const checkMakerHealth = async (
   makerUrl: string,
   timeoutMs: number = 5000
@@ -1036,9 +993,7 @@ export const checkMakerHealth = async (
   }
 }
 
-/**
- * Fetch trading pairs from maker via HTTP API (without WebSocket)
- */
+/** Fetch trading pairs from maker via HTTP API (without WebSocket) */
 export const fetchMakerTradingPairs = async (
   makerUrl: string
 ): Promise<{

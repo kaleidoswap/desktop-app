@@ -405,9 +405,7 @@ export const Component: React.FC = () => {
 
       await updates()
 
-      // Note: WebSocket connection management is handled by the market maker page
-      // We just update the settings here - the market maker page will detect the change
-      // and reconnect automatically if needed
+      // The market maker page owns the WebSocket and reconnects on this change.
 
       // Check if node *connection* settings actually changed. Maker/LSP URLs
       // don't require a node restart, so they must never trip this check.

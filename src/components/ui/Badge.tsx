@@ -13,9 +13,7 @@ interface BadgeProps {
   dot?: boolean
 }
 
-/**
- * Badge component for status indicators and labels
- */
+/** Badge component for status indicators and labels */
 export const Badge: React.FC<BadgeProps> = ({
   children,
   variant = 'default',
@@ -53,9 +51,7 @@ export const Badge: React.FC<BadgeProps> = ({
   )
 }
 
-/**
- * Status badge with a dot indicator
- */
+/** Status badge with a dot indicator */
 export const StatusBadge: React.FC<
   Omit<BadgeProps, 'dot'> & {
     status: 'online' | 'offline' | 'pending' | 'error'

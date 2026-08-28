@@ -126,17 +126,12 @@ fn main() {
                 }
                 dca_scheduler.set_app_handle(app.handle().clone());
                 nwc_manager.set_app_handle(app.handle().clone());
-                // NWC service is started lazily via nwc_start_service
-                // when the frontend detects the node is unlocked.
-                // DCA scheduler is started lazily via dca_start_scheduler
-                // when the frontend detects the node is unlocked.
+                // The NWC service and DCA scheduler both start lazily, once the
+                // frontend detects the node is unlocked.
                 db::init()?;
 
-                // The agent runtime (provider + MCP + Node) isn't bundled in the
-                // installer — it's downloaded on demand into app data the first
-                // time the user enables KaleidoMind (see mind_runtime). mind.rs
-                // resolves it at sidecar-start time (downloaded → dev siblings),
-                // so nothing to wire up here.
+                // The agent runtime is downloaded on demand (mind_runtime) and
+                // resolved at sidecar-start time, so nothing to wire up here.
 
                 // Set up system tray
                 tray::setup_tray(app.handle(), Arc::clone(&node_process))?;
@@ -883,9 +878,8 @@ fn get_local_node_capabilities() -> HashMap<String, bool> {
 async fn get_markdown_content(app: tauri::AppHandle, file_path: String) -> Result<String, String> {
     use std::path::PathBuf;
 
-    // Resolve the file path: if it's a relative path starting with "../docs/",
-    // resolve it against the resource directory (for bundled builds) or the
-    // Cargo manifest directory (for dev builds).
+    // A "../docs/" relative path resolves against the resource dir (bundled)
+    // or the Cargo manifest dir (dev).
     let resolved_path = if file_path.starts_with("../docs/") {
         let filename = file_path.strip_prefix("../docs/").unwrap_or(&file_path);
 
@@ -921,10 +915,7 @@ async fn get_markdown_content(app: tauri::AppHandle, file_path: String) -> Resul
     Ok(content)
 }
 
-/// Store encrypted mnemonic for an account
-///
-/// This command encrypts the mnemonic using the user's password and stores it securely
-/// in the database. The encryption uses AES-256-GCM with Argon2id key derivation.
+/// Encrypt a mnemonic with the user's password and store it for the account.
 #[tauri::command]
 fn store_encrypted_mnemonic(
     account_name: String,
@@ -985,9 +976,7 @@ fn dca_delete_order(
     db::delete_dca_order(account.id, order_id).map_err(|e| e.to_string())
 }
 
-// ---------------------------------------------------------------------------
 // NWC (Nostr Wallet Connect) commands
-// ---------------------------------------------------------------------------
 
 /// Report whether the NWC service is currently running.
 #[tauri::command]
@@ -1167,10 +1156,7 @@ fn limit_delete_order(
     db::delete_limit_order(account.id, order_id).map_err(|e| e.to_string())
 }
 
-/// Retrieve and decrypt mnemonic for an account
-///
-/// This command retrieves the encrypted mnemonic from the database and decrypts it
-/// using the provided password. Returns an error if the password is incorrect.
+/// Retrieve and decrypt an account's mnemonic; errors if the password is wrong.
 #[tauri::command]
 fn get_decrypted_mnemonic(
     state: tauri::State<CurrentAccount>,
@@ -1201,9 +1187,7 @@ fn get_decrypted_mnemonic(
     Ok(mnemonic)
 }
 
-// ---------------------------------------------------------------------------
 // Docker node management commands
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 fn check_docker_environment(account_name: String) -> Option<DockerEnvironment> {

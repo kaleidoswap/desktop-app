@@ -38,9 +38,7 @@ export const getNodeStateMessage = (state: NodeState): string => {
   }
 }
 
-/**
- * Wait for node to reach a specific state with timeout
- */
+/** Wait for node to reach a specific state with timeout */
 export const waitForNodeState = async (
   targetState: NodeState['status'],
   options: {

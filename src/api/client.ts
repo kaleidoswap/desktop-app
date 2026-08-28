@@ -44,9 +44,6 @@ export const getKaleidoClient = async (
   const baseUrl =
     state.nodeSettings.data?.default_maker_url || 'http://localhost:8000'
 
-  // Check if we need to recreate the client
-  // - If it doesn't exist
-  // - If config changed
   const needsRecreate =
     !clientInstance ||
     currentNodeUrl !== (nodeUrl ?? null) ||

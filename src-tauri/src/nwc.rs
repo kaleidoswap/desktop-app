@@ -1,21 +1,18 @@
 //! Nostr Wallet Connect (NIP-47) wallet service.
 //!
-//! Runs an always-on background task (Tokio) inside the Tauri backend that:
-//!   1. connects to Nostr relays,
-//!   2. advertises wallet capabilities via an info event (kind 13194),
-//!   3. listens for NIP-47 requests (kind 23194) from authorized client pubkeys,
-//!   4. executes them against the embedded RGB Lightning Node over HTTP, and
-//!   5. publishes encrypted responses (kind 23195).
+//! An always-on Tokio task that connects to relays, advertises capabilities
+//! (kind 13194), executes NIP-47 requests (kind 23194) from authorized pubkeys
+//! against the embedded RGB Lightning Node, and publishes encrypted responses
+//! (kind 23195).
 //!
-//! The service keypair is a random Nostr identity generated once per account
-//! and persisted (independent of the wallet seed, so it works for every account
-//! type — including remote-node accounts with no stored mnemonic). Each
-//! connected app gets its own randomly generated client secret (handed out in
-//! the `nostr+walletconnect://` URI) which the service authorizes individually
-//! with per-connection method allowlists + spend budget.
+//! The service keypair is a random Nostr identity persisted per account,
+//! independent of the wallet seed, so it works even for remote-node accounts
+//! with no stored mnemonic. Each connected app gets its own client secret
+//! (handed out in the `nostr+walletconnect://` URI), authorized individually
+//! with a method allowlist + spend budget.
 //!
 //! Scope (v1): BTC Lightning only — standard NIP-47 has no notion of RGB
-//! assets. RGB-asset support is a possible future `kaleido_*` extension.
+//! assets; `rln_*` extension methods cover those.
 
 use nostr::nips::{nip04, nip44, nip47};
 use nostr::JsonUtil;
@@ -351,9 +348,7 @@ impl Default for NwcManager {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Request handling
-// ---------------------------------------------------------------------------
 
 fn err(code: nip47::ErrorCode, message: impl Into<String>) -> nip47::NIP47Error {
     nip47::NIP47Error {
@@ -432,11 +427,10 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
     let _ = db::touch_nwc_connection(&client_hex, now);
 
     if method_str == "get_info" {
-        // Answer get_info with raw JSON so we can advertise this connection's
-        // actual allowlist — including the `rln_*` methods. The typed
-        // `nip47::GetInfoResponse` (used by the standard path below) drops
-        // custom method strings, which would hide RGB capability from clients
-        // that detect RLN via `methods` (e.g. the rate wallet's NwcRgbAdapter).
+        // Answer get_info with raw JSON so we advertise this connection's actual
+        // allowlist, including `rln_*`. The typed `nip47::GetInfoResponse` drops
+        // custom method strings, hiding RGB capability from clients that detect
+        // RLN via `methods`.
         let result = rln_get_info_json(&ctx, &connection).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
         let _ = respond_json(&ctx, &event, &client_pubkey, "get_info", result, enc).await;
@@ -745,9 +739,7 @@ async fn dispatch_rln(
     }
 }
 
-// ---------------------------------------------------------------------------
 // RLN HTTP bridge (talks to the embedded node, no auth — local loopback)
-// ---------------------------------------------------------------------------
 
 async fn rln_post<T: DeserializeOwned>(
     ctx: &ServiceCtx,
@@ -865,10 +857,8 @@ struct RlnDecodeInvoiceResp {
 
 // --- method implementations ---
 
-/// Raw-JSON `get_info` that reports the connection's actual method allowlist
-/// (standard NIP-47 + any enabled `rln_*` extensions). Emitted instead of the
-/// typed [`rln_get_info`] so custom `rln_*` strings survive — clients use these
-/// to detect RGB Lightning Node capability.
+/// Raw-JSON `get_info` reporting the connection's actual method allowlist.
+/// Emitted instead of the typed [`rln_get_info`] so `rln_*` strings survive.
 async fn rln_get_info_json(
     ctx: &ServiceCtx,
     connection: &db::NwcConnection,
