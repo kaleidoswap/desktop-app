@@ -34,7 +34,9 @@ import type { ChatToolEvent } from './shared'
 
 // ── Formatting helpers ───────────────────────────────────────────────────
 
-/** Format a sats value (number or numeric string) → "12,345 sats", else null. */
+/**
+ * Format a sats value (number or numeric string) → "12,345 sats", else null.
+ */
 export function fmtSats(n: unknown): string | null {
   const v = typeof n === 'number' ? n : Number(n)
   return Number.isFinite(v) ? `${v.toLocaleString('en-US')} sats` : null
@@ -54,7 +56,9 @@ function num(n: unknown): number | null {
   return Number.isFinite(v) ? v : null
 }
 
-/** Tool results arrive as a JSON string (MCP text content). Coerce to a value. */
+/**
+ * Tool results arrive as a JSON string (MCP text content). Coerce to a value.
+ */
 export function coerce(result: unknown): unknown {
   if (typeof result === 'string') {
     const s = result.trim()
@@ -83,7 +87,9 @@ function truncMiddle(s: string, head = 10, tail = 8): string {
     : s
 }
 
-/** Humanize a tool name for the live "running" pill, e.g. "Checking balance". */
+/**
+ * Humanize a tool name for the live "running" pill, e.g. "Checking balance".
+ */
 export function humanizeToolName(name: string): string {
   const map: Record<string, string> = {
     find_merchant_locations: 'Finding merchants nearby',

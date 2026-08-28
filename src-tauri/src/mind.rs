@@ -1,25 +1,19 @@
 //! KaleidoMind sidecar bridge.
 //!
-//! Supervises the `@kaleidorg/mind-provider` Node sidecar (apps/provider) and
-//! relays its line-delimited JSON protocol (see apps/provider/src/protocol.ts):
-//!   - Commands  (Tauri → sidecar) are written to the child's stdin.
-//!   - Events    (sidecar → Tauri) are read from stdout and re-emitted to the
-//!     webview as the `mind-event` Tauri event (the JSON is forwarded verbatim).
-//!   - stderr is human-readable diagnostics → forwarded to the Tauri log.
+//! Supervises the `@kaleidorg/mind-provider` Node sidecar and relays its
+//! line-delimited JSON protocol (apps/provider/src/protocol.ts): commands go to
+//! the child's stdin, stdout events are re-emitted verbatim as the `mind-event`
+//! Tauri event, stderr goes to the Tauri log. Rust stays a transparent pipe —
+//! all protocol/model logic lives in TS.
 //!
-//! Rust stays a transparent pipe; all protocol/model logic lives in TS. The
-//! sidecar runs the QVAC model, the P2P provider (for phone delegation), skills
-//! and MCP tools.
+//! Launch resolution order:
+//!   1. `$KALEIDO_MIND_CMD` (+ optional space-separated `$KALEIDO_MIND_ARGS`)
+//!   2. `node <dir>/dist/index.js`, if that build exists
+//!   3. `pnpm start` with cwd = `<dir>`
 //!
-//! Sidecar launch is resolved in this order:
-//!   1. `$KALEIDO_MIND_CMD` (+ optional `$KALEIDO_MIND_ARGS`, space-separated)
-//!   2. `node <dir>/dist/index.js`        if that build exists
-//!   3. `pnpm start` with cwd = `<dir>`    (runs `tsx src/index.ts`)
-//!
-//! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` (override), the on-demand
-//! runtime downloaded into app data (mind_runtime), or a dev sibling-path guess.
-//! Resolution happens at start time and is passed to the child via cmd.env —
-//! we never mutate this process's own environment.
+//! `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR`, the downloaded runtime
+//! (mind_runtime), or a dev sibling-path guess. Resolved at start time and
+//! passed to the child via cmd.env — never by mutating our own environment.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -49,7 +43,10 @@ impl MindProcess {
     }
 
     pub fn is_running(&self) -> bool {
-        let mut guard = self.child.lock().unwrap();
+        let mut guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         match guard.as_mut() {
             Some(child) => match child.try_wait() {
                 Ok(Some(_)) => false, // exited
@@ -66,7 +63,10 @@ impl MindProcess {
         // Hold the child lock for the entire check-and-spawn to prevent a race
         // where two concurrent callers both observe is_running()==false and each
         // try to spawn, producing multiple visible console windows on Windows.
-        let mut child_guard = self.child.lock().unwrap();
+        let mut child_guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let already_running = match child_guard.as_mut() {
             Some(c) => matches!(c.try_wait(), Ok(None)),
             None => false,
@@ -172,7 +172,10 @@ impl MindProcess {
         let stdout = child.stdout.take().ok_or("no stdout on sidecar")?;
         let stderr = child.stderr.take().ok_or("no stderr on sidecar")?;
 
-        *self.stdin.lock().unwrap() = Some(child_stdin);
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(child_stdin);
         *child_guard = Some(child);
         drop(child_guard);
 
@@ -217,7 +220,10 @@ impl MindProcess {
     /// Write one JSON command line to the sidecar's stdin.
     pub fn send(&self, app: &AppHandle, payload: &serde_json::Value) -> Result<(), String> {
         self.ensure_started(app)?;
-        let mut guard = self.stdin.lock().unwrap();
+        let mut guard = self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let stdin = guard.as_mut().ok_or("sidecar stdin not available")?;
         let mut line = serde_json::to_string(payload).map_err(|e| e.to_string())?;
         line.push('\n');
@@ -230,8 +236,16 @@ impl MindProcess {
 
     /// Kill the sidecar (best-effort) and drop the pipes.
     pub fn stop(&self) {
-        *self.stdin.lock().unwrap() = None;
-        if let Some(mut child) = self.child.lock().unwrap().take() {
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        if let Some(mut child) = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
             let _ = child.kill();
             let _ = child.wait();
         }

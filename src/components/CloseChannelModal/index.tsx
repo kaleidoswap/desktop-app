@@ -9,6 +9,7 @@ import {
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 interface CloseChannelModalProps {
   isOpen: boolean
@@ -77,7 +78,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
 
       onClose()
     } catch (error: any) {
-      console.error('Error closing channel:', error)
+      logger.error('Error closing channel:', error)
 
       const errorMessage = error?.data?.error || 'Unknown error'
       setError(errorMessage)

@@ -133,9 +133,7 @@ import { TakerRequest } from './types'
 export const nodeApi = createApi({
   baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
-    // ============================================================================
     // BTC Operations
-    // ============================================================================
     address: builder.query<AddressResponse, void>({
       queryFn: queryFn((w, _: void) => w.getAddress()),
     }),
@@ -211,16 +209,12 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.keysend(args)),
     }),
 
-    // ============================================================================
     // RGB Asset Operations
-    // ============================================================================
     listAssets: builder.query<ListAssetsResponse, void>({
       queryFn: queryFn((w, _: void) => w.listAssets()),
     }),
 
-    // ============================================================================
     // Lightning Network - Channels
-    // ============================================================================
     listChannels: builder.query<ListChannelsResponse, void>({
       queryFn: queryFn((w, _: void) => w.listChannels()),
     }),
@@ -229,16 +223,12 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, _: void) => w.listPayments()),
     }),
 
-    // ============================================================================
     // Lightning Network - Peers
-    // ============================================================================
     listPeers: builder.query<ListPeersResponse, void>({
       queryFn: queryFn((w, _: void) => w.listPeers()),
     }),
 
-    // ============================================================================
     // Swaps
-    // ============================================================================
     listSwaps: builder.query<ListSwapsResponse, void>({
       queryFn: queryFn((w, _: void) => w.listSwaps()),
     }),
@@ -255,9 +245,7 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, _: void) => w.listUnspents()),
     }),
 
-    // ============================================================================
     // Lightning Network - Invoices & Payments
-    // ============================================================================
     lnInvoice: builder.mutation<LNInvoiceResponse, LNInvoiceInput>({
       queryFn: queryFn((w, args) => w.createLNInvoice(args)),
     }),
@@ -278,9 +266,7 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, _: void) => w.getNetworkInfo()),
     }),
 
-    // ============================================================================
     // Wallet Management
-    // ============================================================================
     nodeInfo: builder.query<NodeInfoResponse, void>({
       queryFn: queryFn((w, _: void) => w.getNodeInfo()),
     }),
@@ -319,9 +305,7 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, _: void) => w.shutdown()),
     }),
 
-    // ============================================================================
     // Utility Methods
-    // ============================================================================
     signMessage: builder.mutation<SignMessageResponse, SignMessageRequest>({
       queryFn: queryFn((w, args) => w.signMessage(args)),
     }),

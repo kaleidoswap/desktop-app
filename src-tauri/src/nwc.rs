@@ -1,21 +1,18 @@
 //! Nostr Wallet Connect (NIP-47) wallet service.
 //!
-//! Runs an always-on background task (Tokio) inside the Tauri backend that:
-//!   1. connects to Nostr relays,
-//!   2. advertises wallet capabilities via an info event (kind 13194),
-//!   3. listens for NIP-47 requests (kind 23194) from authorized client pubkeys,
-//!   4. executes them against the embedded RGB Lightning Node over HTTP, and
-//!   5. publishes encrypted responses (kind 23195).
+//! An always-on Tokio task that connects to relays, advertises capabilities
+//! (kind 13194), executes NIP-47 requests (kind 23194) from authorized pubkeys
+//! against the embedded RGB Lightning Node, and publishes encrypted responses
+//! (kind 23195).
 //!
-//! The service keypair is a random Nostr identity generated once per account
-//! and persisted (independent of the wallet seed, so it works for every account
-//! type — including remote-node accounts with no stored mnemonic). Each
-//! connected app gets its own randomly generated client secret (handed out in
-//! the `nostr+walletconnect://` URI) which the service authorizes individually
-//! with per-connection method allowlists + spend budget.
+//! The service keypair is a random Nostr identity persisted per account,
+//! independent of the wallet seed, so it works even for remote-node accounts
+//! with no stored mnemonic. Each connected app gets its own client secret
+//! (handed out in the `nostr+walletconnect://` URI), authorized individually
+//! with a method allowlist + spend budget.
 //!
 //! Scope (v1): BTC Lightning only — standard NIP-47 has no notion of RGB
-//! assets. RGB-asset support is a possible future `kaleido_*` extension.
+//! assets; `rln_*` extension methods cover those.
 
 use nostr::nips::{nip04, nip44, nip47};
 use nostr::JsonUtil;
@@ -127,18 +124,24 @@ impl NwcManager {
     }
 
     pub fn set_app_handle(&self, handle: AppHandle) {
-        *self.app_handle.lock().unwrap() = Some(handle);
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(handle);
     }
 
     pub fn is_running(&self) -> bool {
-        self.inner.lock().unwrap().is_some()
+        self.inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_some()
     }
 
     /// The bech32 npub of the running service, if any.
     pub fn service_npub(&self) -> Option<String> {
         self.service_pubkey
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .as_ref()
             .and_then(|pk| pk.to_bech32().ok())
     }
@@ -212,7 +215,11 @@ impl NwcManager {
             proxy_endpoint: cfg.proxy_endpoint,
             network: cfg.network,
             account_id: cfg.account_id,
-            app_handle: self.app_handle.lock().unwrap().clone(),
+            app_handle: self
+                .app_handle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone(),
         };
 
         // Spawn the notification loop. Each request is handled in its own task
@@ -242,16 +249,33 @@ impl NwcManager {
             log::info!("[NWC] service stopped");
         });
 
-        *self.service_pubkey.lock().unwrap() = Some(service_pubkey);
-        *self.relays.lock().unwrap() = relays;
-        *self.inner.lock().unwrap() = Some(RunningService { client, task });
+        *self
+            .service_pubkey
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(service_pubkey);
+        *self
+            .relays
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = relays;
+        *self
+            .inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(RunningService { client, task });
         Ok(())
     }
 
     /// Stop the NWC service. Safe to call when not running.
     pub async fn stop(&self) {
-        let running = self.inner.lock().unwrap().take();
-        *self.service_pubkey.lock().unwrap() = None;
+        let running = self
+            .inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        *self
+            .service_pubkey
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
         if let Some(running) = running {
             running.client.shutdown().await;
             running.task.abort();
@@ -270,9 +294,13 @@ impl NwcManager {
         let service_pubkey = self
             .service_pubkey
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .ok_or_else(|| "NWC service is not running".to_string())?;
-        let relays = self.relays.lock().unwrap().clone();
+        let relays = self
+            .relays
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
 
         // Fresh per-connection client key (the "secret" handed to the app).
         let client_keys = Keys::generate();
@@ -320,9 +348,7 @@ impl Default for NwcManager {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Request handling
-// ---------------------------------------------------------------------------
 
 fn err(code: nip47::ErrorCode, message: impl Into<String>) -> nip47::NIP47Error {
     nip47::NIP47Error {
@@ -401,11 +427,10 @@ async fn handle_request(ctx: ServiceCtx, event: Event) {
     let _ = db::touch_nwc_connection(&client_hex, now);
 
     if method_str == "get_info" {
-        // Answer get_info with raw JSON so we can advertise this connection's
-        // actual allowlist — including the `rln_*` methods. The typed
-        // `nip47::GetInfoResponse` (used by the standard path below) drops
-        // custom method strings, which would hide RGB capability from clients
-        // that detect RLN via `methods` (e.g. the rate wallet's NwcRgbAdapter).
+        // Answer get_info with raw JSON so we advertise this connection's actual
+        // allowlist, including `rln_*`. The typed `nip47::GetInfoResponse` drops
+        // custom method strings, hiding RGB capability from clients that detect
+        // RLN via `methods`.
         let result = rln_get_info_json(&ctx, &connection).await;
         emit_activity(&ctx, &connection, &method_str, result.is_ok(), now);
         let _ = respond_json(&ctx, &event, &client_pubkey, "get_info", result, enc).await;
@@ -616,6 +641,13 @@ async fn respond_json(
 /// Dispatch an `rln_` extension method to its fixed RLN endpoint, forwarding the
 /// raw JSON body and returning the raw JSON response. The path is server-chosen
 /// per method; the client only controls the body.
+fn default_expiration_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() + 3600)
+        .unwrap_or(0)
+}
+
 async fn dispatch_rln(
     ctx: &ServiceCtx,
     method: &str,
@@ -650,13 +682,15 @@ async fn dispatch_rln(
             // RLN requires expiration_timestamp + a non-empty transport_endpoints.
             let mut body = obj();
             if body.get("expiration_timestamp").is_none() {
-                let exp = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_secs() + 3600)
-                    .unwrap_or(0);
-                body["expiration_timestamp"] = serde_json::json!(exp);
+                body["expiration_timestamp"] = serde_json::json!(default_expiration_timestamp());
             }
-            if body.get("transport_endpoints").is_none() && !ctx.proxy_endpoint.is_empty() {
+            if body.get("transport_endpoints").is_none() {
+                if ctx.proxy_endpoint.is_empty() {
+                    return Err(err(
+                        nip47::ErrorCode::Internal,
+                        "transport_endpoints missing and no RGB proxy endpoint is configured",
+                    ));
+                }
                 body["transport_endpoints"] = serde_json::json!([ctx.proxy_endpoint]);
             }
             rln_post::<serde_json::Value>(ctx, "/rgbinvoice", body).await
@@ -667,7 +701,37 @@ async fn dispatch_rln(
         "rln_decode_rgb_invoice" => {
             rln_post::<serde_json::Value>(ctx, "/decodergbinvoice", obj()).await
         }
-        "rln_send_asset" => rln_post::<serde_json::Value>(ctx, "/sendrgb", obj()).await,
+        "rln_send_asset" => {
+            // Like /rgbinvoice, RLN requires expiration_timestamp, plus
+            // transport_endpoints on every recipient in recipient_map.
+            let mut body = obj();
+            if body.get("expiration_timestamp").is_none() {
+                body["expiration_timestamp"] = serde_json::json!(default_expiration_timestamp());
+            }
+            if let Some(map) = body
+                .get_mut("recipient_map")
+                .and_then(|m| m.as_object_mut())
+            {
+                for recipients in map.values_mut() {
+                    let Some(list) = recipients.as_array_mut() else {
+                        continue;
+                    };
+                    for recipient in list {
+                        if recipient.get("transport_endpoints").is_some() {
+                            continue;
+                        }
+                        if ctx.proxy_endpoint.is_empty() {
+                            return Err(err(
+                                nip47::ErrorCode::Internal,
+                                "recipient is missing transport_endpoints and no RGB proxy endpoint is configured",
+                            ));
+                        }
+                        recipient["transport_endpoints"] = serde_json::json!([ctx.proxy_endpoint]);
+                    }
+                }
+            }
+            rln_post::<serde_json::Value>(ctx, "/sendrgb", body).await
+        }
         _ => Err(err(
             nip47::ErrorCode::NotImplemented,
             format!("Unknown method '{method}'"),
@@ -675,9 +739,7 @@ async fn dispatch_rln(
     }
 }
 
-// ---------------------------------------------------------------------------
 // RLN HTTP bridge (talks to the embedded node, no auth — local loopback)
-// ---------------------------------------------------------------------------
 
 async fn rln_post<T: DeserializeOwned>(
     ctx: &ServiceCtx,
@@ -795,10 +857,8 @@ struct RlnDecodeInvoiceResp {
 
 // --- method implementations ---
 
-/// Raw-JSON `get_info` that reports the connection's actual method allowlist
-/// (standard NIP-47 + any enabled `rln_*` extensions). Emitted instead of the
-/// typed [`rln_get_info`] so custom `rln_*` strings survive — clients use these
-/// to detect RGB Lightning Node capability.
+/// Raw-JSON `get_info` reporting the connection's actual method allowlist.
+/// Emitted instead of the typed [`rln_get_info`] so `rln_*` strings survive.
 async fn rln_get_info_json(
     ctx: &ServiceCtx,
     connection: &db::NwcConnection,

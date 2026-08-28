@@ -20,6 +20,7 @@ import {
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 interface ChangePasswordModalProps {
   showModal: boolean
@@ -182,7 +183,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           password: newPassword,
         })
       } catch (err) {
-        console.error('Failed to re-encrypt local mnemonic copy:', err)
+        logger.error('Failed to re-encrypt local mnemonic copy:', err)
       }
     }
 

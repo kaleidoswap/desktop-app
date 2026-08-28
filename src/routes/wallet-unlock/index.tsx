@@ -38,6 +38,7 @@ import {
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
+import { logger } from '../../utils/logger'
 
 interface Fields {
   password: string
@@ -196,9 +197,7 @@ export const Component = () => {
     setUnlockStatusMessage(null)
 
     try {
-      // Quick reachability check before starting the retry loop.
-      // If the node is completely unreachable, fail fast with a clear message
-      // instead of retrying for minutes.
+      // Fail fast on an unreachable node instead of retrying for minutes.
       try {
         await withTimeout(nodeInfo(), 8000, 'Node reachability check')
       } catch (preCheckError: any) {
@@ -268,7 +267,7 @@ export const Component = () => {
       // Start the NWC wallet service now that the node is unlocked.
       // Best-effort: a failure here must not block the unlock flow.
       invoke('nwc_start_service').catch((err) => {
-        console.warn('nwc_start_service failed', err)
+        logger.warn('nwc_start_service failed', err)
       })
 
       setUnlockError(null)
@@ -300,7 +299,7 @@ export const Component = () => {
           position: 'bottom-right',
         })
       } catch (error) {
-        console.error('Failed to stop node:', error)
+        logger.error('Failed to stop node:', error)
       }
     }
     navigate(WALLET_SETUP_PATH)

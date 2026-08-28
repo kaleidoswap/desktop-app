@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge'
 
 import { formatDate } from '../../../helpers/date'
 import { Badge } from '../Badge'
+import { logger } from '../../../utils/logger'
 
 export interface Column<T> {
   header: ReactNode
@@ -30,7 +31,7 @@ export const copyToClipboard = (
       toast.success(message)
     })
     .catch((err) => {
-      console.error('Failed to copy:', err)
+      logger.error('Failed to copy:', err)
     })
 }
 

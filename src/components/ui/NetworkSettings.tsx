@@ -7,9 +7,7 @@ interface NetworkSettingsProps {
   className?: string
 }
 
-/**
- * A reusable component for network configuration settings
- */
+/** A reusable component for network configuration settings */
 export const NetworkSettings = ({
   form,
   className = '',

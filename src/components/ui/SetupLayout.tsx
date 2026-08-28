@@ -16,9 +16,7 @@ interface SetupLayoutProps {
   className?: string
 }
 
-/**
- * A consistent layout for setup screens with header, icon, and back button
- */
+/** A consistent layout for setup screens with header, icon, and back button */
 export const SetupLayout: React.FC<SetupLayoutProps> = ({
   children,
   title,
@@ -91,9 +89,7 @@ export const SetupLayout: React.FC<SetupLayoutProps> = ({
   )
 }
 
-/**
- * A section component for setup screens
- */
+/** A section component for setup screens */
 export const SetupSection: React.FC<{
   children: ReactNode
   title?: string
@@ -121,9 +117,7 @@ export const SetupSection: React.FC<{
   )
 }
 
-/**
- * A form field wrapper
- */
+/** A form field wrapper */
 export const FormField: React.FC<{
   children: ReactNode
   label: string

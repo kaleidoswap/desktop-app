@@ -60,6 +60,7 @@ import {
   WalletFundsCard,
   OrderIdCard,
 } from './components'
+import { logger } from '../../utils/logger'
 
 interface BuyChannelModalProps {
   isOpen: boolean
@@ -511,7 +512,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           setFees(response.data)
         }
       } catch (error) {
-        console.error('Error fetching fees:', error)
+        logger.error('Error fetching fees:', error)
       }
     }
 
@@ -568,16 +569,16 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
 
             // Connect to LSP if not already connected
             if (!isConnected) {
-              console.log('Connecting to LSP peer:', lspConnectionUrl)
+              logger.debug('Connecting to LSP peer:', lspConnectionUrl)
               await connectPeer({
                 peer_pubkey_and_addr: lspConnectionUrl,
               }).unwrap()
-              console.log('Successfully connected to LSP peer')
+              logger.debug('Successfully connected to LSP peer')
             } else {
-              console.log('Already connected to LSP peer')
+              logger.debug('Already connected to LSP peer')
             }
           } catch (peerError) {
-            console.error('Error connecting to LSP peer:', peerError)
+            logger.error('Error connecting to LSP peer:', peerError)
             throw new Error(
               'Failed to connect to LSP. Please check your connection and try again.',
               { cause: peerError }
@@ -747,7 +748,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               orderPayload,
             })
           } catch (dbError) {
-            console.error('Error saving order to database:', dbError)
+            logger.error('Error saving order to database:', dbError)
             // Don't throw here - payment was successful, just log the error
           }
         }
@@ -781,7 +782,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
               orderPayload,
             })
           } catch (dbError) {
-            console.error('Error saving order to database:', dbError)
+            logger.error('Error saving order to database:', dbError)
             // Don't throw here - payment was successful, just log the error
           }
         }

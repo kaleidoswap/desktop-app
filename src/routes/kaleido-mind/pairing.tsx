@@ -11,7 +11,9 @@ import { KALEIDO_MIND_BRAIN_PATH } from '../../app/router/paths'
 
 import { MindCard, useMindContext } from './shared'
 
-/** The QR + states, with no surrounding navigation (works in a modal or page). */
+/**
+ * The QR + states, with no surrounding navigation (works in a modal or page).
+ */
 export const PairingPanel: React.FC = () => {
   const mind = useMindContext()
   const { status } = mind

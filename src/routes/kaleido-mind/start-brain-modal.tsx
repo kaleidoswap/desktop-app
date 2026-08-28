@@ -13,7 +13,9 @@ import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import type { UseMindResult } from '../../hooks/useMind'
 
-/** Remembers the last model you started, so "the latest" is the one you used. */
+/**
+ * Remembers the last model you started, so "the latest" is the one you used.
+ */
 export const LAST_MODEL_KEY = 'kaleido-mind.last-model.v1'
 
 export const StartBrainModal: React.FC<{

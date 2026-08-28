@@ -1,6 +1,7 @@
 import { Copy } from 'lucide-react'
 import React, { ReactNode } from 'react'
 import { toast } from 'react-toastify'
+import { logger } from '../../utils/logger'
 
 interface InfoCardProps {
   icon: ReactNode
@@ -12,9 +13,7 @@ interface InfoCardProps {
   className?: string
 }
 
-/**
- * InfoCard component for displaying information with an icon
- */
+/** InfoCard component for displaying information with an icon */
 export const InfoCard: React.FC<InfoCardProps> = ({
   icon,
   label,
@@ -28,7 +27,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
     if (!copyText) return
 
     navigator.clipboard.writeText(copyText).catch((err) => {
-      console.error('Failed to copy: ', err)
+      logger.error('Failed to copy: ', err)
     })
 
     toast.success(copySuccessMessage || 'Copied to clipboard')
@@ -64,9 +63,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   )
 }
 
-/**
- * A grid of info cards
- */
+/** A grid of info cards */
 export const InfoCardGrid: React.FC<{
   children: ReactNode
   columns?: 1 | 2 | 3 | 4

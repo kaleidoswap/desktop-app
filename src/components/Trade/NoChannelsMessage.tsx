@@ -26,6 +26,7 @@ import {
   TradablePairsDisplay,
   SupportedAssetsDisplay,
 } from './TradablePairsDisplay'
+import { logger } from '../../utils/logger'
 
 interface NoChannelsMessageProps {
   onNavigate: (path: string) => void
@@ -521,7 +522,7 @@ export const WebSocketDisconnectedMessage: React.FC<
     try {
       await onRetryConnection()
     } catch (error) {
-      console.error('Failed to refresh connection:', error)
+      logger.error('Failed to refresh connection:', error)
     }
   }
 

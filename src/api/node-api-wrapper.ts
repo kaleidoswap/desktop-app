@@ -92,9 +92,7 @@ export class NodeApiWrapper {
     }
   }
 
-  // ============================================================================
   // Wallet Management
-  // ============================================================================
 
   async getNodeInfo(): Promise<ApiResult<NodeInfoResponse>> {
     return this.execute(() => this.client.getNodeInfo())
@@ -136,9 +134,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.shutdown())
   }
 
-  // ============================================================================
   // BTC Operations
-  // ============================================================================
 
   async getAddress(): Promise<ApiResult<AddressResponse>> {
     return this.execute(() => this.client.getAddress())
@@ -172,9 +168,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.estimateFee(request))
   }
 
-  // ============================================================================
   // RGB Asset Operations
-  // ============================================================================
 
   async listAssets(
     filterAssetSchemas: Parameters<RlnClient['listAssets']>[0] = []
@@ -210,9 +204,7 @@ export class NodeApiWrapper {
     )
   }
 
-  // ============================================================================
   // Lightning Network - Channels
-  // ============================================================================
 
   async listChannels(): Promise<ApiResult<ListChannelsResponse>> {
     return this.execute(() => this.client.listChannels())
@@ -239,9 +231,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.closeChannel(request))
   }
 
-  // ============================================================================
   // Lightning Network - Peers
-  // ============================================================================
 
   async listPeers(): Promise<ApiResult<ListPeersResponse>> {
     return this.execute(() => this.client.listPeers())
@@ -259,9 +249,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.disconnectPeer(request))
   }
 
-  // ============================================================================
   // Lightning Network - Invoices & Payments
-  // ============================================================================
 
   async createLNInvoice(
     request: LNInvoiceInput
@@ -317,9 +305,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.listPayments())
   }
 
-  // ============================================================================
   // Swaps
-  // ============================================================================
 
   async listSwaps(): Promise<ApiResult<ListSwapsResponse>> {
     return this.execute(() => this.client.listSwaps())
@@ -349,9 +335,7 @@ export class NodeApiWrapper {
     )
   }
 
-  // ============================================================================
   // Utility Methods
-  // ============================================================================
 
   async signMessage(
     request: SignMessageRequest

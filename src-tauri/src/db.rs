@@ -66,15 +66,16 @@ pub struct NwcConnection {
 }
 
 // Check if a database file exists, and create one if it does not.
-pub fn init() {
+pub fn init() -> Result<(), String> {
     // Create database file if it doesn't exist
     if !db_file_exists() {
-        create_db_file();
+        create_db_file()?;
     }
 
     // Create/verify tables regardless of whether the file existed
     let path = get_db_path();
-    let conn = Connection::open(path).unwrap();
+    let conn = Connection::open(&path)
+        .map_err(|e| format!("failed to open database at {}: {}", path, e))?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS accounts (
@@ -100,7 +101,7 @@ pub fn init() {
         )",
         [],
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
 
     // Add mnemonic encryption columns if they don't exist (migration)
     let _ = conn.execute(
@@ -128,7 +129,7 @@ pub fn init() {
         );",
         (),
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
 
     // Add account_id column to existing ChannelOrders table if it doesn't exist
     let _ = conn.execute(
@@ -152,7 +153,7 @@ pub fn init() {
         );",
         (),
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
 
     // Add LimitOrders table
     conn.execute(
@@ -166,7 +167,7 @@ pub fn init() {
         );",
         (),
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
 
     // Add AppSettings table for key-value config (e.g. node backend type)
     conn.execute(
@@ -176,7 +177,7 @@ pub fn init() {
         );",
         (),
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
 
     // Add NwcConnections table (Nostr Wallet Connect app connections)
     conn.execute(
@@ -199,21 +200,28 @@ pub fn init() {
         );",
         (),
     )
-    .unwrap();
+    .map_err(|e| format!("failed to run database migration: {}", e))?;
+
+    Ok(())
 }
 
 // Create the database file.
-fn create_db_file() {
+fn create_db_file() -> Result<(), String> {
     let db_path = get_db_path();
-    let db_dir = Path::new(&db_path).parent().unwrap();
 
     // If the parent directory does not exist, create it.
-    if !db_dir.exists() {
-        fs::create_dir_all(db_dir).unwrap();
+    if let Some(db_dir) = Path::new(&db_path).parent() {
+        if !db_dir.exists() {
+            fs::create_dir_all(db_dir)
+                .map_err(|e| format!("failed to create database directory {}: {}", db_path, e))?;
+        }
     }
 
     // Create the database file.
-    fs::File::create(db_path).unwrap();
+    fs::File::create(&db_path)
+        .map_err(|e| format!("failed to create database file {}: {}", db_path, e))?;
+
+    Ok(())
 }
 
 // Check whether the database file exists.
@@ -314,8 +322,7 @@ pub fn get_accounts() -> Result<Vec<Account>, rusqlite::Error> {
                 language: row.get(17).ok(),
             })
         })?
-        .map(|res| res.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     Ok(accounts)
 }
@@ -517,8 +524,7 @@ pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, 
                         payload: row.get(5)?,
                     })
                 })?
-                .map(|res| res.unwrap())
-                .collect();
+                .collect::<Result<_, _>>()?;
             Ok(orders)
         }
         None => {
@@ -534,8 +540,7 @@ pub fn get_channel_orders(account_id: Option<i32>) -> Result<Vec<ChannelOrder>, 
                         payload: row.get(5)?,
                     })
                 })?
-                .map(|res| res.unwrap())
-                .collect();
+                .collect::<Result<_, _>>()?;
             Ok(orders)
         }
     }
@@ -582,8 +587,7 @@ pub fn get_dca_orders(account_id: i32) -> Result<Vec<String>, rusqlite::Error> {
         conn.prepare("SELECT payload FROM DcaOrders WHERE account_id = ?1 ORDER BY id ASC")?;
     let payloads = stmt
         .query_map([account_id], |row| row.get(0))?
-        .map(|r| r.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
     Ok(payloads)
 }
 
@@ -614,8 +618,7 @@ pub fn get_limit_orders(account_id: i32) -> Result<Vec<String>, rusqlite::Error>
         conn.prepare("SELECT payload FROM LimitOrders WHERE account_id = ?1 ORDER BY id ASC")?;
     let payloads = stmt
         .query_map([account_id], |row| row.get(0))?
-        .map(|r| r.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
     Ok(payloads)
 }
 
@@ -651,9 +654,7 @@ pub fn get_encrypted_mnemonic(
     Ok(result.flatten())
 }
 
-// ---------------------------------------------------------------------------
 // App Settings (key-value store)
-// ---------------------------------------------------------------------------
 
 #[allow(dead_code)]
 pub fn get_app_setting(key: &str) -> Result<Option<String>, rusqlite::Error> {
@@ -673,9 +674,7 @@ pub fn set_app_setting(key: &str, value: &str) -> Result<usize, rusqlite::Error>
     )
 }
 
-// ---------------------------------------------------------------------------
 // NWC connections (Nostr Wallet Connect)
-// ---------------------------------------------------------------------------
 
 const NWC_COLUMNS: &str = "id, account_id, name, client_pubkey, client_secret, relays_json, methods_json, budget_msat, spent_msat, budget_renews_at, enabled, created_at, last_used_at";
 
@@ -738,8 +737,7 @@ pub fn get_nwc_connections(account_id: i32) -> Result<Vec<NwcConnection>, rusqli
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map([account_id], row_to_nwc_connection)?
-        .map(|r| r.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
     Ok(rows)
 }
 
@@ -754,8 +752,7 @@ pub fn get_all_enabled_nwc_connections() -> Result<Vec<NwcConnection>, rusqlite:
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map([], row_to_nwc_connection)?
-        .map(|r| r.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
     Ok(rows)
 }
 
@@ -770,8 +767,7 @@ pub fn get_enabled_nwc_connections_for_account(
     let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map([account_id], row_to_nwc_connection)?
-        .map(|r| r.unwrap())
-        .collect();
+        .collect::<Result<_, _>>()?;
     Ok(rows)
 }
 

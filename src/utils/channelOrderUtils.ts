@@ -109,9 +109,7 @@ export const getChannelOrderAccessToken = (
   order: ChannelOrderStatusLike | null | undefined
 ): string | null => order?.access_token || order?.token || null
 
-/**
- * Helper function to extract meaningful error messages
- */
+/** Helper function to extract meaningful error messages */
 export const extractErrorMessage = (error: any): string => {
   // Handle string errors
   if (typeof error === 'string') {
@@ -149,9 +147,7 @@ export const extractErrorMessage = (error: any): string => {
   return 'Unknown error format'
 }
 
-/**
- * Builds a channel order payload from parameters
- */
+/** Builds a channel order payload from parameters */
 export const buildChannelOrderPayload = (
   params: CreateChannelOrderParams
 ): ChannelOrderPayload => {
@@ -203,9 +199,7 @@ export const buildChannelOrderPayload = (
   return payload
 }
 
-/**
- * Formats error message from RTK Query error
- */
+/** Formats error message from RTK Query error */
 export const formatRtkQueryError = (error: FetchBaseQueryError): string => {
   let errorMessage = 'An error occurred while creating the channel order'
 
@@ -359,9 +353,7 @@ export const getChannelOrderTerminalStatus = (
   return null
 }
 
-/**
- * Validates channel parameters against LSP options
- */
+/** Validates channel parameters against LSP options */
 export const validateChannelParams = (
   params: CreateChannelOrderParams,
   assets: AssetInfo[],

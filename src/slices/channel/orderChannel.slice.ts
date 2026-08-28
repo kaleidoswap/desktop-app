@@ -1,12 +1,6 @@
-import {
-  PayloadAction,
-  createDraftSafeSelector,
-  createSlice,
-} from '@reduxjs/toolkit'
 import * as z from 'zod'
 
-import { RootState } from '../../app/store'
-import { MIN_CHANNEL_CAPACITY, MAX_CHANNEL_CAPACITY } from '../../constants'
+import { MAX_CHANNEL_CAPACITY } from '../../constants'
 
 export const OrderChannelFormSchema = z.object({
   assetId: z.string(),
@@ -23,54 +17,3 @@ export const OrderChannelFormSchema = z.object({
 })
 
 export type TChannelRequestForm = z.infer<typeof OrderChannelFormSchema>
-
-interface SliceState {
-  forms: {
-    request: TChannelRequestForm
-  }
-}
-
-export const initialState: SliceState = {
-  forms: {
-    request: {
-      assetId: '',
-      capacitySat: MIN_CHANNEL_CAPACITY,
-      channelExpireBlocks: 4320,
-      clientAssetAmount: 0,
-      // 1 month
-      clientBalanceSat: 0,
-      lspAssetAmount: 0,
-      rfqId: '',
-    },
-  },
-}
-export const orderChannelSlice = createSlice({
-  initialState,
-  name: 'orderChannel',
-  reducers: {
-    setChannelRequestForm: (
-      state,
-      action: PayloadAction<Partial<SliceState['forms']['request']>>
-    ) => {
-      state.forms.request = {
-        ...state.forms.request,
-        ...action.payload,
-      }
-    },
-  },
-})
-
-export const orderChannelSliceActions = {
-  ...orderChannelSlice.actions,
-}
-
-// Selectors
-const selfSelector = (state: { channel: SliceState }) => state.channel
-const formSelector = createDraftSafeSelector(
-  selfSelector,
-  (_state: RootState, formKey: keyof SliceState['forms']) => formKey,
-  (state, formKey) => state.forms[formKey]
-)
-export const orderChannelSliceSelectors = {
-  form: formSelector,
-}

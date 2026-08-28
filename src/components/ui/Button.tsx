@@ -16,9 +16,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string
 }
 
-/**
- * Standard button component with consistent styling across the application
- */
+/** Standard button component with consistent styling across the application */
 export const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
@@ -83,9 +81,7 @@ export const Button: React.FC<ButtonProps> = ({
   )
 }
 
-/**
- * Action button specifically for actions like deposit, withdraw, etc.
- */
+/** Action button specifically for actions like deposit, withdraw, etc. */
 export const ActionButton: React.FC<
   Omit<ButtonProps, 'variant'> & { color?: 'cyan' | 'red' | 'purple' | 'blue' }
 > = ({ children, color = 'blue', ...props }) => {
@@ -137,9 +133,7 @@ export const ActionButton: React.FC<
   )
 }
 
-/**
- * Icon button for actions with just an icon
- */
+/** Icon button for actions with just an icon */
 export const IconButton: React.FC<
   Omit<ButtonProps, 'children'> & { icon: ReactNode }
 > = ({ icon, size = 'md', variant = 'ghost', className = '', ...props }) => {
