@@ -48,7 +48,7 @@ export const loadAssetIcon = async (
       return iconUrl
     }
     throw new Error('Icon not found')
-  } catch (error) {
+  } catch {
     return defaultIcon
   }
 }

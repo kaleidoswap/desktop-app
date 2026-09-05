@@ -138,7 +138,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         ) {
           setLnInvoiceStr(invoiceRes.data.invoice)
         }
-      } catch (error) {
+      } catch {
         toast.error(t('depositModal.step2.toasts.generateAddressError'))
       } finally {
         setLoading(false)
@@ -215,7 +215,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         try {
           const res = await addressQuery()
           setAddress(res.data?.address)
-        } catch (error) {
+        } catch {
           toast.error(t('depositModal.step2.toasts.generateAddressError'))
         } finally {
           setLoading(false)
@@ -540,7 +540,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         const res = await addressQuery()
         setAddress(res.data?.address)
       }
-    } catch (error) {
+    } catch {
       toast.error(t('depositModal.step2.toasts.generateAddressError'))
     } finally {
       setLoading(false)
@@ -586,7 +586,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     try {
       await navigator.clipboard.writeText(text)
       toast.success(t('depositModal.step2.toasts.addressCopied'))
-    } catch (error) {
+    } catch {
       toast.error(t('depositModal.step2.toasts.addressCopyError'))
     }
   }
@@ -595,7 +595,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     try {
       await navigator.clipboard.writeText(recipientId ?? '')
       toast.success(t('depositModal.step2.toasts.recipientCopied'))
-    } catch (error) {
+    } catch {
       toast.error(t('depositModal.step2.toasts.recipientCopyError'))
     }
   }

@@ -240,7 +240,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
       // Handle both pubkey-only and pubkey@host:port formats
       const pubkey = peerInfo.includes('@') ? peerInfo.split('@')[0] : peerInfo
       return (peers.peers ?? []).some((peer: any) => peer.pubkey === pubkey)
-    } catch (error) {
+    } catch {
       return false
     }
   }

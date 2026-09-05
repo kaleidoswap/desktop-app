@@ -714,12 +714,13 @@ export function useLimitOrderScheduler() {
     // Initial check
     void checkOrders()
 
+    const queuedOrderIds = queuedOrderIdsRef.current
     return () => {
       clearInterval(intervalId)
       _executeFnRef.current = null
       runQueueRef.current = null
       executionQueueRef.current = []
-      queuedOrderIdsRef.current.clear()
+      queuedOrderIds.clear()
       logger.info('LimitOrder: scheduler stopped')
     }
   }, [dispatch])

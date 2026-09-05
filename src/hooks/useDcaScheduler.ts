@@ -840,12 +840,13 @@ export function useDcaScheduler() {
       `DCA: frontend scheduler started (every ${DCA_SCHEDULER_INTERVAL_MS / 1000}s)`
     )
 
+    const queuedOrderIds = queuedOrderIdsRef.current
     return () => {
       clearInterval(intervalId)
       _executeFnRef.current = null
       runQueueRef.current = null
       executionQueueRef.current = []
-      queuedOrderIdsRef.current.clear()
+      queuedOrderIds.clear()
       logger.info('DCA: frontend scheduler stopped')
     }
     // dispatch is stable — effect runs once on mount.

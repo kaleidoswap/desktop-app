@@ -113,7 +113,7 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
 
       setNewMakerUrl('')
       setIsAddingNew(false)
-    } catch (error) {
+    } catch {
       toast.error(t('trade.maker.invalidUrl'), {
         autoClose: 5000,
         toastId: 'invalid-maker-url',

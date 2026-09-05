@@ -105,7 +105,7 @@ export const Component = () => {
           medium: Math.round(mediumFee.fee_rate ?? DEFAULT_FEE_RATES.medium),
           slow: Math.round(slowFee.fee_rate ?? DEFAULT_FEE_RATES.slow),
         })
-      } catch (e) {
+      } catch {
         setFormError(t('createChannel.errorFetchFeeRates'))
       }
     }

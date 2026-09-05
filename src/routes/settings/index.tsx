@@ -541,7 +541,7 @@ export const Component: React.FC = () => {
       dispatch(nodeSettingsActions.resetNodeSettings())
       navigate(WALLET_SETUP_PATH)
       toast.success('Node shut down successfully')
-    } catch (error) {
+    } catch {
       toast.error('Failed to shut down node')
     } finally {
       setIsShuttingDown(false)
@@ -565,7 +565,7 @@ export const Component: React.FC = () => {
         await invoke('save_logs_to_file', { filePath })
         toast.success('Logs exported successfully')
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to export logs')
     }
   }

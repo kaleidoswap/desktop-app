@@ -89,6 +89,7 @@ export const PasswordInput = forwardRef<
 >(({ isVisible, onToggleVisibility, className = '', ...props }, ref) => {
   return (
     <Input
+      className={className}
       ref={ref}
       suffixNode={
         <button

@@ -151,8 +151,9 @@ export const StatusToast: React.FC<{
 
   // Clear any existing timeouts when component unmounts
   useEffect(() => {
+    const autoRemoveTimeouts = autoRemoveTimeoutsRef.current
     return () => {
-      Object.values(autoRemoveTimeoutsRef.current).forEach((timeout) => {
+      Object.values(autoRemoveTimeouts).forEach((timeout) => {
         clearTimeout(timeout)
       })
     }

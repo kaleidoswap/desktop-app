@@ -289,7 +289,7 @@ export const Component = () => {
         await response.json()
         setConnectionSuccess(true)
         toast.success(t('walletRemote.connectionSuccessToast'))
-      } catch (jsonError) {
+      } catch {
         setConnectionError({
           details: t('walletRemote.invalidResponseFormatDetails'),
           message: t('walletRemote.invalidResponseFormat'),
@@ -355,7 +355,7 @@ export const Component = () => {
         data.name = finalName
         form.setValue('name', finalName)
       }
-    } catch (error) {
+    } catch {
       // If check fails, proceed with the original name — insert will catch real conflicts
     }
 
@@ -464,7 +464,7 @@ export const Component = () => {
           await response.json()
           setConnectionStep('creating')
           toast.success(t('walletRemote.connectionSuccessCreating'))
-        } catch (jsonError) {
+        } catch {
           setConnectionError({
             details: t('walletRemote.invalidResponseFormatDetails'),
             message: t('walletRemote.invalidResponseFormat'),

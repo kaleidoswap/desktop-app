@@ -162,7 +162,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
       setAssetBalances(newBalances)
       toast.success(t('trade.manual.balancesUpdated'))
-    } catch (error) {
+    } catch {
       toast.error(t('trade.manual.balancesFailed'))
     } finally {
       setIsLoadingBalances(false)
@@ -214,7 +214,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
       // Apply thousands separators for better readability
       setValue('fromAmount', formattedValue)
-    } catch (error) {
+    } catch {
       setValue('fromAmount', '')
     }
   }
@@ -231,7 +231,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
 
       // Apply thousands separators for better readability
       setValue('toAmount', formattedValue)
-    } catch (error) {
+    } catch {
       setValue('toAmount', '')
     }
   }
@@ -381,7 +381,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       setPaymentSecret(response.payment_secret ?? '')
       setSwapInitiated(true)
       toast.success(t('trade.manual.swapInitiated'))
-    } catch (error) {
+    } catch {
       toast.error(t('trade.manual.swapInitiateFailed'))
     } finally {
       setIsInitiating(false)
@@ -413,7 +413,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
       setSwapString('')
       setPaymentSecret('')
       setValue('takerPubkey', '')
-    } catch (error) {
+    } catch {
       toast.error(t('trade.manual.swapExecuteFailed'))
     } finally {
       setIsExecuting(false)
@@ -455,7 +455,7 @@ export const ManualSwapForm: React.FC<ManualSwapFormProps> = ({ assets }) => {
         minimumFractionDigits: precision,
         useGrouping: true,
       }).format(balance / Math.pow(10, precision))
-    } catch (error) {
+    } catch {
       return '0'
     }
   }

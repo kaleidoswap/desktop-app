@@ -282,7 +282,7 @@ export const parseAssetAmountWithPrecision = (
     // Example: input "3.00000000" -> clean "3.00000000" -> return 300000000
     const multiplier = Math.pow(10, precision)
     return Math.round(parsedAmount * multiplier)
-  } catch (error) {
+  } catch {
     return 0
   }
 }

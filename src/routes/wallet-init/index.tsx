@@ -284,7 +284,7 @@ export const Component = () => {
       )
 
       handleStepChange('password')
-    } catch (error) {
+    } catch {
       toast.error(t('walletInit.setupStep.failedToSetup'))
     }
   }
@@ -980,7 +980,7 @@ export const Component = () => {
       await invoke('stop_node')
       toast.info(t('walletInit.unlockStep.unlockingCancelled'))
       handleStepChange('verify')
-    } catch (error) {
+    } catch {
       toast.error(t('walletInit.unlockStep.failedToCancel'))
     } finally {
       setIsUnlocking(false)

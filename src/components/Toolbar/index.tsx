@@ -697,7 +697,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                     5000,
                     'Stopping stale node'
                   )
-                } catch (error) {
+                } catch {
                   void stoppedPromise.catch(() => undefined)
                 }
                 await stoppedPromise
@@ -1553,7 +1553,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       toast.success(
         t('toolbar.nodes.nodeUpdateSuccess', { name: formData.name })
       )
-    } catch (error) {
+    } catch {
       toast.error(t('toolbar.nodes.nodeUpdateFailed'))
     } finally {
       setIsLoading(false)

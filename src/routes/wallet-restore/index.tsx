@@ -407,7 +407,7 @@ export const Component = () => {
       if (selected && typeof selected === 'string') {
         form.setValue('backup_path', selected)
       }
-    } catch (error) {
+    } catch {
       toast.error(t('walletRestore.failedToSelectBackup'))
     }
   }
