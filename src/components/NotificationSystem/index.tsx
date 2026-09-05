@@ -290,6 +290,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  // Mirror of `notifications` for callbacks (timers) created before a
+  // re-render has delivered the latest list.
+  const notificationsRef = useRef<Notification[]>([])
+  notificationsRef.current = notifications
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
   const [selectedUpdateModal, setSelectedUpdateModal] = useState<any>(null)
   const notificationTimers = useRef<
@@ -333,16 +337,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   const removeNotification = (id: string) => {
-    setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
-    )
+    // Read from the ref, not the render closure: auto-close timers are created
+    // before the new item lands in state, so the `notifications` captured at
+    // that point never contains it and onClose would silently be skipped.
+    const notification = notificationsRef.current.find((n) => n.id === id)
+
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
 
     if (notificationTimers.current[id]) {
       clearTimeout(notificationTimers.current[id])
       delete notificationTimers.current[id]
     }
 
-    const notification = notifications.find((n) => n.id === id)
     if (notification?.onClose) {
       notification.onClose()
     }
