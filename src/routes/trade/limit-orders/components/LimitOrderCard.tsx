@@ -225,6 +225,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
           {!isTerminal && (
             <>
               <button
+                aria-label={t('limitOrders.card.fillNow', 'Fill Now')}
                 className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-primary/15 hover:text-primary"
                 onClick={() => executeLimitOrderManually(order.id)}
                 title={t('limitOrders.card.fillNow', 'Fill Now')}
@@ -233,6 +234,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
               </button>
               {order.status === 'active' ? (
                 <button
+                  aria-label={t('a11y.pause', 'Pause')}
                   className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-warning/15 hover:text-status-warning"
                   onClick={() => dispatch(pauseLimitOrder(order.id))}
                   title="Pause"
@@ -241,6 +243,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
                 </button>
               ) : (
                 <button
+                  aria-label={t('a11y.resume', 'Resume')}
                   className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-success/15 hover:text-status-success"
                   onClick={() => dispatch(resumeLimitOrder(order.id))}
                   title="Resume"
@@ -249,6 +252,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
                 </button>
               )}
               <button
+                aria-label={t('a11y.cancel', 'Cancel')}
                 className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
                 onClick={() => dispatch(cancelLimitOrder(order.id))}
                 title="Cancel"
@@ -259,6 +263,7 @@ export function LimitOrderCard({ order, currentPrices }: Props) {
           )}
           {isTerminal && (
             <button
+              aria-label={t('a11y.delete', 'Delete')}
               className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
               onClick={() => dispatch(deleteLimitOrder(order.id))}
               title="Delete"

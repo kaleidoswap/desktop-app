@@ -144,6 +144,7 @@ export const Step5 = ({
                   {orderId}
                 </code>
                 <button
+                  aria-label={t('orderChannel.step4.copyToClipboard')}
                   className="shrink-0 text-content-tertiary hover:text-white transition-colors"
                   onClick={copyToClipboard}
                   title={t('orderChannel.step4.copyToClipboard')}

@@ -495,6 +495,9 @@ export const Component: React.FC = () => {
 
               {/* Refresh button — rightmost */}
               <button
+                aria-label={
+                  isLoading ? t('channels.refreshing') : t('channels.refresh')
+                }
                 className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={isLoading}
                 onClick={() => void refreshData()}
@@ -519,6 +522,7 @@ export const Component: React.FC = () => {
                 >
                   {filter.label}
                   <button
+                    aria-label={t('a11y.removeFilter', 'Remove filter')}
                     className="ml-1.5 text-content-secondary hover:text-white"
                     onClick={() => toggleFilter(filter)}
                   >

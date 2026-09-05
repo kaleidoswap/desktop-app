@@ -8,6 +8,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../helpers/modalPortal'
+import { useDialog } from '../../../hooks/useDialog'
 import { ORDER_CHANNEL_PATH, TRADE_LIMIT_PATH } from '../../../app/router/paths'
 import { useAppSelector } from '../../../app/store/hooks'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
@@ -26,13 +27,21 @@ function CreateOrderModal({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const pos = getModalPositionClass()
+  const { dialogRef, dialogProps } = useDialog({
+    label: t('limitOrders.createOrder', 'New Limit Order'),
+    onClose,
+  })
   return createPortal(
     <div
       className={`${pos} inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="flex min-h-full items-center justify-center p-4 sm:p-6 pointer-events-none">
-        <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto pointer-events-auto">
+        <div
+          className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto pointer-events-auto"
+          ref={dialogRef}
+          {...dialogProps}
+        >
           <div className="flex items-center justify-between pb-4 border-b border-divider/10 mb-6">
             <div className="flex items-center gap-3">
               <Target className="w-6 h-6 text-primary flex-shrink-0" />
@@ -41,6 +50,7 @@ function CreateOrderModal({
               </h3>
             </div>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
               onClick={onClose}
               type="button"

@@ -59,6 +59,7 @@ export const TermsAndPrivacyContent: React.FC<TermsAndPrivacyContentProps> = ({
             {isTerms ? t('legal.terms.title') : t('legal.privacy.title')}
           </h3>
           <button
+            aria-label={t('a11y.close', 'Close')}
             className="p-2 rounded-full hover:bg-surface-high text-content-secondary hover:text-white transition-colors"
             onClick={onClose}
           >

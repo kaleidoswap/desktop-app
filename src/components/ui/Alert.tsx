@@ -27,6 +27,7 @@ export const Alert: React.FC<AlertProps> = ({
   dismissible = false,
   onDismiss,
 }) => {
+  const { t } = useTranslation()
   const variantStyles = {
     error: 'bg-red/10 border-red/20 text-red',
     info: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
@@ -60,6 +61,7 @@ export const Alert: React.FC<AlertProps> = ({
 
       {dismissible && (
         <button
+          aria-label={t('a11y.dismiss', 'Dismiss')}
           className="p-1 hover:bg-surface-high/30 rounded-lg transition-colors"
           onClick={onDismiss}
         >

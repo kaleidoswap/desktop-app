@@ -61,6 +61,7 @@ export const renderCopyableField = (
         {displayValue}
       </span>
       <button
+        aria-label={`Copy ${copyMessage || 'text'}`}
         className="flex-shrink-0 text-content-tertiary hover:text-content-secondary transition-colors"
         onClick={(e) => {
           e.stopPropagation()

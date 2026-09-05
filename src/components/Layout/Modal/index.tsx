@@ -1,7 +1,7 @@
-import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
+import { useDialog } from '../../../hooks/useDialog'
 import { useOnClickOutside } from '../../../hooks/useOnClickOutside'
 import {
   getModalPortalTarget,
@@ -14,13 +14,16 @@ import { Content } from './Content'
 export const LayoutModal = () => {
   const dispatch = useAppDispatch()
   const modal = useAppSelector(uiSliceSeletors.modal)
-  const modalRef = useRef(null)
-
   const handleCloseModal = () => {
     dispatch(uiSliceActions.setModal({ type: 'none' }))
   }
 
-  useOnClickOutside(modalRef, handleCloseModal)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen: modal.type !== 'none',
+    onClose: handleCloseModal,
+  })
+
+  useOnClickOutside(dialogRef, handleCloseModal)
 
   if (modal.type === 'none') return null
 
@@ -31,7 +34,8 @@ export const LayoutModal = () => {
       <div
         className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50
                    shadow-2xl shadow-black/20 overflow-hidden relative"
-        ref={modalRef}
+        ref={dialogRef}
+        {...dialogProps}
       >
         <div className="max-h-[85vh] overflow-y-scroll px-8 py-8">
           <Content modal={modal} onClose={handleCloseModal} />

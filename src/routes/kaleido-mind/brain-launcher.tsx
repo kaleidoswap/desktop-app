@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { KALEIDO_MIND_MODELS_PATH } from '../../app/router/paths'
@@ -46,6 +47,7 @@ const CatalogSkeleton: React.FC = () => (
 
 /** Step 1 — choose & download a model from the catalog. */
 const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
+  const { t } = useTranslation()
   const isEmpty = mind.catalog.length === 0
   const recommendedId = mind.catalog[0]?.id
 
@@ -128,6 +130,7 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
                   </div>
                   {downloading ? (
                     <button
+                      aria-label={t('a11y.cancelDownload', 'Cancel download')}
                       className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger"
                       onClick={() => mind.cancelDownload(m.id)}
                       title="Cancel download"

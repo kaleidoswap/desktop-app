@@ -6,6 +6,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../../helpers/modalPortal'
+import { useDialog } from '../../../../hooks/useDialog'
 
 export interface AnalyticsModalProps {
   isOpen: boolean
@@ -35,6 +36,11 @@ export function AnalyticsModal({
   formatPrice,
 }: AnalyticsModalProps) {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('dca.analytics.title', 'Overall Stats & Analytics'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -45,7 +51,11 @@ export function AnalyticsModal({
       className={`${pos} inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        className="w-full max-w-lg bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden flex flex-col max-h-[90vh]"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
           <div className="flex items-center gap-2">
@@ -57,6 +67,7 @@ export function AnalyticsModal({
             </h2>
           </div>
           <button
+            aria-label={t('a11y.close', 'Close')}
             className="p-1.5 rounded-md text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
             onClick={onClose}
           >

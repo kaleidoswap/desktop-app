@@ -6,6 +6,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 export const ModalType = {
   ERROR: 'error',
@@ -37,6 +38,12 @@ export const StatusModal: React.FC<StatusModalProps> = ({
   autoCloseDelay = 3000,
   isOpen,
 }) => {
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: title,
+    onClose,
+  })
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     if (autoClose && isOpen) {
@@ -96,6 +103,8 @@ export const StatusModal: React.FC<StatusModalProps> = ({
       <div
         className={`max-w-md w-full rounded-xl shadow-2xl ${config.bgColor} border ${config.borderColor} p-6 transform transition-all duration-300 ease-in-out animate-fade-in`}
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         <div className="flex items-start">
           <div className="flex-shrink-0 mr-4">{config.icon}</div>

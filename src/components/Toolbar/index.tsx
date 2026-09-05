@@ -43,6 +43,7 @@ import {
   setSettingsAsync,
 } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForDockerNodeReady, waitForNodeReady } from '../../utils/nodeState'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 export interface Account {
   datapath: string
@@ -925,7 +926,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
   if (error) {
     return (
       <div className="p-4 text-red-500">
-        {t('toolbar.main.errorLoading', { error: error.message })}
+        {t('toolbar.main.errorLoading', {
+          error: toUserFacingError(error, t).message,
+        })}
       </div>
     )
   }
@@ -1024,6 +1027,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
 
 // Modal Content Components
 const CopyField = ({ label, value }: { label: string; value: string }) => {
+  const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
     navigator.clipboard.writeText(value)
@@ -1040,6 +1044,7 @@ const CopyField = ({ label, value }: { label: string; value: string }) => {
           {value}
         </span>
         <button
+          aria-label={t('a11y.copy', 'Copy')}
           className="shrink-0 p-1 rounded text-content-tertiary hover:text-white hover:bg-surface-high/60 transition-colors"
           onClick={handleCopy}
           title="Copy"
@@ -1233,6 +1238,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
           {t('toolbar.modal.switchNode')}
         </h3>
         <button
+          aria-label={t('a11y.close', 'Close')}
           className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
           onClick={onCancel}
           type="button"
@@ -1420,6 +1426,7 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
           </h3>
         </div>
         <button
+          aria-label={t('a11y.close', 'Close')}
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
           onClick={onCancel}
           type="button"
@@ -1575,6 +1582,7 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
           </h3>
         </div>
         <button
+          aria-label={t('a11y.close', 'Close')}
           className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
           onClick={onClose}
           type="button"

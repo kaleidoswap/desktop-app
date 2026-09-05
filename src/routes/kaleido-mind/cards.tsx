@@ -27,6 +27,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice'
 
@@ -118,9 +119,11 @@ const CopyButton: React.FC<{ value: string; label?: string }> = ({
   value,
   label,
 }) => {
+  const { t } = useTranslation()
   const [done, setDone] = useState(false)
   return (
     <button
+      aria-label={label ? undefined : t('a11y.copy', 'Copy')}
       className="inline-flex items-center gap-1 rounded-md border border-border-default px-1.5 py-0.5 text-[0.68rem] text-content-tertiary transition-colors hover:bg-surface-overlay hover:text-content-secondary"
       onClick={() => {
         void navigator.clipboard.writeText(value).then(() => {

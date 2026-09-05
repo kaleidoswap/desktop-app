@@ -184,6 +184,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 </p>
                 <CopyToClipboard onCopy={copySuccess} text={onchainAddress}>
                   <button
+                    aria-label={t('a11y.copy', 'Copy')}
                     className="shrink-0 mt-0.5 text-content-tertiary hover:text-white transition-colors"
                     type="button"
                   >
@@ -216,6 +217,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 </p>
                 <CopyToClipboard onCopy={copySuccess} text={bolt11Invoice}>
                   <button
+                    aria-label={t('a11y.copy', 'Copy')}
                     className="shrink-0 mt-0.5 text-content-tertiary hover:text-white transition-colors"
                     type="button"
                   >

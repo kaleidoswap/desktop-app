@@ -1,5 +1,6 @@
 import { Copy } from 'lucide-react'
 import React, { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 interface InfoCardProps {
@@ -24,6 +25,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   copySuccessMessage,
   className = '',
 }) => {
+  const { t } = useTranslation()
   const handleCopy = () => {
     if (!copyText) return
 
@@ -50,6 +52,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
             </span>
             {copyable && (
               <button
+                aria-label={t('a11y.copyLabel', 'Copy {{label}}', { label })}
                 className="shrink-0 p-1.5 hover:bg-surface-high/50 rounded-lg transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
                 onClick={handleCopy}
                 title={`Copy ${label}`}

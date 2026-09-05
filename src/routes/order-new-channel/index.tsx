@@ -4,6 +4,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 import { scrollContentToTop } from '../../helpers/contentScroll'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -47,6 +48,156 @@ import { Step3 } from './Step3'
 import { Step4 } from './Step4'
 import { Step5 } from './Step5'
 import 'react-toastify/dist/ReactToastify.css'
+
+const BackConfirmationModal = ({
+  onClose,
+  onConfirm,
+}: {
+  onClose: () => void
+  onConfirm: () => void
+}) => {
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    label: t('orderChannel.backConfirmTitle'),
+    onClose,
+  })
+  return createPortal(
+    <div
+      className={`${getModalPositionClass()} inset-0 z-50 flex items-center justify-center p-4`}
+    >
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="w-full max-w-md rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl shadow-black/20 relative z-10"
+        ref={dialogRef}
+        {...dialogProps}
+      >
+        <div className="px-8 py-8">
+          {/* Title row */}
+          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+            <ArrowLeft className="w-6 h-6 text-emerald-400" />
+            <h3 className="text-xl font-bold text-white">
+              {t('orderChannel.backConfirmTitle')}
+            </h3>
+          </div>
+          <p className="text-sm text-content-secondary mb-5">
+            {t('orderChannel.backConfirmMessage')}
+          </p>
+          <div className="flex items-center justify-between">
+            <button
+              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+              onClick={onConfirm}
+              type="button"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {t('orderChannel.backConfirmGoBack')}
+            </button>
+            <button
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+              onClick={onClose}
+              type="button"
+            >
+              {t('orderChannel.backConfirmCancel')}
+              <CheckCircle className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    getModalPortalTarget()
+  )
+}
+
+const LspConfirmModal = ({
+  isConnecting,
+  isLoading,
+  lspUrl,
+  onCancel,
+  onConfirm,
+}: {
+  isConnecting: boolean
+  isLoading: boolean
+  lspUrl: string
+  onCancel: () => void
+  onConfirm: () => void
+}) => {
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    label: t('orderChannel.step1.alreadyConnected'),
+    onClose: onCancel,
+  })
+  return createPortal(
+    <div
+      className={`${getModalPositionClass()} inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto`}
+      onClick={onCancel}
+    >
+      <div
+        className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
+      >
+        <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+          <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
+          <h3 className="text-xl font-bold text-white">
+            {t('orderChannel.step1.alreadyConnected')}
+          </h3>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center h-20 mb-4">
+            <Spinner color="#15E99A" overlay={false} size={32} />
+          </div>
+        ) : (
+          <div className="mb-9">
+            <div className="flex items-center gap-3 mb-4 pt-5">
+              <img
+                alt="KaleidoSwap"
+                className="w-8 h-8 flex-shrink-0"
+                src={kaleidoswapPictogram}
+              />
+              <span className="text-sm font-medium text-white">
+                KaleidoSwap LSP
+              </span>
+            </div>
+            <div className="p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
+              <p className="text-sm text-content-secondary break-all font-mono">
+                {lspUrl}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <button
+            className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+            onClick={onCancel}
+            type="button"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            Change
+          </button>
+          <button
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={isLoading || isConnecting}
+            onClick={onConfirm}
+            type="button"
+          >
+            {t('orderChannel.step1.continueButton')}
+            {isConnecting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    getModalPortalTarget()
+  )
+}
 
 export const Component = () => {
   const { t } = useTranslation()
@@ -463,51 +614,6 @@ export const Component = () => {
     }
   }, [resetPaymentMonitor, returnTo, navigate])
 
-  const BackConfirmationModal = () =>
-    createPortal(
-      <div
-        className={`${getModalPositionClass()} inset-0 z-50 flex items-center justify-center p-4`}
-      >
-        <div
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-          onClick={() => setShowBackConfirmation(false)}
-        />
-        <div className="w-full max-w-md rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl shadow-black/20 relative z-10">
-          <div className="px-8 py-8">
-            {/* Title row */}
-            <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
-              <ArrowLeft className="w-6 h-6 text-emerald-400" />
-              <h3 className="text-xl font-bold text-white">
-                {t('orderChannel.backConfirmTitle')}
-              </h3>
-            </div>
-            <p className="text-sm text-content-secondary mb-5">
-              {t('orderChannel.backConfirmMessage')}
-            </p>
-            <div className="flex items-center justify-between">
-              <button
-                className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-                onClick={handleConfirmBack}
-                type="button"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                {t('orderChannel.backConfirmGoBack')}
-              </button>
-              <button
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
-                onClick={() => setShowBackConfirmation(false)}
-                type="button"
-              >
-                {t('orderChannel.backConfirmCancel')}
-                <CheckCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>,
-      getModalPortalTarget()
-    )
-
   // LSP the order is being placed with — surfaced on every wizard step so the
   // user always knows which node they're buying a channel from.
   const lspApiUrl =
@@ -525,75 +631,15 @@ export const Component = () => {
 
   return (
     <div className="w-full min-h-full text-white">
-      {showLspConfirm &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className={`${getModalPositionClass()} inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto`}
-            onClick={handleCancelLsp}
-          >
-            <div
-              className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-lg w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
-                <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-bold text-white">
-                  {t('orderChannel.step1.alreadyConnected')}
-                </h3>
-              </div>
-
-              {isLoadingLspConfirm ? (
-                <div className="flex items-center justify-center h-20 mb-4">
-                  <Spinner color="#15E99A" overlay={false} size={32} />
-                </div>
-              ) : (
-                <div className="mb-9">
-                  <div className="flex items-center gap-3 mb-4 pt-5">
-                    <img
-                      alt="KaleidoSwap"
-                      className="w-8 h-8 flex-shrink-0"
-                      src={kaleidoswapPictogram}
-                    />
-                    <span className="text-sm font-medium text-white">
-                      KaleidoSwap LSP
-                    </span>
-                  </div>
-                  <div className="p-4 bg-surface-base/50 rounded-xl border border-border-default/50">
-                    <p className="text-sm text-content-secondary break-all font-mono">
-                      {lspConfirmUrl}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <button
-                  className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-                  onClick={handleCancelLsp}
-                  type="button"
-                >
-                  <ArrowLeftRight className="w-3.5 h-3.5" />
-                  Change
-                </button>
-                <button
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  disabled={isLoadingLspConfirm || isConnectingLsp}
-                  onClick={handleConfirmLsp}
-                  type="button"
-                >
-                  {t('orderChannel.step1.continueButton')}
-                  {isConnectingLsp ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ArrowRight className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>,
-          getModalPortalTarget()
-        )}
+      {showLspConfirm && typeof document !== 'undefined' && (
+        <LspConfirmModal
+          isConnecting={isConnectingLsp}
+          isLoading={isLoadingLspConfirm}
+          lspUrl={lspConfirmUrl}
+          onCancel={handleCancelLsp}
+          onConfirm={handleConfirmLsp}
+        />
+      )}
 
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <ChannelsNav />
@@ -643,6 +689,10 @@ export const Component = () => {
                   text={lspConfirmUrl}
                 >
                   <button
+                    aria-label={t(
+                      'orderChannel.lspCopyTitle',
+                      'Copy connection URL'
+                    )}
                     className="flex-shrink-0 rounded-full p-1 text-content-tertiary transition-colors hover:bg-surface-overlay hover:text-white"
                     title={t(
                       'orderChannel.lspCopyTitle',
@@ -674,7 +724,12 @@ export const Component = () => {
             </div>,
             getModalPortalTarget()
           )}
-        {showBackConfirmation && <BackConfirmationModal />}
+        {showBackConfirmation && (
+          <BackConfirmationModal
+            onClose={() => setShowBackConfirmation(false)}
+            onConfirm={handleConfirmBack}
+          />
+        )}
         {step === 1 && <Step1 onNext={onSubmitStep1} />}
 
         {step === 2 && (

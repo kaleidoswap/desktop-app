@@ -1,6 +1,7 @@
 import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import {
@@ -8,6 +9,7 @@ import {
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
+import { useDialog } from '../../hooks/useDialog'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { Button, IconButton } from '../ui'
 
@@ -30,6 +32,12 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   error,
   retryFunction,
 }) => {
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('a11y.createColoredUtxos', 'Create Colored UTXOs'),
+    onClose,
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [feeRate, setFeeRate] = useState(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -172,6 +180,8 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       <div
         className="bg-surface-base p-0 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-border-subtle/50 animate-scaleIn overflow-hidden flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         {/* Header - Fixed */}
         <div className="relative px-6 pt-6 pb-4 border-b border-border-subtle/50 flex-shrink-0">
@@ -275,6 +285,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                   </label>
                   <div className="flex rounded-lg overflow-hidden border border-border-default focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                     <button
+                      aria-label={t('a11y.decrease', 'Decrease')}
                       className="bg-surface-high text-white px-3 py-2 hover:bg-surface-elevated disabled:opacity-50 transition-colors"
                       disabled={numUtxos <= 1}
                       onClick={() =>
@@ -306,6 +317,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                       value={numUtxos}
                     />
                     <button
+                      aria-label={t('a11y.increase', 'Increase')}
                       className="bg-surface-high text-white px-3 py-2 hover:bg-surface-elevated disabled:opacity-50 transition-colors"
                       disabled={numUtxos >= 10}
                       onClick={() =>

@@ -1,4 +1,5 @@
 import React, { InputHTMLAttributes, ReactNode, forwardRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: ReactNode
@@ -87,12 +88,18 @@ export const PasswordInput = forwardRef<
     onToggleVisibility: () => void
   }
 >(({ isVisible, onToggleVisibility, className = '', ...props }, ref) => {
+  const { t } = useTranslation()
   return (
     <Input
       className={className}
       ref={ref}
       suffixNode={
         <button
+          aria-label={
+            isVisible
+              ? t('a11y.hidePassword', 'Hide password')
+              : t('a11y.showPassword', 'Show password')
+          }
           className="p-1 hover:bg-surface-high/50 rounded-md transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
           onClick={onToggleVisibility}
           type="button"

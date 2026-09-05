@@ -1,6 +1,7 @@
 import { Download, Upload, History } from 'lucide-react'
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { WALLET_HISTORY_ASSETS_PATH } from '../../app/router/paths'
@@ -37,6 +38,7 @@ const TooltipButton: React.FC<TooltipButtonProps> = ({
   return (
     <>
       <button
+        aria-label={label}
         className={`p-1.5 rounded-lg transition-colors duration-150 ${color}`}
         onClick={onClick}
         onMouseEnter={handleMouseEnter}
@@ -95,6 +97,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
   incomingBalance = 0,
   isLoading,
 }) => {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -154,7 +157,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
               {
                 color: 'text-status-success hover:bg-status-success/15',
                 icon: <Download className="w-3.5 h-3.5" />,
-                label: 'Deposit',
+                label: t('a11y.deposit', 'Deposit'),
                 onClick: () =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -166,7 +169,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
               {
                 color: 'text-violet-400 hover:bg-violet-500/15',
                 icon: <Upload className="w-3.5 h-3.5" />,
-                label: 'Withdraw',
+                label: t('a11y.withdraw', 'Withdraw'),
                 onClick: () =>
                   dispatch(
                     uiSliceActions.setModal({
@@ -178,7 +181,7 @@ export const AssetRow: React.FC<AssetRowProps> = ({
               {
                 color: 'text-white hover:bg-white/10',
                 icon: <History className="w-3.5 h-3.5" />,
-                label: 'History',
+                label: t('a11y.history', 'History'),
                 onClick: () =>
                   navigate(
                     `${WALLET_HISTORY_ASSETS_PATH}?assetId=${asset.asset_id}`

@@ -47,6 +47,7 @@ import {
   StatusModal,
 } from '../../components/StatusModal'
 import { useBackup } from '../../hooks/useBackup'
+import { useDialog } from '../../hooks/useDialog'
 import { LANGUAGES } from '../../i18n'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -67,6 +68,7 @@ import {
 } from '../../slices/priceApi/priceApi.slice'
 
 import { TerminalLogDisplay } from './TerminalLogDisplay'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 interface FormFields {
   bitcoinUnit: string
@@ -221,7 +223,9 @@ export const Component: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch node logs:', error)
       toast.error(
-        `Failed to load logs: ${error instanceof Error ? error.message : 'Unknown error'}`
+        t('settings.logsLoadFailed', {
+          error: toUserFacingError(error, t).message,
+        })
       )
 
       // Increment retry count and implement backoff
@@ -588,6 +592,26 @@ export const Component: React.FC = () => {
     return () => clearInterval(interval)
   }, [nodeInfo])
 
+  const { dialogRef: restartDialogRef, dialogProps: restartDialogProps } =
+    useDialog({
+      isOpen: showRestartConfirmation,
+      label: t('settings.restartNode'),
+      onClose: () => setShowRestartConfirmation(false),
+    })
+  const { dialogRef: logoutDialogRef, dialogProps: logoutDialogProps } =
+    useDialog({
+      isOpen: showLogoutConfirmation,
+      label: t('settings.confirmLogout'),
+      onClose: () => setShowLogoutConfirmation(false),
+    })
+  const { dialogRef: shutdownDialogRef, dialogProps: shutdownDialogProps } =
+    useDialog({
+      dismissable: !isShuttingDown,
+      isOpen: showShutdownConfirmation,
+      label: t('settings.confirmShutdown'),
+      onClose: () => setShowShutdownConfirmation(false),
+    })
+
   // If the page is loading, show a loading state
   if (isLoading) {
     return (
@@ -795,6 +819,11 @@ export const Component: React.FC = () => {
                             </div>
                             <div className="flex gap-1">
                               <button
+                                aria-label={
+                                  url === watch('defaultMakerUrl')
+                                    ? t('settings.currentDefault')
+                                    : t('settings.setAsDefault')
+                                }
                                 className="rounded p-1.5 text-content-secondary transition-colors hover:bg-primary/15 hover:text-primary"
                                 onClick={() => setValue('defaultMakerUrl', url)}
                                 title={
@@ -809,6 +838,7 @@ export const Component: React.FC = () => {
                                 />
                               </button>
                               <button
+                                aria-label={t('settings.removeUrl')}
                                 className="rounded p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
                                 onClick={() => {
                                   const n = (field.value ?? []).filter(
@@ -1199,6 +1229,7 @@ export const Component: React.FC = () => {
               </div>
               <div className="flex gap-1">
                 <button
+                  aria-label={t('settings.exportLogs')}
                   className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
                   disabled={nodeLogs.length === 0 || isLoadingLogs}
                   onClick={handleExportLogs}
@@ -1207,6 +1238,7 @@ export const Component: React.FC = () => {
                   <Download className="w-4 h-4" />
                 </button>
                 <button
+                  aria-label={t('settings.refreshLogs')}
                   className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
                   disabled={isLoadingLogs}
                   onClick={() => {
@@ -1220,6 +1252,7 @@ export const Component: React.FC = () => {
                   />
                 </button>
                 <button
+                  aria-label={t('settings.clearLogs')}
                   className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
                   disabled={nodeLogs.length === 0 || isLoadingLogs}
                   onClick={() => setNodeLogs([])}
@@ -1331,6 +1364,8 @@ export const Component: React.FC = () => {
             <div
               className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
               onClick={(e) => e.stopPropagation()}
+              ref={restartDialogRef}
+              {...restartDialogProps}
             >
               <div className="flex items-center justify-center text-yellow-500 mb-4">
                 <AlertTriangle size={48} />
@@ -1376,6 +1411,8 @@ export const Component: React.FC = () => {
             <div
               className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
               onClick={(e) => e.stopPropagation()}
+              ref={logoutDialogRef}
+              {...logoutDialogProps}
             >
               <div className="flex items-center justify-center text-yellow-500 mb-4">
                 <AlertTriangle size={48} />
@@ -1419,6 +1456,8 @@ export const Component: React.FC = () => {
             <div
               className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
               onClick={(e) => e.stopPropagation()}
+              ref={shutdownDialogRef}
+              {...shutdownDialogProps}
             >
               {isShuttingDown ? (
                 <div className="flex flex-col items-center py-6">

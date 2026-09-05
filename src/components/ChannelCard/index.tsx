@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
+import { useDialog } from '../../hooks/useDialog'
 import { useSettings } from '../../hooks/useSettings'
 import {
   getModalPortalTarget,
@@ -38,6 +39,7 @@ const truncateMiddle = (str: string, start = 10, end = 10): string => {
 }
 
 const CopyableValue: React.FC<{ value: string }> = ({ value }) => {
+  const { t } = useTranslation()
   const { copied, copy } = useCopyToClipboard()
 
   return (
@@ -46,6 +48,9 @@ const CopyableValue: React.FC<{ value: string }> = ({ value }) => {
         {truncateMiddle(value)}
       </div>
       <button
+        aria-label={
+          copied ? t('a11y.copied', 'Copied!') : t('a11y.copy', 'Copy')
+        }
         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-white transition-colors"
         onClick={() => copy(value)}
         title={copied ? 'Copied!' : 'Copy'}
@@ -69,6 +74,11 @@ export const InfoModal: React.FC<InfoModalProps> = ({
   bitcoinUnit,
 }) => {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('channelCard.infoModal.title'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -172,7 +182,11 @@ export const InfoModal: React.FC<InfoModalProps> = ({
       className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
       onMouseDown={handleBackdropClick}
     >
-      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+      <div
+        className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
@@ -183,6 +197,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
               </h3>
             </div>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation()

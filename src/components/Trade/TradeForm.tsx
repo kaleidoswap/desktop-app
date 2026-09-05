@@ -181,6 +181,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
             {/* Enhanced Swap Button */}
             <div className="absolute left-1/2 -translate-x-1/2 -bottom-6 z-10">
               <button
+                aria-label={t('a11y.swapAssets', 'Swap assets')}
                 className={swapButtonClasses}
                 disabled={!hasChannels || !hasTradablePairs || isSwapInProgress}
                 onClick={() => onSwapAssets()}

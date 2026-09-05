@@ -19,6 +19,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 interface ChangePasswordModalProps {
@@ -61,8 +62,6 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [phase, setPhase] = useState<Phase>('form')
 
-  if (!showModal) return null
-
   const reset = () => {
     setCurrentPassword('')
     setNewPassword('')
@@ -77,6 +76,17 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     reset()
     onClose()
   }
+
+  const dismissable = phase === 'form' && !isLoading
+
+  const { dialogRef, dialogProps } = useDialog({
+    dismissable,
+    isOpen: showModal,
+    label: t('changePassword.title', 'Change Password'),
+    onClose: handleClose,
+  })
+
+  if (!showModal) return null
 
   // Once the node is locked there is no way back to a working session from
   // here — the only safe exit is the unlock screen.
@@ -216,6 +226,11 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           value={value}
         />
         <button
+          aria-label={
+            show
+              ? t('a11y.hidePassword', 'Hide password')
+              : t('a11y.showPassword', 'Show password')
+          }
           className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-secondary transition-colors"
           onClick={() => setShow(!show)}
           tabIndex={-1}
@@ -350,8 +365,6 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     )
   }
 
-  const dismissable = phase === 'form' && !isLoading
-
   return createPortal(
     <div
       className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4`}
@@ -359,7 +372,11 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         dismissable && e.target === e.currentTarget && handleClose()
       }
     >
-      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative">
+      <div
+        className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         <div className="max-h-[85vh] overflow-y-auto px-8 py-8">
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
             <KeyRound className="w-6 h-6 text-primary" />
@@ -368,6 +385,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             </h3>
             {dismissable && (
               <button
+                aria-label={t('a11y.close', 'Close')}
                 className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
                 onClick={handleClose}
                 type="button"

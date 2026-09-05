@@ -16,6 +16,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../helpers/modalPortal'
+import { useDialog } from '../../../hooks/useDialog'
 import { formatBitcoinAmount } from '../../../helpers/number'
 import BitcoinLogo from '../../../assets/bitcoin-logo.svg'
 import LightningLogo from '../../../assets/lightning-logo.svg'
@@ -87,6 +88,12 @@ export const WalletConfirmationModal: React.FC<
   // Whether the user has explicitly picked a method — once they have, we stop
   // overriding their choice with the auto-default.
   const [hasUserSelected, setHasUserSelected] = useState(false)
+  const { dialogRef, dialogProps } = useDialog({
+    dismissable: !isProcessing,
+    isOpen,
+    label: t('orderChannel.step3.payWithWallet'),
+    onClose,
+  })
 
   // Pre-select a sensible default when the modal opens: prefer Lightning, but
   // fall back to whichever method the user can actually afford (a brand-new
@@ -158,7 +165,11 @@ export const WalletConfirmationModal: React.FC<
         {/* m-auto centres the card like items-center/justify-center, but when the
             card is taller than the area it overflows downward only, so the top
             stays reachable by scrolling instead of being clipped. */}
-        <div className="m-auto w-full max-w-lg rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl">
+        <div
+          className="m-auto w-full max-w-lg rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl"
+          ref={dialogRef}
+          {...dialogProps}
+        >
           <div className="px-8 py-8">
             {/* Title row */}
             <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
@@ -167,6 +178,7 @@ export const WalletConfirmationModal: React.FC<
                 {t('orderChannel.step3.payWithWallet')}
               </h3>
               <button
+                aria-label={t('a11y.close', 'Close')}
                 className="text-content-secondary hover:text-white p-1.5 rounded-md hover:bg-surface-high/60 transition-colors"
                 onClick={onClose}
                 type="button"

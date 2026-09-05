@@ -60,6 +60,11 @@ export const PasswordSetupForm = ({
 
   const EyeToggle = () => (
     <button
+      aria-label={
+        isPasswordVisible
+          ? t('a11y.hidePassword', 'Hide password')
+          : t('a11y.showPassword', 'Show password')
+      }
       className="absolute right-3 top-1/2 -translate-y-1/2 p-1
                  text-content-secondary hover:text-white rounded-lg
                  hover:bg-surface-high/50 transition-all duration-200

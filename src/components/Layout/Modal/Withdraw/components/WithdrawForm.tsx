@@ -376,6 +376,7 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
             }}
           />
           <button
+            aria-label={t('a11y.pasteFromClipboard', 'Paste from clipboard')}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg
                       text-content-secondary hover:text-primary hover:bg-primary/10 transition-colors"
             onClick={handlePasteFromClipboard}

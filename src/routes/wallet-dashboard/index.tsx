@@ -579,6 +579,7 @@ export const Component = () => {
                   ].map(({ icon, label, color, onClick }) => (
                     <div className="relative group/btn" key={label}>
                       <button
+                        aria-label={label}
                         className={`p-1.5 rounded-md transition-colors duration-150 ${color}`}
                         onClick={onClick}
                         title={label}
@@ -681,6 +682,7 @@ export const Component = () => {
                 </code>
               </div>
               <button
+                aria-label={t('a11y.copyPublicKey', 'Copy public key')}
                 className="text-content-tertiary hover:text-content-primary transition-colors flex-shrink-0 ml-2"
                 onClick={handleCopyPubkey}
                 title={pubkey}
@@ -936,6 +938,7 @@ export const Component = () => {
               ].map(({ icon, label, onClick }) => (
                 <div className="relative group/act" key={label}>
                   <button
+                    aria-label={label}
                     className="icon-action p-1.5 rounded-md bg-transparent hover:bg-white/5 border border-white/30 hover:border-white/50 text-white transition-colors"
                     onClick={onClick}
                     title={label}

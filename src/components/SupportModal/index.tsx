@@ -21,6 +21,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 interface SupportModalProps {
   isOpen: boolean
@@ -41,6 +42,11 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
   const { t } = useTranslation()
   const [activeSection, setActiveSection] = useState('main')
   const [expandedIssue, setExpandedIssue] = useState<number | null>(null)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('supportModal.title'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -104,6 +110,8 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
       <div
         className="bg-surface-base border border-divider/20 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-scroll custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         {/* Modal Header */}
         <div className="flex justify-between items-center p-6 border-b border-divider/10">
@@ -286,7 +294,10 @@ export const SupportModal = ({ isOpen, onClose }: SupportModalProps) => {
                         </div>
                       </div>
                       {expandedIssue === index ? (
-                        <button className="p-1 text-content-secondary hover:text-white transition-colors">
+                        <button
+                          aria-label={t('a11y.collapse', 'Collapse')}
+                          className="p-1 text-content-secondary hover:text-white transition-colors"
+                        >
                           <X className="w-5 h-5" />
                         </button>
                       ) : (

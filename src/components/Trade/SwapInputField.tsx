@@ -120,6 +120,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
               </span>
               {onRefresh && (
                 <button
+                  aria-label={t('trade.swapInput.refreshAmounts')}
                   className="p-1 rounded-md bg-transparent hover:bg-surface-high/50 text-white border border-border-default transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={disabled}
                   onClick={onRefresh}

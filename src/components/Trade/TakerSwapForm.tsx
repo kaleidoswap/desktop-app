@@ -231,6 +231,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
             </h3>
           </div>
           <button
+            aria-label={t('a11y.refreshBalances', 'Refresh balances')}
             className="p-2 rounded-lg hover:bg-surface-high transition-colors"
             disabled={isRefreshing || !swapDetails}
             onClick={fetchAssetBalances}
@@ -459,6 +460,10 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
                         {nodeInfoData.pubkey}
                       </code>
                       <button
+                        aria-label={t(
+                          'a11y.copyToClipboard',
+                          'Copy to clipboard'
+                        )}
                         className="p-1.5 rounded bg-surface-high hover:bg-surface-elevated transition-all duration-150 hover:scale-[1.05] active:scale-[0.95]"
                         onClick={() => {
                           navigator.clipboard.writeText(

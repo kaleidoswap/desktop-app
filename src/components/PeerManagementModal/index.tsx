@@ -141,6 +141,7 @@ export const PeerManagementModal = ({ onClose }: PeerManagementModalProps) => {
                 </div>
                 <div className="relative group/disc ml-4 flex-shrink-0">
                   <button
+                    aria-label={t('peerManagement.disconnectTooltip')}
                     className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger opacity-60 group-hover:opacity-100"
                     onClick={() => handleDisconnect(peer.pubkey ?? '')}
                     type="button"

@@ -7,6 +7,7 @@ import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
 
 import { useChannelOrderPaymentMonitor } from '../../hooks/useChannelOrderPaymentMonitor'
+import { useDialog } from '../../hooks/useDialog'
 import { useSettings } from '../../hooks/useSettings'
 import {
   getQuoteFromAmount,
@@ -109,7 +110,6 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   const [orderPayload, setOrderPayload] = useState<any>(null)
   const onSuccessRef = useRef(onSuccess)
   onSuccessRef.current = onSuccess
-  const modalShellRef = useRef<HTMLDivElement>(null)
 
   const [assetMap, setAssetMap] = useState<Record<string, AssetInfo>>({})
   const [lspOptions, setLspOptions] = useState<LspOptions | null>(null)
@@ -133,6 +133,22 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
   )
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [showCustomAssetCapacity, setShowCustomAssetCapacity] = useState(false)
+
+  const modalTitle =
+    step === 1
+      ? channelType === 'asset'
+        ? t('components.buyChannelModal.openAssetLightningChannel')
+        : t('components.buyChannelModal.openBtcLightningChannel')
+      : step === 2
+        ? t('components.buyChannelModal.completePayment')
+        : t('components.buyChannelModal.orderStatus')
+
+  // `handleClose` is declared further down; the closure defers the lookup.
+  const { dialogRef: modalShellRef, dialogProps } = useDialog({
+    isOpen,
+    label: modalTitle,
+    onClose: () => handleClose(),
+  })
 
   const [nodeInfoRequest] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [addressRequest] = nodeApi.endpoints.address.useLazyQuery()
@@ -263,7 +279,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
       behavior: 'smooth',
       top: 0,
     })
-  }, [showWalletConfirmation])
+  }, [showWalletConfirmation, modalShellRef])
 
   const assetId = watch('assetId')
   const capacitySat = watch('capacitySat')
@@ -830,6 +846,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
           step === 2 ? 'max-w-6xl' : 'max-w-2xl'
         } max-h-full overflow-y-auto flex flex-col`}
         ref={modalShellRef}
+        {...dialogProps}
       >
         {loading && (
           <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50 rounded-2xl">
@@ -840,15 +857,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
         {/* Header */}
         <div className="sticky top-0 bg-surface-base border-b border-border-subtle/50 p-6 flex items-center justify-between z-10 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-white">
-              {step === 1
-                ? channelType === 'asset'
-                  ? t('components.buyChannelModal.openAssetLightningChannel')
-                  : t('components.buyChannelModal.openBtcLightningChannel')
-                : step === 2
-                  ? t('components.buyChannelModal.completePayment')
-                  : t('components.buyChannelModal.orderStatus')}
-            </h2>
+            <h2 className="text-2xl font-bold text-white">{modalTitle}</h2>
             <p className="text-content-secondary mt-1">
               {step === 1
                 ? t('components.buyChannelModal.configureChannel')
@@ -860,6 +869,7 @@ export const BuyChannelModal: React.FC<BuyChannelModalProps> = ({
             </p>
           </div>
           <button
+            aria-label={t('a11y.close', 'Close')}
             className="p-2 hover:bg-surface-overlay rounded-lg transition-colors"
             onClick={handleClose}
           >

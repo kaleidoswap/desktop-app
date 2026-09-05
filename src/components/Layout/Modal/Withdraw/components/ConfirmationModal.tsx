@@ -9,6 +9,7 @@ import {
   formatAssetAmountWithPrecision,
   formatNumberWithCommas,
 } from '../../../../../helpers/number'
+import { useDialog } from '../../../../../hooks/useDialog'
 import { ConfirmationModalProps, HTLCStatus, AssetOption } from '../types'
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -34,6 +35,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     isLightningPayment && decodedInvoice?.amt_msat && !decodedInvoice?.asset_id
 
   const [showOverlay, setShowOverlay] = useState(false)
+  // The failure overlay auto-dismisses and has no close control.
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen: showOverlay,
+    label: t('withdrawModal.confirmation.overlay.title'),
+  })
   const feeRateDisplay = useMemo(() => {
     if (!pendingData) return ''
 
@@ -99,7 +105,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (paymentStatus === HTLCStatus.Failed) {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-base/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-surface-overlay border border-red-500/20 rounded-2xl p-6 max-w-sm mx-auto text-center shadow-xl animate-scaleIn">
+          <div
+            className="bg-surface-overlay border border-red-500/20 rounded-2xl p-6 max-w-sm mx-auto text-center shadow-xl animate-scaleIn"
+            ref={dialogRef}
+            {...dialogProps}
+          >
             <div className="w-16 h-16 mx-auto bg-red-500/10 rounded-full flex items-center justify-center mb-4">
               <svg
                 className="h-10 w-10 text-red-400"

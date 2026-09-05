@@ -248,6 +248,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 </span>
                 <div className="relative group/copy">
                   <button
+                    aria-label={t('createChannel.step3.copyPubkey')}
                     className="text-content-tertiary hover:text-white p-0.5 rounded transition-colors"
                     onClick={() =>
                       navigator.clipboard.writeText(

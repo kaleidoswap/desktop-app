@@ -16,6 +16,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../../helpers/modalPortal'
+import { useDialog } from '../../../../hooks/useDialog'
 import { Spinner } from '../../../../components/Spinner'
 import kaleidoswapPictogram from '../../../../assets/logo.svg'
 import { makerApi } from '../../../../slices/makerApi/makerApi.slice'
@@ -38,6 +39,11 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('dca.getUsdt.title', 'Receive USDT'),
+    onClose,
+  })
 
   const [kaleidoConnectionUrl, setKaleidoConnectionUrl] = useState('')
   const [isLoadingLsp, setIsLoadingLsp] = useState(false)
@@ -121,7 +127,11 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
       className={`${pos} inset-0 z-50 flex items-center justify-center p-4 bg-surface-base/70 backdrop-blur-sm`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-2xl bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden">
+      <div
+        className="w-full max-w-2xl bg-surface-base border border-border-subtle rounded-2xl shadow-2xl shadow-black/30 overflow-hidden"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle/50">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -129,6 +139,7 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
             {t('dca.getUsdt.title', 'Receive USDT')}
           </h2>
           <button
+            aria-label={t('a11y.close', 'Close')}
             className="p-1.5 rounded-md text-content-secondary hover:text-content-primary hover:bg-surface-overlay transition-colors"
             onClick={onClose}
           >
@@ -230,6 +241,7 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
                     </span>
                     <div className="relative group/disc flex-shrink-0">
                       <button
+                        aria-label={t('a11y.changeLsp', 'Change LSP')}
                         className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
                         onClick={handleAddNewLsp}
                         type="button"

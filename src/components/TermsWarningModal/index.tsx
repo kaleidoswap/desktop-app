@@ -1,5 +1,6 @@
 import { Scale, ArrowRight, X } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { TermsAndPrivacyContent } from '../TermsAndPrivacyContent'
 import { Modal, Button } from '../ui'
@@ -17,6 +18,7 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
   onClose,
   onAccept,
 }) => {
+  const { t } = useTranslation()
   const [showContent, setShowContent] = useState<ContentType>(null)
 
   return (
@@ -30,6 +32,7 @@ export const TermsWarningModal: React.FC<TermsWarningModalProps> = ({
               Terms & Privacy Policy
             </h3>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
               onClick={onClose}
               type="button"

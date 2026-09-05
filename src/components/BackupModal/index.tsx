@@ -8,6 +8,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 interface BackupModalProps {
   showModal: boolean
@@ -33,6 +34,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({
   setValue,
 }) => {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen: showModal,
+    label: t('backupModal.title'),
+    onClose,
+  })
 
   if (!showModal) return null
 
@@ -41,7 +47,11 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       className={`${getModalPositionClass()} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative">
+      <div
+        className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden relative"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         <div className="max-h-[85vh] overflow-y-auto px-8 py-8">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
@@ -50,6 +60,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
               {t('backupModal.title')}
             </h3>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
               onClick={onClose}
               type="button"
@@ -73,6 +84,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                   value={backupPath}
                 />
                 <button
+                  aria-label={t('a11y.selectFolder', 'Select folder')}
                   className="px-3 py-2.5 text-primary hover:text-white hover:bg-primary/20 border-l border-border-default transition-colors rounded-r-xl"
                   onClick={onSelectFolder}
                   type="button"

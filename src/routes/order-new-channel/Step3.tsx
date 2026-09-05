@@ -120,6 +120,7 @@ export const Step3: React.FC<Props> = ({
             <div className="relative group/copy">
               <CopyToClipboard onCopy={handleCopyOrderId} text={order.order_id}>
                 <button
+                  aria-label={t('a11y.copyOrderId', 'Copy Order ID')}
                   className="text-content-tertiary hover:text-white p-0.5 rounded transition-colors"
                   type="button"
                 >

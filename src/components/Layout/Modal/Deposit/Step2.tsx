@@ -641,6 +641,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         <Download className="w-6 h-6 text-primary" />
         <h3 className="text-xl font-bold text-white flex-1">{titleText}</h3>
         <button
+          aria-label={t('a11y.close', 'Close')}
           className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
           onClick={onClose}
           type="button"
@@ -890,6 +891,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 {/* Regenerate icon button */}
                 <div className="flex justify-end">
                   <button
+                    aria-label={t('depositModal.step2.actions.regenerate')}
                     className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30
                              hover:border-white/50 text-white transition-colors disabled:opacity-40
                              disabled:cursor-not-allowed"
@@ -925,6 +927,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                       </span>
                     </div>
                     <button
+                      aria-label={t('depositModal.step2.actions.copy')}
                       className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
                                text-content-secondary hover:text-primary flex-shrink-0"
                       onClick={() => handleCopy(onchainAddress)}
@@ -955,6 +958,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                       </span>
                     </div>
                     <button
+                      aria-label={t('depositModal.step2.actions.copy')}
                       className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
                                text-content-secondary hover:text-primary flex-shrink-0"
                       onClick={() => handleCopy(lnInvoiceStr)}
@@ -1197,6 +1201,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                       : address}
                   </div>
                   <button
+                    aria-label={t('depositModal.step2.actions.copy')}
                     className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
                              text-content-secondary hover:text-primary"
                     onClick={() => handleCopy(address)}
@@ -1220,6 +1225,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                           : recipientId}
                       </div>
                       <button
+                        aria-label={t('depositModal.step2.actions.copy')}
                         className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
                                text-content-secondary hover:text-primary"
                         onClick={handleCopyRecipientId}

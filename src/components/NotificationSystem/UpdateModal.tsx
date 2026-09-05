@@ -14,6 +14,8 @@ import {
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useDialog } from '../../hooks/useDialog'
+
 interface UpdateModalProps {
   isOpen: boolean
   onClose: () => void
@@ -33,6 +35,31 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   const [downloaded, setDownloaded] = useState<number>(0)
   const [completed, setCompleted] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Each visual state renders its own card, so each gets its own dialog
+  // binding; only the one currently shown is active.
+  const isInstallingView = !completed && Boolean(contentLength) && isInstalling
+  const isErrorView = !completed && !isInstallingView && Boolean(error)
+  const isDefaultView = !completed && !isInstallingView && !isErrorView
+  const completedDialog = useDialog({
+    isOpen: isOpen && completed,
+    label: t('updaterModal.completed.title'),
+  })
+  const installingDialog = useDialog({
+    isOpen: isOpen && isInstallingView,
+    label: t('updaterModal.installing.title'),
+  })
+  const errorDialog = useDialog({
+    isOpen: isOpen && isErrorView,
+    label: t('updaterModal.error.title'),
+    onClose,
+  })
+  const defaultDialog = useDialog({
+    dismissable: !isInstalling,
+    isOpen: isOpen && isDefaultView,
+    label: t('updaterModal.default.title'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -171,7 +198,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   if (completed) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-green-600/30 rounded-3xl p-8 shadow-2xl">
+        <div
+          className="max-w-md w-full bg-surface-base border border-green-600/30 rounded-3xl p-8 shadow-2xl"
+          ref={completedDialog.dialogRef}
+          {...completedDialog.dialogProps}
+        >
           <div className="text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
               <CheckCircle2 className="w-8 h-8 text-white" />
@@ -213,7 +244,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-purple-600/30 rounded-3xl p-8 shadow-2xl">
+        <div
+          className="max-w-md w-full bg-surface-base border border-purple-600/30 rounded-3xl p-8 shadow-2xl"
+          ref={installingDialog.dialogRef}
+          {...installingDialog.dialogProps}
+        >
           <div className="text-center">
             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg relative overflow-hidden">
               <Download className="w-8 h-8 text-white z-10" />
@@ -375,7 +410,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   if (error) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-red-600/30 rounded-3xl p-8 shadow-2xl">
+        <div
+          className="max-w-md w-full bg-surface-base border border-red-600/30 rounded-3xl p-8 shadow-2xl"
+          ref={errorDialog.dialogRef}
+          {...errorDialog.dialogProps}
+        >
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-3">
               {t('updaterModal.error.title')}
@@ -406,10 +445,15 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   // Default update modal state
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="max-w-lg w-full bg-surface-base border border-amber-600/30 rounded-3xl p-8 shadow-2xl">
+      <div
+        className="max-w-lg w-full bg-surface-base border border-amber-600/30 rounded-3xl p-8 shadow-2xl"
+        ref={defaultDialog.dialogRef}
+        {...defaultDialog.dialogProps}
+      >
         <div className="relative">
           {/* Close button */}
           <button
+            aria-label={t('a11y.close', 'Close')}
             className="absolute -top-2 -right-2 p-2 bg-surface-high hover:bg-surface-elevated rounded-full transition-colors z-10"
             onClick={onClose}
           >

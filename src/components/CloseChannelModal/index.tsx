@@ -8,6 +8,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 import { nodeApi, NodeApiError } from '../../slices/nodeApi/nodeApi.slice'
 
 interface CloseChannelModalProps {
@@ -31,6 +32,19 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
   const [isClosing, setIsClosing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestForceClose, setSuggestForceClose] = useState(false)
+
+  const resetAndClose = () => {
+    setError(null)
+    setSuggestForceClose(false)
+    onClose()
+  }
+
+  const { dialogRef, dialogProps } = useDialog({
+    dismissable: !isClosing,
+    isOpen,
+    label: t('closeChannelModal.title'),
+    onClose: resetAndClose,
+  })
 
   if (!isOpen) return null
 
@@ -110,12 +124,6 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
     }
   }
 
-  const resetAndClose = () => {
-    setError(null)
-    setSuggestForceClose(false)
-    onClose()
-  }
-
   const pos = getModalPositionClass()
 
   return createPortal(
@@ -123,7 +131,11 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
       className={`${pos} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
       onMouseDown={handleBackdropClick}
     >
-      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+      <div
+        className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
@@ -132,6 +144,7 @@ export const CloseChannelModal: React.FC<CloseChannelModalProps> = ({
               {t('closeChannelModal.title')}
             </h3>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
               disabled={isClosing}
               onClick={(e) => {

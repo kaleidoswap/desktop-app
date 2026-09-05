@@ -9,7 +9,9 @@ import {
 } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
+import { useDialog } from '../../hooks/useDialog'
 import { UpdateModal } from './UpdateModal'
 
 const DEFAULT_NOTIFICATION_AUTO_CLOSE_MS = 5000
@@ -97,6 +99,7 @@ const NotificationItem: React.FC<{
   inPanel?: boolean
   onNotificationClick?: (notification: Notification) => void
 }> = ({ notification, onClose, inPanel = false, onNotificationClick }) => {
+  const { t } = useTranslation()
   const {
     icon: Icon,
     containerClass,
@@ -177,6 +180,7 @@ const NotificationItem: React.FC<{
             )}
             {!inPanel && (
               <button
+                aria-label={t('a11y.close', 'Close')}
                 className="p-1 hover:bg-surface-high/10 rounded-full transition-colors"
                 onClick={(e) => {
                   e.preventDefault()
@@ -236,8 +240,18 @@ const NotificationPanel: React.FC<{
   onRemoveNotification,
   onNotificationClick,
 }) => {
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    label: t('a11y.notifications', 'Notifications'),
+    onClose,
+  })
+
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-surface-base border-l border-divider/10 shadow-xl z-50">
+    <div
+      className="fixed inset-y-0 right-0 w-96 bg-surface-base border-l border-divider/10 shadow-xl z-50"
+      ref={dialogRef}
+      {...dialogProps}
+    >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between p-4 border-b border-divider/10">
           <div className="flex items-center gap-2">
@@ -255,6 +269,7 @@ const NotificationPanel: React.FC<{
               Clear all
             </button>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="p-1 hover:bg-surface-high/10 rounded-full transition-colors"
               onClick={onClose}
             >

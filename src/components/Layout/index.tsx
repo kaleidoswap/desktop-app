@@ -35,6 +35,7 @@ import {
   scrollContentToTop,
 } from '../../helpers/contentScroll'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
+import { useDialog } from '../../hooks/useDialog'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
@@ -176,6 +177,11 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
         </NavLink>
         {hasSubMenu && !isCollapsed && (
           <button
+            aria-label={
+              isSubMenuOpen
+                ? t('a11y.collapse', 'Collapse')
+                : t('a11y.expand', 'Expand')
+            }
             className="pr-4 py-3 flex items-center"
             onClick={handleChevronClick}
             type="button"
@@ -889,15 +895,43 @@ export const Layout = (props: Props) => {
     }
   }
 
+  const closeConfirmTitle = isNodeActive
+    ? 'Close KaleidoSwap?'
+    : 'Quit KaleidoSwap?'
+  const {
+    dialogRef: closeConfirmDialogRef,
+    dialogProps: closeConfirmDialogProps,
+  } = useDialog({
+    dismissable: !isHandlingCloseAction,
+    isOpen: showCloseConfirmModal,
+    label: closeConfirmTitle,
+    onClose: () => setShowCloseConfirmModal(false),
+  })
+  const showNodeUnreachableModal =
+    !shouldHideNavbar && isNodeUnreachable && !isMindRoute
+  const {
+    dialogRef: nodeUnreachableDialogRef,
+    dialogProps: nodeUnreachableDialogProps,
+  } = useDialog({
+    isOpen: showNodeUnreachableModal,
+    label: t('nodeReachability.blockingTitle', {
+      defaultValue: 'Node is offline',
+    }),
+  })
+
   return (
     <div className={props.className}>
       <ShutdownAnimation isVisible={isShuttingDown} status={shutdownStatus} />
 
       {showCloseConfirmModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md bg-surface-base rounded-xl border border-divider/20 shadow-xl p-6">
+          <div
+            className="w-full max-w-md bg-surface-base rounded-xl border border-divider/20 shadow-xl p-6"
+            ref={closeConfirmDialogRef}
+            {...closeConfirmDialogProps}
+          >
             <h3 className="text-xl font-semibold text-white">
-              {isNodeActive ? 'Close KaleidoSwap?' : 'Quit KaleidoSwap?'}
+              {closeConfirmTitle}
             </h3>
             <p className="text-content-secondary mt-3">
               {isNodeActive
@@ -952,9 +986,13 @@ export const Layout = (props: Props) => {
         </div>
       )}
 
-      {!shouldHideNavbar && isNodeUnreachable && !isMindRoute && (
+      {showNodeUnreachableModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-40 p-4">
-          <div className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6">
+          <div
+            className="w-full max-w-lg bg-surface-base rounded-lg border border-red-500/30 shadow-2xl p-6"
+            ref={nodeUnreachableDialogRef}
+            {...nodeUnreachableDialogProps}
+          >
             <div className="flex items-start gap-4">
               <div className="w-11 h-11 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
                 <Activity className="w-5 h-5 text-red-300" />
@@ -1046,6 +1084,11 @@ export const Layout = (props: Props) => {
               )}
 
               <button
+                aria-label={
+                  isSidebarCollapsed
+                    ? t('a11y.expandSidebar', 'Expand sidebar')
+                    : t('a11y.collapseSidebar', 'Collapse sidebar')
+                }
                 className="p-3 rounded-lg text-content-secondary hover:text-primary
                            hover:bg-surface-overlay/50 transition-all duration-300
                            transform hover:scale-110 active:scale-95
@@ -1262,7 +1305,7 @@ export const Layout = (props: Props) => {
 
                   {/* Notifications bell */}
                   <button
-                    aria-label="Toggle notifications"
+                    aria-label={t('a11y.notifications', 'Notifications')}
                     className="relative p-3 text-content-secondary hover:text-white rounded-xl hover:bg-gradient-to-r hover:from-surface-overlay hover:to-surface-overlay/50
                              transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={(e) => {

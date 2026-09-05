@@ -1,5 +1,5 @@
 import { Search, X, Copy, Check, ArrowRight } from 'lucide-react'
-import React, { useState, useRef, useMemo, useEffect } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 
 import {
@@ -11,6 +11,7 @@ import { twJoin } from 'tailwind-merge'
 
 import defaultIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
+import { useDialog } from '../../hooks/useDialog'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 
 export interface AssetOptionData {
@@ -102,6 +103,7 @@ const AssetOption = React.memo(
                 </span>
                 {onCopyAssetId && (
                   <button
+                    aria-label={t('trade.assetModal.copyAssetId')}
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-surface-elevated/50 rounded"
                     onClick={handleCopyAssetId}
                     title={t('trade.assetModal.copyAssetId')}
@@ -158,9 +160,13 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
     searchPlaceholder || t('trade.assetModal.searchPlaceholder')
   const [searchTerm, setSearchTerm] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: displayTitle,
+    onClose,
+  })
 
-  useOnClickOutside(modalRef, onClose)
+  useOnClickOutside(dialogRef, onClose)
 
   // Enhanced filter with better search capabilities
   const filteredOptions = useMemo(() => {
@@ -199,32 +205,6 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
       })
   }
 
-  // Handle escape key to close modal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      return () => {
-        document.removeEventListener('keydown', handleEscape)
-      }
-    }
-  }, [isOpen, onClose])
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = 'auto'
-      }
-    }
-  }, [isOpen])
-
   if (!isOpen) return null
 
   const pos = getModalPositionClass()
@@ -242,7 +222,8 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
           'animate-in fade-in-0 zoom-in-95 duration-300'
         )}
         onClick={(e) => e.stopPropagation()}
-        ref={modalRef}
+        ref={dialogRef}
+        {...dialogProps}
       >
         {/* Header */}
         <div className="p-6 border-b border-border-default/50 bg-surface-overlay/50">
@@ -256,6 +237,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
               )}
             </div>
             <button
+              aria-label={t('trade.assetModal.close')}
               className="p-2 hover:bg-surface-high/50 rounded-full transition-colors text-content-secondary hover:text-white"
               onClick={onClose}
               title={t('trade.assetModal.close')}
@@ -277,6 +259,7 @@ export const AssetSelectionModal: React.FC<AssetSelectionModalProps> = ({
             />
             {searchTerm && (
               <button
+                aria-label={t('a11y.clear', 'Clear')}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded-sm transition-colors"
                 onClick={clearSearch}
               >

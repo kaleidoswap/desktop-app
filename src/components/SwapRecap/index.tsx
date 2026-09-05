@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import React, { useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 import { AssetOption } from '../../components/Trade'
 import {
@@ -16,6 +17,7 @@ import {
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 import { calculateAndFormatRate } from '../../helpers/number'
+import { useDialog } from '../../hooks/useDialog'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
@@ -139,6 +141,13 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
     onClose()
   }, [onClose])
 
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('a11y.swapDetails', 'Swap Details'),
+    onClose: handleClose,
+  })
+
   if (!isOpen) return null
 
   const pos = getModalPositionClass()
@@ -151,6 +160,8 @@ export const SwapRecap: React.FC<SwapRecapProps> = ({
       <div
         className="bg-surface-base/90 rounded-2xl border border-border-subtle/50 w-full max-w-md shadow-xl animate-in slide-in-from-bottom-8 duration-300"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         <div className="p-8 space-y-6">
           {/* Header */}

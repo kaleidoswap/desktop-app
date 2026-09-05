@@ -28,6 +28,7 @@ import kaleidoswapPictogram from '../../assets/logo.svg'
 import { makerApi } from '../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 interface Props {
   onNext: (data: { connectionUrl: string; success: boolean }) => void
@@ -224,7 +225,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
         }
         onNext({ connectionUrl, success: true })
       } catch (error) {
-        toast.error(`${error}`)
+        toast.error(toUserFacingError(error, t).message)
       } finally {
         setIsConnecting(false)
       }
@@ -340,6 +341,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                       text={manualConnectionUrl}
                     >
                       <button
+                        aria-label={t('orderChannel.step1.copyToClipboard')}
                         className="absolute right-2 top-2 p-1.5 bg-surface-high/80 hover:bg-surface-elevated rounded-md transition-all duration-150 hover:scale-[1.05] active:scale-[0.95] group"
                         title={t('orderChannel.step1.copyToClipboard')}
                         type="button"
@@ -403,6 +405,7 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
                     </span>
                     <div className="relative group/disc flex-shrink-0">
                       <button
+                        aria-label={t('a11y.deselectLsp', 'Deselect LSP')}
                         className="rounded-lg p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
                         onClick={(e) => {
                           e.stopPropagation()

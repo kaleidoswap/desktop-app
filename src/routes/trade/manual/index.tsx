@@ -194,6 +194,7 @@ export const Component = () => {
           </h3>
         </div>
         <button
+          aria-label={t('tradeManual.roleSelector.refresh')}
           className="p-2 rounded-lg hover:bg-surface-overlay transition-colors"
           disabled={isRefreshing}
           onClick={refreshData}
@@ -247,7 +248,14 @@ export const Component = () => {
         <h2 className="text-xl font-semibold text-white">
           {t('tradeManual.swapExplanation.title')}
         </h2>
-        <button className="p-1 rounded-full hover:bg-surface-overlay transition-colors">
+        <button
+          aria-label={
+            isExplanationExpanded
+              ? t('a11y.collapse', 'Collapse')
+              : t('a11y.expand', 'Expand')
+          }
+          className="p-1 rounded-full hover:bg-surface-overlay transition-colors"
+        >
           {isExplanationExpanded ? (
             <ChevronUp className="w-5 h-5 text-content-secondary" />
           ) : (

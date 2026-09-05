@@ -544,6 +544,10 @@ export const Component = () => {
                         {transfer.txid}
                       </span>
                       <button
+                        aria-label={t(
+                          'a11y.copyTransactionId',
+                          'Copy transaction ID'
+                        )}
                         className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
                         onClick={(e) => {
                           e.stopPropagation()
@@ -611,6 +615,10 @@ export const Component = () => {
                         {transfer.recipient_id}
                       </span>
                       <button
+                        aria-label={t(
+                          'a11y.copyRecipientId',
+                          'Copy recipient ID'
+                        )}
                         className="ml-2 text-content-secondary hover:text-content-primary transition-colors"
                         onClick={(e) => {
                           e.stopPropagation()

@@ -16,8 +16,10 @@ import {
   X,
 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { MindCard, gb, useMindContext } from './shared'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 /** Shimmer placeholder rows shown while the catalog is being fetched. */
 const CatalogSkeleton: React.FC = () => (
@@ -38,6 +40,7 @@ const CatalogSkeleton: React.FC = () => (
 )
 
 export const ModelsManager: React.FC = () => {
+  const { t } = useTranslation()
   const mind = useMindContext()
   const { status } = mind
   const providerOn = status?.on === true
@@ -90,9 +93,7 @@ export const ModelsManager: React.FC = () => {
                 setName('')
                 setShowCustom(false)
               })
-              .catch((err) =>
-                setCustomError(err instanceof Error ? err.message : String(err))
-              )
+              .catch((err) => setCustomError(toUserFacingError(err, t).message))
           }}
         >
           <p className="text-xs text-content-tertiary">
@@ -209,6 +210,7 @@ export const ModelsManager: React.FC = () => {
                   <div className="flex shrink-0 items-center gap-2">
                     {downloading ? (
                       <button
+                        aria-label={t('a11y.cancelDownload', 'Cancel download')}
                         className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger"
                         onClick={() => mind.cancelDownload(m.id)}
                         title="Cancel download"
@@ -237,6 +239,7 @@ export const ModelsManager: React.FC = () => {
                           </button>
                         )}
                         <button
+                          aria-label={t('a11y.delete', 'Delete')}
                           className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger disabled:opacity-30"
                           disabled={isActive}
                           onClick={() => mind.deleteModel(m.id)}

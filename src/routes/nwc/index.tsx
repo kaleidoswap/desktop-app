@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event'
 import { Copy, Plus } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import { Alert, Badge, Button, Card, Input, Modal } from '../../components/ui'
@@ -101,6 +102,7 @@ function parseMethods(json: string): string[] {
 }
 
 export const Component = () => {
+  const { t } = useTranslation()
   const [running, setRunning] = useState(false)
   const [npub, setNpub] = useState<string | null>(null)
   const [connections, setConnections] = useState<NwcConnection[]>([])
@@ -311,6 +313,7 @@ export const Component = () => {
                 value={npub ?? '—'}
               />
               <button
+                aria-label={t('a11y.copy', 'Copy')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary transition-colors flex-shrink-0"
                 onClick={() => {
                   if (npub) {

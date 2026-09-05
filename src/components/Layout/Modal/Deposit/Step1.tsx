@@ -144,6 +144,7 @@ export const Step1 = ({ onNext, onClose }: Props) => {
           {t('depositModal.title', 'Deposit')}
         </h3>
         <button
+          aria-label={t('a11y.close', 'Close')}
           className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
           onClick={onClose}
           type="button"

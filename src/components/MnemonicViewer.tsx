@@ -18,6 +18,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../helpers/modalPortal'
+import { useDialog } from '../hooks/useDialog'
 
 interface MnemonicViewerModalProps {
   isOpen: boolean
@@ -36,6 +37,14 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [copied, setCopied] = useState(false)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label:
+      step === 'password'
+        ? t('mnemonicViewer.unlockTitle')
+        : t('mnemonicViewer.displayTitle'),
+    onClose,
+  })
 
   useEffect(() => {
     if (!isOpen) {
@@ -96,7 +105,11 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
       className={`${getModalPositionClass()} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden">
+      <div
+        className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 overflow-hidden"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         <div className="max-h-[90vh] overflow-y-scroll px-8 py-8">
           {/* Header */}
           <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-6">
@@ -107,6 +120,7 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                 : t('mnemonicViewer.displayTitle')}
             </h3>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
               onClick={onClose}
               type="button"
@@ -145,6 +159,11 @@ export const MnemonicViewerModal: React.FC<MnemonicViewerModalProps> = ({
                     value={password}
                   />
                   <button
+                    aria-label={
+                      showPassword
+                        ? t('a11y.hidePassword', 'Hide password')
+                        : t('a11y.showPassword', 'Show password')
+                    }
                     className="px-3 text-content-secondary hover:text-white transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     type="button"

@@ -1,12 +1,14 @@
 import { X } from 'lucide-react'
 import React from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 import { calculateAndFormatRate } from '../../helpers/number'
+import { useDialog } from '../../hooks/useDialog'
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
 import { AssetOption } from '../Trade'
 
@@ -39,6 +41,13 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
   getAssetPrecision,
   isLoading = false,
 }) => {
+  const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('a11y.confirmSwap', 'Confirm Swap'),
+    onClose,
+  })
+
   if (!isOpen) return null
 
   const getDisplayAsset = (asset: string) => {
@@ -55,11 +64,14 @@ export const SwapConfirmation: React.FC<SwapConfirmationProps> = ({
       <div
         className="bg-surface-base border border-border-subtle rounded-2xl max-w-lg w-full mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         <div className="p-6 border-b border-border-subtle">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-white">Confirm Swap</h3>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="p-2 hover:bg-surface-overlay rounded-lg transition-colors"
               onClick={onClose}
             >

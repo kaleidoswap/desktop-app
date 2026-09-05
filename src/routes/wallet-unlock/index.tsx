@@ -36,8 +36,10 @@ import {
   DESKTOP_ANNOUNCE_ALIAS,
 } from '../../helpers/unlock'
 import { parseRpcUrl } from '../../helpers/utils'
+import { useDialog } from '../../hooks/useDialog'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 interface Fields {
   password: string
@@ -280,8 +282,11 @@ export const Component = () => {
         return
       }
 
-      const errorMessage =
-        error instanceof Error ? error.message : t('walletUnlock.unknownError')
+      const errorMessage = toUserFacingError(
+        error,
+        t,
+        'walletUnlock.unknownError'
+      ).message
       setUnlockError(errorMessage)
       setUnlockStatusMessage(null)
       setErrors([errorMessage])
@@ -361,8 +366,7 @@ export const Component = () => {
       }
       // If not success, the form is now visible for password entry
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to start Docker node'
+      const message = toUserFacingError(error, t).message
       setErrors([message])
       toast.error(message, { autoClose: 5000, position: 'top-right' })
     } finally {
@@ -372,6 +376,12 @@ export const Component = () => {
 
   const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
   const accountName = nodeSettings.name || 'Your Wallet'
+
+  const { dialogRef: initDialogRef, dialogProps: initDialogProps } = useDialog({
+    isOpen: showInitModal,
+    label: t('walletUnlock.initializeWalletTitle'),
+    onClose: () => setShowInitModal(false),
+  })
 
   if (redirectToRoot) {
     return <Navigate replace to={WALLET_DASHBOARD_PATH} />
@@ -663,7 +673,11 @@ export const Component = () => {
       {/* Wallet not initialized modal */}
       {showInitModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-sm">
+          <div
+            className="w-full max-w-sm"
+            ref={initDialogRef}
+            {...initDialogProps}
+          >
             <Card className="p-6">
               <div className="text-center mb-5">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-status-warning/10 border border-status-warning/20 mb-3">

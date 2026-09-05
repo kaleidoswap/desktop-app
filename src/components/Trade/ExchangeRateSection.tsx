@@ -151,6 +151,7 @@ export const ExchangeRateDisplay: React.FC<ExchangeRateDisplayProps> = ({
       <div className="flex-1 flex items-center justify-end">
         {onRefresh && (
           <button
+            aria-label={t('tradeMarketMaker.swap.refresh')}
             className="p-1 rounded-md bg-transparent hover:bg-surface-high/50 text-white border border-border-default transition-all active:scale-95"
             onClick={onRefresh}
             title={t('tradeMarketMaker.swap.refresh')}

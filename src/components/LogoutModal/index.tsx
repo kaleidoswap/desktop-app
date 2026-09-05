@@ -7,6 +7,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 interface LogoutModalProps {
   isOpen: boolean
@@ -22,6 +23,14 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
   isLoggingOut = false,
 }) => {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    dismissable: !isLoggingOut,
+    isOpen,
+    label: isLoggingOut
+      ? t('logoutModal.loggingOut')
+      : t('logoutModal.confirmLogoutTitle'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -34,6 +43,8 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
       <div
         className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm border border-border-default animate-fade-in relative"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         {isLoggingOut ? (
           <div className="flex flex-col items-center py-6">
@@ -50,6 +61,7 @@ export const LogoutModal: React.FC<LogoutModalProps> = ({
         ) : (
           <>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="absolute top-3 right-3 p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-high/50 transition-colors"
               onClick={onClose}
               type="button"

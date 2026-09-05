@@ -14,6 +14,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../../helpers/modalPortal'
+import { useDialog } from '../../../../hooks/useDialog'
 
 export function HowItWorksModal({
   isOpen,
@@ -24,6 +25,11 @@ export function HowItWorksModal({
 }) {
   const { t } = useTranslation()
   const [expandedStep, setExpandedStep] = useState<string | null>('fund')
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('dca.howItWorks.title', 'How DCA works'),
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -119,6 +125,8 @@ export function HowItWorksModal({
         <div
           className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-2xl w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
+          {...dialogProps}
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-divider/10 mb-6">
@@ -129,6 +137,7 @@ export function HowItWorksModal({
               </h3>
             </div>
             <button
+              aria-label={t('a11y.close', 'Close')}
               className="p-1.5 rounded-md text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
               onClick={onClose}
               type="button"

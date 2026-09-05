@@ -450,7 +450,14 @@ export function DcaOrderCard({ order, currentBtcPrice }: Props) {
         </div>
 
         {hasHistory && (
-          <button className="text-content-secondary hover:text-content-primary transition-colors flex-shrink-0">
+          <button
+            aria-label={
+              expanded
+                ? t('a11y.collapse', 'Collapse')
+                : t('a11y.expand', 'Expand')
+            }
+            className="text-content-secondary hover:text-content-primary transition-colors flex-shrink-0"
+          >
             {expanded ? (
               <ChevronUp className="w-4 h-4" />
             ) : (

@@ -329,6 +329,7 @@ export const MarketMakerFormPanel = ({
 
               <div className="flex justify-center my-2 relative z-10">
                 <button
+                  aria-label={t('a11y.swapAssets', 'Swap assets')}
                   className={`p-2 rounded-xl border transition-all duration-300 ${
                     hasChannels && hasTradablePairs && !isSwapInProgress
                       ? 'bg-status-success/15 hover:bg-status-success/25 border-status-success/30 hover:border-status-success/50 text-status-success hover:scale-110 cursor-pointer'
@@ -432,6 +433,9 @@ export const MarketMakerFormPanel = ({
                           </p>
                         </div>
                         <button
+                          aria-label={t(
+                            'tradeMarketMaker.error.copyErrorMessage'
+                          )}
                           className="flex-shrink-0 p-2 hover:bg-red-500/20 rounded-xl transition-colors border border-red-500/30 hover:border-red-500/50 backdrop-blur-sm"
                           onClick={() => onCopyError(errorMessage)}
                           title={t('tradeMarketMaker.error.copyErrorMessage')}

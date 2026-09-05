@@ -20,6 +20,7 @@ import {
 
 import bitcoinIcon from '../../assets/bitcoin-logo.svg'
 import { formatNumberWithCommas } from '../../helpers/number'
+import { useDialog } from '../../hooks/useDialog'
 import './animations.css'
 
 interface BitcoinChannelSelectorProps {
@@ -52,6 +53,11 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [modalDraft, setModalDraft] = useState('')
   const modalInputRef = useRef<HTMLInputElement>(null)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen: showCustomModal,
+    label: t('a11y.customCapacity', 'Custom Capacity'),
+    onClose: () => setShowCustomModal(false),
+  })
 
   // Focus input when modal opens
   useEffect(() => {
@@ -197,7 +203,11 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
               if (e.target === e.currentTarget) setShowCustomModal(false)
             }}
           >
-            <div className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn">
+            <div
+              className="bg-surface-base border border-border-default/60 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scaleIn"
+              ref={dialogRef}
+              {...dialogProps}
+            >
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-orange-500/10">
@@ -208,6 +218,7 @@ export const BitcoinChannelSelector: React.FC<BitcoinChannelSelectorProps> = ({
                   </h3>
                 </div>
                 <button
+                  aria-label={t('a11y.close', 'Close')}
                   className="p-1.5 rounded-lg text-content-secondary hover:text-white hover:bg-surface-overlay transition-colors"
                   onClick={() => setShowCustomModal(false)}
                   type="button"

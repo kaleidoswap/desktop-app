@@ -1705,6 +1705,10 @@ const NodeSetupForm = ({
               error={!!form.formState.errors.name}
               suffixNode={
                 <button
+                  aria-label={t(
+                    'a11y.generateRandomName',
+                    'Generate random name'
+                  )}
                   className="text-content-tertiary hover:text-primary transition-colors"
                   onClick={() =>
                     form.setValue('name', generateRandomName(), {

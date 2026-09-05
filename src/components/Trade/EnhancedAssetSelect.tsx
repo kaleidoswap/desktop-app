@@ -1,6 +1,7 @@
 import { Search, ChevronDown, X, Copy, Check } from 'lucide-react'
 import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 import {
   getModalPortalTarget,
@@ -38,6 +39,7 @@ const AssetOption = React.memo(
     showFullAssetId = false,
     onCopyAssetId,
   }: AssetOptionProps) => {
+    const { t } = useTranslation()
     const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null)
     const displayTicker = ticker || 'None'
     const iconTicker =
@@ -97,6 +99,10 @@ const AssetOption = React.memo(
                   assetId !== displayTicker &&
                   onCopyAssetId && (
                     <button
+                      aria-label={t(
+                        'a11y.copyFullAssetId',
+                        'Copy full asset ID'
+                      )}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-elevated/50 rounded"
                       onClick={handleCopyAssetId}
                       title="Copy full asset ID"
@@ -141,6 +147,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
   showFullAssetId = false,
   fieldLabel,
 }) => {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [dropdownPosition, setDropdownPosition] = useState({
@@ -233,6 +240,21 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
         window.removeEventListener('resize', handleResize)
         window.removeEventListener('scroll', handleScroll, true)
       }
+    }
+  }, [isOpen])
+
+  // Escape closes the open listbox
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      setIsOpen(false)
+      setSearchTerm('')
+    }
+    document.addEventListener('keydown', handleKeyDown, true)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true)
     }
   }, [isOpen])
 
@@ -371,6 +393,7 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
                   />
                   {searchTerm && (
                     <button
+                      aria-label={t('a11y.clear', 'Clear')}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-surface-high/50 rounded-sm transition-colors"
                       onClick={clearSearch}
                     >

@@ -7,10 +7,13 @@ import {
   Wrench,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { MindCard, useMindContext } from './shared'
+import { toUserFacingError } from '../../helpers/userFacingError'
 
 export const SkillsManager: React.FC = () => {
+  const { t } = useTranslation()
   const mind = useMindContext()
   const caps = mind.capabilities
   const [showAddMcp, setShowAddMcp] = useState(false)
@@ -73,9 +76,7 @@ export const SkillsManager: React.FC = () => {
                   setShowAddSkill(false)
                 })
                 .catch((error) =>
-                  setSkillError(
-                    error instanceof Error ? error.message : String(error)
-                  )
+                  setSkillError(toUserFacingError(error, t).message)
                 )
             }}
           >
@@ -149,9 +150,7 @@ export const SkillsManager: React.FC = () => {
                     void mind
                       .setSkillEnabled(skill.name, !skill.enabled)
                       .catch((error) =>
-                        setSkillError(
-                          error instanceof Error ? error.message : String(error)
-                        )
+                        setSkillError(toUserFacingError(error, t).message)
                       )
                   }}
                   type="button"
@@ -159,6 +158,9 @@ export const SkillsManager: React.FC = () => {
                   {skill.enabled ? 'Enabled' : 'Disabled'}
                 </button>
                 <button
+                  aria-label={t('a11y.deleteItem', 'Delete {{name}}', {
+                    name: skill.name,
+                  })}
                   className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger"
                   onClick={() => {
                     if (
@@ -217,9 +219,7 @@ export const SkillsManager: React.FC = () => {
                   setShowAddMcp(false)
                 })
                 .catch((error) =>
-                  setMcpError(
-                    error instanceof Error ? error.message : String(error)
-                  )
+                  setMcpError(toUserFacingError(error, t).message)
                 )
             }}
           >
@@ -280,6 +280,9 @@ export const SkillsManager: React.FC = () => {
                 </p>
               </div>
               <button
+                aria-label={t('a11y.removeItem', 'Remove {{name}}', {
+                  name: server.name,
+                })}
                 className="rounded p-1 text-content-tertiary hover:bg-surface-overlay hover:text-status-danger"
                 onClick={() => void mind.removeMcpServer(server.id)}
                 title={`Remove ${server.name}`}

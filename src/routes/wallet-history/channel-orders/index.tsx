@@ -30,6 +30,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../../helpers/modalPortal'
+import { useDialog } from '../../../hooks/useDialog'
 
 import { Card, Select } from '../../../components/ui'
 import {
@@ -44,6 +45,7 @@ import {
   Lsps1CreateOrderResponse,
 } from '../../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
+import { toUserFacingError } from '../../../helpers/userFacingError'
 
 interface ChannelOrder {
   id: number
@@ -180,6 +182,11 @@ const OrderDetailCard: React.FC<{
   onDelete: () => void
 }> = ({ isOpen, onClose, order, orderData, orderStatus, onDelete }) => {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('components.walletHistory.channelOrders.detailsModal.title'),
+    onClose,
+  })
   if (!isOpen) return null
 
   const getStatusIcon = (status: string) => {
@@ -229,7 +236,11 @@ const OrderDetailCard: React.FC<{
     <div
       className={`${getModalPositionClass()} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto pointer-events-auto`}
     >
-      <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-2xl max-w-3xl w-full my-8">
+      <div
+        className="bg-surface-base rounded-xl border border-border-default/70 shadow-2xl max-w-3xl w-full my-8"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border-default/70">
           <div className="flex items-center gap-3">
@@ -557,13 +568,22 @@ const DeleteConfirmationModal: React.FC<{
   orderId: string
 }> = ({ isOpen, onClose, onConfirm, orderId }) => {
   const { t } = useTranslation()
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: t('components.walletHistory.channelOrders.deleteModal.title'),
+    onClose,
+  })
   if (!isOpen) return null
 
   return createPortal(
     <div
       className={`${getModalPositionClass()} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
     >
-      <div className="bg-surface-base rounded-xl border border-border-default/70 shadow-xl max-w-md w-full">
+      <div
+        className="bg-surface-base rounded-xl border border-border-default/70 shadow-xl max-w-md w-full"
+        ref={dialogRef}
+        {...dialogProps}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-default/70">
           <div className="flex items-center gap-3">
@@ -657,7 +677,7 @@ export const Component = () => {
       setError(null)
     } catch (err) {
       console.error('Error fetching channel orders:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(toUserFacingError(err, t, 'errors.user.loadFailed').message)
     }
   }
 
@@ -731,9 +751,11 @@ export const Component = () => {
     } catch (err) {
       console.error('Error deleting channel order:', err)
       toast.error(
-        err instanceof Error
-          ? err.message
-          : t('components.walletHistory.channelOrders.messages.deleteFailed')
+        toUserFacingError(
+          err,
+          t,
+          'components.walletHistory.channelOrders.messages.deleteFailed'
+        ).message
       )
       setShowDeleteModal(false)
       setOrderToDelete(null)
@@ -1143,6 +1165,9 @@ export const Component = () => {
                       <div className="flex items-center justify-center gap-2">
                         <div className="relative group/btn">
                           <button
+                            aria-label={t(
+                              'components.walletHistory.channelOrders.actions.viewDetails'
+                            )}
                             className="p-1.5 rounded-md bg-transparent border border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/10 text-blue-400 hover:text-blue-300 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1159,6 +1184,9 @@ export const Component = () => {
                         </div>
                         <div className="relative group/btn">
                           <button
+                            aria-label={t(
+                              'components.walletHistory.channelOrders.actions.deleteOrder'
+                            )}
                             className="p-1.5 rounded-md bg-transparent border border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation()

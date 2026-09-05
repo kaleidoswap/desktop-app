@@ -18,6 +18,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
@@ -53,6 +54,11 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
   const [showConnectionDialog, setShowConnectionDialog] = useState(false)
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen: showConnectionDialog,
+    label: t('createChannel.step1.connectDialog.title'),
+    onClose: () => setShowConnectionDialog(false),
+  })
   const [selectedPeerInfo, setSelectedPeerInfo] = useState<string>('')
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectedPeers, setConnectedPeers] = useState<
@@ -425,6 +431,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
                   onClick={() => handleSelectConnectedPeer(peer.pubkey)}
                 >
                   <button
+                    aria-label={t('a11y.disconnectPeer', 'Disconnect peer')}
                     className="absolute top-1.5 right-1.5 rounded-lg p-1 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
                     onClick={(e) => {
                       e.stopPropagation()
@@ -474,8 +481,13 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
               if (e.target === e.currentTarget) setShowConnectionDialog(false)
             }}
           >
-            <div className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4 relative">
+            <div
+              className="bg-surface-overlay p-8 rounded-xl border border-border-default max-w-md w-full mx-4 relative"
+              ref={dialogRef}
+              {...dialogProps}
+            >
               <button
+                aria-label={t('a11y.close', 'Close')}
                 className="absolute top-4 right-4 text-content-tertiary hover:text-white transition-colors"
                 onClick={() => setShowConnectionDialog(false)}
                 type="button"

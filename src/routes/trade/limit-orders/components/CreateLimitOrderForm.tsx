@@ -515,6 +515,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
 
       <div className="flex justify-center -my-3 relative z-10">
         <button
+          aria-label={t('a11y.swapAssets', 'Swap assets')}
           className="group bg-surface-elevated border border-border-default/40 p-2 rounded-full shadow-sm text-content-tertiary hover:text-primary hover:border-primary/40 hover:bg-surface-elevated/80 transition-all duration-200 active:scale-90 cursor-pointer"
           onClick={() => {
             const prevFrom = fromAsset

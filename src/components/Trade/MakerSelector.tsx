@@ -222,6 +222,11 @@ export const MakerSelector: React.FC<MakerSelectorProps> = ({
           </button>
 
           <button
+            aria-label={
+              wsConnected
+                ? t('trade.maker.connected')
+                : t('trade.maker.reconnect')
+            }
             className={refreshButtonClasses}
             onClick={handleRefreshConnection}
             title={
