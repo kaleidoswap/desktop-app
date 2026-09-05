@@ -3,7 +3,10 @@ import { createPortal } from 'react-dom'
 
 import { useAppDispatch, useAppSelector } from '../../../app/store/hooks'
 import { useOnClickOutside } from '../../../hooks/useOnClickOutside'
-import { getModalPortalTarget } from '../../../helpers/modalPortal'
+import {
+  getModalPortalTarget,
+  getModalPositionClass,
+} from '../../../helpers/modalPortal'
 import { uiSliceActions, uiSliceSeletors } from '../../../slices/ui/ui.slice'
 
 import { Content } from './Content'
@@ -22,7 +25,9 @@ export const LayoutModal = () => {
   if (modal.type === 'none') return null
 
   return createPortal(
-    <div className="absolute inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto">
+    <div
+      className={`${getModalPositionClass()} inset-0 bg-surface-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pointer-events-auto`}
+    >
       <div
         className="w-full max-w-lg bg-surface-base rounded-3xl border border-border-subtle/50
                    shadow-2xl shadow-black/20 overflow-hidden relative"

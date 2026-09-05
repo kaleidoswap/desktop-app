@@ -96,7 +96,7 @@ const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
   return createPortal(
     <div
       aria-modal="true"
-      className={`${pos} left-72 top-16 right-0 bottom-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
+      className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
       onClick={onClose}
       role="dialog"
     >

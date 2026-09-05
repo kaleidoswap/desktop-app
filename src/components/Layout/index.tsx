@@ -563,6 +563,13 @@ export const Layout = (props: Props) => {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const shouldHideNavbar = HIDE_NAVBAR_PATHS.includes(location.pathname)
+
+  // The page scrolls inside #content-scroll rather than the window, so start
+  // every route at the top instead of inheriting the previous page's offset.
+  const contentScrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    contentScrollRef.current?.scrollTo({ top: 0 })
+  }, [location.pathname])
   // KaleidoMind does not depend on the node, so the node-offline overlay must
   // never block it — a node-less or "KaleidoMind only" user can keep using it.
   const isMindRoute = location.pathname.startsWith(KALEIDO_MIND_PATH)
@@ -1013,7 +1020,7 @@ export const Layout = (props: Props) => {
       )}
 
       {!shouldHideNavbar ? (
-        <div className="min-h-screen flex m-0 p-0 overflow-x-hidden">
+        <div className="h-screen flex m-0 p-0 overflow-hidden">
           {/* Sidebar Navigation */}
           <div
             className={`flex flex-col fixed left-0 top-0 h-screen bg-surface-base border-r border-divider/30
@@ -1172,7 +1179,7 @@ export const Layout = (props: Props) => {
 
           {/* Main content */}
           <main
-            className={`flex-1 flex flex-col min-h-screen max-w-full overflow-x-hidden bg-surface-raised transition-all duration-300
+            className={`flex-1 flex flex-col h-screen min-h-0 max-w-full overflow-hidden bg-surface-raised transition-all duration-300
                         ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}
           >
             {/* Top bar with page title and notifications */}
@@ -1338,17 +1345,26 @@ export const Layout = (props: Props) => {
               </div>
             </div>
 
-            {/* Main content area */}
+            {/* Main content area. The shell is bounded to the viewport and the page
+                scrolls inside #content-scroll, so #content-area is always exactly the
+                visible region below the top bar. */}
             <div
-              className="relative isolate flex-1 overflow-hidden p-6"
+              className="relative isolate flex-1 min-h-0 overflow-hidden"
               id="content-area"
             >
-              {/* Portal target for modals — absolute inset-0 so modals cover only this area.
-                  When empty it must not intercept clicks on the content underneath; the
-                  `#modal-portal:empty` rule in styles.css disables pointer events until a
-                  modal is portaled in. */}
+              {/* Portal target for modals — absolute inset-0 so modals cover only this
+                  area and are centered in the visible region regardless of how far the
+                  page content has been scrolled. When empty it must not intercept clicks
+                  on the content underneath; the `#modal-portal:empty` rule in styles.css
+                  disables pointer events until a modal is portaled in. */}
               <div className="absolute inset-0 z-50" id="modal-portal" />
-              {props.children}
+              <div
+                className="h-full overflow-y-auto overflow-x-hidden p-6"
+                id="content-scroll"
+                ref={contentScrollRef}
+              >
+                {props.children}
+              </div>
             </div>
           </main>
         </div>

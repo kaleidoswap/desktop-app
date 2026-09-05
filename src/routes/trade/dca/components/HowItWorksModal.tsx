@@ -113,7 +113,7 @@ export function HowItWorksModal({
       className={`${pos} inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
     >
       <div
-        className="flex min-h-screen items-center justify-center p-4 sm:p-6"
+        className="flex min-h-full items-center justify-center p-4 sm:p-6"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <div

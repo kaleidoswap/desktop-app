@@ -74,10 +74,10 @@ function CreateOrderModal({
   const pos = getModalPositionClass()
   return createPortal(
     <div
-      className={`${pos} inset-0 z-50 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
+      className={`${pos} inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm animate-in fade-in duration-200`}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="flex min-h-screen items-center justify-center p-4 sm:p-6 pointer-events-none">
+      <div className="flex min-h-full items-center justify-center p-4 sm:p-6 pointer-events-none">
         <div className="bg-surface-base p-6 sm:p-8 rounded-3xl border border-border-subtle/50 max-w-xl w-full shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto pointer-events-auto">
           <div className="flex items-center justify-between pb-4 border-b border-divider/10 mb-6">
             <div className="flex items-center gap-3">

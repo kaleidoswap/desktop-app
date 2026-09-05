@@ -456,46 +456,50 @@ export const Component = () => {
     }
   }, [resetPaymentMonitor, returnTo, navigate])
 
-  const BackConfirmationModal = () => (
-    <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+  const BackConfirmationModal = () =>
+    createPortal(
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={() => setShowBackConfirmation(false)}
-      />
-      <div className="w-full max-w-md rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl shadow-black/20 relative z-10">
-        <div className="px-8 py-8">
-          {/* Title row */}
-          <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
-            <ArrowLeft className="w-6 h-6 text-emerald-400" />
-            <h3 className="text-xl font-bold text-white">
-              {t('orderChannel.backConfirmTitle')}
-            </h3>
-          </div>
-          <p className="text-sm text-content-secondary mb-5">
-            {t('orderChannel.backConfirmMessage')}
-          </p>
-          <div className="flex items-center justify-between">
-            <button
-              className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-              onClick={handleConfirmBack}
-              type="button"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              {t('orderChannel.backConfirmGoBack')}
-            </button>
-            <button
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
-              onClick={() => setShowBackConfirmation(false)}
-              type="button"
-            >
-              {t('orderChannel.backConfirmCancel')}
-              <CheckCircle className="w-4 h-4" />
-            </button>
+        className={`${getModalPositionClass()} inset-0 z-50 flex items-center justify-center p-4`}
+      >
+        <div
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onClick={() => setShowBackConfirmation(false)}
+        />
+        <div className="w-full max-w-md rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl shadow-black/20 relative z-10">
+          <div className="px-8 py-8">
+            {/* Title row */}
+            <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+              <ArrowLeft className="w-6 h-6 text-emerald-400" />
+              <h3 className="text-xl font-bold text-white">
+                {t('orderChannel.backConfirmTitle')}
+              </h3>
+            </div>
+            <p className="text-sm text-content-secondary mb-5">
+              {t('orderChannel.backConfirmMessage')}
+            </p>
+            <div className="flex items-center justify-between">
+              <button
+                className="px-3 py-2 text-content-secondary hover:text-white transition-colors flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+                onClick={handleConfirmBack}
+                type="button"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                {t('orderChannel.backConfirmGoBack')}
+              </button>
+              <button
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+                onClick={() => setShowBackConfirmation(false)}
+                type="button"
+              >
+                {t('orderChannel.backConfirmCancel')}
+                <CheckCircle className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  )
+      </div>,
+      getModalPortalTarget()
+    )
 
   // LSP the order is being placed with — surfaced on every wizard step so the
   // user always knows which node they're buying a channel from.
@@ -646,19 +650,23 @@ export const Component = () => {
             </div>
           </div>
         )}
-        {loading && (
-          <div className="absolute inset-0 z-50 flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-surface-base/85 backdrop-blur-sm">
-            <Spinner color="#15E99A" overlay={false} size={50} />
-            <div className="text-center">
-              <p className="text-base font-semibold text-white">
-                {t('orderChannel.creatingOrder')}
-              </p>
-              <p className="mt-1 text-sm text-content-secondary">
-                {t('orderChannel.creatingOrderHint')}
-              </p>
-            </div>
-          </div>
-        )}
+        {loading &&
+          createPortal(
+            <div
+              className={`${getModalPositionClass()} inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-surface-base/85 backdrop-blur-sm`}
+            >
+              <Spinner color="#15E99A" overlay={false} size={50} />
+              <div className="text-center">
+                <p className="text-base font-semibold text-white">
+                  {t('orderChannel.creatingOrder')}
+                </p>
+                <p className="mt-1 text-sm text-content-secondary">
+                  {t('orderChannel.creatingOrderHint')}
+                </p>
+              </div>
+            </div>,
+            getModalPortalTarget()
+          )}
         {showBackConfirmation && <BackConfirmationModal />}
         {step === 1 && <Step1 onNext={onSubmitStep1} />}
 
