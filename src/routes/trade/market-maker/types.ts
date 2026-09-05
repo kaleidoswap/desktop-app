@@ -11,9 +11,14 @@ export interface Fields {
   from: string
   fromAsset: string // ticker
   fromAssetId?: string // asset_id (protocol ID for RGB assets)
+  // Exact amounts from the quote that produced rfq_id, in the maker's units
+  // (msat for BTC, base units for RGB assets). Sent as-is on execution so the
+  // request matches the quote instead of being re-derived from rounded display text.
+  fromAmountRaw?: number
   to: string
   toAsset: string // ticker
   toAssetId?: string // asset_id (protocol ID for RGB assets)
+  toAmountRaw?: number
 }
 
 export interface SwapExecutionParams {

@@ -206,6 +206,8 @@ export const Component = () => {
   const [swapRecapDetails, setSwapRecapDetails] =
     useState<SwapDetailsType | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [isExecutingSwap, setIsExecutingSwap] = useState(false)
+  const isExecutingSwapRef = useRef(false)
 
   // Add state for quote validity tracking
   const [hasValidQuote, setHasValidQuote] = useState(false)
@@ -486,6 +488,8 @@ export const Component = () => {
         window.requestAnimationFrame(() => {
           form.setValue('to', '')
           form.setValue('rfq_id', '')
+          form.setValue('fromAmountRaw', undefined)
+          form.setValue('toAmountRaw', undefined)
           setHasValidQuote(false)
           setQuoteExpiresAt(null)
           setIsToAmountLoading(false)
@@ -569,6 +573,8 @@ export const Component = () => {
           setQuoteExpiresAt(null)
           form.setValue('to', '')
           form.setValue('rfq_id', '')
+          form.setValue('fromAmountRaw', undefined)
+          form.setValue('toAmountRaw', undefined)
           debouncedQuoteRequest(requestQuote)
           return
         }
@@ -660,6 +666,8 @@ export const Component = () => {
         // Important: Save the RFQ ID and asset IDs from the quote to use when executing the swap
         if (quoteResponse.rfq_id) {
           form.setValue('rfq_id', quoteResponse.rfq_id)
+          form.setValue('fromAmountRaw', quoteResponse.from_asset?.amount)
+          form.setValue('toAmountRaw', quoteResponse.to_asset.amount)
         }
 
         // Store the asset_id (protocol IDs) for validation
@@ -758,6 +766,11 @@ export const Component = () => {
     (asset: string): number => {
       // First check if we have precision from a quote for this asset
       // This handles assets not in our listAssets
+      // Quote precision is stored under the ticker (see the quote handler),
+      // so check that before falling back to the asset id.
+      if (quoteAssetPrecision[asset] !== undefined) {
+        return quoteAssetPrecision[asset]
+      }
       const assetId = mapTickerToAssetId(asset, tradablePairs)
       if (assetId && quoteAssetPrecision[assetId] !== undefined) {
         return quoteAssetPrecision[assetId]
@@ -860,7 +873,11 @@ export const Component = () => {
       setQuoteExpiresAt(quote.expires_at || null)
 
       if (quote.price) setCurrentPrice(quote.price)
-      if (quote.rfq_id) form.setValue('rfq_id', quote.rfq_id)
+      if (quote.rfq_id) {
+        form.setValue('rfq_id', quote.rfq_id)
+        form.setValue('fromAmountRaw', quote.from_asset.amount)
+        form.setValue('toAmountRaw', quote.to_asset?.amount)
+      }
       if (quote.from_asset?.asset_id)
         form.setValue('fromAssetId', quote.from_asset.asset_id)
       if (quote.to_asset?.asset_id)
@@ -893,6 +910,8 @@ export const Component = () => {
       // Clear the form values related to the failed quote
       form.setValue('to', '')
       form.setValue('rfq_id', '')
+      form.setValue('fromAmountRaw', undefined)
+      form.setValue('toAmountRaw', undefined)
 
       // Create a user-friendly error message
       let userFriendlyError = quoteError
@@ -1500,7 +1519,8 @@ export const Component = () => {
       setFromAmount,
       setSelectedPair,
       setMaxFromAmount,
-      t
+      t,
+      getAssetPrecisionWrapper
     )
 
     // Return enhanced handler that also saves preferences
@@ -1528,6 +1548,7 @@ export const Component = () => {
     setSelectedPair,
     setMaxFromAmount,
     dispatch,
+    getAssetPrecisionWrapper,
   ])
 
   // Create refreshAmounts handler from our utility
@@ -1963,6 +1984,8 @@ export const Component = () => {
         // Clear form amounts but keep assets
         form.setValue('to', '')
         form.setValue('rfq_id', '')
+        form.setValue('fromAmountRaw', undefined)
+        form.setValue('toAmountRaw', undefined)
 
         // Clear any existing connection timeout when switching makers
         clearConnectionTimeout()
@@ -3020,11 +3043,18 @@ export const Component = () => {
     setShowConfirmation(true)
   }
 
-  // Wrapper around executeSwap to handle UI state
+  // Wrapper around executeSwap to handle UI state. `isSwapInProgress` is
+  // derived from polled swap data, so it lags behind the click; guard locally
+  // so a double click cannot submit the same rfq_id twice.
   const handleExecuteSwap = async (data: Fields) => {
+    if (isExecutingSwapRef.current) return
+    isExecutingSwapRef.current = true
+    setIsExecutingSwap(true)
     try {
       await executeSwap(data)
     } finally {
+      isExecutingSwapRef.current = false
+      setIsExecutingSwap(false)
       setShowConfirmation(false)
     }
   }
@@ -3500,7 +3530,7 @@ export const Component = () => {
         fromAmount={form.getValues().from}
         fromAsset={form.getValues().fromAsset}
         getAssetPrecision={getAssetPrecisionWrapper}
-        isLoading={isSwapInProgress}
+        isLoading={isSwapInProgress || isExecutingSwap}
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={() => handleExecuteSwap(form.getValues())}

@@ -96,7 +96,8 @@ export const createAssetChangeHandler = (
   ) => Promise<string | null>,
   setSelectedPair: (pair: TradingPair | null) => void,
   setMaxFromAmount: (amount: number) => void,
-  t: TFunction
+  t: TFunction,
+  getAssetPrecision?: (asset: string) => number
 ) => {
   return async (field: 'fromAsset' | 'toAsset', newValue: string) => {
     const currentFromAsset = form.getValues().fromAsset
@@ -235,9 +236,18 @@ export const createAssetChangeHandler = (
     } else {
       // For toAsset changes, preserve the current from amount but clamp if out of range
       const currentFromAmount = form.getValues().from
-      const parsedFromAmount = currentFromAmount
+      const displayFromAmount = currentFromAmount
         ? parseFloat(currentFromAmount.replace(/,/g, ''))
         : 0
+      // minOrderSize and newMaxAmount are raw units; the form holds display
+      // units (e.g. USDT precision=6: display 0.06 -> raw 60,000).
+      const fromPrecision = getAssetPrecision
+        ? getAssetPrecision(updatedFromAsset)
+        : 0
+      const parsedFromAmount =
+        fromPrecision > 0
+          ? Math.round(displayFromAmount * Math.pow(10, fromPrecision))
+          : displayFromAmount
 
       if (!parsedFromAmount || parsedFromAmount === 0) {
         // Set to max if no amount is set
@@ -398,7 +408,7 @@ export const getAvailableAssets = (
             (c.inbound_balance_msat ?? 0) > 0)
       )
       .map((c) => c.asset_id)
-      .filter((assetId): assetId is string => assetId !== null) // Filter out null values
+      .filter((assetId): assetId is string => !!assetId) // Drop null/undefined
   )
 
   // Always include BTC
@@ -655,7 +665,7 @@ export const getAssetConflictsForTicker = (
 export const createFetchAndSetPairsHandler = (
   getClient: () => any, // Returns KaleidoClient
   dispatch: (action: any) => void,
-  channels: any[], // TODO: Type this properly
+  channels: Channel[],
   assets: Asset[],
   form: any,
   formatAmount: (amount: number, asset: string) => string,

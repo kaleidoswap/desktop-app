@@ -210,6 +210,17 @@ export const createSwapExecutor = (
       if (data.toAsset.toLowerCase() === 'btc') {
         toAmount *= 1000
       }
+
+      // Prefer the exact amounts the maker quoted. The display strings are
+      // rounded (BTC msat -> sat, asset precision), so re-deriving from them can
+      // disagree with the maker's swapstring by up to one display unit and fail
+      // validateSwapString below.
+      if (data.fromAmountRaw && data.fromAmountRaw > 0) {
+        fromAmount = data.fromAmountRaw
+      }
+      if (data.toAmountRaw && data.toAmountRaw > 0) {
+        toAmount = data.toAmountRaw
+      }
       const rfq_id = data.rfq_id
       if (!rfq_id) {
         throw new Error(

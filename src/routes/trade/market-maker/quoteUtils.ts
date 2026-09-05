@@ -181,7 +181,7 @@ export const createQuoteRequestHandler = (
     }
 
     // Create a unique key for this quote request (using tickers for consistency with previous logic)
-    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}`
+    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${fromAmount}/from`
 
     // Skip if this is the exact same quote we just requested
     if (quoteKey === lastRequestedQuoteKey) {
@@ -374,7 +374,7 @@ export const createReverseQuoteRequestHandler = (
       }
     }
 
-    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/to:${toAmount}`
+    const quoteKey = `${fromAssetTicker}/${toAssetTicker}/${toAmount}/to`
 
     if (quoteKey === lastRequestedQuoteKey) {
       const timeSinceLastRequest = Date.now() - lastQuoteRequestTime
