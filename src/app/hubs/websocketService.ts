@@ -70,6 +70,7 @@ class WebSocketService {
   private reconnectInterval: number = 2000 // Reduced from 8000ms to 2000ms for faster reconnection
   private subscribedPairs: Set<string> = new Set()
   private isReconnecting: boolean = false
+  private reconnectTimer: number | null = null
   private heartbeatInterval: number | null = null
   private lastHeartbeatResponse: number = 0
   private heartbeatTimeout: number = 12000 // Reduced from 15000ms to 12000ms for quicker timeout detection
@@ -674,6 +675,13 @@ class WebSocketService {
       return true
     }
 
+    // Skip if a socket is already open; creating another would leave the old
+    // one's handlers attached and tearing down the new connection's state.
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      logger.info('WebSocketService: Socket already open, reusing connection')
+      return true
+    }
+
     try {
       // Format WebSocket URL
       const baseUrl = this.url.replace(/\/+$/, '')
@@ -695,7 +703,7 @@ class WebSocketService {
       const connectionTimeout = setTimeout(() => {
         if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
           logger.warn('WebSocketService: Connection timeout - closing socket')
-          this.socket.close(1006, 'Connection timeout')
+          this.socket.close()
           this.recordConnectionFailure()
         }
       }, 5000) // 5 second timeout for initial connection
@@ -747,6 +755,7 @@ class WebSocketService {
     this.messageProcessInterval = 500 // Reset to default
 
     this.startHeartbeat()
+    this.startConnectionHealthMonitoring()
 
     // Reset rate limiting after successful connection
     resetRateLimitBackoff()
@@ -874,21 +883,25 @@ class WebSocketService {
         resetRateLimitBackoff()
         trackMessageSuccess()
       } else if (data.error) {
-        logger.error(`WebSocketService: Server reported error: ${data.error}`)
-        trackMessageFailure(`Server error: ${data.error}`)
+        const errorText =
+          typeof data.error === 'string'
+            ? data.error
+            : JSON.stringify(data.error)
+        logger.error(`WebSocketService: Server reported error: ${errorText}`)
+        trackMessageFailure(`Server error: ${errorText}`)
 
         // Handle rate limit errors specifically
-        if (data.error.includes('Rate limit exceeded')) {
+        if (errorText.includes('Rate limit exceeded')) {
           handleRateLimitError()
         }
 
         // If this is a quote-related error, clear the quote and signal the UI
         const isQuoteError =
-          data.error.includes('Failed to calculate quote') ||
-          data.error.includes('equivalent base amount must be between') ||
-          data.error.includes('No tradable pair found') ||
-          data.error.includes('Invalid asset') ||
-          data.error.includes('quote') // Generic quote error detection
+          errorText.includes('Failed to calculate quote') ||
+          errorText.includes('equivalent base amount must be between') ||
+          errorText.includes('No tradable pair found') ||
+          errorText.includes('Invalid asset') ||
+          errorText.includes('quote') // Generic quote error detection
 
         if (isQuoteError && this.lastQuoteRequest && this.dispatch) {
           this.dispatch(clearQuote(this.lastQuoteRequest))
@@ -944,12 +957,12 @@ class WebSocketService {
         )
         setTimeout(() => {
           if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
-            this.socket.close(1006, 'Error during connection')
+            this.socket.close()
           }
         }, 200)
       } else if (readyState === WebSocket.OPEN) {
         // For OPEN state, close immediately
-        this.socket.close(1006, 'Error event occurred')
+        this.socket.close()
       }
     } catch (err) {
       logger.warn('WebSocketService: Error during socket cleanup', err)
@@ -1020,6 +1033,7 @@ class WebSocketService {
 
     this.connectionInitialized = false
     this.isReconnecting = false
+    this.clearReconnectTimer()
 
     // Record close time for cooldown
     this.lastCloseTime = Date.now()
@@ -1061,7 +1075,7 @@ class WebSocketService {
               this.socket &&
               this.socket.readyState === WebSocket.CONNECTING
             ) {
-              this.socket.close(1006, 'Connection timeout during close')
+              this.socket.close()
             }
           }, 100)
         }
@@ -1404,10 +1418,24 @@ class WebSocketService {
     }
   }
 
+  private clearReconnectTimer(): void {
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+  }
+
   /**
    * Handle reconnection logic with exponential backoff and improved network checking
    */
   private handleReconnect(): void {
+    if (!this.connectionInitialized) {
+      logger.debug(
+        'WebSocketService: Not initialized, ignoring reconnect request'
+      )
+      return
+    }
+
     if (this.isReconnecting) {
       logger.info('WebSocketService: Already attempting to reconnect')
       return
@@ -1493,7 +1521,16 @@ class WebSocketService {
     }
 
     // Schedule reconnection attempt
-    setTimeout(() => {
+    this.clearReconnectTimer()
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null
+      if (!this.connectionInitialized) {
+        logger.info(
+          'WebSocketService: Connection was closed, skipping scheduled reconnect'
+        )
+        this.isReconnecting = false
+        return
+      }
       if (this.isConnected()) {
         logger.info('WebSocketService: Already reconnected, skipping')
         this.isReconnecting = false
