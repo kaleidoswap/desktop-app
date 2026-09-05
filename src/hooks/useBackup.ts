@@ -2,8 +2,10 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { exists } from '@tauri-apps/plugin-fs'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
+import { WALLET_UNLOCK_PATH } from '../app/router/paths'
 import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../helpers/unlock'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
 
@@ -39,6 +41,7 @@ interface UseBackupReturn {
 export const useBackup = ({
   nodeSettings,
 }: UseBackupProps): UseBackupReturn => {
+  const navigate = useNavigate()
   const [showBackupModal, setShowBackupModal] = useState(false)
   const [isBackupInProgress, setIsBackupInProgress] = useState(false)
 
@@ -131,11 +134,17 @@ export const useBackup = ({
     )
     if (backupResponse.status === 200) {
       await handleSuccessfulBackup(data)
-    } else if (backupResponse.status === 401) {
+      return
+    }
+    if (backupResponse.status === 401) {
       toast.error('Wrong password')
     } else {
       toast.error('Backup error')
     }
+    // The node was locked for the backup and we could not unlock it with the
+    // supplied password, so send the user to the unlock screen rather than
+    // leaving them on a dashboard that can no longer talk to the node.
+    navigate(WALLET_UNLOCK_PATH)
   }
 
   const handleLockedBackup = async (data: BackupFormFields) => {

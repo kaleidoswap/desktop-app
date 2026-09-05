@@ -218,7 +218,12 @@ export const unlockNodeWithRetry = async ({
         status?: number | string
         data?: { error?: string }
       }
-      const errorMessage = maybeError?.data?.error || message
+      // The SDK wraps non-2xx bodies as "API Error (<status>): <msg>"; strip
+      // that so the exact-match checks below see the node's own message.
+      const errorMessage = (maybeError?.data?.error || message).replace(
+        /^API Error \(\d+\):\s*/i,
+        ''
+      )
 
       if (
         (typeof maybeError.status === 'string' &&

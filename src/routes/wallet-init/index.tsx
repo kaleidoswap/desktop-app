@@ -944,6 +944,7 @@ export const Component = () => {
 
   const handleUnlockComplete = async () => {
     try {
+      isCancelledRef.current = false
       setIsUnlocking(true)
       await unlockNodeUntilReady(nodePassword)
       if (isCancelledRef.current) return
@@ -975,6 +976,8 @@ export const Component = () => {
 
   const handleCancelUnlocking = async () => {
     setIsCancellingUnlock(true)
+    // Stop unlockNodeWithRetry from retrying against the node we are stopping
+    isCancelledRef.current = true
     try {
       // Stop the node
       await invoke('stop_node')

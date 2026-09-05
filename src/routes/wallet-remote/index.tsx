@@ -552,10 +552,6 @@ export const Component = () => {
 
       setConnectionStep('finalizing')
 
-      // A locked node must be unlocked first; an already-unlocked node goes
-      // straight to the dashboard.
-      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
-
       // Insert account
       await invoke('insert_account', {
         bearerToken: data.useAuth ? data.authToken : '',
@@ -582,7 +578,9 @@ export const Component = () => {
       toast.success(t('walletRemote.accountCreatedSuccess'))
       setIsConnecting(false)
       setConnectionStep('idle')
-      navigate(WALLET_DASHBOARD_PATH)
+      // A locked node must be unlocked first; an already-unlocked node goes
+      // straight to the dashboard.
+      navigate(lockedNode ? WALLET_UNLOCK_PATH : WALLET_DASHBOARD_PATH)
     } catch (error: any) {
       setIsConnecting(false)
       setConnectionStep('idle')
