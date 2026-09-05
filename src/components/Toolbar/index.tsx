@@ -37,6 +37,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 import {
   nodeSettingsActions,
   setSettingsAsync,
@@ -73,36 +74,19 @@ interface NodeCardProps {
 }
 
 const Modal: React.FC<ModalProps> = ({ onClose, children }) => {
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
-
-  // Prevent scrolling of the body when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [])
-
+  const { dialogRef, dialogProps } = useDialog({ onClose })
   const pos = getModalPositionClass()
 
   return createPortal(
     <div
-      aria-modal="true"
       className={`${pos} inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
       onClick={onClose}
-      role="dialog"
     >
       <div
         className="bg-surface-base text-white rounded-3xl border border-border-subtle/50 shadow-2xl shadow-black/20 max-w-lg w-full mx-4 overflow-hidden animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         <div className="max-h-[85vh] overflow-y-auto px-8 py-8">{children}</div>
       </div>

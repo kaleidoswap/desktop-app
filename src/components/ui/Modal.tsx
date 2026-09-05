@@ -1,11 +1,12 @@
 import { X } from 'lucide-react'
-import React, { ReactNode, useEffect } from 'react'
+import React, { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { useDialog } from '../../hooks/useDialog'
 
 export interface ModalProps {
   title?: string
@@ -25,31 +26,11 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   size = 'md',
 }) => {
-  // Prevent scrolling of the body when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = 'auto'
-      }
-    }
-  }, [isOpen])
-
-  // Handle escape key to close modal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape)
-      return () => {
-        document.removeEventListener('keydown', handleEscape)
-      }
-    }
-  }, [isOpen, onClose])
+  const { dialogRef, dialogProps } = useDialog({
+    isOpen,
+    label: title,
+    onClose,
+  })
 
   if (!isOpen) return null
 
@@ -71,6 +52,8 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`bg-surface-base rounded-xl border border-divider/20 shadow-xl ${sizeClasses[size]} w-full`}
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        {...dialogProps}
       >
         {title && (
           <div className="flex items-center justify-between p-4 border-b border-divider/10">

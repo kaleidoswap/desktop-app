@@ -418,8 +418,7 @@
     "remoteNodePrerequisitesTitle": "Prerequisites",
     "remoteNodePrerequisitesMessage": "You'll need a running rgb-lightning-node instance to connect. Follow our setup guide to get started.",
     "viewSetupGuide": "View Setup Guide",
-    "getStarted": "Get Started",
-    "recommended": "Recommended"
+    "getStarted": "Get Started"
   },
   "createChannel": {
     "checkingBalance": "Checking balance",
@@ -3061,6 +3060,20 @@
       "invalidPrice": "Please enter a valid limit price",
       "invalidAmount": "Please enter a valid amount",
       "insufficientBalance": "Insufficient balance"
+    }
+  },
+  "errors": {
+    "user": {
+      "generic": "Something went wrong. Please try again.",
+      "desktopRuntime": "This feature is only available in the desktop app.",
+      "unreachable": "Could not reach the node. Check that it is running and try again.",
+      "timeout": "The request took too long. Please try again.",
+      "unauthorized": "Authentication failed. Check your password or access token.",
+      "locked": "The node is locked or still starting. Unlock it and try again.",
+      "rateLimited": "Too many requests. Please wait a moment and try again.",
+      "loadFailed": "Could not load this data.",
+      "details": "Details",
+      "hideDetails": "Hide details"
     }
   }
 }
