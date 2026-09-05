@@ -251,12 +251,19 @@ button:not([disabled]):active {
    ~1000px tall that exceeds the content area and the modal (header / footer
    actions) gets clipped. Cap the scroll region to the space actually available
    below the top bar so it scrolls internally instead. */
+#modal-portal {
+  container-type: size;
+}
 #modal-portal .overflow-y-scroll,
 #modal-portal .max-h-\[80vh\],
 #modal-portal .max-h-\[85vh\],
 #modal-portal .max-h-\[90vh\],
 #modal-portal .max-h-\[calc\(100vh-2rem\)\] {
-  max-height: calc(100vh - 7rem);
+  /* Fallback for engines without container-query units: the top bar is ~6rem. */
+  max-height: calc(100vh - 13rem);
+  /* 7rem of headroom covers the overlay padding plus a modal header/footer
+     rendered outside the scroll region. */
+  max-height: calc(100cqh - 7rem);
 }
 
 /* Icon-only action buttons — override global scale with explicit center origin to prevent lateral drift */
