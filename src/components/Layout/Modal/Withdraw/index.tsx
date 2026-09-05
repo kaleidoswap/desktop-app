@@ -1045,12 +1045,13 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           ) {
             // Zero-amount BTC invoice: convert user-entered amount to msat
             const userAmount = Number(pendingData.amount)
-            if (bitcoinUnit === 'SAT') {
-              paymentParams.amt_msat = userAmount * 1000
-            } else {
-              // BTC to msat
-              paymentParams.amt_msat = userAmount * 100000000 * 1000
-            }
+            // Keep the msat value integral: float math on BTC amounts
+            // (e.g. 0.00050001 * 1e8 * 1000) yields fractional msat.
+            const userAmountSats =
+              bitcoinUnit === 'SAT'
+                ? Math.round(userAmount)
+                : BTCtoSatoshi(userAmount)
+            paymentParams.amt_msat = userAmountSats * 1000
           }
 
           const res = await sendPayment(paymentParams).unwrap()

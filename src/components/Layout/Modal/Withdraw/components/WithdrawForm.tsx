@@ -924,7 +924,8 @@ const WithdrawForm: React.FC<WithdrawFormProps> = ({
                       }
 
                       if (
-                        addressType === 'lightning-address' &&
+                        (addressType === 'lightning' ||
+                          addressType === 'lightning-address') &&
                         assetId === BTC_ASSET_ID
                       ) {
                         // For lightning, compare against HTLC limits
