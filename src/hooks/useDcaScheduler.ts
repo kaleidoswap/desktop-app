@@ -780,8 +780,13 @@ export function useDcaScheduler() {
       if (!next) {
         return
       }
-      queuedOrderIdsRef.current.delete(next.orderId)
-      await executeOrder(next.orderId, next.currentPrice)
+      try {
+        await executeOrder(next.orderId, next.currentPrice)
+      } finally {
+        // Release the id only once execution has finished so a scheduler tick
+        // that fires mid-execution cannot enqueue (and run) the same order twice.
+        queuedOrderIdsRef.current.delete(next.orderId)
+      }
       if (executionQueueRef.current.length > 0) {
         void runQueue()
       }
