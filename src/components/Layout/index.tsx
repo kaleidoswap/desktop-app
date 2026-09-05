@@ -30,6 +30,10 @@ import {
 import { useAppDispatch, useAppSelector } from '../../app/store/hooks'
 import logoFull from '../../assets/logo-full.svg'
 import { isBtcWalletTx } from '../../helpers/walletHistoryUtils'
+import {
+  CONTENT_SCROLL_ID,
+  scrollContentToTop,
+} from '../../helpers/contentScroll'
 import { useNodeLifecycleEvents } from '../../hooks/useNodeLifecycleEvents'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
@@ -566,9 +570,8 @@ export const Layout = (props: Props) => {
 
   // The page scrolls inside #content-scroll rather than the window, so start
   // every route at the top instead of inheriting the previous page's offset.
-  const contentScrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    contentScrollRef.current?.scrollTo({ top: 0 })
+    scrollContentToTop()
   }, [location.pathname])
   // KaleidoMind does not depend on the node, so the node-offline overlay must
   // never block it — a node-less or "KaleidoMind only" user can keep using it.
@@ -1360,8 +1363,7 @@ export const Layout = (props: Props) => {
               <div className="absolute inset-0 z-50" id="modal-portal" />
               <div
                 className="h-full overflow-y-auto overflow-x-hidden p-6"
-                id="content-scroll"
-                ref={contentScrollRef}
+                id={CONTENT_SCROLL_ID}
               >
                 {props.children}
               </div>

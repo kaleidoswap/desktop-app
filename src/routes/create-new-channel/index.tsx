@@ -8,6 +8,7 @@ import { ChannelWizardSteps } from '../../components/Channels/ChannelWizardSteps
 
 import { CHANNELS_PATH } from '../../app/router/paths'
 import { FormError } from '../../components/FormError'
+import { scrollContentToTop } from '../../helpers/contentScroll'
 import { useAppDispatch } from '../../app/store/hooks'
 import { CreateUTXOModal } from '../../components/CreateUTXOModal'
 import { Spinner } from '../../components/Spinner'
@@ -42,6 +43,12 @@ const initialFormState: TNewChannelForm = {
 export const Component = () => {
   const { t } = useTranslation()
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+
+  // Each step replaces the page content without a route change, so bring the
+  // scroll position back to the top or the next step opens mid-way down.
+  useEffect(() => {
+    scrollContentToTop()
+  }, [step])
   const [feeRates, setFeeRates] = useState(DEFAULT_FEE_RATES)
   const [formError, setFormError] = useState<string | null>(null)
 

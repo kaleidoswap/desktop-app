@@ -154,8 +154,11 @@ export const WalletConfirmationModal: React.FC<
         onClick={() => !isProcessing && onClose()}
       />
 
-      <div className="absolute inset-0 overflow-y-auto px-4 py-8 flex items-center justify-center">
-        <div className="w-full max-w-lg rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl">
+      <div className="absolute inset-0 overflow-y-auto px-4 py-8 flex">
+        {/* m-auto centres the card like items-center/justify-center, but when the
+            card is taller than the area it overflows downward only, so the top
+            stays reachable by scrolling instead of being clipped. */}
+        <div className="m-auto w-full max-w-lg rounded-3xl border border-border-subtle/50 bg-surface-base shadow-2xl">
           <div className="px-8 py-8">
             {/* Title row */}
             <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">

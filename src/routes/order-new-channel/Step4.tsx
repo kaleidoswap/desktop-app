@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ClipLoader } from 'react-spinners'
 import { toast } from 'react-toastify'
@@ -77,7 +77,6 @@ export const Step4: React.FC<StepProps> = ({
   const [isProcessingWalletPayment, setIsProcessingWalletPayment] =
     useState(false)
   const [, setIsLoadingData] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
 
   const refreshData = useCallback(async () => {
     if (!btcBalanceResponse.data || !listChannelsResponse.data) {
@@ -269,11 +268,6 @@ export const Step4: React.FC<StepProps> = ({
     setIsProcessingWalletPayment(false)
   }, [order?.order_id])
 
-  useEffect(() => {
-    if (!showWalletConfirmation) return
-    contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [showWalletConfirmation])
-
   if (!order) {
     return (
       <div className="w-full">
@@ -313,7 +307,7 @@ export const Step4: React.FC<StepProps> = ({
 
   return (
     <div className="w-full relative">
-      <div className="max-w-lg mx-auto space-y-5 relative" ref={contentRef}>
+      <div className="max-w-lg mx-auto space-y-5 relative">
         <div className="text-center mt-4 mb-8">
           <h3 className="text-3xl font-bold text-white">
             {t('orderChannel.step4.paymentTitle')}

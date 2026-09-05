@@ -4,6 +4,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { scrollContentToTop } from '../../helpers/contentScroll'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -60,6 +61,12 @@ export const Component = () => {
   const preselectedAssetAmount = navState.preselectedAssetAmount
   const returnTo = navState.returnTo
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+
+  // Each step replaces the page content without a route change, so bring the
+  // scroll position back to the top or the next step opens mid-way down.
+  useEffect(() => {
+    scrollContentToTop()
+  }, [step])
   const [loading, setLoading] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
