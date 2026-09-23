@@ -197,7 +197,9 @@ export interface AgentState {
 
 export interface SuggestedAction {
   id: string
-  /** 'wallet' | 'node' | 'portfolio' | 'trade' — mapped to an icon by the UI. */
+  /**
+   * 'wallet' | 'node' | 'portfolio' | 'trade' — mapped to an icon by the UI.
+   */
   icon: string
   title: string
   subtitle: string
@@ -273,7 +275,9 @@ export type MindEvent =
 
 export interface ChatResult {
   text: string
-  /** The model's `<think>` reasoning for this turn, if any (shown collapsed in chat). */
+  /**
+   * The model's `<think>` reasoning for this turn, if any (shown collapsed in chat).
+   */
   thinking?: string
   latencyMs: number
   tokensPerSecond: number
@@ -386,17 +390,23 @@ class MindClient {
   }
 
   // ── Agent runtime (on-demand download) ──────────────────────────────
-  /** Whether the agent runtime (provider/mcp/node) is downloaded + installed. */
+  /**
+   * Whether the agent runtime (provider/mcp/node) is downloaded + installed.
+   */
   async runtimeInstalled(): Promise<boolean> {
     return invoke<boolean>('mind_runtime_installed')
   }
 
-  /** Start downloading the agent runtime; progress arrives via onRuntimeProgress. */
+  /**
+   * Start downloading the agent runtime; progress arrives via onRuntimeProgress.
+   */
   async installRuntime(): Promise<void> {
     await invoke('mind_runtime_install')
   }
 
-  /** Subscribe to runtime download/extract progress. Returns an unsubscribe fn. */
+  /**
+   * Subscribe to runtime download/extract progress. Returns an unsubscribe fn.
+   */
   onRuntimeProgress(handler: (p: RuntimeProgress) => void): () => void {
     let unlisten: (() => void) | undefined
     let cancelled = false
@@ -478,8 +488,10 @@ class MindClient {
   stopProvider() {
     return this.request<ProviderStatusEvent>({ cmd: 'stop' })
   }
-  /** Stop an in-flight chat turn (the stop button). Fire-and-forget — the
-   *  matching `chat()` promise then resolves with whatever was produced so far. */
+  /**
+   * Stop an in-flight chat turn (the stop button). Fire-and-forget — the
+   * matching `chat()` promise then resolves with whatever was produced so far.
+   */
   cancelChat(chatId: string) {
     return this.send({ chatId, cmd: 'cancel_chat' })
   }
@@ -577,7 +589,9 @@ class MindClient {
   deleteTask(taskId: string) {
     return this.request<{ removed: boolean }>({ cmd: 'delete_task', taskId })
   }
-  /** Force-run a task now (regardless of schedule). Resolves with its outcome. */
+  /**
+   * Force-run a task now (regardless of schedule). Resolves with its outcome.
+   */
   runTask(taskId: string) {
     return this.request<{
       ok: boolean

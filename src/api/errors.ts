@@ -6,9 +6,7 @@
 
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
-/**
- * Standard error response structure
- */
+/** Standard error response structure */
 export interface ApiErrorResponse {
   error: string
   code?: number | string
@@ -16,9 +14,7 @@ export interface ApiErrorResponse {
   details?: Record<string, unknown>
 }
 
-/**
- * Categorized error types for better handling
- */
+/** Categorized error types for better handling */
 export enum ErrorCategory {
   NETWORK = 'NETWORK',
   VALIDATION = 'VALIDATION',
@@ -32,9 +28,7 @@ export enum ErrorCategory {
   UNKNOWN = 'UNKNOWN',
 }
 
-/**
- * Enhanced error with category and retry information
- */
+/** Enhanced error with category and retry information */
 export interface CategorizedError {
   category: ErrorCategory
   message: string
@@ -44,9 +38,7 @@ export interface CategorizedError {
   code?: string
 }
 
-/**
- * UTXO-related error patterns
- */
+/** UTXO-related error patterns */
 const UTXO_ERROR_PATTERNS = [
   'not enough UTXOs',
   'insufficient UTXOs',
@@ -54,18 +46,14 @@ const UTXO_ERROR_PATTERNS = [
   'no uncolored UTXOs',
 ]
 
-/**
- * Node state change error patterns
- */
+/** Node state change error patterns */
 const NODE_STATE_PATTERNS = [
   'node is changing state',
   'node is locked',
   'node is unlocking',
 ]
 
-/**
- * Extract a readable error message from various error formats
- */
+/** Extract a readable error message from various error formats */
 export function extractErrorMessage(error: unknown): string {
   // Handle null/undefined
   if (!error) {
@@ -119,9 +107,7 @@ export function extractErrorMessage(error: unknown): string {
   return String(error)
 }
 
-/**
- * Categorize an error based on its content and status code
- */
+/** Categorize an error based on its content and status code */
 export function categorizeError(
   error: unknown,
   statusCode?: number
@@ -264,9 +250,7 @@ export function categorizeError(
   }
 }
 
-/**
- * Transform SDK errors into RTK Query error format
- */
+/** Transform SDK errors into RTK Query error format */
 export function transformSdkError(error: unknown): FetchBaseQueryError {
   // kaleido-sdk throws KaleidoError subclasses carrying an HTTP `statusCode`
   // and a `code` (e.g. 'VALIDATION_ERROR', 'NETWORK_ERROR'). We must forward
@@ -306,16 +290,12 @@ export function transformSdkError(error: unknown): FetchBaseQueryError {
   }
 }
 
-/**
- * Check if an error is retryable
- */
+/** Check if an error is retryable */
 export function isRetryableError(error: CategorizedError): boolean {
   return error.isRetryable
 }
 
-/**
- * Check if an error is a UTXO-related error
- */
+/** Check if an error is a UTXO-related error */
 export function isUtxoError(error: unknown): boolean {
   const message = extractErrorMessage(error).toLowerCase()
   return UTXO_ERROR_PATTERNS.some((pattern) =>
@@ -323,9 +303,7 @@ export function isUtxoError(error: unknown): boolean {
   )
 }
 
-/**
- * Check if an error is a node state change error
- */
+/** Check if an error is a node state change error */
 export function isNodeStateError(error: unknown): boolean {
   const message = extractErrorMessage(error).toLowerCase()
   return NODE_STATE_PATTERNS.some((pattern) =>

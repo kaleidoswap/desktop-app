@@ -15,7 +15,6 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
 import { useSettings } from '../../../hooks/useSettings'
-// import { StatusToast } from '../../../components/StatusToast'
 import {
   NoChannelsMessage,
   ManualSwapForm,

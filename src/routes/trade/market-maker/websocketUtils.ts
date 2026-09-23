@@ -21,13 +21,7 @@ let connectionHealth = {
   successfulMessages: 0,
 }
 
-/**
- * Initialize WebSocket connection using the WebSocketService
- * @param makerUrl The URL of the market maker
- * @param clientId Client ID, usually the node pubkey
- * @param dispatch Redux dispatch function
- * @returns Promise that resolves to a boolean indicating success
- */
+/** Initialize WebSocket connection using the WebSocketService */
 export const initializeWebSocket = (
   makerUrl: string,
   clientId: string,
@@ -70,11 +64,6 @@ export const initializeWebSocket = (
 
 /**
  * Initialize WebSocket connection and wait for it to be ready for communication
- * @param makerUrl The URL of the market maker
- * @param clientId Client ID, usually the node pubkey
- * @param dispatch Redux dispatch function
- * @param timeout Maximum time to wait for connection in milliseconds
- * @returns Promise that resolves to a boolean indicating success
  */
 export const initializeWebSocketWithWait = async (
   makerUrl: string,
@@ -132,15 +121,7 @@ export const initializeWebSocketWithWait = async (
   }
 }
 
-/**
- * Initialize WebSocket connection with automatic retry logic
- * @param makerUrl The URL of the market maker
- * @param clientId Client ID, usually the node pubkey
- * @param dispatch Redux dispatch function
- * @param maxRetries Maximum number of retry attempts
- * @param timeout Maximum time to wait for each connection attempt in milliseconds
- * @returns Promise that resolves to a boolean indicating success
- */
+/** Initialize WebSocket connection with automatic retry logic */
 export const initializeWebSocketWithRetry = async (
   makerUrl: string,
   clientId: string,
@@ -202,24 +183,18 @@ export const initializeWebSocketWithRetry = async (
   return false
 }
 
-/**
- * Close the WebSocket connection
- */
+/** Close the WebSocket connection */
 export const closeWebSocket = (): void => {
   webSocketService.close()
 }
 
-/**
- * Track when we succeed in sending a WebSocket message
- */
+/** Track when we succeed in sending a WebSocket message */
 export function trackMessageSuccess(): void {
   connectionHealth.lastSuccessfulMessage = Date.now()
   connectionHealth.successfulMessages++
 }
 
-/**
- * Track when we fail to send a WebSocket message
- */
+/** Track when we fail to send a WebSocket message */
 export function trackMessageFailure(error?: any): void {
   connectionHealth.failedMessages++
   connectionHealth.lastFailureTime = Date.now()
@@ -229,9 +204,7 @@ export function trackMessageFailure(error?: any): void {
   }
 }
 
-/**
- * Get WebSocket connection health metrics
- */
+/** Get WebSocket connection health metrics */
 export function getConnectionHealth(): any {
   return {
     ...connectionHealth,
@@ -253,9 +226,7 @@ export function getConnectionHealth(): any {
   }
 }
 
-/**
- * Reset the connection health metrics
- */
+/** Reset the connection health metrics */
 export function resetConnectionHealth(): void {
   connectionHealth = {
     failedMessages: 0,
@@ -265,9 +236,7 @@ export function resetConnectionHealth(): void {
   }
 }
 
-/**
- * Handle a rate limit error by increasing backoff delay
- */
+/** Handle a rate limit error by increasing backoff delay */
 export function handleRateLimitError(): void {
   const now = Date.now()
 
@@ -287,9 +256,7 @@ export function handleRateLimitError(): void {
   )
 }
 
-/**
- * Reset rate limit backoff to initial values
- */
+/** Reset rate limit backoff to initial values */
 export function resetRateLimitBackoff(): void {
   if (rateLimit.currentDelay !== rateLimit.baseDelay) {
     logger.debug(
@@ -301,9 +268,7 @@ export function resetRateLimitBackoff(): void {
   rateLimit.attempts = 0
 }
 
-/**
- * Get the current delay that should be used before next attempt
- */
+/** Get the current delay that should be used before next attempt */
 export function getCurrentBackoffDelay(): number {
   const now = Date.now()
   const timeSinceLastAttempt = now - rateLimit.lastAttempt
@@ -317,9 +282,7 @@ export function getCurrentBackoffDelay(): number {
   return rateLimit.currentDelay - timeSinceLastAttempt
 }
 
-/**
- * Check if websocket connection is healthy based on message success rate
- */
+/** Check if websocket connection is healthy based on message success rate */
 export function isConnectionHealthy(): boolean {
   const totalMessages =
     connectionHealth.successfulMessages + connectionHealth.failedMessages
@@ -342,21 +305,14 @@ export function isConnectionHealthy(): boolean {
   return true
 }
 
-/**
- * Add jitter to a delay value to prevent thundering herd problem
- * @param delay Base delay in milliseconds
- * @param jitterFactor Factor to multiply the delay by (default 0.3 = ±30%)
- */
+/** Add jitter to a delay value to prevent thundering herd problem */
 export function addJitter(delay: number, jitterFactor: number = 0.3): number {
   // Add random jitter between -jitterFactor and +jitterFactor of the delay
   const jitter = (Math.random() * 2 - 1) * jitterFactor * delay
   return Math.max(0, delay + jitter)
 }
 
-/**
- * Ping the server and measure response time
- * @returns Promise that resolves to the round-trip time in milliseconds
- */
+/** Ping the server and measure response time */
 export const pingServer = async (): Promise<number> => {
   return new Promise((resolve) => {
     if (!webSocketService.isConnected()) {
@@ -393,10 +349,7 @@ export const pingServer = async (): Promise<number> => {
   })
 }
 
-/**
- * Retry connecting to the WebSocket server
- * @returns Promise that resolves to a boolean indicating success
- */
+/** Retry connecting to the WebSocket server */
 export const retryConnection = async (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (webSocketService.isConnected()) {

@@ -21,7 +21,6 @@ export const NodeOption: React.FC<NodeOptionProps> = ({
   icon,
   onClick,
   selected,
-  recommended,
 }) => (
   <div
     className={`relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
@@ -29,13 +28,6 @@ export const NodeOption: React.FC<NodeOptionProps> = ({
     ${selected ? 'bg-gradient-to-br from-cyan/15 to-transparent border-cyan' : 'bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20'}`}
     onClick={onClick}
   >
-    {recommended && (
-      <div className="absolute top-0 right-0">
-        {/* <div className="bg-cyan text-blue-darkest text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
-          Recommended
-        </div> */}
-      </div>
-    )}
     <div className="p-6">
       <div className="flex items-center gap-4 mb-4">
         <div

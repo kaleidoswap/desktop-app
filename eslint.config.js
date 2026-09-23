@@ -53,6 +53,9 @@ export default tseslint.config(
       // Import rules
       'import/no-default-export': 'error',
 
+      // Use src/utils/logger instead of console so log levels stay filterable
+      'no-console': 'error',
+
       // Sort keys rules
       'sort-keys-fix/sort-keys-fix': 'warn',
 
@@ -66,6 +69,14 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  // The logger is the one module allowed to talk to the console directly
+  {
+    files: ['src/utils/logger.ts', 'src/test/**'],
+    rules: {
+      'no-console': 'off',
     },
   },
 

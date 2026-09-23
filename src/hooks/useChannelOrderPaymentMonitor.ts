@@ -11,6 +11,7 @@ import {
   type ChannelOrderPaymentMethod,
   type ChannelOrderTerminalStatus,
 } from '../utils/channelOrderUtils'
+import { logger } from '../utils/logger'
 
 interface UseChannelOrderPaymentMonitorOptions {
   accessToken?: string | null
@@ -124,7 +125,7 @@ export const useChannelOrderPaymentMonitor = ({
           orderPayload: orderPayloadRef.current,
         })
       } catch (error) {
-        console.error('Error saving order to database:', error)
+        logger.error('Error saving order to database:', error)
       }
     }
 
@@ -146,7 +147,7 @@ export const useChannelOrderPaymentMonitor = ({
         })
 
         if (orderResponse.error) {
-          console.error('Error polling channel order:', orderResponse.error)
+          logger.error('Error polling channel order:', orderResponse.error)
           return
         }
 
@@ -178,7 +179,7 @@ export const useChannelOrderPaymentMonitor = ({
         setPaymentStatus(terminalStatus)
         onTerminalStateRef.current?.(terminalStatus, orderData)
       } catch (error) {
-        console.error('Error polling channel order:', error)
+        logger.error('Error polling channel order:', error)
       } finally {
         if (!cancelled && !reachedTerminalState) {
           scheduleNextPoll()

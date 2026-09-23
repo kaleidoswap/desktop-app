@@ -7,6 +7,7 @@ import {
   setLifecycleState,
   type BackendNodeState,
 } from '../slices/node/node.slice'
+import { logger } from '../utils/logger'
 
 export const useNodeLifecycleEvents = () => {
   const dispatch = useAppDispatch()
@@ -21,7 +22,7 @@ export const useNodeLifecycleEvents = () => {
           dispatch(setLifecycleState(state))
         }
       } catch (error) {
-        console.error('Failed to fetch initial node state:', error)
+        logger.error('Failed to fetch initial node state:', error)
       }
     }
 

@@ -166,9 +166,7 @@ class WebSocketService {
     window.addEventListener('offline', this.networkOfflineHandler)
   }
 
-  /**
-   * Start connection health monitoring
-   */
+  /** Start connection health monitoring */
   private startConnectionHealthMonitoring(): void {
     this.stopConnectionHealthMonitoring()
 
@@ -177,9 +175,7 @@ class WebSocketService {
     }, this.CONNECTION_HEALTH_CHECK_INTERVAL)
   }
 
-  /**
-   * Stop connection health monitoring
-   */
+  /** Stop connection health monitoring */
   private stopConnectionHealthMonitoring(): void {
     if (this.connectionHealthCheckInterval) {
       clearInterval(this.connectionHealthCheckInterval)
@@ -187,9 +183,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Perform health check on the connection
-   */
+  /** Perform health check on the connection */
   private performHealthCheck(): void {
     if (!this.isConnected()) {
       return
@@ -222,9 +216,7 @@ class WebSocketService {
     this.updateStabilityScore()
   }
 
-  /**
-   * Update connection stability score
-   */
+  /** Update connection stability score */
   private updateStabilityScore(): void {
     const now = Date.now()
     const timeSinceLastFailure = now - this.stability.lastFailureTime
@@ -248,9 +240,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Record a connection failure and update circuit breaker
-   */
+  /** Record a connection failure and update circuit breaker */
   private recordConnectionFailure(): void {
     this.stability.consecutiveFailures++
     this.stability.lastFailureTime = Date.now()
@@ -269,9 +259,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Record a successful connection
-   */
+  /** Record a successful connection */
   private recordConnectionSuccess(): void {
     this.stability.consecutiveFailures = 0
     this.stability.lastSuccessfulConnection = Date.now()
@@ -287,9 +275,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Open the circuit breaker
-   */
+  /** Open the circuit breaker */
   private openCircuitBreaker(): void {
     this.stability.circuitBreakerState = CircuitBreakerState.OPEN
     this.stability.circuitBreakerOpenTime = Date.now()
@@ -307,9 +293,7 @@ class WebSocketService {
     )
   }
 
-  /**
-   * Reset the circuit breaker to closed state
-   */
+  /** Reset the circuit breaker to closed state */
   private resetCircuitBreaker(): void {
     const oldState = this.stability.circuitBreakerState
     this.stability.circuitBreakerState = CircuitBreakerState.CLOSED
@@ -321,9 +305,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Check if circuit breaker allows connection attempts
-   */
+  /** Check if circuit breaker allows connection attempts */
   private canAttemptConnection(): boolean {
     const now = Date.now()
 
@@ -353,13 +335,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Add a message to the send queue with priority
-   * @param action Action type for the message
-   * @param payload Payload data
-   * @param priority Priority (higher numbers = higher priority)
-   * @returns True if message was added, false if queue is full
-   */
+  /** Add a message to the send queue with priority */
   private queueMessage(
     action: string,
     payload: any,
@@ -433,9 +409,7 @@ class WebSocketService {
     return true
   }
 
-  /**
-   * Process the message queue with rate limiting
-   */
+  /** Process the message queue with rate limiting */
   private processMessageQueue(): void {
     if (this.processingQueue) return
 
@@ -525,13 +499,7 @@ class WebSocketService {
     processNext()
   }
 
-  /**
-   * Initialize the WebSocket connection with a URL, client ID, and dispatch
-   *
-   * @param url Base URL of the maker service
-   * @param clientId Unique client identifier
-   * @param dispatch Redux dispatch function
-   */
+  /** Initialize the WebSocket connection with a URL, client ID, and dispatch */
   public init(url: string, clientId: string, dispatch: Dispatch): boolean {
     // Skip if URL is not provided
     if (!url) {
@@ -622,11 +590,7 @@ class WebSocketService {
     return this.connect()
   }
 
-  /**
-   * Updates the WebSocket URL and reconnects if necessary
-   *
-   * @param url New URL to connect to
-   */
+  /** Updates the WebSocket URL and reconnects if necessary */
   public updateUrl(url: string): boolean {
     if (!url) {
       logger.error('WebSocketService updateUrl: No URL provided')
@@ -650,9 +614,7 @@ class WebSocketService {
     return this.isConnected()
   }
 
-  /**
-   * Internal method to establish WebSocket connection
-   */
+  /** Internal method to establish WebSocket connection */
   private connect(): boolean {
     if (!this.url || !this.clientId) {
       logger.error('WebSocketService connect: URL or client ID not set')
@@ -724,9 +686,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Handle WebSocket open event
-   */
+  /** Handle WebSocket open event */
   private handleOpen(): void {
     const connectionTime = Date.now() - this.connectionStartTime
     this.lastSuccessfulConnection = Date.now()
@@ -768,9 +728,7 @@ class WebSocketService {
     }, 500) // 500ms delay to ensure connection stability
   }
 
-  /**
-   * Handle WebSocket message event
-   */
+  /** Handle WebSocket message event */
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data)
@@ -793,9 +751,8 @@ class WebSocketService {
               data.data
             )
 
-            // Make sure we have the necessary fields
-            // Handle both old format (from_amount/to_amount as top-level fields)
-            // and new format (amount inside from_asset/to_asset objects)
+            // Accepts both the old top-level from_amount/to_amount format and
+            // the new amount-inside-from_asset/to_asset one.
             const hasOldFormat =
               data.data.from_amount !== undefined &&
               data.data.to_amount !== undefined
@@ -910,9 +867,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Handle WebSocket error event
-   */
+  /** Handle WebSocket error event */
   private handleError(event: Event): void {
     logger.error('WebSocketService: WebSocket error', event)
     trackMessageFailure('WebSocket error event')
@@ -959,9 +914,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Handle WebSocket close event
-   */
+  /** Handle WebSocket close event */
   private handleClose(event: CloseEvent): void {
     logger.info(
       `WebSocketService: Disconnected with code ${event.code}, reason: ${event.reason || 'No reason provided'}`
@@ -1012,9 +965,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Close the WebSocket connection and clean up resources
-   */
+  /** Close the WebSocket connection and clean up resources */
   public close(): void {
     logger.info('WebSocketService: Closing connection')
 
@@ -1098,23 +1049,17 @@ class WebSocketService {
     logger.info('WebSocketService: Connection closed and resources cleaned up')
   }
 
-  /**
-   * Check if the WebSocket is currently connected
-   */
+  /** Check if the WebSocket is currently connected */
   public isConnected(): boolean {
     return this.socket?.readyState === WebSocket.OPEN
   }
 
-  /**
-   * Get the current URL the WebSocket is connected to
-   */
+  /** Get the current URL the WebSocket is connected to */
   public getCurrentUrl(): string {
     return this.url
   }
 
-  /**
-   * Force a reconnection to the WebSocket server
-   */
+  /** Force a reconnection to the WebSocket server */
   public reconnect(): boolean {
     logger.info('WebSocketService: Manual reconnection requested')
 
@@ -1158,9 +1103,7 @@ class WebSocketService {
     return false
   }
 
-  /**
-   * Get enhanced diagnostics including stability metrics
-   */
+  /** Get enhanced diagnostics including stability metrics */
   public getDiagnostics(): any {
     const baseStats = {
       clientId: this.clientId,
@@ -1200,11 +1143,7 @@ class WebSocketService {
     }
   }
 
-  /**
-   * Wait for the connection to be ready for communication
-   * @param timeout Maximum time to wait in milliseconds
-   * @returns Promise that resolves to true if connected, false if timeout
-   */
+  /** Wait for the connection to be ready for communication */
   public async waitForConnection(
     timeout: number = this.CONNECTION_READY_TIMEOUT
   ): Promise<boolean> {
@@ -1241,9 +1180,7 @@ class WebSocketService {
     return this.isConnected() && this.isConnectionReady
   }
 
-  /**
-   * Check if the connection is ready for communication
-   */
+  /** Check if the connection is ready for communication */
   public isConnectionReadyForCommunication(): boolean {
     return this.isConnected() && this.isConnectionReady
   }
@@ -1251,12 +1188,6 @@ class WebSocketService {
   /**
    * Request a quote for swapping from one asset to another
    * Now includes connection readiness checking
-   *
-   * @param fromAsset The asset to swap from
-   * @param toAsset The asset to swap to
-   * @param amount The amount to swap
-   * @param direction Whether the amount is the 'from' amount or 'to' amount (default: 'from')
-   * @returns A promise that resolves to true if the quote request was sent successfully
    */
   public async requestQuote(
     fromAsset: string,
@@ -1386,9 +1317,7 @@ class WebSocketService {
     }, this.heartbeatIntervalMs)
   }
 
-  /**
-   * Stop the heartbeat interval
-   */
+  /** Stop the heartbeat interval */
   private stopHeartbeat(): void {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval)

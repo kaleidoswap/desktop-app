@@ -71,7 +71,7 @@ function extractErrorText(err: unknown): string {
   return String(err)
 }
 
-function normalizeDcaError(err: unknown) {
+export function normalizeDcaError(err: unknown) {
   const rawMessage = extractErrorText(err)
   // Strip any leading error class name prefix (e.g. "TypeError: ", "ValidationError: ", "API Error (422): ")
   const message = rawMessage
@@ -211,7 +211,7 @@ function normalizeDcaError(err: unknown) {
  * fee_asset == 'BTC' (or empty) → final_fee is in msats → divide by 1000
  * Otherwise (USDT RGB asset) → final_fee is in asset units → convert using btcPrice
  */
-function computeFeeSats(
+export function computeFeeSats(
   fee:
     | { final_fee: number; fee_asset?: string; fee_asset_precision?: number }
     | undefined,
@@ -243,7 +243,7 @@ function sendNotification(title: string, body: string) {
 }
 
 /** Build DcaOrderInfo compatible with the Rust struct */
-function toRustOrder(order: DcaOrder) {
+export function toRustOrder(order: DcaOrder) {
   return {
     amount_usdt: order.amountUsdt,
     id: order.id,
@@ -261,7 +261,7 @@ function toRustOrder(order: DcaOrder) {
   }
 }
 
-function computeUsdtLnBalance(
+export function computeUsdtLnBalance(
   channels: any[] | undefined,
   niAssets: NiaAsset[] | undefined
 ): number | null {

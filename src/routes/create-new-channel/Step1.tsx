@@ -30,6 +30,7 @@ import {
   TNewChannelForm,
 } from '../../slices/channel/channel.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 const truncateMiddle = (str: string, head = 14, tail = 10): string =>
   str.length <= head + tail + 1
@@ -107,7 +108,7 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
           setConnectedPeers([])
         }
       } catch (error) {
-        console.error('Failed to load connected peers:', error)
+        logger.error('Failed to load connected peers:', error)
       } finally {
         setLoadingPeers(false)
       }

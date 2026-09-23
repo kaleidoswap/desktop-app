@@ -373,7 +373,9 @@ const TargetInput: React.FC<{
   </div>
 )
 
-/** Editable BTC/USDT/XAUT target weights + drift trigger; saves to the agent. */
+/**
+ * Editable BTC/USDT/XAUT target weights + drift trigger; saves to the agent.
+ */
 const TargetsCard: React.FC<{
   targets: PortfolioTargets
   onSave: (t: PortfolioTargets) => Promise<void>

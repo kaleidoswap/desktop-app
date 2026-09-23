@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 
 import { Modal } from '../ui'
+import { logger } from '../../utils/logger'
 
 interface TermsAndPrivacyContentProps {
   type: 'terms' | 'privacy'
@@ -44,7 +45,7 @@ export const TermsAndPrivacyContent: React.FC<TermsAndPrivacyContentProps> = ({
         setContent(content as string)
       } catch (error) {
         setError(t(isTerms ? 'legal.terms.error' : 'legal.privacy.error'))
-        console.error(`Failed to load ${type}:`, error)
+        logger.error(`Failed to load ${type}:`, error)
       }
     }
     loadContent()

@@ -25,41 +25,65 @@
     "info": "情報",
     "comingSoon": "近日公開"
   },
+  "launcher": {
+    "title": "KaleidoSwapへようこそ",
+    "subtitle": "使い方を選択してください。後から変更できます。",
+    "default": "デフォルト",
+    "yourAccounts": "あなたのアカウント",
+    "setUpNode": "ノードをセットアップ",
+    "newNode": "新しいノードをセットアップ",
+    "openMind": "KaleidoMindを開く",
+    "modes": {
+      "both": {
+        "title": "ノード + Mind",
+        "desc": "ウォレット/ノードとローカルAIブレインを一緒に実行します。"
+      },
+      "node": {
+        "title": "ノードのみ",
+        "desc": "RGB Lightningノード、チャネル、スワップのみ。"
+      },
+      "mind": {
+        "title": "Mind のみ",
+        "desc": "ローカルAIブレインのみ。ノードは不要です。"
+      }
+    }
+  },
   "navigation": {
+    "node": "ノード",
+    "mind": "Mind",
+    "kaleidoMind": "KaleidoMind",
+    "overview": "概要",
+    "activate": "{{name}} を有効化",
     "dashboard": "ダッシュボード",
     "trade": "トレード",
     "history": "履歴",
+    "liquidity": "流動性",
+    "brain": "ブレイン",
+    "pairing": "ペアリング",
+    "models": "モデル",
+    "skills": "スキル",
+    "chat": "チャット",
     "channels": "チャネル",
     "settings": "設定",
     "marketMaker": "マーケットメイカー",
     "manualSwaps": "手動スワップ",
     "nostrP2P": "Nostr P2P",
+    "dca": "DCA",
+    "limitOrders": "指値注文",
     "helpSupport": "ヘルプ&サポート",
     "getHelpSupport": "ヘルプ&サポートを利用",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar",
-    "dca": "DCA",
-    "limitOrders": "指値注文",
-    "node": "ノード",
-    "mind": "Mind",
-    "kaleidoMind": "KaleidoMind",
-    "overview": "概要",
-    "liquidity": "流動性",
-    "pairing": "ペアリング",
-    "models": "モデル",
-    "skills": "スキル",
-    "chat": "チャット",
-    "activate": "{{name}} を有効化"
+    "expandSidebar": "Expand sidebar"
   },
   "channels": {
-    "buyChannel": "チャネルを購入",
-    "createNewChannel": "Open Channel",
-    "buyAChannel": "チャネルを購入",
-    "manageChannels": "チャネルを管理",
     "pageTitle": "Lightningウォレットダッシュボード",
     "lastUpdated": "最終更新：{{time}}",
     "loadingData": "データを読み込み中...",
     "openChannel": "チャネルを開設",
+    "buyChannel": "チャネルを購入",
+    "createNewChannel": "Open Channel",
+    "buyAChannel": "チャネルを購入",
+    "manageChannels": "チャネルを管理",
     "refreshing": "更新中...",
     "refresh": "更新",
     "totalBalance": "合計残高",
@@ -105,27 +129,36 @@
     "myWallet": "マイウォレット",
     "connected": "接続済み",
     "disconnected": "未接続",
-    "logout": "ログアウト",
-    "settings": "設定",
     "noNode": "ノード未接続",
     "tapToConnect": "タップして接続",
-    "connectNode": "ノードを接続"
+    "connectNode": "ノードを接続",
+    "reconnect": "ノードに再接続",
+    "reconnecting": "再接続中…",
+    "logout": "ログアウト",
+    "settings": "設定"
   },
   "settings": {
     "title": "設定",
     "subtitle": "ノードとアプリケーションの設定を管理",
     "applicationSettings": "アプリケーション設定",
     "generalSettings": "一般設定",
+    "capabilities": "機能",
+    "capabilitiesDescription": "KaleidoSwapのどの部分を表示するかを選択します — ノード、AIブレイン、またはその両方。",
     "language": "言語",
     "bitcoinUnit": "ビットコイン単位",
     "bitcoinUnitSat": "サトシ（SAT）",
     "bitcoinUnitBtc": "ビットコイン（BTC）",
+    "fiatCurrency": "法定通貨",
+    "fiatCurrencyDescription": "法定通貨表示に使う通貨",
     "theme": "テーマ",
     "themeDark": "ダーク",
     "themeLight": "ライト",
     "lspUrl": "LSP URL",
     "lspUrlPlaceholder": "例：http://localhost:8000",
+    "lspUrlHint": "LSPのURLは通常、デフォルトのMaker URLと同じです。",
+    "matchMakerUrl": "デフォルトのMaker URLに合わせる",
     "makerSettings": "メイカー設定",
+    "makerLspSettings": "Maker・LSP設定",
     "makerUrls": "メイカーURL",
     "additionalMakerUrls": "追加のメイカーURL",
     "addMakerUrl": "メイカーURLを追加",
@@ -192,9 +225,7 @@
     "restartNow": "今すぐ再起動",
     "later": "後で",
     "shuttingDownTitle": "ノードをシャットダウン中",
-    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください...",
-    "fiatCurrency": "法定通貨",
-    "fiatCurrencyDescription": "法定通貨表示に使う通貨"
+    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください..."
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",
@@ -254,1705 +285,22 @@
   "labels": {
     "soon": "近日公開"
   },
-  "walletRemote": {
-    "apiUrlMissingParams": "ベースURLとエンドポイントの両方が必要です",
-    "connectionVerifiedHeading": "✅ 接続が確認されました：",
-    "creatingAccount": "アカウントを作成中...",
-    "finalizingSetup": "セットアップを完了中...",
-    "processing": "処理中...",
-    "unknownTestError": "接続テスト中に不明なエラーが発生しました。",
-    "unknownConnectionError": "ノードへの接続中に不明なエラーが発生しました。",
-    "unexpectedError": "予期しないエラー",
-    "regtestTypeLocal": "ローカル",
-    "authenticationFailedToast": "認証に失敗しました。認証情報を確認してください。",
-    "nodeEndpointNotFoundToast": "ノードエンドポイントが見つかりません。ノードURLを確認してください。",
-    "serverErrorToast": "サーバーエラー。リモートノードがダウンしているか、設定が正しくない可能性があります。",
-    "connectionTimeout": "接続タイムアウト",
-    "connectionTimeoutDetails": "接続の応答に時間がかかりすぎました。ネットワーク接続とノードURLを確認してください。",
-    "connectionTimeoutToast": "接続がタイムアウトしました。",
-    "connectionFailed": "接続に失敗しました",
-    "title": "リモートノードに接続",
-    "subtitle": "リモートRGBライトニングノードの詳細を入力してください",
-    "configureRemoteNode": "リモートノード接続設定を構成します。既存のRGBライトニングノードの詳細を入力してください。",
-    "accountName": "アカウント名",
-    "accountNameDescription": "この名前はリモートノード接続の識別に使用されます",
-    "accountNamePlaceholder": "マイリモートノード",
-    "accountNameRequired": "アカウント名は必須です",
-    "nodeUrl": "ノードURL",
-    "nodeUrlDescription": "リモートRGBライトニングノードのURL",
-    "nodeUrlDescriptionRegtest": "{{type}}regtest接続のノードURL",
-    "nodeUrlPlaceholder": "http://your-node-url:3000",
-    "nodeUrlPlaceholderRegtest": "http://localhost:3001",
-    "nodeUrlRequired": "ノードURLは必須です",
-    "nodeUrlInvalidFormat": "URLから「/nodeinfo」を削除してください - 自動的に追加されます",
-    "nodeUrlTrailingSlash": "URLから余分な末尾のスラッシュを削除してください",
-    "nodeUrlProtocol": "URLはhttp://またはhttps://で始まる必要があります",
-    "password": "ノードパスワード",
-    "passwordPlaceholder": "パスワード",
-    "passwordRequired": "パスワードは必須です",
-    "useAuthToken": "認証トークンを使用",
-    "authToken": "認証トークン",
-    "authTokenRequired": "認証トークンは必須です",
-    "testConnection": "接続をテスト",
-    "testingConnection": "接続をテスト中...",
-    "testConnectionAndCreate": "接続をテストしてアカウントを作成",
-    "connectionTestSuccessful": "接続テストが成功しました",
-    "connectionTestSuccessMessage": "リモートノードへの接続に成功しました！ノードが正しく応答しています。",
-    "connectionVerified": "接続が確認されました！これでノードに安全に接続できます。",
-    "nodeOnline": "ノードはオンラインでアクセス可能です",
-    "authWorking": "認証が正しく機能しています",
-    "nodeRespondingValidData": "ノードが有効なデータで応答しています",
-    "testConnectionError": "{{error}}",
-    "authenticationFailed": "認証に失敗しました",
-    "authenticationFailedDetails": "無効な認証情報または認証トークンです。パスワードまたは認証トークンを確認してください。",
-    "nodeEndpointNotFound": "ノードエンドポイントが見つかりません",
-    "nodeEndpointNotFoundDetails": "/nodeinfoエンドポイントが見つかりませんでした。ノードURLが正しいことを確認してください。",
-    "serverError": "サーバーエラー",
-    "serverErrorDetails": "リモートノードがサーバーエラー（{{status}}）を返しました。ノードがダウンしているか、設定が正しくない可能性があります。",
-    "connectionTestFailed": "接続テストに失敗しました",
-    "connectionTestFailedDetails": "HTTP {{status}}：{{statusText}}",
-    "connectionTestFailedToast": "接続テストに失敗しました：{{status}}",
-    "invalidResponseFormat": "無効な応答形式",
-    "invalidResponseFormatDetails": "ノードが応答しましたが、有効なJSONではありません。これはRGBライトニングノードではない可能性があります。",
-    "invalidResponseFormatToast": "接続テスト中に無効な応答がありました。",
-    "networkConnectionFailed": "ネットワーク接続に失敗しました",
-    "networkConnectionFailedDetails": "テスト中にリモートノードに到達できませんでした。インターネット接続とノードURLを確認してください。",
-    "networkConnectionFailedToast": "接続テスト中にネットワークエラーが発生しました。",
-    "connectionSuccessToast": "✅ 接続テストが成功しました！ノードに到達可能です。",
-    "processingStep1": "ステップ1：リモートノードへの接続をテスト中...",
-    "processingStep2": "ステップ2：アカウントを作成して設定を保存中...",
-    "processingStep3": "ステップ3：アカウントセットアップを完了中...",
-    "accountExists": "アカウント名は既に存在します",
-    "accountExistsMessage": "別のアカウント名を選択するか、既存のアカウントを削除してください。",
-    "accountExistsToast": "この名前のアカウントは既に存在します",
-    "failedCheckAccountExists": "アカウントの存在確認に失敗しました",
-    "failedCheckAccountExistsMessage": "アカウント名が利用可能かどうかを確認できませんでした。もう一度お試しください。",
-    "failedCheckAccountExistsToast": "アカウントの存在確認に失敗しました。もう一度お試しください。",
-    "connectionSuccessCreating": "✅ 接続成功！アカウントを作成中...",
-    "connectionFailedToast": "接続に失敗しました：{{status}} {{statusText}}",
-    "invalidResponseToast": "ノードからの無効な応答です。URLを確認してください。",
-    "connectionTimeoutLong": "接続がタイムアウトしました。ネットワークを確認してもう一度お試しください。",
-    "networkErrorToast": "ネットワークエラー。接続とノードURLを確認してください。",
-    "corsError": "CORSポリシーエラー",
-    "corsErrorDetails": "リモートノードがこのアプリケーションからのリクエストを受け入れるように設定されていません。",
-    "corsErrorToast": "CORSエラー。リモートノードが適切に設定されていない可能性があります。",
-    "failedToConnectToast": "リモートノードへの接続に失敗しました。設定を確認してください。",
-    "accountCreatedSuccess": "🎉 アカウントが正常に作成されました！",
-    "failedToCreateAccount": "アカウントの作成に失敗しました",
-    "failedToCreateAccountDetails": "接続成功後にアカウント作成が失敗しました：{{error}}",
-    "failedToCreateAccountToast": "アカウントの作成に失敗しました。もう一度お試しください。",
-    "troubleshootingTips": "💡 トラブルシューティングのヒント：",
-    "verifyNodeUrl": "ノードURLが正しくアクセス可能であることを確認してください",
-    "checkNodeRunning": "ノードが実行中で応答しているか確認してください",
-    "ensurePortCorrect": "ポート番号が正しいことを確認してください",
-    "trySwitchingRegtest": "regtestを使用している場合は、ローカルとリモートのregtestを切り替えてみてください",
-    "authHelp": "🔑 認証ヘルプ：",
-    "doubleCheckPassword": "パスワードを再確認してください",
-    "verifyAuthToken": "認証トークンを使用している場合は確認してください",
-    "ensureNodeAccepts": "ノードが認証情報を受け入れることを確認してください",
-    "networkTroubleshooting": "🌐 ネットワークトラブルシューティング：",
-    "checkInternet": "インターネット接続を確認してください",
-    "verifyNodeOnline": "ノードがオンラインでアクセス可能であることを確認してください",
-    "trySwitchingConnection": "regtestを使用している場合は、regtest接続タイプを切り替えてみてください",
-    "dismissAndRetry": "閉じてもう一度試す",
-    "requiresRestart": "再起動が必要です"
-  },
-  "mnemonicViewer": {
-    "unlockTitle": "リカバリーフレーズのロック解除",
-    "displayTitle": "あなたのリカバリーフレーズ",
-    "unlockSubtitle": "リカバリーフレーズを復号化して表示するにはパスワードを入力してください",
-    "displaySubtitle": "このフレーズを安全に秘密に保管してください",
-    "securityNoticeTitle": "セキュリティに関する注意",
-    "securityNoticeDescription": "リカバリーフレーズはウォレットパスワードで暗号化されています。これにより、あなただけがアクセスできることが保証されます。",
-    "retrievedSuccess": "リカバリーフレーズが正常に取得されました",
-    "incorrectPassword": "パスワードが正しくないか、ニーモニックが保存されていません",
-    "decryptFailed": "リカバリーフレーズの復号化に失敗しました。パスワードを確認してください。",
-    "copyFailed": "クリップボードへのコピーに失敗しました",
-    "decrypting": "復号化中...",
-    "viewButton": "リカバリーフレーズを表示",
-    "warningTitle": "⚠️ 重要なセキュリティ警告",
-    "warningNeverShare": "このフレーズを誰にも共有しないでください",
-    "warningControlWallet": "このフレーズを持つ人は誰でもあなたのウォレットを制御できます",
-    "warningStoreSecurely": "オフラインの安全な場所に保管してください",
-    "warningScreenPrivacy": "画面を誰にも見られないようにしてください",
-    "recoveryPhraseHeading": "あなたの12単語のリカバリーフレーズ",
-    "copyButton": "クリップボードにコピー",
-    "copySuccessButton": "クリップボードにコピーしました",
-    "closeButton": "閉じて非表示"
-  },
-  "issueAssetModal": {
-    "title": "新しいアセットを発行",
-    "note": "注：新しいアセットの発行にはColored UTXOが必要です。Colored UTXOが不足している場合、プロセスにはオンチェーントランザクションが含まれる場合があります。",
-    "tickerLabel": "ティッカーシンボル",
-    "tickerPlaceholder": "BTC",
-    "nameLabel": "アセット名",
-    "namePlaceholder": "Bitcoin",
-    "amountLabel": "発行量",
-    "amountPlaceholder": "100",
-    "precisionLabel": "精度（小数点以下の桁数）",
-    "precisionPlaceholder": "8",
-    "precisionError": "精度の値は0から10の間である必要があります。",
-    "previewPrefix": "発行するアセット：",
-    "submit": "アセットを発行",
-    "submitting": "発行中...",
-    "success": "アセットが正常に発行されました！",
-    "failure": "アセットの発行に失敗しました"
-  },
-  "updater": {
-    "checkingTitle": "アップデートを確認中",
-    "checkingDescription": "最高のエクスペリエンスを提供するために最新バージョンを確認しています。",
-    "errorTitle": "アップデート確認失敗",
-    "errorGeneric": "アップデートの確認に失敗しました。後でもう一度お試しください。",
-    "stuckError": "アップデートプロセスが停止しているようです。もう一度お試しください。",
-    "timeoutError": "アップデートプロセスがタイムアウトしました。もう一度お試しください。",
-    "installError": "アップデートのインストールに失敗しました。もう一度お試しください。",
-    "installToastError": "アップデートのインストールに失敗しました",
-    "tryAgain": "もう一度試す",
-    "downloadingTitle": "アップデートをダウンロード中",
-    "versionLabel": "バージョン",
-    "installWarning": "アップデート中はアプリケーションを閉じないでください",
-    "downloadedLabel": "ダウンロード済み",
-    "downloadingStatus": "ダウンロード中...",
-    "installingStatus": "インストール中...",
-    "installingLabel": "インストール中...",
-    "cancelHelp": "問題がありますか？クリックしてキャンセルし、もう一度試してください",
-    "cancelledError": "ユーザーによってアップデートがキャンセルされました",
-    "releaseNotesTitle": "新機能",
-    "availableTitle": "新しいアップデートが利用可能です！",
-    "releasedOn": "リリース日：{{date}}",
-    "installButton": "ダウンロード&インストール",
-    "skipButton": "今はスキップ",
-    "recommendation": "最新の機能とセキュリティの改善を取得するためにアップデートすることをお勧めします。",
-    "completedTitle": "アップデート準備完了！🎉",
-    "completedDescription": "バージョン{{version}}が正常にダウンロードされました。",
-    "completedSubtext": "最新の機能と改善を楽しむためにアプリケーションを再起動してください。",
-    "restartButton": "今すぐ再起動",
-    "fileUnits": {
-      "bytes": "バイト",
-      "kilobytes": "KB",
-      "megabytes": "MB",
-      "gigabytes": "GB"
-    }
-  },
-  "buyChannel": {
-    "totalPayment": "合計支払額",
-    "expires": "有効期限：{{time}}",
-    "lightningTab": "⚡ Lightning",
-    "onchainTab": "⛓️ オンチェーン",
-    "lightningInstructions": "QRコードをスキャンするか、インボイスをコピーしてLightningで支払います。",
-    "onchainInstructions": "以下のアドレスにBitcoinを送信してください。{{confirmations}}回の確認が必要です。",
-    "copySuccess": "クリップボードにコピーしました！",
-    "copyInvoice": "インボイスをコピー",
-    "copyAddress": "アドレスをコピー",
-    "lspFetchError": "LSPデータの取得エラー。後でもう一度お試しください。",
-    "createOrderError": "チャネル注文の作成中にエラーが発生しました",
-    "orderIdMissing": "サーバーレスポンスから注文IDを取得できませんでした",
-    "lightningPaymentFailed": "Lightning支払いに失敗しました",
-    "lightningPaymentSuccess": "Lightning支払いが正常に開始されました！",
-    "onchainPaymentSuccess": "オンチェーン支払いが正常に送信されました！",
-    "paymentFailed": "支払いに失敗しました：{{error}}",
-    "unknownError": "不明なエラー",
-    "lightning": "Lightning",
-    "onchain": "オンチェーン"
-  },
-  "websocket": {
-    "connectionLost": "メイカーへの接続が失われました。再接続を試みています...",
-    "serverError": "サーバーエラーが検出されました。再接続を試みています..."
-  },
-  "trade": {
-    "maker": {
-      "switching": "新しいメイカーに切り替え中...",
-      "reconnected": "マーケットメイカーに正常に再接続しました",
-      "reconnecting": "再接続中です。お待ちください...",
-      "changeFailed": "メイカーの変更に失敗しました",
-      "invalidUrl": "無効なURL形式",
-      "reconnectingStatus": "メイカーに再接続中...",
-      "reconnectionInitFailed": "再接続の開始に失敗しました。もう一度お試しください。",
-      "reconnectionFailed": "メイカーへの再接続に失敗しました",
-      "selectMaker": "メイカーを選択",
-      "connected": "接続済み",
-      "reconnect": "再接続",
-      "marketMakers": "マーケットメイカー",
-      "enterUrl": "メイカーURLを入力...",
-      "cancel": "キャンセル",
-      "addMaker": "メイカーを追加",
-      "addNewMaker": "新しいメイカーを追加",
-      "notConnected": "メイカーに未接続"
+  "peerManagement": {
+    "title": "ピア",
+    "peerPlaceholder": "pubkey@host:port",
+    "connect": "接続",
+    "cancel": "キャンセル",
+    "connectToPeer": "ピアに接続",
+    "disconnectTooltip": "ピアを切断",
+    "disconnect": "切断",
+    "noPeers": "接続されているピアはありません。開始するにはいくつかのピアに接続してください。",
+    "success": {
+      "connected": "ピアに正常に接続しました",
+      "disconnected": "ピアから切断しました"
     },
-    "header": {
-      "title": "トレード"
-    },
-    "feeSection": {
-      "title": "手数料の内訳",
-      "percentOfTrade": "取引の{{rate}}%",
-      "baseFee": "基本手数料",
-      "baseFeeTooltip": "取引金額に関係なく課金される固定手数料",
-      "variableFee": "変動手数料",
-      "variableFeeTooltip": "取引金額に応じて計算されるパーセンテージベースの手数料",
-      "totalFee": "合計手数料",
-      "percentOfTradeValue": "取引価値の{{rate}}%",
-      "feeDeduction": "手数料控除",
-      "feeDeductionDesc": "手数料は受取金額から自動的に控除されます。表示される「受取金額」はすべての手数料を考慮済みです。"
-    },
-    "swapButton": {
-      "connecting": "接続中...",
-      "buyChannel": "チャネルで{{asset}}を購入",
-      "gettingQuote": "最新の見積もりを取得中...",
-      "preparingSwap": "スワップを準備中...",
-      "noChannels": "利用可能なチャネルがありません",
-      "noTradablePairs": "取引可能なペアがありません",
-      "exceedsMax": "最大受取可能額を超過",
-      "channelAwaiting": "チャネルは確認待ち",
-      "invalidAmount": "無効な金額",
-      "enterAmount": "金額を入力",
-      "swapInProgress": "スワップ実行中...",
-      "waitingQuote": "見積もりを待機中...",
-      "swapNow": "今すぐスワップ"
-    },
-    "swapInput": {
-      "available": "利用可能:",
-      "refreshAmounts": "金額を更新",
-      "estimating": "見積もり中...",
-      "loading": "読み込み中...",
-      "placeholder": "0.00",
-      "selectAsset": "アセットを選択",
-      "searchAsset": "ティッカーまたはアセットIDで検索...",
-      "selectAssetTitle": "アセットを選択",
-      "quickAmount": "クイック金額",
-      "percentAvailable": "利用可能の%",
-      "min": "最小",
-      "max": "最大",
-      "maxHtlc": "最大HTLC",
-      "maxHtlcTooltip": "この支払いチャネルで送信できる最大金額"
-    },
-    "exchangeRate": {
-      "justNow": "たった今",
-      "secondsAgo": "{{seconds}}秒前",
-      "oneMinuteAgo": "1分前",
-      "minutesAgo": "{{minutes}}分前",
-      "oneHourAgo": "1時間前",
-      "hoursAgo": "{{hours}}時間前",
-      "updated": "更新済み",
-      "never": "未更新",
-      "live": "ライブ",
-      "stale": "古い",
-      "loadingRate": "為替レートを読み込み中...",
-      "updatingRate": "レートを更新中..."
-    },
-    "nostrP2P": {
-      "title": "Nostr P2Pトレーディング",
-      "description": "NostrによるP2Pトレーディングは近日公開！中央集権的なメイカーに依存せず、他のユーザーと直接取引できます。",
-      "directSwaps": "ダイレクトスワップ",
-      "directSwapsDesc": "仲介者なしでピアと直接取引",
-      "limitOrders": "指値注文",
-      "limitOrdersDesc": "価格を設定してマッチを待つ",
-      "notifications": "通知",
-      "notificationsDesc": "注文がマッチしたらアラートを受け取る",
-      "trustlessSwaps": "トラストレススワップ",
-      "trustlessSwapsDesc": "アトミックスワップにより、両者がアセットを受け取るか、取引が行われないことを保証",
-      "globalMarketplace": "グローバルマーケットプレイス",
-      "globalMarketplaceDesc": "Nostrネットワークを通じて世界中のトレーダーとつながる",
-      "notifyPrompt": "Nostr P2Pトレーディングのローンチ時に通知を受け取りたいですか？",
-      "starGithub": "GitHubリポジトリにスターを付ける"
-    },
-    "tradablePairs": {
-      "title": "利用可能な取引ペア",
-      "noPairs": "取引ペアがありません",
-      "pairCount": "{{count}}ペア",
-      "clickToCopy": "クリックしてコピー: {{id}}",
-      "active": "アクティブ",
-      "inactive": "非アクティブ",
-      "morePairs": "+ {{count}}個のペアが利用可能",
-      "openChannelHint": "これらのアセットでチャネルを開設して取引を開始"
-    },
-    "supportedAssets": {
-      "title": "サポートされているアセット",
-      "assetCount": "{{count}}アセット",
-      "clickToCopyAssetId": "クリックしてアセットIDをコピー: {{id}}",
-      "tradeHint": "これらのアセットの任意の組み合わせで取引できます"
-    },
-    "tradeForm": {
-      "available": "利用可能:",
-      "youSend": "送信",
-      "canReceive": "最大受取可能:",
-      "youReceive": "受取（推定）"
-    },
-    "assetModal": {
-      "none": "なし",
-      "selected": "選択済み",
-      "copyAssetId": "完全なアセットIDをコピー",
-      "title": "アセットを選択",
-      "searchPlaceholder": "ティッカー、名前、またはアセットIDで検索...",
-      "close": "閉じる",
-      "assetsFound": "{{count}}アセットが見つかりました",
-      "noAssetsFound": "アセットが見つかりません",
-      "searchHint": "ティッカー（例: \"BTC\"）、名前、またはアセットIDで検索してみてください",
-      "clearSearch": "検索をクリアしてすべてのアセットを表示",
-      "tip": "ヒント: ティッカーで検索または完全なアセットIDを貼り付けできます",
-      "selectedLabel": "選択済み"
-    },
-    "noChannels": {
-      "insufficientBalance": "Bitcoin残高が不足しています",
-      "insufficientBalanceMessage": "チャネルを開設するにはビットコインが必要です。開始するにはBTCを入金してください。",
-      "depositBTC": "BTCを入金",
-      "noRGBChannels": "利用可能なRGBチャネルがありません",
-      "noRGBChannelsMessage": "スワップを始めるには、いくつかの資産を含むチャネルが必要です。",
-      "openChannel": "チャネルを開設",
-      "buyFromLSP": "LSPから購入",
-      "marketMaker": "マーケットメイカー",
-      "noTradingChannels": "利用可能な取引チャネルがありません",
-      "buyChannel": "チャネルを購入",
-      "availableTradingPairs": "利用可能な取引ペア",
-      "supportedAssets": "対応資産",
-      "quickStartGuide": "クイックスタートガイド",
-      "quickStartMessage": "RGB資産の取引を始めるには以下の手順に従ってください。",
-      "checkSupportedAssets": "対応資産を確認",
-      "checkSupportedAssetsMessage": "このメイカーが対応する資産を確認するにはレジストリをご覧ください。",
-      "createYourChannel": "チャネルを作成",
-      "createChannelMessage": "LSPからチャネルを購入するか、お持ちの資産で直接チャネルを開設してください。",
-      "startTrading": "取引を開始",
-      "startTradingMessage": "チャネルが有効になったらここに戻って取引を始めてください。",
-      "recommendationCompatible": "このマーケットメイカーと互換性のある資産をすでに保有しています。直接チャネルを開設できます。",
-      "recommendationBuy": "最短で始めるには、このメイカーが対応する資産付きのチャネルをLSPから購入することをおすすめします。",
-      "recommendationOpen": "このマーケットメイカーは特定の資産に対応しています。これらの資産でチャネルを開設できます。",
-      "recommendationDefault": "このマーケットメイカーで取引するには、対応資産のいずれかを含むチャネルが必要です。"
-    },
-    "channelsNotReady": {
-      "title": "チャネルはまだ準備中です",
-      "message": "取引用チャネルを設定しています。この処理には通常数分かかります。準備が完了するまでお待ちください。",
-      "channelStatus": "チャネル状態",
-      "initializing": "初期化中...",
-      "checkStatus": "状態を確認",
-      "setupTime": "設定時間",
-      "setupTimeMessage": "チャネルの設定完了には通常3〜5分かかります。",
-      "autoRefresh": "自動更新",
-      "autoRefreshMessage": "30秒ごとに自動で状態を確認します。"
-    },
-    "connectionIssues": {
-      "connectionLost": "マーケットメイカーとの接続が失われました",
-      "connectionLostMessage": "取引用チャネルは利用可能ですが、マーケットメイカーとのリアルタイム接続の維持に問題があります。",
-      "preventsTradingMessage": "このため、価格のライブ更新と取引ができません。",
-      "retryConnection": "再接続",
-      "connectionIssue": "接続の問題",
-      "network": "ネットワーク",
-      "checkInternetMessage": "インターネット接続を確認してください",
-      "switchMaker": "メイカーを切り替え",
-      "tryDifferentMaker": "上で別のマーケットメイカーを試してください",
-      "wait": "待機",
-      "serverBusy": "サーバーが一時的に混雑している可能性があります",
-      "currentMaker": "現在のメイカー:",
-      "marketMakerSelector": "現在のメイカーが利用できない場合は、別のメイカーに切り替えて取引を続けてください。",
-      "connectingToMaker": "マーケットメイカーに接続中",
-      "connectionTimeout": "接続タイムアウト",
-      "establishingConnection": "接続を確立中",
-      "connectingMessage": "マーケットメイカーへの接続を試みています...",
-      "usuallyFastMessage": "通常は数秒で完了します。",
-      "timeoutMessage": "30秒以内にマーケットメイカーへ接続できませんでした。",
-      "serverUnreachableMessage": "サーバーに到達できないか、障害が発生している可能性があります。",
-      "connectingForSeconds": "{{seconds}}秒間接続中...",
-      "cancelAndRetry": "キャンセルして再試行",
-      "elapsedTime": "{{seconds}}秒経過",
-      "tryingSwitchMessage": "現在接続を試みています。別のメイカーを試すために切り替えることもできます。",
-      "switchIfUnavailable": "現在のメイカーが利用できない場合は別のメイカーに切り替えてください。",
-      "connectionInProgress": "接続処理中"
-    },
-    "manual": {
-      "balancesUpdated": "資産残高を更新しました",
-      "balancesFailed": "資産残高の取得に失敗しました",
-      "swapInitiated": "スワップを開始しました",
-      "swapInitiateFailed": "スワップの開始に失敗しました。もう一度お試しください。",
-      "noActiveSwap": "実行できるアクティブなスワップがありません",
-      "missingTakerPubkey": "テイカーの公開鍵を入力してください",
-      "swapExecuted": "スワップを実行しました",
-      "swapExecuteFailed": "スワップの実行に失敗しました。もう一度お試しください。"
-    },
-    "taker": {
-      "balancesUpdated": "資産残高を更新しました",
-      "balancesFailed": "資産残高の取得に失敗しました",
-      "missingSwapString": "スワップ文字列を入力してください",
-      "whitelistSuccess": "取引をホワイトリストに追加しました",
-      "whitelistFailed": "取引のホワイトリスト登録に失敗しました。もう一度お試しください。",
-      "pubkeyCopied": "公開鍵をクリップボードにコピーしました"
-    },
-    "statusToast": {
-      "swapSucceeded": "スワップ成功",
-      "swapExpired": "スワップ期限切れ",
-      "pendingSwaps_one": "{{count}}件のスワップを処理中",
-      "pendingSwaps_other": "{{count}}件のスワップを処理中"
-    }
-  },
-  "toolbar": {
-    "accounts": {
-      "fetchFailed": "アカウントの取得に失敗しました",
-      "updateSuccess": "アカウント「{{name}}」が正常に更新されました",
-      "updateFailed": "アカウントの更新に失敗しました：{{error}}",
-      "deleteSuccess": "アカウント「{{name}}」が正常に削除されました",
-      "deleteFailed": "アカウント「{{name}}」の削除に失敗しました"
-    },
-    "nodes": {
-      "localNodeStarted": "ローカルノード「{{name}}」が正常に起動されました",
-      "startingLocalNode": "ローカルノードを起動中...",
-      "stoppingExisting": "競合するポート上の既存ノードを停止中...",
-      "existingStopped": "既存ノードが正常に停止されました",
-      "startFailed": "ノードの起動に失敗しました",
-      "startFailedWithReason": "ノードの起動に失敗しました：{{error}}",
-      "portErrors": "ポート設定のエラーを修正してください",
-      "nodeUpdateSuccess": "ノード「{{name}}」が正常に更新されました",
-      "nodeUpdateFailed": "ノードの更新に失敗しました"
-    },
-    "nodeCard": {
-      "local": "ローカル",
-      "remote": "リモート"
-    },
-    "main": {
-      "errorLoading": "ノードの読み込みエラー: {{error}}",
-      "title": "あなたのアカウント",
-      "exitEditMode": "編集モードを終了",
-      "enterEditMode": "編集モードに入る",
-      "editNodes": "ノードを編集",
-      "editModeInstructions": "編集モード: ノードをクリックして編集、または編集/削除ボタンを使用",
-      "noNodesFound": "ノードが見つかりません",
-      "createNodeHint": "Kaleidoswapを始めるには新しいノードを作成してください"
-    },
-    "modal": {
-      "checkingNodeStatus": "ノードステータスを確認中...",
-      "nodeAlreadyRunning": "ノードは既に実行中です、コンテキストを切り替え中...",
-      "startingLocalNode": "ローカルノードを起動中...",
-      "connectingRemoteNode": "リモートノードに接続中...",
-      "unknownError": "ノードの切り替え中に不明なエラーが発生しました",
-      "localNode": "ローカルノード",
-      "remoteNode": "リモートノード",
-      "switchNode": "ノードを切り替え",
-      "reviewDetails": "切り替え前にノードの詳細を確認",
-      "errorSwitchingNode": "ノード切り替えエラー",
-      "useSuggestedPorts": "推奨ポートを使用",
-      "connectionDetails": "接続詳細",
-      "nodeUrl": "ノードURL",
-      "rpcConnection": "RPC接続",
-      "serviceEndpoints": "サービスエンドポイント",
-      "indexerUrl": "インデクサーURL",
-      "rgbProxy": "RGBプロキシ",
-      "portConfiguration": "ポート設定",
-      "daemonPort": "デーモンポート",
-      "ldkPeerPort": "LDKピアポート",
-      "dataPath": "データパス",
-      "cancel": "キャンセル",
-      "switching": "切り替え中...",
-      "switchToNode": "このノードに切り替え"
-    },
-    "delete": {
-      "title": "ノードを削除",
-      "confirmMessage": "ノード「{{name}}」を削除してもよろしいですか？",
-      "warningTitle": "⚠️ 警告",
-      "cannotUndo": "この操作は元に戻せません",
-      "localWarning1": "ノードをバックアップしていない場合、資金へのアクセスを永久に失うことになります",
-      "localWarning2": "すべてのローカルノードデータが永久に削除されます",
-      "localWarning3": "削除されるデータパス: {{path}}",
-      "remoteWarning1": "これは保存された接続設定のみを削除します",
-      "remoteWarning2": "リモートノードはアクティブなままで、リモートマシンで直接管理する必要があります",
-      "remoteWarning3": "後で再接続する場合は、リモートノードの認証情報にアクセスできることを確認してください",
-      "cancel": "キャンセル",
-      "deleteNode": "ノードを削除",
-      "deleteConnection": "接続を削除"
-    },
-    "edit": {
-      "title": "ノードを編集",
-      "tabs": {
-        "basic": "基本設定",
-        "advanced": "詳細設定"
-      },
-      "sections": {
-        "connectionSettings": "接続設定",
-        "serviceEndpoints": "サービスエンドポイント",
-        "portConfiguration": "ポート設定",
-        "makerSettings": "メイカー設定"
-      },
-      "fields": {
-        "nodeName": "ノード名",
-        "nodeUrl": "ノードURL",
-        "rpcConnectionUrl": "RPC接続URL",
-        "bitcoindRpcUrl": "Bitcoind RPC URL",
-        "indexerUrl": "インデクサーURL",
-        "rgbProxyEndpoint": "RGBプロキシエンドポイント",
-        "dataPath": "データパス",
-        "dataPathHint": "データパスはアカウント作成後に変更できません",
-        "daemonListeningPort": "デーモンリスニングポート",
-        "daemonListeningPortHint": "RGB LightningノードデーモンAPI用ポート (1024-65535)",
-        "ldkPeerListeningPort": "LDKピアリスニングポート",
-        "ldkPeerListeningPortHint": "Lightning Networkピア接続用ポート (1024-65535)",
-        "defaultMakerUrl": "デフォルトメイカーURL",
-        "defaultLspUrl": "デフォルトLSP URL"
-      },
-      "validation": {
-        "daemonPortRequired": "デーモンポートは必須です",
-        "daemonPortRange": "デーモンポートは1024から65535の間である必要があります",
-        "ldkPortRequired": "LDKピアポートは必須です",
-        "ldkPortRange": "LDKピアポートは1024から65535の間である必要があります",
-        "portsMustDiffer": "デーモンポートとLDKポートは異なる必要があります"
-      },
-      "cancel": "キャンセル",
-      "saveChanges": "変更を保存"
-    }
-  },
-  "orderChannel": {
-    "step1": {
-      "title": "LSPから新しいチャネルを購入",
-      "subtitle": "始めるにはLightningサービスプロバイダーに接続してください",
-      "howItWorks": "チャネル開設の仕組み",
-      "step1Title": "チャネルリクエストを開始",
-      "step1Description": "チャネル容量と初期残高配分を指定",
-      "step2Title": "LSPがリクエストを処理",
-      "step2Description": "Lightningサービスプロバイダーが注文を検証して受け入れ",
-      "step3Title": "支払いを行う",
-      "step3Description": "Lightningまたはオンチェーンでチャネルに資金を提供",
-      "step4Title": "チャネルが自動的に開設",
-      "step4Description": "支払いが確認されると、LSPがノードとのチャネルを開設",
-      "lspServerUrl": "LSPサーバーURL",
-      "lspUrlPlaceholder": "LSPサーバーURLを入力",
-      "selectKaleidoLsp": "Kaleidoswap LSPを使用",
-      "checkingConnection": "LSP接続を確認中...",
-      "alreadyConnectedMessage": "このLSPにすでに接続されています",
-      "connectButton": "LSPに接続",
-      "cancelButton": "キャンセル",
-      "continueButton": "続行",
-      "modalTitle": "LSPに接続しますか？",
-      "modalMessage": "Lightningサービスプロバイダーに接続し、チャネルパラメータを取得します。",
-      "checkPeerFailed": "ピア接続ステータスの確認に失敗しました",
-      "lspFetchSuccess": "LSP情報が正常に取得されました",
-      "lspUrlMissing": "LSP接続URLの取得に失敗しました",
-      "lspFetchFailed": "LSP情報の取得に失敗しました",
-      "timeout": "リクエストがタイムアウトしました。LSPサーバーが応答していません。URLを確認してもう一度お試しください。",
-      "networkError": "ネットワークエラー。接続とLSP URLを確認してください。",
-      "waitForConnectionUrl": "LSP接続URLの取得をお待ちください",
-      "alreadyConnected": "LSPで続行しますか？",
-      "alreadyConnectedToast": "既にLSPに接続されています",
-      "connectedSuccess": "LSPへの接続に成功しました",
-      "kaleidoLspFetched": "Kaleidoswap LSP情報が正常に取得されました",
-      "kaleidoLspFailed": "Kaleidoswap LSPの選択に失敗しました",
-      "noDefaultLsp": "ネットワーク{{network}}用のデフォルトLSP URLが設定されていません",
-      "verifyingConnection": "接続を確認中です。お待ちください",
-      "currentStep": "現在のステップ",
-      "setParameters": "パラメータを設定",
-      "completeSetup": "セットアップを完了",
-      "lspReadyConnect": "LSP接続準備完了",
-      "alreadyConnectedInfo": "このLSPにすでに接続されています。続行するには下をクリックするか、別のLSPを取得して接続してください。",
-      "lspReadyInfo": "LSP接続の詳細が読み込まれました。下をクリックして接続し、続行してください",
-      "connectionStringLabel": "LSP接続文字列",
-      "connectionStringPlaceholder": "接続文字列がここに表示されます...",
-      "connectionStringWaiting": "LSP接続の詳細を待機中...",
-      "connectionStringInfo": "この一意の接続URLがLSPピアを識別します",
-      "fetchLspInfo": "LSP情報を取得",
-      "fetching": "取得中...",
-      "enterLspInstructions": "LSPサーバーのURLを入力するか、下のデフォルトのKaleidoswap LSPを使用してください",
-      "useDefaultKaleidoLsp": "デフォルトのKaleidoswap LSPを使用",
-      "continueWithConnectedLsp": "接続されたLSPで続行",
-      "waitingForLspUrl": "LSP URLを待機中...",
-      "connecting": "接続中...",
-      "connectLsp": "LSPを接続",
-      "alreadyConnectedPopup": "このLSPにすでに接続されています。チャネルの購入を続行しますか？",
-      "establishConnection": "続行するにはLightningサービスプロバイダーとの接続を確立してください。",
-      "lspConnectionLabel": "LSP接続文字列",
-      "completed": "完了",
-      "nextStep": "次のステップ",
-      "copyToClipboard": "クリップボードにコピー",
-      "failedToConnectPeer": "ピアへの接続に失敗しました",
-      "networkInfoNotAvailable": "ネットワーク情報が利用できません",
-      "unsupportedNetwork": "サポートされていないネットワーク: {{network}}",
-      "noDefaultLspUrl": "ネットワーク用のデフォルトLSP URLが設定されていません: {{network}}"
-    },
-    "step2": {
-      "title": "チャネルを設定",
-      "subtitle": "チャネルパラメータと容量を設定",
-      "stepLabel": "ステップ{{current}}/{{total}}",
-      "step1Label": "接続",
-      "step2Label": "設定",
-      "step3Label": "支払い",
-      "channelCapacity": "チャネル容量（サトシ）",
-      "channelLiquidity": "チャネル流動性（サトシ）",
-      "channelCapacityInfo": "チャネルの総容量（サトシ単位）",
-      "channelLiquidityInfo": "チャネルで管理する流動性の量",
-      "addAssetTitle": "チャネルにアセットを追加",
-      "selectAsset": "アセットを選択",
-      "assetAmount": "アセット量",
-      "loading": "読み込み中...",
-      "backButton": "戻る",
-      "nextButton": "次のステップ",
-      "fees": {
-        "title": "推定手数料",
-        "lspFee": "LSP手数料",
-        "onchainFee": "オンチェーン手数料",
-        "totalFee": "総手数料",
-        "fetchFailed": "データの取得エラー。後でもう一度お試しください。"
-      },
-      "capacityRequired": "チャネル容量を入力してください。",
-      "liquidityRequired": "チャネル流動性を入力してください。",
-      "assetRequired": "続行する前にアセットを選択してください。",
-      "assetUnsupported": "選択したアセットはこのLSPでサポートされていません。更新してサポートされているアセットを選択してください。",
-      "assetAmountRequired": "続行する前にアセット量を入力してください。",
-      "capacityAdjusted": "チャネル容量が最小値に調整されました：{{amount}}サトシ",
-      "liquidityAdjusted": "チャネル流動性が最小値に調整されました：{{amount}}サトシ",
-      "assetAdjusted": "アセット量が最小値に調整されました：{{amount}} {{ticker}}",
-      "assetExceedsMax": "金額が最大制限{{amount}} {{ticker}}を超えています。続行する前に有効な金額を入力してください。",
-      "adjustmentsMade": "要件を満たすためにいくつかの値が調整されました。",
-      "formError": "フォームデータにエラーがありました。入力を確認してください。",
-      "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。",
-      "noAsset": "アセットなし",
-      "moreAssets": "他{{count}}件"
-    },
-    "step3": {
-      "title": "支払いを完了",
-      "subtitle": "チャネルを開設するために支払いを行う",
-      "loadingOrder": "注文詳細を読み込み中...",
-      "errorInvalidOrder": "エラー：無効な注文データ",
-      "stepLabel": "ステップ{{current}}/{{total}}",
-      "step1Label": "接続",
-      "step2Label": "設定",
-      "step3Label": "支払い",
-      "paymentMethod": "支払い方法",
-      "lightning": "Lightning",
-      "onchain": "オンチェーン",
-      "scanQR": "QRコードをスキャン",
-      "copyAddress": "アドレスをコピー",
-      "copyInvoice": "請求書をコピー",
-      "copied": "コピーしました！",
-      "amount": "金額",
-      "address": "アドレス",
-      "invoice": "請求書",
-      "expiresIn": "有効期限",
-      "expired": "期限切れ",
-      "waitingForPayment": "支払いを待っています...",
-      "paymentReceived": "支払いを受け取りました！",
-      "processingPayment": "支払いを処理中...",
-      "channelOpening": "チャネルを開設中...",
-      "backButton": "戻る",
-      "restartButton": "最初から",
-      "paymentReceivedTitle": "支払いを受け取りました",
-      "paymentReceivedMessage": "{{method}}による支払いを受け取り、処理中です。",
-      "processingTitle": "支払い処理中",
-      "processingMessage": "支払いを処理してチャネルを開設しています。しばらくお待ちください。",
-      "lightningSuccess": "Lightning支払いが正常に開始されました！",
-      "onchainSuccess": "オンチェーン支払いが正常に送信されました！",
-      "paymentFailed": "支払いに失敗しました：{{error}}",
-      "unknownError": "不明なエラー",
-      "lightningPaymentFailed": "Lightning支払いが失敗しました",
-      "orderSummary": "注文概要",
-      "confirmedChannel": "確認済みチャネル",
-      "yourLiquidity": "あなたの流動性",
-      "lspLiquidity": "LSPの流動性",
-      "your": "あなた",
-      "lsp": "LSP",
-      "rgbAssetChannel": "RGB資産チャネル",
-      "assetId": "資産ID",
-      "lspAssetAmount": "LSP資産額",
-      "yourAssetAmount": "あなたの資産額",
-      "channelAmount": "チャネル金額",
-      "serviceFee": "サービス手数料",
-      "total": "合計",
-      "paymentStatus": "支払い状況",
-      "keepWindowOpen": "このウィンドウを開いたままにしてください",
-      "autoUpdate": "状況は自動で更新されます",
-      "feeSlow": "低速",
-      "feeNormal": "標準",
-      "feeFast": "高速",
-      "feeCustom": "カスタム",
-      "feeRateLabel": "手数料率",
-      "customFeePlaceholder": "カスタム手数料率を入力",
-      "paymentExpiresIn": "支払い期限まで",
-      "expiresVerySoon": "まもなく期限切れです！",
-      "expiresSoon": "まもなく期限切れ",
-      "processingWait": "支払いを処理しています。しばらくお待ちください",
-      "confirmPayment": "支払いを確認",
-      "paymentType": "支払い方法",
-      "maxSendable": "最大送金可能額",
-      "availableBalance": "利用可能残高",
-      "amountToPay": "支払額",
-      "remainingBalance": "残高",
-      "feeRate": "手数料率",
-      "verifyDetails": "確認前に支払い内容をご確認ください",
-      "cancel": "キャンセル",
-      "loadingBalance": "残高を読み込み中...",
-      "payWithWallet": "ウォレット残高で支払う",
-      "available": "利用可能",
-      "insufficientBalance": "残高不足",
-      "required": "必要",
-      "pay": "支払う",
-      "paymentSuccessful": "支払いが完了しました！",
-      "method": "方法",
-      "lspAmount": "LSP金額",
-      "yourAmount": "あなたの金額",
-      "expiredMessage": "支払い可能時間が終了しました。新しい注文を作成してください。",
-      "createNewOrder": "新しい注文を作成",
-      "errorMessage": "支払い処理中にエラーが発生しました。もう一度お試しください。",
-      "tryAgain": "再試行",
-      "or": "または",
-      "paymentInstructions": "QRコードまたは以下の支払い詳細を使って支払ってください",
-      "externalWalletTitle": "外部ウォレットで支払う",
-      "showDetails": "詳細を表示",
-      "hideDetails": "詳細を非表示",
-      "processingSubtitle": "支払いを処理し、チャネルを開設しています",
-      "order": "注文",
-      "paymentReceivedStatus": "支払い受領",
-      "processingOrder": "注文を処理中",
-      "channelReady": "チャネル準備完了",
-      "waitingMakerConfirmation": "LSPからの最終確認を待っています...",
-      "lightningTab": "⚡ Lightning",
-      "onchainTab": "⛓️ オンチェーン"
-    },
-    "step4": {
-      "success": {
-        "title": "注文完了！",
-        "message": "支払いを受け取り、チャネルを開設中です。",
-        "buttonText": "チャネルページへ",
-        "channelOpening": "チャネル開設進行中"
-      },
-      "error": {
-        "title": "支払い失敗",
-        "message": "支払いに問題が発生しました。もう一度お試しください。",
-        "buttonText": "再試行",
-        "refundTitle": "支払いについて：",
-        "refundMessage": "オンチェーン返金が自動的に処理されます",
-        "refundDetails": "まもなくウォレットに送信されます。",
-        "refundNote": "24時間以内に返金がない場合は、下記の注文IDを使用してLSPサポートに連絡してください。",
-        "orderIdLabel": "注文ID：",
-        "copyToClipboard": "クリップボードにコピー",
-        "copyHint": "返金についてサポートに連絡する際にこのIDをコピーしてください"
-      },
-      "expired": {
-        "title": "注文期限切れ",
-        "message": "注文が期限切れになりました。続行するには新しい注文を作成してください。",
-        "buttonText": "新しい注文を作成",
-        "expiredNote": "注文期限切れ：",
-        "expiredDetails": "注文が期限切れになりました。続行するには新しい注文を作成してください。"
-      },
-      "pending": {
-        "title": "支払い処理中",
-        "message": "支払いを処理中です。しばらくお待ちください。",
-        "buttonText": "状態を確認"
-      },
-      "returnToChannels": "チャネルに戻る",
-      "errorButtonText": "再試行",
-      "errorMessage": "お支払いに問題が発生しました。もう一度お試しください。",
-      "errorTitle": "支払い失敗",
-      "expiredButtonText": "新しい注文を作成",
-      "expiredMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。",
-      "expiredTitle": "注文期限切れ",
-      "pendingButtonText": "状態を確認",
-      "pendingMessage": "お支払いを処理中です。少し時間がかかる場合があります。",
-      "pendingTitle": "支払いを処理中",
-      "successButtonText": "チャネルページへ",
-      "successMessage": "支払いを受領し、チャネルを開設しています。",
-      "successTitle": "注文が完了しました！",
-      "channelProgress": "チャネル開設中",
-      "refundHeader": "お支払いについて:",
-      "refundProcess": "オンチェーン返金は自動で処理されます",
-      "refundProcessSuffix": "まもなくウォレットへ送金されます。",
-      "refundSupport": "24時間以内に返金が届かない場合は、以下の注文IDを添えてLSPサポートへお問い合わせください。",
-      "orderIdHelp": "返金についてサポートへ連絡する際はこのIDをコピーしてください",
-      "expiredSectionTitle": "注文期限切れ:",
-      "expiredSectionMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。"
-    },
-    "orderCopy": "注文IDがコピーされました！",
-    "paymentCopied": "支払い詳細がクリップボードにコピーされました！",
-    "infoMessage": "LSPチャネルは、オンチェーントランザクションを管理する必要なく、即座に流動性を提供します。LSPがチャネル開設を処理し、支払いを受け取るためのインバウンド流動性を提供します。",
-    "formErrors": {
-      "formSubmissionError": "フォームの送信中にエラーが発生しました。"
-    },
-    "feeUnit": "sat/vB",
-    "backConfirmTitle": "Leave this page?",
-    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
-    "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
-  },
-  "channelConfiguration": {
-    "bitcoinChannel": {
-      "title": "Bitcoinチャネル",
-      "channelCapacity": "チャネル容量",
-      "liquidityDistribution": "流動性の配分",
-      "spending": "支出",
-      "receiving": "受信",
-      "total": "合計",
-      "sats": "sats",
-      "spendingBalance": "支出残高",
-      "spendingBalanceInfo": " (青): アウトバウンド流動性 - 支払いやアセットの購入に使用できます。",
-      "receivingCapacity": "受信容量",
-      "receivingCapacityInfo": " (紫): LSPからのインバウンド流動性 - 受信可能な金額を決定します。",
-      "feeReserve": "各側で手数料として{{amount}} sats予約済み",
-      "feeReserveTitle": "なぜ手数料が予約されているのですか？",
-      "feeReserveExplanation": "チャネルの各側（あなたの支出残高とLSPの受信容量）には、将来のオンチェーントランザクション手数料をカバーするために<strong>{{amount}} sats</strong>が予約されています。",
-      "clientFeeReserve": "<strong>クライアント側 ({{amount}} sats):</strong> チャネル閉鎖手数料をカバーするため、支出残高から予約されています",
-      "lspFeeReserve": "<strong>LSP側 ({{amount}} sats):</strong> チャネル管理操作のため、LSPの受信容量から予約されています",
-      "feeReserveConclusion": "これらの予約により、両当事者が協力的なチャネル閉鎖などの必要なオンチェーン操作を常に実行できることが保証されます。",
-      "spendingPercentage": "{{percent}}% 支出",
-      "zeroSpending": "0% 支出",
-      "fullSpending": "100% 支出",
-      "allReceiving": "全て受取",
-      "allSpending": "全て支払"
-    },
-    "assetChannel": {
-      "title": "{{ticker}}アセットチャネル",
-      "totalCapacity": "総アセット容量",
-      "assetDistribution": "アセットの配分",
-      "yourAssets": "あなたのアセット",
-      "lspReserve": "LSP準備金",
-      "total": "合計",
-      "yourAssetsInfo": " (緑): 購入して所有するアセット - 送信または取引に使用できます。",
-      "lspReserveInfo": " (ターコイズ): LSPが保有するアセット - 後で受信できる金額を決定します。"
-    },
-    "assetSection": {
-      "noAssetsTitle": "利用可能なアセットがありません",
-      "noAssetsMessage": "現在、チャネルに追加できるアセットがありません。後でもう一度試すか、アセットを追加せずに続行してください。",
-      "chooseAsset": "チャネル用のRGBアセットを選択",
-      "searchPlaceholder": "名前、ティッカー、またはアセットIDで検索...",
-      "selectAssetTitle": "RGBアセットを選択"
-    },
-    "feeBreakdown": {
-      "totalCostBreakdown": "総コストの内訳",
-      "estimatedCosts": "推定コスト",
-      "calculating": "(計算中...)",
-      "setupFee": "セットアップ手数料",
-      "capacityFee": "容量手数料",
-      "durationFee": "期間手数料",
-      "discount": "割引 ({{code}})",
-      "channelFees": "チャネル手数料",
-      "totalPayment": "合計支払額",
-      "feeExplanation": "この手数料は、チャネルのセットアップと維持にかかるコストをカバーします。支払う必要がある合計金額には、この手数料と希望するチャネル流動性が含まれます。"
-    },
-    "duration": {
-      "oneMonth": "1ヶ月",
-      "threeMonths": "3ヶ月",
-      "sixMonths": "6ヶ月",
-      "label": "チャネルロック期間",
-      "tooltipInfo": "LSPがチャネルを開いておくことを保証する最小時間。期間が長いほど安定性が高くなりますが、手数料に影響する可能性があります。1ヶ月 = 4,320ブロック、3ヶ月 = 12,960ブロック、6ヶ月 = 25,920ブロック。デフォルト: 3ヶ月。"
-    }
-  },
-  "rootRoute": {
-    "connectionErrorTitle": "接続エラー",
-    "noWalletFound": "ウォレットが見つかりません。続行するにはウォレットをセットアップしてください。",
-    "nodeNotRunning": "ノードが実行されていません。アプリを再起動してみてください。",
-    "returnToSetup": "ウォレットセットアップに戻る",
-    "connectingTitle": "ノードに接続中",
-    "connectingDescription": "接続を確立しています。お待ちください...",
-    "errorMessage": "エラー：{{message}}"
-  },
-  "createUtxos": {
-    "title": "Colored UTXOを作成",
-    "description": "Colored UTXOはRGBアセットライトニングチャネルの開設に必要です。アセット固有の支払いチャネルの作成を可能にし、Lightning Network上でのRGBアセットの高速で安全なトランザクションを実現します。",
-    "fields": {
-      "numberOfUtxos": "UTXO数",
-      "numberPlaceholder": "数量を入力",
-      "sizeLabel": "UTXOサイズ（サトシ単位）",
-      "sizePlaceholder": "サイズを入力",
-      "feeRate": "手数料率"
-    },
-    "feeOptions": {
-      "slow": "遅い（{{fee}} sat/vB）",
-      "normal": "標準（{{fee}} sat/vB）",
-      "fast": "速い（{{fee}} sat/vB）",
-      "custom": "カスタム"
-    },
-    "availableBalance": "利用可能残高：{{amount}}サトシ",
-    "actions": {
-      "create": "UTXOを作成"
-    },
-    "toastSuccess": "UTXOが正常に作成されました"
-  },
-  "legal": {
-    "common": {
-      "noticeTitle": "重要なお知らせ："
-    },
-    "privacy": {
-      "title": "KaleidoSwapプライバシーポリシー",
-      "lastUpdated": "最終更新日：{{date}}",
-      "noticeBody": "RGBプロトコルおよびRGBテストネットプロトコルは、該当するRGBトークンまたはRGBテストネットトークンの取引にプライバシー強化機能を組み込もうとしていますが、暗号化やプライバシー強化システムが完全に安全であることはありません。RGBプロトコルおよびRGBテストネットプロトコルは実験的なプロトコルであり、本アプリはこれらの実験的プロトコル用の実験的なウォレットアプリケーションです。本アプリは障害が発生する可能性があり、欠陥が含まれている場合があります。本アプリを使用した取引は公開される可能性があります。本アプリを通じて送信されるデータのセキュリティを保証することはできません。送信は自己責任で行ってください。",
-      "error": "プライバシーポリシーの読み込みに失敗しました"
-    },
-    "terms": {
-      "title": "テストネットKALEIDOSWAP利用規約",
-      "effectiveDate": "発効日：{{date}}",
-      "noticeItems": [
-        "本アプリはRGBテストネットプロトコルおよびテストネットビットコインブロックチェーン上で動作します。",
-        "本アプリは実験的なデジタル資産ウォレットアプリケーションです。",
-        "本アプリの使用はすべて自己責任で行ってください。",
-        "完全に失うことを覚悟できないテストネットBTCまたはRGBテストネットトークンの送受信に本アプリを使用しないでください。"
-      ],
-      "error": "利用規約の読み込みに失敗しました"
-    }
-  },
-  "tradeManual": {
     "errors": {
-      "initializationFailed": "手動スワップコンポーネントの初期化に失敗しました。もう一度お試しください。"
-    },
-    "toast": {
-      "refreshSuccess": "データが正常に更新されました",
-      "refreshError": "データの更新に失敗しました。もう一度お試しください。"
-    },
-    "roles": {
-      "maker": "メイカー",
-      "taker": "テイカー"
-    },
-    "roleSelector": {
-      "title": "あなたの役割",
-      "refresh": "データを更新",
-      "makerDescription": "<maker>メイカー</maker>として、スワップを開始および実行できます。受信スワップをホワイトリストに登録するには、<taker>テイカー</taker>の役割に切り替えてください。",
-      "takerDescription": "<taker>テイカー</taker>として、受信スワップをホワイトリストに登録できます。スワップを開始および実行するには、<maker>メイカー</maker>の役割に切り替えてください。"
-    },
-    "swapExplanation": {
-      "title": "アトミックスワップの仕組み",
-      "cards": {
-        "trustless": {
-          "title": "トラストレス交換",
-          "description": "アトミックスワップは、互いに信頼せず第三者を介さずに、2者間で異なる資産を交換できます。"
-        },
-        "locks": {
-          "title": "暗号化ロック",
-          "description": "スワップは暗号化ハッシュロックを使用して、両者が資産を受け取るか、どちらも受け取らないことを保証します。"
-        },
-        "guarantee": {
-          "title": "アトミック保証",
-          "description": "「アトミック」特性により、スワップは完全に完了するか全く完了しないかのいずれかとなり、カウンターパーティリスクを排除します。"
-        }
-      },
-      "process": {
-        "title": "スワッププロセス",
-        "makerInitiates": {
-          "title": "メイカーが開始",
-          "description": "メイカーはスワップする資産と金額を定義し、スワップ文字列を生成します。"
-        },
-        "takerWhitelists": {
-          "title": "テイカーがホワイトリスト登録",
-          "description": "テイカーはスワップ条件を確認し、スワップ文字列をホワイトリストに登録して取引を承認します。"
-        },
-        "makerExecutes": {
-          "title": "メイカーが実行",
-          "description": "メイカーがスワップを実行し、両者間の資産のアトミック交換をトリガーします。"
-        }
-      },
-      "makerRole": {
-        "title": "メイカーの役割",
-        "intro": "メイカーとして、以下のことができます：",
-        "items": [
-          "資産と金額を定義してスワップを開始する",
-          "テイカーとスワップ文字列を生成して共有する",
-          "テイカーがホワイトリストに登録した後、スワップを実行する",
-          "開始フェーズと実行フェーズの両方を制御する"
-        ]
-      },
-      "takerRole": {
-        "title": "テイカーの役割",
-        "intro": "テイカーとして、以下のことができます：",
-        "items": [
-          "メイカーからスワップ文字列を受信する",
-          "提案されたスワップ条件を確認する",
-          "スワップ文字列をホワイトリストに登録して取引を承認する",
-          "メイカーがスワップを実行するのを待つ"
-        ]
-      },
-      "liquidity": {
-        "title": "流動性の要件",
-        "intro": "アトミックスワップを成功させるには、両者に以下が必要です：",
-        "items": [
-          "ライトニングチャネルで交換される資産の十分な流動性",
-          "メイカーとテイカー間の支払いをルーティングするためのビットコイン流動性",
-          "両者を接続するアクティブでバランスの取れたチャネル"
-        ],
-        "note": "流動性が不十分な場合、適切にホワイトリストに登録されていてもスワップが失敗する可能性があります。"
-      },
-      "collapsedHint": "クリックして展開し、アトミックスワップの仕組みと関連する役割について詳しく学びます。"
-    },
-    "makerForm": {
-      "title": "手動スワップ",
-      "description": "メイカーとしてアトミックスワップを作成・実行",
-      "initiateTitle": "スワップを開始（メイカー）",
-      "labels": {
-        "fromAsset": "送信アセット",
-        "toAsset": "受取アセット",
-        "amountToSend": "送信量",
-        "amountToReceive": "受取量",
-        "timeout": "タイムアウト（秒）",
-        "takerPubkey": "テイカーの公開鍵"
-      },
-      "placeholders": {
-        "selectAsset": "アセットを選択してください",
-        "enterAmount": "金額を入力",
-        "takerPubkey": "テイカーの公開鍵を入力"
-      },
-      "buttons": {
-        "initiateSwap": "スワップを開始",
-        "initiating": "スワップを開始中...",
-        "shareWithTaker": "テイカーと共有",
-        "executeSwap": "スワップを実行",
-        "executing": "スワップを実行中..."
-      },
-      "info": {
-        "initiateDescription": "スワップするアセットと金額を定義し、スワップを開始してスワップ文字列を生成します。",
-        "swapInitiated": "スワップが開始されました。以下のスワップ文字列をテイカーと共有してください。",
-        "swapStringLabel": "スワップ文字列",
-        "copyButton": "コピー",
-        "copiedToClipboard": "クリップボードにコピーしました！",
-        "executeInfo": "テイカーがスワップ文字列をホワイトリストに登録したら、以下でスワップを実行できます。",
-        "statusLabel": "スワップステータス",
-        "sufficientBalanceWarning": "選択したアセットに十分な残高があることを確認してください。資金が不足するとスワップは失敗します。",
-        "timeoutDescription": "スワップが有効な期間",
-        "minTimeout": "最小タイムアウトは10秒です",
-        "maxTimeout": "最大タイムアウトは86400秒（24時間）です",
-        "canReceiveUpTo": "最大受取可能額"
-      },
-      "errors": {
-        "amountExceedsBalance": "金額が利用可能残高を超えています",
-        "swapInitiationFailed": "スワップの開始に失敗しました。もう一度お試しください。",
-        "swapExecutionFailed": "スワップの実行に失敗しました。もう一度お試しください。",
-        "invalidSwapString": "無効なスワップ文字列",
-        "enterTakerPubkey": "テイカーの公開鍵を入力してください"
-      },
-      "success": {
-        "swapInitiated": "スワップが正常に開始されました",
-        "swapExecuted": "スワップが正常に実行されました"
-      },
-      "balance": {
-        "available": "利用可能",
-        "sendingMore": "利用可能額を超えて送信中"
-      }
-    },
-    "takerForm": {
-      "title": "スワップを受信",
-      "description": "テイカーとして受信アトミックスワップをホワイトリスト登録",
-      "pasteTitle": "スワップ文字列を貼り付け",
-      "labels": {
-        "swapString": "スワップ文字列"
-      },
-      "placeholders": {
-        "pasteSwapString": "メイカーからのスワップ文字列をここに貼り付け"
-      },
-      "buttons": {
-        "whitelist": "取引をホワイトリスト登録",
-        "whitelisting": "ホワイトリスト登録中...",
-        "whitelistedSuccessfully": "ホワイトリスト登録完了",
-        "reset": "リセット"
-      },
-      "review": {
-        "title": "スワップ詳細を確認",
-        "youReceive": "受け取る",
-        "youSend": "送信する",
-        "currentBalance": "現在の残高",
-        "additionalDetails": "追加詳細",
-        "timeout": "タイムアウト",
-        "seconds": "秒"
-      },
-      "info": {
-        "pasteDescription": "メイカーからのスワップ文字列を貼り付けて、自動的にデコードしてスワップ詳細を表示します。",
-        "decoding": "スワップ文字列をデコード中...",
-        "reviewDescription": "ホワイトリスト登録する前にスワップ詳細を確認してください。",
-        "loading": "読み込み中...",
-        "liquidityWarning": "スワップを成功させるには、あなたとメイカー間のライトニングチャネルに、両方のアセットの十分な流動性が必要です。これには支払いルーティング用のビットコイン流動性も含まれます。",
-        "insufficientBalanceWarning": "このスワップを完了するのに十分な{{asset}}がありません。資金が不足した状態で続行するとスワップは失敗します。",
-        "whitelistInfo": "ホワイトリスト登録後、メイカーにスワップを実行できることを伝えてください。実行されるとアセットは自動的に交換されます。スワップを成功させるには、あなたとメイカー間のライトニングチャネルに両方のアセットとビットコインの十分な流動性があることを確認してください。",
-        "waitingForMaker": "メイカーがスワップを実行するのを待っています。しばらくお待ちください。",
-        "balanceWarning": "このスワップを完了するのに十分な残高がありません。"
-      },
-      "errors": {
-        "whitelistFailed": "ホワイトリスト登録に失敗しました。もう一度お試しください。",
-        "invalidSwapString": "無効なスワップ文字列です。確認してもう一度お試しください。",
-        "insufficientBalance": "このスワップを完了するのに残高が不足しています"
-      },
-      "success": {
-        "whitelisted": "取引が正常にホワイトリスト登録されました",
-        "whitelistedMessage": "スワップの準備ができたことをメイカーに伝えてください。メイカーがスワップを実行すると、アセットは自動的に交換されます。",
-        "yourNodePubkey": "あなたのノード公開鍵（メイカーに必要）:"
-      }
-    }
-  },
-  "channelCard": {
-    "infoModal": {
-      "title": "チャネル情報",
-      "fields": {
-        "channelId": "チャネルID",
-        "fundingTx": "ファンディングトランザクション",
-        "peerPubkey": "ピア公開鍵",
-        "shortChannelId": "ショートチャネルID",
-        "status": "ステータス",
-        "capacity": "容量",
-        "localBalance": "ローカル残高",
-        "nextHtlcLimit": "次のHTLC上限",
-        "nextHtlcMinimum": "次のHTLC最小値",
-        "publicChannel": "公開チャネル",
-        "usable": "使用可能",
-        "assetId": "アセットID",
-        "assetLocalAmount": "アセットローカル量",
-        "assetRemoteAmount": "アセットリモート量"
-      },
-      "na": "N/A"
-    },
-    "status": {
-      "open": "オープン",
-      "pending": "保留中",
-      "offline": "オフライン"
-    },
-    "labels": {
-      "capacity": "容量",
-      "bitcoinLiquidity": "Bitcoin流動性",
-      "assetLiquidity": "{{ticker}}流動性",
-      "outbound": "送信",
-      "inbound": "受信",
-      "total": "合計"
-    },
-    "buttons": {
-      "details": "詳細",
-      "close": "閉じる",
-      "manage": "管理"
-    },
-    "tooltips": {
-      "info": "チャネル情報"
-    }
-  },
-  "utxoManagement": {
-    "title": "UTXO管理",
-    "status": {
-      "colorable": "Colorable",
-      "colored": "Colored",
-      "normal": "通常"
-    },
-    "summary": {
-      "colorable": {
-        "title": "Colorable UTXO",
-        "bullets": [
-          "RGB対応で未割り当てのUTXO",
-          "オンチェーンRGBアセットを受信"
-        ]
-      },
-      "colored": {
-        "title": "Colored UTXO",
-        "bullets": [
-          "RGBライトニングチャネルを開設",
-          "オンチェーンRGBアセットを送信"
-        ]
-      },
-      "normal": {
-        "title": "通常のUTXO",
-        "bullets": [
-          "Bitcoinライトニングチャネルを開設",
-          "通常のトランザクション"
-        ]
-      },
-      "countLabel": "{{count}}個のUTXO"
-    },
-    "card": {
-      "rgbAllocations": "RGB割り当て："
-    },
-    "actions": {
-      "create": "新しいUTXOを作成"
-    },
-    "sections": {
-      "colorable": "Colorable UTXO",
-      "colored": "Colored UTXO",
-      "normal": "通常のUTXO"
-    },
-    "empty": "UTXOが見つかりません。開始するにはいくつか作成してください。"
-  },
-  "updaterModal": {
-    "fileSizes": ["バイト", "KB", "MB", "GB"],
-    "fileSizeZero": "0バイト",
-    "errors": {
-      "timeout": "アップデートプロセスが5分後にタイムアウトしました。インターネット接続を確認してもう一度お試しください。",
-      "installFailed": "アップデートのインストールに失敗しました：{{message}}。もう一度試すか、GitHubから手動でダウンロードしてください。",
-      "cancelled": "ユーザーによってアップデートがキャンセルされました"
-    },
-    "common": {
-      "whatsNew": "新機能"
-    },
-    "completed": {
-      "title": "アップデート完了！🎉",
-      "success": "バージョン{{version}}が正常にインストールされました。",
-      "restartNote": "アップデートを適用するためにアプリケーションを自動的に再起動しています...",
-      "restarting": "再起動中...",
-      "manualRestart": "数秒以内にアプリケーションが自動的に再起動しない場合は、手動で再起動してアップデートを適用してください。"
-    },
-    "installing": {
-      "title": "アップデートをダウンロード中",
-      "versionLabel": "バージョン{{version}}",
-      "warning": "アップデート中はアプリケーションを閉じないでください",
-      "downloadedLabel": "ダウンロード済み",
-      "downloading": "ダウンロード中...",
-      "installing": "インストール中...",
-      "cancelHelp": "問題がありますか？クリックしてキャンセルし、もう一度試してください"
-    },
-    "error": {
-      "title": "アップデート失敗",
-      "retry": "もう一度試す"
-    },
-    "default": {
-      "title": "アップデートが利用可能です！",
-      "versionLabel": "バージョン",
-      "releasedOn": "リリース日：{{date}}",
-      "installing": "インストール中...",
-      "installCta": "ダウンロード&インストール",
-      "remindLater": "後で",
-      "recommendation": "最新の機能とセキュリティの改善を取得するためにアップデートすることをお勧めします。"
-    }
-  },
-  "depositModal": {
-    "progress": {
-      "selectAsset": "アセット選択",
-      "details": "入金詳細"
-    },
-    "common": {
-      "continue": "続ける",
-      "back": "戻る",
-      "finish": "完了"
-    },
-    "step1": {
-      "title": "アセット選択",
-      "subtitle": "ウォレットに入金するアセットを選択してください",
-      "selectorPlaceholder": "アセットを選択",
-      "newAssetLabel": "新しいアセット",
-      "searchPlaceholder": "アセットを検索...",
-      "addNewAsset": "新しいアセットを追加",
-      "noResults": "「{{query}}」に一致するアセットが見つかりません",
-      "selected": "選択済み",
-      "genericAsset": "アセット",
-      "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
-      "assetIdLabel": "アセットID(オプション)",
-      "assetIdPlaceholder": "アセットIDを入力(オプション)"
-    },
-    "step2": {
-      "titleWithTicker": "{{ticker}}を入金",
-      "titleGeneric": "アセットを入金",
-      "titleAny": "任意のRGBアセットを入金",
-      "intro": "お好みの入金方法を選択し、以下の手順に従ってください",
-      "network": {
-        "onchain": "オンチェーン",
-        "lightning": "Lightning",
-        "requiresAsset": "アセットIDが必要です"
-      },
-      "privacy": {
-        "title": "プライバシー保護受取",
-        "modePrivacy": "Blinded UTXOを使用(プライバシー強化)",
-        "modeWitness": "オンチェーンアドレスを使用(Witness方式)",
-        "privacyLabel": "プライバシーモード:",
-        "privacyDescription": "Colorable かつ Blinded な UTXO を使用してプライバシーを強化します。利用可能な Colorable UTXO が必要です。",
-        "witnessLabel": "Witnessモード:",
-        "witnessDescription": "標準的なBitcoinオンチェーンアドレスを使用します。シンプルですがプライバシー性は低くなります。",
-        "witnessNote": "注: Witness方式でRGBアセットを受け取る場合、送信者はRGBアセットが割り当てられる新しいUTXOを作成するために、いくらかのサトシを追加する必要があります。"
-      },
-      "networkInfo": {
-        "using": "{{network}}ネットワークを使用中",
-        "description": {
-          "signet": "Mutinynet Faucetからテストコインを取得して、アプリケーションをお試しください。",
-          "regtest": "RGB Tools Botからテストコインを取得して、アプリケーションをお試しください。",
-          "testnet": "Testnet Faucetからテストコインを取得して、アプリケーションをお試しください。"
-        },
-        "button": {
-          "signet": "Mutinynet Faucetにアクセス",
-          "regtest": "RGB Tools Botを開く",
-          "testnet": "Testnet Faucetにアクセス"
-        }
-      },
-      "noColorable": {
-        "title": "Colorable UTXOが必要です",
-        "description": "オンチェーンRGBアセットを受け取るには、Colorable UTXOが必要です。",
-        "cta": "Colorable UTXOを作成"
-      },
-      "amount": {
-        "optionalLabel": "金額（オプション）",
-        "precision": "精度：{{value}} 桁",
-        "example": "金額を入力（例：{{ticker}} の場合 10.23）",
-        "requiredLabel": "金額",
-        "maxLabel": "最大：{{amount}} {{asset}}",
-        "maxPlaceholder": "金額を入力（最大 {{amount}}）",
-        "notAvailable": "N/A",
-        "maxButton": "最大",
-        "rgbNote": "注：RGB アセット転送には 3,000 サトシが必要です。",
-        "noChannels": "警告：アクティブな Lightning チャネルが見つかりません。Lightning 入金は利用できません。",
-        "exceeds": "金額が利用可能な上限を超えています：{{amount}} {{asset}}",
-        "zeroAmountInfo": "支払う側が金額を決めるゼロ金額インボイスを作成するには空欄のままにしてください"
-      },
-      "actions": {
-        "copy": "クリップボードにコピー",
-        "generateAddress": "新しいアドレスを生成",
-        "generateAddressCta": "アドレスを生成",
-        "generateInvoice": "インボイスを生成"
-      },
-      "labels": {
-        "lnInvoice": "LN インボイス",
-        "btcAddress": "BTC アドレス",
-        "rgbInvoice": "RGB インボイス"
-      },
-      "status": {
-        "pending": "支払い待機中...",
-        "success": "支払いを受け取りました！",
-        "failed": "支払いに失敗しました（{{status}}）"
-      },
-      "toasts": {
-        "generateAddressError": "アドレスの生成に失敗しました",
-        "rgbInvoiceError": "RGB インボイスの生成に失敗しました：{{error}}",
-        "rgbInvoiceInvalid": "RGB インボイスの生成に失敗しました：無効なレスポンス",
-        "rgbInvoiceUnknown": "RGB インボイスの生成に失敗しました",
-        "invalidAmount": "有効な正の数値を入力してください",
-        "lnInvoiceError": "Lightning インボイスの生成に失敗しました",
-        "addressCopied": "アドレスをクリップボードにコピーしました",
-        "addressCopyError": "アドレスのコピーに失敗しました",
-        "recipientCopied": "受取人 ID をクリップボードにコピーしました",
-        "recipientCopyError": "受取人 ID のコピーに失敗しました",
-        "lightningSuccess": "Lightning 入金を正常に受け取りました！",
-        "lightningFailed": "Lightning 入金に失敗しました：{{status}}"
-      }
-    }
-  },
-  "tradeMarketMaker": {
-    "loading": {
-      "checkingBalance": "ウォレット残高と要件を確認中...",
-      "verifyingChannels": "チャネルの可用性と流動性を確認中...",
-      "connectingMaker": "マーケットメイカーに接続して取引ペアを取得中...",
-      "initializingInfrastructure": "トレーディングインフラストラクチャを初期化中...",
-      "connectingToMaker": "マーケットメイカーに接続中",
-      "initializingInterface": "トレーディングインターフェースを初期化中"
-    },
-    "header": {
-      "liveTrading": "ライブトレーディング",
-      "via": "経由",
-      "ready": "準備完了",
-      "noPairs": "ペアなし",
-      "noMaker": "メイカーなし",
-      "reconnect": "再接続"
-    },
-    "form": {
-      "youSend": "送信する",
-      "youReceive": "受け取る（推定）",
-      "available": "利用可能：",
-      "onchainAvailable": "オンチェーン利用可能：",
-      "canReceiveUpTo": "最大受取可能額：",
-      "status": "ステータス：",
-      "channelNeeded": "チャネルが必要"
-    },
-    "banners": {
-      "tradingOnchain": "オンチェーン残高で取引中",
-      "noChannelsYet": "まだトレーディングチャネルがありません。アセットを購入すると、オンチェーンBTC残高を使用して新しいチャネルが自動的に作成されます。",
-      "channelNotReady": "チャネル未準備：{{asset}}",
-      "channelsNotReady": "チャネル未準備：{{assets}}",
-      "channelAwaiting": "{{asset}}チャネルはブロックチェーンの確認を待機中です。取引ペアは表示できますが、チャネルが確認されるまでスワップは無効になります。これには通常数分かかります。",
-      "channelsAwaiting": "{{assets}}{{channelText}}はブロックチェーンの確認を待機中です。取引ペアは表示できますが、{{confirmText}}確認されるまでスワップは無効になります。これには通常数分かかります。",
-      "additionalChannelsPending": "追加チャネルが保留中",
-      "channelPendingConfirmation_one": "{{asset}}チャネルが確認待ちです。",
-      "channelPendingConfirmation_other": "{{count}}個のチャネル（{{assets}}）が確認待ちです。"
-    },
-    "channelWarning": {
-      "title": "{{asset}}チャネルが必要",
-      "sendMessage": "{{asset}}を送信するには、このアセット用のLightningチャネルを作成する必要があります。",
-      "receiveMessage": "{{asset}}を受け取るには、このアセット用のLightningチャネルを作成する必要があります。アセットは現在のレートで購入され、新しいチャネルに入金されます。"
-    },
-    "error": {
-      "title": "トレーディングエラー",
-      "maxLimitExceeded": "最大制限を超過",
-      "copyErrorMessage": "エラーメッセージをコピー",
-      "unableToGetQuote": "マーケットメイカーから見積もりを取得できません。もう一度お試しください。",
-      "pairNotAvailable": "この取引ペアは現在利用できません。",
-      "assetNotValid": "選択したアセットの1つが無効です。",
-      "unableToCalculateQuote": "見積もりを計算できません。別の金額を試してください。",
-      "amountOutsideRange": "入力した金額はこの取引ペアの有効範囲外です。",
-      "amountMustBeBetween": "金額は{{min}}から{{max}} {{asset}}の間である必要があります。",
-      "swapDisabledOnchain": "オンチェーン残高での取引時はアセットスワップは利用できません。BTCでアセットを購入することのみ可能です。",
-      "cannotSwapSameAsset": "両方のアセットに{{asset}}を選択することはできません",
-      "noTradingPairs": "{{asset}}に利用可能な取引ペアがありません",
-      "failedToFindPair": "有効な取引ペアが見つかりませんでした",
-      "cannotSwapZeroAmounts": "ゼロ量はスワップできません。有効な金額を入力してください。",
-      "noValidQuote": "有効な見積もりがありません。見積もりを更新してみてください。",
-      "channelAwaitingConfirmation": "{{asset}}チャネルは確認待ちです。スワップする前に準備が整うまでお待ちください。",
-      "noAssetChannel": "{{asset}}チャネルがありません。スワップするには{{asset}}でチャネルを開設してください。",
-      "noAssetChannelReceive": "{{asset}}チャネルがありません。受け取るには{{asset}}でチャネルを開設してください。",
-      "canOnlyReceiveUpTo": "最大{{amount}} {{asset}}まで受け取ることができます。",
-      "channelAwaitingPlural": "{{asset}}のチャネルは確認待ちです。準備が整うまでお待ちください。",
-      "pleaseWaitChannelConfirmation": "取引する前にチャネルが確認されるまでお待ちください。"
-    },
-    "swap": {
-      "errorDetailsClipboard": "エラー詳細がクリップボードにコピーされました",
-      "swapFailed": "スワップ失敗：{{error}}",
-      "exchangeRateQuote": "為替レートと見積もり",
-      "refresh": "↻ 更新"
-    },
-    "noChannels": {
-      "insufficientBalance": "Bitcoin残高不足",
-      "insufficientBalanceMessage": "トレーディングチャネルを開設するにはビットコインが必要です。取引を開始するにはBTCを入金してください。",
-      "depositBitcoin": "Bitcoinを入金",
-      "noChannelsAvailable": "利用可能なチャネルがありません",
-      "noChannelsMessage": "取引を開始するには、アセットを含むチャネルを作成するか、Lightning Service Providerから購入する必要があります。",
-      "createChannel": "チャネルを作成",
-      "buyFromLSP": "LSPから購入"
-    },
-    "toast": {
-      "swapCompleted": "スワップが正常に完了しました！",
-      "reconnectWait": "再接続する前にアプリの読み込みが完了するまでお待ちください。",
-      "reconnectSuccess": "マーケットメイカーに正常に再接続しました！",
-      "reconnectFailed": "マーケットメイカーへの再接続に失敗しました。メイカーURLとネットワーク接続を確認してください。",
-      "reconnectError": "再接続に失敗しました：{{error}}",
-      "channelOrderCreating": "オンチェーン残高でアセットを購入するためのチャネル注文を作成中！",
-      "createAssetChannel": "{{asset}}チャネルを作成しましょう！",
-      "needChannelToTrade": "取引するにはチャネルが必要です。希望するアセットで作成しましょう。",
-      "channelCreatedSuccess": "チャネルが正常に作成されました！更新中...",
-      "failedToRefreshAmounts": "金額の更新に失敗しました。もう一度お試しください。",
-      "initializationFailed": "トレーディングインターフェースの初期化に失敗しました。もう一度お試しください。",
-      "connectionError": "接続エラーが発生しました。取引が制限される可能性があります。",
-      "connectionFailed": "マーケットメイカーへのライブ接続の確立に失敗しました。メイカーURLを確認してもう一度試してください。"
-    },
-    "assetConflict": {
-      "warning": "警告：「{{ticker}}」の複数のバージョンが検出されました。取引には1つのバージョンのみが利用可能です。",
-      "multipleConflicts": "{{conflictCount}}個のアセット競合が見つかりました。{{excludedPairs}}個の取引ペアを除外しました。{{validPairs}}個の有効なペアが取引可能です。",
-      "noTradablePairs": "このマーケットメイカーで取引可能なペアがありません。メイカーはあなたがチャネルを持っているアセットの取引ペアを提供していません。",
-      "noValidPairs": "アセット競合のフィルタリング後、有効な取引ペアがありません。",
-      "tickerConflict": "アセット競合が検出されました：「{{ticker}}」には複数のアセットID（{{assetIds}}）があります。安全のため{{pairCount}}個の取引ペアを除外しました。",
-      "assetInfo": "{{count}}個のアセット競合が見つかりました。レジストリを表示してサポートされているアセットを確認してください。"
-    },
-    "validation": {
-      "insufficientBalance": "残高不足。送信可能な{{asset}}がありません。",
-      "enterAmount": "送信する金額を入力してください。",
-      "minimumOrderSize": "最小注文サイズは{{amount}} {{asset}}です。",
-      "maxSendAmount": "最大{{amount}} {{asset}}まで送信できます。",
-      "unableToReceive": "{{asset}}を受け取れません。チャネル容量がありません。",
-      "maxReceiveAmount": "最大{{amount}} {{asset}}まで受け取ることができます。",
-      "htlcLimit": "チャネル制約により、1回のトランザクションで最大{{amount}} {{asset}}まで送信できます。",
-      "minOrderSize": "{{asset}}の最小注文サイズは{{amount}}です。",
-      "maxOrderSize": "{{asset}}の最大注文サイズは{{amount}}です。",
-      "invalidAmount": "無効な金額です。この取引ペアの最小および最大注文サイズを確認してください。"
-    }
-  },
-  "withdrawModal": {
-    "balance": {
-      "btcLabel": "利用可能なBTC残高:",
-      "assetLabel": "利用可能な{{ticker}}残高:",
-      "available": "利用可能残高:"
-    },
-    "form": {
-      "addressPlaceholder": "Bitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスを貼り付けてください",
-      "addressRequired": "アドレスまたはインボイスが必要です",
-      "clear": "クリア",
-      "detected": {
-        "label": "検出:",
-        "types": {
-          "lightningInvoice": "Lightningインボイス",
-          "lightningAddress": "Lightningアドレス",
-          "bitcoinAddress": "Bitcoinアドレス",
-          "rgbInvoice": "RGBインボイス"
-        }
-      },
-      "lightningCapacity": {
-        "title": "最大Lightning容量:",
-        "withdrawable": "最大出金可能額(手数料差引後):"
-      },
-      "units": {
-        "sats": "サトシ"
-      },
-      "witness": {
-        "label": "Witness UTXO用のBitcoin量(サトシ)",
-        "placeholder": "サトシで金額を入力(最小: 512、例: 1200)",
-        "errors": {
-          "min": "金額は最低512サトシ必要です",
-          "required": "Witness量が必要です"
-        },
-        "note": "注: RGBアセットをWitness受取人に送信する場合、RGBアセットが割り当てられる新しいUTXOを受取人のために作成するために、いくらかのBitcoinを追加する必要があります。推奨: 1000-2000サトシ。"
-      },
-      "assetSelector": {
-        "label": "アセット",
-        "placeholder": "アセットを選択"
-      },
-      "amount": {
-        "label": "金額",
-        "optionalLabel": "金額(オプション)",
-        "requiredLabel": "金額",
-        "precision": "精度: {{value}}桁",
-        "example": "金額を入力(例: {{ticker}}の場合10.23)",
-        "maxLabel": "最大: {{amount}} {{asset}}",
-        "maxPlaceholder": "金額を入力(最大 {{amount}})",
-        "notAvailable": "N/A",
-        "maxButton": "最大",
-        "equivalent": "{{unit}}換算:",
-        "exceedsAvailable": "金額が利用可能残高を超えています。「最大」をクリックして全残高を使用してください。",
-        "lightningLimit": {
-          "title": "Lightning上限:",
-          "description": "最大出金可能額はチャネル容量とHTLC上限により制限されます。"
-        },
-        "rgbNote": "注: RGBアセット転送には3,000サトシが必要です。",
-        "noChannels": "警告: アクティブなLightningチャネルが見つかりません。Lightning入金は利用できません。",
-        "minBitcoinSat": "1 SAT",
-        "minBitcoinBtc": "0.00000001 BTC",
-        "minAssetAmount": "{{amount}} {{ticker}}"
-      },
-      "fees": {
-        "label": "手数料率",
-        "customLabel": "カスタム手数料率(sat/vB)",
-        "options": {
-          "slow": "遅い",
-          "normal": "標準",
-          "fast": "速い",
-          "custom": "カスタム"
-        }
-      },
-      "donation": {
-        "label": "ギフト/寄付として送信",
-        "description": "ギフト転送では受取人の検証なしで即座に送信できます。チップやプレゼントに便利です。注意してご使用ください。"
-      },
-      "status": {
-        "pending": "支払い待機中...",
-        "success": "支払いを受け取りました!",
-        "failed": "支払いに失敗しました({{status}})"
-      },
-      "actions": {
-        "copy": "クリップボードにコピー",
-        "generateAddress": "新しいアドレスを生成",
-        "generateInvoice": "インボイスを生成",
-        "generateAddressCta": "アドレスを生成"
-      },
-      "submit": {
-        "lightning": "インボイスを支払う",
-        "rgb": "RGBアセットを送信",
-        "onchain": "出金"
-      },
-      "analyzing": "入力を解析中…"
-    },
-    "main": {
-      "title": {
-        "form": "資金を出金",
-        "confirm": "出金を確認"
-      },
-      "subtitle": {
-        "form": "Bitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスに資金を送信します。",
-        "confirm": "確認する前に出金の詳細を確認してください。"
-      },
-      "buttons": {
-        "cancel": "キャンセル"
-      },
-      "labels": {
-        "assetFallback": "アセット",
-        "unknownAsset": "不明"
-      },
-      "toasts": {
-        "lightningSuccess": "Lightning支払いが成功しました!",
-        "btcSuccess": "BTC出金が成功しました",
-        "rgbSuccess": "RGBアセット出金が成功しました"
-      },
-      "errors": {
-        "zeroBalance": "エラー: {{asset}}の残高がゼロです。出金を続行できません。",
-        "fetchBalance": "エラー: {{asset}}残高の取得に失敗しました。出金を続行できません。",
-        "assetMissing": "エラー: このアセットを保有していません。出金を続行できません。",
-        "fetchAssetBalance": "エラー: このアセットの残高取得に失敗しました。出金を続行できません。",
-        "invoiceAssetCapacity": "エラー: インボイスはアセット{{asset}}…を{{requested}}要求していますが、最大チャネル容量は{{capacity}}のみです。支払いを続行できません。",
-        "invoiceBtcCapacity": "エラー: インボイスは{{requested}}サトシを要求していますが、最大BTCチャネル容量は{{capacity}}サトシのみです。支払いを続行できません。",
-        "invoiceExceedsBalance": "エラー: インボイス金額({{amount}}サトシ)が利用可能残高{{balance}} {{unit}}を超えています。支払いを続行できません。",
-        "invoiceExceedsCapacity": "エラー: インボイス金額({{amount}}サトシ)がアウトバウンドチャネル容量({{capacity}}サトシ)を超えています。支払いを続行できません。",
-        "rgbAssetMissing": "エラー: 要求されたアセット{{asset}}…を保有していません。支払いを続行できません。",
-        "paymentFailedGeneric": "エラー: 支払いに失敗しました。詳細を確認するか、もう一度お試しください。",
-        "paymentPendingTimeout": "エラー: 60秒後も支払いが保留中です。手動でステータスを確認するか、もう一度お試しください。",
-        "decodeRgbFailed": "RGBインボイスのデコードに失敗しました。インボイスが有効であることを確認してください。",
-        "invalidFormat": "無効なアドレス形式です。有効なBitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスを入力してください。",
-        "decodeInputFailed": "入力のデコードに失敗しました。アドレス形式を確認してください。",
-        "lightningCapacityNeeded": "エラー: アウトバウンド容量が不足しています。{{amount}}サトシが必要ですが、利用可能なのは{{capacity}}サトシのみです。",
-        "invalidLightningInvoice": "無効なLightningインボイスです。",
-        "rgbMissingRecipient": "デコードされたRGBインボイスに受取人IDがありません。",
-        "rgbMissingTransport": "デコードされたRGBインボイスにトランスポートエンドポイントがありません。",
-        "witnessAmountTooLow": "Witness受取人の場合、Witness量は最低512サトシ必要です。",
-        "proxyEndpointMissing": "プロキシトランスポートエンドポイントが設定されていません。",
-        "rgbPaymentFailed": "RGBアセット支払いに失敗しました。",
-        "unknownPayment": "不明な支払いエラー",
-        "lightningImmediateFailure": "支払いが即座に失敗しました。ステータス: {{status}}",
-        "lightningFailedDetailed": "Lightning支払いに失敗しました: {{error}}",
-        "withdrawalFailedToast": "出金に失敗しました: {{error}}",
-        "withdrawalFailedDetails": "出金に失敗しました: {{error}}",
-        "withdrawalFailedDefault": "出金に失敗しました",
-        "onchainExceedsBalance": "出金金額({{amount}})が利用可能残高({{balance}})を超えています",
-        "capacityToast": "続行できません: インボイス金額({{amount}}サトシ)がアウトバウンド容量({{capacity}}サトシ)を超えています。",
-        "lightningSendPayment": "Lightning支払いに失敗しました: {{error}}",
-        "zeroAmountRequired": "このゼロ金額インボイスには金額を入力してください。"
-      },
-      "warnings": {
-        "invoiceAdjusted": "警告: インボイスは{{requested}} {{asset}}を要求していますが、残高は{{balance}} {{asset}}のみです。最大送信可能額に調整されました。",
-        "noRgbAssets": "警告: 送信可能なRGBアセットがありません。"
-      },
-      "info": {
-        "zeroAmountInvoice": "これはゼロ金額インボイスです。下に支払いたい金額を入力してください。",
-        "assetAmountRequired": "このインボイスには{{ticker}}の金額が指定されていません。送信する金額を入力してください。"
-      }
-    },
-    "details": {
-      "lightning": {
-        "title": "Lightningインボイス詳細",
-        "assetLabel": "アセット:",
-        "assetAmountLabel": "アセット量:",
-        "assetAmountNotSpecified": "インボイスに未指定",
-        "lightningBalanceLabel": "あなたのLightning残高:",
-        "btcAmountLabel": "BTC量:",
-        "amountLabel": "金額:",
-        "descriptionLabel": "説明:",
-        "descriptionPayment": "支払い #{{hash}}",
-        "descriptionFallback": "説明なし",
-        "expiresLabel": "有効期限:",
-        "payeeLabel": "受取人:",
-        "maxOutboundLabel": "最大アウトバウンド:",
-        "satValue": "{{value}}サトシ",
-        "capacityMin": "0サトシ",
-        "capacityUsage": "容量の{{percentage}}%を使用",
-        "lowCapacityWarning": "可視容量が低いです。支払いを試すことはできますが、失敗する可能性があります。",
-        "withinCapacity": "支払い金額はアウトバウンド容量内です",
-        "insufficientAsset": "この支払いに対してLightningチャネル内の{{ticker}}が不足しています。"
-      },
-      "rgb": {
-        "title": "RGBインボイス詳細",
-        "assetLabel": "アセット:",
-        "requestedAmountLabel": "要求金額:",
-        "amountNotSpecified": "指定なし",
-        "amountHint": "💡 必要に応じて以下の金額を変更できます",
-        "recipientLabel": "受取人ID:",
-        "expiresLabel": "有効期限:",
-        "transportLabel": "トランスポート:",
-        "transportValue": "{{count}}個のエンドポイント",
-        "balanceLabel": "あなたの残高:"
-      }
-    },
-    "paymentStatus": {
-      "pending": "支払い処理中...",
-      "succeeded": "支払いが成功しました!",
-      "failed": "支払いに失敗しました",
-      "expired": "支払いの有効期限が切れました"
-    },
-    "confirmation": {
-      "overlay": {
-        "title": "支払い失敗",
-        "body": "Lightningの支払いを処理できませんでした。",
-        "closing": "自動的に閉じます..."
-      },
-      "status": {
-        "checking": "支払いステータスを確認中... しばらくお待ちください。",
-        "pending": "支払い処理中です。Lightning Networkが支払いを処理するまでお待ちください。",
-        "failedTitle": "支払い失敗",
-        "failedDescription": "Lightningの支払いを処理できませんでした。以下のエラー詳細を確認してください。"
-      },
-      "labels": {
-        "type": "種別:",
-        "asset": "アセット:",
-        "amount": "金額:",
-        "btcAmount": "BTC量:",
-        "transferType": "転送タイプ:",
-        "paymentHash": "支払いハッシュ:",
-        "assetId": "アセットID:",
-        "assetAmount": "アセット量:",
-        "feeRate": "手数料率:",
-        "invoice": "インボイス:",
-        "address": "アドレス:"
-      },
-      "types": {
-        "lightning": "Lightning支払い",
-        "onchain": "オンチェーン出金"
-      },
-      "donation": "ギフト/寄付",
-      "rgbNotice": "これはRGBアセット転送です。プロセスは完了まで数分かかり、受取人の確認が必要です。",
-      "validation": {
-        "errorPrefix": "エラー:",
-        "warningPrefix": "警告:"
-      },
-      "buttons": {
-        "back": "戻る",
-        "confirm": "確認"
-      },
-      "fee": {
-        "custom": "{{rate}} sat/vB(カスタム)",
-        "predefined": "{{rate}} sat/vB({{label}})"
-      }
+      "connectFailed": "ピアへの接続に失敗しました",
+      "disconnectFailed": "ピアからの切断に失敗しました"
     }
   },
   "dashboard": {
@@ -1969,6 +317,7 @@
     "totalBalance": "合計残高",
     "deposit": "入金",
     "depositNow": "今すぐ入金",
+    "swap": "Swap",
     "withdraw": "出金",
     "onChain": "オンチェーン",
     "offChain": "オフチェーン",
@@ -1991,39 +340,17 @@
     "noFunds": "Bitcoin資金なし",
     "noFundsMessage": "ウォレットにBitcoin資金がありません。アプリケーションの使用を開始するには資金を入金してください。",
     "unknown": "不明",
+    "btcPrice": "BTC価格",
+    "priceUnavailable": "価格を利用できません",
     "nodeInfo": "ノード情報",
     "manage": "管理",
     "history": "履歴",
     "testnetWarning": "テストネットワーク",
-    "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。",
-    "swap": "Swap",
-    "btcPrice": "BTC価格",
-    "priceUnavailable": "価格を利用できません",
-    "activateMindTitle": "KaleidoMind を追加",
-    "activateMindDesc": "ノードと並行してローカル AI ブレインを実行 — チャット、モデル、電話ペアリング。"
-  },
-  "peerManagement": {
-    "title": "ピア",
-    "connectToPeer": "ピアに接続",
-    "peerPlaceholder": "pubkey@host:port",
-    "connect": "接続",
-    "cancel": "キャンセル",
-    "disconnect": "切断",
-    "disconnectTooltip": "ピアを切断",
-    "loading": "ピアを読み込み中...",
-    "noPeers": "接続されているピアはありません。開始するにはいくつかのピアに接続してください。",
-    "success": {
-      "connected": "ピアに正常に接続しました",
-      "disconnected": "ピアから切断しました"
-    },
-    "errors": {
-      "connectFailed": "ピアへの接続に失敗しました",
-      "disconnectFailed": "ピアからの切断に失敗しました"
-    }
+    "testnetWarningDesc": "テストネットワーク上にいます。資金は本物ではなく、取引に金銭的価値はありません。"
   },
   "history": {
-    "bitcoin": "ビットコイン",
     "description": "入金、支払い、出金、スワップを含むトランザクション履歴を表示します。",
+    "bitcoin": "ビットコイン",
     "deposits": "入金",
     "paymentsWithdrawals": "支払いと出金",
     "swaps": "スワップ",
@@ -2058,7 +385,10 @@
   "walletSetup": {
     "getHelpSupport": "ヘルプ&サポートを利用",
     "connectTitle": "KaleidoSwap へようこそ",
+    "welcomeTo": "ようこそ",
     "connectSubtitle": "始め方を選んでください — RGB Lightning ノードに接続、ローカル AI ブレインを実行、またはその両方。",
+    "mindOnlyHint": "このデスクトップでローカル AI ブレインを実行 — ノードは不要です。いつでも後でノードを接続できます。",
+    "openMind": "KaleidoMind を開く",
     "remoteNodeTitle": "リモートノード",
     "remoteNodeDescription": "ホストされたノードまたは自己ホスト型インスタンスに接続します。ほとんどのユーザーと高度なセットアップに推奨されます。",
     "localNodeTitle": "ローカルノード",
@@ -2088,13 +418,12 @@
     "remoteNodePrerequisitesTitle": "前提条件",
     "remoteNodePrerequisitesMessage": "接続するには実行中のrgb-lightning-nodeインスタンスが必要です。始めるにはセットアップガイドに従ってください。",
     "viewSetupGuide": "セットアップガイドを見る",
-    "getStarted": "始める",
-    "mindOnlyHint": "このデスクトップでローカル AI ブレインを実行 — ノードは不要です。いつでも後でノードを接続できます。",
-    "openMind": "KaleidoMind を開く"
+    "getStarted": "始める"
   },
   "createChannel": {
     "checkingBalance": "残高を確認中...",
     "retry": "再試行",
+    "goBack": "戻る",
     "stepPeerConnection": "ピア接続",
     "stepChannelSettings": "チャネル設定",
     "stepReviewConfirm": "確認&承認",
@@ -2120,12 +449,12 @@
       "noPeers": "現在接続されているピアはありません。以下で新しいピアに接続できます。",
       "or": "または",
       "connectNewPeer": "新しいピアに接続",
+      "connectManually": "手動で接続",
       "placeholder": "例：039257e0669aa5dea5df7c971048699a39f9023333d550a90800b9412f231ee8e7@lsp.signet.kaleidoswap.com:9735",
       "invalidPeerFormat": "無効なピア形式です。期待される形式：<66文字の16進公開鍵>@ホスト名:ポート または 有効な公開鍵",
       "helpText": "接続文字列は、66文字の16進公開鍵の後に@記号、ホストアドレス、ポート番号（例：:9735）を続ける必要があります",
       "suggestedNodes": "推奨ノードから選択",
       "loadingLsp": "LSP情報を読み込み中...",
-      "continue": "続ける",
       "connectDialog": {
         "title": "ピアに接続",
         "message": "チャネルを開設する前にこのピアに接続しますか？",
@@ -2138,7 +467,8 @@
       "errorNoLspUrl": "ネットワーク{{network}}用のデフォルトLSP URLが設定されていません",
       "errorFetchLsp": "LSP接続情報の取得に失敗しました",
       "errorInvalidPeerString": "無効なピア接続文字列です",
-      "errorConnectFailed": "ピアへの接続に失敗しました。もう一度お試しください。"
+      "errorConnectFailed": "ピアへの接続に失敗しました。もう一度お試しください。",
+      "continue": "続ける"
     },
     "step2": {
       "title": "チャネルを開設 - ステップ2",
@@ -2218,6 +548,7 @@
       "onlyKnownToParties": "当事者のみに知られる",
       "rgbAssetChannel": "RGBアセットチャネル",
       "rgbAssetInfo": "このチャネルには、Bitcoin流動性とRGBアセット割り当ての両方が含まれます。RGBアセット（{{ticker}}）は{{amount}}ユニットで割り当てられます。",
+      "initialLiquidity": "初期流動性",
       "back": "戻る",
       "opening": "開設中...",
       "openChannel": "チャネルを開設"
@@ -2412,6 +743,10 @@
       "failedToStopNode": "ポート{{port}}上の既存ノードの停止に失敗しました",
       "failedToStart": "ノードの起動に失敗しました",
       "suggestedPorts": "推奨される代替ポート：\n- デーモンポート：{{daemon}}\n- LDKピアポート：{{ldk}}",
+      "portConflictTitle": "ポートの競合",
+      "killProcessPrompt": "ポート{{ports}}は他のアプリケーションが使用中です。ノードを起動できるよう、それらのプロセスを停止しますか？",
+      "killProcessConfirm": "プロセスを停止",
+      "killingProcesses": "競合しているプロセスを停止しています...",
       "nodeInitFailed": "ノードの初期化に失敗しました",
       "invalidResponse": "無効な応答：ニーモニックが見つかりません"
     }
@@ -2443,8 +778,230 @@
     "unlockCancelled": "ロック解除プロセスがキャンセルされました",
     "failedCheckStatus": "ノードステータスの確認に失敗しました：{{error}}",
     "failedGetNodeInfo": "ロック解除後のノード情報の取得に失敗しました",
-    "unknownError": "不明なエラーが発生しました",
-    "unlockTimeoutMessage": "ウォレットのロック解除に通常より時間がかかっています。ノードがしばらくオフラインだった場合、バックグラウンドでまだブロックチェーンを同期している可能性があります。解除が完了するまでアプリを開いたままにしてください。"
+    "unlockTimeoutMessage": "ウォレットのロック解除に通常より時間がかかっています。ノードがしばらくオフラインだった場合、バックグラウンドでまだブロックチェーンを同期している可能性があります。解除が完了するまでアプリを開いたままにしてください。",
+    "unknownError": "不明なエラーが発生しました"
+  },
+  "trade": {
+    "header": {
+      "title": "トレード"
+    },
+    "feeSection": {
+      "title": "手数料の内訳",
+      "percentOfTrade": "取引の{{rate}}%",
+      "baseFee": "基本手数料",
+      "baseFeeTooltip": "取引金額に関係なく課金される固定手数料",
+      "variableFee": "変動手数料",
+      "variableFeeTooltip": "取引金額に応じて計算されるパーセンテージベースの手数料",
+      "totalFee": "合計手数料",
+      "percentOfTradeValue": "取引価値の{{rate}}%",
+      "feeDeduction": "手数料控除",
+      "feeDeductionDesc": "手数料は受取金額から自動的に控除されます。表示される「受取金額」はすべての手数料を考慮済みです。"
+    },
+    "swapButton": {
+      "connecting": "接続中...",
+      "buyChannel": "チャネルで{{asset}}を購入",
+      "gettingQuote": "最新の見積もりを取得中...",
+      "preparingSwap": "スワップを準備中...",
+      "noChannels": "利用可能なチャネルがありません",
+      "noTradablePairs": "取引可能なペアがありません",
+      "exceedsMax": "最大受取可能額を超過",
+      "channelAwaiting": "チャネルは確認待ち",
+      "invalidAmount": "無効な金額",
+      "enterAmount": "金額を入力",
+      "swapInProgress": "スワップ実行中...",
+      "waitingQuote": "見積もりを待機中...",
+      "swapNow": "今すぐスワップ"
+    },
+    "swapInput": {
+      "available": "利用可能:",
+      "refreshAmounts": "金額を更新",
+      "estimating": "見積もり中...",
+      "loading": "読み込み中...",
+      "placeholder": "0.00",
+      "selectAsset": "アセットを選択",
+      "searchAsset": "ティッカーまたはアセットIDで検索...",
+      "selectAssetTitle": "アセットを選択",
+      "quickAmount": "クイック金額",
+      "percentAvailable": "利用可能の%",
+      "min": "最小",
+      "max": "最大",
+      "maxHtlc": "最大HTLC",
+      "maxHtlcTooltip": "この支払いチャネルで送信できる最大金額"
+    },
+    "exchangeRate": {
+      "justNow": "たった今",
+      "secondsAgo": "{{seconds}}秒前",
+      "oneMinuteAgo": "1分前",
+      "minutesAgo": "{{minutes}}分前",
+      "oneHourAgo": "1時間前",
+      "hoursAgo": "{{hours}}時間前",
+      "updated": "更新済み",
+      "never": "未更新",
+      "live": "ライブ",
+      "stale": "古い",
+      "loadingRate": "為替レートを読み込み中...",
+      "updatingRate": "レートを更新中..."
+    },
+    "noChannels": {
+      "insufficientBalance": "Bitcoin残高が不足しています",
+      "insufficientBalanceMessage": "チャネルを開設するにはビットコインが必要です。開始するにはBTCを入金してください。",
+      "depositBTC": "BTCを入金",
+      "noRGBChannels": "利用可能なRGBチャネルがありません",
+      "noRGBChannelsMessage": "スワップを始めるには、いくつかの資産を含むチャネルが必要です。",
+      "openChannel": "チャネルを開設",
+      "buyFromLSP": "LSPから購入",
+      "marketMaker": "マーケットメイカー",
+      "noTradingChannels": "利用可能な取引チャネルがありません",
+      "buyChannel": "チャネルを購入",
+      "availableTradingPairs": "利用可能な取引ペア",
+      "supportedAssets": "対応資産",
+      "quickStartGuide": "クイックスタートガイド",
+      "quickStartMessage": "RGB資産の取引を始めるには以下の手順に従ってください。",
+      "checkSupportedAssets": "対応資産を確認",
+      "checkSupportedAssetsMessage": "このメイカーが対応する資産を確認するにはレジストリをご覧ください。",
+      "createYourChannel": "チャネルを作成",
+      "createChannelMessage": "LSPからチャネルを購入するか、お持ちの資産で直接チャネルを開設してください。",
+      "startTrading": "取引を開始",
+      "startTradingMessage": "チャネルが有効になったらここに戻って取引を始めてください。",
+      "recommendationCompatible": "このマーケットメイカーと互換性のある資産をすでに保有しています。直接チャネルを開設できます。",
+      "recommendationBuy": "最短で始めるには、このメイカーが対応する資産付きのチャネルをLSPから購入することをおすすめします。",
+      "recommendationOpen": "このマーケットメイカーは特定の資産に対応しています。これらの資産でチャネルを開設できます。",
+      "recommendationDefault": "このマーケットメイカーで取引するには、対応資産のいずれかを含むチャネルが必要です。"
+    },
+    "channelsNotReady": {
+      "title": "チャネルはまだ準備中です",
+      "message": "取引用チャネルを設定しています。この処理には通常数分かかります。準備が完了するまでお待ちください。",
+      "channelStatus": "チャネル状態",
+      "initializing": "初期化中...",
+      "checkStatus": "状態を確認",
+      "setupTime": "設定時間",
+      "setupTimeMessage": "チャネルの設定完了には通常3〜5分かかります。",
+      "autoRefresh": "自動更新",
+      "autoRefreshMessage": "30秒ごとに自動で状態を確認します。"
+    },
+    "connectionIssues": {
+      "connectionLost": "マーケットメイカーとの接続が失われました",
+      "connectionLostMessage": "取引用チャネルは利用可能ですが、マーケットメイカーとのリアルタイム接続の維持に問題があります。",
+      "preventsTradingMessage": "このため、価格のライブ更新と取引ができません。",
+      "retryConnection": "再接続",
+      "connectionIssue": "接続の問題",
+      "network": "ネットワーク",
+      "checkInternetMessage": "インターネット接続を確認してください",
+      "switchMaker": "メイカーを切り替え",
+      "tryDifferentMaker": "上で別のマーケットメイカーを試してください",
+      "wait": "待機",
+      "serverBusy": "サーバーが一時的に混雑している可能性があります",
+      "currentMaker": "現在のメイカー:",
+      "marketMakerSelector": "現在のメイカーが利用できない場合は、別のメイカーに切り替えて取引を続けてください。",
+      "connectingToMaker": "マーケットメイカーに接続中",
+      "connectionTimeout": "接続タイムアウト",
+      "establishingConnection": "接続を確立中",
+      "connectingMessage": "マーケットメイカーへの接続を試みています...",
+      "usuallyFastMessage": "通常は数秒で完了します。",
+      "timeoutMessage": "30秒以内にマーケットメイカーへ接続できませんでした。",
+      "serverUnreachableMessage": "サーバーに到達できないか、障害が発生している可能性があります。",
+      "connectingForSeconds": "{{seconds}}秒間接続中...",
+      "cancelAndRetry": "キャンセルして再試行",
+      "elapsedTime": "{{seconds}}秒経過",
+      "tryingSwitchMessage": "現在接続を試みています。別のメイカーを試すために切り替えることもできます。",
+      "switchIfUnavailable": "現在のメイカーが利用できない場合は別のメイカーに切り替えてください。",
+      "connectionInProgress": "接続処理中"
+    },
+    "manual": {
+      "balancesUpdated": "資産残高を更新しました",
+      "balancesFailed": "資産残高の取得に失敗しました",
+      "swapInitiated": "スワップを開始しました",
+      "swapInitiateFailed": "スワップの開始に失敗しました。もう一度お試しください。",
+      "noActiveSwap": "実行できるアクティブなスワップがありません",
+      "missingTakerPubkey": "テイカーの公開鍵を入力してください",
+      "swapExecuted": "スワップを実行しました",
+      "swapExecuteFailed": "スワップの実行に失敗しました。もう一度お試しください。"
+    },
+    "taker": {
+      "balancesUpdated": "資産残高を更新しました",
+      "balancesFailed": "資産残高の取得に失敗しました",
+      "missingSwapString": "スワップ文字列を入力してください",
+      "whitelistSuccess": "取引をホワイトリストに追加しました",
+      "whitelistFailed": "取引のホワイトリスト登録に失敗しました。もう一度お試しください。",
+      "pubkeyCopied": "公開鍵をクリップボードにコピーしました"
+    },
+    "maker": {
+      "selectMaker": "メイカーを選択",
+      "connected": "接続済み",
+      "reconnect": "再接続",
+      "marketMakers": "マーケットメイカー",
+      "enterUrl": "メイカーURLを入力...",
+      "cancel": "キャンセル",
+      "addMaker": "メイカーを追加",
+      "addNewMaker": "新しいメイカーを追加",
+      "notConnected": "メイカーに未接続",
+      "switching": "新しいメイカーに切り替え中...",
+      "reconnected": "マーケットメイカーに正常に再接続しました",
+      "reconnecting": "再接続中です。お待ちください...",
+      "changeFailed": "メイカーの変更に失敗しました",
+      "invalidUrl": "無効なURL形式",
+      "reconnectingStatus": "メイカーに再接続中...",
+      "reconnectionInitFailed": "再接続の開始に失敗しました。もう一度お試しください。",
+      "reconnectionFailed": "メイカーへの再接続に失敗しました"
+    },
+    "nostrP2P": {
+      "title": "Nostr P2Pトレーディング",
+      "description": "NostrによるP2Pトレーディングは近日公開！中央集権的なメイカーに依存せず、他のユーザーと直接取引できます。",
+      "directSwaps": "ダイレクトスワップ",
+      "directSwapsDesc": "仲介者なしでピアと直接取引",
+      "limitOrders": "指値注文",
+      "limitOrdersDesc": "価格を設定してマッチを待つ",
+      "notifications": "通知",
+      "notificationsDesc": "注文がマッチしたらアラートを受け取る",
+      "trustlessSwaps": "トラストレススワップ",
+      "trustlessSwapsDesc": "アトミックスワップにより、両者がアセットを受け取るか、取引が行われないことを保証",
+      "globalMarketplace": "グローバルマーケットプレイス",
+      "globalMarketplaceDesc": "Nostrネットワークを通じて世界中のトレーダーとつながる",
+      "notifyPrompt": "Nostr P2Pトレーディングのローンチ時に通知を受け取りたいですか？",
+      "starGithub": "GitHubリポジトリにスターを付ける"
+    },
+    "tradablePairs": {
+      "title": "利用可能な取引ペア",
+      "noPairs": "取引ペアがありません",
+      "pairCount": "{{count}}ペア",
+      "clickToCopy": "クリックしてコピー: {{id}}",
+      "active": "アクティブ",
+      "inactive": "非アクティブ",
+      "morePairs": "+ {{count}}個のペアが利用可能",
+      "openChannelHint": "これらのアセットでチャネルを開設して取引を開始"
+    },
+    "supportedAssets": {
+      "title": "サポートされているアセット",
+      "assetCount": "{{count}}アセット",
+      "clickToCopyAssetId": "クリックしてアセットIDをコピー: {{id}}",
+      "tradeHint": "これらのアセットの任意の組み合わせで取引できます"
+    },
+    "tradeForm": {
+      "available": "利用可能:",
+      "youSend": "送信",
+      "canReceive": "最大受取可能:",
+      "youReceive": "受取（推定）"
+    },
+    "assetModal": {
+      "none": "なし",
+      "selected": "選択済み",
+      "copyAssetId": "完全なアセットIDをコピー",
+      "title": "アセットを選択",
+      "searchPlaceholder": "ティッカー、名前、またはアセットIDで検索...",
+      "close": "閉じる",
+      "assetsFound": "{{count}}アセットが見つかりました",
+      "noAssetsFound": "アセットが見つかりません",
+      "searchHint": "ティッカー（例: \"BTC\"）、名前、またはアセットIDで検索してみてください",
+      "clearSearch": "検索をクリアしてすべてのアセットを表示",
+      "tip": "ヒント: ティッカーで検索または完全なアセットIDを貼り付けできます",
+      "selectedLabel": "選択済み"
+    },
+    "statusToast": {
+      "swapSucceeded": "スワップ成功",
+      "swapExpired": "スワップ期限切れ",
+      "pendingSwaps_one": "{{count}}件のスワップを処理中",
+      "pendingSwaps_other": "{{count}}件のスワップを処理中"
+    }
   },
   "walletRestore": {
     "title": "ウォレットを復元",
@@ -2489,6 +1046,109 @@
     "continue": "続ける",
     "close": "閉じる",
     "defaultAccountName": "復元されたアカウント"
+  },
+  "walletRemote": {
+    "title": "リモートノードに接続",
+    "subtitle": "リモートRGBライトニングノードの詳細を入力してください",
+    "configureRemoteNode": "リモートノード接続設定を構成します。既存のRGBライトニングノードの詳細を入力してください。",
+    "accountName": "アカウント名",
+    "accountNameDescription": "この名前はリモートノード接続の識別に使用されます",
+    "accountNamePlaceholder": "マイリモートノード",
+    "accountNameRequired": "アカウント名は必須です",
+    "nodeUrl": "ノードURL",
+    "nodeUrlDescription": "リモートRGBライトニングノードのURL",
+    "nodeUrlDescriptionRegtest": "{{type}}regtest接続のノードURL",
+    "nodeUrlPlaceholder": "http://your-node-url:3000",
+    "nodeUrlPlaceholderRegtest": "http://localhost:3001",
+    "nodeUrlRequired": "ノードURLは必須です",
+    "nodeUrlInvalidFormat": "URLから「/nodeinfo」を削除してください - 自動的に追加されます",
+    "nodeUrlTrailingSlash": "URLから余分な末尾のスラッシュを削除してください",
+    "nodeUrlProtocol": "URLはhttp://またはhttps://で始まる必要があります",
+    "password": "ノードパスワード",
+    "passwordPlaceholder": "パスワード",
+    "passwordRequired": "パスワードは必須です",
+    "useAuthToken": "認証トークンを使用",
+    "authToken": "認証トークン",
+    "authTokenRequired": "認証トークンは必須です",
+    "testConnection": "接続をテスト",
+    "testingConnection": "接続をテスト中...",
+    "testConnectionAndCreate": "接続をテストしてアカウントを作成",
+    "connectionTestSuccessful": "接続テストが成功しました",
+    "connectionTestSuccessMessage": "リモートノードへの接続に成功しました！ノードが正しく応答しています。",
+    "connectionVerified": "接続が確認されました！これでノードに安全に接続できます。",
+    "nodeOnline": "ノードはオンラインでアクセス可能です",
+    "authWorking": "認証が正しく機能しています",
+    "nodeRespondingValidData": "ノードが有効なデータで応答しています",
+    "testConnectionError": "{{error}}",
+    "authenticationFailed": "認証に失敗しました",
+    "authenticationFailedDetails": "無効な認証情報または認証トークンです。パスワードまたは認証トークンを確認してください。",
+    "authenticationFailedToast": "認証に失敗しました。認証情報を確認してください。",
+    "nodeEndpointNotFound": "ノードエンドポイントが見つかりません",
+    "nodeEndpointNotFoundDetails": "/nodeinfoエンドポイントが見つかりませんでした。ノードURLが正しいことを確認してください。",
+    "nodeEndpointNotFoundToast": "ノードエンドポイントが見つかりません。ノードURLを確認してください。",
+    "serverError": "サーバーエラー",
+    "serverErrorDetails": "リモートノードがサーバーエラー（{{status}}）を返しました。ノードがダウンしているか、設定が正しくない可能性があります。",
+    "serverErrorToast": "サーバーエラー。リモートノードがダウンしているか、設定が正しくない可能性があります。",
+    "connectionTestFailed": "接続テストに失敗しました",
+    "connectionTestFailedDetails": "HTTP {{status}}：{{statusText}}",
+    "connectionTestFailedToast": "接続テストに失敗しました：{{status}}",
+    "invalidResponseFormat": "無効な応答形式",
+    "invalidResponseFormatDetails": "ノードが応答しましたが、有効なJSONではありません。これはRGBライトニングノードではない可能性があります。",
+    "invalidResponseFormatToast": "接続テスト中に無効な応答がありました。",
+    "connectionTimeout": "接続タイムアウト",
+    "connectionTimeoutDetails": "接続の応答に時間がかかりすぎました。ネットワーク接続とノードURLを確認してください。",
+    "connectionTimeoutToast": "接続がタイムアウトしました。",
+    "networkConnectionFailed": "ネットワーク接続に失敗しました",
+    "networkConnectionFailedDetails": "テスト中にリモートノードに到達できませんでした。インターネット接続とノードURLを確認してください。",
+    "networkConnectionFailedToast": "接続テスト中にネットワークエラーが発生しました。",
+    "connectionSuccessToast": "✅ 接続テストが成功しました！ノードに到達可能です。",
+    "processingStep1": "ステップ1：リモートノードへの接続をテスト中...",
+    "processingStep2": "ステップ2：アカウントを作成して設定を保存中...",
+    "processingStep3": "ステップ3：アカウントセットアップを完了中...",
+    "accountExists": "アカウント名は既に存在します",
+    "accountExistsMessage": "別のアカウント名を選択するか、既存のアカウントを削除してください。",
+    "accountExistsToast": "この名前のアカウントは既に存在します",
+    "failedCheckAccountExists": "アカウントの存在確認に失敗しました",
+    "failedCheckAccountExistsMessage": "アカウント名が利用可能かどうかを確認できませんでした。もう一度お試しください。",
+    "failedCheckAccountExistsToast": "アカウントの存在確認に失敗しました。もう一度お試しください。",
+    "connectionSuccessCreating": "✅ 接続成功！アカウントを作成中...",
+    "connectionFailedToast": "接続に失敗しました：{{status}} {{statusText}}",
+    "invalidResponseToast": "ノードからの無効な応答です。URLを確認してください。",
+    "connectionTimeoutLong": "接続がタイムアウトしました。ネットワークを確認してもう一度お試しください。",
+    "networkErrorToast": "ネットワークエラー。接続とノードURLを確認してください。",
+    "corsError": "CORSポリシーエラー",
+    "corsErrorDetails": "リモートノードがこのアプリケーションからのリクエストを受け入れるように設定されていません。",
+    "corsErrorToast": "CORSエラー。リモートノードが適切に設定されていない可能性があります。",
+    "failedToConnectToast": "リモートノードへの接続に失敗しました。設定を確認してください。",
+    "accountCreatedSuccess": "🎉 アカウントが正常に作成されました！",
+    "failedToCreateAccount": "アカウントの作成に失敗しました",
+    "failedToCreateAccountDetails": "接続成功後にアカウント作成が失敗しました：{{error}}",
+    "failedToCreateAccountToast": "アカウントの作成に失敗しました。もう一度お試しください。",
+    "troubleshootingTips": "💡 トラブルシューティングのヒント：",
+    "verifyNodeUrl": "ノードURLが正しくアクセス可能であることを確認してください",
+    "checkNodeRunning": "ノードが実行中で応答しているか確認してください",
+    "ensurePortCorrect": "ポート番号が正しいことを確認してください",
+    "trySwitchingRegtest": "regtestを使用している場合は、ローカルとリモートのregtestを切り替えてみてください",
+    "authHelp": "🔑 認証ヘルプ：",
+    "doubleCheckPassword": "パスワードを再確認してください",
+    "verifyAuthToken": "認証トークンを使用している場合は確認してください",
+    "ensureNodeAccepts": "ノードが認証情報を受け入れることを確認してください",
+    "networkTroubleshooting": "🌐 ネットワークトラブルシューティング：",
+    "checkInternet": "インターネット接続を確認してください",
+    "verifyNodeOnline": "ノードがオンラインでアクセス可能であることを確認してください",
+    "trySwitchingConnection": "regtestを使用している場合は、regtest接続タイプを切り替えてみてください",
+    "dismissAndRetry": "閉じてもう一度試す",
+    "requiresRestart": "再起動が必要です",
+    "apiUrlMissingParams": "ベースURLとエンドポイントの両方が必要です",
+    "connectionVerifiedHeading": "✅ 接続が確認されました：",
+    "creatingAccount": "アカウントを作成中...",
+    "finalizingSetup": "セットアップを完了中...",
+    "processing": "処理中...",
+    "unknownTestError": "接続テスト中に不明なエラーが発生しました。",
+    "unknownConnectionError": "ノードへの接続中に不明なエラーが発生しました。",
+    "unexpectedError": "予期しないエラー",
+    "regtestTypeLocal": "ローカル",
+    "connectionFailed": "接続に失敗しました"
   },
   "deposits": {
     "title": "入金履歴",
@@ -2595,6 +1255,8 @@
     "transactionIdCopied": "トランザクションIDがクリップボードにコピーされました",
     "recipientIdCopied": "受取人IDがクリップボードにコピーされました",
     "searchPlaceholder": "トランザクションを検索...",
+    "allAssets": "すべてのアセット",
+    "selectAsset": "転送を表示するアセットを選択してください",
     "allTypes": "すべての種別",
     "sent": "送信",
     "received": "受信",
@@ -2615,6 +1277,1364 @@
     "statusLabel": "ステータス：",
     "dateLabel": "日付：",
     "recipientIdLabel": "受取人ID："
+  },
+  "mnemonicViewer": {
+    "unlockTitle": "リカバリーフレーズのロック解除",
+    "displayTitle": "あなたのリカバリーフレーズ",
+    "unlockSubtitle": "リカバリーフレーズを復号化して表示するにはパスワードを入力してください",
+    "displaySubtitle": "このフレーズを安全に秘密に保管してください",
+    "securityNoticeTitle": "セキュリティに関する注意",
+    "securityNoticeDescription": "リカバリーフレーズはウォレットパスワードで暗号化されています。これにより、あなただけがアクセスできることが保証されます。",
+    "retrievedSuccess": "リカバリーフレーズが正常に取得されました",
+    "incorrectPassword": "パスワードが正しくないか、ニーモニックが保存されていません",
+    "decryptFailed": "リカバリーフレーズの復号化に失敗しました。パスワードを確認してください。",
+    "copyFailed": "クリップボードへのコピーに失敗しました",
+    "decrypting": "復号化中...",
+    "viewButton": "リカバリーフレーズを表示",
+    "warningTitle": "⚠️ 重要なセキュリティ警告",
+    "warningNeverShare": "このフレーズを誰にも共有しないでください",
+    "warningControlWallet": "このフレーズを持つ人は誰でもあなたのウォレットを制御できます",
+    "warningStoreSecurely": "オフラインの安全な場所に保管してください",
+    "warningScreenPrivacy": "画面を誰にも見られないようにしてください",
+    "recoveryPhraseHeading": "あなたの12単語のリカバリーフレーズ",
+    "copyButton": "クリップボードにコピー",
+    "copySuccessButton": "クリップボードにコピーしました",
+    "closeButton": "閉じて非表示"
+  },
+  "issueAssetModal": {
+    "title": "新しいアセットを発行",
+    "note": "注：新しいアセットの発行にはColored UTXOが必要です。Colored UTXOが不足している場合、プロセスにはオンチェーントランザクションが含まれる場合があります。",
+    "tickerLabel": "ティッカーシンボル",
+    "tickerPlaceholder": "BTC",
+    "nameLabel": "アセット名",
+    "namePlaceholder": "Bitcoin",
+    "amountLabel": "発行量",
+    "amountPlaceholder": "100",
+    "precisionLabel": "精度（小数点以下の桁数）",
+    "precisionPlaceholder": "8",
+    "precisionError": "精度の値は0から10の間である必要があります。",
+    "previewPrefix": "発行するアセット：",
+    "submit": "アセットを発行",
+    "submitting": "発行中...",
+    "success": "アセットが正常に発行されました！",
+    "failure": "アセットの発行に失敗しました"
+  },
+  "updater": {
+    "checkingTitle": "アップデートを確認中",
+    "checkingDescription": "最高のエクスペリエンスを提供するために最新バージョンを確認しています。",
+    "errorTitle": "アップデート確認失敗",
+    "errorGeneric": "アップデートの確認に失敗しました。後でもう一度お試しください。",
+    "stuckError": "アップデートプロセスが停止しているようです。もう一度お試しください。",
+    "timeoutError": "アップデートプロセスがタイムアウトしました。もう一度お試しください。",
+    "installError": "アップデートのインストールに失敗しました。もう一度お試しください。",
+    "installToastError": "アップデートのインストールに失敗しました",
+    "tryAgain": "もう一度試す",
+    "downloadingTitle": "アップデートをダウンロード中",
+    "versionLabel": "バージョン",
+    "installWarning": "アップデート中はアプリケーションを閉じないでください",
+    "downloadedLabel": "ダウンロード済み",
+    "downloadingStatus": "ダウンロード中...",
+    "installingStatus": "インストール中...",
+    "installingLabel": "インストール中...",
+    "cancelHelp": "問題がありますか？クリックしてキャンセルし、もう一度試してください",
+    "cancelledError": "ユーザーによってアップデートがキャンセルされました",
+    "releaseNotesTitle": "新機能",
+    "availableTitle": "新しいアップデートが利用可能です！",
+    "releasedOn": "リリース日：{{date}}",
+    "installButton": "ダウンロード&インストール",
+    "skipButton": "今はスキップ",
+    "recommendation": "最新の機能とセキュリティの改善を取得するためにアップデートすることをお勧めします。",
+    "completedTitle": "アップデート準備完了！🎉",
+    "completedDescription": "バージョン{{version}}が正常にダウンロードされました。",
+    "completedSubtext": "最新の機能と改善を楽しむためにアプリケーションを再起動してください。",
+    "restartButton": "今すぐ再起動",
+    "fileUnits": {
+      "bytes": "バイト",
+      "kilobytes": "KB",
+      "megabytes": "MB",
+      "gigabytes": "GB"
+    }
+  },
+  "buyChannel": {
+    "totalPayment": "合計支払額",
+    "expires": "有効期限：{{time}}",
+    "lightning": "Lightning",
+    "onchain": "オンチェーン",
+    "lightningTab": "⚡ Lightning",
+    "onchainTab": "⛓️ オンチェーン",
+    "lightningInstructions": "QRコードをスキャンするか、インボイスをコピーしてLightningで支払います。",
+    "onchainInstructions": "以下のアドレスにBitcoinを送信してください。{{confirmations}}回の確認が必要です。",
+    "copySuccess": "クリップボードにコピーしました！",
+    "copyInvoice": "インボイスをコピー",
+    "copyAddress": "アドレスをコピー",
+    "lspFetchError": "LSPデータの取得エラー。後でもう一度お試しください。",
+    "createOrderError": "チャネル注文の作成中にエラーが発生しました",
+    "orderIdMissing": "サーバーレスポンスから注文IDを取得できませんでした",
+    "lightningPaymentFailed": "Lightning支払いに失敗しました",
+    "lightningPaymentSuccess": "Lightning支払いが正常に開始されました！",
+    "onchainPaymentSuccess": "オンチェーン支払いが正常に送信されました！",
+    "paymentFailed": "支払いに失敗しました：{{error}}",
+    "unknownError": "不明なエラー"
+  },
+  "websocket": {
+    "connectionLost": "メイカーへの接続が失われました。再接続を試みています...",
+    "serverError": "サーバーエラーが検出されました。再接続を試みています..."
+  },
+  "toolbar": {
+    "accounts": {
+      "fetchFailed": "アカウントの取得に失敗しました",
+      "updateSuccess": "アカウント「{{name}}」が正常に更新されました",
+      "updateFailed": "アカウントの更新に失敗しました：{{error}}",
+      "deleteSuccess": "アカウント「{{name}}」が正常に削除されました",
+      "deleteFailed": "アカウント「{{name}}」の削除に失敗しました"
+    },
+    "nodes": {
+      "localNodeStarted": "ローカルノード「{{name}}」が正常に起動されました",
+      "startingLocalNode": "ローカルノードを起動中...",
+      "stoppingExisting": "競合するポート上の既存ノードを停止中...",
+      "existingStopped": "既存ノードが正常に停止されました",
+      "portConflictTitle": "ポートの競合",
+      "killProcessPrompt": "ポート{{ports}}は他のアプリケーションが使用中です。ノードを起動できるよう、それらのプロセスを停止しますか？",
+      "killProcessConfirm": "プロセスを停止",
+      "killingProcesses": "競合しているプロセスを停止しています...",
+      "startFailed": "ノードの起動に失敗しました",
+      "startFailedWithReason": "ノードの起動に失敗しました：{{error}}",
+      "portErrors": "ポート設定のエラーを修正してください",
+      "nodeUpdateSuccess": "ノード「{{name}}」が正常に更新されました",
+      "nodeUpdateFailed": "ノードの更新に失敗しました"
+    },
+    "nodeCard": {
+      "local": "ローカル",
+      "remote": "リモート"
+    },
+    "main": {
+      "errorLoading": "ノードの読み込みエラー: {{error}}",
+      "title": "あなたのアカウント",
+      "exitEditMode": "編集モードを終了",
+      "enterEditMode": "編集モードに入る",
+      "editNodes": "ノードを編集",
+      "editModeInstructions": "編集モード: ノードをクリックして編集、または編集/削除ボタンを使用",
+      "noNodesFound": "ノードが見つかりません",
+      "createNodeHint": "Kaleidoswapを始めるには新しいノードを作成してください"
+    },
+    "modal": {
+      "checkingNodeStatus": "ノードステータスを確認中...",
+      "nodeAlreadyRunning": "ノードは既に実行中です、コンテキストを切り替え中...",
+      "startingLocalNode": "ローカルノードを起動中...",
+      "connectingRemoteNode": "リモートノードに接続中...",
+      "unknownError": "ノードの切り替え中に不明なエラーが発生しました",
+      "localNode": "ローカルノード",
+      "remoteNode": "リモートノード",
+      "switchNode": "ノードを切り替え",
+      "reviewDetails": "切り替え前にノードの詳細を確認",
+      "errorSwitchingNode": "ノード切り替えエラー",
+      "useSuggestedPorts": "推奨ポートを使用",
+      "connectionDetails": "接続詳細",
+      "nodeUrl": "ノードURL",
+      "rpcConnection": "RPC接続",
+      "serviceEndpoints": "サービスエンドポイント",
+      "indexerUrl": "インデクサーURL",
+      "rgbProxy": "RGBプロキシ",
+      "portConfiguration": "ポート設定",
+      "daemonPort": "デーモンポート",
+      "ldkPeerPort": "LDKピアポート",
+      "dataPath": "データパス",
+      "cancel": "キャンセル",
+      "switching": "切り替え中...",
+      "switchToNode": "このノードに切り替え"
+    },
+    "delete": {
+      "title": "ノードを削除",
+      "confirmMessage": "ノード「{{name}}」を削除してもよろしいですか？",
+      "warningTitle": "⚠️ 警告",
+      "cannotUndo": "この操作は元に戻せません",
+      "localWarning1": "ノードをバックアップしていない場合、資金へのアクセスを永久に失うことになります",
+      "localWarning2": "すべてのローカルノードデータが永久に削除されます",
+      "localWarning3": "削除されるデータパス: {{path}}",
+      "remoteWarning1": "これは保存された接続設定のみを削除します",
+      "remoteWarning2": "リモートノードはアクティブなままで、リモートマシンで直接管理する必要があります",
+      "remoteWarning3": "後で再接続する場合は、リモートノードの認証情報にアクセスできることを確認してください",
+      "cancel": "キャンセル",
+      "deleteNode": "ノードを削除",
+      "deleteConnection": "接続を削除"
+    },
+    "edit": {
+      "title": "ノードを編集",
+      "tabs": {
+        "basic": "基本設定",
+        "advanced": "詳細設定"
+      },
+      "sections": {
+        "connectionSettings": "接続設定",
+        "serviceEndpoints": "サービスエンドポイント",
+        "portConfiguration": "ポート設定",
+        "makerSettings": "メイカー設定"
+      },
+      "fields": {
+        "nodeName": "ノード名",
+        "nodeUrl": "ノードURL",
+        "rpcConnectionUrl": "RPC接続URL",
+        "bitcoindRpcUrl": "Bitcoind RPC URL",
+        "indexerUrl": "インデクサーURL",
+        "rgbProxyEndpoint": "RGBプロキシエンドポイント",
+        "dataPath": "データパス",
+        "dataPathHint": "データパスはアカウント作成後に変更できません",
+        "daemonListeningPort": "デーモンリスニングポート",
+        "daemonListeningPortHint": "RGB LightningノードデーモンAPI用ポート (1024-65535)",
+        "ldkPeerListeningPort": "LDKピアリスニングポート",
+        "ldkPeerListeningPortHint": "Lightning Networkピア接続用ポート (1024-65535)",
+        "defaultMakerUrl": "デフォルトメイカーURL",
+        "defaultLspUrl": "デフォルトLSP URL"
+      },
+      "validation": {
+        "daemonPortRequired": "デーモンポートは必須です",
+        "daemonPortRange": "デーモンポートは1024から65535の間である必要があります",
+        "ldkPortRequired": "LDKピアポートは必須です",
+        "ldkPortRange": "LDKピアポートは1024から65535の間である必要があります",
+        "portsMustDiffer": "デーモンポートとLDKポートは異なる必要があります"
+      },
+      "cancel": "キャンセル",
+      "saveChanges": "変更を保存"
+    }
+  },
+  "orderChannel": {
+    "creatingOrder": "注文を作成しています…",
+    "creatingOrderHint": "チャネルを予約するためLSPに接続しています。数秒かかることがあります。",
+    "step1": {
+      "title": "LSPから新しいチャネルを購入",
+      "subtitle": "始めるにはLightningサービスプロバイダーに接続してください",
+      "howItWorks": "チャネル開設の仕組み",
+      "step1Title": "チャネルリクエストを開始",
+      "step1Description": "チャネル容量と初期残高配分を指定",
+      "step2Title": "LSPがリクエストを処理",
+      "step2Description": "Lightningサービスプロバイダーが注文を検証して受け入れ",
+      "step3Title": "支払いを行う",
+      "step3Description": "Lightningまたはオンチェーンでチャネルに資金を提供",
+      "step4Title": "チャネルが自動的に開設",
+      "step4Description": "支払いが確認されると、LSPがノードとのチャネルを開設",
+      "lspServerUrl": "LSPサーバーURL",
+      "lspUrlPlaceholder": "LSPサーバーURLを入力",
+      "selectKaleidoLsp": "Kaleidoswap LSPを使用",
+      "checkingConnection": "LSP接続を確認中...",
+      "alreadyConnectedMessage": "このLSPにすでに接続されています",
+      "connectButton": "LSPに接続",
+      "cancelButton": "キャンセル",
+      "continueButton": "続行",
+      "modalTitle": "LSPに接続しますか？",
+      "modalMessage": "Lightningサービスプロバイダーに接続し、チャネルパラメータを取得します。",
+      "checkPeerFailed": "ピア接続ステータスの確認に失敗しました",
+      "lspFetchSuccess": "LSP情報が正常に取得されました",
+      "lspUrlMissing": "LSP接続URLの取得に失敗しました",
+      "lspFetchFailed": "LSP情報の取得に失敗しました",
+      "infoMessage": "マーケットメーカーとチャネルを開いて、すぐにRGBアセットの取引を始めましょう。",
+      "timeout": "リクエストがタイムアウトしました。LSPサーバーが応答していません。URLを確認してもう一度お試しください。",
+      "networkError": "ネットワークエラー。接続とLSP URLを確認してください。",
+      "waitForConnectionUrl": "LSP接続URLの取得をお待ちください",
+      "alreadyConnected": "LSPで続行しますか？",
+      "alreadyConnectedToast": "既にLSPに接続されています",
+      "connectedSuccess": "LSPへの接続に成功しました",
+      "kaleidoLspFetched": "Kaleidoswap LSP情報が正常に取得されました",
+      "kaleidoLspFailed": "Kaleidoswap LSPの選択に失敗しました",
+      "noDefaultLsp": "ネットワーク{{network}}用のデフォルトLSP URLが設定されていません",
+      "verifyingConnection": "接続を確認中です。お待ちください",
+      "currentStep": "現在のステップ",
+      "setParameters": "パラメータを設定",
+      "completeSetup": "セットアップを完了",
+      "lspReadyConnect": "LSP接続準備完了",
+      "alreadyConnectedInfo": "このLSPにすでに接続されています。続行するには下をクリックするか、別のLSPを取得して接続してください。",
+      "lspReadyInfo": "LSP接続の詳細が読み込まれました。下をクリックして接続し、続行してください",
+      "connectionStringLabel": "LSP接続文字列",
+      "connectionStringPlaceholder": "接続文字列がここに表示されます...",
+      "connectionStringWaiting": "LSP接続の詳細を待機中...",
+      "connectionStringInfo": "この一意の接続URLがLSPピアを識別します",
+      "fetchLspInfo": "LSP情報を取得",
+      "fetching": "取得中...",
+      "enterLspInstructions": "LSPサーバーのURLを入力するか、下のデフォルトのKaleidoswap LSPを使用してください",
+      "useDefaultKaleidoLsp": "デフォルトのKaleidoswap LSPを使用",
+      "continueWithConnectedLsp": "接続されたLSPで続行",
+      "waitingForLspUrl": "LSP URLを待機中...",
+      "connecting": "接続中...",
+      "connectLsp": "LSPを接続",
+      "alreadyConnectedPopup": "このLSPにすでに接続されています。チャネルの購入を続行しますか？",
+      "establishConnection": "続行するにはLightningサービスプロバイダーとの接続を確立してください。",
+      "lspConnectionLabel": "LSP接続文字列",
+      "completed": "完了",
+      "nextStep": "次のステップ",
+      "copyToClipboard": "クリップボードにコピー",
+      "failedToConnectPeer": "ピアへの接続に失敗しました",
+      "networkInfoNotAvailable": "ネットワーク情報が利用できません",
+      "unsupportedNetwork": "サポートされていないネットワーク: {{network}}",
+      "noDefaultLspUrl": "ネットワーク用のデフォルトLSP URLが設定されていません: {{network}}"
+    },
+    "step2": {
+      "title": "チャネルを設定",
+      "subtitle": "チャネルパラメータと容量を設定",
+      "intro": {
+        "title": "チャネルを設定",
+        "stepCapacity": "チャネルの総容量を選択します。大きいほど、送受信できる量が増えます。",
+        "stepOutbound": "自分側で開始する量（アウトバウンド、送信可能分)を設定します。残りはインバウンド、つまり受信できる量です。",
+        "stepAsset": "必要に応じてRGBアセットを追加し、チャネルを開いておく期間を選択します。",
+        "stepReview": "下部の合計費用の内訳を確認してから、確認と支払いに進みます。"
+      },
+      "stepLabel": "ステップ{{current}}/{{total}}",
+      "step1Label": "接続",
+      "step2Label": "設定",
+      "step3Label": "支払い",
+      "channelCapacity": "チャネル容量（サトシ）",
+      "channelLiquidity": "チャネル流動性（サトシ）",
+      "channelCapacityInfo": "チャネルの総容量（サトシ単位）",
+      "channelLiquidityInfo": "チャネルで管理する流動性の量",
+      "addAssetTitle": "チャネルにアセットを追加",
+      "selectAsset": "アセットを選択",
+      "assetAmount": "アセット量",
+      "loading": "読み込み中...",
+      "backButton": "戻る",
+      "nextButton": "次のステップ",
+      "fees": {
+        "title": "推定手数料",
+        "lspFee": "LSP手数料",
+        "onchainFee": "オンチェーン手数料",
+        "totalFee": "総手数料",
+        "fetchFailed": "データの取得エラー。後でもう一度お試しください。"
+      },
+      "capacityRequired": "チャネル容量を入力してください。",
+      "liquidityRequired": "チャネル流動性を入力してください。",
+      "assetRequired": "続行する前にアセットを選択してください。",
+      "assetUnsupported": "選択したアセットはこのLSPでサポートされていません。更新してサポートされているアセットを選択してください。",
+      "assetAmountRequired": "続行する前にアセット量を入力してください。",
+      "capacityAdjusted": "チャネル容量が最小値に調整されました：{{amount}}サトシ",
+      "liquidityAdjusted": "チャネル流動性が最小値に調整されました：{{amount}}サトシ",
+      "assetAdjusted": "アセット量が最小値に調整されました：{{amount}} {{ticker}}",
+      "assetExceedsMax": "金額が最大制限{{amount}} {{ticker}}を超えています。続行する前に有効な金額を入力してください。",
+      "adjustmentsMade": "要件を満たすためにいくつかの値が調整されました。",
+      "formError": "フォームデータにエラーがありました。入力を確認してください。",
+      "unexpectedError": "予期しないエラーが発生しました。もう一度お試しください。",
+      "noAsset": "アセットなし",
+      "moreAssets": "他{{count}}件"
+    },
+    "step3": {
+      "title": "支払いを完了",
+      "subtitle": "チャネルを開設するために支払いを行う",
+      "channelDetailsTitle": "チャネルの詳細",
+      "continueToPayment": "支払いに進む",
+      "sectionOrderReview": "注文の確認",
+      "sectionPayment": "支払い",
+      "loadingOrder": "注文詳細を読み込み中...",
+      "errorInvalidOrder": "エラー：無効な注文データ",
+      "stepLabel": "ステップ{{current}}/{{total}}",
+      "step1Label": "接続",
+      "step2Label": "設定",
+      "step3Label": "支払い",
+      "paymentMethod": "支払い方法",
+      "lightning": "Lightning",
+      "onchain": "オンチェーン",
+      "scanQR": "QRコードをスキャン",
+      "copyAddress": "アドレスをコピー",
+      "copyInvoice": "請求書をコピー",
+      "copied": "コピーしました！",
+      "amount": "金額",
+      "address": "アドレス",
+      "invoice": "請求書",
+      "expiresIn": "有効期限",
+      "expired": "期限切れ",
+      "waitingForPayment": "支払いを待っています...",
+      "paymentReceived": "支払いを受け取りました！",
+      "processingPayment": "支払いを処理中...",
+      "channelOpening": "チャネルを開設中...",
+      "backButton": "戻る",
+      "restartButton": "最初から",
+      "paymentReceivedTitle": "支払いを受け取りました",
+      "paymentReceivedMessage": "{{method}}による支払いを受け取り、処理中です。",
+      "processingTitle": "支払い処理中",
+      "processingMessage": "支払いを処理してチャネルを開設しています。しばらくお待ちください。",
+      "lightningSuccess": "Lightning支払いが正常に開始されました！",
+      "onchainSuccess": "オンチェーン支払いが正常に送信されました！",
+      "paymentFailed": "支払いに失敗しました：{{error}}",
+      "unknownError": "不明なエラー",
+      "lightningPaymentFailed": "Lightning支払いが失敗しました",
+      "orderSummary": "注文概要",
+      "confirmedChannel": "確認済みチャネル",
+      "yourLiquidity": "あなたの流動性",
+      "lspLiquidity": "LSPの流動性",
+      "your": "あなた",
+      "lsp": "LSP",
+      "rgbAssetChannel": "RGB資産チャネル",
+      "assetId": "資産ID",
+      "lspAssetAmount": "LSP資産額",
+      "yourAssetAmount": "あなたの資産額",
+      "channelAmount": "チャネル金額",
+      "serviceFee": "サービス手数料",
+      "total": "合計",
+      "paymentStatus": "支払い状況",
+      "keepWindowOpen": "このウィンドウを開いたままにしてください",
+      "autoUpdate": "状況は自動で更新されます",
+      "feeSlow": "低速",
+      "feeNormal": "標準",
+      "feeFast": "高速",
+      "feeCustom": "カスタム",
+      "feeRateLabel": "手数料率",
+      "customFeePlaceholder": "カスタム手数料率を入力",
+      "paymentExpiresIn": "支払い期限まで",
+      "expiresVerySoon": "まもなく期限切れです！",
+      "expiresSoon": "まもなく期限切れ",
+      "processingWait": "支払いを処理しています。しばらくお待ちください",
+      "confirmPayment": "支払いを確認",
+      "paymentType": "支払い方法",
+      "maxSendable": "最大送金可能額",
+      "availableBalance": "利用可能残高",
+      "amountToPay": "支払額",
+      "remainingBalance": "残高",
+      "feeRate": "手数料率",
+      "verifyDetails": "確認前に支払い内容をご確認ください",
+      "cancel": "キャンセル",
+      "loadingBalance": "残高を読み込み中...",
+      "payWithWallet": "ウォレット残高で支払う",
+      "available": "利用可能",
+      "insufficientBalance": "残高不足",
+      "required": "必要",
+      "pay": "支払う",
+      "paymentSuccessful": "支払いが完了しました！",
+      "method": "方法",
+      "lspAmount": "LSP金額",
+      "yourAmount": "あなたの金額",
+      "expiredMessage": "支払い可能時間が終了しました。新しい注文を作成してください。",
+      "createNewOrder": "新しい注文を作成",
+      "errorMessage": "支払い処理中にエラーが発生しました。もう一度お試しください。",
+      "tryAgain": "再試行",
+      "or": "または",
+      "paymentInstructions": "QRコードまたは以下の支払い詳細を使って支払ってください",
+      "externalWalletTitle": "外部ウォレットで支払う",
+      "showDetails": "詳細を表示",
+      "hideDetails": "詳細を非表示",
+      "processingSubtitle": "支払いを処理し、チャネルを開設しています",
+      "order": "注文",
+      "paymentReceivedStatus": "支払い受領",
+      "processingOrder": "注文を処理中",
+      "channelReady": "チャネル準備完了",
+      "waitingMakerConfirmation": "LSPからの最終確認を待っています...",
+      "lightningTab": "⚡ Lightning",
+      "onchainTab": "⛓️ オンチェーン"
+    },
+    "step4": {
+      "paymentTitle": "支払い",
+      "success": {
+        "title": "注文完了！",
+        "message": "支払いを受け取り、チャネルを開設中です。",
+        "buttonText": "チャネルページへ",
+        "channelOpening": "チャネル開設進行中"
+      },
+      "error": {
+        "title": "支払い失敗",
+        "message": "支払いに問題が発生しました。もう一度お試しください。",
+        "buttonText": "再試行",
+        "refundTitle": "支払いについて：",
+        "refundMessage": "オンチェーン返金が自動的に処理されます",
+        "refundDetails": "まもなくウォレットに送信されます。",
+        "refundNote": "24時間以内に返金がない場合は、下記の注文IDを使用してLSPサポートに連絡してください。",
+        "orderIdLabel": "注文ID：",
+        "copyToClipboard": "クリップボードにコピー",
+        "copyHint": "返金についてサポートに連絡する際にこのIDをコピーしてください"
+      },
+      "expired": {
+        "title": "注文期限切れ",
+        "message": "注文が期限切れになりました。続行するには新しい注文を作成してください。",
+        "buttonText": "新しい注文を作成",
+        "expiredNote": "注文期限切れ：",
+        "expiredDetails": "注文が期限切れになりました。続行するには新しい注文を作成してください。"
+      },
+      "pending": {
+        "title": "支払い処理中",
+        "message": "支払いを処理中です。しばらくお待ちください。",
+        "buttonText": "状態を確認"
+      },
+      "returnToChannels": "チャネルに戻る",
+      "errorButtonText": "再試行",
+      "errorMessage": "お支払いに問題が発生しました。もう一度お試しください。",
+      "errorTitle": "支払い失敗",
+      "expiredButtonText": "新しい注文を作成",
+      "expiredMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。",
+      "expiredTitle": "注文期限切れ",
+      "pendingButtonText": "状態を確認",
+      "pendingMessage": "お支払いを処理中です。少し時間がかかる場合があります。",
+      "pendingTitle": "支払いを処理中",
+      "successButtonText": "チャネルページへ",
+      "successMessage": "支払いを受領し、チャネルを開設しています。",
+      "successTitle": "注文が完了しました！",
+      "channelProgress": "チャネル開設中",
+      "refundHeader": "お支払いについて:",
+      "refundProcess": "オンチェーン返金は自動で処理されます",
+      "refundProcessSuffix": "まもなくウォレットへ送金されます。",
+      "refundSupport": "24時間以内に返金が届かない場合は、以下の注文IDを添えてLSPサポートへお問い合わせください。",
+      "orderIdHelp": "返金についてサポートへ連絡する際はこのIDをコピーしてください",
+      "expiredSectionTitle": "注文期限切れ:",
+      "expiredSectionMessage": "注文の期限が切れました。続行するには新しい注文を作成してください。"
+    },
+    "orderCopy": "注文IDがコピーされました！",
+    "paymentCopied": "支払い詳細がクリップボードにコピーされました！",
+    "infoMessage": "LSPチャネルは、オンチェーントランザクションを管理する必要なく、即座に流動性を提供します。LSPがチャネル開設を処理し、支払いを受け取るためのインバウンド流動性を提供します。",
+    "formErrors": {
+      "formSubmissionError": "フォームの送信中にエラーが発生しました。"
+    },
+    "feeUnit": "sat/vB",
+    "backConfirmTitle": "Leave this page?",
+    "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
+    "backConfirmCancel": "Stay",
+    "backConfirmGoBack": "Go Back"
+  },
+  "channelConfiguration": {
+    "bitcoinChannel": {
+      "title": "Bitcoinチャネル",
+      "channelCapacity": "チャネル容量",
+      "liquidityDistribution": "流動性の配分",
+      "spending": "支出",
+      "receiving": "受信",
+      "total": "合計",
+      "sats": "sats",
+      "spendingBalance": "支出残高",
+      "spendingBalanceInfo": " (青): アウトバウンド流動性 - 支払いやアセットの購入に使用できます。",
+      "receivingCapacity": "受信容量",
+      "receivingCapacityInfo": " (紫): LSPからのインバウンド流動性 - 受信可能な金額を決定します。",
+      "feeReserve": "各側で手数料として{{amount}} sats予約済み",
+      "feeReserveTitle": "なぜ手数料が予約されているのですか？",
+      "feeReserveExplanation": "チャネルの各側（あなたの支出残高とLSPの受信容量）には、将来のオンチェーントランザクション手数料をカバーするために<strong>{{amount}} sats</strong>が予約されています。",
+      "clientFeeReserve": "<strong>クライアント側 ({{amount}} sats):</strong> チャネル閉鎖手数料をカバーするため、支出残高から予約されています",
+      "lspFeeReserve": "<strong>LSP側 ({{amount}} sats):</strong> チャネル管理操作のため、LSPの受信容量から予約されています",
+      "feeReserveConclusion": "これらの予約により、両当事者が協力的なチャネル閉鎖などの必要なオンチェーン操作を常に実行できることが保証されます。",
+      "spendingPercentage": "{{percent}}% 支出",
+      "zeroSpending": "0% 支出",
+      "fullSpending": "100% 支出",
+      "allReceiving": "全て受取",
+      "allSpending": "全て支払"
+    },
+    "assetChannel": {
+      "title": "{{ticker}}アセットチャネル",
+      "totalCapacity": "総アセット容量",
+      "assetDistribution": "アセットの配分",
+      "yourAssets": "あなたのアセット",
+      "lspReserve": "LSP準備金",
+      "total": "合計",
+      "yourAssetsInfo": " (緑): 購入して所有するアセット - 送信または取引に使用できます。",
+      "lspReserveInfo": " (ターコイズ): LSPが保有するアセット - 後で受信できる金額を決定します。"
+    },
+    "assetSection": {
+      "noAssetsTitle": "利用可能なアセットがありません",
+      "noAssetsMessage": "現在、チャネルに追加できるアセットがありません。後でもう一度試すか、アセットを追加せずに続行してください。",
+      "chooseAsset": "チャネル用のRGBアセットを選択",
+      "searchPlaceholder": "名前、ティッカー、またはアセットIDで検索...",
+      "selectAssetTitle": "RGBアセットを選択"
+    },
+    "feeBreakdown": {
+      "totalCostBreakdown": "総コストの内訳",
+      "estimatedCosts": "推定コスト",
+      "calculating": "(計算中...)",
+      "setupFee": "セットアップ手数料",
+      "capacityFee": "容量手数料",
+      "durationFee": "期間手数料",
+      "discount": "割引 ({{code}})",
+      "channelFees": "チャネル手数料",
+      "totalPayment": "合計支払額",
+      "feeExplanation": "この手数料は、チャネルのセットアップと維持にかかるコストをカバーします。支払う必要がある合計金額には、この手数料と希望するチャネル流動性が含まれます。"
+    },
+    "duration": {
+      "oneMonth": "1ヶ月",
+      "threeMonths": "3ヶ月",
+      "sixMonths": "6ヶ月",
+      "label": "チャネルロック期間",
+      "tooltipInfo": "LSPがチャネルを開いておくことを保証する最小時間。期間が長いほど安定性が高くなりますが、手数料に影響する可能性があります。1ヶ月 = 4,320ブロック、3ヶ月 = 12,960ブロック、6ヶ月 = 25,920ブロック。デフォルト: 3ヶ月。"
+    }
+  },
+  "rootRoute": {
+    "connectionErrorTitle": "接続エラー",
+    "noWalletFound": "ウォレットが見つかりません。続行するにはウォレットをセットアップしてください。",
+    "nodeNotRunning": "ノードが実行されていません。アプリを再起動してみてください。",
+    "returnToSetup": "ウォレットセットアップに戻る",
+    "connectingTitle": "ノードに接続中",
+    "connectingDescription": "接続を確立しています。お待ちください...",
+    "errorMessage": "エラー：{{message}}"
+  },
+  "createUtxos": {
+    "title": "Colored UTXOを作成",
+    "description": "Colored UTXOはRGBアセットライトニングチャネルの開設に必要です。アセット固有の支払いチャネルの作成を可能にし、Lightning Network上でのRGBアセットの高速で安全なトランザクションを実現します。",
+    "fields": {
+      "numberOfUtxos": "UTXO数",
+      "numberPlaceholder": "数量を入力",
+      "sizeLabel": "UTXOサイズ（サトシ単位）",
+      "sizePlaceholder": "サイズを入力",
+      "feeRate": "手数料率"
+    },
+    "feeOptions": {
+      "slow": "遅い（{{fee}} sat/vB）",
+      "normal": "標準（{{fee}} sat/vB）",
+      "fast": "速い（{{fee}} sat/vB）",
+      "custom": "カスタム"
+    },
+    "availableBalance": "利用可能残高：{{amount}}サトシ",
+    "actions": {
+      "create": "UTXOを作成"
+    },
+    "toastSuccess": "UTXOが正常に作成されました"
+  },
+  "legal": {
+    "common": {
+      "noticeTitle": "重要なお知らせ："
+    },
+    "privacy": {
+      "title": "KaleidoSwapプライバシーポリシー",
+      "lastUpdated": "最終更新日：{{date}}",
+      "noticeBody": "RGBプロトコルおよびRGBテストネットプロトコルは、該当するRGBトークンまたはRGBテストネットトークンの取引にプライバシー強化機能を組み込もうとしていますが、暗号化やプライバシー強化システムが完全に安全であることはありません。RGBプロトコルおよびRGBテストネットプロトコルは実験的なプロトコルであり、本アプリはこれらの実験的プロトコル用の実験的なウォレットアプリケーションです。本アプリは障害が発生する可能性があり、欠陥が含まれている場合があります。本アプリを使用した取引は公開される可能性があります。本アプリを通じて送信されるデータのセキュリティを保証することはできません。送信は自己責任で行ってください。",
+      "error": "プライバシーポリシーの読み込みに失敗しました"
+    },
+    "terms": {
+      "title": "テストネットKALEIDOSWAP利用規約",
+      "effectiveDate": "発効日：{{date}}",
+      "noticeItems": {
+        "0": "本アプリはRGBテストネットプロトコルおよびテストネットビットコインブロックチェーン上で動作します。",
+        "1": "本アプリは実験的なデジタル資産ウォレットアプリケーションです。",
+        "2": "本アプリの使用はすべて自己責任で行ってください。",
+        "3": "完全に失うことを覚悟できないテストネットBTCまたはRGBテストネットトークンの送受信に本アプリを使用しないでください。"
+      },
+      "error": "利用規約の読み込みに失敗しました"
+    }
+  },
+  "tradeManual": {
+    "loading": {
+      "initializing": "手動スワップを初期化しています",
+      "checkingBalance": "ウォレット残高と要件を確認しています"
+    },
+    "errors": {
+      "initializationFailed": "手動スワップコンポーネントの初期化に失敗しました。もう一度お試しください。"
+    },
+    "toast": {
+      "refreshSuccess": "データが正常に更新されました",
+      "refreshError": "データの更新に失敗しました。もう一度お試しください。"
+    },
+    "roles": {
+      "maker": "メイカー",
+      "taker": "テイカー"
+    },
+    "roleSelector": {
+      "title": "あなたの役割",
+      "refresh": "データを更新",
+      "makerDescription": "<maker>メイカー</maker>として、スワップを開始および実行できます。受信スワップをホワイトリストに登録するには、<taker>テイカー</taker>の役割に切り替えてください。",
+      "takerDescription": "<taker>テイカー</taker>として、受信スワップをホワイトリストに登録できます。スワップを開始および実行するには、<maker>メイカー</maker>の役割に切り替えてください。"
+    },
+    "swapExplanation": {
+      "title": "アトミックスワップの仕組み",
+      "cards": {
+        "trustless": {
+          "title": "トラストレス交換",
+          "description": "アトミックスワップは、互いに信頼せず第三者を介さずに、2者間で異なる資産を交換できます。"
+        },
+        "locks": {
+          "title": "暗号化ロック",
+          "description": "スワップは暗号化ハッシュロックを使用して、両者が資産を受け取るか、どちらも受け取らないことを保証します。"
+        },
+        "guarantee": {
+          "title": "アトミック保証",
+          "description": "「アトミック」特性により、スワップは完全に完了するか全く完了しないかのいずれかとなり、カウンターパーティリスクを排除します。"
+        }
+      },
+      "process": {
+        "title": "スワッププロセス",
+        "makerInitiates": {
+          "title": "メイカーが開始",
+          "description": "メイカーはスワップする資産と金額を定義し、スワップ文字列を生成します。"
+        },
+        "takerWhitelists": {
+          "title": "テイカーがホワイトリスト登録",
+          "description": "テイカーはスワップ条件を確認し、スワップ文字列をホワイトリストに登録して取引を承認します。"
+        },
+        "makerExecutes": {
+          "title": "メイカーが実行",
+          "description": "メイカーがスワップを実行し、両者間の資産のアトミック交換をトリガーします。"
+        }
+      },
+      "makerRole": {
+        "title": "メイカーの役割",
+        "intro": "メイカーとして、以下のことができます：",
+        "items": {
+          "0": "資産と金額を定義してスワップを開始する",
+          "1": "テイカーとスワップ文字列を生成して共有する",
+          "2": "テイカーがホワイトリストに登録した後、スワップを実行する",
+          "3": "開始フェーズと実行フェーズの両方を制御する"
+        }
+      },
+      "takerRole": {
+        "title": "テイカーの役割",
+        "intro": "テイカーとして、以下のことができます：",
+        "items": {
+          "0": "メイカーからスワップ文字列を受信する",
+          "1": "提案されたスワップ条件を確認する",
+          "2": "スワップ文字列をホワイトリストに登録して取引を承認する",
+          "3": "メイカーがスワップを実行するのを待つ"
+        }
+      },
+      "liquidity": {
+        "title": "流動性の要件",
+        "intro": "アトミックスワップを成功させるには、両者に以下が必要です：",
+        "items": {
+          "0": "ライトニングチャネルで交換される資産の十分な流動性",
+          "1": "メイカーとテイカー間の支払いをルーティングするためのビットコイン流動性",
+          "2": "両者を接続するアクティブでバランスの取れたチャネル"
+        },
+        "note": "流動性が不十分な場合、適切にホワイトリストに登録されていてもスワップが失敗する可能性があります。"
+      },
+      "collapsedHint": "クリックして展開し、アトミックスワップの仕組みと関連する役割について詳しく学びます。"
+    },
+    "makerForm": {
+      "title": "手動スワップ",
+      "description": "メイカーとしてアトミックスワップを作成・実行",
+      "initiateTitle": "スワップを開始（メイカー）",
+      "balance": {
+        "available": "利用可能"
+      },
+      "labels": {
+        "fromAsset": "送信アセット",
+        "amountToSend": "送信量",
+        "toAsset": "受取アセット",
+        "amountToReceive": "受取量",
+        "timeout": "タイムアウト（秒）",
+        "takerPubkey": "テイカーの公開鍵"
+      },
+      "placeholders": {
+        "selectAsset": "アセットを選択してください",
+        "enterAmount": "金額を入力",
+        "takerPubkey": "テイカーの公開鍵を入力"
+      },
+      "errors": {
+        "amountExceedsBalance": "金額が利用可能残高を超えています",
+        "enterTakerPubkey": "テイカーの公開鍵を入力してください"
+      },
+      "info": {
+        "initiateDescription": "スワップするアセットと金額を定義し、スワップを開始してスワップ文字列を生成します。",
+        "timeoutDescription": "スワップが有効な期間",
+        "minTimeout": "最小タイムアウトは10秒です",
+        "maxTimeout": "最大タイムアウトは86400秒（24時間）です",
+        "sufficientBalanceWarning": "選択したアセットに十分な残高があることを確認してください。資金が不足するとスワップは失敗します。",
+        "canReceiveUpTo": "最大受取可能額",
+        "swapInitiated": "スワップが開始されました。以下のスワップ文字列をテイカーと共有してください。",
+        "copiedToClipboard": "クリップボードにコピーしました！",
+        "executeInfo": "テイカーがスワップ文字列をホワイトリストに登録したら、以下でスワップを実行できます。"
+      },
+      "buttons": {
+        "initiateSwap": "スワップを開始",
+        "initiating": "スワップを開始中...",
+        "shareWithTaker": "テイカーと共有",
+        "executeSwap": "スワップを実行",
+        "executing": "スワップを実行中..."
+      }
+    }
+  },
+  "channelCard": {
+    "infoModal": {
+      "title": "チャネル情報",
+      "fields": {
+        "channelId": "チャネルID",
+        "fundingTx": "ファンディングトランザクション",
+        "peerPubkey": "ピア公開鍵",
+        "shortChannelId": "ショートチャネルID",
+        "status": "ステータス",
+        "capacity": "容量",
+        "localBalance": "ローカル残高",
+        "nextHtlcLimit": "次のHTLC上限",
+        "nextHtlcMinimum": "次のHTLC最小値",
+        "publicChannel": "公開チャネル",
+        "usable": "使用可能",
+        "assetId": "アセットID",
+        "assetLocalAmount": "アセットローカル量",
+        "assetRemoteAmount": "アセットリモート量"
+      },
+      "na": "N/A"
+    },
+    "status": {
+      "open": "オープン",
+      "pending": "保留中",
+      "offline": "オフライン"
+    },
+    "labels": {
+      "capacity": "容量",
+      "bitcoinLiquidity": "Bitcoin流動性",
+      "assetLiquidity": "{{ticker}}流動性",
+      "outbound": "送信",
+      "inbound": "受信",
+      "total": "合計"
+    },
+    "buttons": {
+      "details": "詳細",
+      "manage": "管理",
+      "close": "閉じる"
+    },
+    "tooltips": {
+      "info": "チャネル情報"
+    }
+  },
+  "utxoManagement": {
+    "title": "UTXO管理",
+    "status": {
+      "colorable": "Colorable",
+      "colored": "Colored",
+      "normal": "通常"
+    },
+    "summary": {
+      "colorable": {
+        "title": "Colorable UTXO",
+        "bullets": {
+          "0": "RGB対応で未割り当てのUTXO",
+          "1": "オンチェーンRGBアセットを受信"
+        }
+      },
+      "colored": {
+        "title": "Colored UTXO",
+        "bullets": {
+          "0": "RGBライトニングチャネルを開設",
+          "1": "オンチェーンRGBアセットを送信"
+        }
+      },
+      "normal": {
+        "title": "通常のUTXO",
+        "bullets": {
+          "0": "Bitcoinライトニングチャネルを開設",
+          "1": "通常のトランザクション"
+        }
+      },
+      "countLabel": "{{count}}個のUTXO"
+    },
+    "card": {
+      "rgbAllocations": "RGB割り当て："
+    },
+    "actions": {
+      "create": "新しいUTXOを作成"
+    },
+    "sections": {
+      "colorable": "Colorable UTXO",
+      "colored": "Colored UTXO",
+      "normal": "通常のUTXO"
+    },
+    "filter": {
+      "all": "すべて"
+    },
+    "empty": "UTXOが見つかりません。開始するにはいくつか作成してください。"
+  },
+  "depositModal": {
+    "progress": {
+      "selectAsset": "アセット選択",
+      "details": "入金詳細"
+    },
+    "common": {
+      "continue": "続ける",
+      "back": "戻る",
+      "finish": "完了"
+    },
+    "step1": {
+      "title": "アセット選択",
+      "subtitle": "ウォレットに入金するアセットを選択してください",
+      "selectorPlaceholder": "アセットを選択",
+      "newAssetLabel": "新しいアセット",
+      "searchPlaceholder": "アセットを検索...",
+      "addNewAsset": "新しいアセットを追加",
+      "noResults": "「{{query}}」に一致するアセットが見つかりません",
+      "selected": "選択済み",
+      "genericAsset": "アセット",
+      "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
+      "assetIdLabel": "アセットID(オプション)",
+      "assetIdPlaceholder": "アセットIDを入力(オプション)"
+    },
+    "step2": {
+      "titleWithTicker": "{{ticker}}を入金",
+      "titleGeneric": "アセットを入金",
+      "titleAny": "任意のRGBアセットを入金",
+      "intro": "お好みの入金方法を選択し、以下の手順に従ってください",
+      "network": {
+        "onchain": "オンチェーン",
+        "lightning": "Lightning",
+        "requiresAsset": "アセットIDが必要です"
+      },
+      "privacy": {
+        "title": "プライバシー保護受取",
+        "modePrivacy": "Blinded UTXOを使用(プライバシー強化)",
+        "modeWitness": "オンチェーンアドレスを使用(Witness方式)",
+        "privacyLabel": "プライバシーモード:",
+        "privacyDescription": "Colorable かつ Blinded な UTXO を使用してプライバシーを強化します。利用可能な Colorable UTXO が必要です。",
+        "witnessLabel": "Witnessモード:",
+        "witnessDescription": "標準的なBitcoinオンチェーンアドレスを使用します。シンプルですがプライバシー性は低くなります。",
+        "witnessNote": "注: Witness方式でRGBアセットを受け取る場合、送信者はRGBアセットが割り当てられる新しいUTXOを作成するために、いくらかのサトシを追加する必要があります。"
+      },
+      "networkInfo": {
+        "using": "{{network}}ネットワークを使用中",
+        "description": {
+          "signet": "Mutinynet Faucetからテストコインを取得して、アプリケーションをお試しください。",
+          "regtest": "RGB Tools Botからテストコインを取得して、アプリケーションをお試しください。",
+          "testnet": "Testnet Faucetからテストコインを取得して、アプリケーションをお試しください。"
+        },
+        "button": {
+          "signet": "Mutinynet Faucetにアクセス",
+          "regtest": "RGB Tools Botを開く",
+          "testnet": "Testnet Faucetにアクセス"
+        }
+      },
+      "noColorable": {
+        "title": "Colorable UTXOが必要です",
+        "description": "オンチェーンRGBアセットを受け取るには、Colorable UTXOが必要です。",
+        "cta": "Colorable UTXOを作成"
+      },
+      "amount": {
+        "optionalLabel": "金額（オプション）",
+        "precision": "精度：{{value}} 桁",
+        "example": "金額を入力（例：{{ticker}} の場合 10.23）",
+        "requiredLabel": "金額",
+        "maxLabel": "最大：{{amount}} {{asset}}",
+        "maxPlaceholder": "金額を入力（最大 {{amount}}）",
+        "notAvailable": "N/A",
+        "maxButton": "最大",
+        "rgbNote": "注：RGB アセット転送には 3,000 サトシが必要です。",
+        "noChannels": "警告：アクティブな Lightning チャネルが見つかりません。Lightning 入金は利用できません。",
+        "exceeds": "金額が利用可能な上限を超えています：{{amount}} {{asset}}",
+        "zeroAmountInfo": "支払う側が金額を決めるゼロ金額インボイスを作成するには空欄のままにしてください",
+        "btcPlaceholder": "金額を入力"
+      },
+      "bip21": {
+        "badge": "統合BIP21"
+      },
+      "actions": {
+        "copy": "クリップボードにコピー",
+        "generateAddress": "新しいアドレスを生成",
+        "generateAddressCta": "アドレスを生成",
+        "generateInvoice": "インボイスを生成",
+        "regenerate": "新しいアドレスを生成"
+      },
+      "labels": {
+        "lnInvoice": "LN インボイス",
+        "btcAddress": "BTC アドレス",
+        "rgbInvoice": "RGB インボイス"
+      },
+      "status": {
+        "pending": "支払い待機中...",
+        "success": "支払いを受け取りました！",
+        "failed": "支払いに失敗しました（{{status}}）"
+      },
+      "toasts": {
+        "generateAddressError": "アドレスの生成に失敗しました",
+        "rgbInvoiceError": "RGB インボイスの生成に失敗しました：{{error}}",
+        "rgbInvoiceInvalid": "RGB インボイスの生成に失敗しました：無効なレスポンス",
+        "rgbInvoiceUnknown": "RGB インボイスの生成に失敗しました",
+        "invalidAmount": "有効な正の数値を入力してください",
+        "lnInvoiceError": "Lightning インボイスの生成に失敗しました",
+        "addressCopied": "アドレスをクリップボードにコピーしました",
+        "addressCopyError": "アドレスのコピーに失敗しました",
+        "recipientCopied": "受取人 ID をクリップボードにコピーしました",
+        "recipientCopyError": "受取人 ID のコピーに失敗しました",
+        "lightningSuccess": "Lightning 入金を正常に受け取りました！",
+        "lightningFailed": "Lightning 入金に失敗しました：{{status}}"
+      }
+    }
+  },
+  "updaterModal": {
+    "fileSizes": {
+      "0": "バイト",
+      "1": "KB",
+      "2": "MB",
+      "3": "GB"
+    },
+    "fileSizeZero": "0バイト",
+    "errors": {
+      "timeout": "アップデートプロセスが5分後にタイムアウトしました。インターネット接続を確認してもう一度お試しください。",
+      "installFailed": "アップデートのインストールに失敗しました：{{message}}。もう一度試すか、GitHubから手動でダウンロードしてください。",
+      "cancelled": "ユーザーによってアップデートがキャンセルされました"
+    },
+    "common": {
+      "whatsNew": "新機能"
+    },
+    "completed": {
+      "title": "アップデート完了！🎉",
+      "success": "バージョン{{version}}が正常にインストールされました。",
+      "restartNote": "アップデートを適用するためにアプリケーションを自動的に再起動しています...",
+      "restarting": "再起動中...",
+      "manualRestart": "数秒以内にアプリケーションが自動的に再起動しない場合は、手動で再起動してアップデートを適用してください。"
+    },
+    "installing": {
+      "title": "アップデートをダウンロード中",
+      "versionLabel": "バージョン{{version}}",
+      "warning": "アップデート中はアプリケーションを閉じないでください",
+      "downloadedLabel": "ダウンロード済み",
+      "downloading": "ダウンロード中...",
+      "installing": "インストール中...",
+      "cancelHelp": "問題がありますか？クリックしてキャンセルし、もう一度試してください"
+    },
+    "error": {
+      "title": "アップデート失敗",
+      "retry": "もう一度試す"
+    },
+    "default": {
+      "title": "アップデートが利用可能です！",
+      "versionLabel": "バージョン",
+      "releasedOn": "リリース日：{{date}}",
+      "installing": "インストール中...",
+      "installCta": "ダウンロード&インストール",
+      "remindLater": "後で",
+      "recommendation": "最新の機能とセキュリティの改善を取得するためにアップデートすることをお勧めします。"
+    }
+  },
+  "tradeMarketMaker": {
+    "loading": {
+      "checkingBalance": "ウォレット残高と要件を確認中...",
+      "verifyingChannels": "チャネルの可用性と流動性を確認中...",
+      "connectingMaker": "マーケットメイカーに接続して取引ペアを取得中...",
+      "initializingInfrastructure": "トレーディングインフラストラクチャを初期化中...",
+      "connectingToMaker": "マーケットメイカーに接続中",
+      "initializingInterface": "トレーディングインターフェースを初期化中"
+    },
+    "header": {
+      "liveTrading": "ライブトレーディング",
+      "via": "経由",
+      "ready": "準備完了",
+      "noPairs": "ペアなし",
+      "noMaker": "メイカーなし",
+      "reconnect": "再接続"
+    },
+    "form": {
+      "youSend": "送信する",
+      "youReceive": "受け取る（推定）",
+      "available": "利用可能：",
+      "onchainAvailable": "オンチェーン利用可能：",
+      "canReceiveUpTo": "最大受取可能額：",
+      "status": "ステータス：",
+      "channelNeeded": "チャネルが必要"
+    },
+    "banners": {
+      "tradingOnchain": "オンチェーン残高で取引中",
+      "noChannelsYet": "まだトレーディングチャネルがありません。アセットを購入すると、オンチェーンBTC残高を使用して新しいチャネルが自動的に作成されます。",
+      "channelNotReady": "チャネル未準備：{{asset}}",
+      "channelsNotReady": "チャネル未準備：{{assets}}",
+      "channelAwaiting": "{{asset}}チャネルはブロックチェーンの確認を待機中です。取引ペアは表示できますが、チャネルが確認されるまでスワップは無効になります。これには通常数分かかります。",
+      "channelsAwaiting": "{{assets}}{{channelText}}はブロックチェーンの確認を待機中です。取引ペアは表示できますが、{{confirmText}}確認されるまでスワップは無効になります。これには通常数分かかります。",
+      "additionalChannelsPending": "追加チャネルが保留中",
+      "channelPendingConfirmation_one": "{{asset}}チャネルが確認待ちです。",
+      "channelPendingConfirmation_other": "{{count}}個のチャネル（{{assets}}）が確認待ちです。"
+    },
+    "channelWarning": {
+      "title": "{{asset}}チャネルが必要",
+      "sendMessage": "{{asset}}を送信するには、このアセット用のLightningチャネルを作成する必要があります。",
+      "receiveMessage": "{{asset}}を受け取るには、このアセット用のLightningチャネルを作成する必要があります。アセットは現在のレートで購入され、新しいチャネルに入金されます。"
+    },
+    "error": {
+      "title": "トレーディングエラー",
+      "maxLimitExceeded": "最大制限を超過",
+      "copyErrorMessage": "エラーメッセージをコピー",
+      "unableToGetQuote": "マーケットメイカーから見積もりを取得できません。もう一度お試しください。",
+      "pairNotAvailable": "この取引ペアは現在利用できません。",
+      "assetNotValid": "選択したアセットの1つが無効です。",
+      "unableToCalculateQuote": "見積もりを計算できません。別の金額を試してください。",
+      "amountOutsideRange": "入力した金額はこの取引ペアの有効範囲外です。",
+      "amountMustBeBetween": "金額は{{min}}から{{max}} {{asset}}の間である必要があります。",
+      "swapDisabledOnchain": "オンチェーン残高での取引時はアセットスワップは利用できません。BTCでアセットを購入することのみ可能です。",
+      "cannotSwapSameAsset": "両方のアセットに{{asset}}を選択することはできません",
+      "noTradingPairs": "{{asset}}に利用可能な取引ペアがありません",
+      "failedToFindPair": "有効な取引ペアが見つかりませんでした",
+      "cannotSwapZeroAmounts": "ゼロ量はスワップできません。有効な金額を入力してください。",
+      "noValidQuote": "有効な見積もりがありません。見積もりを更新してみてください。",
+      "channelAwaitingConfirmation": "{{asset}}チャネルは確認待ちです。スワップする前に準備が整うまでお待ちください。",
+      "noAssetChannel": "{{asset}}チャネルがありません。スワップするには{{asset}}でチャネルを開設してください。",
+      "noAssetChannelReceive": "{{asset}}チャネルがありません。受け取るには{{asset}}でチャネルを開設してください。",
+      "canOnlyReceiveUpTo": "最大{{amount}} {{asset}}まで受け取ることができます。",
+      "channelAwaitingPlural": "{{asset}}のチャネルは確認待ちです。準備が整うまでお待ちください。",
+      "pleaseWaitChannelConfirmation": "取引する前にチャネルが確認されるまでお待ちください。"
+    },
+    "swap": {
+      "exchangeRateQuote": "為替レートと見積もり",
+      "refresh": "↻ 更新",
+      "errorDetailsClipboard": "エラー詳細がクリップボードにコピーされました",
+      "swapFailed": "スワップ失敗：{{error}}"
+    },
+    "noChannels": {
+      "insufficientBalance": "Bitcoin残高不足",
+      "insufficientBalanceMessage": "トレーディングチャネルを開設するにはビットコインが必要です。取引を開始するにはBTCを入金してください。",
+      "depositBitcoin": "Bitcoinを入金",
+      "noChannelsAvailable": "利用可能なチャネルがありません",
+      "noChannelsMessage": "取引を開始するには、アセットを含むチャネルを作成するか、Lightning Service Providerから購入する必要があります。",
+      "createChannel": "チャネルを作成",
+      "buyFromLSP": "LSPから購入"
+    },
+    "toast": {
+      "swapCompleted": "スワップが正常に完了しました！",
+      "reconnectWait": "再接続する前にアプリの読み込みが完了するまでお待ちください。",
+      "reconnectSuccess": "マーケットメイカーに正常に再接続しました！",
+      "reconnectFailed": "マーケットメイカーへの再接続に失敗しました。メイカーURLとネットワーク接続を確認してください。",
+      "reconnectError": "再接続に失敗しました：{{error}}",
+      "channelOrderCreating": "オンチェーン残高でアセットを購入するためのチャネル注文を作成中！",
+      "createAssetChannel": "{{asset}}チャネルを作成しましょう！",
+      "needChannelToTrade": "取引するにはチャネルが必要です。希望するアセットで作成しましょう。",
+      "channelCreatedSuccess": "チャネルが正常に作成されました！更新中...",
+      "failedToRefreshAmounts": "金額の更新に失敗しました。もう一度お試しください。",
+      "initializationFailed": "トレーディングインターフェースの初期化に失敗しました。もう一度お試しください。",
+      "connectionError": "接続エラーが発生しました。取引が制限される可能性があります。",
+      "connectionFailed": "マーケットメイカーへのライブ接続の確立に失敗しました。メイカーURLを確認してもう一度試してください。"
+    },
+    "assetConflict": {
+      "warning": "警告：「{{ticker}}」の複数のバージョンが検出されました。取引には1つのバージョンのみが利用可能です。",
+      "multipleConflicts": "{{conflictCount}}個のアセット競合が見つかりました。{{excludedPairs}}個の取引ペアを除外しました。{{validPairs}}個の有効なペアが取引可能です。",
+      "noTradablePairs": "このマーケットメイカーで取引可能なペアがありません。メイカーはあなたがチャネルを持っているアセットの取引ペアを提供していません。",
+      "noValidPairs": "アセット競合のフィルタリング後、有効な取引ペアがありません。",
+      "tickerConflict": "アセット競合が検出されました：「{{ticker}}」には複数のアセットID（{{assetIds}}）があります。安全のため{{pairCount}}個の取引ペアを除外しました。",
+      "assetInfo": "{{count}}個のアセット競合が見つかりました。レジストリを表示してサポートされているアセットを確認してください。"
+    },
+    "validation": {
+      "insufficientBalance": "残高不足。送信可能な{{asset}}がありません。",
+      "enterAmount": "送信する金額を入力してください。",
+      "minimumOrderSize": "最小注文サイズは{{amount}} {{asset}}です。",
+      "maxSendAmount": "最大{{amount}} {{asset}}まで送信できます。",
+      "unableToReceive": "{{asset}}を受け取れません。チャネル容量がありません。",
+      "maxReceiveAmount": "最大{{amount}} {{asset}}まで受け取ることができます。",
+      "htlcLimit": "チャネル制約により、1回のトランザクションで最大{{amount}} {{asset}}まで送信できます。",
+      "minOrderSize": "{{asset}}の最小注文サイズは{{amount}}です。",
+      "maxOrderSize": "{{asset}}の最大注文サイズは{{amount}}です。",
+      "invalidAmount": "無効な金額です。この取引ペアの最小および最大注文サイズを確認してください。"
+    }
+  },
+  "withdrawModal": {
+    "balance": {
+      "btcLabel": "利用可能なBTC残高:",
+      "assetLabel": "利用可能な{{ticker}}残高:",
+      "available": "利用可能残高:"
+    },
+    "form": {
+      "addressPlaceholder": "Bitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスを貼り付けてください",
+      "addressRequired": "アドレスまたはインボイスが必要です",
+      "analyzing": "入力を解析中…",
+      "clear": "クリア",
+      "detected": {
+        "label": "検出:",
+        "types": {
+          "lightningInvoice": "Lightningインボイス",
+          "lightningAddress": "Lightningアドレス",
+          "bitcoinAddress": "Bitcoinアドレス",
+          "rgbInvoice": "RGBインボイス"
+        }
+      },
+      "lightningCapacity": {
+        "title": "最大Lightning容量:",
+        "withdrawable": "最大出金可能額(手数料差引後):"
+      },
+      "units": {
+        "sats": "サトシ"
+      },
+      "witness": {
+        "label": "Witness UTXO用のBitcoin量(サトシ)",
+        "placeholder": "サトシで金額を入力(最小: 512、例: 1200)",
+        "errors": {
+          "min": "金額は最低512サトシ必要です",
+          "required": "Witness量が必要です"
+        },
+        "note": "注: RGBアセットをWitness受取人に送信する場合、RGBアセットが割り当てられる新しいUTXOを受取人のために作成するために、いくらかのBitcoinを追加する必要があります。推奨: 1000-2000サトシ。"
+      },
+      "assetSelector": {
+        "label": "アセット",
+        "placeholder": "アセットを選択"
+      },
+      "amount": {
+        "label": "金額",
+        "optionalLabel": "金額(オプション)",
+        "requiredLabel": "金額",
+        "precision": "精度: {{value}}桁",
+        "example": "金額を入力(例: {{ticker}}の場合10.23)",
+        "maxLabel": "最大: {{amount}} {{asset}}",
+        "maxPlaceholder": "金額を入力(最大 {{amount}})",
+        "minBitcoinSat": "1 SAT",
+        "minBitcoinBtc": "0.00000001 BTC",
+        "minAssetAmount": "{{amount}} {{ticker}}",
+        "notAvailable": "N/A",
+        "maxButton": "最大",
+        "equivalent": "{{unit}}換算:",
+        "exceedsAvailable": "金額が利用可能残高を超えています。「最大」をクリックして全残高を使用してください。",
+        "lightningLimit": {
+          "title": "Lightning上限:",
+          "description": "最大出金可能額はチャネル容量とHTLC上限により制限されます。"
+        },
+        "rgbNote": "注: RGBアセット転送には3,000サトシが必要です。",
+        "noChannels": "警告: アクティブなLightningチャネルが見つかりません。Lightning入金は利用できません。"
+      },
+      "fees": {
+        "label": "手数料率",
+        "customLabel": "カスタム手数料率(sat/vB)",
+        "options": {
+          "slow": "遅い",
+          "normal": "標準",
+          "fast": "速い",
+          "custom": "カスタム"
+        }
+      },
+      "donation": {
+        "label": "ギフト/寄付として送信",
+        "description": "ギフト転送では受取人の検証なしで即座に送信できます。チップやプレゼントに便利です。注意してご使用ください。"
+      },
+      "status": {
+        "pending": "支払い待機中...",
+        "success": "支払いを受け取りました!",
+        "failed": "支払いに失敗しました({{status}})"
+      },
+      "actions": {
+        "copy": "クリップボードにコピー",
+        "generateAddress": "新しいアドレスを生成",
+        "generateInvoice": "インボイスを生成",
+        "generateAddressCta": "アドレスを生成"
+      },
+      "submit": {
+        "lightning": "インボイスを支払う",
+        "rgb": "RGBアセットを送信",
+        "onchain": "出金"
+      }
+    },
+    "main": {
+      "title": {
+        "form": "資金を出金",
+        "confirm": "出金を確認"
+      },
+      "subtitle": {
+        "form": "Bitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスに資金を送信します。",
+        "confirm": "確認する前に出金の詳細を確認してください。"
+      },
+      "buttons": {
+        "cancel": "キャンセル"
+      },
+      "labels": {
+        "assetFallback": "アセット",
+        "unknownAsset": "不明"
+      },
+      "toasts": {
+        "lightningSuccess": "Lightning支払いが成功しました!",
+        "btcSuccess": "BTC出金が成功しました",
+        "rgbSuccess": "RGBアセット出金が成功しました"
+      },
+      "errors": {
+        "zeroBalance": "エラー: {{asset}}の残高がゼロです。出金を続行できません。",
+        "fetchBalance": "エラー: {{asset}}残高の取得に失敗しました。出金を続行できません。",
+        "assetMissing": "エラー: このアセットを保有していません。出金を続行できません。",
+        "fetchAssetBalance": "エラー: このアセットの残高取得に失敗しました。出金を続行できません。",
+        "invoiceAssetCapacity": "エラー: インボイスはアセット{{asset}}…を{{requested}}要求していますが、最大チャネル容量は{{capacity}}のみです。支払いを続行できません。",
+        "invoiceBtcCapacity": "エラー: インボイスは{{requested}}サトシを要求していますが、最大BTCチャネル容量は{{capacity}}サトシのみです。支払いを続行できません。",
+        "invoiceExceedsBalance": "エラー: インボイス金額({{amount}}サトシ)が利用可能残高{{balance}} {{unit}}を超えています。支払いを続行できません。",
+        "invoiceExceedsCapacity": "エラー: インボイス金額({{amount}}サトシ)がアウトバウンドチャネル容量({{capacity}}サトシ)を超えています。支払いを続行できません。",
+        "rgbAssetMissing": "エラー: 要求されたアセット{{asset}}…を保有していません。支払いを続行できません。",
+        "paymentFailedGeneric": "エラー: 支払いに失敗しました。詳細を確認するか、もう一度お試しください。",
+        "paymentPendingTimeout": "エラー: 60秒後も支払いが保留中です。手動でステータスを確認するか、もう一度お試しください。",
+        "decodeRgbFailed": "RGBインボイスのデコードに失敗しました。インボイスが有効であることを確認してください。",
+        "invalidFormat": "無効なアドレス形式です。有効なBitcoinアドレス、Lightningインボイス、Lightningアドレス、またはRGBインボイスを入力してください。",
+        "decodeInputFailed": "入力のデコードに失敗しました。アドレス形式を確認してください。",
+        "lightningCapacityNeeded": "エラー: アウトバウンド容量が不足しています。{{amount}}サトシが必要ですが、利用可能なのは{{capacity}}サトシのみです。",
+        "invalidLightningInvoice": "無効なLightningインボイスです。",
+        "rgbMissingRecipient": "デコードされたRGBインボイスに受取人IDがありません。",
+        "rgbMissingTransport": "デコードされたRGBインボイスにトランスポートエンドポイントがありません。",
+        "witnessAmountTooLow": "Witness受取人の場合、Witness量は最低512サトシ必要です。",
+        "proxyEndpointMissing": "プロキシトランスポートエンドポイントが設定されていません。",
+        "rgbPaymentFailed": "RGBアセット支払いに失敗しました。",
+        "unknownPayment": "不明な支払いエラー",
+        "lightningImmediateFailure": "支払いが即座に失敗しました。ステータス: {{status}}",
+        "lightningSendPayment": "Lightning支払いに失敗しました: {{error}}",
+        "withdrawalFailedToast": "出金に失敗しました: {{error}}",
+        "withdrawalFailedDetails": "出金に失敗しました: {{error}}",
+        "withdrawalFailedDefault": "出金に失敗しました",
+        "onchainExceedsBalance": "出金金額({{amount}})が利用可能残高({{balance}})を超えています",
+        "capacityToast": "続行できません: インボイス金額({{amount}}サトシ)がアウトバウンド容量({{capacity}}サトシ)を超えています。",
+        "zeroAmountRequired": "このゼロ金額インボイスには金額を入力してください。",
+        "recipientNetworkMismatch": "このRGBインボイスは、あなたのウォレットとは異なるBitcoinネットワーク用です（ウォレットは{{network}}上にあります）。受取人に同じネットワークで生成したインボイスを依頼して、もう一度お試しください。",
+        "invalidRecipientId": "このRGBインボイスの受取人IDが無効です（blinded UTXOまたはスクリプトである必要があります）。インボイスを確認し、受取人に新しいものを生成してもらってください。",
+        "invalidRecipientData": "RGBインボイスを正しく読み取れませんでした。完全で改変されていないインボイスを貼り付けたことを確認するか、受取人に新しいものを依頼してください。",
+        "invalidTransportEndpoint": "このインボイスのRGBトランスポート（プロキシ）エンドポイントが無効または到達不能です。受取人に有効なトランスポートエンドポイントを持つインボイスを依頼するか、プロキシ設定を確認してください。",
+        "insufficientUtxos": "このRGB支払いを完了するのに十分なUTXOがありません。送信する前に新しいUTXOを作成する必要があるかもしれません。"
+      },
+      "warnings": {
+        "invoiceAdjusted": "警告: インボイスは{{requested}} {{asset}}を要求していますが、残高は{{balance}} {{asset}}のみです。最大送信可能額に調整されました。",
+        "noRgbAssets": "警告: 送信可能なRGBアセットがありません。"
+      },
+      "info": {
+        "zeroAmountInvoice": "これはゼロ金額インボイスです。下に支払いたい金額を入力してください。",
+        "assetAmountRequired": "このインボイスには{{ticker}}の金額が指定されていません。送信する金額を入力してください。"
+      }
+    },
+    "details": {
+      "lightning": {
+        "title": "Lightningインボイス詳細",
+        "assetLabel": "アセット:",
+        "assetAmountLabel": "アセット量:",
+        "assetAmountNotSpecified": "インボイスに未指定",
+        "lightningBalanceLabel": "あなたのLightning残高:",
+        "btcAmountLabel": "BTC量:",
+        "amountLabel": "金額:",
+        "descriptionLabel": "説明:",
+        "descriptionPayment": "支払い #{{hash}}",
+        "descriptionFallback": "説明なし",
+        "expiresLabel": "有効期限:",
+        "payeeLabel": "受取人:",
+        "maxOutboundLabel": "最大アウトバウンド:",
+        "satValue": "{{value}}サトシ",
+        "capacityMin": "0サトシ",
+        "capacityUsage": "容量の{{percentage}}%を使用",
+        "lowCapacityWarning": "可視容量が低いです。支払いを試すことはできますが、失敗する可能性があります。",
+        "withinCapacity": "支払い金額はアウトバウンド容量内です",
+        "insufficientAsset": "この支払いに対してLightningチャネル内の{{ticker}}が不足しています。"
+      },
+      "rgb": {
+        "title": "RGBインボイス詳細",
+        "assetLabel": "アセット:",
+        "requestedAmountLabel": "要求金額:",
+        "amountNotSpecified": "指定なし",
+        "amountHint": "💡 必要に応じて以下の金額を変更できます",
+        "recipientLabel": "受取人ID:",
+        "expiresLabel": "有効期限:",
+        "transportLabel": "トランスポート:",
+        "transportValue": "{{count}}個のエンドポイント",
+        "balanceLabel": "あなたの残高:"
+      }
+    },
+    "paymentStatus": {
+      "pending": "支払い処理中...",
+      "succeeded": "支払いが成功しました!",
+      "failed": "支払いに失敗しました",
+      "expired": "支払いの有効期限が切れました"
+    },
+    "confirmation": {
+      "overlay": {
+        "title": "支払い失敗",
+        "body": "Lightningの支払いを処理できませんでした。",
+        "closing": "自動的に閉じます..."
+      },
+      "status": {
+        "checking": "支払いステータスを確認中... しばらくお待ちください。",
+        "pending": "支払い処理中です。Lightning Networkが支払いを処理するまでお待ちください。",
+        "failedTitle": "支払い失敗",
+        "failedDescription": "Lightningの支払いを処理できませんでした。以下のエラー詳細を確認してください。"
+      },
+      "labels": {
+        "type": "種別:",
+        "asset": "アセット:",
+        "amount": "金額:",
+        "btcAmount": "BTC量:",
+        "transferType": "転送タイプ:",
+        "paymentHash": "支払いハッシュ:",
+        "assetId": "アセットID:",
+        "assetAmount": "アセット量:",
+        "feeRate": "手数料率:",
+        "invoice": "インボイス:",
+        "address": "アドレス:"
+      },
+      "types": {
+        "lightning": "Lightning支払い",
+        "onchain": "オンチェーン出金"
+      },
+      "donation": "ギフト/寄付",
+      "rgbNotice": "これはRGBアセット転送です。プロセスは完了まで数分かかり、受取人の確認が必要です。",
+      "validation": {
+        "errorPrefix": "エラー:",
+        "warningPrefix": "警告:"
+      },
+      "buttons": {
+        "back": "戻る",
+        "confirm": "確認"
+      },
+      "fee": {
+        "custom": "{{rate}} sat/vB(カスタム)",
+        "predefined": "{{rate}} sat/vB({{label}})"
+      }
+    }
   },
   "components": {
     "alert": {
@@ -2645,6 +2665,15 @@
         "columns": "列",
         "selectColumns": "列を選択",
         "resetToDefaults": "デフォルトに戻す",
+        "editColumns": "列を編集",
+        "allAssets": "すべてのアセット",
+        "allTypes": "すべての種類",
+        "typeBitcoin": "Bitcoin",
+        "typeRgbAsset": "RGBアセット",
+        "allStatuses": "すべてのステータス",
+        "statusCompleted": "完了",
+        "statusFailed": "失敗",
+        "statusCreated": "作成済み",
         "refresh": "更新",
         "detailsModal": {
           "title": "チャネル注文の詳細",
@@ -2741,40 +2770,19 @@
       "built": "ビルド日時:"
     },
     "buyChannelModal": {
-      "discount": "割引",
-      "confirmationTime": "確認時間:",
-      "noFundsDeducted": "資金は差し引かれませんでした。新しい注文を作成して再試行してください。",
-      "confirmAssetPurchase": "アセット購入の確認",
-      "buyChannelWithAsset": "アセット付きチャネルを購入",
-      "completePayment": "支払いを完了",
-      "orderStatus": "注文ステータス",
-      "reviewAndConfirm": "購入内容を確認・承認、またはカスタマイズしてください",
-      "configureChannel": "チャネルとアセットのパラメータを設定してください",
-      "payForChannel": "注文を完了するためにチャネルの料金をお支払いください",
-      "orderCompleted": "チャネル注文が正常に完了しました！",
-      "orderStatusSubtitle": "注文ステータス",
-      "confirmPurchase": "購入を確認",
-      "purchaseDescription": "ライトニングチャネルで{{amount}} {{ticker}}を購入します。確認して続行するか、カスタマイズしてください。",
-      "assetCost": "アセットコスト",
-      "yourLiquidity": "あなたの流動性",
-      "fees": "手数料",
-      "total": "合計",
-      "cancel": "キャンセル",
-      "customize": "カスタマイズ",
-      "loading": "読み込み中...",
-      "proceedToPayment": "支払いに進む",
-      "payWithWallet": "ウォレットで支払う",
-      "assetPurchase": "アセット購入",
       "balanceNeededDescription": "現在の残高では、この支払いルートはまだ利用できません。",
       "balanceNeededTitle": "残高をさらに用意してください",
       "availableLabel": "利用可能",
       "capacityFee": "容量手数料",
+      "discount": "割引",
       "continue": "続行",
+      "confirmationTime": "確認時間:",
       "durationFee": "期間手数料",
       "expiresLabel": "有効期限",
       "lightningInvoice": "Lightningインボイス",
       "loadingBalance": "残高を読み込み中...",
       "loadingQuote": "見積もりを読み込み中...",
+      "noFundsDeducted": "資金は差し引かれませんでした。新しい注文を作成して再試行してください。",
       "onchainAddress": "オンチェーンアドレス",
       "openAssetLightningChannel": "資産Lightningチャネルを開設",
       "openBtcLightningChannel": "BTC Lightningチャネルを開設",
@@ -2812,7 +2820,28 @@
       "walletDescription": "ウォレット支払いオプションを開いて残高を確認し、1つのモーダルからLightningまたはオンチェーンで支払えます。",
       "walletEyebrow": "ウォレット支払い",
       "walletLightningDescription": "現在の送信可能流動性を使って、最速のウォレット支払いルートを利用します。",
-      "walletOnchainDescription": "オンチェーンのウォレット残高から直接注文に資金を入れ、ここで手数料レベルを選択します。"
+      "walletOnchainDescription": "オンチェーンのウォレット残高から直接注文に資金を入れ、ここで手数料レベルを選択します。",
+      "confirmAssetPurchase": "アセット購入の確認",
+      "buyChannelWithAsset": "アセット付きチャネルを購入",
+      "completePayment": "支払いを完了",
+      "orderStatus": "注文ステータス",
+      "reviewAndConfirm": "購入内容を確認・承認、またはカスタマイズしてください",
+      "configureChannel": "チャネルとアセットのパラメータを設定してください",
+      "payForChannel": "注文を完了するためにチャネルの料金をお支払いください",
+      "orderCompleted": "チャネル注文が正常に完了しました！",
+      "orderStatusSubtitle": "注文ステータス",
+      "confirmPurchase": "購入を確認",
+      "purchaseDescription": "ライトニングチャネルで{{amount}} {{ticker}}を購入します。確認して続行するか、カスタマイズしてください。",
+      "assetCost": "アセットコスト",
+      "yourLiquidity": "あなたの流動性",
+      "fees": "手数料",
+      "total": "合計",
+      "cancel": "キャンセル",
+      "customize": "カスタマイズ",
+      "loading": "読み込み中...",
+      "proceedToPayment": "支払いに進む",
+      "payWithWallet": "ウォレットで支払う",
+      "assetPurchase": "アセット購入"
     },
     "feeBreakdown": {
       "channelFees": "チャネル手数料:"
@@ -2868,6 +2897,13 @@
       "btcLnBalance": "BTC LN残高",
       "usdtLnBalance": "USDT LN残高"
     },
+    "section": {
+      "balances": "チャネル残高",
+      "pendingBadge": "保留中",
+      "pendingUsdtChannels": "保留中のUSDTチャネル",
+      "pendingUsdtDescription": "新しいUSDT Lightningチャネルは作成中です。承認されると利用可能残高に表示されます。",
+      "pendingUsdtTitle": "新しいUSDTチャネルが保留中"
+    },
     "card": {
       "executions": "実行回数",
       "accumulated": "累積",
@@ -2883,10 +2919,10 @@
       "subtitle": "金額、トリガーモード、スケジュールを設定します。いつでも一時停止またはキャンセルできます。",
       "scheduledHint": "定期的な間隔で買い付け",
       "targetHint": "BTCがトリガーに達したら買い付け",
+      "conversionHint": "各実行でUSDTを一度使い、BTC satsが加算されます。",
       "estimatedReceive": "1回あたりの受取見込み",
       "remainingBalance": "各買い付け後の残高",
       "scheduleNote": "ノードがアンロック中は約30秒ごとに実行可否を確認します。",
-      "conversionHint": "各実行でUSDTを一度使い、BTC satsが加算されます。",
       "liquidityHint": "DCAには使えるUSDT Lightning残高と、各実行に十分なBTC受取容量が必要です。"
     },
     "tabs": {
@@ -2917,15 +2953,15 @@
     "howItWorks": {
       "title": "DCAの仕組み",
       "description": "各注文は指定したUSDT金額でBTCを繰り返し購入します。実行はノードがアンロックかつ準備完了のときのみ行われます。",
-      "scheduled": "定期: 固定間隔で購入（例: 24時間ごと）。",
-      "priceTarget": "価格ターゲット: BTC価格がトリガー以下になったときに購入。",
-      "actions": "操作: 今すぐ実行で即時購入、一時停止でトリガー停止、キャンセルで履歴へ移動。",
       "fundingTitle": "1. 注文に資金を入れる",
       "fundingDescription": "購入額に十分なUSDT Lightning残高を維持してください。BTC Lightning容量によって、各実行で受け取れるsats数が決まります。",
       "triggerTitle": "2. トリガーを選ぶ",
       "triggerDescription": "定期注文は各間隔ごとに購入します。価格目標注文はBTCがしきい値に達するのを待ち、購入が成功すると新しい市場価格から再度有効になります。",
       "manageTitle": "3. 監視して操作する",
-      "manageDescription": "今すぐ購入するには実行、自動実行を止めるには一時停止、過去の実行を残したまま履歴へ移すにはキャンセルを使います。"
+      "manageDescription": "今すぐ購入するには実行、自動実行を止めるには一時停止、過去の実行を残したまま履歴へ移すにはキャンセルを使います。",
+      "scheduled": "定期: 固定間隔で購入（例: 24時間ごと）。",
+      "priceTarget": "価格ターゲット: BTC価格がトリガー以下になったときに購入。",
+      "actions": "操作: 今すぐ実行で即時購入、一時停止でトリガー停止、キャンセルで履歴へ移動。"
     },
     "orderHelp": {
       "scheduled": "この注文は選択した間隔に基づいて定期的に購入します。",
@@ -2948,6 +2984,8 @@
       "failed": "DCA注文に失敗しました: {{error}}",
       "skippedNoWs": "DCAをスキップ: Makerに未接続"
     },
+    "addBtcLiquidity": "Add BTC",
+    "addUsdtLiquidity": "Add USDT",
     "getUsdt": {
       "cta": "Get USDT",
       "title": "Get USDT on Lightning",
@@ -2958,23 +2996,14 @@
       "onChainBalance": "On-chain balance: {{amount}} USDT",
       "noOnChain": "No on-chain USDT available",
       "useAll": "Use all",
-      "openButton": "Open USDT Channel",
-      "channelOpened": "USDT channel opening initiated",
-      "errorLspInfo": "Failed to get LSP info",
       "usdtAmountLabel": "USDT amount",
       "capacityLabel": "Channel capacity",
       "capacityHint": "BTC capacity of the channel. Also sets the max BTC you can receive per DCA execution.",
       "capacityRange": "Min {{min}} – max {{max}} sats",
-      "maxReceive": "max receive ≈ {{sats}} sats BTC"
-    },
-    "addBtcLiquidity": "Add BTC",
-    "addUsdtLiquidity": "Add USDT",
-    "section": {
-      "balances": "チャネル残高",
-      "pendingBadge": "保留中",
-      "pendingUsdtChannels": "保留中のUSDTチャネル",
-      "pendingUsdtDescription": "新しいUSDT Lightningチャネルは作成中です。承認されると利用可能残高に表示されます。",
-      "pendingUsdtTitle": "新しいUSDTチャネルが保留中"
+      "maxReceive": "max receive ≈ {{sats}} sats BTC",
+      "openButton": "Open USDT Channel",
+      "channelOpened": "USDT channel opening initiated",
+      "errorLspInfo": "Failed to get LSP info"
     }
   },
   "limitOrders": {
@@ -3043,21 +3072,5 @@
       "invalidAmount": "有効な数量を入力してください",
       "insufficientBalance": "残高不足"
     }
-  },
-  "launcher": {
-    "modes": {
-      "both": {
-        "title": "ノード + Mind"
-      },
-      "node": {
-        "title": "ノードのみ"
-      },
-      "mind": {
-        "title": "Mind のみ"
-      }
-    }
-  },
-  "liquidity": {
-    "sell": "売却"
   }
 }

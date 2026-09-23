@@ -15,9 +15,7 @@ export interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-/**
- * Modal component for displaying content in a overlay
- */
+/** Modal component for displaying content in a overlay */
 export const Modal: React.FC<ModalProps> = ({
   title,
   isOpen,

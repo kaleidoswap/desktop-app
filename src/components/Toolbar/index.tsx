@@ -42,6 +42,7 @@ import {
   setSettingsAsync,
 } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForDockerNodeReady, waitForNodeReady } from '../../utils/nodeState'
+import { logger } from '../../utils/logger'
 
 export interface Account {
   datapath: string
@@ -435,7 +436,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
       )
 
       if (nodeInfoRes.isSuccess) {
-        console.log('Node unlocked, navigating to dashboard')
+        logger.debug('Node unlocked, navigating to dashboard')
         navigate(WALLET_DASHBOARD_PATH)
         return true
       }
@@ -458,7 +459,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
         status === 403 ||
         status === '403'
       ) {
-        console.log('Node locked, navigating to unlock page')
+        logger.debug('Node locked, navigating to unlock page')
         navigate(WALLET_UNLOCK_PATH)
         return true
       }
@@ -683,7 +684,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
                   }
                   await stoppedPromise
                 } catch (error) {
-                  console.warn(`Could not stop node on port ${port}:`, error)
+                  logger.warn(`Could not stop node on port ${port}:`, error)
                 }
               }
             } else {
@@ -777,10 +778,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             timeoutMs: 90000,
           })
 
-          // Decide destination from real node API status:
-          // - unlocked: dashboard
-          // - locked: unlock
-          // - uninitialized: setup
+          // Destination follows the real node API status.
           let destination:
             | typeof WALLET_DASHBOARD_PATH
             | typeof WALLET_UNLOCK_PATH
@@ -913,7 +911,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({ isCollapsed = false }) => {
             return
           }
         } catch (error) {
-          console.warn('Docker auto-start check failed:', error)
+          logger.warn('Docker auto-start check failed:', error)
           // Fall through to normal remote node handling
         }
       }
@@ -1184,7 +1182,7 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
         'Node switch operation'
       )
     } catch (error) {
-      console.error('Node switch error:', error)
+      logger.error('Node switch error:', error)
       if (error instanceof Error) {
         setError(error.message)
         // Check if error message contains suggested ports
@@ -1421,7 +1419,7 @@ const DeleteNodeModalContent: React.FC<DeleteNodeModalContentProps> = ({
       onCancel() // Close the modal after successful deletion
     } catch (error) {
       // Error is already handled in the parent component
-      console.error('Failed to delete node:', error)
+      logger.error('Failed to delete node:', error)
     }
   }
 

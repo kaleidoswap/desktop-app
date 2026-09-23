@@ -30,12 +30,8 @@ impl fmt::Display for CryptoError {
 
 impl Error for CryptoError {}
 
-/// Derives a 32-byte encryption key from a password using Argon2id
-///
-/// Uses Argon2id with secure parameters:
-/// - Memory: 64 MB
-/// - Iterations: 3
-/// - Parallelism: 4 threads
+/// Derives a 32-byte key from a password: Argon2id, 64 MB, 3 iterations,
+/// 4 threads.
 fn derive_key(password: &str, salt: &[u8]) -> Result<[u8; 32], CryptoError> {
     // Configure Argon2 with secure parameters
     let argon2 = Argon2::default();
@@ -65,9 +61,7 @@ fn derive_key(password: &str, salt: &[u8]) -> Result<[u8; 32], CryptoError> {
     Ok(key)
 }
 
-/// Encrypts a mnemonic phrase using AES-256-GCM
-///
-/// Returns (encrypted_data_hex, salt_hex, nonce_hex)
+/// Encrypts a mnemonic with AES-256-GCM → (encrypted_hex, salt_hex, nonce_hex).
 pub fn encrypt_mnemonic(
     mnemonic: &str,
     password: &str,
@@ -112,9 +106,7 @@ pub fn encrypt_mnemonic(
     ))
 }
 
-/// Decrypts a mnemonic phrase using AES-256-GCM
-///
-/// Takes hex-encoded encrypted_data, salt, and nonce
+/// Decrypts a mnemonic from hex-encoded encrypted_data, salt and nonce.
 pub fn decrypt_mnemonic(
     encrypted_hex: &str,
     password: &str,

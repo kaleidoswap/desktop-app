@@ -1,11 +1,10 @@
 //! On-demand download + install of the KaleidoMind agent runtime.
 //!
-//! The packaged installer no longer bundles the ~1.7 GB agent (provider + mcp +
-//! Node). The first time the user enables KaleidoMind we download the
-//! per-platform tarball from the `mind-assets-*` GitHub release into the app's
-//! data dir, verify its sha256, extract it, and point the sidecar env vars
-//! (read by mind.rs) at it. Progress streams to the frontend via the
-//! `mind-runtime` event. In dev the sidecar still uses the sibling repos.
+//! The installer doesn't bundle the ~1.7 GB agent (provider + mcp + Node). On
+//! first enable we fetch the per-platform tarball from the `mind-assets-*`
+//! GitHub release into the app data dir, verify its sha256 and extract it;
+//! progress streams to the frontend on the `mind-runtime` event. In dev the
+//! sidecar uses the sibling repos instead.
 
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -106,10 +105,9 @@ pub fn is_installed(app: &AppHandle) -> bool {
         .unwrap_or(false)
 }
 
-// Path resolvers for the downloaded runtime. mind.rs reads these at
-// sidecar-start time and passes them to the CHILD via cmd.env(...) — we never
-// mutate this process's own environment (std::env::set_var is not thread-safe).
-// All gate on the current version so a stale runtime is ignored.
+// Path resolvers for the downloaded runtime, read by mind.rs at sidecar-start
+// time and passed to the child via cmd.env (std::env::set_var is not
+// thread-safe). All gate on the current version so a stale runtime is ignored.
 
 /// The downloaded provider package dir (`…/mind-provider`, parent of `dist/`),
 /// if the current-version runtime is installed.
@@ -245,9 +243,8 @@ fn do_install(app: &AppHandle, name: &str, root: &Path) -> Result<(), String> {
         let _ = fs::write(vf, ASSETS_TAG);
     }
 
-    // Done — no env mutation needed: mind.rs resolves this path on the next
-    // sidecar start (provider_dir/mcp_path/node_bin_path) and passes it to the
-    // child process, so the agent starts without an app restart.
+    // No env mutation needed: mind.rs resolves this path on the next sidecar
+    // start, so the agent picks it up without an app restart.
     emit(app, "done", total, total, None);
     Ok(())
 }

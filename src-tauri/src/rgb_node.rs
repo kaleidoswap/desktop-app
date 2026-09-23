@@ -71,8 +71,14 @@ impl NodeProcess {
     }
 
     pub fn set_window(&self, window: WebviewWindow) {
-        *self.window.lock().unwrap() = Some(window.clone());
-        *self.app_handle.lock().unwrap() = Some(window.app_handle().clone());
+        *self
+            .window
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window.clone());
+        *self
+            .app_handle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(window.app_handle().clone());
     }
 
     /// Check if a port is available
@@ -243,10 +249,8 @@ impl NodeProcess {
         Ok(())
     }
 
-    /// Starts a new RGB Lightning Node process (if none is running).
-    /// If one is running, it is shut down first, then a new one is started.
-    /// Returns an error if the node binary cannot be started.
-    /// On Windows, this will always return an error since rgb-lightning-node is not supported.
+    /// Starts a node process, shutting down any running one first. Always errors
+    /// on Windows, where rgb-lightning-node is unsupported.
     #[allow(dead_code)]
     pub fn start(
         &self,
@@ -724,12 +728,10 @@ impl NodeProcess {
         Ok(daemon_port)
     }
 
-    /// Like `start()` but returns the daemon port immediately after the process and its
-    /// monitoring thread have been spawned, *without* blocking on the HTTP readiness probe.
-    ///
-    /// The caller is responsible for calling `NodeProcess::wait_for_http_ready_static` and
-    /// `NodeProcess::finalize_running` (or `handle_http_wait_error`) after releasing whatever
-    /// lock they hold, so that other Tauri commands are not blocked during the ~30-second wait.
+    /// Like `start()` but returns as soon as the process is spawned, without
+    /// blocking on the HTTP readiness probe. The caller must then call
+    /// `wait_for_http_ready_static` + `finalize_running` (or `handle_http_wait_error`)
+    /// after releasing its lock, so the ~30s wait doesn't block other commands.
     #[allow(dead_code)]
     pub fn start_spawn_only(
         &self,
@@ -1080,7 +1082,10 @@ impl NodeProcess {
             path
         } else {
             // In production mode, get the resource path from the app handle
-            let app_handle = self.app_handle.lock().unwrap();
+            let app_handle = self
+                .app_handle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let app_handle = app_handle.as_ref().ok_or_else(|| {
                 "App handle not set. Make sure to call set_window first.".to_string()
             })?;

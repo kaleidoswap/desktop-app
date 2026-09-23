@@ -7,9 +7,7 @@ interface LoadingPlaceholderProps {
   rounded?: boolean
 }
 
-/**
- * A loading placeholder with animation
- */
+/** A loading placeholder with animation */
 export const LoadingPlaceholder: React.FC<LoadingPlaceholderProps> = ({
   width = 'w-20',
   height = 'h-6',
@@ -21,9 +19,7 @@ export const LoadingPlaceholder: React.FC<LoadingPlaceholderProps> = ({
   ></div>
 )
 
-/**
- * A text loading placeholder
- */
+/** A text loading placeholder */
 export const TextLoadingPlaceholder: React.FC<
   LoadingPlaceholderProps & { lines?: number }
 > = ({
@@ -46,9 +42,7 @@ export const TextLoadingPlaceholder: React.FC<
   </div>
 )
 
-/**
- * A card loading placeholder
- */
+/** A card loading placeholder */
 export const CardLoadingPlaceholder: React.FC<{ withHeader?: boolean }> = ({
   withHeader = true,
 }) => (

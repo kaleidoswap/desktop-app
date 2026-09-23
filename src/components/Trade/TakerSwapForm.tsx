@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 import { useSettings } from '../../hooks/useSettings'
 import { getAssetPrecision } from '../../helpers/number'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 interface TakerSwapFormProps {
   assets: any[]
@@ -75,7 +76,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
         to_asset: swapToAsset,
       }
     } catch (error) {
-      console.error('Failed to decode swap string:', error)
+      logger.error('Failed to decode swap string:', error)
       throw new Error(
         'Invalid swap string format. Please check and try again.',
         {
@@ -117,7 +118,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       setAssetBalances(newBalances)
       toast.success(t('trade.taker.balancesUpdated'))
     } catch (error) {
-      console.error('Failed to fetch asset balances:', error)
+      logger.error('Failed to fetch asset balances:', error)
       toast.error(t('trade.taker.balancesFailed'))
     } finally {
       setIsLoadingBalances(false)
@@ -153,7 +154,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       const decodedSwap = decodeSwapString(swapString)
       setSwapDetails(decodedSwap)
     } catch (error: any) {
-      console.error('Failed to decode swap:', error)
+      logger.error('Failed to decode swap:', error)
       setDecodeError(error.message || 'Failed to decode swap string')
       setSwapDetails(null)
     } finally {
@@ -177,7 +178,7 @@ export const TakerSwapForm: React.FC<TakerSwapFormProps> = ({
       toast.success(t('trade.taker.whitelistSuccess'))
       setWhitelistSuccess(true)
     } catch (error) {
-      console.error('Failed to whitelist trade:', error)
+      logger.error('Failed to whitelist trade:', error)
       toast.error(t('trade.taker.whitelistFailed'))
     } finally {
       setIsWhitelisting(false)

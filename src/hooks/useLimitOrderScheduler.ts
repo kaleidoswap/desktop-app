@@ -68,7 +68,7 @@ function extractErrorText(err: unknown): string {
   return String(err)
 }
 
-function normalizeLimitError(err: unknown) {
+export function normalizeLimitError(err: unknown) {
   const rawMessage = extractErrorText(err)
   const message = rawMessage
     .replace(/^[A-Za-z]*Error:\s*/i, '')
@@ -152,7 +152,7 @@ function sendNotification(title: string, body: string) {
  * Determine the layer for a given asset based on its trading pair endpoint data.
  * BTC uses BTC_LN, RGB assets use RGB_LN.
  */
-function getAssetLayer(
+export function getAssetLayer(
   ticker: string,
   assetId: string,
   pairs: TradingPair[]
@@ -373,9 +373,7 @@ export function useLimitOrderScheduler() {
       try {
         const pairs = tradingPairsRef.current || []
 
-        // Determine from/to based on side
-        // Buy: spending quote asset to get base asset
-        // Sell: spending base asset to get quote asset
+        // Buy spends the quote asset for the base asset; sell is the reverse.
         const fromAssetId =
           order.side === 'buy' ? order.quoteAssetId : order.baseAssetId
         const fromTicker =
@@ -388,9 +386,7 @@ export function useLimitOrderScheduler() {
         const fromLayer = getAssetLayer(fromTicker, fromAssetId, pairs)
         const toLayer = getAssetLayer(toTicker, toAssetId, pairs)
 
-        // Calculate raw from_amount
-        // For buy: from_amount is in quote asset = amount * limitPrice (in quote precision units)
-        // For sell: from_amount is the base asset amountRaw
+        // Buy: amount * limitPrice in quote precision. Sell: the base amountRaw.
         const fromAmountRaw =
           order.side === 'buy'
             ? order.amountRaw // Already computed as quote amount in precision units

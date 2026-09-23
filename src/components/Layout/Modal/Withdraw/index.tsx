@@ -47,6 +47,7 @@ import {
 } from './types'
 import { getAssignmentAmount } from '../../../../utils/rgbUtils'
 import { resolveRgbPaymentErrorKey } from '../../../../utils/rgbPaymentErrors'
+import { logger } from '../../../../utils/logger'
 
 const isLightningAddress = (input: string): boolean => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -195,7 +196,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         })
       }
     } catch (error) {
-      console.error('Error fetching BTC balance:', error)
+      logger.error('Error fetching BTC balance:', error)
       setAssetBalance(0)
       setValidationMessage({
         message: t('withdrawModal.main.errors.fetchBalance', { asset: 'BTC' }),
@@ -240,7 +241,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         }
         return selectedBalance
       } catch (error) {
-        console.error(`Error fetching asset balance for ${assetId}:`, error)
+        logger.error(`Error fetching asset balance for ${assetId}:`, error)
         setAssetBalance(0)
         // Check if asset exists in the list
         const assetExists = (assets.data?.nia || []).some(
@@ -356,12 +357,12 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           setPaymentStatus(currentStatus)
 
           if (currentStatus !== HTLCStatus.Pending) {
-            console.log(`Payment status changed to: ${currentStatus}`)
+            logger.debug(`Payment status changed to: ${currentStatus}`)
             setIsPollingStatus(false) // This will clean up in the next render
             setIsConfirming(false)
 
             if (currentStatus === HTLCStatus.Succeeded) {
-              console.log(`Payment status changed to: ${currentStatus}`)
+              logger.debug(`Payment status changed to: ${currentStatus}`)
 
               // Show success toast and close modal immediately
               toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
@@ -387,7 +388,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           }
         }
       } catch (error) {
-        console.error('Error polling payment status:', error)
+        logger.error('Error polling payment status:', error)
       }
     }
 
@@ -401,7 +402,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
 
       // Set up timeout
       timeoutId = setTimeout(() => {
-        console.log('Payment polling timed out after 60 seconds')
+        logger.debug('Payment polling timed out after 60 seconds')
         setIsPollingStatus(false) // This will clean up in the next render
         setIsConfirming(false)
         setPaymentStatus(HTLCStatus.Failed)
@@ -456,9 +457,9 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
       try {
         if (input.startsWith('ln')) {
           // Lightning invoice
-          console.log('Decoding Lightning invoice:', input)
+          logger.debug('Decoding Lightning invoice:', input)
           const decoded = await decodeInvoice({ invoice: input }).unwrap()
-          console.log('Decoded Lightning invoice:', decoded)
+          logger.debug('Decoded Lightning invoice:', decoded)
 
           setDecodedInvoice(decoded)
           setPaymentHash(decoded.payment_hash || null) // Store payment hash
@@ -569,12 +570,12 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           }
         } else if (input.startsWith('rgb')) {
           // RGB invoice
-          console.log('Decoding RGB invoice:', input)
+          logger.debug('Decoding RGB invoice:', input)
           try {
             const decodedRgb = await decodeRgbInvoice({
               invoice: input,
             }).unwrap()
-            console.log('Decoded RGB invoice:', decodedRgb)
+            logger.debug('Decoded RGB invoice:', decodedRgb)
 
             setDecodedRgbInvoice(decodedRgb)
             setAddressType('rgb')
@@ -677,7 +678,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               }
             }
           } catch (error) {
-            console.error('Failed to decode RGB invoice:', error)
+            logger.error('Failed to decode RGB invoice:', error)
             setValidationMessage({
               message: t('withdrawModal.main.errors.decodeRgbFailed'),
               type: 'error',
@@ -708,7 +709,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           })
         }
       } catch (error) {
-        console.error('Failed to decode input', error)
+        logger.error('Failed to decode input', error)
         setAddressType('invalid')
         setValidationMessage({
           message: t('withdrawModal.main.errors.decodeInputFailed'),
@@ -741,7 +742,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
       setValue('address', text)
       await detectAddressType(text)
     } catch (error) {
-      console.error('Failed to read clipboard', error)
+      logger.error('Failed to read clipboard', error)
     }
   }, [setValue, detectAddressType])
 
@@ -1011,7 +1012,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           )
         }
 
-        console.log('Processing Lightning payment...')
+        logger.debug('Processing Lightning payment...')
 
         try {
           // Check if this is a zero-amount invoice and prepare amount parameter
@@ -1067,11 +1068,11 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           setPaymentStatus((res.status as PaymentStatus) || null)
 
           if (res.status === HTLCStatus.Pending) {
-            console.log('Payment initiated - polling for status updates')
+            logger.debug('Payment initiated - polling for status updates')
             // Important: Set isPollingStatus in a separate statement to ensure React batches state updates correctly
             setIsPollingStatus(true)
           } else if (res.status === HTLCStatus.Succeeded) {
-            console.log('Payment succeeded immediately')
+            logger.debug('Payment succeeded immediately')
 
             // Show success toast and close modal immediately
             toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
@@ -1086,7 +1087,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             setPendingData(null)
             dispatch(uiSliceActions.setModal({ type: 'none' }))
           } else {
-            console.log('Payment failed immediately:', res.status)
+            logger.debug('Payment failed immediately:', res.status)
             const failureMsg = t(
               'withdrawModal.main.errors.lightningImmediateFailure',
               { status: res.status }
@@ -1103,7 +1104,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             })
           }
         } catch (error: any) {
-          console.error('Lightning payment error:', error)
+          logger.error('Lightning payment error:', error)
 
           // Extract detailed error information for Lightning payments
           let errorMessage = t('withdrawModal.main.errors.unknownPayment')
@@ -1157,7 +1158,6 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          // if ('error' in res) check removed as unwrap throws
           toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
             progressStyle: { background: '#3B82F6' },
           })
@@ -1174,7 +1174,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             assets.data?.nia
           )
 
-          console.log(
+          logger.debug(
             `Sending RGB asset ${ticker} with amount ${pendingData.amount} (raw: ${rawAmount})`
           )
 
@@ -1211,9 +1211,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             let witnessData:
               { amount_sat: number; blinding?: number } | undefined = undefined
             if (decodedRgbInvoice.recipient_type === 'Witness') {
-              // For witness recipients, we need to provide witness_data
-              // The amount_sat is the Bitcoin amount (in sats) to send to the recipient
-              // This amount will be used for the witness UTXO
+              // Witness recipients need witness_data: the sats funding the witness UTXO.
               const witnessAmountSat = pendingData.witness_amount_sat || 1200
               if (!witnessAmountSat || witnessAmountSat < 512) {
                 throw new Error(
@@ -1297,7 +1295,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         }, 1500)
       }
     } catch (error: any) {
-      console.error('Withdrawal error:', error)
+      logger.error('Withdrawal error:', error)
 
       // Check if this is a UTXO-related error and handle with CreateUTXOModal
       const wasHandled = handleApiError(
@@ -1395,7 +1393,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           slow: Math.round(slow?.fee_rate || 0),
         })
       } catch (error) {
-        console.error('Failed to fetch fee estimates:', error)
+        logger.error('Failed to fetch fee estimates:', error)
       }
     }
 

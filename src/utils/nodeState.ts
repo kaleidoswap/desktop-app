@@ -1,3 +1,4 @@
+import { logger } from './logger'
 /**
  * Node state management utilities
  * Provides type-safe handling of RGB Lightning node states
@@ -37,9 +38,7 @@ export const getNodeStateMessage = (state: NodeState): string => {
   }
 }
 
-/**
- * Wait for node to reach a specific state with timeout
- */
+/** Wait for node to reach a specific state with timeout */
 export const waitForNodeState = async (
   targetState: NodeState['status'],
   options: {
@@ -202,7 +201,7 @@ export const waitForNodeReady = async (
             const status = await invoke<number>('probe_node_http', {
               daemonPort: Number(daemonPort),
             })
-            console.log(
+            logger.debug(
               '[waitForNodeReady] Tauri HTTP probe succeeded with status',
               status,
               'while backend state is',

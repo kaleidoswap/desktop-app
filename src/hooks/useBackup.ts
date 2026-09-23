@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 
 import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../helpers/unlock'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
+import { logger } from '../utils/logger'
 
 interface BackupFormFields {
   backupPath: string
@@ -61,7 +62,7 @@ export const useBackup = ({
       await lock().unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Lock attempt failed:', err)
+      logger.error('Lock attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
@@ -77,7 +78,7 @@ export const useBackup = ({
       ).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Unlock attempt failed:', err)
+      logger.error('Unlock attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
@@ -87,7 +88,7 @@ export const useBackup = ({
       await backup({ backup_path: backupPath, password }).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Backup attempt failed:', err)
+      logger.error('Backup attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
@@ -117,7 +118,7 @@ export const useBackup = ({
         toast.error('Lock unsuccessful')
       }
     } catch (err) {
-      console.error('Backup failed:', err)
+      logger.error('Backup failed:', err)
       toast.error('Backup error')
     } finally {
       handleBackupCompletion(pathToBackup)

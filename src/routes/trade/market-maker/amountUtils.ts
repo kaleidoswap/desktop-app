@@ -3,9 +3,7 @@ import { toast } from 'react-toastify'
 
 import { logger } from '../../../utils/logger'
 
-/**
- * Creates a function to set the "from" amount directly
- */
+/** Creates a function to set the "from" amount directly */
 export const createSetFromAmountHelper = (
   form: any,
   formatAmount: (amount: number, asset: string) => string,
@@ -47,9 +45,7 @@ export const createSetFromAmountHelper = (
   }
 }
 
-/**
- * Creates a handler for the size percentage buttons
- */
+/** Creates a handler for the size percentage buttons */
 export const createSizeClickHandler = (
   form: any,
   maxFromAmount: number,
@@ -101,9 +97,7 @@ export const createSizeClickHandler = (
   }
 }
 
-/**
- * Creates a handler for the refresh amounts button
- */
+/** Creates a handler for the refresh amounts button */
 export const createRefreshAmountsHandler = (
   selectedPair: any,
   form: any,

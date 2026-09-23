@@ -1,8 +1,6 @@
 import i18n from 'i18next'
 
-/**
- * Get the locale code for date formatting based on the current language
- */
+/** Get the locale code for date formatting based on the current language */
 export const getDateLocale = (): string => {
   const language = i18n.language || 'en'
 

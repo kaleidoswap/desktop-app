@@ -2,6 +2,7 @@ import { getName, getVersion } from '@tauri-apps/api/app'
 import { Package, Info } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { logger } from '../../utils/logger'
 
 interface AppVersionInfo {
   name: string
@@ -48,7 +49,7 @@ export const AppVersion: React.FC<AppVersionProps> = ({
 
         setVersionInfo(info)
       } catch (error) {
-        console.error('Failed to get version info:', error)
+        logger.error('Failed to get version info:', error)
         // Fallback to package.json version if available
         setVersionInfo({
           name: 'KaleidoSwap',

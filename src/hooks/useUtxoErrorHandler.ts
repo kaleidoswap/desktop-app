@@ -16,9 +16,7 @@ export const useUtxoErrorHandler = () => {
     retryFunction: undefined as (() => Promise<any>) | undefined,
   })
 
-  /**
-   * Check if the error is related to insufficient UTXOs
-   */
+  /** Check if the error is related to insufficient UTXOs */
   const isUtxoError = (error: any): boolean => {
     if (!error || !error.data || !error.data.error) {
       return false
@@ -31,7 +29,6 @@ export const useUtxoErrorHandler = () => {
 
   /**
    * Handle an API error by showing the UTXO modal if the error is UTXO-related
-   * @returns true if the error was handled, false otherwise
    */
   const handleApiError = (
     error: any,
