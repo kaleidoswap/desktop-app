@@ -17,6 +17,7 @@ import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
 import { handleApiError } from '../routes/trade/market-maker/apiUtils'
 import { validateSwapString } from '../routes/trade/market-maker/swapUtils'
 import { logger } from '../utils/logger'
+import { isLimitPriceTriggered } from '../utils/limitOrderUtils'
 
 export const LIMIT_ORDER_SCHEDULER_INTERVAL_MS = 20_000
 const MAX_SLIPPAGE_PCT = 3
@@ -683,14 +684,20 @@ export function useLimitOrderScheduler() {
         if (!currentPrice || currentPrice <= 0) continue
 
         // Buy limit: trigger when market price drops to or below limit price
-        if (order.side === 'buy' && currentPrice <= order.limitPrice) {
+        if (
+          order.side === 'buy' &&
+          isLimitPriceTriggered('buy', order.limitPrice, currentPrice)
+        ) {
           logger.info(
             `LimitOrder: BUY trigger order=${order.id} current=${currentPrice} limit=${order.limitPrice}`
           )
           enqueueExecution(order.id)
         }
         // Sell limit: trigger when market price rises to or above limit price
-        if (order.side === 'sell' && currentPrice >= order.limitPrice) {
+        if (
+          order.side === 'sell' &&
+          isLimitPriceTriggered('sell', order.limitPrice, currentPrice)
+        ) {
           logger.info(
             `LimitOrder: SELL trigger order=${order.id} current=${currentPrice} limit=${order.limitPrice}`
           )

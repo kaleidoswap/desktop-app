@@ -418,8 +418,7 @@
     "remoteNodePrerequisitesTitle": "Prerequisites",
     "remoteNodePrerequisitesMessage": "You'll need a running rgb-lightning-node instance to connect. Follow our setup guide to get started.",
     "viewSetupGuide": "View Setup Guide",
-    "getStarted": "Get Started",
-    "recommended": "Recommended"
+    "getStarted": "Get Started"
   },
   "createChannel": {
     "checkingBalance": "Checking balance",
@@ -3009,6 +3008,8 @@
       "noPairs": "No pairs available",
       "side": "Side",
       "limitPrice": "Limit Price",
+      "marketableWarningBuy": "This price is at or above the market price, so the order will execute almost immediately. Enter a lower price to wait for the market to drop.",
+      "marketableWarningSell": "This price is at or below the market price, so the order will execute almost immediately. Enter a higher price to wait for the market to rise.",
       "amount": "Amount",
       "available": "Available",
       "estimatedTotal": "Estimated Total",
