@@ -3015,6 +3015,8 @@
       "noPairs": "没有可用的交易对",
       "side": "方向",
       "limitPrice": "限价",
+      "marketableWarningBuy": "此价格达到或高于市场价，订单几乎会立即成交。若想等待价格下跌，请输入更低的价格。",
+      "marketableWarningSell": "此价格达到或低于市场价，订单几乎会立即成交。若想等待价格上涨，请输入更高的价格。",
       "amount": "数量",
       "available": "可用",
       "estimatedTotal": "预估总额",

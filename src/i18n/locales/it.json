@@ -3018,6 +3018,8 @@
       "noPairs": "Nessuna coppia disponibile",
       "side": "Lato",
       "limitPrice": "Prezzo Limite",
+      "marketableWarningBuy": "Questo prezzo è pari o superiore al prezzo di mercato, quindi l'ordine verrà eseguito quasi subito. Inserisci un prezzo più basso per attendere un calo del mercato.",
+      "marketableWarningSell": "Questo prezzo è pari o inferiore al prezzo di mercato, quindi l'ordine verrà eseguito quasi subito. Inserisci un prezzo più alto per attendere un rialzo del mercato.",
       "amount": "Importo",
       "available": "Disponibile",
       "estimatedTotal": "Totale Stimato",

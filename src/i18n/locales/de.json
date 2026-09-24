@@ -3018,6 +3018,8 @@
       "noPairs": "Keine Paare verfügbar",
       "side": "Seite",
       "limitPrice": "Limitpreis",
+      "marketableWarningBuy": "Dieser Preis liegt auf oder über dem Marktpreis, die Order wird also fast sofort ausgeführt. Gib einen niedrigeren Preis ein, um auf fallende Kurse zu warten.",
+      "marketableWarningSell": "Dieser Preis liegt auf oder unter dem Marktpreis, die Order wird also fast sofort ausgeführt. Gib einen höheren Preis ein, um auf steigende Kurse zu warten.",
       "amount": "Betrag",
       "available": "Verfügbar",
       "estimatedTotal": "Geschätzter Gesamtbetrag",

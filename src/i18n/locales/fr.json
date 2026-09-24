@@ -3024,6 +3024,8 @@
       "noPairs": "Aucune paire disponible",
       "side": "Côté",
       "limitPrice": "Prix Limite",
+      "marketableWarningBuy": "Ce prix est égal ou supérieur au prix du marché, l'ordre sera donc exécuté presque immédiatement. Saisissez un prix plus bas pour attendre une baisse du marché.",
+      "marketableWarningSell": "Ce prix est égal ou inférieur au prix du marché, l'ordre sera donc exécuté presque immédiatement. Saisissez un prix plus élevé pour attendre une hausse du marché.",
       "amount": "Montant",
       "available": "Disponible",
       "estimatedTotal": "Total Estimé",

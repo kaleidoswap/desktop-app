@@ -366,8 +366,9 @@ describe('useLimitOrderScheduler', () => {
   })
 
   it('triggers a buy when the market price exactly equals the limit price', async () => {
-    // Inclusive comparison: an at-market limit order executes on the very
-    // first scheduler tick after creation (see issue #92)
+    // Inclusive comparison, deliberately: a marketable limit order should
+    // fill. The surprise in #92 came from the create form pre-filling the
+    // limit price at market, which is fixed there, not here.
     dbOrders = [makeOrder({ limitPrice: 100_000 })]
     pollPrice = 100_000
     await mountScheduler()
