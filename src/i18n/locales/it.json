@@ -1887,12 +1887,12 @@
     "terms": {
       "title": "TERMINI DI UTILIZZO DI KALEIDOSWAP TEST NET",
       "effectiveDate": "Data di entrata in vigore: {{date}}",
-      "noticeItems": {
-        "0": "L'APP OPERA SUL PROTOCOLLO RGB TEST NET E SULLA BLOCKCHAIN BITCOIN TEST NET.",
-        "1": "L'APP È UN'APPLICAZIONE DI PORTAFOGLIO DI ASSET DIGITALI SPERIMENTALE.",
-        "2": "TUTTO L'UTILIZZO DELL'APP È A TUO RISCHIO.",
-        "3": "NON DOVRESTI USARE L'APP PER INVIARE O RICEVERE BTC TEST NET O TOKEN RGB TEST NET CHE NON SEI PREPARATO A PERDERE COMPLETAMENTE."
-      },
+      "noticeItems": [
+        "L'APP OPERA SUL PROTOCOLLO RGB TEST NET E SULLA BLOCKCHAIN BITCOIN TEST NET.",
+        "L'APP È UN'APPLICAZIONE DI PORTAFOGLIO DI ASSET DIGITALI SPERIMENTALE.",
+        "TUTTO L'UTILIZZO DELL'APP È A TUO RISCHIO.",
+        "NON DOVRESTI USARE L'APP PER INVIARE O RICEVERE BTC TEST NET O TOKEN RGB TEST NET CHE NON SEI PREPARATO A PERDERE COMPLETAMENTE."
+      ],
       "error": "Impossibile caricare i termini di servizio"
     }
   },
@@ -1952,31 +1952,31 @@
       "makerRole": {
         "title": "Ruolo Maker",
         "intro": "Come maker, puoi:",
-        "items": {
-          "0": "Avviare scambi definendo asset e importi",
-          "1": "Generare e condividere stringhe di scambio con i taker",
-          "2": "Eseguire scambi una volta che il taker ti ha autorizzato",
-          "3": "Controllare sia la fase di avvio che di esecuzione"
-        }
+        "items": [
+          "Avviare scambi definendo asset e importi",
+          "Generare e condividere stringhe di scambio con i taker",
+          "Eseguire scambi una volta che il taker ti ha autorizzato",
+          "Controllare sia la fase di avvio che di esecuzione"
+        ]
       },
       "takerRole": {
         "title": "Ruolo Taker",
         "intro": "Come taker, puoi:",
-        "items": {
-          "0": "Ricevere stringhe di scambio dai maker",
-          "1": "Rivedere i termini dello scambio proposti",
-          "2": "Autorizzare la stringa di scambio per accettare lo scambio",
-          "3": "Attendere che il maker esegua lo scambio"
-        }
+        "items": [
+          "Ricevere stringhe di scambio dai maker",
+          "Rivedere i termini dello scambio proposti",
+          "Autorizzare la stringa di scambio per accettare lo scambio",
+          "Attendere che il maker esegua lo scambio"
+        ]
       },
       "liquidity": {
         "title": "Requisiti di Liquidità",
         "intro": "Perché gli atomic swap abbiano successo, entrambe le parti necessitano di:",
-        "items": {
-          "0": "Liquidità sufficiente degli asset da scambiare nei loro canali lightning",
-          "1": "Liquidità Bitcoin per instradare i pagamenti tra maker e taker",
-          "2": "Canali attivi e bilanciati che collegano entrambe le parti"
-        },
+        "items": [
+          "Liquidità sufficiente degli asset da scambiare nei loro canali lightning",
+          "Liquidità Bitcoin per instradare i pagamenti tra maker e taker",
+          "Canali attivi e bilanciati che collegano entrambe le parti"
+        ],
         "note": "Se la liquidità è insufficiente, lo scambio potrebbe fallire anche se è stato correttamente autorizzato."
       },
       "collapsedHint": "Clicca per espandere e scoprire di più su come funzionano gli atomic swap e i ruoli coinvolti."
@@ -2078,24 +2078,18 @@
     "summary": {
       "colorable": {
         "title": "UTXO Colorabili",
-        "bullets": {
-          "0": "UTXO RGB pronti non ancora allocati",
-          "1": "Ricevi asset RGB on-chain"
-        }
+        "bullets": [
+          "UTXO RGB pronti non ancora allocati",
+          "Ricevi asset RGB on-chain"
+        ]
       },
       "colored": {
         "title": "UTXO Colorati",
-        "bullets": {
-          "0": "Apri canali Lightning RGB",
-          "1": "Invia asset RGB on-chain"
-        }
+        "bullets": ["Apri canali Lightning RGB", "Invia asset RGB on-chain"]
       },
       "normal": {
         "title": "UTXO Normali",
-        "bullets": {
-          "0": "Apri canali Lightning Bitcoin",
-          "1": "Transazioni regolari"
-        }
+        "bullets": ["Apri canali Lightning Bitcoin", "Transazioni regolari"]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -2229,12 +2223,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": {
-      "0": "Byte",
-      "1": "KB",
-      "2": "MB",
-      "3": "GB"
-    },
+    "fileSizes": ["Byte", "KB", "MB", "GB"],
     "fileSizeZero": "0 Byte",
     "errors": {
       "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",

@@ -1887,12 +1887,12 @@
     "terms": {
       "title": "CONDITIONS D'UTILISATION KALEIDOSWAP TESTNET",
       "effectiveDate": "Date d'entrée en vigueur : {{date}}",
-      "noticeItems": {
-        "0": "L'APPLICATION FONCTIONNE SUR LE PROTOCOLE RGB TESTNET ET SUR LA BLOCKCHAIN BITCOIN TESTNET.",
-        "1": "L'APPLICATION EST UN PORTEFEUILLE D'ACTIFS NUMÉRIQUES EXPÉRIMENTAL.",
-        "2": "L'UTILISATION DE L'APPLICATION SE FAIT À VOS RISQUES ET PÉRILS.",
-        "3": "VOUS NE DEVEZ PAS UTILISER L'APPLICATION POUR ENVOYER OU RECEVOIR DES BTC TESTNET OU DES TOKENS RGB TESTNET QUE VOUS N'ÊTES PAS PRÊT À PERDRE INTÉGRALEMENT."
-      },
+      "noticeItems": [
+        "L'APPLICATION FONCTIONNE SUR LE PROTOCOLE RGB TESTNET ET SUR LA BLOCKCHAIN BITCOIN TESTNET.",
+        "L'APPLICATION EST UN PORTEFEUILLE D'ACTIFS NUMÉRIQUES EXPÉRIMENTAL.",
+        "L'UTILISATION DE L'APPLICATION SE FAIT À VOS RISQUES ET PÉRILS.",
+        "VOUS NE DEVEZ PAS UTILISER L'APPLICATION POUR ENVOYER OU RECEVOIR DES BTC TESTNET OU DES TOKENS RGB TESTNET QUE VOUS N'ÊTES PAS PRÊT À PERDRE INTÉGRALEMENT."
+      ],
       "error": "Impossible de charger les conditions d'utilisation"
     }
   },
@@ -1952,31 +1952,31 @@
       "makerRole": {
         "title": "Rôle du maker",
         "intro": "En tant que maker, vous pouvez :",
-        "items": {
-          "0": "Initier des swaps en définissant actifs et montants",
-          "1": "Générer et partager des chaînes de swap avec les takers",
-          "2": "Exécuter les swaps une fois approuvés par le taker",
-          "3": "Contrôler les phases d'initiation et d'exécution"
-        }
+        "items": [
+          "Initier des swaps en définissant actifs et montants",
+          "Générer et partager des chaînes de swap avec les takers",
+          "Exécuter les swaps une fois approuvés par le taker",
+          "Contrôler les phases d'initiation et d'exécution"
+        ]
       },
       "takerRole": {
         "title": "Rôle du taker",
         "intro": "En tant que taker, vous pouvez :",
-        "items": {
-          "0": "Recevoir des chaînes de swap des makers",
-          "1": "Examiner les conditions proposées",
-          "2": "Mettre la chaîne de swap sur liste blanche pour accepter l'échange",
-          "3": "Attendre que le maker exécute le swap"
-        }
+        "items": [
+          "Recevoir des chaînes de swap des makers",
+          "Examiner les conditions proposées",
+          "Mettre la chaîne de swap sur liste blanche pour accepter l'échange",
+          "Attendre que le maker exécute le swap"
+        ]
       },
       "liquidity": {
         "title": "Exigences de liquidité",
         "intro": "Pour réussir un swap atomique, les deux parties doivent disposer de :",
-        "items": {
-          "0": "Liquidité suffisante des actifs échangés dans leurs canaux Lightning",
-          "1": "Liquidité en Bitcoin pour router les paiements entre maker et taker",
-          "2": "Canaux actifs et équilibrés reliant les deux parties"
-        },
+        "items": [
+          "Liquidité suffisante des actifs échangés dans leurs canaux Lightning",
+          "Liquidité en Bitcoin pour router les paiements entre maker et taker",
+          "Canaux actifs et équilibrés reliant les deux parties"
+        ],
         "note": "Si la liquidité est insuffisante, le swap peut échouer même s'il a été correctement approuvé."
       },
       "collapsedHint": "Cliquez pour en savoir plus sur le fonctionnement des swaps atomiques et les rôles impliqués."
@@ -2078,24 +2078,24 @@
     "summary": {
       "colorable": {
         "title": "UTXO colorables",
-        "bullets": {
-          "0": "UTXO prêts pour RGB mais non alloués",
-          "1": "Recevoir des actifs RGB on-chain"
-        }
+        "bullets": [
+          "UTXO prêts pour RGB mais non alloués",
+          "Recevoir des actifs RGB on-chain"
+        ]
       },
       "colored": {
         "title": "UTXO colorés",
-        "bullets": {
-          "0": "Ouvrir des canaux Lightning RGB",
-          "1": "Envoyer des actifs RGB on-chain"
-        }
+        "bullets": [
+          "Ouvrir des canaux Lightning RGB",
+          "Envoyer des actifs RGB on-chain"
+        ]
       },
       "normal": {
         "title": "UTXO normaux",
-        "bullets": {
-          "0": "Ouvrir des canaux Lightning Bitcoin",
-          "1": "Transactions classiques"
-        }
+        "bullets": [
+          "Ouvrir des canaux Lightning Bitcoin",
+          "Transactions classiques"
+        ]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -2229,12 +2229,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": {
-      "0": "Octets",
-      "1": "Ko",
-      "2": "Mo",
-      "3": "Go"
-    },
+    "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
       "timeout": "Le processus de mise à jour a expiré après 5 minutes. Vérifiez votre connexion Internet puis réessayez.",

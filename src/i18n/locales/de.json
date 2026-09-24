@@ -1887,12 +1887,12 @@
     "terms": {
       "title": "KALEIDOSWAP-TESTNET-NUTZUNGSBEDINGUNGEN",
       "effectiveDate": "Gültig ab: {{date}}",
-      "noticeItems": {
-        "0": "DIE APP LÄUFT AUF DEM RGB-TESTNET UND DEM BITCOIN-TESTNET.",
-        "1": "DIE APP IST EIN EXPERIMENTELLES WALLET.",
-        "2": "DIE NUTZUNG ERFOLGT AUF EIGENES RISIKO.",
-        "3": "SENDE NUR TESTNET-TOKENS, DEREN VERLUST DU VERTRETEN KANNST."
-      },
+      "noticeItems": [
+        "DIE APP LÄUFT AUF DEM RGB-TESTNET UND DEM BITCOIN-TESTNET.",
+        "DIE APP IST EIN EXPERIMENTELLES WALLET.",
+        "DIE NUTZUNG ERFOLGT AUF EIGENES RISIKO.",
+        "SENDE NUR TESTNET-TOKENS, DEREN VERLUST DU VERTRETEN KANNST."
+      ],
       "error": "Nutzungsbedingungen konnten nicht geladen werden"
     }
   },
@@ -1952,31 +1952,31 @@
       "makerRole": {
         "title": "Maker-Rolle",
         "intro": "Als Maker kannst du:",
-        "items": {
-          "0": "Swaps mit Assets und Beträgen definieren",
-          "1": "Swap-Strings generieren und teilen",
-          "2": "Swaps ausführen, sobald der Taker dich freigibt",
-          "3": "Initiierung und Ausführung kontrollieren"
-        }
+        "items": [
+          "Swaps mit Assets und Beträgen definieren",
+          "Swap-Strings generieren und teilen",
+          "Swaps ausführen, sobald der Taker dich freigibt",
+          "Initiierung und Ausführung kontrollieren"
+        ]
       },
       "takerRole": {
         "title": "Taker-Rolle",
         "intro": "Als Taker kannst du:",
-        "items": {
-          "0": "Swap-Strings von Makern erhalten",
-          "1": "Bedingungen prüfen",
-          "2": "Swap-Strings freigeben",
-          "3": "Warten, bis der Maker ausführt"
-        }
+        "items": [
+          "Swap-Strings von Makern erhalten",
+          "Bedingungen prüfen",
+          "Swap-Strings freigeben",
+          "Warten, bis der Maker ausführt"
+        ]
       },
       "liquidity": {
         "title": "Liquiditätsanforderungen",
         "intro": "Für erfolgreiche Swaps benötigen beide Parteien:",
-        "items": {
-          "0": "Ausreichende Liquidität der getauschten Assets in ihren Kanälen",
-          "1": "Bitcoin-Liquidität zum Routen zwischen Maker und Taker",
-          "2": "Aktive, ausbalancierte Kanäle zwischen beiden"
-        },
+        "items": [
+          "Ausreichende Liquidität der getauschten Assets in ihren Kanälen",
+          "Bitcoin-Liquidität zum Routen zwischen Maker und Taker",
+          "Aktive, ausbalancierte Kanäle zwischen beiden"
+        ],
         "note": "Ohne ausreichende Liquidität kann der Swap trotz Whitelist fehlschlagen."
       },
       "collapsedHint": "Klicke hier, um mehr über atomare Swaps und die Rollen zu erfahren."
@@ -2078,24 +2078,18 @@
     "summary": {
       "colorable": {
         "title": "Färbbare UTXOs",
-        "bullets": {
-          "0": "RGB-bereit, aber noch nicht zugewiesen",
-          "1": "RGB-Assets on-chain empfangen"
-        }
+        "bullets": [
+          "RGB-bereit, aber noch nicht zugewiesen",
+          "RGB-Assets on-chain empfangen"
+        ]
       },
       "colored": {
         "title": "Gefärbte UTXOs",
-        "bullets": {
-          "0": "RGB-Lightning-Kanäle öffnen",
-          "1": "RGB-Assets on-chain senden"
-        }
+        "bullets": ["RGB-Lightning-Kanäle öffnen", "RGB-Assets on-chain senden"]
       },
       "normal": {
         "title": "Normale UTXOs",
-        "bullets": {
-          "0": "Bitcoin-Lightning-Kanäle öffnen",
-          "1": "Reguläre Transaktionen"
-        }
+        "bullets": ["Bitcoin-Lightning-Kanäle öffnen", "Reguläre Transaktionen"]
       },
       "countLabel": "{{count}} UTXOs"
     },
@@ -2229,12 +2223,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": {
-      "0": "Bytes",
-      "1": "KB",
-      "2": "MB",
-      "3": "GB"
-    },
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "Update brach nach 5 Minuten ab. Prüfe deine Verbindung und versuche es erneut.",
