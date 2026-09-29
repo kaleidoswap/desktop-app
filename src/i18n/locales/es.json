@@ -1887,12 +1887,12 @@
     "terms": {
       "title": "TÉRMINOS DE USO DE KALEIDOSWAP TEST NET",
       "effectiveDate": "Fecha de Vigencia: {{date}}",
-      "noticeItems": {
-        "0": "LA APP OPERA EN EL PROTOCOLO RGB TEST NET Y LA BLOCKCHAIN BITCOIN TEST NET.",
-        "1": "LA APP ES UNA APLICACIÓN DE BILLETERA DE ACTIVOS DIGITALES EXPERIMENTAL.",
-        "2": "TODO USO DE LA APP ES BAJO TU PROPIO RIESGO.",
-        "3": "NO DEBES USAR LA APP PARA ENVIAR O RECIBIR BTC TEST NET O TOKENS RGB TEST NET QUE NO ESTÉS PREPARADO PARA PERDER COMPLETAMENTE."
-      },
+      "noticeItems": [
+        "LA APP OPERA EN EL PROTOCOLO RGB TEST NET Y LA BLOCKCHAIN BITCOIN TEST NET.",
+        "LA APP ES UNA APLICACIÓN DE BILLETERA DE ACTIVOS DIGITALES EXPERIMENTAL.",
+        "TODO USO DE LA APP ES BAJO TU PROPIO RIESGO.",
+        "NO DEBES USAR LA APP PARA ENVIAR O RECIBIR BTC TEST NET O TOKENS RGB TEST NET QUE NO ESTÉS PREPARADO PARA PERDER COMPLETAMENTE."
+      ],
       "error": "Error al cargar los términos de servicio"
     }
   },
@@ -1952,31 +1952,31 @@
       "makerRole": {
         "title": "Rol de Maker",
         "intro": "Como maker, puedes:",
-        "items": {
-          "0": "Iniciar intercambios definiendo activos y cantidades",
-          "1": "Generar y compartir cadenas de intercambio con takers",
-          "2": "Ejecutar intercambios una vez que el taker te haya incluido en lista blanca",
-          "3": "Controlar tanto la fase de inicio como de ejecución"
-        }
+        "items": [
+          "Iniciar intercambios definiendo activos y cantidades",
+          "Generar y compartir cadenas de intercambio con takers",
+          "Ejecutar intercambios una vez que el taker te haya incluido en lista blanca",
+          "Controlar tanto la fase de inicio como de ejecución"
+        ]
       },
       "takerRole": {
         "title": "Rol de Taker",
         "intro": "Como taker, puedes:",
-        "items": {
-          "0": "Recibir cadenas de intercambio de makers",
-          "1": "Revisar los términos de intercambio propuestos",
-          "2": "Incluir en lista blanca la cadena de intercambio para aceptar el trade",
-          "3": "Esperar a que el maker ejecute el intercambio"
-        }
+        "items": [
+          "Recibir cadenas de intercambio de makers",
+          "Revisar los términos de intercambio propuestos",
+          "Incluir en lista blanca la cadena de intercambio para aceptar el trade",
+          "Esperar a que el maker ejecute el intercambio"
+        ]
       },
       "liquidity": {
         "title": "Requisitos de Liquidez",
         "intro": "Para que los intercambios atómicos tengan éxito, ambas partes necesitan:",
-        "items": {
-          "0": "Liquidez suficiente de los activos que se intercambian en sus canales lightning",
-          "1": "Liquidez Bitcoin para enrutar pagos entre el maker y el taker",
-          "2": "Canales activos y equilibrados que conecten a ambas partes"
-        },
+        "items": [
+          "Liquidez suficiente de los activos que se intercambian en sus canales lightning",
+          "Liquidez Bitcoin para enrutar pagos entre el maker y el taker",
+          "Canales activos y equilibrados que conecten a ambas partes"
+        ],
         "note": "Si la liquidez es insuficiente, el intercambio puede fallar incluso si ha sido correctamente incluido en lista blanca."
       },
       "collapsedHint": "Haz clic para expandir y aprender más sobre cómo funcionan los intercambios atómicos y los roles involucrados."
@@ -2078,24 +2078,24 @@
     "summary": {
       "colorable": {
         "title": "UTXOs Coloreables",
-        "bullets": {
-          "0": "UTXO listo para RGB aún no asignado",
-          "1": "Recibir activos RGB on-chain"
-        }
+        "bullets": [
+          "UTXO listo para RGB aún no asignado",
+          "Recibir activos RGB on-chain"
+        ]
       },
       "colored": {
         "title": "UTXOs Coloreados",
-        "bullets": {
-          "0": "Abrir canales Lightning RGB",
-          "1": "Enviar activos RGB on-chain"
-        }
+        "bullets": [
+          "Abrir canales Lightning RGB",
+          "Enviar activos RGB on-chain"
+        ]
       },
       "normal": {
         "title": "UTXOs Normales",
-        "bullets": {
-          "0": "Abrir canales Lightning Bitcoin",
-          "1": "Transacciones regulares"
-        }
+        "bullets": [
+          "Abrir canales Lightning Bitcoin",
+          "Transacciones regulares"
+        ]
       },
       "countLabel": "{{count}} UTXOs"
     },
@@ -2229,12 +2229,7 @@
     }
   },
   "updaterModal": {
-    "fileSizes": {
-      "0": "Bytes",
-      "1": "KB",
-      "2": "MB",
-      "3": "GB"
-    },
+    "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 bytes",
     "errors": {
       "timeout": "El proceso de actualización se agotó después de 5 minutos. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
