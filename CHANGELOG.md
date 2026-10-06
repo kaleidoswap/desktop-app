@@ -1,3 +1,23 @@
+## [Version 0.6.0] - 2026-10-06
+
+> ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.6.0: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.6.0.
+
+### 🚀 Features
+- **RGB Lightning Node 0.10.0**: The bundled node moves to 0.10.0, pinned to a release tag instead of the tip of master, and the app speaks the 0.8, 0.9 and 0.10 APIs (mandatory RGB invoice/send expiration, transfer filters, `WaitingBroadcast` status)
+- **Indexer-only sync**: Accounts without a bitcoind RPC URL now unlock with indexer-only chain sync instead of placeholder localhost credentials
+- **Safer recovery-phrase backup**: The phrase stays blurred until you reveal it, copy works only while it is visible, and verification requires revealing it first; "Skip backup" is now a discreet link
+
+### 🔧 Improvements
+- **Clearer node errors**: An unlock rejected because the node runs an unsupported version now says so instead of showing the raw deserialization error
+- **Mutinynet by default**: Removed the Bitfinex regtest network; regtest is local-only (local or Docker)
+- **Sturdier desktop backend**: A locked or corrupt database reports an error at startup instead of crashing, and one failed request no longer breaks all later ones
+- **Translations**: All eight languages are in sync with English, with a test that guards key sets and value shapes
+
+### 🐛 Bug Fixes
+- **Limit orders filled immediately (#92)**: The limit price no longer pre-fills at the market price, which created orders that triggered on the next tick; a warning now appears when the entered price would fill right away
+- **NWC RGB payments**: Sending RGB assets and creating RGB invoices over Nostr Wallet Connect include the fields the node now requires, or return a clear error
+- **Security**: Updated dependencies with known vulnerabilities (axios, react-router, nanoid, browserslist)
+
 ## [Version 0.5.0] - 2026-07-10
 
 > ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
