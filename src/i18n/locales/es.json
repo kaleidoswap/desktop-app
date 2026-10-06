@@ -3014,6 +3014,8 @@
       "noPairs": "No hay pares disponibles",
       "side": "Lado",
       "limitPrice": "Precio Límite",
+      "marketableWarningBuy": "Este precio está en o por encima del precio de mercado, así que la orden se ejecutará casi de inmediato. Introduce un precio más bajo para esperar a que el mercado baje.",
+      "marketableWarningSell": "Este precio está en o por debajo del precio de mercado, así que la orden se ejecutará casi de inmediato. Introduce un precio más alto para esperar a que el mercado suba.",
       "amount": "Cantidad",
       "available": "Disponible",
       "estimatedTotal": "Total Estimado",

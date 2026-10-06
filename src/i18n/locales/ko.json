@@ -3008,6 +3008,8 @@
       "noPairs": "사용 가능한 페어 없음",
       "side": "방향",
       "limitPrice": "지정가",
+      "marketableWarningBuy": "이 가격은 시장가 이상이므로 주문이 거의 즉시 체결됩니다. 시세 하락을 기다리려면 더 낮은 가격을 입력하세요.",
+      "marketableWarningSell": "이 가격은 시장가 이하이므로 주문이 거의 즉시 체결됩니다. 시세 상승을 기다리려면 더 높은 가격을 입력하세요.",
       "amount": "수량",
       "available": "사용 가능",
       "estimatedTotal": "예상 총액",

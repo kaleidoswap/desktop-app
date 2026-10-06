@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { ArrowUpDown, ShoppingCart } from 'lucide-react'
+import { ArrowUpDown, ShoppingCart, AlertTriangle } from 'lucide-react'
 
 import { ORDER_CHANNEL_PATH } from '../../../../app/router/paths'
 import { useAppDispatch, useAppSelector } from '../../../../app/store/hooks'
@@ -17,6 +17,7 @@ import {
   parseAssetAmount,
   SATOSHIS_PER_BTC,
 } from '../../../../helpers/number'
+import { isLimitPriceTriggered } from '../../../../utils/limitOrderUtils'
 
 interface Props {
   onCreated?: () => void
@@ -117,14 +118,20 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
     return rawPrice / Math.pow(10, quotePrecision)
   }, [selectedPair])
 
-  // Initialize limit price smoothly if empty and price is available
-  useEffect(() => {
-    if (currentPrice && !limitPriceStr) {
-      setLimitPriceStr(currentPrice.toString())
-    }
-  }, [currentPrice, limitPriceStr])
+  // The limit price is deliberately NOT pre-filled with the market price: an
+  // order placed at market satisfies the trigger immediately and fills on the
+  // next scheduler tick, which read as "setting a limit order forces a swap"
+  // (#92). The "Market:" button above the field still sets it in one click.
 
   const limitPrice = parseFloat(limitPriceStr)
+
+  // An order whose trigger is already satisfied will fill on the next tick.
+  const wouldExecuteImmediately =
+    side !== null &&
+    currentPrice !== undefined &&
+    currentPrice > 0 &&
+    limitPrice > 0 &&
+    isLimitPriceTriggered(side, limitPrice, currentPrice)
 
   // Asset options formatting
   const fromAssetOptions = useMemo(
@@ -632,6 +639,23 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
           )}
         </div>
       </div>
+
+      {wouldExecuteImmediately && (
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-status-warning/30 bg-status-warning/10 px-3 py-2">
+          <AlertTriangle className="w-4 h-4 text-status-warning flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-status-warning">
+            {side === 'buy'
+              ? t(
+                  'limitOrders.form.marketableWarningBuy',
+                  'This price is at or above the market price, so the order will execute almost immediately. Enter a lower price to wait for the market to drop.'
+                )
+              : t(
+                  'limitOrders.form.marketableWarningSell',
+                  'This price is at or below the market price, so the order will execute almost immediately. Enter a higher price to wait for the market to rise.'
+                )}
+          </p>
+        </div>
+      )}
 
       {insufficientBalance && (
         <p className="mt-1 text-xs text-status-danger px-1">
