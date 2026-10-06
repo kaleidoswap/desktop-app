@@ -716,7 +716,16 @@
       "title": "恢复短语",
       "subtitle": "将您的恢复短语保存在安全的地方",
       "mnemonicCopied": "助记词已复制到剪贴板",
-      "failedToCopy": "复制助记词失败"
+      "failedToCopy": "复制助记词失败",
+      "warning": "切勿分享您的恢复短语。任何拥有它的人都能控制您的钱包。请将其写下并离线保存。",
+      "wordCount": "{{count}} 个单词",
+      "reveal": "显示",
+      "hide": "隐藏",
+      "copy": "复制",
+      "revealTitle": "点击显示您的恢复短语",
+      "revealHint": "请确保没有人能看到您的屏幕",
+      "verifyButton": "验证恢复短语",
+      "skipButton": "跳过备份（不推荐）"
     },
     "verifyStep": {
       "title": "验证恢复短语",
@@ -735,7 +744,8 @@
       "failedToUnlock": "解锁节点失败",
       "failedToVerify": "解锁后验证节点状态失败",
       "unlockingCancelled": "节点解锁已取消",
-      "failedToCancel": "取消解锁失败"
+      "failedToCancel": "取消解锁失败",
+      "incompatibleNode": "节点拒绝了请求格式。它可能运行着此应用不支持的 RGB Lightning Node 版本：请更新应用，或使用与之匹配的节点版本。"
     },
     "errors": {
       "failedToCheckPorts": "检查端口可用性失败",

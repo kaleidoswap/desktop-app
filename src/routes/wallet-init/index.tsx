@@ -1244,6 +1244,11 @@ export const Component = () => {
               variant="error"
             >
               <p className="text-sm">{nodeErrorMessage}</p>
+              {nodeErrorMessage.includes('Failed to deserialize') && (
+                <p className="mt-2 text-sm text-content-secondary">
+                  {t('walletInit.unlockStep.incompatibleNode')}
+                </p>
+              )}
               <div className="mt-4">
                 <Button
                   onClick={() => handleStepChange('verify')}

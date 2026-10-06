@@ -716,7 +716,16 @@
       "title": "복구 구문",
       "subtitle": "복구 구문을 안전한 장소에 저장하세요",
       "mnemonicCopied": "니모닉이 클립보드에 복사되었습니다",
-      "failedToCopy": "니모닉 복사에 실패했습니다"
+      "failedToCopy": "니모닉 복사에 실패했습니다",
+      "warning": "복구 문구를 절대 공유하지 마세요. 이 문구를 가진 사람은 누구나 지갑을 제어할 수 있습니다. 적어서 오프라인에 보관하세요.",
+      "wordCount": "{{count}}개 단어",
+      "reveal": "보기",
+      "hide": "숨기기",
+      "copy": "복사",
+      "revealTitle": "클릭하여 복구 문구 보기",
+      "revealHint": "다른 사람이 화면을 볼 수 없는지 확인하세요",
+      "verifyButton": "복구 문구 확인",
+      "skipButton": "백업 건너뛰기 (권장하지 않음)"
     },
     "verifyStep": {
       "title": "복구 구문 확인",
@@ -735,7 +744,8 @@
       "failedToUnlock": "노드 잠금 해제에 실패했습니다",
       "failedToVerify": "잠금 해제 후 노드 상태 확인에 실패했습니다",
       "unlockingCancelled": "노드 잠금 해제가 취소되었습니다",
-      "failedToCancel": "잠금 해제 취소에 실패했습니다"
+      "failedToCancel": "잠금 해제 취소에 실패했습니다",
+      "incompatibleNode": "노드가 요청 형식을 거부했습니다. 이 앱이 지원하지 않는 RGB Lightning Node 버전이 실행 중일 수 있습니다. 앱을 업데이트하거나 호환되는 노드 버전을 사용하세요."
     },
     "errors": {
       "failedToCheckPorts": "포트 사용 가능 여부 확인에 실패했습니다",

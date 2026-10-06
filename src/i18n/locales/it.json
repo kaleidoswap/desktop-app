@@ -716,7 +716,16 @@
       "title": "Frase di Recupero",
       "subtitle": "Salva la tua frase di recupero in un luogo sicuro",
       "mnemonicCopied": "Mnemonic copiato negli appunti",
-      "failedToCopy": "Impossibile copiare il mnemonic"
+      "failedToCopy": "Impossibile copiare il mnemonic",
+      "warning": "Non condividere mai la tua frase di recupero. Chiunque la possieda controlla il tuo wallet. Scrivila e conservala offline.",
+      "wordCount": "{{count}} parole",
+      "reveal": "Mostra",
+      "hide": "Nascondi",
+      "copy": "Copia",
+      "revealTitle": "Clicca per mostrare la frase di recupero",
+      "revealHint": "Assicurati che nessuno possa vedere il tuo schermo",
+      "verifyButton": "Verifica Frase di Recupero",
+      "skipButton": "Salta il backup (sconsigliato)"
     },
     "verifyStep": {
       "title": "Verifica Frase di Recupero",
@@ -735,7 +744,8 @@
       "failedToUnlock": "Impossibile sbloccare il nodo",
       "failedToVerify": "Impossibile verificare lo stato del nodo dopo lo sblocco",
       "unlockingCancelled": "Sblocco del nodo annullato",
-      "failedToCancel": "Impossibile annullare lo sblocco"
+      "failedToCancel": "Impossibile annullare lo sblocco",
+      "incompatibleNode": "Il nodo ha rifiutato il formato della richiesta. Probabilmente esegue una versione di RGB Lightning Node non supportata da questa app: aggiorna l'app o usa una versione del nodo compatibile."
     },
     "errors": {
       "failedToCheckPorts": "Impossibile verificare la disponibilità delle porte",

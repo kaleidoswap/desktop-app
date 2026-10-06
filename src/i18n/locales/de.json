@@ -716,7 +716,16 @@
       "title": "Wiederherstellungsphrase",
       "subtitle": "Bewahre deine Phrase an einem sicheren Ort auf",
       "mnemonicCopied": "Phrase in Zwischenablage kopiert",
-      "failedToCopy": "Phrase konnte nicht kopiert werden"
+      "failedToCopy": "Phrase konnte nicht kopiert werden",
+      "warning": "Teile deine Wiederherstellungsphrase niemals. Wer sie besitzt, kontrolliert deine Wallet. Schreibe sie auf und bewahre sie offline auf.",
+      "wordCount": "{{count}} Wörter",
+      "reveal": "Anzeigen",
+      "hide": "Verbergen",
+      "copy": "Kopieren",
+      "revealTitle": "Klicken, um die Wiederherstellungsphrase anzuzeigen",
+      "revealHint": "Stelle sicher, dass niemand deinen Bildschirm sieht",
+      "verifyButton": "Wiederherstellungsphrase bestätigen",
+      "skipButton": "Backup überspringen (nicht empfohlen)"
     },
     "verifyStep": {
       "title": "Phrase verifizieren",
@@ -735,7 +744,8 @@
       "failedToUnlock": "Node konnte nicht entsperrt werden",
       "failedToVerify": "Node-Status nach dem Entsperren konnte nicht geprüft werden",
       "unlockingCancelled": "Entsperrvorgang abgebrochen",
-      "failedToCancel": "Abbruch fehlgeschlagen"
+      "failedToCancel": "Abbruch fehlgeschlagen",
+      "incompatibleNode": "Der Node hat das Anfrageformat abgelehnt. Vermutlich läuft eine RGB-Lightning-Node-Version, die diese App nicht unterstützt: Aktualisiere die App oder verwende eine passende Node-Version."
     },
     "errors": {
       "failedToCheckPorts": "Ports konnten nicht geprüft werden",

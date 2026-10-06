@@ -717,7 +717,16 @@
       "title": "Recovery Phrase",
       "subtitle": "Save your recovery phrase in a secure location",
       "mnemonicCopied": "Mnemonic copied to clipboard",
-      "failedToCopy": "Failed to copy mnemonic"
+      "failedToCopy": "Failed to copy mnemonic",
+      "warning": "Never share your recovery phrase. Anyone who has it controls your wallet. Write it down and keep it offline.",
+      "wordCount": "{{count}} words",
+      "reveal": "Reveal",
+      "hide": "Hide",
+      "copy": "Copy",
+      "revealTitle": "Click to reveal your recovery phrase",
+      "revealHint": "Make sure no one can see your screen",
+      "verifyButton": "Verify Recovery Phrase",
+      "skipButton": "Skip backup (not recommended)"
     },
     "verifyStep": {
       "title": "Verify Recovery Phrase",
@@ -736,7 +745,8 @@
       "failedToUnlock": "Failed to unlock node",
       "failedToVerify": "Failed to verify node status after unlock",
       "unlockingCancelled": "Node unlocking cancelled",
-      "failedToCancel": "Failed to cancel unlocking"
+      "failedToCancel": "Failed to cancel unlocking",
+      "incompatibleNode": "The node rejected the request format. It is probably running an RGB Lightning Node version this app does not support: update the app, or run a node version that matches it."
     },
     "errors": {
       "failedToCheckPorts": "Failed to check port availability",

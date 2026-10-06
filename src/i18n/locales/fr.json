@@ -716,7 +716,16 @@
       "title": "Phrase de récupération",
       "subtitle": "Conservez votre phrase de récupération dans un endroit sûr",
       "mnemonicCopied": "Phrase copiée dans le presse-papiers",
-      "failedToCopy": "Impossible de copier la phrase"
+      "failedToCopy": "Impossible de copier la phrase",
+      "warning": "Ne partagez jamais votre phrase de récupération. Quiconque la possède contrôle votre portefeuille. Notez-la et conservez-la hors ligne.",
+      "wordCount": "{{count}} mots",
+      "reveal": "Afficher",
+      "hide": "Masquer",
+      "copy": "Copier",
+      "revealTitle": "Cliquez pour afficher votre phrase de récupération",
+      "revealHint": "Assurez-vous que personne ne voit votre écran",
+      "verifyButton": "Vérifier la phrase de récupération",
+      "skipButton": "Ignorer la sauvegarde (déconseillé)"
     },
     "verifyStep": {
       "title": "Vérifier la phrase de récupération",
@@ -735,7 +744,8 @@
       "failedToUnlock": "Impossible de déverrouiller le nœud",
       "failedToVerify": "Impossible de vérifier l'état du nœud après déverrouillage",
       "unlockingCancelled": "Déverrouillage annulé",
-      "failedToCancel": "Impossible d'annuler le déverrouillage"
+      "failedToCancel": "Impossible d'annuler le déverrouillage",
+      "incompatibleNode": "Le nœud a rejeté le format de la requête. Il exécute probablement une version de RGB Lightning Node non prise en charge par cette application : mettez l'application à jour ou utilisez une version de nœud compatible."
     },
     "errors": {
       "failedToCheckPorts": "Impossible de vérifier la disponibilité des ports",
