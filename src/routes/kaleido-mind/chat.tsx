@@ -274,10 +274,13 @@ export const Component: React.FC = () => {
   const listRef = useRef<HTMLDivElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
   const activeChatRef = useRef<string | null>(null)
+  const stoppedRef = useRef(false)
 
   const stop = () => {
     const id = activeChatRef.current
-    if (id) void mind.cancelChat(id)
+    if (!id) return
+    stoppedRef.current = true
+    void mind.cancelChat(id)
   }
 
   const scrollToEnd = () =>
@@ -311,6 +314,7 @@ export const Component: React.FC = () => {
     ])
     setSending(true)
     activeChatRef.current = assistantId
+    stoppedRef.current = false
     scrollToEnd()
     // Correlate tool calls↔results by (name, occurrence). The sidecar fires the
     // call event fire-and-forget after an async lookup, so a fast result can
@@ -414,7 +418,12 @@ export const Component: React.FC = () => {
                   tokensPerSecond: reply.tokensPerSecond,
                 },
                 streaming: false,
-                text: reply.text,
+                // A stopped turn resolves normally with whatever streamed so far.
+                text:
+                  stoppedRef.current &&
+                  (!reply.text || reply.text === '(no response)')
+                    ? message.text || 'Stopped.'
+                    : reply.text,
                 thinking: reply.thinking ?? message.thinking,
               }
             : message

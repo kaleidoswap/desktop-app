@@ -1,3 +1,14 @@
+## [Unreleased]
+
+### 🔧 Improvements
+- **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0) and `kaleido-mcp` 0.3.1, still on `@qvac/sdk` 0.13.5 so phone pairing keeps working. Existing installs download the new runtime on next enable
+- **KaleidoMind on each network**: The agent's MCP server gets the active account's network, maker URL and RGB proxy, so it no longer falls back to a default maker that does not match the network
+- **New agent tools**: Labels for the RGB issuance, UTXO, transfer and atomic-swap tools in the live activity pill
+
+### 🐛 Bug Fixes
+- **KaleidoMind tool arguments**: Tool calls from the on-device model now carry their arguments (amounts, asset IDs, invoices) instead of reaching the tools empty
+- **Stop button**: Stopping a chat turn keeps the text streamed so far (or shows "Stopped.") instead of an error
+
 ## [Version 0.6.0] - 2026-10-06
 
 > ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.6.0: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.6.0.

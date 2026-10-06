@@ -113,8 +113,7 @@ impl MindProcess {
         // Point the sidecar at kaleido-mcp so the agent gets real tools.
         // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
         // narrates tool calls ("I'll check your balance…") it can never execute.
-        // The MCP server reads RLN_NODE_URL (default http://localhost:3001) +
-        // KALEIDOSWAP_API_URL + WDK_SEED from the inherited env.
+        // The MCP server's node/maker/network env comes from apply_account_env.
         match resolve_mcp_path(app) {
             Some(mcp) => {
                 log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
@@ -125,42 +124,11 @@ impl MindProcess {
             ),
         }
 
-        // Point the MCP server at the ACTIVE node so balances/channels work for
-        // remote nodes too — not just the localhost:3001 default. The current
-        // account's node_url is the RLN node HTTP API the rest of the app uses.
-        if let Some(url) = app
+        let account = app
             .try_state::<crate::CurrentAccount>()
-            .and_then(|acc| {
-                acc.0
-                    .read()
-                    .ok()
-                    .and_then(|g| g.as_ref().map(|a| a.node_url.clone()))
-            })
-            .filter(|u| !u.trim().is_empty())
-        {
-            log::info!("[mind] RLN_NODE_URL={}", url);
-            cmd.env("RLN_NODE_URL", url);
-        }
-
-        // Point the MCP at the SAME maker the trading UI uses. kaleido-mcp
-        // defaults to mainnet api.kaleidoswap.com, which doesn't resolve on the
-        // test networks (signet/regtest) — so without this the LSP + swap tools
-        // "fetch failed". Source it from the active account's default_maker_url
-        // (e.g. https://api.signet.kaleidoswap.com), trimming any trailing slash
-        // so the SDK's "/api/v1/lsps1/*" paths don't double up.
-        if let Some(url) = app
-            .try_state::<crate::CurrentAccount>()
-            .and_then(|acc| {
-                acc.0
-                    .read()
-                    .ok()
-                    .and_then(|g| g.as_ref().map(|a| a.default_maker_url.clone()))
-            })
-            .map(|u| u.trim().trim_end_matches('/').to_string())
-            .filter(|u| !u.is_empty())
-        {
-            log::info!("[mind] KALEIDOSWAP_API_URL={}", url);
-            cmd.env("KALEIDOSWAP_API_URL", url);
+            .and_then(|acc| acc.0.read().ok().and_then(|g| g.clone()));
+        if let Some(account) = account {
+            apply_account_env(&mut cmd, &account);
         }
 
         let mut child = cmd
@@ -249,6 +217,48 @@ impl MindProcess {
             let _ = child.kill();
             let _ = child.wait();
         }
+    }
+}
+
+/// kaleido-mcp only knows `mainnet` and `signet`; every test network maps to
+/// `signet` and the explicit KALEIDOSWAP_API_URL / RGB_PROXY_ENDPOINT below
+/// override its defaults.
+fn mcp_network(network: &str) -> &'static str {
+    if network.eq_ignore_ascii_case("mainnet") {
+        "mainnet"
+    } else {
+        "signet"
+    }
+}
+
+/// Point kaleido-mcp at the ACTIVE account: its RLN node, the maker the
+/// trading UI uses, its RGB proxy and the matching network preset. On mainnet
+/// kaleido-mcp has no default maker and exits without KALEIDOSWAP_API_URL.
+fn apply_account_env(cmd: &mut Command, account: &crate::db::Account) {
+    let network = mcp_network(&account.network);
+    log::info!("[mind] KALEIDO_NETWORK={} ({})", network, account.network);
+    cmd.env("KALEIDO_NETWORK", network);
+
+    let node_url = account.node_url.trim();
+    if !node_url.is_empty() {
+        log::info!("[mind] RLN_NODE_URL={}", node_url);
+        cmd.env("RLN_NODE_URL", node_url);
+    }
+
+    // Trim the trailing slash so the SDK's "/api/v1/lsps1/*" paths don't double up.
+    let maker_url = account.default_maker_url.trim().trim_end_matches('/');
+    if !maker_url.is_empty() {
+        log::info!("[mind] KALEIDOSWAP_API_URL={}", maker_url);
+        cmd.env("KALEIDOSWAP_API_URL", maker_url);
+    } else if network == "mainnet" {
+        log::warn!(
+            "[mind] no maker URL on mainnet — kaleido-mcp will not start; chat runs tool-less"
+        );
+    }
+
+    let proxy = account.proxy_endpoint.trim();
+    if !proxy.is_empty() {
+        cmd.env("RGB_PROXY_ENDPOINT", proxy);
     }
 }
 
