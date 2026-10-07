@@ -4,10 +4,13 @@
 - **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0) and `kaleido-mcp` 0.3.1, still on `@qvac/sdk` 0.13.5 so phone pairing keeps working. Existing installs download the new runtime on next enable
 - **KaleidoMind on each network**: The agent's MCP server gets the active account's network, maker URL and RGB proxy, so it no longer falls back to a default maker that does not match the network
 - **New agent tools**: Labels for the RGB issuance, UTXO, transfer and atomic-swap tools in the live activity pill
+- **No maker configured**: Mainnet and Testnet no longer default to KaleidoSwap API hosts that do not exist. Market-maker, DCA and limit-order screens ask for a maker URL when the account has none, maker calls fail with a clear error instead of reaching `localhost:8000`, and KaleidoMind says when swap and channel tools are unavailable
 
 ### 🐛 Bug Fixes
 - **KaleidoMind tool arguments**: Tool calls from the on-device model now carry their arguments (amounts, asset IDs, invoices) instead of reaching the tools empty
 - **Stop button**: Stopping a chat turn keeps the text streamed so far (or shows "Stopped.") instead of an error
+- **KaleidoMind after editing an account**: A maker, node or proxy URL changed in Settings now reaches the agent on its next start instead of after re-login
+- **Create channel**: The LSP lookup uses the account's LSP or maker URL before the network default
 
 ## [Version 0.6.0] - 2026-10-06
 

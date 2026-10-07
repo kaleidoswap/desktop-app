@@ -375,3 +375,22 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::mcp_network;
+
+    #[test]
+    fn maps_app_networks_to_mcp_presets() {
+        assert_eq!(mcp_network("Mainnet"), "mainnet");
+        for n in [
+            "SignetCustom",
+            "Signet",
+            "Testnet",
+            "Regtest",
+            "LocalRegtest",
+        ] {
+            assert_eq!(mcp_network(n), "signet");
+        }
+    }
+}
