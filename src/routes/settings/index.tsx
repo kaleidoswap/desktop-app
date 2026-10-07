@@ -23,17 +23,12 @@ import {
   KeyRound,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-import {
-  getModalPortalTarget,
-  getModalPositionClass,
-} from '../../helpers/modalPortal'
 import { isValidBitcoindRpcUrl } from '../../helpers/unlock'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'
@@ -42,7 +37,7 @@ import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
 import { ChangePasswordModal } from '../../components/ChangePasswordModal'
 import { MnemonicViewerModal } from '../../components/MnemonicViewer'
-import { BitcoindRpcField } from '../../components/ui'
+import { BitcoindRpcField, ConfirmDialog } from '../../components/ui'
 import {
   ModalType,
   ModalTypeValue,
@@ -181,7 +176,6 @@ const ActionCard = ({
 export const Component: React.FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const pos = getModalPositionClass()
   const dispatch = useDispatch()
   const { bitcoinUnit, fiatCurrency, nodeConnectionString, language, appMode } =
     useSelector((state: RootState) => state.settings)
@@ -1119,152 +1113,48 @@ export const Component: React.FC = () => {
         type={modal.type}
       />
 
-      {showRestartConfirmation &&
-        createPortal(
-          <div
-            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget)
-                setShowRestartConfirmation(false)
-            }}
-          >
-            <div
-              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-center text-yellow-500 mb-4">
-                <AlertTriangle size={48} />
-              </div>
-              <h2 className="text-2xl font-bold mb-4 text-center text-white">
-                {t('settings.restartNode')}
-              </h2>
-              <p className="text-content-secondary text-center mb-6">
-                {t('settings.restartNodeMessage')}
-              </p>
-              <div className="flex justify-between space-x-4">
-                <button
-                  className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                  onClick={() => setShowRestartConfirmation(false)}
-                  type="button"
-                >
-                  {t('settings.later')}
-                </button>
-                <button
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                  onClick={() => {
-                    setShowRestartConfirmation(false)
-                    handleRestartNode()
-                  }}
-                  type="button"
-                >
-                  {t('settings.restartNow')}
-                </button>
-              </div>
-            </div>
-          </div>,
-          getModalPortalTarget()
-        )}
+      <ConfirmDialog
+        cancelLabel={t('settings.later')}
+        confirmLabel={t('settings.restartNow')}
+        isOpen={showRestartConfirmation}
+        message={t('settings.restartNodeMessage')}
+        onCancel={() => setShowRestartConfirmation(false)}
+        onConfirm={() => {
+          setShowRestartConfirmation(false)
+          handleRestartNode()
+        }}
+        title={t('settings.restartNode')}
+      />
 
-      {showLogoutConfirmation &&
-        createPortal(
-          <div
-            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setShowLogoutConfirmation(false)
-            }}
-          >
-            <div
-              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-center text-yellow-500 mb-4">
-                <AlertTriangle size={48} />
-              </div>
-              <h2 className="text-2xl font-bold mb-4 text-center text-white">
-                {t('settings.confirmLogout')}
-              </h2>
-              <p className="text-content-secondary text-center mb-6">
-                {t('settings.logoutMessage')}
-              </p>
-              <div className="flex justify-between space-x-4">
-                <button
-                  className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                  onClick={() => setShowLogoutConfirmation(false)}
-                  type="button"
-                >
-                  {t('settings.cancel')}
-                </button>
-                <button
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                  onClick={confirmLogout}
-                  type="button"
-                >
-                  {t('settings.confirmLogout')}
-                </button>
-              </div>
-            </div>
-          </div>,
-          getModalPortalTarget()
-        )}
+      <ConfirmDialog
+        cancelLabel={t('settings.cancel')}
+        confirmLabel={t('settings.confirmLogout')}
+        isOpen={showLogoutConfirmation}
+        message={t('settings.logoutMessage')}
+        onCancel={() => setShowLogoutConfirmation(false)}
+        onConfirm={confirmLogout}
+        title={t('settings.confirmLogout')}
+      />
 
-      {showShutdownConfirmation &&
-        createPortal(
-          <div
-            className={`${pos} inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50`}
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget)
-                setShowShutdownConfirmation(false)
-            }}
-          >
-            <div
-              className="bg-surface-overlay p-6 rounded-xl shadow-2xl w-full max-w-sm"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isShuttingDown ? (
-                <div className="flex flex-col items-center py-6">
-                  <div className="w-16 h-16 mb-4">
-                    <div className="w-full h-full border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    {t('settings.shuttingDownTitle')}
-                  </h3>
-                  <p className="text-content-secondary text-center">
-                    {t('settings.shuttingDownMessage')}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-center text-red-500 mb-4">
-                    <AlertTriangle size={48} />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-4 text-center text-white">
-                    {t('settings.confirmShutdown')}
-                  </h2>
-                  <p className="text-content-secondary text-center mb-6">
-                    {t('settings.confirmShutdownMessage')}
-                  </p>
-                  <div className="flex justify-between space-x-4">
-                    <button
-                      className="flex-1 px-4 py-2 bg-surface-elevated text-white rounded-lg hover:bg-surface-high focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                      onClick={() => setShowShutdownConfirmation(false)}
-                      type="button"
-                    >
-                      {t('settings.cancel')}
-                    </button>
-                    <button
-                      className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-emphasis focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-overlay"
-                      onClick={confirmShutdown}
-                      type="button"
-                    >
-                      {t('settings.confirmShutdown')}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>,
-          getModalPortalTarget()
-        )}
+      <ConfirmDialog
+        cancelLabel={t('settings.cancel')}
+        confirmLabel={t('settings.confirmShutdown')}
+        isLoading={isShuttingDown}
+        isOpen={showShutdownConfirmation}
+        message={
+          isShuttingDown
+            ? t('settings.shuttingDownMessage')
+            : t('settings.confirmShutdownMessage')
+        }
+        onCancel={() => setShowShutdownConfirmation(false)}
+        onConfirm={confirmShutdown}
+        title={
+          isShuttingDown
+            ? t('settings.shuttingDownTitle')
+            : t('settings.confirmShutdown')
+        }
+        tone="danger"
+      />
     </div>
   )
 }
