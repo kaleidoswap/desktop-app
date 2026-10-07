@@ -590,7 +590,11 @@ export const Component: React.FC = () => {
       </header>
 
       {/* ── Tabs ── */}
-      <nav className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-border-subtle bg-surface-base/90 p-1 backdrop-blur">
+      <nav
+        aria-label={t('settings.title', 'Settings')}
+        className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-border-subtle bg-surface-base/90 p-1 backdrop-blur"
+        role="tablist"
+      >
         {tabs.map((x) => (
           <button
             className={`inline-flex flex-shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
@@ -599,7 +603,9 @@ export const Component: React.FC = () => {
                 : 'text-content-secondary hover:bg-surface-overlay hover:text-white'
             }`}
             key={x.id}
+            aria-selected={activeTab === x.id}
             onClick={() => setTab(x.id)}
+            role="tab"
             type="button"
           >
             <span className={activeTab === x.id ? 'text-primary' : ''}>
@@ -630,6 +636,7 @@ export const Component: React.FC = () => {
                 <div className="grid grid-cols-3 gap-1 rounded-lg border border-border-default bg-surface-base/60 p-1">
                   {APP_MODE_OPTIONS.map((opt) => (
                     <button
+                      aria-pressed={appMode === opt.mode}
                       className={`whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                         appMode === opt.mode
                           ? 'bg-primary/15 text-primary'
@@ -694,7 +701,17 @@ export const Component: React.FC = () => {
                 render={({ field }) => (
                   <SettingRow label={t('settings.language')}>
                     <div className="relative">
-                      <select {...field} className={selectCls}>
+                      <select
+                        {...field}
+                        aria-label={t('settings.language')}
+                        className={selectCls}
+                        onChange={(e) => {
+                          // Applies right away; the language is an app-level
+                          // setting, not part of the account form.
+                          field.onChange(e.target.value)
+                          dispatch(setLanguage(e.target.value))
+                        }}
+                      >
                         {Object.entries(LANGUAGES).map(
                           ([code, { name, flag }]) => (
                             <option key={code} value={code}>

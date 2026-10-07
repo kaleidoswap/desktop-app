@@ -822,7 +822,10 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/40
                   ${usePrivacy ? 'bg-primary' : 'bg-surface-elevated'}`}
+                aria-checked={usePrivacy}
+                aria-label={t('depositModal.step2.privacy.title')}
                 onClick={() => setUsePrivacy(!usePrivacy)}
+                role="switch"
                 type="button"
               >
                 <span
