@@ -109,11 +109,6 @@ impl MindProcess {
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
             cmd.env("KALEIDO_MIND_MAX_TOKENS", "512");
         }
-        // Whisper/TTS are only loaded to serve paired phones, and phone pairing
-        // is paused (no P2P provider in @qvac/sdk >= 0.19): skip downloading them.
-        if std::env::var_os("KALEIDO_MIND_VOICE").is_none() {
-            cmd.env("KALEIDO_MIND_VOICE", "0");
-        }
 
         // Point the sidecar at kaleido-mcp so the agent gets real tools.
         // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
