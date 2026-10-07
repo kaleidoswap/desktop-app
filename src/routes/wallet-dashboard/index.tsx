@@ -357,7 +357,7 @@ export const Component = () => {
             <div className="text-xs text-content-secondary">
               {t('dashboard.activateMindDesc', {
                 defaultValue:
-                  'Run a local AI brain alongside your node — chat, models and phone pairing.',
+                  'Run a local AI brain alongside your node — chat, models and skills.',
               })}
             </div>
           </div>
