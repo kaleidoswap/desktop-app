@@ -35,6 +35,7 @@ import type {
 } from 'kaleido-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 import { findNewOutgoingTxid } from '../../../../helpers/sentTxid'
+import { toMsat } from '../../../../helpers/btcUnits'
 
 import { WithdrawForm, ConfirmationModal } from './components'
 import { SentPanel, type SentSummary } from './components/SentPanel'
@@ -47,7 +48,10 @@ import {
   HTLCStatus,
   ValidationMessage,
 } from './types'
-import { getAssignmentAmount } from '../../../../utils/rgbUtils'
+import {
+  getAllRgbAssets,
+  getAssignmentAmount,
+} from '../../../../utils/rgbUtils'
 import { resolveRgbPaymentErrorKey } from '../../../../utils/rgbPaymentErrors'
 import { logger } from '../../../../utils/logger'
 
@@ -120,7 +124,23 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const [decodeInvoice] = nodeApi.useLazyDecodeInvoiceQuery()
   const [decodeRgbInvoice] = nodeApi.useLazyDecodeRgbInvoiceQuery()
 
-  const assets = nodeApi.endpoints.listAssets.useQuery()
+  const assetsQuery = nodeApi.endpoints.listAssets.useQuery()
+  // This flow and its children look assets up in `data.nia`; expose every RGB
+  // schema (NIA, CFA, UDA, IFA) there so tickers and precision resolve for
+  // all of them, not only NIA.
+  const assets = useMemo(
+    () =>
+      assetsQuery.data
+        ? {
+            ...assetsQuery,
+            data: {
+              ...assetsQuery.data,
+              nia: getAllRgbAssets(assetsQuery.data),
+            },
+          }
+        : assetsQuery,
+    [assetsQuery]
+  )
   const channelsQuery = nodeApi.endpoints.listChannels.useQuery(undefined, {
     pollingInterval: 3000,
   })
@@ -1093,13 +1113,10 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               pendingData.decodedInvoice.amt_msat === 0)
           ) {
             // Zero-amount BTC invoice: convert user-entered amount to msat
-            const userAmount = Number(pendingData.amount)
-            if (bitcoinUnit === 'SAT') {
-              paymentParams.amt_msat = userAmount * 1000
-            } else {
-              // BTC to msat
-              paymentParams.amt_msat = userAmount * 100000000 * 1000
-            }
+            paymentParams.amt_msat = toMsat(
+              Number(pendingData.amount),
+              bitcoinUnit
+            )
           }
 
           const res = await sendPayment(paymentParams).unwrap()
