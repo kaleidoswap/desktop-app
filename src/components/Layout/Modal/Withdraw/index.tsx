@@ -39,6 +39,7 @@ import { toMsat } from '../../../../helpers/btcUnits'
 
 import { WithdrawForm, ConfirmationModal } from './components'
 import { SentPanel, type SentSummary } from './components/SentPanel'
+import { buildSentSummary } from './sentSummary'
 import {
   AddressType,
   FeeEstimations,
@@ -1014,35 +1015,14 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const describeSent = (
     kind: SentSummary['kind'],
     reference?: string | null
-  ): SentSummary => {
-    const data = pendingRef.current
-    if (!data) return { kind, reference: reference ?? undefined }
-    const assetForLabel = data.decodedInvoice?.asset_id || data.asset_id
-    const isBtc = !assetForLabel || assetForLabel === BTC_ASSET_ID
-    const unit = isBtc
-      ? bitcoinUnit === 'SAT'
-        ? 'SATS'
-        : bitcoinUnit
-      : ((assets.data?.nia || []).find((a: any) => a.asset_id === assetForLabel)
-          ?.ticker ?? '')
-    const entered = Number(String(data.amount ?? '').replace(/,/g, ''))
-    let amount =
-      entered > 0
-        ? entered.toLocaleString(undefined, { maximumFractionDigits: 8 })
-        : undefined
-    const invoiceMsat = data.decodedInvoice?.amt_msat
-    if (!amount && isBtc && invoiceMsat) {
-      const sats = invoiceMsat / 1000
-      amount =
-        bitcoinUnit === 'SAT' ? sats.toLocaleString() : (sats / 1e8).toFixed(8)
-    }
-    return {
-      amountLabel: amount ? `${amount} ${unit}`.trim() : undefined,
-      destination: data.address || undefined,
+  ): SentSummary =>
+    buildSentSummary(
+      pendingRef.current,
       kind,
-      reference: reference ?? undefined,
-    }
-  }
+      reference,
+      bitcoinUnit,
+      assets.data?.nia ?? []
+    )
 
   const handleConfirmedSubmit = useCallback(async () => {
     if (!pendingData) return

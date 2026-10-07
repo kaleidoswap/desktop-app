@@ -21,17 +21,14 @@ import { nodeApi } from '../../../../slices/nodeApi/nodeApi.slice'
 import { DepositModal, uiSliceSeletors } from '../../../../slices/ui/ui.slice'
 import { getAllRgbAssets } from '../../../../utils/rgbUtils'
 
+import { isUsdt, orderOtherAssets, type PickerAsset } from './assetOrder'
+
 interface Props {
   onNext: (assetId?: string) => void
   onClose: () => void
 }
 
-interface Asset {
-  asset_id: string
-  ticker: string
-  name?: string
-  hasBalance: boolean
-}
+type Asset = PickerAsset
 
 const RECENT_KEY = 'kaleido.deposit.recentAssets'
 const RECENT_MAX = 6
@@ -58,9 +55,6 @@ const rememberRecent = (assetId: string) => {
     // Storage unavailable: recents are a convenience only.
   }
 }
-
-const isUsdt = (a: { ticker?: string | null; name?: string | null }) =>
-  a.ticker?.toUpperCase() === 'USDT' || /tether usd/i.test(a.name ?? '')
 
 const AssetIcon = ({ asset, size }: { asset: Asset; size: string }) => {
   const fallback = asset.asset_id === BTC_ASSET_ID ? btcLogo : rgbLogo
@@ -190,20 +184,10 @@ export const Step1 = ({ onNext, onClose }: Props) => {
 
   // Slider: everything except the pinned tiles, recent first, then assets the
   // wallet holds, then alphabetical.
-  const others = useMemo(() => {
-    const rank = (a: Asset) => {
-      const r = recent.indexOf(a.asset_id)
-      return r === -1 ? RECENT_MAX : r
-    }
-    return rgbAssets
-      .filter((a) => a.asset_id !== usdt?.asset_id)
-      .sort(
-        (a, b) =>
-          rank(a) - rank(b) ||
-          Number(b.hasBalance) - Number(a.hasBalance) ||
-          a.ticker.localeCompare(b.ticker)
-      )
-  }, [rgbAssets, usdt?.asset_id, recent])
+  const others = useMemo(
+    () => orderOtherAssets(rgbAssets, recent, usdt?.asset_id),
+    [rgbAssets, usdt?.asset_id, recent]
+  )
 
   const q = searchQuery.trim().toLowerCase()
   const filteredOthers = q
