@@ -71,6 +71,7 @@ export interface CatalogModel {
   hfFile: string
   ramHintGb: number
   notes?: string
+  recommended?: boolean
 }
 
 export interface DownloadProgress {

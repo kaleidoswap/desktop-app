@@ -18,6 +18,7 @@ import {
 import React, { useMemo, useState } from 'react'
 
 import { MindCard, gb, useMindContext } from './shared'
+import { getRecommendedModelId } from './modelCatalog'
 
 /** Shimmer placeholder rows shown while the catalog is being fetched. */
 const CatalogSkeleton: React.FC = () => (
@@ -52,8 +53,7 @@ export const ModelsManager: React.FC = () => {
   )
 
   const isEmpty = mind.catalog.length === 0
-  // First catalog entry is the provider's recommended model (see start-brain-modal).
-  const recommendedId = mind.catalog[0]?.id
+  const recommendedId = getRecommendedModelId(mind.catalog)
 
   return (
     <MindCard>
@@ -66,7 +66,19 @@ export const ModelsManager: React.FC = () => {
           </span>
         )}
         <button
+          aria-label="Refresh model catalog"
           className="ml-auto flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
+          disabled={mind.catalogLoading}
+          onClick={() => void mind.refresh()}
+          type="button"
+        >
+          <RefreshCw
+            className={`h-3.5 w-3.5 ${mind.catalogLoading ? 'animate-spin' : ''}`}
+          />
+          Refresh
+        </button>
+        <button
+          className="flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1 text-xs text-content-secondary hover:bg-surface-overlay"
           onClick={() => setShowCustom((v) => !v)}
           type="button"
         >

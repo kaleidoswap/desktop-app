@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom'
 import { KALEIDO_MIND_MODELS_PATH } from '../../app/router/paths'
 import { Select } from '../../components/ui/Select'
 import type { UseMindResult } from '../../hooks/useMind'
+import { getRecommendedModelId } from './modelCatalog'
 
 import { gb, labelForPhase } from './shared'
 import { LAST_MODEL_KEY } from './start-brain-modal'
@@ -47,7 +48,7 @@ const CatalogSkeleton: React.FC = () => (
 /** Step 1 — choose & download a model from the catalog. */
 const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const isEmpty = mind.catalog.length === 0
-  const recommendedId = mind.catalog[0]?.id
+  const recommendedId = getRecommendedModelId(mind.catalog)
 
   return (
     <div className="w-full max-w-lg">

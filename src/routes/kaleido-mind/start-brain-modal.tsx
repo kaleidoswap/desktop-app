@@ -12,6 +12,7 @@ import { KALEIDO_MIND_BRAIN_PATH } from '../../app/router/paths'
 import { Modal } from '../../components/ui/Modal'
 import { Select } from '../../components/ui/Select'
 import type { UseMindResult } from '../../hooks/useMind'
+import { getRecommendedModelId } from './modelCatalog'
 
 /**
  * Remembers the last model you started, so "the latest" is the one you used.
@@ -28,18 +29,19 @@ export const StartBrainModal: React.FC<{
   const [dismissed, setDismissed] = useState(false)
   const [selected, setSelected] = useState('')
 
-  // "Latest" = the model you last ran (persisted), else the first installed
-  // (the catalog lists the recommended model first).
+  // Prefer the last model used, then the recommended installed model.
   let lastId: string | null = null
   try {
     lastId = localStorage.getItem(LAST_MODEL_KEY)
   } catch {
     /* ignore */
   }
+  const recommendedId = getRecommendedModelId(mind.catalog)
   const defaultId =
     (lastId && installed.some((m) => m.id === lastId)
       ? lastId
-      : installed[0]?.id) ?? ''
+      : (installed.find((m) => m.id === recommendedId)?.id ??
+        installed[0]?.id)) ?? ''
   const modelId = selected || defaultId
   const activeModel = installed.find((m) => m.id === modelId)
 

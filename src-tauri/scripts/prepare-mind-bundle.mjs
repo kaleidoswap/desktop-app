@@ -17,7 +17,7 @@
  *   Measure it (`du -sh resources/mind`) and trim unused engines before relying
  *   on it for a shipped build. Confirm the model loads on each target.
  *
- * Env knobs: PROVIDER_VERSION / MCP_VERSION / QVAC_VERSION (npm semver ranges),
+ * Env knobs: PROVIDER_VERSION / MIND_VERSION / MCP_VERSION / QVAC_VERSION (npm semver ranges),
  * NODE_VERSION, TARGET_PLATFORM / TARGET_ARCH (override host detection).
  */
 import { execFileSync } from 'node:child_process'
@@ -29,21 +29,22 @@ import {
   cpSync,
   chmodSync,
   writeFileSync,
+  readFileSync,
 } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
-// 0.7.0 (+ @kaleidorg/mind 0.7.0) delivers tool arguments to QVAC models and
-// turns a cancelled inference into a normal stopped turn.
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.7.0'
+// Pin the provider and core together so every platform receives the same catalog.
+const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '0.8.0'
+const MIND_VERSION = process.env.MIND_VERSION ?? '0.8.1'
 // 0.3.x picks its defaults from KALEIDO_NETWORK (set by mind.rs) and no longer
 // installs the Spark/Liquid wallet packages (optional peers, unused here).
-const MCP_VERSION = process.env.MCP_VERSION ?? '^0.3.1'
+const MCP_VERSION = process.env.MCP_VERSION ?? '0.3.1'
 // 0.19 removed the P2P provider behind phone pairing; the provider then runs
 // desktop-only, and pairing is paused in the app until it returns.
-const QVAC_VERSION = process.env.QVAC_VERSION ?? '^0.21.0'
+const QVAC_VERSION = process.env.QVAC_VERSION ?? '0.21.0'
 
 // @qvac/sdk (via @qvac/inference) hard-depends on EVERY inference engine, but
 // the desktop agent only runs the LLM (llamacpp completion) — its provider
@@ -112,11 +113,14 @@ const run = (cmd, args, cwd, { shell = false } = {}) => {
 }
 
 function reset() {
+  const placeholder = existsSync(join(out, '.gitkeep'))
+    ? readFileSync(join(out, '.gitkeep'), 'utf8')
+    : ''
   rmSync(out, { recursive: true, force: true })
   mkdirSync(out, { recursive: true })
   // Restore the tracked placeholder so the dir survives in git — Tauri's
   // build-time resource check needs resources/mind to exist in dev/CI.
-  writeFileSync(join(out, '.gitkeep'), '')
+  writeFileSync(join(out, '.gitkeep'), placeholder)
 }
 
 // npm matches --os against packages' `"os"` fields, which use Node's
@@ -136,7 +140,12 @@ function installFromNpm(name, deps) {
   writeFileSync(
     join(dir, 'package.json'),
     JSON.stringify(
-      { name: `kaleido-bundle-${name}`, version: '0.0.0', private: true, dependencies: deps },
+      {
+        name: `kaleido-bundle-${name}`,
+        version: '0.0.0',
+        private: true,
+        dependencies: deps,
+      },
       null,
       2
     ) + '\n'
@@ -179,7 +188,9 @@ function pruneEngines(name) {
   // 0.21 engines also ship per-platform native packages (`<engine>-<os>-<cpu>`).
   const installed = existsSync(qvac) ? readdirSync(qvac) : []
   for (const eng of DROP_ENGINES) {
-    for (const dir of installed.filter((d) => d === eng || d.startsWith(`${eng}-`))) {
+    for (const dir of installed.filter(
+      (d) => d === eng || d.startsWith(`${eng}-`)
+    )) {
       rmSync(join(qvac, dir), { recursive: true, force: true })
       console.log(`  pruned @qvac/${dir}`)
     }
@@ -227,7 +238,16 @@ function writeSlimWorker(name) {
     join(workerDir, 'lifecycle.js'),
     join(nm, '@qvac', 'sdk', 'dist', 'src', 'logging', 'index.js'),
     join(nm, '@qvac', 'inference', 'dist', 'plugins', 'index.js'),
-    join(nm, '@qvac', 'inference', 'dist', 'plugins', 'builtin', 'llamacpp-completion', 'plugin.js'),
+    join(
+      nm,
+      '@qvac',
+      'inference',
+      'dist',
+      'plugins',
+      'builtin',
+      'llamacpp-completion',
+      'plugin.js'
+    ),
     join(nm, '@qvac', 'llm-llamacpp'),
   ]
   // Fail loudly if the SDK layout changed — better a broken build than shipping
@@ -248,7 +268,8 @@ function fetchNode() {
   const archMap = { x64: 'x64', arm64: 'arm64' }
   const platform = process.env.TARGET_PLATFORM ?? platMap[process.platform]
   const arch = process.env.TARGET_ARCH ?? archMap[process.arch]
-  if (!platform || !arch) throw new Error(`unsupported target ${process.platform}/${process.arch}`)
+  if (!platform || !arch)
+    throw new Error(`unsupported target ${process.platform}/${process.arch}`)
 
   const isWin = platform === 'win'
   const ext = isWin ? 'zip' : 'tar.gz'
@@ -262,7 +283,9 @@ function fetchNode() {
   // bsdtar (mac/linux/win10+) extracts both .tar.gz and .zip.
   run(TAR, ['-xf', archive, '-C', work])
 
-  const binSrc = isWin ? join(work, base, 'node.exe') : join(work, base, 'bin', 'node')
+  const binSrc = isWin
+    ? join(work, base, 'node.exe')
+    : join(work, base, 'bin', 'node')
   const binDst = join(out, isWin ? 'node.exe' : 'node')
   cpSync(binSrc, binDst)
   if (!isWin) chmodSync(binDst, 0o755)
@@ -274,6 +297,7 @@ console.log(`Staging KaleidoMind bundle (from npm) → ${out}`)
 reset()
 installFromNpm('provider', {
   '@kaleidorg/mind-provider': PROVIDER_VERSION,
+  '@kaleidorg/mind': MIND_VERSION,
   '@qvac/sdk': QVAC_VERSION,
 })
 assertPlatformRuntimes('provider')
@@ -284,4 +308,6 @@ if (DROP_ENGINES.length) writeSlimWorker('provider')
 installFromNpm('mcp', { 'kaleido-mcp': MCP_VERSION })
 fetchNode()
 console.log('\nDone. Verify size:  du -sh src-tauri/resources/mind')
-console.log('Then `tauri build` and confirm the agent runs in the packaged app.')
+console.log(
+  'Then `tauri build` and confirm the agent runs in the packaged app.'
+)
