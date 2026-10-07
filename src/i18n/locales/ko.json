@@ -952,7 +952,15 @@
       "invalidUrl": "유효한 URL을 입력하세요",
       "reconnectingStatus": "메이커에 재연결 중...",
       "reconnectionInitFailed": "재연결을 시작하지 못했습니다",
-      "reconnectionFailed": "재연결에 실패했습니다"
+      "reconnectionFailed": "재연결에 실패했습니다",
+      "noMaker": {
+        "title": "설정된 메이커가 없습니다",
+        "message": "{{network}}에는 기본 KaleidoSwap 메이커가 없습니다. 거래할 메이커의 API URL을 입력하세요.",
+        "save": "저장",
+        "saved": "메이커 URL이 저장되었습니다",
+        "saveFailed": "메이커 URL을 저장할 수 없습니다",
+        "openSettings": "설정 열기"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2P 거래",

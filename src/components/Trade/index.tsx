@@ -101,6 +101,7 @@ export { SwapInputField } from './SwapInputField'
 export { ExchangeRateSection } from './ExchangeRateSection'
 export { SwapButton } from './SwapButton'
 export { MakerSelector } from './MakerSelector'
+export { NoMakerConfigured, RequireMaker } from './NoMakerConfigured'
 export { AssetOption, AssetSelect, ExchangeRateDisplay }
 export { EnhancedAssetSelect } from './EnhancedAssetSelect'
 export { ManualSwapForm } from './ManualSwapForm'

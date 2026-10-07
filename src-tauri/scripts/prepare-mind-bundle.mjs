@@ -34,12 +34,13 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
-// 0.6.3 adds the `cancel_chat` command (stop button); pulls @kaleidorg/mind
-// 0.6.4 which threads the AbortSignal through the funnel/recipe/qvac provider.
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.6.3'
-// 0.2.1 fixes the chat-swap quote tool (optional layers + buy-side to_amount);
-// pairs with @kaleidorg/mind 0.6.2's corrected kaleidoswap-atomic recipe args.
-const MCP_VERSION = process.env.MCP_VERSION ?? '^0.2.1'
+// 0.7.0 (+ @kaleidorg/mind 0.7.0) delivers tool arguments to QVAC models and
+// turns a cancelled inference into a normal stopped turn.
+const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '^0.7.0'
+// 0.3.x picks its defaults from KALEIDO_NETWORK (set by mind.rs) and no longer
+// installs the Spark/Liquid wallet packages (optional peers, unused here).
+const MCP_VERSION = process.env.MCP_VERSION ?? '^0.3.1'
+// Stay on 0.13.x: QVAC 0.19 removed the P2P provider the "brain" pairing uses.
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '^0.13.5'
 
 // @qvac/sdk hard-depends on EVERY inference engine (~4 GB), but the desktop

@@ -438,6 +438,7 @@ fn insert_account(
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 fn update_account(
+    state: tauri::State<CurrentAccount>,
     name: String,
     network: String,
     datapath: Option<String>,
@@ -453,8 +454,8 @@ fn update_account(
     bearer_token: Option<String>,
     language: Option<String>,
 ) -> Result<usize, String> {
-    match db::update_account(
-        name,
+    let num_rows = db::update_account(
+        name.clone(),
         network,
         datapath,
         rpc_connection_url,
@@ -468,10 +469,20 @@ fn update_account(
         ldk_peer_listening_port,
         bearer_token,
         language,
-    ) {
-        Ok(num_rows) => Ok(num_rows),
-        Err(e) => Err(e.to_string()),
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Keep the in-memory account (read by the KaleidoMind sidecar) in sync.
+    let mut current = state
+        .0
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if current.as_ref().is_some_and(|a| a.name == name) {
+        if let Ok(Some(account)) = db::get_account_by_name(&name) {
+            *current = Some(account);
+        }
     }
+    Ok(num_rows)
 }
 
 #[tauri::command]

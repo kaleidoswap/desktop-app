@@ -71,6 +71,23 @@ export const getKaleidoClient = async (
   return clientInstance!
 }
 
+export class MakerNotConfiguredError extends Error {
+  constructor() {
+    super('Maker API not configured: set a maker URL in Settings')
+    this.name = 'MakerNotConfiguredError'
+  }
+}
+
+/** The client for maker/LSP calls; throws when the account has no maker URL. */
+export const getMakerClient = async (
+  state: MinimalState
+): Promise<KaleidoClient> => {
+  if (!state.nodeSettings.data?.default_maker_url?.trim()) {
+    throw new MakerNotConfiguredError()
+  }
+  return getKaleidoClient(state)
+}
+
 /**
  * Get the Node API wrapper with enhanced error handling and request defaults
  */

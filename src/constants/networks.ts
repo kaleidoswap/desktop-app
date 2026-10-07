@@ -33,10 +33,11 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
     proxy_endpoint: 'rpc://myproxy.local:3000/json-rpc',
     rpc_connection_url: 'user:password@localhost:18443',
   },
+  // No public mainnet maker/LSP: the user enters their maker's URL.
   Mainnet: {
     daemon_listening_port: '3001',
-    default_lsp_url: 'https://api.kaleidoswap.com/',
-    default_maker_url: 'https://api.kaleidoswap.com/',
+    default_lsp_url: '',
+    default_maker_url: '',
     indexer_url: '127.0.0.1:50001',
     ldk_peer_listening_port: '9735',
     proxy_endpoint: 'rpc://127.0.0.1:3000/json-rpc',
@@ -72,8 +73,8 @@ export const NETWORK_DEFAULTS: Record<string, NetworkDefaults> = {
   },
   Testnet: {
     daemon_listening_port: '3001',
-    default_lsp_url: 'https://api.testnet.kaleidoswap.com/',
-    default_maker_url: 'https://api.testnet.kaleidoswap.com/',
+    default_lsp_url: '',
+    default_maker_url: '',
     indexer_url: 'ssl://electrum.iriswallet.com:50013',
     ldk_peer_listening_port: '9735',
     proxy_endpoint: 'rpcs://proxy.iriswallet.com/0.2/json-rpc',

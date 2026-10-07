@@ -1,4 +1,4 @@
-import { TradeNav } from '../../../components/Trade'
+import { RequireMaker, TradeNav } from '../../../components/Trade'
 
 import { LimitOrdersView } from './LimitOrdersView'
 
@@ -7,6 +7,8 @@ export const Component = () => (
     <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
       <TradeNav />
     </div>
-    <LimitOrdersView />
+    <RequireMaker>
+      <LimitOrdersView />
+    </RequireMaker>
   </div>
 )

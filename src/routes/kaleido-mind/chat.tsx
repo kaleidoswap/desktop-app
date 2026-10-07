@@ -21,6 +21,10 @@ import React, { useRef, useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
+import { Link } from 'react-router-dom'
+
+import { SETTINGS_PATH } from '../../app/router/paths'
+import { useAppSelector } from '../../app/store/hooks'
 
 import { BrainLauncher } from './brain-launcher'
 import { ToolEventView, fmtSats } from './cards'
@@ -269,15 +273,21 @@ export const Component: React.FC = () => {
 
   // Persisted across Mind sub-tabs (owned by the layout).
   const { messages, setMessages, input, setInput } = useMindChat()
+  const hasMaker = !!useAppSelector((state) =>
+    state.nodeSettings.data.default_maker_url?.trim()
+  )
   const [sending, setSending] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
   const activeChatRef = useRef<string | null>(null)
+  const stoppedRef = useRef(false)
 
   const stop = () => {
     const id = activeChatRef.current
-    if (id) void mind.cancelChat(id)
+    if (!id) return
+    stoppedRef.current = true
+    void mind.cancelChat(id)
   }
 
   const scrollToEnd = () =>
@@ -311,6 +321,7 @@ export const Component: React.FC = () => {
     ])
     setSending(true)
     activeChatRef.current = assistantId
+    stoppedRef.current = false
     scrollToEnd()
     // Correlate tool calls↔results by (name, occurrence). The sidecar fires the
     // call event fire-and-forget after an async lookup, so a fast result can
@@ -414,7 +425,12 @@ export const Component: React.FC = () => {
                   tokensPerSecond: reply.tokensPerSecond,
                 },
                 streaming: false,
-                text: reply.text,
+                // A stopped turn resolves normally with whatever streamed so far.
+                text:
+                  stoppedRef.current &&
+                  (!reply.text || reply.text === '(no response)')
+                    ? message.text || 'Stopped.'
+                    : reply.text,
                 thinking: reply.thinking ?? message.thinking,
               }
             : message
@@ -523,6 +539,17 @@ export const Component: React.FC = () => {
           History
         </button>
       </div>
+
+      {!hasMaker && (
+        <div className="border-b border-divider/15 bg-status-warning/10 px-5 py-2 text-xs text-content-secondary">
+          No maker configured for this account, so swap and channel tools are
+          unavailable.{' '}
+          <Link className="text-primary underline" to={SETTINGS_PATH}>
+            Set a maker URL in Settings
+          </Link>
+          , then restart the model.
+        </div>
+      )}
 
       {showHistory && (
         <div className="border-b border-divider/15 bg-surface-overlay/40 px-5 py-3">

@@ -952,7 +952,15 @@
       "invalidUrl": "Formato de URL inválido",
       "reconnectingStatus": "Reconectando al creador...",
       "reconnectionInitFailed": "Error al iniciar la reconexión. Por favor intenta de nuevo.",
-      "reconnectionFailed": "Error al reconectar con el creador"
+      "reconnectionFailed": "Error al reconectar con el creador",
+      "noMaker": {
+        "title": "No hay ningún maker configurado",
+        "message": "No hay un maker predeterminado de KaleidoSwap para {{network}}. Introduce la URL de la API del maker con el que quieres operar.",
+        "save": "Guardar",
+        "saved": "URL del maker guardada",
+        "saveFailed": "No se pudo guardar la URL del maker",
+        "openSettings": "Abrir ajustes"
+      }
     },
     "nostrP2P": {
       "title": "Intercambio P2P de Nostr",

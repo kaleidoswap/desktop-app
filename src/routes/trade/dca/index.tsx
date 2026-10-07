@@ -20,7 +20,7 @@ import {
 } from '../../../helpers/modalPortal'
 
 import { IconButton } from '../../../components/ui'
-import { TradeNav } from '../../../components/Trade'
+import { NoMakerConfigured, TradeNav } from '../../../components/Trade'
 
 import { useAppSelector } from '../../../app/store/hooks'
 import bitcoinLogo from '../../../assets/bitcoin-logo.svg'
@@ -105,7 +105,7 @@ function CreateOrderModal({
   )
 }
 
-export const Component = () => {
+const DcaPage = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('active')
@@ -693,5 +693,20 @@ export const Component = () => {
         </section>
       </div>
     </>
+  )
+}
+
+export const Component = () => {
+  const makerUrl = useAppSelector(
+    (state) => state.nodeSettings.data.default_maker_url
+  )
+  if (makerUrl?.trim()) return <DcaPage />
+  return (
+    <div className="w-full min-h-full">
+      <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
+        <TradeNav />
+      </div>
+      <NoMakerConfigured />
+    </div>
   )
 }
