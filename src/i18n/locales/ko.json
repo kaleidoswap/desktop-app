@@ -73,7 +73,8 @@
     "helpSupport": "도움말 및 지원",
     "getHelpSupport": "도움말 및 지원 받기",
     "menu": "메뉴",
-    "expandSidebar": "사이드바 펼치기"
+    "expandSidebar": "사이드바 펼치기",
+    "nwc": "앱 연결"
   },
   "channels": {
     "pageTitle": "채널 관리",
@@ -3165,5 +3166,97 @@
     "bitcoindBody": "더 프라이빗하며 직접 운영하는 노드에 기반합니다. RPC가 활성화된 Bitcoin Core가 항상 접속 가능해야 합니다.",
     "invalidFormat": "사용자:비밀번호@호스트:포트 형식을 사용하세요",
     "notConfigured": "사용 안 함: 인덱서에서 동기화 중"
+  },
+  "nwc": {
+    "title": "앱 연결",
+    "subtitle": "Nostr Wallet Connect로 다른 앱이 이 지갑을 사용할 수 있습니다. 노드는 이 컴퓨터에 그대로 있습니다.",
+    "add": "새 연결",
+    "activity": "최근 활동",
+    "activityHint": "이 페이지가 열려 있는 동안 연결된 앱의 요청이 여기에 표시됩니다.",
+    "budgetUsed": "{{budget}} sats 중 {{spent}} sats 사용",
+    "cancel": "취소",
+    "caps": {
+      "receive": "받기",
+      "spend": "지출 가능",
+      "view": "보기"
+    },
+    "connect": {
+      "title": "앱 연결하기",
+      "warning": "이 코드는 선택한 권한을 앱에 부여합니다. 한 번만 표시되니 지금 스캔하거나 복사하고 공유하지 마세요."
+    },
+    "connections": "연결",
+    "done": "완료",
+    "empty": {
+      "body": "연결을 만들고 KaleidoSwap 모바일 지갑 등 연결할 앱에서 QR 코드를 스캔하세요.",
+      "stopped": "연결을 추가하려면 서비스를 시작하세요.",
+      "title": "아직 연결된 앱이 없습니다"
+    },
+    "errors": {
+      "create": "연결을 만들지 못했습니다",
+      "permissions": "권한을 하나 이상 선택하세요",
+      "revoke": "연결을 취소하지 못했습니다",
+      "start": "서비스를 시작하지 못했습니다",
+      "update": "연결을 업데이트하지 못했습니다"
+    },
+    "lastUsed": "{{when}} 사용",
+    "neverUsed": "사용 기록 없음",
+    "new": {
+      "access": "접근 권한",
+      "budget": "지출 한도",
+      "budgetHint": "이 앱이 보낼 수 있는 총액을 제한합니다. 비워 두면 한도가 없습니다.",
+      "create": "연결 만들기",
+      "customBudget": "직접 입력 (sats)",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB 자산",
+      "name": "이름",
+      "namePlaceholder": "예: Rate 모바일, 브라우저 확장",
+      "noLimit": "한도 없음",
+      "title": "새 앱 연결",
+      "defaultName": "앱 연결 {{n}}"
+    },
+    "noBudget": "지출 한도 없음",
+    "pause": "일시 중지",
+    "paused": "일시 중지됨",
+    "permissionsCount": "권한 {{count}}개",
+    "presets": {
+      "custom": "사용자 지정",
+      "customDesc": "권한을 하나씩 선택합니다.",
+      "full": "전체 지갑",
+      "fullDesc": "Lightning 및 RGB 보기, 받기, 보내기. KaleidoSwap 지갑에 권장.",
+      "receive": "보기 및 받기",
+      "receiveDesc": "잔액 보기와 인보이스 생성. 지출 불가.",
+      "view": "보기 전용",
+      "viewDesc": "잔액, 자산, 내역만."
+    },
+    "resume": "재개",
+    "revoke": "취소",
+    "revokeBody": "“{{name}}”은(는) 즉시 이 지갑에 대한 접근 권한을 잃습니다. 다시 연결하려면 새 연결이 필요합니다.",
+    "revokeTitle": "연결 취소",
+    "revoked": "연결이 취소되었습니다",
+    "service": {
+      "identity": "지갑 서비스 ID",
+      "running": "서비스 실행 중",
+      "scope": "Lightning 결제 및 RGB 자산 (KaleidoSwap 확장)",
+      "start": "서비스 시작",
+      "stopped": "서비스 중지됨"
+    },
+    "methods": {
+      "get_info": "노드 정보",
+      "get_balance": "잔액",
+      "make_invoice": "인보이스 생성",
+      "lookup_invoice": "인보이스 조회",
+      "list_transactions": "거래 내역",
+      "pay_invoice": "인보이스 결제",
+      "pay_keysend": "keysend 보내기",
+      "rln_node_info": "RGB 노드 정보",
+      "rln_list_assets": "RGB 자산 목록",
+      "rln_asset_balance": "RGB 잔액",
+      "rln_rgb_invoice": "RGB 인보이스 생성",
+      "rln_ln_invoice": "RGB Lightning 인보이스 생성",
+      "rln_decode_rgb_invoice": "RGB 인보이스 디코딩",
+      "rln_send_asset": "RGB 자산 보내기",
+      "rln_list_channels": "채널 목록",
+      "rln_get_address": "온체인 주소"
+    }
   }
 }

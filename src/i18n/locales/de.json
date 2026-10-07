@@ -73,7 +73,8 @@
     "helpSupport": "Hilfe & Support",
     "getHelpSupport": "Hilfe & Support erhalten",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "App-Verbindungen"
   },
   "channels": {
     "pageTitle": "Lightning-Wallet-Dashboard",
@@ -3165,5 +3166,97 @@
     "bitcoindBody": "Privater, stützt sich auf deinen eigenen Node. Erfordert Bitcoin Core mit RPC, stets erreichbar.",
     "invalidFormat": "Verwende das Format benutzer:passwort@host:port",
     "notConfigured": "Nicht verwendet: Synchronisierung über den Indexer"
+  },
+  "nwc": {
+    "title": "App-Verbindungen",
+    "subtitle": "Andere Apps nutzen diese Wallet über Nostr Wallet Connect. Dein Node bleibt auf diesem Computer.",
+    "add": "Neue Verbindung",
+    "activity": "Letzte Aktivität",
+    "activityHint": "Anfragen verbundener Apps erscheinen hier, solange diese Seite geöffnet ist.",
+    "budgetUsed": "{{spent}} von {{budget}} sats ausgegeben",
+    "cancel": "Abbrechen",
+    "caps": {
+      "receive": "Empfangen",
+      "spend": "Kann ausgeben",
+      "view": "Ansehen"
+    },
+    "connect": {
+      "title": "App verbinden",
+      "warning": "Dieser Code gibt der App die gewählten Berechtigungen. Er wird nur einmal angezeigt: jetzt scannen oder kopieren und nicht teilen."
+    },
+    "connections": "Verbindungen",
+    "done": "Fertig",
+    "empty": {
+      "body": "Erstelle eine Verbindung und scanne ihren QR-Code mit der App, die du verbinden willst, z. B. der KaleidoSwap Mobile-Wallet.",
+      "stopped": "Starte den Dienst, um eine Verbindung hinzuzufügen.",
+      "title": "Noch keine Apps verbunden"
+    },
+    "errors": {
+      "create": "Verbindung konnte nicht erstellt werden",
+      "permissions": "Wähle mindestens eine Berechtigung",
+      "revoke": "Verbindung konnte nicht widerrufen werden",
+      "start": "Dienst konnte nicht gestartet werden",
+      "update": "Verbindung konnte nicht aktualisiert werden"
+    },
+    "lastUsed": "Genutzt {{when}}",
+    "neverUsed": "Nie genutzt",
+    "new": {
+      "access": "Zugriff",
+      "budget": "Ausgabelimit",
+      "budgetHint": "Begrenzt, wie viel diese App insgesamt senden kann. Leer lassen für kein Limit.",
+      "create": "Verbindung erstellen",
+      "customBudget": "Eigener Betrag in sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB-Assets",
+      "name": "Name",
+      "namePlaceholder": "z. B. Rate Mobile, Browser-Erweiterung",
+      "noLimit": "Kein Limit",
+      "title": "Neue App-Verbindung",
+      "defaultName": "App-Verbindung {{n}}"
+    },
+    "noBudget": "Kein Ausgabelimit",
+    "pause": "Pausieren",
+    "paused": "Pausiert",
+    "permissionsCount": "{{count}} Berechtigungen",
+    "presets": {
+      "custom": "Benutzerdefiniert",
+      "customDesc": "Jede Berechtigung einzeln wählen.",
+      "full": "Volle Wallet",
+      "fullDesc": "Lightning und RGB: ansehen, empfangen und senden. Empfohlen für KaleidoSwap-Wallets.",
+      "receive": "Ansehen & empfangen",
+      "receiveDesc": "Salden ansehen und Rechnungen erstellen. Kann nichts ausgeben.",
+      "view": "Nur ansehen",
+      "viewDesc": "Nur Salden, Assets und Verlauf."
+    },
+    "resume": "Fortsetzen",
+    "revoke": "Widerrufen",
+    "revokeBody": "„{{name}}“ verliert sofort den Zugriff auf diese Wallet. Zum erneuten Verbinden brauchst du eine neue Verbindung.",
+    "revokeTitle": "Verbindung widerrufen",
+    "revoked": "Verbindung widerrufen",
+    "service": {
+      "identity": "Identität des Wallet-Dienstes",
+      "running": "Dienst läuft",
+      "scope": "Lightning-Zahlungen und RGB-Assets (KaleidoSwap-Erweiterungen)",
+      "start": "Dienst starten",
+      "stopped": "Dienst gestoppt"
+    },
+    "methods": {
+      "get_info": "Node-Info",
+      "get_balance": "Saldo",
+      "make_invoice": "Rechnungen erstellen",
+      "lookup_invoice": "Rechnungen abfragen",
+      "list_transactions": "Transaktionsverlauf",
+      "pay_invoice": "Rechnungen bezahlen",
+      "pay_keysend": "Keysend senden",
+      "rln_node_info": "RGB-Node-Info",
+      "rln_list_assets": "RGB-Assets auflisten",
+      "rln_asset_balance": "RGB-Salden",
+      "rln_rgb_invoice": "RGB-Rechnungen erstellen",
+      "rln_ln_invoice": "RGB-Lightning-Rechnungen erstellen",
+      "rln_decode_rgb_invoice": "RGB-Rechnungen dekodieren",
+      "rln_send_asset": "RGB-Assets senden",
+      "rln_list_channels": "Kanäle auflisten",
+      "rln_get_address": "On-Chain-Adresse"
+    }
   }
 }

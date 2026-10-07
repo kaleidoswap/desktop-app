@@ -1,11 +1,28 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { Copy, Plus } from 'lucide-react'
+import {
+  Activity,
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Copy,
+  Eye,
+  Link as LinkIcon,
+  Loader2,
+  Plus,
+  Send,
+  Download,
+  ShieldCheck,
+  SlidersHorizontal,
+  Trash2,
+  Wallet,
+} from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
-import { Alert, Badge, Button, Card, Input, Modal } from '../../components/ui'
+import { Modal } from '../../components/ui'
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard'
 import { logger } from '../../utils/logger'
 
@@ -34,62 +51,137 @@ interface NwcActivity {
   timestamp: number
 }
 
+type Capability = 'view' | 'receive' | 'spend'
+
+interface MethodDef {
+  id: string
+  label: string
+  group: 'lightning' | 'rgb'
+  capability: Capability
+}
+
 /** All methods the Rust service implements. */
-const ALL_METHODS: { id: string; label: string; payment: boolean }[] = [
+const ALL_METHODS: MethodDef[] = [
   // Standard NIP-47 (Bitcoin Lightning)
-  { id: 'get_info', label: 'Get node info', payment: false },
-  { id: 'get_balance', label: 'Get balance', payment: false },
-  { id: 'make_invoice', label: 'Create invoices', payment: false },
-  { id: 'lookup_invoice', label: 'Look up invoices', payment: false },
-  { id: 'list_transactions', label: 'List transactions', payment: false },
-  { id: 'pay_invoice', label: 'Pay invoices', payment: true },
-  { id: 'pay_keysend', label: 'Send keysend', payment: true },
-  // KaleidoSwap RLN extensions (RGB + node)
-  { id: 'rln_node_info', label: 'RLN node info', payment: false },
-  { id: 'rln_list_assets', label: 'List RGB assets', payment: false },
-  { id: 'rln_asset_balance', label: 'RGB asset balance', payment: false },
-  { id: 'rln_rgb_invoice', label: 'Create RGB invoices', payment: false },
   {
+    capability: 'view',
+    group: 'lightning',
+    id: 'get_info',
+    label: 'Node info',
+  },
+  {
+    capability: 'view',
+    group: 'lightning',
+    id: 'get_balance',
+    label: 'Balance',
+  },
+  {
+    capability: 'receive',
+    group: 'lightning',
+    id: 'make_invoice',
+    label: 'Create invoices',
+  },
+  {
+    capability: 'view',
+    group: 'lightning',
+    id: 'lookup_invoice',
+    label: 'Look up invoices',
+  },
+  {
+    capability: 'view',
+    group: 'lightning',
+    id: 'list_transactions',
+    label: 'Transaction history',
+  },
+  {
+    capability: 'spend',
+    group: 'lightning',
+    id: 'pay_invoice',
+    label: 'Pay invoices',
+  },
+  {
+    capability: 'spend',
+    group: 'lightning',
+    id: 'pay_keysend',
+    label: 'Send keysend',
+  },
+  // KaleidoSwap RLN extensions (RGB + node)
+  {
+    capability: 'view',
+    group: 'rgb',
+    id: 'rln_node_info',
+    label: 'RGB node info',
+  },
+  {
+    capability: 'view',
+    group: 'rgb',
+    id: 'rln_list_assets',
+    label: 'List RGB assets',
+  },
+  {
+    capability: 'view',
+    group: 'rgb',
+    id: 'rln_asset_balance',
+    label: 'RGB balances',
+  },
+  {
+    capability: 'receive',
+    group: 'rgb',
+    id: 'rln_rgb_invoice',
+    label: 'Create RGB invoices',
+  },
+  {
+    capability: 'receive',
+    group: 'rgb',
     id: 'rln_ln_invoice',
     label: 'Create RGB Lightning invoices',
-    payment: false,
   },
   {
+    capability: 'view',
+    group: 'rgb',
     id: 'rln_decode_rgb_invoice',
     label: 'Decode RGB invoices',
-    payment: false,
   },
-  { id: 'rln_send_asset', label: 'Send RGB assets', payment: true },
-  { id: 'rln_list_channels', label: 'List channels', payment: false },
-  { id: 'rln_get_address', label: 'Get on-chain address', payment: false },
+  {
+    capability: 'spend',
+    group: 'rgb',
+    id: 'rln_send_asset',
+    label: 'Send RGB assets',
+  },
+  {
+    capability: 'view',
+    group: 'rgb',
+    id: 'rln_list_channels',
+    label: 'List channels',
+  },
+  {
+    capability: 'receive',
+    group: 'rgb',
+    id: 'rln_get_address',
+    label: 'On-chain address',
+  },
 ]
 
-const DEFAULT_METHODS = [
-  'get_info',
-  'get_balance',
-  'make_invoice',
-  'lookup_invoice',
-  'list_transactions',
-  'pay_invoice',
-  // RGB extensions — enabled by default so wallets (e.g. rate) can detect the
-  // node as an RGB Lightning Node and list/transact assets without the user
-  // having to hand-pick these.
-  'rln_node_info',
-  'rln_list_assets',
-  'rln_asset_balance',
-  'rln_rgb_invoice',
-  'rln_ln_invoice',
-  'rln_decode_rgb_invoice',
-  'rln_send_asset',
-  'rln_list_channels',
-  'rln_get_address',
-]
+const METHOD_BY_ID = Object.fromEntries(ALL_METHODS.map((m) => [m.id, m]))
 
-const SATS_PER_BTC = 100_000_000
+const methodsWith = (caps: Capability[], exclude: string[] = []) =>
+  ALL_METHODS.filter(
+    (m) => caps.includes(m.capability) && !exclude.includes(m.id)
+  ).map((m) => m.id)
 
-function formatSats(msat: number): string {
-  return Math.floor(msat / 1000).toLocaleString()
+type PresetId = 'view' | 'receive' | 'full' | 'custom'
+
+// "full" keeps the previous default: everything except keysend, so wallets
+// such as Rate detect an RGB Lightning Node and can transact assets.
+const PRESETS: Record<Exclude<PresetId, 'custom'>, string[]> = {
+  full: methodsWith(['view', 'receive', 'spend'], ['pay_keysend']),
+  receive: methodsWith(['view', 'receive']),
+  view: methodsWith(['view']),
 }
+
+const BUDGET_CHOICES = [10_000, 100_000, 1_000_000]
+
+const formatSats = (msat: number) => Math.floor(msat / 1000).toLocaleString()
 
 function parseMethods(json: string): string[] {
   try {
@@ -100,7 +192,79 @@ function parseMethods(json: string): string[] {
   }
 }
 
+const capabilitiesOf = (methods: string[]) => {
+  const caps = new Set(methods.map((m) => METHOD_BY_ID[m]?.capability))
+  return {
+    receive: caps.has('receive'),
+    spend: caps.has('spend'),
+    view: caps.has('view'),
+  }
+}
+
+const useRelativeTime = () => {
+  const { i18n } = useTranslation()
+  return (unixSeconds: number) => {
+    const diff = unixSeconds - Date.now() / 1000
+    const rtf = new Intl.RelativeTimeFormat(i18n.language || 'en', {
+      numeric: 'auto',
+    })
+    const abs = Math.abs(diff)
+    if (abs < 60) return rtf.format(Math.round(diff), 'second')
+    if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute')
+    if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour')
+    return rtf.format(Math.round(diff / 86400), 'day')
+  }
+}
+
+const Switch = ({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: () => void
+  label: string
+}) => (
+  <button
+    aria-checked={checked}
+    aria-label={label}
+    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
+      checked ? 'bg-primary' : 'bg-surface-elevated'
+    }`}
+    onClick={onChange}
+    role="switch"
+    title={label}
+    type="button"
+  >
+    <span
+      className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+        checked ? 'translate-x-6' : 'translate-x-1'
+      }`}
+    />
+  </button>
+)
+
+const Section = ({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  action?: React.ReactNode
+  children: React.ReactNode
+}) => (
+  <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+    <div className="flex items-center justify-between gap-3 border-b border-divider/10 px-5 py-4">
+      <h2 className="text-base font-bold text-white">{title}</h2>
+      {action}
+    </div>
+    {children}
+  </section>
+)
+
 export const Component = () => {
+  const { t } = useTranslation()
+  const relativeTime = useRelativeTime()
   const [running, setRunning] = useState(false)
   const [npub, setNpub] = useState<string | null>(null)
   const [connections, setConnections] = useState<NwcConnection[]>([])
@@ -116,13 +280,19 @@ export const Component = () => {
   // Add-connection modal state
   const [showAdd, setShowAdd] = useState(false)
   const [name, setName] = useState('')
-  const [methods, setMethods] = useState<string[]>(DEFAULT_METHODS)
+  const [preset, setPreset] = useState<PresetId>('full')
+  const [methods, setMethods] = useState<string[]>(PRESETS.full)
   const [budgetSats, setBudgetSats] = useState('')
   const [creating, setCreating] = useState(false)
 
-  // Result (connection URI) modal state
   const [newUri, setNewUri] = useState<string | null>(null)
-  const { copied, copy } = useCopyToClipboard()
+  const [revokeTarget, setRevokeTarget] = useState<NwcConnection | null>(null)
+  const [expanded, setExpanded] = useState<number | null>(null)
+  const uriCopy = useCopyToClipboard()
+  const npubCopy = useCopyToClipboard(1500)
+
+  const methodLabel = (id: string) =>
+    t(`nwc.methods.${id}`, METHOD_BY_ID[id]?.label ?? id)
 
   const refresh = useCallback(async () => {
     try {
@@ -164,12 +334,14 @@ export const Component = () => {
       await refresh()
     } catch (err) {
       setStartError(
-        typeof err === 'string' ? err : 'Failed to start the NWC service'
+        typeof err === 'string'
+          ? err
+          : t('nwc.errors.start', 'Failed to start the service')
       )
     } finally {
       setStarting(false)
     }
-  }, [refresh])
+  }, [refresh, t])
 
   // Auto-start once when the page loads and the service isn't running yet
   // (the node is unlocked if we're rendering this page).
@@ -180,45 +352,70 @@ export const Component = () => {
     }
   }, [loading, running, handleStart])
 
+  const choosePreset = (id: PresetId) => {
+    setPreset(id)
+    if (id !== 'custom') setMethods(PRESETS[id])
+  }
+
   const toggleMethod = (id: string) => {
+    setPreset('custom')
     setMethods((prev) =>
       prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
     )
   }
 
-  const resetAddForm = () => {
-    setName('')
-    setMethods(DEFAULT_METHODS)
+  // Next free "App connection N" so the user can create without typing.
+  const generateName = () => {
+    const taken = new Set(connections.map((c) => c.name.trim()))
+    let n = connections.length + 1
+    let candidate = t('nwc.new.defaultName', {
+      defaultValue: 'App connection {{n}}',
+      n,
+    })
+    while (taken.has(candidate)) {
+      n += 1
+      candidate = t('nwc.new.defaultName', {
+        defaultValue: 'App connection {{n}}',
+        n,
+      })
+    }
+    return candidate
+  }
+
+  const openAdd = () => {
+    setName(generateName())
+    setPreset('full')
+    setMethods(PRESETS.full)
     setBudgetSats('')
+    setShowAdd(true)
   }
 
   const handleCreate = async () => {
-    if (!name.trim()) {
-      toast.error('Please enter a name for this connection')
-      return
-    }
     if (methods.length === 0) {
-      toast.error('Select at least one permission')
+      toast.error(t('nwc.errors.permissions', 'Select at least one permission'))
       return
     }
     setCreating(true)
     try {
       const budgetMsat =
-        budgetSats.trim() !== '' && Number(budgetSats) > 0
+        canSpend && budgetSats.trim() !== '' && Number(budgetSats) > 0
           ? Math.round(Number(budgetSats) * 1000)
           : null
       const uri = await invoke<string>('nwc_create_connection', {
         budgetMsat,
         methods,
-        name: name.trim(),
+        name: name.trim() || generateName(),
       })
       setShowAdd(false)
-      resetAddForm()
       setNewUri(uri)
       await refresh()
     } catch (err) {
       logger.error('NWC: create connection failed', err)
-      toast.error(typeof err === 'string' ? err : 'Failed to create connection')
+      toast.error(
+        typeof err === 'string'
+          ? err
+          : t('nwc.errors.create', 'Failed to create the connection')
+      )
     } finally {
       setCreating(false)
     }
@@ -233,326 +430,643 @@ export const Component = () => {
       await refresh()
     } catch (err) {
       logger.error('NWC: toggle enabled failed', err)
-      toast.error('Failed to update connection')
+      toast.error(t('nwc.errors.update', 'Failed to update the connection'))
     }
   }
 
-  const handleRevoke = async (conn: NwcConnection) => {
-    if (
-      !window.confirm(
-        `Revoke "${conn.name}"? The connected app will lose access immediately.`
-      )
-    ) {
-      return
-    }
+  const handleRevoke = async () => {
+    if (!revokeTarget) return
     try {
-      await invoke('nwc_revoke_connection', { id: conn.id })
+      await invoke('nwc_revoke_connection', { id: revokeTarget.id })
       await refresh()
-      toast.success('Connection revoked')
+      toast.success(t('nwc.revoked', 'Connection revoked'))
     } catch (err) {
       logger.error('NWC: revoke failed', err)
-      toast.error('Failed to revoke connection')
+      toast.error(t('nwc.errors.revoke', 'Failed to revoke the connection'))
+    } finally {
+      setRevokeTarget(null)
     }
+  }
+
+  const canSpend = capabilitiesOf(methods).spend
+
+  const presetCards: {
+    id: PresetId
+    icon: React.ReactNode
+    title: string
+    description: string
+  }[] = [
+    {
+      description: t(
+        'nwc.presets.fullDesc',
+        'Lightning and RGB: view, receive and send. Recommended for KaleidoSwap wallets.'
+      ),
+      icon: <Wallet className="h-4 w-4" />,
+      id: 'full',
+      title: t('nwc.presets.full', 'Full wallet'),
+    },
+    {
+      description: t(
+        'nwc.presets.receiveDesc',
+        'View balances and create invoices. Cannot spend.'
+      ),
+      icon: <Download className="h-4 w-4" />,
+      id: 'receive',
+      title: t('nwc.presets.receive', 'View & receive'),
+    },
+    {
+      description: t(
+        'nwc.presets.viewDesc',
+        'Balances, assets and history only.'
+      ),
+      icon: <Eye className="h-4 w-4" />,
+      id: 'view',
+      title: t('nwc.presets.view', 'View only'),
+    },
+    {
+      description: t('nwc.presets.customDesc', 'Pick each permission.'),
+      icon: <SlidersHorizontal className="h-4 w-4" />,
+      id: 'custom',
+      title: t('nwc.presets.custom', 'Custom'),
+    },
+  ]
+
+  const capabilityChips = (connMethods: string[]) => {
+    const caps = capabilitiesOf(connMethods)
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {caps.view && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-surface-high px-2 py-0.5 text-xs text-content-secondary">
+            <Eye className="h-3 w-3" />
+            {t('nwc.caps.view', 'View')}
+          </span>
+        )}
+        {caps.receive && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-surface-high px-2 py-0.5 text-xs text-content-secondary">
+            <Download className="h-3 w-3" />
+            {t('nwc.caps.receive', 'Receive')}
+          </span>
+        )}
+        {caps.spend && (
+          <span className="inline-flex items-center gap-1 rounded-md bg-status-warning-subtle px-2 py-0.5 text-xs text-status-warning">
+            <Send className="h-3 w-3" />
+            {t('nwc.caps.spend', 'Can spend')}
+          </span>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-content-primary">
-          App Connections
-        </h1>
-        <p className="text-content-secondary mt-1">
-          Connect external apps to this wallet over Nostr Wallet Connect
-          (NIP-47). Your node stays on this machine — apps talk to it through
-          relays using the connection string you share with them.
-        </p>
-      </div>
-
-      {!running && !loading && (
-        <Card title="Service not running">
-          <div className="space-y-3">
-            <p className="text-content-secondary text-sm">
-              The NWC service starts automatically when your wallet is unlocked.
-              If it isn’t running, start it here.
-            </p>
-            {startError && (
-              <Alert title="Could not start" variant="error">
-                {startError}
-              </Alert>
+    <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-6">
+      {/* Header */}
+      <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-subtle bg-surface-overlay px-5 py-4">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15">
+          <LinkIcon className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold text-white">
+            {t('nwc.title', 'App Connections')}
+          </h1>
+          <p className="text-sm text-content-secondary">
+            {t(
+              'nwc.subtitle',
+              'Let other apps use this wallet through Nostr Wallet Connect. Your node stays on this computer.'
             )}
-            <Button
-              isLoading={starting}
-              onClick={handleStart}
-              variant="primary"
-            >
-              Start service
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      <Card
-        action={
-          <Badge variant={running ? 'success' : 'default'}>
-            {running ? 'Running' : 'Stopped'}
-          </Badge>
-        }
-        title="Service status"
-      >
-        <div className="space-y-3 text-sm">
-          <div className="space-y-1">
-            <span className="text-content-secondary">
-              Wallet service identity
-            </span>
-            <div className="relative mt-1">
-              <input
-                className="w-full font-mono text-xs text-content-primary bg-surface-overlay/50 border border-border-default/50 rounded-lg px-3 py-2 pr-9 outline-none truncate"
-                readOnly
-                value={npub ?? '—'}
-              />
-              <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-primary transition-colors flex-shrink-0"
-                onClick={() => {
-                  if (npub) {
-                    navigator.clipboard.writeText(npub)
-                    toast.success('Copied to clipboard')
-                  }
-                }}
-                title="Copy npub"
-                type="button"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-          <p className="text-content-tertiary">
-            Scope: Bitcoin Lightning only. RGB-asset support over NWC is not yet
-            available.
           </p>
         </div>
-      </Card>
+        <button
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!running}
+          onClick={openAdd}
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+          {t('nwc.add', 'New connection')}
+        </button>
+      </header>
 
-      <Card
-        action={
-          <Button
-            disabled={!running}
-            icon={<Plus className="w-4 h-4" />}
-            iconPosition="right"
-            onClick={() => setShowAdd(true)}
-            size="sm"
-            variant="primary"
+      {/* Service */}
+      <section className="rounded-2xl border border-border-subtle bg-surface-overlay p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+              running
+                ? 'bg-status-success-subtle text-status-success'
+                : 'bg-surface-high text-content-tertiary'
+            }`}
           >
-            Add connection
-          </Button>
-        }
-        title="Connections"
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                running
+                  ? 'animate-pulse bg-status-success'
+                  : 'bg-content-tertiary'
+              }`}
+            />
+            {running
+              ? t('nwc.service.running', 'Service running')
+              : t('nwc.service.stopped', 'Service stopped')}
+          </span>
+          <span className="text-xs text-content-tertiary">
+            {t(
+              'nwc.service.scope',
+              'Lightning payments and RGB assets (KaleidoSwap extensions)'
+            )}
+          </span>
+          {!running && !loading && (
+            <button
+              className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg border border-border-default px-3 text-sm font-medium text-white transition-colors hover:bg-surface-high disabled:opacity-50"
+              disabled={starting}
+              onClick={handleStart}
+              type="button"
+            >
+              {starting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('nwc.service.start', 'Start service')}
+            </button>
+          )}
+        </div>
+
+        {startError && (
+          <p className="mt-3 flex items-start gap-2 rounded-lg bg-status-danger-subtle p-3 text-xs text-status-danger">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            {startError}
+          </p>
+        )}
+
+        <div className="mt-4">
+          <p className="mb-1.5 text-xs text-content-tertiary">
+            {t('nwc.service.identity', 'Wallet service identity')}
+          </p>
+          <button
+            className="group flex w-full items-center gap-3 rounded-lg border border-border-default bg-surface-base/50 px-3 py-2 text-left transition-colors hover:border-primary/40 disabled:cursor-default"
+            disabled={!npub}
+            onClick={() => npub && npubCopy.copy(npub)}
+            type="button"
+          >
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-content-primary">
+              {npub ?? '—'}
+            </span>
+            {npubCopy.copied ? (
+              <Check className="h-3.5 w-3.5 flex-shrink-0 text-status-success" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 flex-shrink-0 text-content-tertiary group-hover:text-primary" />
+            )}
+          </button>
+        </div>
+      </section>
+
+      {/* Connections */}
+      <Section
+        title={`${t('nwc.connections', 'Connections')}${
+          connections.length ? ` · ${connections.length}` : ''
+        }`}
       >
         {connections.length === 0 ? (
-          <p className="text-content-secondary text-sm py-4 text-center">
-            No app connections yet.
-            {running
-              ? ' Click “Add connection” to create one.'
-              : ' Unlock your wallet to add one.'}
-          </p>
+          <div className="flex flex-col items-center px-6 py-12 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <LinkIcon className="h-6 w-6 text-primary" />
+            </div>
+            <p className="text-sm font-semibold text-white">
+              {t('nwc.empty.title', 'No apps connected yet')}
+            </p>
+            <p className="mt-1 max-w-sm text-sm text-content-secondary">
+              {running
+                ? t(
+                    'nwc.empty.body',
+                    'Create a connection and scan its QR code from the app you want to link, such as the KaleidoSwap mobile wallet.'
+                  )
+                : t(
+                    'nwc.empty.stopped',
+                    'Start the service to add a connection.'
+                  )}
+            </p>
+            {running && (
+              <button
+                className="mt-5 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
+                onClick={openAdd}
+                type="button"
+              >
+                <Plus className="h-4 w-4" />
+                {t('nwc.add', 'New connection')}
+              </button>
+            )}
+          </div>
         ) : (
-          <ul className="divide-y divide-divider">
+          <ul className="divide-y divide-divider/10">
             {connections.map((conn) => {
               const connMethods = parseMethods(conn.methods_json)
+              const spends = capabilitiesOf(connMethods).spend
+              const budgetPct =
+                conn.budget_msat && conn.budget_msat > 0
+                  ? Math.min(100, (conn.spent_msat / conn.budget_msat) * 100)
+                  : 0
+              const isOpen = expanded === conn.id
               return (
-                <li
-                  className="py-4 flex items-start justify-between gap-4"
-                  key={conn.id}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-content-primary">
-                        {conn.name}
-                      </span>
-                      <Badge
-                        size="sm"
-                        variant={conn.enabled ? 'success' : 'default'}
+                <li className="px-5 py-4" key={conn.id}>
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                        conn.enabled
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-surface-high text-content-tertiary'
+                      }`}
+                    >
+                      {conn.name.trim().charAt(0).toUpperCase() || '?'}
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span
+                          className={`truncate font-semibold ${
+                            conn.enabled
+                              ? 'text-white'
+                              : 'text-content-secondary'
+                          }`}
+                        >
+                          {conn.name}
+                        </span>
+                        {!conn.enabled && (
+                          <span className="rounded-md bg-surface-high px-1.5 py-0.5 text-[11px] font-medium text-content-tertiary">
+                            {t('nwc.paused', 'Paused')}
+                          </span>
+                        )}
+                        <span className="text-xs text-content-tertiary">
+                          {conn.last_used_at != null
+                            ? t('nwc.lastUsed', {
+                                defaultValue: 'Used {{when}}',
+                                when: relativeTime(conn.last_used_at),
+                              })
+                            : t('nwc.neverUsed', 'Never used')}
+                        </span>
+                      </div>
+
+                      {capabilityChips(connMethods)}
+
+                      {spends &&
+                        (conn.budget_msat != null ? (
+                          <div className="max-w-sm space-y-1">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-surface-high">
+                              <div
+                                className={`h-full rounded-full ${
+                                  budgetPct > 90
+                                    ? 'bg-status-danger'
+                                    : 'bg-primary'
+                                }`}
+                                style={{ width: `${budgetPct}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-content-tertiary">
+                              {t('nwc.budgetUsed', {
+                                budget: formatSats(conn.budget_msat),
+                                defaultValue:
+                                  '{{spent}} of {{budget}} sats spent',
+                                spent: formatSats(conn.spent_msat),
+                              })}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-content-tertiary">
+                            {t('nwc.noBudget', 'No spending limit')}
+                          </p>
+                        ))}
+
+                      <button
+                        className="inline-flex items-center gap-1 text-xs font-medium text-content-secondary hover:text-white"
+                        onClick={() => setExpanded(isOpen ? null : conn.id)}
+                        type="button"
                       >
-                        {conn.enabled ? 'Enabled' : 'Disabled'}
-                      </Badge>
+                        {t('nwc.permissionsCount', {
+                          count: connMethods.length,
+                          defaultValue: '{{count}} permissions',
+                        })}
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {connMethods.map((m) => (
+                            <span
+                              className="rounded-md border border-border-default px-2 py-0.5 text-xs text-content-secondary"
+                              key={m}
+                              title={m}
+                            >
+                              {methodLabel(m)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {connMethods.map((m) => (
-                        <Badge key={m} size="sm" variant="info">
-                          {m}
-                        </Badge>
-                      ))}
+
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <Switch
+                        checked={conn.enabled}
+                        label={
+                          conn.enabled
+                            ? t('nwc.pause', 'Pause')
+                            : t('nwc.resume', 'Resume')
+                        }
+                        onChange={() => handleToggleEnabled(conn)}
+                      />
+                      <button
+                        className="rounded-lg p-2 text-content-tertiary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                        onClick={() => setRevokeTarget(conn)}
+                        title={t('nwc.revoke', 'Revoke')}
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                    {conn.budget_msat != null && (
-                      <p className="text-xs text-content-secondary mt-2">
-                        Budget: {formatSats(conn.spent_msat)} /{' '}
-                        {formatSats(conn.budget_msat)} sats spent
-                      </p>
-                    )}
-                    {conn.last_used_at != null && (
-                      <p className="text-xs text-content-tertiary mt-1">
-                        Last used:{' '}
-                        {new Date(conn.last_used_at * 1000).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <Button
-                      onClick={() => handleToggleEnabled(conn)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      {conn.enabled ? 'Disable' : 'Enable'}
-                    </Button>
-                    <Button
-                      onClick={() => handleRevoke(conn)}
-                      size="sm"
-                      variant="danger"
-                    >
-                      Revoke
-                    </Button>
                   </div>
                 </li>
               )
             })}
           </ul>
         )}
-      </Card>
+      </Section>
 
       {activity.length > 0 && (
-        <Card title="Recent activity">
-          <ul className="divide-y divide-divider text-sm">
+        <Section title={t('nwc.activity', 'Recent activity')}>
+          <ul className="divide-y divide-divider/10">
             {activity.map((a, i) => (
-              <li className="py-2 flex justify-between gap-4" key={i}>
-                <span className="text-content-primary">
-                  {a.connection_name} ·{' '}
-                  <span className="font-mono">{a.method}</span>
+              <li
+                className="flex items-center gap-3 px-5 py-2.5 text-sm"
+                key={i}
+              >
+                <span
+                  className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                    a.ok ? 'bg-status-success' : 'bg-status-danger'
+                  }`}
+                />
+                <span className="min-w-0 flex-1 truncate text-content-primary">
+                  {a.connection_name}
+                  <span className="text-content-tertiary">
+                    {' '}
+                    · {methodLabel(a.method)}
+                  </span>
                 </span>
-                <span className="flex items-center gap-2 text-content-tertiary">
+                <span className="flex-shrink-0 text-xs tabular-nums text-content-tertiary">
                   {new Date(a.timestamp * 1000).toLocaleTimeString()}
-                  <Badge size="sm" variant={a.ok ? 'success' : 'danger'}>
-                    {a.ok ? 'ok' : 'error'}
-                  </Badge>
                 </span>
               </li>
             ))}
           </ul>
-        </Card>
+        </Section>
       )}
 
-      {/* Add-connection modal */}
+      {/* New connection */}
       <Modal
         isOpen={showAdd}
         onClose={() => setShowAdd(false)}
-        size="md"
-        title="New app connection"
+        size="lg"
+        title={t('nwc.new.title', 'New app connection')}
       >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-1">
-              Name
+        <div className="space-y-5 p-5">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-white">
+              {t('nwc.new.name', 'Name')}
             </label>
-            <Input
+            <input
+              autoFocus
+              onFocus={(e) => e.target.select()}
+              className="w-full rounded-lg border border-border-default bg-surface-base/60 px-3.5 py-2.5 text-sm text-white placeholder:text-content-tertiary focus:border-primary focus:outline-none"
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Rate mobile, Browser extension"
+              placeholder={t(
+                'nwc.new.namePlaceholder',
+                'e.g. Rate mobile, Browser extension'
+              )}
               value={name}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-2">
-              Permissions
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-white">
+              {t('nwc.new.access', 'Access')}
             </label>
-            <div className="space-y-2">
-              {ALL_METHODS.map((m) => (
-                <label
-                  className="flex items-center gap-2 text-sm text-content-primary cursor-pointer"
-                  key={m.id}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {presetCards.map((p) => (
+                <button
+                  className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                    preset === p.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border-default hover:border-primary/40'
+                  }`}
+                  key={p.id}
+                  onClick={() => choosePreset(p.id)}
+                  type="button"
                 >
-                  <input
-                    checked={methods.includes(m.id)}
-                    onChange={() => toggleMethod(m.id)}
-                    type="checkbox"
-                  />
-                  <span>{m.label}</span>
-                  {m.payment && (
-                    <Badge size="sm" variant="warning">
-                      spends funds
-                    </Badge>
-                  )}
-                </label>
+                  <span
+                    className={`mt-0.5 rounded-lg p-1.5 ${
+                      preset === p.id
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-surface-high text-content-secondary'
+                    }`}
+                  >
+                    {p.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-white">
+                      {p.title}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-content-tertiary">
+                      {p.description}
+                    </span>
+                  </span>
+                </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-content-secondary mb-1">
-              Spending budget (sats, optional)
-            </label>
-            <Input
-              onChange={(e) => setBudgetSats(e.target.value)}
-              placeholder="Leave empty for unlimited"
-              type="number"
-              value={budgetSats}
-            />
-            <p className="text-xs text-content-tertiary mt-1">
-              Caps total outgoing payments for this connection
-              {budgetSats && Number(budgetSats) > 0
-                ? ` (${(Number(budgetSats) / SATS_PER_BTC).toFixed(8)} BTC)`
-                : ''}
-              .
-            </p>
-          </div>
+          {preset === 'custom' && (
+            <div className="grid gap-4 rounded-xl border border-border-default bg-surface-base/40 p-4 sm:grid-cols-2">
+              {(['lightning', 'rgb'] as const).map((group) => (
+                <div className="space-y-2" key={group}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-content-tertiary">
+                    {group === 'lightning'
+                      ? t('nwc.new.groupLightning', 'Lightning')
+                      : t('nwc.new.groupRgb', 'RGB assets')}
+                  </p>
+                  {ALL_METHODS.filter((m) => m.group === group).map((m) => (
+                    <label
+                      className="flex cursor-pointer items-center gap-2.5 text-sm text-content-primary"
+                      key={m.id}
+                    >
+                      <input
+                        checked={methods.includes(m.id)}
+                        className="h-4 w-4 accent-primary"
+                        onChange={() => toggleMethod(m.id)}
+                        type="checkbox"
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {methodLabel(m.id)}
+                      </span>
+                      {m.capability === 'spend' && (
+                        <Send className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setShowAdd(false)} variant="ghost">
-              Cancel
-            </Button>
-            <Button
-              isLoading={creating}
-              onClick={handleCreate}
-              variant="primary"
-            >
-              Create
-            </Button>
-          </div>
+          {canSpend && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white">
+                {t('nwc.new.budget', 'Spending limit')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {BUDGET_CHOICES.map((b) => (
+                  <button
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      budgetSats === String(b)
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border-default text-content-secondary hover:text-white'
+                    }`}
+                    key={b}
+                    onClick={() => setBudgetSats(String(b))}
+                    type="button"
+                  >
+                    {b.toLocaleString()} sats
+                  </button>
+                ))}
+                <button
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    budgetSats === ''
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border-default text-content-secondary hover:text-white'
+                  }`}
+                  onClick={() => setBudgetSats('')}
+                  type="button"
+                >
+                  {t('nwc.new.noLimit', 'No limit')}
+                </button>
+              </div>
+              <input
+                className="w-full rounded-lg border border-border-default bg-surface-base/60 px-3.5 py-2.5 text-sm text-white placeholder:text-content-tertiary focus:border-primary focus:outline-none"
+                min={0}
+                onChange={(e) => setBudgetSats(e.target.value)}
+                placeholder={t('nwc.new.customBudget', 'Custom amount in sats')}
+                type="number"
+                value={budgetSats}
+              />
+              <p className="text-xs text-content-tertiary">
+                {t(
+                  'nwc.new.budgetHint',
+                  'Caps the total this app can send. Leave empty for no limit.'
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-divider/10 bg-surface-base px-5 py-4">
+          <button
+            className="h-10 rounded-lg px-4 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-overlay hover:text-white"
+            onClick={() => setShowAdd(false)}
+            type="button"
+          >
+            {t('nwc.cancel', 'Cancel')}
+          </button>
+          <button
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:opacity-50"
+            disabled={creating}
+            onClick={handleCreate}
+            type="button"
+          >
+            {creating && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t('nwc.new.create', 'Create connection')}
+          </button>
         </div>
       </Modal>
 
-      {/* Connection-string result modal */}
+      {/* Connection string */}
       <Modal
         isOpen={newUri !== null}
         onClose={() => setNewUri(null)}
         size="md"
-        title="Connect your app"
+        title={t('nwc.connect.title', 'Connect your app')}
       >
-        <div className="space-y-4">
-          <Alert title="Save this now" variant="warning">
-            This connection string grants the configured permissions to your
-            wallet. It is shown once — copy it or scan the QR into your app now.
-          </Alert>
-
+        <div className="space-y-4 p-5">
+          <p className="flex items-start gap-2 rounded-xl border border-status-warning/30 bg-status-warning-subtle p-3 text-xs leading-relaxed text-content-primary">
+            <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-status-warning" />
+            {t(
+              'nwc.connect.warning',
+              'This code gives the app the permissions you chose. It is shown only once: scan it or copy it now, and do not share it.'
+            )}
+          </p>
           {newUri && (
-            <div className="flex justify-center bg-white p-4 rounded-xl">
-              <QRCodeSVG includeMargin size={232} value={newUri} />
+            <div className="mx-auto w-fit rounded-2xl bg-white p-3">
+              <QRCodeSVG level="M" size={220} value={newUri} />
             </div>
           )}
-
-          <div className="bg-surface-overlay rounded-lg p-3">
-            <p className="font-mono text-xs break-all text-content-primary">
+          <button
+            className="group flex w-full items-center gap-3 rounded-lg border border-border-default bg-surface-base/50 px-3 py-2.5 text-left hover:border-primary/40"
+            onClick={() => newUri && uriCopy.copy(newUri)}
+            type="button"
+          >
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-content-secondary">
               {newUri}
-            </p>
-          </div>
+            </span>
+            {uriCopy.copied ? (
+              <Check className="h-4 w-4 flex-shrink-0 text-status-success" />
+            ) : (
+              <Copy className="h-4 w-4 flex-shrink-0 text-content-tertiary group-hover:text-primary" />
+            )}
+          </button>
+          <button
+            className="h-10 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
+            onClick={() => setNewUri(null)}
+            type="button"
+          >
+            {t('nwc.done', 'Done')}
+          </button>
+        </div>
+      </Modal>
 
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => newUri && copy(newUri)} variant="secondary">
-              {copied ? 'Copied!' : 'Copy connection string'}
-            </Button>
-            <Button onClick={() => setNewUri(null)} variant="primary">
-              Done
-            </Button>
+      {/* Revoke confirmation */}
+      <Modal
+        isOpen={revokeTarget !== null}
+        onClose={() => setRevokeTarget(null)}
+        size="sm"
+        title={t('nwc.revokeTitle', 'Revoke connection')}
+      >
+        <div className="space-y-5 p-5">
+          <p className="text-sm leading-relaxed text-content-secondary">
+            {t('nwc.revokeBody', {
+              defaultValue:
+                '“{{name}}” will lose access to this wallet immediately. To reconnect it you will need a new connection.',
+              name: revokeTarget?.name ?? '',
+            })}
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="h-10 flex-1 rounded-lg border border-border-default text-sm font-medium text-white hover:bg-surface-high"
+              onClick={() => setRevokeTarget(null)}
+              type="button"
+            >
+              {t('nwc.cancel', 'Cancel')}
+            </button>
+            <button
+              className="h-10 flex-1 rounded-lg bg-status-danger text-sm font-semibold text-white hover:opacity-90"
+              onClick={handleRevoke}
+              type="button"
+            >
+              {t('nwc.revoke', 'Revoke')}
+            </button>
           </div>
         </div>
       </Modal>
+
+      {activity.length === 0 && connections.length > 0 && (
+        <p className="flex items-center justify-center gap-2 text-xs text-content-tertiary">
+          <Activity className="h-3.5 w-3.5" />
+          {t(
+            'nwc.activityHint',
+            'Requests from connected apps will appear here while this page is open.'
+          )}
+        </p>
+      )}
     </div>
   )
 }

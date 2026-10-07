@@ -73,7 +73,8 @@
     "helpSupport": "ヘルプ&サポート",
     "getHelpSupport": "ヘルプ&サポートを利用",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "アプリ接続"
   },
   "channels": {
     "pageTitle": "Lightningウォレットダッシュボード",
@@ -3171,5 +3172,97 @@
     "bitcoindBody": "よりプライベートで、自分のノードに基づきます。RPC 有効な Bitcoin Core が常に接続可能である必要があります。",
     "invalidFormat": "ユーザー:パスワード@ホスト:ポート の形式で入力してください",
     "notConfigured": "未使用：インデクサーから同期中"
+  },
+  "nwc": {
+    "title": "アプリ接続",
+    "subtitle": "Nostr Wallet Connect で他のアプリからこのウォレットを使えます。ノードはこのコンピュータに残ります。",
+    "add": "新しい接続",
+    "activity": "最近のアクティビティ",
+    "activityHint": "このページを開いている間、接続済みアプリからのリクエストがここに表示されます。",
+    "budgetUsed": "{{budget}} sats 中 {{spent}} sats 使用済み",
+    "cancel": "キャンセル",
+    "caps": {
+      "receive": "受取",
+      "spend": "支払い可能",
+      "view": "閲覧"
+    },
+    "connect": {
+      "title": "アプリを接続",
+      "warning": "このコードは選択した権限をアプリに付与します。表示は一度だけです。今すぐスキャンまたはコピーし、共有しないでください。"
+    },
+    "connections": "接続",
+    "done": "完了",
+    "empty": {
+      "body": "接続を作成し、KaleidoSwap モバイルウォレットなど連携したいアプリで QR コードをスキャンしてください。",
+      "stopped": "接続を追加するにはサービスを開始してください。",
+      "title": "まだ接続されたアプリはありません"
+    },
+    "errors": {
+      "create": "接続を作成できませんでした",
+      "permissions": "権限を 1 つ以上選択してください",
+      "revoke": "接続を取り消せませんでした",
+      "start": "サービスを開始できませんでした",
+      "update": "接続を更新できませんでした"
+    },
+    "lastUsed": "{{when}}に使用",
+    "neverUsed": "未使用",
+    "new": {
+      "access": "アクセス",
+      "budget": "支出上限",
+      "budgetHint": "このアプリが送金できる合計を制限します。空欄なら上限なし。",
+      "create": "接続を作成",
+      "customBudget": "カスタム金額（sats）",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB アセット",
+      "name": "名前",
+      "namePlaceholder": "例: Rate モバイル、ブラウザ拡張",
+      "noLimit": "上限なし",
+      "title": "新しいアプリ接続",
+      "defaultName": "アプリ接続 {{n}}"
+    },
+    "noBudget": "支出上限なし",
+    "pause": "一時停止",
+    "paused": "一時停止中",
+    "permissionsCount": "{{count}} 件の権限",
+    "presets": {
+      "custom": "カスタム",
+      "customDesc": "権限を個別に選択します。",
+      "full": "フルウォレット",
+      "fullDesc": "Lightning と RGB の閲覧・受取・送金。KaleidoSwap ウォレットにおすすめ。",
+      "receive": "閲覧と受取",
+      "receiveDesc": "残高の閲覧と請求書の作成。支払いはできません。",
+      "view": "閲覧のみ",
+      "viewDesc": "残高・アセット・履歴のみ。"
+    },
+    "resume": "再開",
+    "revoke": "取り消す",
+    "revokeBody": "「{{name}}」はこのウォレットへのアクセスを直ちに失います。再接続には新しい接続が必要です。",
+    "revokeTitle": "接続を取り消す",
+    "revoked": "接続を取り消しました",
+    "service": {
+      "identity": "ウォレットサービスの ID",
+      "running": "サービス稼働中",
+      "scope": "Lightning 決済と RGB アセット（KaleidoSwap 拡張）",
+      "start": "サービスを開始",
+      "stopped": "サービス停止中"
+    },
+    "methods": {
+      "get_info": "ノード情報",
+      "get_balance": "残高",
+      "make_invoice": "請求書を作成",
+      "lookup_invoice": "請求書を照会",
+      "list_transactions": "取引履歴",
+      "pay_invoice": "請求書を支払う",
+      "pay_keysend": "keysend を送信",
+      "rln_node_info": "RGB ノード情報",
+      "rln_list_assets": "RGB アセット一覧",
+      "rln_asset_balance": "RGB 残高",
+      "rln_rgb_invoice": "RGB 請求書を作成",
+      "rln_ln_invoice": "RGB Lightning 請求書を作成",
+      "rln_decode_rgb_invoice": "RGB 請求書をデコード",
+      "rln_send_asset": "RGB アセットを送信",
+      "rln_list_channels": "チャネル一覧",
+      "rln_get_address": "オンチェーンアドレス"
+    }
   }
 }

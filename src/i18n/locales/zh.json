@@ -73,7 +73,8 @@
     "helpSupport": "帮助与支持",
     "getHelpSupport": "获取帮助与支持",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "应用连接"
   },
   "channels": {
     "pageTitle": "闪电钱包仪表板",
@@ -3162,5 +3163,97 @@
     "bitcoindBody": "更私密，基于你自己运行的节点。需要启用 RPC 且始终可访问的 Bitcoin Core。",
     "invalidFormat": "请使用 用户名:密码@主机:端口 格式",
     "notConfigured": "未使用：通过索引器同步"
+  },
+  "nwc": {
+    "title": "应用连接",
+    "subtitle": "通过 Nostr Wallet Connect 让其他应用使用此钱包。您的节点仍留在本机。",
+    "add": "新建连接",
+    "activity": "最近活动",
+    "activityHint": "页面打开期间，已连接应用的请求会显示在这里。",
+    "budgetUsed": "已花费 {{spent}} / {{budget}} sats",
+    "cancel": "取消",
+    "caps": {
+      "receive": "收款",
+      "spend": "可支出",
+      "view": "查看"
+    },
+    "connect": {
+      "title": "连接您的应用",
+      "warning": "此代码会授予应用您选择的权限，仅显示一次：请立即扫描或复制，切勿分享。"
+    },
+    "connections": "连接",
+    "done": "完成",
+    "empty": {
+      "body": "创建连接，并在要关联的应用（例如 KaleidoSwap 移动钱包）中扫描二维码。",
+      "stopped": "启动服务以添加连接。",
+      "title": "尚未连接任何应用"
+    },
+    "errors": {
+      "create": "无法创建连接",
+      "permissions": "请至少选择一项权限",
+      "revoke": "无法撤销连接",
+      "start": "无法启动服务",
+      "update": "无法更新连接"
+    },
+    "lastUsed": "{{when}}使用",
+    "neverUsed": "从未使用",
+    "new": {
+      "access": "访问权限",
+      "budget": "支出上限",
+      "budgetHint": "限制此应用可发送的总额。留空表示不限。",
+      "create": "创建连接",
+      "customBudget": "自定义金额（sats）",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB 资产",
+      "name": "名称",
+      "namePlaceholder": "例如：Rate 移动端、浏览器扩展",
+      "noLimit": "不限",
+      "title": "新建应用连接",
+      "defaultName": "应用连接 {{n}}"
+    },
+    "noBudget": "无支出上限",
+    "pause": "暂停",
+    "paused": "已暂停",
+    "permissionsCount": "{{count}} 项权限",
+    "presets": {
+      "custom": "自定义",
+      "customDesc": "逐项选择权限。",
+      "full": "完整钱包",
+      "fullDesc": "闪电网络与 RGB：查看、收款和发送。推荐用于 KaleidoSwap 钱包。",
+      "receive": "查看与收款",
+      "receiveDesc": "查看余额并创建发票，无法支出。",
+      "view": "仅查看",
+      "viewDesc": "仅余额、资产和历史记录。"
+    },
+    "resume": "恢复",
+    "revoke": "撤销",
+    "revokeBody": "“{{name}}”将立即失去对此钱包的访问权限。重新连接需要新建连接。",
+    "revokeTitle": "撤销连接",
+    "revoked": "连接已撤销",
+    "service": {
+      "identity": "钱包服务身份",
+      "running": "服务运行中",
+      "scope": "闪电支付与 RGB 资产（KaleidoSwap 扩展）",
+      "start": "启动服务",
+      "stopped": "服务已停止"
+    },
+    "methods": {
+      "get_info": "节点信息",
+      "get_balance": "余额",
+      "make_invoice": "创建发票",
+      "lookup_invoice": "查询发票",
+      "list_transactions": "交易记录",
+      "pay_invoice": "支付发票",
+      "pay_keysend": "发送 keysend",
+      "rln_node_info": "RGB 节点信息",
+      "rln_list_assets": "列出 RGB 资产",
+      "rln_asset_balance": "RGB 余额",
+      "rln_rgb_invoice": "创建 RGB 发票",
+      "rln_ln_invoice": "创建 RGB 闪电发票",
+      "rln_decode_rgb_invoice": "解码 RGB 发票",
+      "rln_send_asset": "发送 RGB 资产",
+      "rln_list_channels": "列出通道",
+      "rln_get_address": "链上地址"
+    }
   }
 }
