@@ -847,10 +847,10 @@ export const Step2: React.FC<Props> = ({
                     onChange={(val) =>
                       setValue('clientBalanceSat', Math.round(val).toString())
                     }
-                    outboundColor="bg-[#9365FF]"
+                    outboundColor="bg-purple"
                     outboundLabel={`${formatNumber(btcOut)} sats`}
                     step={currentCapacity >= 1000000 ? 10000 : 1000}
-                    thumbBorderClass="border-[#9365FF]"
+                    thumbBorderClass="border-purple"
                     unit="sats"
                     value={btcOut}
                   />

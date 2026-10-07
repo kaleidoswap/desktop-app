@@ -485,7 +485,7 @@ export const Component = () => {
               {t('orderChannel.backConfirmGoBack')}
             </button>
             <button
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-emphasis transition-colors"
               onClick={() => setShowBackConfirmation(false)}
               type="button"
             >
@@ -567,7 +567,7 @@ export const Component = () => {
                   Change
                 </button>
                 <button
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-[#12131C] hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary-emphasis transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={isLoadingLspConfirm || isConnectingLsp}
                   onClick={handleConfirmLsp}
                   type="button"

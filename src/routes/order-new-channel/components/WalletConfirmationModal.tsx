@@ -325,7 +325,7 @@ export const WalletConfirmationModal: React.FC<
 
                   {/* Single pay button */}
                   <button
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={!selectedMethod || !canPay}
                     onClick={() => selectedMethod && onPay(selectedMethod)}
                     type="button"

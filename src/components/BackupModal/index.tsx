@@ -119,7 +119,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
             {/* Actions */}
             <div className="pt-2">
               <button
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-emphasis text-gray-900 rounded-xl font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isBackupInProgress}
                 type="submit"
               >

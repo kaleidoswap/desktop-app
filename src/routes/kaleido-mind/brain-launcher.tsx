@@ -210,7 +210,7 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 blur-2xl" />
           <div className="relative rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-6 shadow-lg shadow-primary/10 ring-1 ring-primary/20 backdrop-blur-2xl">
-            <Brain className="relative z-10 h-10 w-10 text-[#15E99A]" />
+            <Brain className="relative z-10 h-10 w-10 text-primary" />
           </div>
         </div>
         <div className="max-w-lg space-y-4 text-center">

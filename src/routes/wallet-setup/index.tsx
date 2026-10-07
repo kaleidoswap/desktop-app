@@ -242,9 +242,9 @@ export const Component = () => {
                     <div className="text-center mb-12 slide-in">
                       <div className="relative inline-flex mb-6">
                         {/* Purple ripple rings */}
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/15 animate-ripple-1 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/10 animate-ripple-2 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-2xl bg-[#9365FF]/8 animate-ripple-3 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/15 animate-ripple-1 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/10 animate-ripple-2 pointer-events-none" />
+                        <div className="absolute inset-0 rounded-2xl bg-purple/8 animate-ripple-3 pointer-events-none" />
                         <div
                           className={`${IconWrapper} bg-gradient-to-br from-primary/20 via-primary/10 to-purple/10 border-2 border-primary/40
                           rounded-2xl shadow-2xl shadow-primary/20
@@ -261,7 +261,7 @@ export const Component = () => {
                       </div>
                       <h1 className="text-3xl md:text-5xl font-bold mb-4 text-white tracking-tight leading-tight py-2">
                         {t('walletSetup.welcomeTo')}{' '}
-                        <span className="bg-gradient-to-r from-[#15E99A] to-[#9365FF] bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
                           KaleidoSwap
                         </span>
                       </h1>

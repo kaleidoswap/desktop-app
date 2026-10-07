@@ -377,7 +377,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               <span
                 className={`flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${
                   asset.ticker === 'USDT'
-                    ? 'bg-[#26A17B]/10 text-[#26A17B] border border-[#26A17B]/30'
+                    ? 'bg-asset-usdt/10 text-asset-usdt border border-asset-usdt/30'
                     : 'bg-purple-900/30 text-purple-300 border border-purple-800/30'
                 }`}
               >
@@ -412,12 +412,12 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             <div className="rounded-lg bg-surface-overlay/40 p-2.5">
               {/* Section header: asset + amounts */}
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-1.5 text-[11px] text-[#9365FF]">
+                <div className="flex items-center gap-1.5 text-[11px] text-purple">
                   <AssetIcon className="h-3.5 w-3.5" ticker="BTC" />
                   <span className="font-semibold">BTC</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                  <span className="flex items-center gap-0.5 text-[#9365FF]">
+                  <span className="flex items-center gap-0.5 text-purple">
                     <ArrowUpRight className="h-3 w-3" />
                     {formatBitcoinAmount(out, bitcoinUnit)}
                   </span>
@@ -430,7 +430,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
               </div>
               <div className="relative h-2.5 bg-surface-overlay rounded-full overflow-hidden">
                 <div
-                  className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                  className="absolute left-0 top-0 h-full bg-purple rounded-l-full"
                   style={{ width: `${outPct}%` }}
                 />
                 <div
@@ -439,7 +439,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 />
               </div>
               <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                <span className="text-[#9365FF]/80">
+                <span className="text-purple/80">
                   {t('channelCard.labels.outbound')}
                 </span>
                 <span className="text-[#C4B5FD]">
