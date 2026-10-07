@@ -2265,7 +2265,7 @@
     "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
-      "timeout": "Le processus de mise à jour a expiré après 5 minutes. Vérifiez votre connexion Internet puis réessayez.",
+      "timeout": "Le téléchargement ne progresse plus. Vérifiez votre connexion internet et réessayez.",
       "installFailed": "Impossible d'installer la mise à jour : {{message}}. Réessayez ou téléchargez-la manuellement depuis GitHub.",
       "cancelled": "Mise à jour annulée par l'utilisateur"
     },

@@ -2256,7 +2256,7 @@
     "fileSizes": ["字节", "KB", "MB", "GB"],
     "fileSizeZero": "0 字节",
     "errors": {
-      "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
+      "timeout": "下载已停止。请检查网络连接后重试。",
       "installFailed": "安装更新失败：{{message}}。请重试或从 GitHub 手动下载。",
       "cancelled": "用户取消更新"
     },

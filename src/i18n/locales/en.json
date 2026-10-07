@@ -2259,7 +2259,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "Update process timed out after 5 minutes. Please check your internet connection and try again.",
+      "timeout": "The download stopped making progress. Check your internet connection and try again.",
       "installFailed": "Failed to install update: {{message}}. Please try again or download manually from GitHub.",
       "cancelled": "Update cancelled by user"
     },

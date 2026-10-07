@@ -1,3 +1,4 @@
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { Update } from '@tauri-apps/plugin-updater'
 import {
@@ -6,13 +7,15 @@ import {
   CheckCircle2,
   RefreshCw,
   Calendar,
-  FileText,
   Sparkles,
-  ArrowRight,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
 import { logger } from '../../utils/logger'
 
 interface UpdateModalProps {
@@ -21,6 +24,95 @@ interface UpdateModalProps {
   update: Update
 }
 
+// A download that makes no progress for this long is reported as stalled.
+const STALL_TIMEOUT_MS = 120_000
+const RELAUNCH_DELAY_MS = 2000
+
+// The release body starts with the build workflow's generic header; the
+// changelog section follows it.
+const cleanReleaseNotes = (body: string) =>
+  body
+    .replace(/^\s*Release v[\w.-]+\s*\n/i, '')
+    .replace(
+      /^\s*See the assets to download and install this version\.\s*\n/i,
+      ''
+    )
+    .replace(/^\s*## \[Version [^\]]+\][^\n]*\n/, '')
+    .trim()
+
+const notesComponents: Components = {
+  a: ({ children, href }) => (
+    <a
+      className="text-primary underline underline-offset-2 hover:text-primary-emphasis"
+      href={href}
+      onClick={(e) => {
+        e.preventDefault()
+        if (href) openUrl(href)
+      }}
+    >
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <div className="my-3 rounded-xl border border-status-warning/30 bg-status-warning-subtle p-3 text-sm leading-relaxed text-content-primary [&_p]:my-0 [&_p]:text-content-primary">
+      {children}
+    </div>
+  ),
+  code: ({ children }) => (
+    <code className="rounded bg-surface-overlay px-1 py-0.5 font-mono text-xs text-content-primary">
+      {children}
+    </code>
+  ),
+  h1: ({ children }) => (
+    <h3 className="mb-2 mt-4 text-sm font-semibold text-content-primary first:mt-0">
+      {children}
+    </h3>
+  ),
+  h2: ({ children }) => (
+    <h3 className="mb-2 mt-4 text-sm font-semibold text-content-primary first:mt-0">
+      {children}
+    </h3>
+  ),
+  h3: ({ children }) => (
+    <h4 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-content-secondary first:mt-0">
+      {children}
+    </h4>
+  ),
+  li: ({ children }) => (
+    <li className="pl-1 text-sm leading-relaxed text-content-secondary marker:text-content-tertiary">
+      {children}
+    </li>
+  ),
+  p: ({ children }) => (
+    <p className="my-2 text-sm leading-relaxed text-content-secondary">
+      {children}
+    </p>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-content-primary">{children}</strong>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-2 list-disc space-y-1.5 pl-5">{children}</ul>
+  ),
+}
+
+const Overlay = ({
+  children,
+  onBackdrop,
+}: {
+  children: React.ReactNode
+  onBackdrop?: () => void
+}) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+    onClick={(e) => {
+      if (e.target === e.currentTarget) onBackdrop?.()
+    }}
+  >
+    {children}
+  </div>
+)
+
 export const UpdateModal: React.FC<UpdateModalProps> = ({
   isOpen,
   onClose,
@@ -28,12 +120,24 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
 }) => {
   const { t, i18n } = useTranslation()
   const [isInstalling, setIsInstalling] = useState(false)
-  const [contentLength, setContentLength] = useState<number | undefined>(
-    undefined
-  )
-  const [downloaded, setDownloaded] = useState<number>(0)
-  const [completed, setCompleted] = useState<boolean>(false)
+  const [contentLength, setContentLength] = useState<number>()
+  const [downloaded, setDownloaded] = useState(0)
+  const [completed, setCompleted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const stallTimer = useRef<ReturnType<typeof setTimeout>>()
+
+  const canClose = !isInstalling && !completed
+
+  useEffect(() => {
+    if (!isOpen || !canClose) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, canClose, onClose])
+
+  useEffect(() => () => clearTimeout(stallTimer.current), [])
 
   if (!isOpen) return null
 
@@ -59,442 +163,259 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     }
   }
 
+  const armStallTimer = () => {
+    clearTimeout(stallTimer.current)
+    stallTimer.current = setTimeout(() => {
+      logger.warn('Update download stalled')
+      setError(t('updaterModal.errors.timeout'))
+      setIsInstalling(false)
+    }, STALL_TIMEOUT_MS)
+  }
+
   const handleInstall = async () => {
     setIsInstalling(true)
     setError(null)
     setDownloaded(0)
     setContentLength(undefined)
     setCompleted(false)
+    armStallTimer()
 
-    // Add timeout protection like the old Updater - but with better error handling
-    const timeoutId = setTimeout(() => {
-      logger.debug('Update timeout - resetting state after 5 minutes')
-      setError(t('updaterModal.errors.timeout'))
-      setIsInstalling(false)
-      setCompleted(false)
-    }, 300000) // 5 minutes timeout
-
+    let received = 0
     try {
-      logger.debug('Starting update installation...', {
-        timestamp: new Date().toISOString(),
-        version: update.version,
-      })
-
+      logger.debug('Starting update installation', { version: update.version })
       await update.downloadAndInstall((event) => {
-        logger.debug(
-          'Download event received:',
-          event.event,
-          'data' in event ? event.data : 'no data'
-        )
         switch (event.event) {
           case 'Started':
-            logger.debug('Download started event')
-            if ('data' in event && event.data) {
-              setContentLength(event.data.contentLength)
-              setDownloaded(0)
-              logger.debug(
-                `Update download started, content length: ${event.data.contentLength} bytes (${((event.data.contentLength || 0) / 1024 / 1024).toFixed(2)} MB)`
-              )
-            }
+            setContentLength(event.data.contentLength || undefined)
+            armStallTimer()
             break
           case 'Progress':
-            logger.debug(
-              'Download progress event:',
-              'data' in event ? event.data : 'no data'
-            )
-            // Fix: Accumulate downloaded bytes instead of just setting chunk length
-            if ('data' in event && event.data) {
-              setDownloaded((prev) => {
-                const newDownloaded = prev + event.data.chunkLength
-                const progress = contentLength
-                  ? Math.round((newDownloaded / contentLength) * 100)
-                  : 0
-                logger.debug(
-                  `Downloaded chunk: ${event.data.chunkLength} bytes, Total: ${newDownloaded} bytes (${progress}%)`
-                )
-                return newDownloaded
-              })
-            }
+            received += event.data.chunkLength
+            setDownloaded(received)
+            armStallTimer()
             break
           case 'Finished':
-            logger.debug('Download finished event')
-            clearTimeout(timeoutId)
-            // Clear the skipped version since update is being installed
-            logger.debug(
-              'Update download finished - will restart application in 2 seconds'
-            )
-
-            // Show completion state briefly before restart
-            setCompleted(true)
-            setIsInstalling(false)
-
-            // Automatically restart the application after download completes
-            setTimeout(() => {
-              logger.debug('Restarting application...')
-              relaunch()
-            }, 2000) // 2 second delay to show completion state
+            // Installing can take a while with no progress events.
+            clearTimeout(stallTimer.current)
             break
         }
       })
-
-      // Fallback: If we reach here without getting a 'Finished' event, assume success
-      logger.debug(
-        'Update installation function completed, checking if UI needs fallback update'
-      )
-      if (!completed) {
-        logger.debug(
-          'No Finished event received, assuming update completed successfully'
-        )
-        clearTimeout(timeoutId)
-        setCompleted(true)
-        setIsInstalling(false)
-
-        setTimeout(() => {
-          logger.debug('Restarting application via fallback...')
-          relaunch()
-        }, 2000)
-      }
-      logger.debug('Download and install completed successfully')
+      // downloadAndInstall resolves once the update is installed.
+      clearTimeout(stallTimer.current)
+      setCompleted(true)
+      setIsInstalling(false)
+      setTimeout(() => relaunch(), RELAUNCH_DELAY_MS)
     } catch (err) {
       logger.error('Download/install error:', err)
-      clearTimeout(timeoutId)
-      const errorMessage =
-        err instanceof Error ? err.message : 'Unknown error occurred'
-      setError(
-        t('updaterModal.errors.installFailed', { message: errorMessage })
-      )
+      clearTimeout(stallTimer.current)
+      const message = err instanceof Error ? err.message : String(err)
+      setError(t('updaterModal.errors.installFailed', { message }))
       setIsInstalling(false)
-      setCompleted(false)
     }
   }
 
-  // Update completed state
   if (completed) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-green-600/30 rounded-3xl p-8 shadow-2xl">
-          <div className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-              <CheckCircle2 className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-3">
-              {t('updaterModal.completed.title')}
-            </h2>
-            <p className="text-green-100/80 text-sm leading-relaxed mb-2">
-              {t('updaterModal.completed.success', { version: update.version })}
-            </p>
-            <p className="text-green-100/60 text-xs mb-8">
-              {t('updaterModal.completed.restartNote')}
-            </p>
-
-            {/* Loading indicator for restart */}
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <RefreshCw className="w-5 h-5 text-green-400 animate-spin" />
-              <span className="text-sm text-green-200">
-                {t('updaterModal.completed.restarting')}
-              </span>
-            </div>
-
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
-              <p className="text-xs text-green-100/70">
-                {t('updaterModal.completed.manualRestart')}
-              </p>
-            </div>
+      <Overlay>
+        <div className="max-h-full w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-surface-base p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-status-success-subtle">
+            <CheckCircle2 className="h-7 w-7 text-status-success" />
           </div>
+          <h2 className="mb-2 text-xl font-bold text-content-primary">
+            {t('updaterModal.completed.title')}
+          </h2>
+          <p className="mb-1 text-sm text-content-secondary">
+            {t('updaterModal.completed.success', { version: update.version })}
+          </p>
+          <p className="mb-6 text-xs text-content-tertiary">
+            {t('updaterModal.completed.restartNote')}
+          </p>
+          <div className="mb-5 flex items-center justify-center gap-2 text-sm text-content-secondary">
+            <RefreshCw className="h-4 w-4 animate-spin text-status-success" />
+            {t('updaterModal.completed.restarting')}
+          </div>
+          <p className="rounded-xl bg-surface-overlay/50 p-3 text-xs text-content-tertiary">
+            {t('updaterModal.completed.manualRestart')}
+          </p>
         </div>
-      </div>
+      </Overlay>
     )
   }
 
-  // Installing state
-  if (contentLength && isInstalling) {
-    const progress = Math.round((downloaded / contentLength) * 100)
-    const downloadedSize = formatFileSize(downloaded)
-    const totalSize = formatFileSize(contentLength)
+  if (isInstalling) {
+    const progress = contentLength
+      ? Math.min(100, Math.round((downloaded / contentLength) * 100))
+      : null
 
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-purple-600/30 rounded-3xl p-8 shadow-2xl">
+      <Overlay>
+        <div className="max-h-full w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-surface-base p-8 shadow-2xl">
           <div className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-400 to-indigo-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg relative overflow-hidden">
-              <Download className="w-8 h-8 text-white z-10" />
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-300/20 to-indigo-300/20 animate-pulse"></div>
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+              <Download className="h-7 w-7 text-primary" />
             </div>
-
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="mb-1 text-xl font-bold text-content-primary">
               {t('updaterModal.installing.title')}
             </h2>
-            <p className="text-purple-100/80 text-sm mb-2">
+            <p className="mb-1 text-sm text-content-secondary">
               {t('updaterModal.installing.versionLabel', {
                 version: update.version,
               })}
             </p>
-            <p className="text-purple-100/60 text-xs mb-8">
+            <p className="mb-6 text-xs text-content-tertiary">
               {t('updaterModal.installing.warning')}
             </p>
+          </div>
 
-            <div className="space-y-4">
-              {/* Enhanced Progress Section with Circular Indicator */}
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                {/* Circular Progress Ring */}
-                <div className="relative w-24 h-24 mx-auto mb-4">
-                  <svg
-                    className="w-24 h-24 transform -rotate-90"
-                    viewBox="0 0 100 100"
-                  >
-                    {/* Background circle */}
-                    <circle
-                      className="text-white/10"
-                      cx="50"
-                      cy="50"
-                      fill="none"
-                      r="45"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                    />
-                    {/* Progress circle */}
-                    <circle
-                      className="transition-all duration-500 ease-out drop-shadow-lg"
-                      cx="50"
-                      cy="50"
-                      fill="none"
-                      r="45"
-                      stroke="url(#progressGradient)"
-                      strokeDasharray={`${2 * Math.PI * 45}`}
-                      strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-                      strokeLinecap="round"
-                      strokeWidth="8"
-                    />
-                    <defs>
-                      <linearGradient
-                        id="progressGradient"
-                        x1="0%"
-                        x2="100%"
-                        y1="0%"
-                        y2="100%"
-                      >
-                        <stop offset="0%" stopColor="#9365FF" />
-                        <stop offset="100%" stopColor="#6366f1" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  {/* Percentage in center */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
-                      {progress}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Download info */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-purple-200/80">
-                      {t('updaterModal.installing.downloadedLabel')}
-                    </span>
-                    <span className="font-medium text-purple-100">
-                      {downloadedSize} / {totalSize}
-                    </span>
-                  </div>
-
-                  {/* Linear Progress Bar */}
-                  <div className="relative">
-                    <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-purple-400 via-purple-300 to-indigo-400 rounded-full transition-all duration-300 ease-out relative"
-                        style={{ width: `${progress}%` }}
-                      >
-                        {/* Animated shine effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-full animate-pulse"></div>
-                        {/* Moving highlight */}
-                        <div className="absolute right-0 top-0 w-4 h-full bg-gradient-to-l from-white/60 to-transparent rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status indicator */}
-                  <div className="flex items-center justify-center gap-2 mt-4">
-                    <div className="flex space-x-1">
-                      <div
-                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                        style={{ animationDelay: '0ms' }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                        style={{ animationDelay: '150ms' }}
-                      ></div>
-                      <div
-                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
-                        style={{ animationDelay: '300ms' }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-purple-200/60 ml-2">
-                      {progress < 100
-                        ? t('updaterModal.installing.downloading')
-                        : t('updaterModal.installing.installing')}
-                    </span>
-                  </div>
-
-                  {/* Emergency cancel button for stuck states */}
-                  <div className="mt-6 pt-4 border-t border-white/10">
-                    <button
-                      className="w-full px-4 py-2 text-purple-200/60 hover:text-purple-100 text-xs transition-all duration-200 rounded-lg hover:bg-white/10"
-                      onClick={() => {
-                        logger.debug('User cancelled update')
-                        setIsInstalling(false)
-                        setCompleted(false)
-                        setError(t('updaterModal.errors.cancelled'))
-                      }}
-                    >
-                      {t('updaterModal.installing.cancelHelp')}
-                    </button>
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-3 rounded-2xl border border-border-default bg-surface-overlay/40 p-5">
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="text-content-secondary">
+                {progress === 100
+                  ? t('updaterModal.installing.installing')
+                  : t('updaterModal.installing.downloading')}
+              </span>
+              <span className="font-semibold tabular-nums text-content-primary">
+                {progress != null ? `${progress}%` : ''}
+              </span>
             </div>
-
-            {update.body && (
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10 text-left mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-purple-300" />
-                  <span className="text-sm font-medium text-purple-200">
-                    {t('updaterModal.common.whatsNew')}
-                  </span>
-                </div>
-                <p className="text-xs text-purple-100/70 leading-relaxed">
-                  {update.body}
-                </p>
-              </div>
-            )}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-high">
+              {progress != null ? (
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              ) : (
+                <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
+              )}
+            </div>
+            <div className="flex justify-between text-xs text-content-tertiary">
+              <span>{t('updaterModal.installing.downloadedLabel')}</span>
+              <span className="tabular-nums">
+                {formatFileSize(downloaded)}
+                {contentLength ? ` / ${formatFileSize(contentLength)}` : ''}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </Overlay>
     )
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-        <div className="max-w-md w-full bg-surface-base border border-red-600/30 rounded-3xl p-8 shadow-2xl">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">
-              {t('updaterModal.error.title')}
-            </h2>
-            <p className="text-red-100/80 text-sm leading-relaxed mb-6">
-              {error}
-            </p>
-            <div className="flex gap-3">
-              <button
-                className="flex-1 px-4 py-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all duration-200 border border-white/20"
-                onClick={() => setError(null)}
-              >
-                {t('updaterModal.error.retry')}
-              </button>
-              <button
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg"
-                onClick={onClose}
-              >
-                {t('common.close')}
-              </button>
-            </div>
+      <Overlay onBackdrop={onClose}>
+        <div className="max-h-full w-full max-w-md overflow-y-auto rounded-3xl border border-border-default bg-surface-base p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-status-danger-subtle">
+            <AlertTriangle className="h-7 w-7 text-status-danger" />
+          </div>
+          <h2 className="mb-2 text-xl font-bold text-content-primary">
+            {t('updaterModal.error.title')}
+          </h2>
+          <p className="mb-6 break-words text-sm leading-relaxed text-content-secondary">
+            {error}
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="flex-1 rounded-xl border border-border-default px-4 py-2.5 text-sm font-medium text-content-primary transition-colors hover:bg-surface-overlay"
+              onClick={onClose}
+              type="button"
+            >
+              {t('common.close')}
+            </button>
+            <button
+              className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
+              onClick={handleInstall}
+              type="button"
+            >
+              {t('updaterModal.error.retry')}
+            </button>
           </div>
         </div>
-      </div>
+      </Overlay>
     )
   }
 
-  // Default update modal state
+  const notes = update.body ? cleanReleaseNotes(update.body) : ''
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
-      <div className="max-w-lg w-full bg-surface-base border border-amber-600/30 rounded-3xl p-8 shadow-2xl">
-        <div className="relative">
-          {/* Close button */}
-          <button
-            className="absolute -top-2 -right-2 p-2 bg-surface-high hover:bg-surface-elevated rounded-full transition-colors z-10"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5 text-content-secondary" />
-          </button>
-
-          <div className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-400 rounded-2xl flex items-center justify-center mb-6 shadow-lg relative">
-              <Sparkles className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
-            </div>
-
-            <h2 className="text-3xl font-bold text-white mb-2">
+    <Overlay onBackdrop={onClose}>
+      <div
+        aria-modal="true"
+        className="flex max-h-full w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-border-default bg-surface-base shadow-2xl"
+        role="dialog"
+      >
+        {/* Header — always visible */}
+        <div className="flex flex-shrink-0 items-start gap-4 border-b border-divider/10 p-6">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/15">
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-content-primary">
               {t('updaterModal.default.title')}
             </h2>
-
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <span className="text-amber-100/80">
-                {t('updaterModal.default.versionLabel')}
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-content-secondary">
+              <span className="rounded-full bg-primary/15 px-2.5 py-0.5 font-semibold text-primary">
+                {t('updaterModal.default.versionLabel')} {update.version}
               </span>
-              <span className="px-3 py-1 bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-200 font-semibold rounded-full border border-amber-400/30">
-                {update.version}
-              </span>
-            </div>
-
-            {update.date && (
-              <div className="flex items-center justify-center gap-2 mb-6 text-amber-100/60">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">
+              {update.date && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-content-tertiary">
+                  <Calendar className="h-3.5 w-3.5" />
                   {t('updaterModal.default.releasedOn', {
                     date: formatDate(update.date),
                   })}
                 </span>
-              </div>
-            )}
-
-            {update.body && (
-              <div className="bg-white/5 rounded-xl p-5 border border-white/10 text-left mb-8">
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-amber-300" />
-                  <span className="text-sm font-medium text-amber-200">
-                    {t('updaterModal.common.whatsNew')}
-                  </span>
-                </div>
-                <p className="text-sm text-amber-100/80 leading-relaxed">
-                  {update.body}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <button
-                className="w-full px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 shadow-lg hover:shadow-amber-500/25 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                disabled={isInstalling}
-                onClick={handleInstall}
-              >
-                {isInstalling ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    {t('updaterModal.default.installing')}
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    {t('updaterModal.default.installCta')}
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </>
-                )}
-              </button>
-              <button
-                className="w-full px-6 py-3 text-amber-200/80 hover:text-white transition-all duration-200 rounded-lg hover:bg-white/10 border border-transparent hover:border-amber-400/30"
-                disabled={isInstalling}
-                onClick={onClose}
-              >
-                {t('updaterModal.default.remindLater')}
-              </button>
+              )}
             </div>
-
-            <p className="text-xs text-amber-100/40 mt-4">
-              {t('updaterModal.default.recommendation')}
-            </p>
           </div>
+          <button
+            aria-label={t('common.close')}
+            className="-mr-2 -mt-2 rounded-full p-2 text-content-secondary transition-colors hover:bg-surface-high hover:text-content-primary"
+            onClick={onClose}
+            type="button"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Release notes — the only scrolling region */}
+        {notes && (
+          <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-tertiary">
+              {t('updaterModal.common.whatsNew')}
+            </p>
+            <ReactMarkdown
+              components={notesComponents}
+              remarkPlugins={[remarkGfm]}
+            >
+              {notes}
+            </ReactMarkdown>
+          </div>
+        )}
+
+        {/* Actions — always visible */}
+        <div className="flex flex-shrink-0 flex-col gap-2 border-t border-divider/10 p-6 sm:flex-row-reverse">
+          <button
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={isInstalling}
+            onClick={handleInstall}
+            type="button"
+          >
+            {isInstalling ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {t('updaterModal.default.installCta')}
+          </button>
+          <button
+            className="rounded-xl px-5 py-3 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-overlay hover:text-content-primary sm:flex-1"
+            onClick={onClose}
+            type="button"
+          >
+            {t('updaterModal.default.remindLater')}
+          </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   )
 }

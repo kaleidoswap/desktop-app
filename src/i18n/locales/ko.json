@@ -2259,7 +2259,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "업데이트 프로세스가 5분 후 시간 초과되었습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
+      "timeout": "다운로드가 더 이상 진행되지 않습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
       "installFailed": "업데이트 설치에 실패했습니다: {{message}}. 다시 시도하거나 GitHub에서 수동으로 다운로드하세요.",
       "cancelled": "사용자가 업데이트를 취소했습니다"
     },

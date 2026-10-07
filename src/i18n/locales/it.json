@@ -2259,7 +2259,7 @@
     "fileSizes": ["Byte", "KB", "MB", "GB"],
     "fileSizeZero": "0 Byte",
     "errors": {
-      "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",
+      "timeout": "Il download si è interrotto. Controlla la connessione a internet e riprova.",
       "installFailed": "Installazione aggiornamento fallita: {{message}}. Riprova o scarica manualmente da GitHub.",
       "cancelled": "Aggiornamento annullato dall'utente"
     },

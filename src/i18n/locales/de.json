@@ -2259,7 +2259,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "Update brach nach 5 Minuten ab. Prüfe deine Verbindung und versuche es erneut.",
+      "timeout": "Der Download kommt nicht mehr voran. Prüfe deine Internetverbindung und versuche es erneut.",
       "installFailed": "Update konnte nicht installiert werden: {{message}}. Versuche es erneut oder lade es manuell von GitHub herunter.",
       "cancelled": "Update vom Nutzer abgebrochen"
     },
