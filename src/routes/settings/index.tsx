@@ -542,15 +542,11 @@ export const Component: React.FC = () => {
       id: 'security',
       label: t('settings.tabs.security', 'Security'),
     },
-    ...(isLocalNode
-      ? [
-          {
-            icon: <Activity className="h-4 w-4" />,
-            id: 'logs' as const,
-            label: t('settings.tabs.logs', 'Logs'),
-          },
-        ]
-      : []),
+    {
+      icon: <Activity className="h-4 w-4" />,
+      id: 'logs',
+      label: t('settings.tabs.logs', 'Logs'),
+    },
   ]
   const activeTab = tabs.some((x) => x.id === tab) ? tab : 'general'
   const isFormTab =
@@ -1077,7 +1073,17 @@ export const Component: React.FC = () => {
       )}
 
       {/* ── Logs ── */}
-      {activeTab === 'logs' && <NodeLogsPanel />}
+      {activeTab === 'logs' && (
+        <NodeLogsPanel
+          remoteUrl={
+            isLocalNode
+              ? undefined
+              : nodeSettings.node_url ||
+                nodeConnectionString ||
+                'http://localhost:3001'
+          }
+        />
+      )}
 
       <MnemonicViewerModal
         isOpen={showMnemonicModal}

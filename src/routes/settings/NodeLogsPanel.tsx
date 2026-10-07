@@ -11,6 +11,7 @@ import {
   Play,
   RefreshCw,
   Search,
+  ServerOff,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,10 +31,24 @@ interface NodeLogsResponse {
   total: number
 }
 
+interface RemoteNodeLogsResponse extends NodeLogsResponse {
+  available: boolean
+  container: string | null
+  reason: 'remote_host' | 'no_container' | 'invalid_url' | null
+}
+
+type UnavailableReason = NonNullable<RemoteNodeLogsResponse['reason']>
+
 const iconButton =
   'p-2 rounded-lg border border-border-default text-content-secondary hover:text-white hover:bg-surface-high/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed'
 
-export const NodeLogsPanel = () => {
+interface NodeLogsPanelProps {
+  /** Set for nodes the app did not start: logs come from a local Docker
+   * container when one publishes this URL's port. */
+  remoteUrl?: string
+}
+
+export const NodeLogsPanel = ({ remoteUrl }: NodeLogsPanelProps) => {
   const { t } = useTranslation()
   const { copied, copy } = useCopyToClipboard(1500)
 
@@ -50,6 +65,8 @@ export const NodeLogsPanel = () => {
   // Scrolled up to read: hold the view still until the user returns.
   const [reading, setReading] = useState(false)
   const [jumpSignal, setJumpSignal] = useState(0)
+  const [container, setContainer] = useState<string | null>(null)
+  const [unavailable, setUnavailable] = useState<UnavailableReason | null>(null)
 
   const inFlight = useRef(false)
 
@@ -58,10 +75,23 @@ export const NodeLogsPanel = () => {
     inFlight.current = true
     setRefreshing(true)
     try {
-      const result = await invoke<NodeLogsResponse>('get_node_logs', {
-        page,
-        pageSize,
-      })
+      let result: NodeLogsResponse
+      if (remoteUrl) {
+        const remote = await invoke<RemoteNodeLogsResponse>(
+          'get_remote_node_logs',
+          { nodeUrl: remoteUrl, page, pageSize }
+        )
+        setUnavailable(
+          remote.available ? null : (remote.reason ?? 'remote_host')
+        )
+        setContainer(remote.container)
+        result = remote
+      } else {
+        result = await invoke<NodeLogsResponse>('get_node_logs', {
+          page,
+          pageSize,
+        })
+      }
       setLogs(result.logs)
       setTotal(result.total)
       setFailures(0)
@@ -73,14 +103,15 @@ export const NodeLogsPanel = () => {
       setRefreshing(false)
       setLoaded(true)
     }
-  }, [page, pageSize])
+  }, [page, pageSize, remoteUrl])
 
   useEffect(() => {
     fetchLogs()
   }, [fetchLogs])
 
   // Only the newest page is live; older pages stay put while being read.
-  const live = page === 1 && !paused && !reading && failures < MAX_FAILURES
+  const live =
+    page === 1 && !paused && !reading && !unavailable && failures < MAX_FAILURES
   useEffect(() => {
     if (!live) return
     const id = setInterval(() => {
@@ -111,6 +142,57 @@ export const NodeLogsPanel = () => {
     }
   }
 
+  if (unavailable) {
+    const messages: Record<UnavailableReason, string> = {
+      invalid_url: t(
+        'settings.logs.unavailable.invalid_url',
+        'The node URL is not valid, so its logs cannot be located.'
+      ),
+      no_container: t(
+        'settings.logs.unavailable.no_container',
+        'The node runs on this computer, but not in a Docker container the app can find. If you run it with Docker, publish its API port (for example -p 3001:3001) and check again.'
+      ),
+      remote_host: t(
+        'settings.logs.unavailable.remote_host',
+        'This node runs on another machine, so its logs stay there. Read them on the server, for example with docker logs.'
+      ),
+    }
+    return (
+      <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+        <div className="flex flex-col items-center px-6 py-14 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-high">
+            <ServerOff className="h-6 w-6 text-content-secondary" />
+          </div>
+          <h2 className="text-base font-bold text-white">
+            {t(
+              'settings.logs.unavailableTitle',
+              'Logs are not available for this node'
+            )}
+          </h2>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-content-secondary">
+            {messages[unavailable]}
+          </p>
+          {unavailable === 'remote_host' && (
+            <code className="mt-4 rounded-lg border border-border-default bg-surface-base/60 px-3 py-1.5 font-mono text-xs text-content-secondary">
+              docker logs -f &lt;container&gt;
+            </code>
+          )}
+          <button
+            className="mt-6 inline-flex items-center gap-2 rounded-lg border border-border-default px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-surface-high"
+            disabled={refreshing}
+            onClick={() => fetchLogs()}
+            type="button"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
+            />
+            {t('settings.logs.checkAgain', 'Check again')}
+          </button>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
       {/* Title + actions */}
@@ -136,6 +218,14 @@ export const NodeLogsPanel = () => {
               ? t('settings.logs.live', 'Live')
               : t('settings.logs.paused', 'Paused')}
           </span>
+          {container && (
+            <span
+              className="truncate rounded-full border border-border-default px-2 py-0.5 font-mono text-xs text-content-secondary"
+              title={t('settings.logs.dockerContainer', 'Docker container')}
+            >
+              docker · {container}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -185,15 +275,17 @@ export const NodeLogsPanel = () => {
               <Copy className="h-4 w-4" />
             )}
           </button>
-          <button
-            className={iconButton}
-            disabled={total === 0}
-            onClick={handleExport}
-            title={t('settings.exportLogs')}
-            type="button"
-          >
-            <Download className="h-4 w-4" />
-          </button>
+          {!remoteUrl && (
+            <button
+              className={iconButton}
+              disabled={total === 0}
+              onClick={handleExport}
+              title={t('settings.exportLogs')}
+              type="button"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
