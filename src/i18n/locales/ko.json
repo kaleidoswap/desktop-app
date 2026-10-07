@@ -225,7 +225,23 @@
     "restartNow": "지금 재시작",
     "later": "나중에",
     "shuttingDownTitle": "노드 종료 중",
-    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요..."
+    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요...",
+    "logs": {
+      "live": "실시간",
+      "paused": "일시 중지됨",
+      "resume": "실시간 업데이트 재개",
+      "pause": "실시간 업데이트 일시 중지",
+      "copy": "표시된 줄 복사",
+      "filter": "줄 필터…",
+      "older": "이전",
+      "newer": "최신",
+      "fetchError": "노드 로그를 읽을 수 없습니다. 실시간 업데이트가 중지되었습니다.",
+      "noMatches": "필터와 일치하는 줄이 없습니다",
+      "matching": "{{count}}개 줄 일치",
+      "exported": "로그를 내보냈습니다",
+      "exportFailed": "로그 내보내기 실패",
+      "jumpToLatest": "최신으로 이동"
+    }
   },
   "modals": {
     "logoutTitle": "로그아웃 확인",

@@ -225,7 +225,23 @@
     "restartNow": "Reiniciar Ahora",
     "later": "Más Tarde",
     "shuttingDownTitle": "Apagando Nodo",
-    "shuttingDownMessage": "Por favor espera mientras se apaga el nodo..."
+    "shuttingDownMessage": "Por favor espera mientras se apaga el nodo...",
+    "logs": {
+      "live": "En vivo",
+      "paused": "En pausa",
+      "resume": "Reanudar actualizaciones",
+      "pause": "Pausar actualizaciones",
+      "copy": "Copiar líneas visibles",
+      "filter": "Filtrar líneas…",
+      "older": "Más antiguos",
+      "newer": "Más recientes",
+      "fetchError": "No se pudieron leer los registros del nodo. Actualizaciones en vivo detenidas.",
+      "noMatches": "Ninguna línea coincide con el filtro",
+      "matching": "{{count}} líneas coincidentes",
+      "exported": "Registros exportados",
+      "exportFailed": "Error al exportar los registros",
+      "jumpToLatest": "Volver a lo más reciente"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmar Cierre de Sesión",

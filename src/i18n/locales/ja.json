@@ -225,7 +225,23 @@
     "restartNow": "今すぐ再起動",
     "later": "後で",
     "shuttingDownTitle": "ノードをシャットダウン中",
-    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください..."
+    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください...",
+    "logs": {
+      "live": "ライブ",
+      "paused": "一時停止中",
+      "resume": "ライブ更新を再開",
+      "pause": "ライブ更新を一時停止",
+      "copy": "表示中の行をコピー",
+      "filter": "行を絞り込み…",
+      "older": "古い",
+      "newer": "新しい",
+      "fetchError": "ノードのログを読み取れませんでした。ライブ更新を停止しました。",
+      "noMatches": "条件に一致する行はありません",
+      "matching": "{{count}} 行が一致",
+      "exported": "ログをエクスポートしました",
+      "exportFailed": "ログのエクスポートに失敗しました",
+      "jumpToLatest": "最新に戻る"
+    }
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",

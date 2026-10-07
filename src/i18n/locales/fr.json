@@ -225,7 +225,23 @@
     "restartNow": "Redémarrer maintenant",
     "later": "Plus tard",
     "shuttingDownTitle": "Arrêt du nœud",
-    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud..."
+    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud...",
+    "logs": {
+      "live": "En direct",
+      "paused": "En pause",
+      "resume": "Reprendre les mises à jour",
+      "pause": "Mettre en pause les mises à jour",
+      "copy": "Copier les lignes visibles",
+      "filter": "Filtrer les lignes…",
+      "older": "Plus anciens",
+      "newer": "Plus récents",
+      "fetchError": "Impossible de lire les journaux du nœud. Mises à jour en direct arrêtées.",
+      "noMatches": "Aucune ligne ne correspond au filtre",
+      "matching": "{{count}} lignes correspondantes",
+      "exported": "Journaux exportés",
+      "exportFailed": "Échec de l’export des journaux",
+      "jumpToLatest": "Revenir aux plus récents"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmer la déconnexion",

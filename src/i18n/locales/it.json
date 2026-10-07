@@ -225,7 +225,23 @@
     "restartNow": "Riavvia Ora",
     "later": "Più Tardi",
     "shuttingDownTitle": "Spegnimento Nodo",
-    "shuttingDownMessage": "Attendere mentre il nodo viene spento..."
+    "shuttingDownMessage": "Attendere mentre il nodo viene spento...",
+    "logs": {
+      "live": "Live",
+      "paused": "In pausa",
+      "resume": "Riprendi aggiornamenti",
+      "pause": "Metti in pausa gli aggiornamenti",
+      "copy": "Copia le righe visibili",
+      "filter": "Filtra righe…",
+      "older": "Più vecchi",
+      "newer": "Più recenti",
+      "fetchError": "Impossibile leggere i log del nodo. Aggiornamenti live interrotti.",
+      "noMatches": "Nessuna riga corrisponde al filtro",
+      "matching": "{{count}} righe corrispondenti",
+      "exported": "Log esportati",
+      "exportFailed": "Esportazione dei log non riuscita",
+      "jumpToLatest": "Torna agli ultimi"
+    }
   },
   "modals": {
     "logoutTitle": "Conferma Disconnessione",

@@ -225,7 +225,23 @@
     "restartNow": "立即重启",
     "later": "稍后",
     "shuttingDownTitle": "正在关闭节点",
-    "shuttingDownMessage": "请稍候，节点正在关闭..."
+    "shuttingDownMessage": "请稍候，节点正在关闭...",
+    "logs": {
+      "live": "实时",
+      "paused": "已暂停",
+      "resume": "恢复实时更新",
+      "pause": "暂停实时更新",
+      "copy": "复制可见行",
+      "filter": "筛选行…",
+      "older": "更早",
+      "newer": "更新",
+      "fetchError": "无法读取节点日志，实时更新已停止。",
+      "noMatches": "没有匹配的行",
+      "matching": "{{count}} 行匹配",
+      "exported": "日志已导出",
+      "exportFailed": "导出日志失败",
+      "jumpToLatest": "回到最新"
+    }
   },
   "modals": {
     "logoutTitle": "确认退出登录",

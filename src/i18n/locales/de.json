@@ -225,7 +225,23 @@
     "restartNow": "Jetzt neu starten",
     "later": "Später",
     "shuttingDownTitle": "Node wird heruntergefahren",
-    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt..."
+    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt...",
+    "logs": {
+      "live": "Live",
+      "paused": "Pausiert",
+      "resume": "Live-Updates fortsetzen",
+      "pause": "Live-Updates pausieren",
+      "copy": "Sichtbare Zeilen kopieren",
+      "filter": "Zeilen filtern…",
+      "older": "Älter",
+      "newer": "Neuer",
+      "fetchError": "Node-Logs konnten nicht gelesen werden. Live-Updates sind gestoppt.",
+      "noMatches": "Keine Zeile passt zum Filter",
+      "matching": "{{count}} passende Zeilen",
+      "exported": "Logs exportiert",
+      "exportFailed": "Export der Logs fehlgeschlagen",
+      "jumpToLatest": "Zu den neuesten"
+    }
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",

@@ -556,6 +556,20 @@ fn get_account_by_name(name: String) -> Result<Option<db::Account>, String> {
     }
 }
 
+/// Page 1 holds the newest `page_size` lines; each page is in chronological
+/// order so it reads top to bottom like a terminal.
+fn paginate_newest_first(all_logs: &[String], page: u32, page_size: u32) -> NodeLogsResponse {
+    let total = all_logs.len();
+    let page_size = page_size.max(1) as usize;
+    let skip = (page.max(1) as usize - 1).saturating_mul(page_size);
+    let end = total.saturating_sub(skip);
+    let start = end.saturating_sub(page_size);
+    NodeLogsResponse {
+        logs: all_logs[start..end].to_vec(),
+        total: total as u32,
+    }
+}
+
 #[tauri::command]
 fn get_node_logs(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
@@ -566,18 +580,7 @@ fn get_node_logs(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let all_logs = node_process.get_logs();
-    let total = all_logs.len() as u32;
-
-    let start = ((page - 1) * page_size) as usize;
-    let end = std::cmp::min(start + page_size as usize, all_logs.len());
-
-    let logs = if start < all_logs.len() {
-        all_logs[start..end].to_vec()
-    } else {
-        Vec::new()
-    };
-
-    Ok(NodeLogsResponse { logs, total })
+    Ok(paginate_newest_first(&all_logs, page, page_size))
 }
 
 #[tauri::command]
@@ -1248,4 +1251,32 @@ fn stop_docker_node(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     dm.stop()
+}
+
+#[cfg(test)]
+mod node_logs_tests {
+    use super::paginate_newest_first;
+
+    fn lines(n: usize) -> Vec<String> {
+        (0..n).map(|i| i.to_string()).collect()
+    }
+
+    #[test]
+    fn first_page_is_the_newest_lines_in_order() {
+        let r = paginate_newest_first(&lines(10), 1, 3);
+        assert_eq!(r.logs, vec!["7", "8", "9"]);
+        assert_eq!(r.total, 10);
+    }
+
+    #[test]
+    fn last_page_is_partial_and_past_the_end_is_empty() {
+        assert_eq!(paginate_newest_first(&lines(10), 4, 3).logs, vec!["0"]);
+        assert!(paginate_newest_first(&lines(10), 5, 3).logs.is_empty());
+        assert!(paginate_newest_first(&[], 1, 3).logs.is_empty());
+    }
+
+    #[test]
+    fn zero_page_or_size_does_not_panic() {
+        assert_eq!(paginate_newest_first(&lines(3), 0, 0).logs, vec!["2"]);
+    }
 }

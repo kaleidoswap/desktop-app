@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
 import {
   ChevronDown,
   LogOut,
@@ -17,7 +16,6 @@ import {
   Trash2,
   Star,
   Store,
-  RefreshCw,
   Lock,
   ArrowRight,
   KeyRound,
@@ -68,8 +66,7 @@ import {
   SUPPORTED_CURRENCIES,
 } from '../../slices/priceApi/priceApi.slice'
 
-import { TerminalLogDisplay } from './TerminalLogDisplay'
-import { logger } from '../../utils/logger'
+import { NodeLogsPanel } from './NodeLogsPanel'
 
 interface FormFields {
   bitcoinUnit: string
@@ -118,14 +115,6 @@ export const Component: React.FC = () => {
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
 
   // All state declarations in one place
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false)
-  const [logsFetchRetries, setLogsFetchRetries] = useState(0)
-  const [isLogsFetchDisabled, setIsLogsFetchDisabled] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalLogs, setTotalLogs] = useState(0)
-  const [nodeLogs, setNodeLogs] = useState<string[]>([])
-  const [maxLogEntries, setMaxLogEntries] = useState(200)
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
   const [showShutdownConfirmation, setShowShutdownConfirmation] =
     useState(false)
@@ -134,7 +123,6 @@ export const Component: React.FC = () => {
   const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
   const [showMnemonicModal, setShowMnemonicModal] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const maxLogsFetchRetries = 3
 
   // Replace showModal with unified modal state
   const [modal, setModal] = useState<{
@@ -188,95 +176,6 @@ export const Component: React.FC = () => {
     handleBackup,
     selectBackupFolder,
   } = useBackup({ nodeSettings })
-
-  const fetchNodeLogs = async () => {
-    // Skip if too many failures
-    if (isLogsFetchDisabled) {
-      return
-    }
-
-    try {
-      setIsLoadingLogs(true)
-      logger.debug('Fetching logs with params:', { currentPage, maxLogEntries })
-
-      const result = await invoke<{ logs: string[]; total: number }>(
-        'get_node_logs',
-        {
-          page: currentPage,
-          pageSize: maxLogEntries,
-        }
-      )
-
-      logger.debug('Received logs:', result)
-
-      if (result && Array.isArray(result.logs)) {
-        setNodeLogs(result.logs)
-        setTotalLogs(result.total)
-        // Reset retry count on success
-        setLogsFetchRetries(0)
-        setIsLogsFetchDisabled(false)
-      } else {
-        logger.error('Invalid logs format received:', result)
-        toast.error('Invalid logs format received from server')
-      }
-    } catch (error) {
-      logger.error('Failed to fetch node logs:', error)
-      toast.error(
-        `Failed to load logs: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
-
-      // Increment retry count and implement backoff
-      const newRetryCount = logsFetchRetries + 1
-      setLogsFetchRetries(newRetryCount)
-
-      if (newRetryCount >= maxLogsFetchRetries) {
-        logger.warn(
-          'Too many log fetch failures, disabling polling for 2 minutes'
-        )
-        setIsLogsFetchDisabled(true)
-        toast.error('Log loading temporarily disabled due to errors')
-        // Re-enable after 2 minutes
-        setTimeout(() => {
-          setIsLogsFetchDisabled(false)
-          setLogsFetchRetries(0)
-        }, 120000) // 2 minutes
-      }
-    } finally {
-      setIsLoadingLogs(false)
-    }
-  }
-
-  // Optimize the useEffect for data loading
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setIsLoading(true)
-        // Ensure we start from page 1
-        setCurrentPage(1)
-        await fetchNodeLogs()
-      } catch (error) {
-        logger.error('Error loading initial data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadInitialData()
-
-    // Set up polling with a cleanup function and longer interval
-    const logsInterval = setInterval(fetchNodeLogs, 10000) // Poll logs every 10 seconds instead of 5
-
-    return () => {
-      clearInterval(logsInterval)
-    }
-  }, []) // Empty dependency array to run only on mount
-
-  // Add effect to refetch when page or page size changes
-  useEffect(() => {
-    if (!isLoading) {
-      fetchNodeLogs()
-    }
-  }, [currentPage, maxLogEntries])
 
   useEffect(() => {
     reset({
@@ -544,27 +443,6 @@ export const Component: React.FC = () => {
     }
   }
 
-  const handleExportLogs = async () => {
-    try {
-      const filePath = await save({
-        defaultPath: `node-logs-${new Date().toISOString().split('T')[0]}.txt`,
-        filters: [
-          {
-            extensions: ['txt'],
-            name: 'Log Files',
-          },
-        ],
-      })
-
-      if (filePath) {
-        await invoke('save_logs_to_file', { filePath })
-        toast.success('Logs exported successfully')
-      }
-    } catch (error) {
-      toast.error('Failed to export logs')
-    }
-  }
-
   const isLocalNode = !!currentAccount.datapath
 
   // Add useEffect for polling node info separately to avoid blocking
@@ -582,21 +460,6 @@ export const Component: React.FC = () => {
 
     return () => clearInterval(interval)
   }, [nodeInfo])
-
-  // If the page is loading, show a loading state
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-8 px-4">
-        <div className="w-12 h-12 mb-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <h2 className="text-xl font-bold text-white mb-1">
-          {t('settings.loadingSettings')}
-        </h2>
-        <p className="text-content-secondary text-sm">
-          {t('settings.pleaseWait')}
-        </p>
-      </div>
-    )
-  }
 
   const inputCls =
     'w-full px-4 py-2.5 text-sm text-white bg-surface-overlay/30 border border-border-default/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors'
@@ -1171,121 +1034,7 @@ export const Component: React.FC = () => {
         </div>
       </div>
 
-      {/* Logs */}
-      {isLocalNode && (
-        <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-divider/10">
-            <div className="flex items-center gap-3">
-              <Activity className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-base font-bold text-white">
-                {t('settings.nodeLogs')}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-default/50 bg-surface-overlay/30 text-sm text-content-secondary">
-                <span>{t('settings.show')}</span>
-                <select
-                  className="bg-transparent text-white text-sm focus:outline-none border-0"
-                  onChange={(e) => {
-                    setMaxLogEntries(Number(e.target.value))
-                    setCurrentPage(1)
-                  }}
-                  value={maxLogEntries}
-                >
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                  <option value="500">500</option>
-                </select>
-                <span>{t('settings.entries')}</span>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={nodeLogs.length === 0 || isLoadingLogs}
-                  onClick={handleExportLogs}
-                  title={t('settings.exportLogs')}
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={isLoadingLogs}
-                  onClick={() => {
-                    setCurrentPage(1)
-                    fetchNodeLogs()
-                  }}
-                  title={t('settings.refreshLogs')}
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`}
-                  />
-                </button>
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={nodeLogs.length === 0 || isLoadingLogs}
-                  onClick={() => setNodeLogs([])}
-                  title={t('settings.clearLogs')}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-5 py-2 border-b border-divider/10 bg-surface-base/50">
-            <span className="text-xs text-content-tertiary">
-              {t('settings.liveNodeLogs')}
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-content-tertiary">
-                {t('settings.page')} {currentPage} {t('settings.of')}{' '}
-                {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} ({totalLogs}{' '}
-                {t('settings.totalEntries')})
-              </span>
-              <div className="flex gap-1">
-                <button
-                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={currentPage === 1 || isLoadingLogs}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                >
-                  {t('settings.previous')}
-                </button>
-                <button
-                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={
-                    currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
-                    isLoadingLogs
-                  }
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  {t('settings.next')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-[500px] overflow-auto relative bg-surface-base/95">
-            {isLoadingLogs ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-surface-base/50">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span className="text-sm text-content-secondary">
-                    {t('settings.loadingLogs')}
-                  </span>
-                </div>
-              </div>
-            ) : nodeLogs.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-content-tertiary gap-2">
-                <Activity className="w-4 h-4" />
-                <span className="text-sm">{t('settings.noLogsAvailable')}</span>
-              </div>
-            ) : (
-              <TerminalLogDisplay logs={nodeLogs} maxEntries={maxLogEntries} />
-            )}
-          </div>
-        </section>
-      )}
+      {isLocalNode && <NodeLogsPanel />}
 
       <MnemonicViewerModal
         isOpen={showMnemonicModal}

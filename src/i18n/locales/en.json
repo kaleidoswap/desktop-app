@@ -225,7 +225,23 @@
     "restartNow": "Restart Now",
     "later": "Later",
     "shuttingDownTitle": "Shutting Down Node",
-    "shuttingDownMessage": "Please wait while the node is being shut down..."
+    "shuttingDownMessage": "Please wait while the node is being shut down...",
+    "logs": {
+      "live": "Live",
+      "paused": "Paused",
+      "resume": "Resume live updates",
+      "pause": "Pause live updates",
+      "copy": "Copy visible lines",
+      "filter": "Filter lines…",
+      "older": "Older",
+      "newer": "Newer",
+      "fetchError": "Could not read the node logs. Live updates are stopped.",
+      "noMatches": "No lines match the filter",
+      "matching": "{{count}} matching lines",
+      "exported": "Logs exported",
+      "exportFailed": "Failed to export logs",
+      "jumpToLatest": "Back to latest"
+    }
   },
   "modals": {
     "logoutTitle": "Confirm Logout",
