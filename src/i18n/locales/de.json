@@ -240,7 +240,15 @@
       "matching": "{{count}} passende Zeilen",
       "exported": "Logs exportiert",
       "exportFailed": "Export der Logs fehlgeschlagen",
-      "jumpToLatest": "Zu den neuesten"
+      "jumpToLatest": "Zu den neuesten",
+      "dockerContainer": "Docker-Container",
+      "unavailableTitle": "Für diesen Node sind keine Logs verfügbar",
+      "checkAgain": "Erneut prüfen",
+      "unavailable": {
+        "invalid_url": "Die Node-URL ist ungültig, daher können die Logs nicht gefunden werden.",
+        "no_container": "Der Node läuft auf diesem Computer, aber nicht in einem Docker-Container, den die App findet. Wenn du ihn mit Docker startest, veröffentliche den API-Port (z. B. -p 3001:3001) und prüfe erneut.",
+        "remote_host": "Dieser Node läuft auf einer anderen Maschine, daher bleiben seine Logs dort. Lies sie auf dem Server, z. B. mit docker logs."
+      }
     },
     "tabs": {
       "general": "Allgemein",
@@ -2184,7 +2192,9 @@
       "newAssetInfo": "Wenn du die Asset-ID nicht kennst, kannst du ohne fortfahren. Es wird eine Adresse erzeugt, die jedes RGB-Asset empfangen kann.",
       "assetIdLabel": "Asset-ID (optional)",
       "assetIdPlaceholder": "Asset-ID eingeben (optional)",
-      "continueWith": "Weiter mit {{ticker}}"
+      "continueWith": "Weiter mit {{ticker}}",
+      "anyRgbAsset": "Beliebiges RGB-Asset",
+      "otherAssets": "Weitere Assets"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} einzahlen",
@@ -2689,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (Benutzerdefiniert)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Zahlung gesendet",
+      "lightning": "Lightning",
+      "onchain": "On-Chain",
+      "rgbOnchain": "RGB On-Chain",
+      "lightningBody": "Die Zahlung wurde über Lightning abgewickelt.",
+      "onchainBody": "Die Transaktion wurde gesendet. Sie wird in den nächsten Blöcken bestätigt.",
+      "rgbBody": "Der Transfer wurde gesendet. Der Empfänger erhält ihn, sobald die Transaktion bestätigt ist.",
+      "to": "An",
+      "paymentHash": "Zahlungs-Hash",
+      "txid": "Transaktions-ID"
     }
   },
   "components": {

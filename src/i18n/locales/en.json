@@ -240,7 +240,15 @@
       "matching": "{{count}} matching lines",
       "exported": "Logs exported",
       "exportFailed": "Failed to export logs",
-      "jumpToLatest": "Back to latest"
+      "jumpToLatest": "Back to latest",
+      "dockerContainer": "Docker container",
+      "unavailableTitle": "Logs are not available for this node",
+      "checkAgain": "Check again",
+      "unavailable": {
+        "invalid_url": "The node URL is not valid, so its logs cannot be located.",
+        "no_container": "The node runs on this computer, but not in a Docker container the app can find. If you run it with Docker, publish its API port (for example -p 3001:3001) and check again.",
+        "remote_host": "This node runs on another machine, so its logs stay there. Read them on the server, for example with docker logs."
+      }
     },
     "tabs": {
       "general": "General",
@@ -2184,7 +2192,9 @@
       "newAssetInfo": "If you don't know the asset ID, you can proceed without entering it. The system will generate a deposit address that can receive any RGB asset.",
       "assetIdLabel": "Asset ID (optional)",
       "assetIdPlaceholder": "Enter asset ID (optional)",
-      "continueWith": "Continue with {{ticker}}"
+      "continueWith": "Continue with {{ticker}}",
+      "anyRgbAsset": "Any RGB asset",
+      "otherAssets": "Other assets"
     },
     "step2": {
       "titleWithTicker": "Deposit {{ticker}}",
@@ -2689,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (Custom)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Payment sent",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "The payment settled over Lightning.",
+      "onchainBody": "The transaction was broadcast. It confirms in the next blocks.",
+      "rgbBody": "The transfer was sent. The recipient receives it once the transaction confirms.",
+      "to": "To",
+      "paymentHash": "Payment hash",
+      "txid": "Transaction ID"
     }
   },
   "components": {

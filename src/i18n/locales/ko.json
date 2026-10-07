@@ -240,7 +240,15 @@
       "matching": "{{count}}개 줄 일치",
       "exported": "로그를 내보냈습니다",
       "exportFailed": "로그 내보내기 실패",
-      "jumpToLatest": "최신으로 이동"
+      "jumpToLatest": "최신으로 이동",
+      "dockerContainer": "Docker 컨테이너",
+      "unavailableTitle": "이 노드의 로그를 볼 수 없습니다",
+      "checkAgain": "다시 확인",
+      "unavailable": {
+        "invalid_url": "노드 URL이 올바르지 않아 로그를 찾을 수 없습니다.",
+        "no_container": "노드가 이 컴퓨터에서 실행 중이지만 앱이 찾을 수 있는 Docker 컨테이너가 아닙니다. Docker로 실행한다면 API 포트를 게시하고(예: -p 3001:3001) 다시 확인하세요.",
+        "remote_host": "이 노드는 다른 머신에서 실행되므로 로그도 그곳에 있습니다. 서버에서 docker logs 등으로 확인하세요."
+      }
     },
     "tabs": {
       "general": "일반",
@@ -2184,7 +2192,9 @@
       "newAssetInfo": "자산 ID를 모르는 경우 입력하지 않고 진행할 수 있습니다. 시스템이 모든 RGB 자산을 수신할 수 있는 입금 주소를 생성합니다.",
       "assetIdLabel": "자산 ID (선택 사항)",
       "assetIdPlaceholder": "자산 ID 입력 (선택 사항)",
-      "continueWith": "{{ticker}}(으)로 계속"
+      "continueWith": "{{ticker}}(으)로 계속",
+      "anyRgbAsset": "모든 RGB 자산",
+      "otherAssets": "기타 자산"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} 입금",
@@ -2689,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (사용자 지정)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "결제 전송됨",
+      "lightning": "Lightning",
+      "onchain": "온체인",
+      "rgbOnchain": "RGB 온체인",
+      "lightningBody": "Lightning으로 결제가 완료되었습니다.",
+      "onchainBody": "트랜잭션이 전파되었습니다. 다음 블록에서 컨펌됩니다.",
+      "rgbBody": "전송되었습니다. 트랜잭션이 컨펌되면 수신자가 받습니다.",
+      "to": "받는 사람",
+      "paymentHash": "결제 해시",
+      "txid": "트랜잭션 ID"
     }
   },
   "components": {

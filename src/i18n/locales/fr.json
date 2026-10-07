@@ -240,7 +240,15 @@
       "matching": "{{count}} lignes correspondantes",
       "exported": "Journaux exportés",
       "exportFailed": "Échec de l’export des journaux",
-      "jumpToLatest": "Revenir aux plus récents"
+      "jumpToLatest": "Revenir aux plus récents",
+      "dockerContainer": "Conteneur Docker",
+      "unavailableTitle": "Les journaux ne sont pas disponibles pour ce nœud",
+      "checkAgain": "Vérifier à nouveau",
+      "unavailable": {
+        "invalid_url": "L’URL du nœud n’est pas valide, ses journaux sont introuvables.",
+        "no_container": "Le nœud tourne sur cet ordinateur, mais pas dans un conteneur Docker que l’app peut trouver. Si vous l’exécutez avec Docker, publiez son port API (par exemple -p 3001:3001) et vérifiez à nouveau.",
+        "remote_host": "Ce nœud tourne sur une autre machine, ses journaux restent là-bas. Consultez-les sur le serveur, par exemple avec docker logs."
+      }
     },
     "tabs": {
       "general": "Général",
@@ -2190,7 +2198,9 @@
       "newAssetInfo": "Si vous ne connaissez pas l'identifiant de l'actif, vous pouvez continuer sans le saisir. Le système générera une adresse de dépôt pouvant recevoir n'importe quel actif RGB.",
       "assetIdLabel": "Identifiant de l'actif (optionnel)",
       "assetIdPlaceholder": "Saisir l'identifiant de l'actif (optionnel)",
-      "continueWith": "Continuer avec {{ticker}}"
+      "continueWith": "Continuer avec {{ticker}}",
+      "anyRgbAsset": "N’importe quel actif RGB",
+      "otherAssets": "Autres actifs"
     },
     "step2": {
       "titleWithTicker": "Déposer {{ticker}}",
@@ -2695,6 +2705,18 @@
         "custom": "{{rate}} sat/vB (Personnalisé)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Paiement envoyé",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "Le paiement a été réglé via Lightning.",
+      "onchainBody": "La transaction a été diffusée. Elle sera confirmée dans les prochains blocs.",
+      "rgbBody": "Le transfert a été envoyé. Le destinataire le reçoit une fois la transaction confirmée.",
+      "to": "À",
+      "paymentHash": "Hash du paiement",
+      "txid": "ID de transaction"
     }
   },
   "components": {

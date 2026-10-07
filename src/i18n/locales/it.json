@@ -240,7 +240,15 @@
       "matching": "{{count}} righe corrispondenti",
       "exported": "Log esportati",
       "exportFailed": "Esportazione dei log non riuscita",
-      "jumpToLatest": "Torna agli ultimi"
+      "jumpToLatest": "Torna agli ultimi",
+      "dockerContainer": "Container Docker",
+      "unavailableTitle": "I log non sono disponibili per questo nodo",
+      "checkAgain": "Riprova",
+      "unavailable": {
+        "invalid_url": "L’URL del nodo non è valido, quindi i log non si possono trovare.",
+        "no_container": "Il nodo gira su questo computer, ma non in un container Docker che l’app riesce a trovare. Se lo avvii con Docker, pubblica la porta API (ad esempio -p 3001:3001) e riprova.",
+        "remote_host": "Questo nodo gira su un’altra macchina, quindi i suoi log restano lì. Leggili sul server, ad esempio con docker logs."
+      }
     },
     "tabs": {
       "general": "Generale",
@@ -2184,7 +2192,9 @@
       "newAssetInfo": "Se non conosci l'ID dell'asset, puoi procedere senza inserirlo. Il sistema genererà un indirizzo di deposito che può ricevere qualsiasi asset RGB.",
       "assetIdLabel": "ID Asset (opzionale)",
       "assetIdPlaceholder": "Inserisci ID asset (opzionale)",
-      "continueWith": "Continua con {{ticker}}"
+      "continueWith": "Continua con {{ticker}}",
+      "anyRgbAsset": "Qualsiasi asset RGB",
+      "otherAssets": "Altri asset"
     },
     "step2": {
       "titleWithTicker": "Deposita {{ticker}}",
@@ -2689,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (Personalizzata)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Pagamento inviato",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "Il pagamento è stato regolato su Lightning.",
+      "onchainBody": "La transazione è stata trasmessa. Verrà confermata nei prossimi blocchi.",
+      "rgbBody": "Il trasferimento è stato inviato. Il destinatario lo riceve quando la transazione viene confermata.",
+      "to": "A",
+      "paymentHash": "Hash del pagamento",
+      "txid": "ID transazione"
     }
   },
   "components": {

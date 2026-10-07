@@ -240,7 +240,15 @@
       "matching": "{{count}} 行が一致",
       "exported": "ログをエクスポートしました",
       "exportFailed": "ログのエクスポートに失敗しました",
-      "jumpToLatest": "最新に戻る"
+      "jumpToLatest": "最新に戻る",
+      "dockerContainer": "Docker コンテナ",
+      "unavailableTitle": "このノードのログは表示できません",
+      "checkAgain": "再確認",
+      "unavailable": {
+        "invalid_url": "ノードの URL が無効なため、ログを特定できません。",
+        "no_container": "ノードはこのコンピュータで動作していますが、アプリが見つけられる Docker コンテナではありません。Docker で実行している場合は API ポートを公開して（例: -p 3001:3001）再確認してください。",
+        "remote_host": "このノードは別のマシンで動作しているため、ログはそちらにあります。サーバーで docker logs などを使って確認してください。"
+      }
     },
     "tabs": {
       "general": "一般",
@@ -2190,7 +2198,9 @@
       "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
       "assetIdLabel": "アセットID(オプション)",
       "assetIdPlaceholder": "アセットIDを入力(オプション)",
-      "continueWith": "{{ticker}} で続行"
+      "continueWith": "{{ticker}} で続行",
+      "anyRgbAsset": "任意の RGB アセット",
+      "otherAssets": "その他のアセット"
     },
     "step2": {
       "titleWithTicker": "{{ticker}}を入金",
@@ -2695,6 +2705,18 @@
         "custom": "{{rate}} sat/vB(カスタム)",
         "predefined": "{{rate}} sat/vB({{label}})"
       }
+    },
+    "sent": {
+      "title": "送金しました",
+      "lightning": "Lightning",
+      "onchain": "オンチェーン",
+      "rgbOnchain": "RGB オンチェーン",
+      "lightningBody": "Lightning で支払いが完了しました。",
+      "onchainBody": "トランザクションをブロードキャストしました。次のブロックで承認されます。",
+      "rgbBody": "送金しました。トランザクションが承認されると受取人に届きます。",
+      "to": "宛先",
+      "paymentHash": "ペイメントハッシュ",
+      "txid": "トランザクション ID"
     }
   },
   "components": {

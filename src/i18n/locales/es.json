@@ -240,7 +240,15 @@
       "matching": "{{count}} líneas coincidentes",
       "exported": "Registros exportados",
       "exportFailed": "Error al exportar los registros",
-      "jumpToLatest": "Volver a lo más reciente"
+      "jumpToLatest": "Volver a lo más reciente",
+      "dockerContainer": "Contenedor Docker",
+      "unavailableTitle": "Los registros no están disponibles para este nodo",
+      "checkAgain": "Comprobar de nuevo",
+      "unavailable": {
+        "invalid_url": "La URL del nodo no es válida, así que no se pueden localizar sus registros.",
+        "no_container": "El nodo se ejecuta en este equipo, pero no en un contenedor Docker que la app pueda encontrar. Si lo ejecutas con Docker, publica su puerto de API (por ejemplo -p 3001:3001) y comprueba de nuevo.",
+        "remote_host": "Este nodo se ejecuta en otra máquina, así que sus registros están allí. Léelos en el servidor, por ejemplo con docker logs."
+      }
     },
     "tabs": {
       "general": "General",
@@ -2190,7 +2198,9 @@
       "newAssetInfo": "Si no conoces el ID del asset, puedes continuar sin introducirlo. El sistema generará una dirección de depósito que puede recibir cualquier asset RGB.",
       "assetIdLabel": "ID del Asset (opcional)",
       "assetIdPlaceholder": "Introduce el ID del asset (opcional)",
-      "continueWith": "Continuar con {{ticker}}"
+      "continueWith": "Continuar con {{ticker}}",
+      "anyRgbAsset": "Cualquier activo RGB",
+      "otherAssets": "Otros activos"
     },
     "step2": {
       "titleWithTicker": "Depositar {{ticker}}",
@@ -2695,6 +2705,18 @@
         "custom": "{{rate}} sat/vB (Personalizada)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Pago enviado",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "El pago se liquidó por Lightning.",
+      "onchainBody": "La transacción se transmitió. Se confirmará en los próximos bloques.",
+      "rgbBody": "La transferencia se envió. El destinatario la recibe cuando se confirme la transacción.",
+      "to": "Para",
+      "paymentHash": "Hash del pago",
+      "txid": "ID de transacción"
     }
   },
   "components": {
