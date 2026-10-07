@@ -225,7 +225,48 @@
     "restartNow": "今すぐ再起動",
     "later": "後で",
     "shuttingDownTitle": "ノードをシャットダウン中",
-    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください..."
+    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください...",
+    "logs": {
+      "live": "ライブ",
+      "paused": "一時停止中",
+      "resume": "ライブ更新を再開",
+      "pause": "ライブ更新を一時停止",
+      "copy": "表示中の行をコピー",
+      "filter": "行を絞り込み…",
+      "older": "古い",
+      "newer": "新しい",
+      "fetchError": "ノードのログを読み取れませんでした。ライブ更新を停止しました。",
+      "noMatches": "条件に一致する行はありません",
+      "matching": "{{count}} 行が一致",
+      "exported": "ログをエクスポートしました",
+      "exportFailed": "ログのエクスポートに失敗しました",
+      "jumpToLatest": "最新に戻る",
+      "dockerContainer": "Docker コンテナ",
+      "unavailableTitle": "このノードのログは表示できません",
+      "checkAgain": "再確認",
+      "unavailable": {
+        "invalid_url": "ノードの URL が無効なため、ログを特定できません。",
+        "no_container": "ノードはこのコンピュータで動作していますが、アプリが見つけられる Docker コンテナではありません。Docker で実行している場合は API ポートを公開して（例: -p 3001:3001）再確認してください。",
+        "remote_host": "このノードは別のマシンで動作しているため、ログはそちらにあります。サーバーで docker logs などを使って確認してください。"
+      }
+    },
+    "tabs": {
+      "general": "一般",
+      "trading": "メーカーと LSP",
+      "node": "ノード接続",
+      "security": "セキュリティ",
+      "logs": "ログ"
+    },
+    "makerLspDescription": "マーケットメーカーがスワップの見積もりを出し、LSP がチャネルと受信流動性を提供します。",
+    "unsavedChanges": "未保存の変更があります",
+    "backupWalletDescription": "暗号化されたウォレットのバックアップをエクスポート",
+    "session": "セッション",
+    "showToken": "トークンを表示",
+    "hideToken": "トークンを隠す",
+    "changePassword": "パスワードを変更",
+    "changePasswordDescription": "ウォレットの暗号化パスワードを更新",
+    "logoutDescription": "ウォレットをロックしてアカウント一覧に戻ります。ノードのデータは保持されます。",
+    "shutdownDescription": "ノードのプロセスを停止します。チャネルは開いたままですがノードはオフラインになります。"
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",
@@ -2157,7 +2198,9 @@
       "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
       "assetIdLabel": "アセットID(オプション)",
       "assetIdPlaceholder": "アセットIDを入力(オプション)",
-      "continueWith": "{{ticker}} で続行"
+      "continueWith": "{{ticker}} で続行",
+      "anyRgbAsset": "任意の RGB アセット",
+      "otherAssets": "その他のアセット"
     },
     "step2": {
       "titleWithTicker": "{{ticker}}を入金",
@@ -2265,7 +2308,7 @@
     "fileSizes": ["バイト", "KB", "MB", "GB"],
     "fileSizeZero": "0バイト",
     "errors": {
-      "timeout": "アップデートプロセスが5分後にタイムアウトしました。インターネット接続を確認してもう一度お試しください。",
+      "timeout": "ダウンロードが進まなくなりました。インターネット接続を確認して、もう一度お試しください。",
       "installFailed": "アップデートのインストールに失敗しました：{{message}}。もう一度試すか、GitHubから手動でダウンロードしてください。",
       "cancelled": "ユーザーによってアップデートがキャンセルされました"
     },
@@ -2662,6 +2705,18 @@
         "custom": "{{rate}} sat/vB(カスタム)",
         "predefined": "{{rate}} sat/vB({{label}})"
       }
+    },
+    "sent": {
+      "title": "送金しました",
+      "lightning": "Lightning",
+      "onchain": "オンチェーン",
+      "rgbOnchain": "RGB オンチェーン",
+      "lightningBody": "Lightning で支払いが完了しました。",
+      "onchainBody": "トランザクションをブロードキャストしました。次のブロックで承認されます。",
+      "rgbBody": "送金しました。トランザクションが承認されると受取人に届きます。",
+      "to": "宛先",
+      "paymentHash": "ペイメントハッシュ",
+      "txid": "トランザクション ID"
     }
   },
   "components": {

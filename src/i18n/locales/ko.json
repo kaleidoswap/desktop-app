@@ -225,7 +225,48 @@
     "restartNow": "지금 재시작",
     "later": "나중에",
     "shuttingDownTitle": "노드 종료 중",
-    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요..."
+    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요...",
+    "logs": {
+      "live": "실시간",
+      "paused": "일시 중지됨",
+      "resume": "실시간 업데이트 재개",
+      "pause": "실시간 업데이트 일시 중지",
+      "copy": "표시된 줄 복사",
+      "filter": "줄 필터…",
+      "older": "이전",
+      "newer": "최신",
+      "fetchError": "노드 로그를 읽을 수 없습니다. 실시간 업데이트가 중지되었습니다.",
+      "noMatches": "필터와 일치하는 줄이 없습니다",
+      "matching": "{{count}}개 줄 일치",
+      "exported": "로그를 내보냈습니다",
+      "exportFailed": "로그 내보내기 실패",
+      "jumpToLatest": "최신으로 이동",
+      "dockerContainer": "Docker 컨테이너",
+      "unavailableTitle": "이 노드의 로그를 볼 수 없습니다",
+      "checkAgain": "다시 확인",
+      "unavailable": {
+        "invalid_url": "노드 URL이 올바르지 않아 로그를 찾을 수 없습니다.",
+        "no_container": "노드가 이 컴퓨터에서 실행 중이지만 앱이 찾을 수 있는 Docker 컨테이너가 아닙니다. Docker로 실행한다면 API 포트를 게시하고(예: -p 3001:3001) 다시 확인하세요.",
+        "remote_host": "이 노드는 다른 머신에서 실행되므로 로그도 그곳에 있습니다. 서버에서 docker logs 등으로 확인하세요."
+      }
+    },
+    "tabs": {
+      "general": "일반",
+      "trading": "메이커 및 LSP",
+      "node": "노드 연결",
+      "security": "보안",
+      "logs": "로그"
+    },
+    "makerLspDescription": "마켓 메이커가 스왑 견적을 제공하고, LSP가 채널과 인바운드 유동성을 판매합니다.",
+    "unsavedChanges": "저장되지 않은 변경 사항이 있습니다",
+    "backupWalletDescription": "암호화된 지갑 백업 내보내기",
+    "session": "세션",
+    "showToken": "토큰 표시",
+    "hideToken": "토큰 숨기기",
+    "changePassword": "비밀번호 변경",
+    "changePasswordDescription": "지갑 암호화 비밀번호 변경",
+    "logoutDescription": "지갑을 잠그고 계정 목록으로 돌아갑니다. 노드 데이터는 유지됩니다.",
+    "shutdownDescription": "노드 프로세스를 중지합니다. 채널은 열린 상태로 유지되지만 노드는 오프라인이 됩니다."
   },
   "modals": {
     "logoutTitle": "로그아웃 확인",
@@ -2151,7 +2192,9 @@
       "newAssetInfo": "자산 ID를 모르는 경우 입력하지 않고 진행할 수 있습니다. 시스템이 모든 RGB 자산을 수신할 수 있는 입금 주소를 생성합니다.",
       "assetIdLabel": "자산 ID (선택 사항)",
       "assetIdPlaceholder": "자산 ID 입력 (선택 사항)",
-      "continueWith": "{{ticker}}(으)로 계속"
+      "continueWith": "{{ticker}}(으)로 계속",
+      "anyRgbAsset": "모든 RGB 자산",
+      "otherAssets": "기타 자산"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} 입금",
@@ -2259,7 +2302,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "업데이트 프로세스가 5분 후 시간 초과되었습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
+      "timeout": "다운로드가 더 이상 진행되지 않습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
       "installFailed": "업데이트 설치에 실패했습니다: {{message}}. 다시 시도하거나 GitHub에서 수동으로 다운로드하세요.",
       "cancelled": "사용자가 업데이트를 취소했습니다"
     },
@@ -2656,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (사용자 지정)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "결제 전송됨",
+      "lightning": "Lightning",
+      "onchain": "온체인",
+      "rgbOnchain": "RGB 온체인",
+      "lightningBody": "Lightning으로 결제가 완료되었습니다.",
+      "onchainBody": "트랜잭션이 전파되었습니다. 다음 블록에서 컨펌됩니다.",
+      "rgbBody": "전송되었습니다. 트랜잭션이 컨펌되면 수신자가 받습니다.",
+      "to": "받는 사람",
+      "paymentHash": "결제 해시",
+      "txid": "트랜잭션 ID"
     }
   },
   "components": {

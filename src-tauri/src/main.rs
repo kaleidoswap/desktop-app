@@ -173,6 +173,8 @@ fn main() {
             start_node,
             stop_node,
             get_node_logs,
+            get_remote_node_logs,
+            save_remote_logs_to_file,
             save_logs_to_file,
             is_node_running,
             get_running_node_account,
@@ -556,6 +558,20 @@ fn get_account_by_name(name: String) -> Result<Option<db::Account>, String> {
     }
 }
 
+/// Page 1 holds the newest `page_size` lines; each page is in chronological
+/// order so it reads top to bottom like a terminal.
+fn paginate_newest_first(all_logs: &[String], page: u32, page_size: u32) -> NodeLogsResponse {
+    let total = all_logs.len();
+    let page_size = page_size.max(1) as usize;
+    let skip = (page.max(1) as usize - 1).saturating_mul(page_size);
+    let end = total.saturating_sub(skip);
+    let start = end.saturating_sub(page_size);
+    NodeLogsResponse {
+        logs: all_logs[start..end].to_vec(),
+        total: total as u32,
+    }
+}
+
 #[tauri::command]
 fn get_node_logs(
     node_process: tauri::State<'_, Arc<Mutex<NodeProcess>>>,
@@ -566,18 +582,112 @@ fn get_node_logs(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let all_logs = node_process.get_logs();
-    let total = all_logs.len() as u32;
+    Ok(paginate_newest_first(&all_logs, page, page_size))
+}
 
-    let start = ((page - 1) * page_size) as usize;
-    let end = std::cmp::min(start + page_size as usize, all_logs.len());
+const MAX_CONTAINER_LOG_LINES: usize = 2000;
 
-    let logs = if start < all_logs.len() {
-        all_logs[start..end].to_vec()
-    } else {
-        Vec::new()
-    };
+#[derive(serde::Serialize)]
+struct RemoteNodeLogsResponse {
+    available: bool,
+    /// Docker container the logs come from, when found.
+    container: Option<String>,
+    /// Why logs are unavailable: "remote_host", "invalid_url", "no_container".
+    reason: Option<String>,
+    logs: Vec<String>,
+    total: u32,
+}
 
-    Ok(NodeLogsResponse { logs, total })
+impl RemoteNodeLogsResponse {
+    fn unavailable(reason: &str) -> Self {
+        Self {
+            available: false,
+            container: None,
+            reason: Some(reason.to_string()),
+            logs: Vec::new(),
+            total: 0,
+        }
+    }
+}
+
+/// All available logs (oldest first) of a node the app did not spawn
+/// itself, plus the container they come from. Only possible when the node
+/// runs on this machine: either the Docker node started by the app, or any
+/// Docker container publishing the node URL's port on localhost. Blocking.
+fn read_local_container_logs(
+    docker_manager: &Arc<Mutex<DockerNodeManager>>,
+    node_url: &str,
+) -> Result<(Vec<String>, Option<String>), &'static str> {
+    let url = reqwest::Url::parse(node_url).map_err(|_| "invalid_url")?;
+    let is_local = matches!(
+        url.host_str(),
+        Some("localhost") | Some("127.0.0.1") | Some("[::1]") | Some("::1")
+    );
+    let port = url
+        .port_or_known_default()
+        .filter(|_| is_local)
+        .ok_or("remote_host")?;
+    {
+        let dm = docker_manager
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if dm.is_running() && dm.get_daemon_port() == Some(port) {
+            let (logs, _) = dm.get_logs_paginated(1, u32::MAX);
+            return Ok((logs, dm.get_current_environment()));
+        }
+    }
+    let (id, name) = DockerNodeManager::find_container_for_port(port).ok_or("no_container")?;
+    match DockerNodeManager::container_logs(&id, MAX_CONTAINER_LOG_LINES) {
+        Ok(lines) => Ok((lines, Some(name))),
+        Err(e) => {
+            log::warn!("docker logs failed for {}: {}", name, e);
+            Err("no_container")
+        }
+    }
+}
+
+#[tauri::command]
+async fn get_remote_node_logs(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+    node_url: String,
+    page: u32,
+    page_size: u32,
+) -> Result<RemoteNodeLogsResponse, String> {
+    let docker_manager = Arc::clone(&*docker_manager);
+    tauri::async_runtime::spawn_blocking(move || {
+        match read_local_container_logs(&docker_manager, &node_url) {
+            Ok((lines, container)) => {
+                let page_logs = paginate_newest_first(&lines, page, page_size);
+                RemoteNodeLogsResponse {
+                    available: true,
+                    container,
+                    reason: None,
+                    logs: page_logs.logs,
+                    total: page_logs.total,
+                }
+            }
+            Err(reason) => RemoteNodeLogsResponse::unavailable(reason),
+        }
+    })
+    .await
+    .map_err(|e| format!("Failed to read container logs: {}", e))
+}
+
+#[tauri::command]
+async fn save_remote_logs_to_file(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+    node_url: String,
+    file_path: String,
+) -> Result<(), String> {
+    let docker_manager = Arc::clone(&*docker_manager);
+    tauri::async_runtime::spawn_blocking(move || {
+        let (lines, _) = read_local_container_logs(&docker_manager, &node_url)
+            .map_err(|reason| format!("Node logs are not available ({})", reason))?;
+        std::fs::write(&file_path, lines.join("\n"))
+            .map_err(|e| format!("Failed to write logs to file: {}", e))
+    })
+    .await
+    .map_err(|e| format!("Failed to export container logs: {}", e))?
 }
 
 #[tauri::command]
@@ -1248,4 +1358,32 @@ fn stop_docker_node(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     dm.stop()
+}
+
+#[cfg(test)]
+mod node_logs_tests {
+    use super::paginate_newest_first;
+
+    fn lines(n: usize) -> Vec<String> {
+        (0..n).map(|i| i.to_string()).collect()
+    }
+
+    #[test]
+    fn first_page_is_the_newest_lines_in_order() {
+        let r = paginate_newest_first(&lines(10), 1, 3);
+        assert_eq!(r.logs, vec!["7", "8", "9"]);
+        assert_eq!(r.total, 10);
+    }
+
+    #[test]
+    fn last_page_is_partial_and_past_the_end_is_empty() {
+        assert_eq!(paginate_newest_first(&lines(10), 4, 3).logs, vec!["0"]);
+        assert!(paginate_newest_first(&lines(10), 5, 3).logs.is_empty());
+        assert!(paginate_newest_first(&[], 1, 3).logs.is_empty());
+    }
+
+    #[test]
+    fn zero_page_or_size_does_not_panic() {
+        assert_eq!(paginate_newest_first(&lines(3), 0, 0).logs, vec!["2"]);
+    }
 }

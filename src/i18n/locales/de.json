@@ -225,7 +225,48 @@
     "restartNow": "Jetzt neu starten",
     "later": "Später",
     "shuttingDownTitle": "Node wird heruntergefahren",
-    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt..."
+    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt...",
+    "logs": {
+      "live": "Live",
+      "paused": "Pausiert",
+      "resume": "Live-Updates fortsetzen",
+      "pause": "Live-Updates pausieren",
+      "copy": "Sichtbare Zeilen kopieren",
+      "filter": "Zeilen filtern…",
+      "older": "Älter",
+      "newer": "Neuer",
+      "fetchError": "Node-Logs konnten nicht gelesen werden. Live-Updates sind gestoppt.",
+      "noMatches": "Keine Zeile passt zum Filter",
+      "matching": "{{count}} passende Zeilen",
+      "exported": "Logs exportiert",
+      "exportFailed": "Export der Logs fehlgeschlagen",
+      "jumpToLatest": "Zu den neuesten",
+      "dockerContainer": "Docker-Container",
+      "unavailableTitle": "Für diesen Node sind keine Logs verfügbar",
+      "checkAgain": "Erneut prüfen",
+      "unavailable": {
+        "invalid_url": "Die Node-URL ist ungültig, daher können die Logs nicht gefunden werden.",
+        "no_container": "Der Node läuft auf diesem Computer, aber nicht in einem Docker-Container, den die App findet. Wenn du ihn mit Docker startest, veröffentliche den API-Port (z. B. -p 3001:3001) und prüfe erneut.",
+        "remote_host": "Dieser Node läuft auf einer anderen Maschine, daher bleiben seine Logs dort. Lies sie auf dem Server, z. B. mit docker logs."
+      }
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "trading": "Maker & LSP",
+      "node": "Node-Verbindung",
+      "security": "Sicherheit",
+      "logs": "Logs"
+    },
+    "makerLspDescription": "Market Maker stellen die Kurse für deine Swaps; der LSP verkauft dir Kanäle und eingehende Liquidität.",
+    "unsavedChanges": "Du hast ungespeicherte Änderungen",
+    "backupWalletDescription": "Verschlüsseltes Wallet-Backup exportieren",
+    "session": "Sitzung",
+    "showToken": "Token anzeigen",
+    "hideToken": "Token ausblenden",
+    "changePassword": "Passwort ändern",
+    "changePasswordDescription": "Verschlüsselungspasswort der Wallet ändern",
+    "logoutDescription": "Wallet sperren und zur Kontoliste zurückkehren. Der Node behält seine Daten.",
+    "shutdownDescription": "Node-Prozess beenden. Offene Kanäle bleiben bestehen, aber der Node ist offline."
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",
@@ -2151,7 +2192,9 @@
       "newAssetInfo": "Wenn du die Asset-ID nicht kennst, kannst du ohne fortfahren. Es wird eine Adresse erzeugt, die jedes RGB-Asset empfangen kann.",
       "assetIdLabel": "Asset-ID (optional)",
       "assetIdPlaceholder": "Asset-ID eingeben (optional)",
-      "continueWith": "Weiter mit {{ticker}}"
+      "continueWith": "Weiter mit {{ticker}}",
+      "anyRgbAsset": "Beliebiges RGB-Asset",
+      "otherAssets": "Weitere Assets"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} einzahlen",
@@ -2259,7 +2302,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "Update brach nach 5 Minuten ab. Prüfe deine Verbindung und versuche es erneut.",
+      "timeout": "Der Download kommt nicht mehr voran. Prüfe deine Internetverbindung und versuche es erneut.",
       "installFailed": "Update konnte nicht installiert werden: {{message}}. Versuche es erneut oder lade es manuell von GitHub herunter.",
       "cancelled": "Update vom Nutzer abgebrochen"
     },
@@ -2656,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (Benutzerdefiniert)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Zahlung gesendet",
+      "lightning": "Lightning",
+      "onchain": "On-Chain",
+      "rgbOnchain": "RGB On-Chain",
+      "lightningBody": "Die Zahlung wurde über Lightning abgewickelt.",
+      "onchainBody": "Die Transaktion wurde gesendet. Sie wird in den nächsten Blöcken bestätigt.",
+      "rgbBody": "Der Transfer wurde gesendet. Der Empfänger erhält ihn, sobald die Transaktion bestätigt ist.",
+      "to": "An",
+      "paymentHash": "Zahlungs-Hash",
+      "txid": "Transaktions-ID"
     }
   },
   "components": {

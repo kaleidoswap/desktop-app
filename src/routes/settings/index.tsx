@@ -1,10 +1,11 @@
 import { invoke } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
 import {
   ChevronDown,
   LogOut,
-  Moon,
-  // Sun, // temporarily unused — light mode disabled
+  Eye,
+  EyeOff,
+  Loader2,
+  Plus,
   Undo,
   Save,
   Shield,
@@ -17,7 +18,6 @@ import {
   Trash2,
   Star,
   Store,
-  RefreshCw,
   Lock,
   ArrowRight,
   KeyRound,
@@ -68,8 +68,7 @@ import {
   SUPPORTED_CURRENCIES,
 } from '../../slices/priceApi/priceApi.slice'
 
-import { TerminalLogDisplay } from './TerminalLogDisplay'
-import { logger } from '../../utils/logger'
+import { NodeLogsPanel } from './NodeLogsPanel'
 
 interface FormFields {
   bitcoinUnit: string
@@ -84,6 +83,100 @@ interface FormFields {
   defaultMakerUrl: string
   bearerToken: string
 }
+
+type SettingsTab = 'general' | 'trading' | 'node' | 'security' | 'logs'
+
+const SettingsCard = ({
+  title,
+  description,
+  badge,
+  children,
+}: {
+  title: string
+  description?: string
+  badge?: React.ReactNode
+  children: React.ReactNode
+}) => (
+  <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-divider/10 px-5 py-4">
+      <div className="min-w-0">
+        <h2 className="text-base font-bold text-white">{title}</h2>
+        {description && (
+          <p className="mt-0.5 text-sm text-content-tertiary">{description}</p>
+        )}
+      </div>
+      {badge}
+    </div>
+    <div className="divide-y divide-divider/10 px-5">{children}</div>
+  </section>
+)
+
+// Label + description on the left, control on the right (stacks when narrow).
+const SettingRow = ({
+  label,
+  description,
+  children,
+}: {
+  label: string
+  description?: string
+  children: React.ReactNode
+}) => (
+  <div className="grid items-center gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,320px)] sm:gap-6">
+    <div className="min-w-0">
+      <p className="text-sm font-medium text-white">{label}</p>
+      {description && (
+        <p className="mt-0.5 text-xs leading-relaxed text-content-tertiary">
+          {description}
+        </p>
+      )}
+    </div>
+    <div>{children}</div>
+  </div>
+)
+
+const FieldBlock = ({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) => (
+  <div className="space-y-2 py-4">
+    <label className="block text-sm font-medium text-white">{label}</label>
+    {children}
+  </div>
+)
+
+const ActionCard = ({
+  icon,
+  label,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode
+  label: string
+  description: string
+  onClick: () => void
+}) => (
+  <button
+    className="group flex flex-col items-start gap-3 rounded-xl border border-border-default bg-surface-base/40 p-4 text-left transition-colors hover:border-primary/40 hover:bg-surface-high/50"
+    onClick={onClick}
+    type="button"
+  >
+    <span className="rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/15">
+      {icon}
+    </span>
+    <span>
+      <span className="flex items-center gap-1 text-sm font-semibold text-white">
+        {label}
+        <ArrowRight className="h-3.5 w-3.5 text-content-tertiary transition-transform group-hover:translate-x-0.5" />
+      </span>
+      <span className="mt-0.5 block text-xs text-content-tertiary">
+        {description}
+      </span>
+    </span>
+  </button>
+)
 
 export const Component: React.FC = () => {
   const { t } = useTranslation()
@@ -118,14 +211,6 @@ export const Component: React.FC = () => {
   const nodeSettings = useAppSelector((state) => state.nodeSettings.data)
 
   // All state declarations in one place
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false)
-  const [logsFetchRetries, setLogsFetchRetries] = useState(0)
-  const [isLogsFetchDisabled, setIsLogsFetchDisabled] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalLogs, setTotalLogs] = useState(0)
-  const [nodeLogs, setNodeLogs] = useState<string[]>([])
-  const [maxLogEntries, setMaxLogEntries] = useState(200)
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
   const [showShutdownConfirmation, setShowShutdownConfirmation] =
     useState(false)
@@ -134,7 +219,8 @@ export const Component: React.FC = () => {
   const [showRestartConfirmation, setShowRestartConfirmation] = useState(false)
   const [showMnemonicModal, setShowMnemonicModal] = useState(false)
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
-  const maxLogsFetchRetries = 3
+  const [tab, setTab] = useState<SettingsTab>('general')
+  const [showToken, setShowToken] = useState(false)
 
   // Replace showModal with unified modal state
   const [modal, setModal] = useState<{
@@ -156,26 +242,31 @@ export const Component: React.FC = () => {
   const [shutdown] = nodeApi.endpoints.shutdown.useMutation()
   const [lock] = nodeApi.endpoints.lock.useMutation()
 
-  const { control, handleSubmit, reset, watch, setValue } = useForm<FormFields>(
-    {
-      defaultValues: {
-        bearerToken: nodeSettings.bearer_token || '',
-        bitcoinUnit,
-        defaultMakerUrl: nodeSettings.default_maker_url || '',
-        fiatCurrency,
-        indexerUrl: nodeSettings.indexer_url || '',
-        language: language || 'en',
-        lspUrl:
-          nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
-        makerUrls: Array.isArray(nodeSettings.maker_urls)
-          ? nodeSettings.maker_urls
-          : [],
-        nodeConnectionString: nodeConnectionString || 'http://localhost:3001',
-        proxyEndpoint: nodeSettings.proxy_endpoint || '',
-        rpcConnectionUrl: nodeSettings.rpc_connection_url || '',
-      },
-    }
-  )
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { isDirty },
+  } = useForm<FormFields>({
+    defaultValues: {
+      bearerToken: nodeSettings.bearer_token || '',
+      bitcoinUnit,
+      defaultMakerUrl: nodeSettings.default_maker_url || '',
+      fiatCurrency,
+      indexerUrl: nodeSettings.indexer_url || '',
+      language: language || 'en',
+      lspUrl:
+        nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
+      makerUrls: Array.isArray(nodeSettings.maker_urls)
+        ? nodeSettings.maker_urls
+        : [],
+      nodeConnectionString: nodeConnectionString || 'http://localhost:3001',
+      proxyEndpoint: nodeSettings.proxy_endpoint || '',
+      rpcConnectionUrl: nodeSettings.rpc_connection_url || '',
+    },
+  })
 
   const {
     showBackupModal,
@@ -188,95 +279,6 @@ export const Component: React.FC = () => {
     handleBackup,
     selectBackupFolder,
   } = useBackup({ nodeSettings })
-
-  const fetchNodeLogs = async () => {
-    // Skip if too many failures
-    if (isLogsFetchDisabled) {
-      return
-    }
-
-    try {
-      setIsLoadingLogs(true)
-      logger.debug('Fetching logs with params:', { currentPage, maxLogEntries })
-
-      const result = await invoke<{ logs: string[]; total: number }>(
-        'get_node_logs',
-        {
-          page: currentPage,
-          pageSize: maxLogEntries,
-        }
-      )
-
-      logger.debug('Received logs:', result)
-
-      if (result && Array.isArray(result.logs)) {
-        setNodeLogs(result.logs)
-        setTotalLogs(result.total)
-        // Reset retry count on success
-        setLogsFetchRetries(0)
-        setIsLogsFetchDisabled(false)
-      } else {
-        logger.error('Invalid logs format received:', result)
-        toast.error('Invalid logs format received from server')
-      }
-    } catch (error) {
-      logger.error('Failed to fetch node logs:', error)
-      toast.error(
-        `Failed to load logs: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
-
-      // Increment retry count and implement backoff
-      const newRetryCount = logsFetchRetries + 1
-      setLogsFetchRetries(newRetryCount)
-
-      if (newRetryCount >= maxLogsFetchRetries) {
-        logger.warn(
-          'Too many log fetch failures, disabling polling for 2 minutes'
-        )
-        setIsLogsFetchDisabled(true)
-        toast.error('Log loading temporarily disabled due to errors')
-        // Re-enable after 2 minutes
-        setTimeout(() => {
-          setIsLogsFetchDisabled(false)
-          setLogsFetchRetries(0)
-        }, 120000) // 2 minutes
-      }
-    } finally {
-      setIsLoadingLogs(false)
-    }
-  }
-
-  // Optimize the useEffect for data loading
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setIsLoading(true)
-        // Ensure we start from page 1
-        setCurrentPage(1)
-        await fetchNodeLogs()
-      } catch (error) {
-        logger.error('Error loading initial data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadInitialData()
-
-    // Set up polling with a cleanup function and longer interval
-    const logsInterval = setInterval(fetchNodeLogs, 10000) // Poll logs every 10 seconds instead of 5
-
-    return () => {
-      clearInterval(logsInterval)
-    }
-  }, []) // Empty dependency array to run only on mount
-
-  // Add effect to refetch when page or page size changes
-  useEffect(() => {
-    if (!isLoading) {
-      fetchNodeLogs()
-    }
-  }, [currentPage, maxLogEntries])
 
   useEffect(() => {
     reset({
@@ -326,16 +328,6 @@ export const Component: React.FC = () => {
       })
 
       toast.success('Node restarted successfully with new settings')
-
-      // Show success modal
-      setModal({
-        autoClose: true,
-        details: '',
-        isOpen: true,
-        message: 'The node has been restarted with your new settings.',
-        title: 'Node Restarted',
-        type: ModalType.SUCCESS,
-      })
     } catch (error) {
       toast.error(
         `Failed to restart node: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -420,32 +412,8 @@ export const Component: React.FC = () => {
         data.indexerUrl !== (nodeSettings.indexer_url || '') ||
         data.proxyEndpoint !== (nodeSettings.proxy_endpoint || '')
 
-      if (nodeSettingsChanged) {
-        // Show restart confirmation modal instead of just a toast
-        setModal({
-          autoClose: false,
-          details: '',
-          isOpen: true,
-          message:
-            'Node connection settings have changed. Would you like to restart the node now for changes to take effect?',
-          title: 'Node Settings Changed',
-          type: ModalType.WARNING,
-        })
-
-        // We'll handle the restart in the modal's action buttons
-      } else {
-        toast.success('Settings saved successfully')
-
-        // Show success modal
-        setModal({
-          autoClose: true,
-          details: '',
-          isOpen: true,
-          message: 'Your settings have been successfully saved.',
-          title: 'Settings Saved',
-          type: ModalType.SUCCESS,
-        })
-      }
+      toast.success('Settings saved successfully')
+      if (nodeSettingsChanged) setShowRestartConfirmation(true)
     } catch (error) {
       toast.error(
         `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -465,20 +433,7 @@ export const Component: React.FC = () => {
     }
   }
 
-  const closeModal = () => {
-    // If it's a warning modal about node settings changed, we need to ask about restart
-    if (
-      modal.type === ModalType.WARNING &&
-      modal.title === 'Node Settings Changed'
-    ) {
-      setModal((prev) => ({ ...prev, isOpen: false }))
-
-      // Show restart confirmation modal
-      setShowRestartConfirmation(true)
-    } else {
-      setModal((prev) => ({ ...prev, isOpen: false }))
-    }
-  }
+  const closeModal = () => setModal((prev) => ({ ...prev, isOpen: false }))
 
   const handleLogout = async () => {
     setShowLogoutConfirmation(true)
@@ -544,27 +499,6 @@ export const Component: React.FC = () => {
     }
   }
 
-  const handleExportLogs = async () => {
-    try {
-      const filePath = await save({
-        defaultPath: `node-logs-${new Date().toISOString().split('T')[0]}.txt`,
-        filters: [
-          {
-            extensions: ['txt'],
-            name: 'Log Files',
-          },
-        ],
-      })
-
-      if (filePath) {
-        await invoke('save_logs_to_file', { filePath })
-        toast.success('Logs exported successfully')
-      }
-    } catch (error) {
-      toast.error('Failed to export logs')
-    }
-  }
-
   const isLocalNode = !!currentAccount.datapath
 
   // Add useEffect for polling node info separately to avoid blocking
@@ -583,708 +517,572 @@ export const Component: React.FC = () => {
     return () => clearInterval(interval)
   }, [nodeInfo])
 
-  // If the page is loading, show a loading state
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-8 px-4">
-        <div className="w-12 h-12 mb-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <h2 className="text-xl font-bold text-white mb-1">
-          {t('settings.loadingSettings')}
-        </h2>
-        <p className="text-content-secondary text-sm">
-          {t('settings.pleaseWait')}
-        </p>
-      </div>
-    )
-  }
-
   const inputCls =
-    'w-full px-4 py-2.5 text-sm text-white bg-surface-overlay/30 border border-border-default/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors'
+    'w-full px-3.5 py-2.5 text-sm text-white bg-surface-base/60 border border-border-default rounded-lg placeholder:text-content-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors'
   const selectCls = `${inputCls} appearance-none pr-10`
 
+  const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
+    {
+      icon: <Settings className="h-4 w-4" />,
+      id: 'general',
+      label: t('settings.tabs.general', 'General'),
+    },
+    {
+      icon: <Store className="h-4 w-4" />,
+      id: 'trading',
+      label: t('settings.tabs.trading', 'Maker & LSP'),
+    },
+    {
+      icon: <Server className="h-4 w-4" />,
+      id: 'node',
+      label: t('settings.tabs.node', 'Node connection'),
+    },
+    {
+      icon: <Shield className="h-4 w-4" />,
+      id: 'security',
+      label: t('settings.tabs.security', 'Security'),
+    },
+    {
+      icon: <Activity className="h-4 w-4" />,
+      id: 'logs',
+      label: t('settings.tabs.logs', 'Logs'),
+    },
+  ]
+  const activeTab = tabs.some((x) => x.id === tab) ? tab : 'general'
+  const isFormTab =
+    activeTab === 'general' || activeTab === 'trading' || activeTab === 'node'
+
   return (
-    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-4 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* ── Left column: forms ── */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <form
-            className="flex flex-col gap-6"
-            onSubmit={handleSubmit(handleSave)}
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-4 py-6">
+      {/* ── Header: account + node status ── */}
+      <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-subtle bg-surface-overlay px-5 py-4">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15">
+          <Settings className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold text-white">
+            {t('settings.title', 'Settings')}
+          </h1>
+          <p className="truncate text-sm text-content-secondary">
+            {currentAccount.name}
+            {currentAccount.network ? ` · ${currentAccount.network}` : ''}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border-default px-2.5 py-1 text-xs text-content-secondary">
+            <Server className="h-3.5 w-3.5" />
+            {isLocalNode ? t('settings.localNode') : t('settings.remoteNode')}
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+              isNodeRunning
+                ? 'bg-status-success-subtle text-status-success'
+                : 'bg-status-danger-subtle text-status-danger'
+            }`}
           >
-            {/* Application Settings */}
-            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
-                <Settings className="w-5 h-5 text-primary flex-shrink-0" />
-                <h2 className="text-base font-bold text-white">
-                  {t('settings.applicationSettings')}
-                </h2>
-              </div>
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isNodeRunning
+                  ? 'animate-pulse bg-status-success'
+                  : 'bg-status-danger'
+              }`}
+            />
+            {isNodeRunning
+              ? t('settings.nodeRunning')
+              : t('settings.nodeOffline')}
+          </span>
+        </div>
+      </header>
 
-              <div className="p-5 space-y-5">
-                {/* Capabilities */}
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-content-secondary">
-                    {t('settings.capabilities', {
-                      defaultValue: 'Capabilities',
-                    })}
-                  </label>
-                  <p className="text-xs text-content-tertiary">
-                    {t('settings.capabilitiesDescription', {
-                      defaultValue:
-                        'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
-                    })}
-                  </p>
-                  <div className="flex gap-1 rounded-xl bg-surface-base/35 p-1 w-fit mt-2">
-                    {APP_MODE_OPTIONS.map((opt) => (
-                      <button
-                        className={`inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-200 focus:outline-none ${
-                          appMode === opt.mode
-                            ? 'bg-primary/15 text-primary border border-primary/30'
-                            : 'text-content-secondary hover:text-white border border-transparent'
-                        }`}
-                        key={opt.mode}
-                        onClick={() => dispatch(setAppMode(opt.mode))}
-                        type="button"
-                      >
-                        {t(opt.labelKey, { defaultValue: opt.fallback })}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+      {/* ── Tabs ── */}
+      <nav className="sticky top-0 z-10 flex gap-1 overflow-x-auto rounded-xl border border-border-subtle bg-surface-base/90 p-1 backdrop-blur">
+        {tabs.map((x) => (
+          <button
+            className={`inline-flex flex-shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+              activeTab === x.id
+                ? 'bg-surface-high text-white shadow-sm'
+                : 'text-content-secondary hover:bg-surface-overlay hover:text-white'
+            }`}
+            key={x.id}
+            onClick={() => setTab(x.id)}
+            type="button"
+          >
+            <span className={activeTab === x.id ? 'text-primary' : ''}>
+              {x.icon}
+            </span>
+            {x.label}
+          </button>
+        ))}
+      </nav>
 
-                {/* Bitcoin Unit */}
-                <Controller
-                  control={control}
-                  name="bitcoinUnit"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.bitcoinUnit')}
-                      </label>
-                      <div className="relative">
-                        <select {...field} className={selectCls}>
-                          <option value="SAT">
-                            {t('settings.bitcoinUnitSat')}
-                          </option>
-                          <option value="BTC">
-                            {t('settings.bitcoinUnitBtc')}
-                          </option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-                />
-
-                {/* Fiat Currency */}
-                <Controller
-                  control={control}
-                  name="fiatCurrency"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.fiatCurrency')}
-                      </label>
-                      <p className="text-xs text-content-tertiary">
-                        {t('settings.fiatCurrencyDescription')}
-                      </p>
-                      <div className="relative">
-                        <select {...field} className={selectCls}>
-                          {SUPPORTED_CURRENCIES.map((currency) => (
-                            <option key={currency} value={currency}>
-                              {CURRENCY_SYMBOLS[currency]}
-                              {CURRENCY_LABELS[currency]}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-                />
-
-                {/* Theme (disabled) */}
-                <div className="space-y-1.5 opacity-50 pointer-events-none">
-                  <label className="block text-sm font-medium text-content-secondary">
-                    {t('settings.theme')}
-                  </label>
-                  <div className="flex rounded-lg overflow-hidden border border-border-default/50 w-fit">
+      <form
+        className={isFormTab ? 'flex flex-col gap-5' : 'hidden'}
+        onSubmit={handleSubmit(handleSave)}
+      >
+        {/* ── General ── */}
+        {activeTab === 'general' && (
+          <>
+            <SettingsCard title={t('settings.applicationSettings')}>
+              <SettingRow
+                description={t('settings.capabilitiesDescription', {
+                  defaultValue:
+                    'Choose which parts of KaleidoSwap are shown — the node, the AI brain, or both.',
+                })}
+                label={t('settings.capabilities', {
+                  defaultValue: 'Capabilities',
+                })}
+              >
+                <div className="grid grid-cols-3 gap-1 rounded-lg border border-border-default bg-surface-base/60 p-1">
+                  {APP_MODE_OPTIONS.map((opt) => (
                     <button
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-[#12131C]"
-                      disabled
+                      className={`whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                        appMode === opt.mode
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-content-secondary hover:text-white'
+                      }`}
+                      key={opt.mode}
+                      onClick={() => dispatch(setAppMode(opt.mode))}
                       type="button"
                     >
-                      <Moon className="w-4 h-4" />
-                      {t('settings.themeDark')}
+                      {t(opt.labelKey, { defaultValue: opt.fallback })}
+                    </button>
+                  ))}
+                </div>
+              </SettingRow>
+
+              <Controller
+                control={control}
+                name="bitcoinUnit"
+                render={({ field }) => (
+                  <SettingRow label={t('settings.bitcoinUnit')}>
+                    <div className="relative">
+                      <select {...field} className={selectCls}>
+                        <option value="SAT">
+                          {t('settings.bitcoinUnitSat')}
+                        </option>
+                        <option value="BTC">
+                          {t('settings.bitcoinUnitBtc')}
+                        </option>
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
+                    </div>
+                  </SettingRow>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="fiatCurrency"
+                render={({ field }) => (
+                  <SettingRow
+                    description={t('settings.fiatCurrencyDescription')}
+                    label={t('settings.fiatCurrency')}
+                  >
+                    <div className="relative">
+                      <select {...field} className={selectCls}>
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <option key={currency} value={currency}>
+                            {CURRENCY_SYMBOLS[currency]}{' '}
+                            {CURRENCY_LABELS[currency]}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
+                    </div>
+                  </SettingRow>
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="language"
+                render={({ field }) => (
+                  <SettingRow label={t('settings.language')}>
+                    <div className="relative">
+                      <select {...field} className={selectCls}>
+                        {Object.entries(LANGUAGES).map(
+                          ([code, { name, flag }]) => (
+                            <option key={code} value={code}>
+                              {flag} {name}
+                            </option>
+                          )
+                        )}
+                      </select>
+                      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-secondary" />
+                    </div>
+                  </SettingRow>
+                )}
+              />
+            </SettingsCard>
+
+            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
+              <AppVersion showDetailed={true} />
+            </section>
+          </>
+        )}
+
+        {/* ── Maker & LSP ── */}
+        {activeTab === 'trading' && (
+          <SettingsCard
+            description={t(
+              'settings.makerLspDescription',
+              'Market makers quote your swaps; the LSP sells you channels and inbound liquidity.'
+            )}
+            title={t('settings.makerLspSettings', 'Maker & LSP Settings')}
+          >
+            <div className="space-y-2 py-4">
+              <label className="block text-sm font-medium text-white">
+                {t('settings.makerUrls')}
+              </label>
+              <Controller
+                control={control}
+                name="makerUrls"
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    {(field.value ?? []).map((url, index) => {
+                      const isDefault = url === watch('defaultMakerUrl')
+                      return (
+                        <div className="flex items-center gap-2" key={index}>
+                          <div className="relative flex-1">
+                            <input
+                              className={`${inputCls} ${isDefault ? 'pr-20' : ''}`}
+                              onChange={(e) => {
+                                const n = [...(field.value ?? [])]
+                                n[index] = e.target.value
+                                field.onChange(n)
+                              }}
+                              placeholder={
+                                t('settings.makerUrlPlaceholder') || 'Maker URL'
+                              }
+                              type="text"
+                              value={url}
+                            />
+                            {isDefault && (
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-primary/15 px-2 py-0.5 text-xs text-primary">
+                                {t('settings.default')}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            className="rounded-lg p-2 text-content-secondary transition-colors hover:bg-primary/15 hover:text-primary"
+                            onClick={() =>
+                              setValue('defaultMakerUrl', url, {
+                                shouldDirty: true,
+                              })
+                            }
+                            title={
+                              isDefault
+                                ? t('settings.currentDefault')
+                                : t('settings.setAsDefault')
+                            }
+                            type="button"
+                          >
+                            <Star
+                              className={`h-4 w-4 ${isDefault ? 'fill-current text-primary' : ''}`}
+                            />
+                          </button>
+                          <button
+                            className="rounded-lg p-2 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
+                            onClick={() => {
+                              const n = (field.value ?? []).filter(
+                                (_, i) => i !== index
+                              )
+                              field.onChange(n)
+                              if (isDefault)
+                                setValue('defaultMakerUrl', n[0] || '', {
+                                  shouldDirty: true,
+                                })
+                            }}
+                            title={t('settings.removeUrl')}
+                            type="button"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                    <button
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border-default text-sm font-medium text-content-secondary transition-colors hover:border-primary/50 hover:text-primary"
+                      onClick={() => {
+                        const n = [...(field.value ?? []), '']
+                        field.onChange(n)
+                        if ((field.value ?? []).length === 0)
+                          setValue('defaultMakerUrl', '')
+                      }}
+                      type="button"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t('settings.addMakerUrl')}
                     </button>
                   </div>
-                </div>
+                )}
+              />
+            </div>
 
-                {/* Language */}
-                <Controller
-                  control={control}
-                  name="language"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.language')}
-                      </label>
-                      <div className="relative">
-                        <select {...field} className={selectCls}>
-                          {Object.entries(LANGUAGES).map(
-                            ([code, { name, flag }]) => (
-                              <option key={code} value={code}>
-                                {flag} {name}
-                              </option>
-                            )
-                          )}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-secondary pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-                />
-              </div>
-            </section>
-
-            {/* Maker & LSP Settings */}
-            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
-                <Store className="w-5 h-5 text-primary flex-shrink-0" />
-                <h2 className="text-base font-bold text-white">
-                  {t('settings.makerLspSettings', 'Maker & LSP Settings')}
-                </h2>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-content-secondary">
-                    {t('settings.makerUrls')}
-                  </label>
-                  <Controller
-                    control={control}
-                    name="makerUrls"
-                    render={({ field }) => (
-                      <div className="space-y-2">
-                        {(field.value ?? []).map((url, index) => (
-                          <div className="flex items-center gap-2" key={index}>
-                            <div className="flex-1 relative">
-                              <input
-                                className={inputCls}
-                                onChange={(e) => {
-                                  const n = [...(field.value ?? [])]
-                                  n[index] = e.target.value
-                                  field.onChange(n)
-                                }}
-                                placeholder={
-                                  t('settings.makerUrlPlaceholder') ||
-                                  'Maker URL'
-                                }
-                                type="text"
-                                value={url}
-                              />
-                              {url === watch('defaultMakerUrl') && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 text-xs bg-primary/15 text-primary rounded-md">
-                                  {t('settings.default')}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-1">
-                              <button
-                                className="rounded p-1.5 text-content-secondary transition-colors hover:bg-primary/15 hover:text-primary"
-                                onClick={() => setValue('defaultMakerUrl', url)}
-                                title={
-                                  url === watch('defaultMakerUrl')
-                                    ? t('settings.currentDefault')
-                                    : t('settings.setAsDefault')
-                                }
-                                type="button"
-                              >
-                                <Star
-                                  className={`w-4 h-4 ${url === watch('defaultMakerUrl') ? 'fill-current' : ''}`}
-                                />
-                              </button>
-                              <button
-                                className="rounded p-1.5 text-content-secondary transition-colors hover:bg-status-danger/15 hover:text-status-danger"
-                                onClick={() => {
-                                  const n = (field.value ?? []).filter(
-                                    (_, i) => i !== index
-                                  )
-                                  field.onChange(n)
-                                  if (url === watch('defaultMakerUrl'))
-                                    setValue('defaultMakerUrl', n[0] || '')
-                                }}
-                                title={t('settings.removeUrl')}
-                                type="button"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+            <Controller
+              control={control}
+              name="lspUrl"
+              render={({ field }) => (
+                <div className="space-y-2 py-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="block text-sm font-medium text-white">
+                      {t('settings.lspUrl')}
+                    </label>
+                    {watch('defaultMakerUrl') &&
+                      field.value !== watch('defaultMakerUrl') && (
                         <button
-                          className="w-full inline-flex items-center justify-center h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-semibold text-white transition-colors"
-                          onClick={() => {
-                            const n = [...(field.value ?? []), '']
-                            field.onChange(n)
-                            if ((field.value ?? []).length === 0)
-                              setValue('defaultMakerUrl', '')
-                          }}
+                          className="text-xs font-medium text-primary hover:underline"
+                          onClick={() =>
+                            field.onChange(watch('defaultMakerUrl'))
+                          }
                           type="button"
                         >
-                          {t('settings.addMakerUrl')}
-                        </button>
-                      </div>
-                    )}
-                  />
-                </div>
-
-                {/* LSP URL — usually matches the default Maker URL */}
-                <Controller
-                  control={control}
-                  name="lspUrl"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="block text-sm font-medium text-content-secondary">
-                          {t('settings.lspUrl')}
-                        </label>
-                        {watch('defaultMakerUrl') &&
-                          field.value !== watch('defaultMakerUrl') && (
-                            <button
-                              className="text-xs font-medium text-primary hover:underline"
-                              onClick={() =>
-                                field.onChange(watch('defaultMakerUrl'))
-                              }
-                              type="button"
-                            >
-                              {t(
-                                'settings.matchMakerUrl',
-                                'Match default Maker URL'
-                              )}
-                            </button>
+                          {t(
+                            'settings.matchMakerUrl',
+                            'Match default Maker URL'
                           )}
-                      </div>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder={t('settings.lspUrlPlaceholder')}
-                        type="text"
-                      />
-                      <p className="text-xs text-content-tertiary">
-                        {t(
-                          'settings.lspUrlHint',
-                          'The LSP URL usually matches your default Maker URL.'
-                        )}
-                      </p>
-                    </div>
-                  )}
-                />
-              </div>
-            </section>
-
-            {/* Node Connection Settings */}
-            <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-divider/10">
-                <div className="flex items-center gap-3">
-                  <Server className="w-5 h-5 text-primary flex-shrink-0" />
-                  <h2 className="text-base font-bold text-white">
-                    {t('settings.nodeConnectionSettings')}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-status-warning/10 border border-status-warning/20 rounded-lg">
-                  <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
-                  <span className="text-xs text-status-warning">
-                    {t('settings.requiresRestart')}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5 space-y-4">
-                <Controller
-                  control={control}
-                  name="nodeConnectionString"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.nodeConnectionString')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder="e.g., http://localhost:3001"
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="indexerUrl"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.indexerUrl')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder="Indexer service URL"
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="proxyEndpoint"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.rgbProxyEndpoint')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder={t('settings.rgbProxyPlaceholder')}
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="bearerToken"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.bearerToken')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder={t('settings.bearerTokenPlaceholder')}
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="rpcConnectionUrl"
-                  render={({ field, fieldState }) => (
-                    <BitcoindRpcField
-                      error={fieldState.error?.message}
-                      inputId="settings-rpc-connection-url"
-                      value={field.value}
-                    >
-                      <input
-                        {...field}
-                        className={inputCls}
-                        id="settings-rpc-connection-url"
-                        placeholder={t('chainSync.placeholder')}
-                        type="text"
-                      />
-                    </BitcoindRpcField>
-                  )}
-                  rules={{
-                    validate: (value) =>
-                      isValidBitcoindRpcUrl(value) ||
-                      t('chainSync.invalidFormat'),
-                  }}
-                />
-              </div>
-            </section>
-
-            {/* Sticky save bar */}
-            <div className="sticky bottom-4">
-              <div className="flex gap-3">
-                <button
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                  disabled={isSaving}
-                  onClick={handleUndo}
-                  type="button"
-                >
-                  <Undo className="w-4 h-4" />
-                  {t('settings.resetChanges')}
-                </button>
-                <button
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-primary hover:bg-primary-emphasis text-sm font-semibold text-[#12131C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSaving}
-                  type="submit"
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-[#12131C]/40 border-t-[#12131C] rounded-full animate-spin" />
-                      {t('settings.saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      {t('settings.saveSettings')}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        {/* ── Right column: status + actions ── */}
-        <div className="flex flex-col gap-6">
-          {/* Security & Backup */}
-          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
-              <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-base font-bold text-white">
-                {t('settings.securityBackup')}
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
-              <button
-                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
-                onClick={() => setShowMnemonicModal(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
-                    <Lock className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">
-                      {t('settings.viewRecoveryPhrase')}
-                    </div>
-                    <div className="text-xs text-content-secondary">
-                      {t('settings.accessSeedPhrase')}
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
-              </button>
-              <button
-                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
-                onClick={() => setShowChangePasswordModal(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
-                    <KeyRound className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">
-                      {t('settings.changePassword', 'Change Password')}
-                    </div>
-                    <div className="text-xs text-content-secondary">
-                      {t(
-                        'settings.changePasswordDescription',
-                        'Update wallet encryption password'
+                        </button>
                       )}
-                    </div>
                   </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
-              </button>
-
-              <button
-                className="w-full group flex items-center justify-between gap-3 p-4 rounded-xl border border-border-default/50 bg-surface-overlay/30 hover:bg-surface-elevated transition-colors text-white"
-                onClick={() => setShowBackupModal(true)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
-                    <Download className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-semibold">
-                      {t('settings.backupWallet')}
-                    </div>
-                    <div className="text-xs text-content-secondary">
-                      Export encrypted backup wallet
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-content-secondary group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-          </section>
-
-          {/* Node Status */}
-          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-divider/10">
-              <Activity className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-base font-bold text-white">
-                {t('settings.nodeStatus')}
-              </h2>
-            </div>
-            <div className="p-4 space-y-3">
-              {/* Status pill */}
-              <div
-                className={`flex items-center gap-3 p-3 rounded-xl border ${isNodeRunning ? 'bg-status-success/10 border-status-success/20' : 'bg-status-danger/10 border-status-danger/20'}`}
-              >
-                <span
-                  className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isNodeRunning ? 'bg-status-success animate-pulse' : 'bg-status-danger'}`}
-                />
-                <span
-                  className={`text-sm font-semibold ${isNodeRunning ? 'text-status-success' : 'text-status-danger'}`}
-                >
-                  {isNodeRunning
-                    ? t('settings.nodeRunning')
-                    : t('settings.nodeOffline')}
-                </span>
-              </div>
-
-              {/* Connection type */}
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-border-default/50 bg-surface-overlay/30">
-                <Server className="w-4 h-4 text-content-tertiary flex-shrink-0" />
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-content-tertiary">
-                    {t('settings.connectionType')}
-                  </p>
-                  <p className="text-sm font-medium text-white">
-                    {isLocalNode
-                      ? t('settings.localNode')
-                      : t('settings.remoteNode')}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-sm font-medium text-white transition-colors"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="w-4 h-4" />
-                  {t('settings.logout')}
-                </button>
-                <button
-                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-status-danger/20 bg-status-danger/10 text-sm font-medium text-status-danger hover:bg-status-danger/20 transition-colors"
-                  onClick={handleShutdown}
-                >
-                  <Power className="w-4 h-4" />
-                  {t('settings.shutdown')}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* App Version */}
-          <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-            <AppVersion showDetailed={true} />
-          </section>
-        </div>
-      </div>
-
-      {/* Logs */}
-      {isLocalNode && (
-        <section className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-overlay">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-divider/10">
-            <div className="flex items-center gap-3">
-              <Activity className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-base font-bold text-white">
-                {t('settings.nodeLogs')}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-default/50 bg-surface-overlay/30 text-sm text-content-secondary">
-                <span>{t('settings.show')}</span>
-                <select
-                  className="bg-transparent text-white text-sm focus:outline-none border-0"
-                  onChange={(e) => {
-                    setMaxLogEntries(Number(e.target.value))
-                    setCurrentPage(1)
-                  }}
-                  value={maxLogEntries}
-                >
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                  <option value="500">500</option>
-                </select>
-                <span>{t('settings.entries')}</span>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={nodeLogs.length === 0 || isLoadingLogs}
-                  onClick={handleExportLogs}
-                  title={t('settings.exportLogs')}
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={isLoadingLogs}
-                  onClick={() => {
-                    setCurrentPage(1)
-                    fetchNodeLogs()
-                  }}
-                  title={t('settings.refreshLogs')}
-                >
-                  <RefreshCw
-                    className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`}
+                  <input
+                    {...field}
+                    className={inputCls}
+                    placeholder={t('settings.lspUrlPlaceholder')}
+                    type="text"
                   />
-                </button>
-                <button
-                  className="p-2 rounded-lg border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={nodeLogs.length === 0 || isLoadingLogs}
-                  onClick={() => setNodeLogs([])}
-                  title={t('settings.clearLogs')}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-5 py-2 border-b border-divider/10 bg-surface-base/50">
-            <span className="text-xs text-content-tertiary">
-              {t('settings.liveNodeLogs')}
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-content-tertiary">
-                {t('settings.page')} {currentPage} {t('settings.of')}{' '}
-                {Math.max(1, Math.ceil(totalLogs / maxLogEntries))} ({totalLogs}{' '}
-                {t('settings.totalEntries')})
-              </span>
-              <div className="flex gap-1">
-                <button
-                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={currentPage === 1 || isLoadingLogs}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                >
-                  {t('settings.previous')}
-                </button>
-                <button
-                  className="px-2 py-1 text-xs rounded-md border border-white/30 hover:border-white/50 bg-transparent hover:bg-white/5 text-white transition-colors disabled:opacity-40"
-                  disabled={
-                    currentPage >= Math.ceil(totalLogs / maxLogEntries) ||
-                    isLoadingLogs
-                  }
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  {t('settings.next')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-[500px] overflow-auto relative bg-surface-base/95">
-            {isLoadingLogs ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-surface-base/50">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span className="text-sm text-content-secondary">
-                    {t('settings.loadingLogs')}
-                  </span>
+                  <p className="text-xs text-content-tertiary">
+                    {t(
+                      'settings.lspUrlHint',
+                      'The LSP URL usually matches your default Maker URL.'
+                    )}
+                  </p>
                 </div>
-              </div>
-            ) : nodeLogs.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-content-tertiary gap-2">
-                <Activity className="w-4 h-4" />
-                <span className="text-sm">{t('settings.noLogsAvailable')}</span>
-              </div>
-            ) : (
-              <TerminalLogDisplay logs={nodeLogs} maxEntries={maxLogEntries} />
-            )}
+              )}
+            />
+          </SettingsCard>
+        )}
+
+        {/* ── Node connection ── */}
+        {activeTab === 'node' && (
+          <SettingsCard
+            badge={
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-status-warning/20 bg-status-warning/10 px-2.5 py-1 text-xs text-status-warning">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {t('settings.requiresRestart')}
+              </span>
+            }
+            title={t('settings.nodeConnectionSettings')}
+          >
+            <Controller
+              control={control}
+              name="nodeConnectionString"
+              render={({ field }) => (
+                <FieldBlock label={t('settings.nodeConnectionString')}>
+                  <input
+                    {...field}
+                    className={`${inputCls} font-mono placeholder:font-sans`}
+                    placeholder="http://localhost:3001"
+                    type="text"
+                  />
+                </FieldBlock>
+              )}
+            />
+            <Controller
+              control={control}
+              name="indexerUrl"
+              render={({ field }) => (
+                <FieldBlock label={t('settings.indexerUrl')}>
+                  <input
+                    {...field}
+                    className={`${inputCls} font-mono placeholder:font-sans`}
+                    placeholder="Indexer service URL"
+                    type="text"
+                  />
+                </FieldBlock>
+              )}
+            />
+            <Controller
+              control={control}
+              name="proxyEndpoint"
+              render={({ field }) => (
+                <FieldBlock label={t('settings.rgbProxyEndpoint')}>
+                  <input
+                    {...field}
+                    className={`${inputCls} font-mono placeholder:font-sans`}
+                    placeholder={t('settings.rgbProxyPlaceholder')}
+                    type="text"
+                  />
+                </FieldBlock>
+              )}
+            />
+            <Controller
+              control={control}
+              name="bearerToken"
+              render={({ field }) => (
+                <FieldBlock label={t('settings.bearerToken')}>
+                  <div className="relative">
+                    <input
+                      {...field}
+                      autoComplete="off"
+                      className={`${inputCls} pr-10 font-mono placeholder:font-sans`}
+                      placeholder={t('settings.bearerTokenPlaceholder')}
+                      type={showToken ? 'text' : 'password'}
+                    />
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-content-tertiary hover:text-white"
+                      onClick={() => setShowToken((v) => !v)}
+                      title={
+                        showToken
+                          ? t('settings.hideToken', 'Hide token')
+                          : t('settings.showToken', 'Show token')
+                      }
+                      type="button"
+                    >
+                      {showToken ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </FieldBlock>
+              )}
+            />
+            <Controller
+              control={control}
+              name="rpcConnectionUrl"
+              render={({ field, fieldState }) => (
+                <div className="py-4">
+                  <BitcoindRpcField
+                    error={fieldState.error?.message}
+                    inputId="settings-rpc-connection-url"
+                    value={field.value}
+                  >
+                    <input
+                      {...field}
+                      className={`${inputCls} font-mono placeholder:font-sans`}
+                      id="settings-rpc-connection-url"
+                      placeholder={t('chainSync.placeholder')}
+                      type="text"
+                    />
+                  </BitcoindRpcField>
+                </div>
+              )}
+              rules={{
+                validate: (value) =>
+                  isValidBitcoindRpcUrl(value) || t('chainSync.invalidFormat'),
+              }}
+            />
+          </SettingsCard>
+        )}
+
+        {/* ── Save bar: only with unsaved changes ── */}
+        {isDirty && (
+          <div className="sticky bottom-4 z-10 animate-fadeIn">
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/30 bg-surface-elevated/95 px-4 py-3 shadow-2xl backdrop-blur">
+              <span className="flex-1 text-sm text-content-secondary">
+                {t('settings.unsavedChanges', 'You have unsaved changes')}
+              </span>
+              <button
+                className="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-high hover:text-white disabled:opacity-50"
+                disabled={isSaving}
+                onClick={handleUndo}
+                type="button"
+              >
+                <Undo className="h-4 w-4" />
+                {t('settings.resetChanges')}
+              </button>
+              <button
+                className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isSaving}
+                type="submit"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {isSaving ? t('settings.saving') : t('settings.saveSettings')}
+              </button>
+            </div>
           </div>
-        </section>
+        )}
+      </form>
+
+      {/* ── Security ── */}
+      {activeTab === 'security' && (
+        <>
+          <SettingsCard title={t('settings.securityBackup')}>
+            <div className="grid gap-3 py-4 sm:grid-cols-3">
+              <ActionCard
+                description={t('settings.accessSeedPhrase')}
+                icon={<Lock className="h-4 w-4 text-primary" />}
+                label={t('settings.viewRecoveryPhrase')}
+                onClick={() => setShowMnemonicModal(true)}
+              />
+              <ActionCard
+                description={t(
+                  'settings.changePasswordDescription',
+                  'Update wallet encryption password'
+                )}
+                icon={<KeyRound className="h-4 w-4 text-primary" />}
+                label={t('settings.changePassword', 'Change Password')}
+                onClick={() => setShowChangePasswordModal(true)}
+              />
+              <ActionCard
+                description={t(
+                  'settings.backupWalletDescription',
+                  'Export an encrypted wallet backup'
+                )}
+                icon={<Download className="h-4 w-4 text-primary" />}
+                label={t('settings.backupWallet')}
+                onClick={() => setShowBackupModal(true)}
+              />
+            </div>
+          </SettingsCard>
+
+          <SettingsCard title={t('settings.session', 'Session')}>
+            <SettingRow
+              description={t('settings.logoutDescription')}
+              label={t('settings.logout')}
+            >
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border-default text-sm font-medium text-white transition-colors hover:bg-surface-high"
+                onClick={handleLogout}
+                type="button"
+              >
+                <LogOut className="h-4 w-4" />
+                {t('settings.logout')}
+              </button>
+            </SettingRow>
+            <SettingRow
+              description={t('settings.shutdownDescription')}
+              label={t('settings.shutdown')}
+            >
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-status-danger/30 bg-status-danger/10 text-sm font-medium text-status-danger transition-colors hover:bg-status-danger/20"
+                onClick={handleShutdown}
+                type="button"
+              >
+                <Power className="h-4 w-4" />
+                {t('settings.shutdown')}
+              </button>
+            </SettingRow>
+          </SettingsCard>
+        </>
+      )}
+
+      {/* ── Logs ── */}
+      {activeTab === 'logs' && (
+        <NodeLogsPanel
+          remoteUrl={
+            isLocalNode
+              ? undefined
+              : nodeSettings.node_url ||
+                nodeConnectionString ||
+                'http://localhost:3001'
+          }
+        />
       )}
 
       <MnemonicViewerModal

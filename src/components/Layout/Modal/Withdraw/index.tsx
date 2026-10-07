@@ -8,7 +8,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -36,6 +36,7 @@ import type {
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
 
 import { WithdrawForm, ConfirmationModal } from './components'
+import { SentPanel, type SentSummary } from './components/SentPanel'
 import {
   AddressType,
   FeeEstimations,
@@ -91,6 +92,10 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const [isDecodingInvoice, setIsDecodingInvoice] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [pendingData, setPendingData] = useState<Fields | null>(null)
+  // The status poller runs in an effect closure; read the latest data here.
+  const pendingRef = useRef<Fields | null>(null)
+  pendingRef.current = pendingData ?? pendingRef.current
+  const [sent, setSent] = useState<SentSummary | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [addressType, setAddressType] = useState<AddressType>('unknown')
   const [validationMessage, setValidationMessage] =
@@ -364,18 +369,11 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
             if (currentStatus === HTLCStatus.Succeeded) {
               logger.debug(`Payment status changed to: ${currentStatus}`)
 
-              // Show success toast and close modal immediately
-              toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
-                autoClose: 5000,
-                progressStyle: { background: '#3B82F6' },
-              })
-
-              // Close the modal immediately
               setIsPollingStatus(false)
               setIsConfirming(false)
               setShowConfirmation(false)
+              setSent(describeSent('lightning', paymentHash))
               setPendingData(null)
-              dispatch(uiSliceActions.setModal({ type: 'none' }))
 
               return // Exit early to prevent further status changes
             } else {
@@ -976,6 +974,39 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
     ]
   )
 
+  const describeSent = (
+    kind: SentSummary['kind'],
+    reference?: string | null
+  ): SentSummary => {
+    const data = pendingRef.current
+    if (!data) return { kind, reference: reference ?? undefined }
+    const assetForLabel = data.decodedInvoice?.asset_id || data.asset_id
+    const isBtc = !assetForLabel || assetForLabel === BTC_ASSET_ID
+    const unit = isBtc
+      ? bitcoinUnit === 'SAT'
+        ? 'SATS'
+        : bitcoinUnit
+      : ((assets.data?.nia || []).find((a: any) => a.asset_id === assetForLabel)
+          ?.ticker ?? '')
+    const entered = Number(String(data.amount ?? '').replace(/,/g, ''))
+    let amount =
+      entered > 0
+        ? entered.toLocaleString(undefined, { maximumFractionDigits: 8 })
+        : undefined
+    const invoiceMsat = data.decodedInvoice?.amt_msat
+    if (!amount && isBtc && invoiceMsat) {
+      const sats = invoiceMsat / 1000
+      amount =
+        bitcoinUnit === 'SAT' ? sats.toLocaleString() : (sats / 1e8).toFixed(8)
+    }
+    return {
+      amountLabel: amount ? `${amount} ${unit}`.trim() : undefined,
+      destination: data.address || undefined,
+      kind,
+      reference: reference ?? undefined,
+    }
+  }
+
   const handleConfirmedSubmit = useCallback(async () => {
     if (!pendingData) return
 
@@ -1074,18 +1105,16 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
           } else if (res.status === HTLCStatus.Succeeded) {
             logger.debug('Payment succeeded immediately')
 
-            // Show success toast and close modal immediately
-            toast.success(t('withdrawModal.main.toasts.lightningSuccess'), {
-              autoClose: 5000,
-              progressStyle: { background: '#3B82F6' },
-            })
-
-            // Close the modal immediately
             setIsPollingStatus(false)
             setIsConfirming(false)
             setShowConfirmation(false)
+            setSent(
+              describeSent(
+                'lightning',
+                res.payment_hash ?? pendingData.decodedInvoice?.payment_hash
+              )
+            )
             setPendingData(null)
-            dispatch(uiSliceActions.setModal({ type: 'none' }))
           } else {
             logger.debug('Payment failed immediately:', res.status)
             const failureMsg = t(
@@ -1158,9 +1187,7 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          toast.success(t('withdrawModal.main.toasts.btcSuccess'), {
-            progressStyle: { background: '#3B82F6' },
-          })
+          setSent(describeSent('onchain'))
         } else {
           const assetInfo = (assets.data?.nia || []).find(
             (a: any) => a.asset_id === pendingData.asset_id
@@ -1280,19 +1307,14 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 t('withdrawModal.main.errors.rgbPaymentFailed')
             )
           }
-          toast.success(t('withdrawModal.main.toasts.rgbSuccess'), {
-            progressStyle: { background: '#3B82F6' },
-          })
+          setSent(
+            describeSent('rgb', (res as { txid?: string } | undefined)?.txid)
+          )
         }
 
-        // Only close modal on successful withdrawal
         setShowConfirmation(false)
         setPendingData(null)
         setIsConfirming(false)
-
-        setTimeout(() => {
-          dispatch(uiSliceActions.setModal({ type: 'none' }))
-        }, 1500)
       }
     } catch (error: any) {
       logger.error('Withdrawal error:', error)
@@ -1422,9 +1444,11 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
           <Upload className="w-6 h-6 text-primary" />
           <h3 className="text-xl font-bold text-white flex-1">
-            {showConfirmation
-              ? t('withdrawModal.main.title.confirm')
-              : t('withdrawModal.main.title.form')}
+            {sent
+              ? t('withdrawModal.sent.title', 'Payment sent')
+              : showConfirmation
+                ? t('withdrawModal.main.title.confirm')
+                : t('withdrawModal.main.title.form')}
           </h3>
           <button
             className="text-content-secondary hover:text-white p-1.5 rounded-lg hover:bg-surface-high/60 transition-colors"
@@ -1436,7 +1460,12 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
         </div>
 
         <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
-          {showConfirmation ? (
+          {sent ? (
+            <SentPanel
+              onDone={() => dispatch(uiSliceActions.setModal({ type: 'none' }))}
+              summary={sent}
+            />
+          ) : showConfirmation ? (
             <ConfirmationModal
               assets={assets}
               availableAssets={availableAssets}

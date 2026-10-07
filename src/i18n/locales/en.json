@@ -225,7 +225,48 @@
     "restartNow": "Restart Now",
     "later": "Later",
     "shuttingDownTitle": "Shutting Down Node",
-    "shuttingDownMessage": "Please wait while the node is being shut down..."
+    "shuttingDownMessage": "Please wait while the node is being shut down...",
+    "logs": {
+      "live": "Live",
+      "paused": "Paused",
+      "resume": "Resume live updates",
+      "pause": "Pause live updates",
+      "copy": "Copy visible lines",
+      "filter": "Filter lines…",
+      "older": "Older",
+      "newer": "Newer",
+      "fetchError": "Could not read the node logs. Live updates are stopped.",
+      "noMatches": "No lines match the filter",
+      "matching": "{{count}} matching lines",
+      "exported": "Logs exported",
+      "exportFailed": "Failed to export logs",
+      "jumpToLatest": "Back to latest",
+      "dockerContainer": "Docker container",
+      "unavailableTitle": "Logs are not available for this node",
+      "checkAgain": "Check again",
+      "unavailable": {
+        "invalid_url": "The node URL is not valid, so its logs cannot be located.",
+        "no_container": "The node runs on this computer, but not in a Docker container the app can find. If you run it with Docker, publish its API port (for example -p 3001:3001) and check again.",
+        "remote_host": "This node runs on another machine, so its logs stay there. Read them on the server, for example with docker logs."
+      }
+    },
+    "tabs": {
+      "general": "General",
+      "trading": "Maker & LSP",
+      "node": "Node connection",
+      "security": "Security",
+      "logs": "Logs"
+    },
+    "makerLspDescription": "Market makers quote your swaps; the LSP sells you channels and inbound liquidity.",
+    "unsavedChanges": "You have unsaved changes",
+    "backupWalletDescription": "Export an encrypted wallet backup",
+    "session": "Session",
+    "showToken": "Show token",
+    "hideToken": "Hide token",
+    "changePassword": "Change Password",
+    "changePasswordDescription": "Update the wallet encryption password",
+    "logoutDescription": "Lock the wallet and go back to the account list. The node keeps its data.",
+    "shutdownDescription": "Stop the node process. Open channels stay open but the node goes offline."
   },
   "modals": {
     "logoutTitle": "Confirm Logout",
@@ -2151,7 +2192,9 @@
       "newAssetInfo": "If you don't know the asset ID, you can proceed without entering it. The system will generate a deposit address that can receive any RGB asset.",
       "assetIdLabel": "Asset ID (optional)",
       "assetIdPlaceholder": "Enter asset ID (optional)",
-      "continueWith": "Continue with {{ticker}}"
+      "continueWith": "Continue with {{ticker}}",
+      "anyRgbAsset": "Any RGB asset",
+      "otherAssets": "Other assets"
     },
     "step2": {
       "titleWithTicker": "Deposit {{ticker}}",
@@ -2259,7 +2302,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "Update process timed out after 5 minutes. Please check your internet connection and try again.",
+      "timeout": "The download stopped making progress. Check your internet connection and try again.",
       "installFailed": "Failed to install update: {{message}}. Please try again or download manually from GitHub.",
       "cancelled": "Update cancelled by user"
     },
@@ -2656,6 +2699,18 @@
         "custom": "{{rate}} sat/vB (Custom)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Payment sent",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "The payment settled over Lightning.",
+      "onchainBody": "The transaction was broadcast. It confirms in the next blocks.",
+      "rgbBody": "The transfer was sent. The recipient receives it once the transaction confirms.",
+      "to": "To",
+      "paymentHash": "Payment hash",
+      "txid": "Transaction ID"
     }
   },
   "components": {

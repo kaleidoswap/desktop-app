@@ -225,7 +225,48 @@
     "restartNow": "Redémarrer maintenant",
     "later": "Plus tard",
     "shuttingDownTitle": "Arrêt du nœud",
-    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud..."
+    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud...",
+    "logs": {
+      "live": "En direct",
+      "paused": "En pause",
+      "resume": "Reprendre les mises à jour",
+      "pause": "Mettre en pause les mises à jour",
+      "copy": "Copier les lignes visibles",
+      "filter": "Filtrer les lignes…",
+      "older": "Plus anciens",
+      "newer": "Plus récents",
+      "fetchError": "Impossible de lire les journaux du nœud. Mises à jour en direct arrêtées.",
+      "noMatches": "Aucune ligne ne correspond au filtre",
+      "matching": "{{count}} lignes correspondantes",
+      "exported": "Journaux exportés",
+      "exportFailed": "Échec de l’export des journaux",
+      "jumpToLatest": "Revenir aux plus récents",
+      "dockerContainer": "Conteneur Docker",
+      "unavailableTitle": "Les journaux ne sont pas disponibles pour ce nœud",
+      "checkAgain": "Vérifier à nouveau",
+      "unavailable": {
+        "invalid_url": "L’URL du nœud n’est pas valide, ses journaux sont introuvables.",
+        "no_container": "Le nœud tourne sur cet ordinateur, mais pas dans un conteneur Docker que l’app peut trouver. Si vous l’exécutez avec Docker, publiez son port API (par exemple -p 3001:3001) et vérifiez à nouveau.",
+        "remote_host": "Ce nœud tourne sur une autre machine, ses journaux restent là-bas. Consultez-les sur le serveur, par exemple avec docker logs."
+      }
+    },
+    "tabs": {
+      "general": "Général",
+      "trading": "Maker et LSP",
+      "node": "Connexion au nœud",
+      "security": "Sécurité",
+      "logs": "Journaux"
+    },
+    "makerLspDescription": "Les market makers cotent vos swaps ; le LSP vous vend des canaux et de la liquidité entrante.",
+    "unsavedChanges": "Vous avez des modifications non enregistrées",
+    "backupWalletDescription": "Exporter une sauvegarde chiffrée du portefeuille",
+    "session": "Session",
+    "showToken": "Afficher le jeton",
+    "hideToken": "Masquer le jeton",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordDescription": "Mettre à jour le mot de passe de chiffrement",
+    "logoutDescription": "Verrouille le portefeuille et revient à la liste des comptes. Le nœud garde ses données.",
+    "shutdownDescription": "Arrête le processus du nœud. Les canaux restent ouverts mais le nœud passe hors ligne."
   },
   "modals": {
     "logoutTitle": "Confirmer la déconnexion",
@@ -2157,7 +2198,9 @@
       "newAssetInfo": "Si vous ne connaissez pas l'identifiant de l'actif, vous pouvez continuer sans le saisir. Le système générera une adresse de dépôt pouvant recevoir n'importe quel actif RGB.",
       "assetIdLabel": "Identifiant de l'actif (optionnel)",
       "assetIdPlaceholder": "Saisir l'identifiant de l'actif (optionnel)",
-      "continueWith": "Continuer avec {{ticker}}"
+      "continueWith": "Continuer avec {{ticker}}",
+      "anyRgbAsset": "N’importe quel actif RGB",
+      "otherAssets": "Autres actifs"
     },
     "step2": {
       "titleWithTicker": "Déposer {{ticker}}",
@@ -2265,7 +2308,7 @@
     "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
-      "timeout": "Le processus de mise à jour a expiré après 5 minutes. Vérifiez votre connexion Internet puis réessayez.",
+      "timeout": "Le téléchargement ne progresse plus. Vérifiez votre connexion internet et réessayez.",
       "installFailed": "Impossible d'installer la mise à jour : {{message}}. Réessayez ou téléchargez-la manuellement depuis GitHub.",
       "cancelled": "Mise à jour annulée par l'utilisateur"
     },
@@ -2662,6 +2705,18 @@
         "custom": "{{rate}} sat/vB (Personnalisé)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Paiement envoyé",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "Le paiement a été réglé via Lightning.",
+      "onchainBody": "La transaction a été diffusée. Elle sera confirmée dans les prochains blocs.",
+      "rgbBody": "Le transfert a été envoyé. Le destinataire le reçoit une fois la transaction confirmée.",
+      "to": "À",
+      "paymentHash": "Hash du paiement",
+      "txid": "ID de transaction"
     }
   },
   "components": {

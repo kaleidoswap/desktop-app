@@ -225,7 +225,48 @@
     "restartNow": "立即重启",
     "later": "稍后",
     "shuttingDownTitle": "正在关闭节点",
-    "shuttingDownMessage": "请稍候，节点正在关闭..."
+    "shuttingDownMessage": "请稍候，节点正在关闭...",
+    "logs": {
+      "live": "实时",
+      "paused": "已暂停",
+      "resume": "恢复实时更新",
+      "pause": "暂停实时更新",
+      "copy": "复制可见行",
+      "filter": "筛选行…",
+      "older": "更早",
+      "newer": "更新",
+      "fetchError": "无法读取节点日志，实时更新已停止。",
+      "noMatches": "没有匹配的行",
+      "matching": "{{count}} 行匹配",
+      "exported": "日志已导出",
+      "exportFailed": "导出日志失败",
+      "jumpToLatest": "回到最新",
+      "dockerContainer": "Docker 容器",
+      "unavailableTitle": "此节点的日志不可用",
+      "checkAgain": "重新检查",
+      "unavailable": {
+        "invalid_url": "节点 URL 无效，无法定位其日志。",
+        "no_container": "节点在本机运行，但不在应用可找到的 Docker 容器中。如果使用 Docker 运行，请发布其 API 端口（例如 -p 3001:3001）后重新检查。",
+        "remote_host": "此节点运行在另一台机器上，日志也在那里。请在服务器上查看，例如使用 docker logs。"
+      }
+    },
+    "tabs": {
+      "general": "通用",
+      "trading": "做市商与 LSP",
+      "node": "节点连接",
+      "security": "安全",
+      "logs": "日志"
+    },
+    "makerLspDescription": "做市商为您的兑换报价；LSP 向您出售通道和入站流动性。",
+    "unsavedChanges": "您有未保存的更改",
+    "backupWalletDescription": "导出加密的钱包备份",
+    "session": "会话",
+    "showToken": "显示令牌",
+    "hideToken": "隐藏令牌",
+    "changePassword": "更改密码",
+    "changePasswordDescription": "更新钱包加密密码",
+    "logoutDescription": "锁定钱包并返回账户列表。节点数据会保留。",
+    "shutdownDescription": "停止节点进程。通道保持开启，但节点将离线。"
   },
   "modals": {
     "logoutTitle": "确认退出登录",
@@ -2148,7 +2189,9 @@
       "newAssetInfo": "如果您不知道资产 ID，可以不输入即可继续。系统将生成一个可以接收任何 RGB 资产的存款地址。",
       "assetIdLabel": "资产 ID（可选）",
       "assetIdPlaceholder": "输入资产 ID（可选）",
-      "continueWith": "继续使用 {{ticker}}"
+      "continueWith": "继续使用 {{ticker}}",
+      "anyRgbAsset": "任意 RGB 资产",
+      "otherAssets": "其他资产"
     },
     "step2": {
       "titleWithTicker": "存入 {{ticker}}",
@@ -2256,7 +2299,7 @@
     "fileSizes": ["字节", "KB", "MB", "GB"],
     "fileSizeZero": "0 字节",
     "errors": {
-      "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
+      "timeout": "下载已停止。请检查网络连接后重试。",
       "installFailed": "安装更新失败：{{message}}。请重试或从 GitHub 手动下载。",
       "cancelled": "用户取消更新"
     },
@@ -2653,6 +2696,18 @@
         "custom": "{{rate}} sat/vB（自定义）",
         "predefined": "{{rate}} sat/vB（{{label}}）"
       }
+    },
+    "sent": {
+      "title": "付款已发送",
+      "lightning": "Lightning",
+      "onchain": "链上",
+      "rgbOnchain": "RGB 链上",
+      "lightningBody": "付款已通过闪电网络完成。",
+      "onchainBody": "交易已广播，将在接下来的区块中确认。",
+      "rgbBody": "转账已发送，交易确认后收款方即可收到。",
+      "to": "收款方",
+      "paymentHash": "付款哈希",
+      "txid": "交易 ID"
     }
   },
   "components": {
