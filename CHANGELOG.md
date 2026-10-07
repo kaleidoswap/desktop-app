@@ -1,7 +1,7 @@
 ## [Unreleased]
 
 ### 🔧 Improvements
-- **KaleidoMind runtime `mind-assets-v0.10.1`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.0 (`@kaleidorg/mind` 0.10.1) and `kaleido-mcp` 0.4.1, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15. Existing installs download the new runtime on next enable
+- **KaleidoMind runtime `mind-assets-v0.10.2`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.0 (`@kaleidorg/mind` 0.10.2) and `kaleido-mcp` 0.4.1, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15. Existing installs download the new runtime on next enable
 
 ## [Version 0.5.1] - 2026-10-07
 
