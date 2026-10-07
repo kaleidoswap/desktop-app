@@ -29,6 +29,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use base64::Engine as _;
+use futures::StreamExt;
 use parking_lot::{Mutex, RwLock};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -103,21 +104,20 @@ impl ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let body = json!({ "error": { "message": self.message, "type": self.kind } });
+        let body = json!({ "error": {
+            "message": self.message,
+            "type": self.kind,
+            "param": Value::Null,
+            "code": self.kind,
+        } });
         (self.status, Json(body)).into_response()
     }
 }
 
-/// Map a sidecar error string to an HTTP error.
+/// Map a sidecar error string to an HTTP error. mind-provider answers
+/// `complete` with "QVAC model not loaded" when no model is running.
 fn sidecar_error(message: String) -> ApiError {
-    if message.starts_with("Unknown cmd") {
-        return ApiError::new(
-            StatusCode::NOT_IMPLEMENTED,
-            "unsupported",
-            "this KaleidoMind runtime cannot serve raw completions; update the agent runtime",
-        );
-    }
-    if message.to_ascii_lowercase().contains("not loaded") {
+    if message.to_ascii_lowercase().contains("model not loaded") {
         return ApiError::unavailable("no model is running on the desktop");
     }
     ApiError::new(StatusCode::BAD_GATEWAY, "inference_error", message)
@@ -486,11 +486,14 @@ fn to_engine_tools(tools: Option<&Value>) -> Result<Vec<Value>, String> {
             if !valid_tool_name(name) {
                 return Err(format!("invalid tool name: {:?}", name));
             }
-            Ok(json!({
-                "name": name,
-                "description": f.get("description").and_then(Value::as_str).unwrap_or(""),
-                "parameters": f.get("parameters").cloned().unwrap_or(json!({ "type": "object", "properties": {} })),
-            }))
+            let mut tool = json!({ "name": name });
+            if let Some(d) = f.get("description").and_then(Value::as_str) {
+                tool["description"] = json!(d);
+            }
+            if let Some(p) = f.get("parameters").filter(|p| p.is_object()) {
+                tool["parameters"] = p.clone();
+            }
+            Ok(tool)
         })
         .collect()
 }
@@ -521,9 +524,19 @@ fn build_complete_command(id: &str, body: &Value) -> Result<Value, String> {
         "id": id,
         "cmd": "complete",
         "messages": to_engine_messages(messages)?,
-        "tools": to_engine_tools(body.get("tools"))?,
     });
+    let tools = to_engine_tools(body.get("tools"))?;
+    if !tools.is_empty() {
+        cmd["tools"] = json!(tools);
+    }
     if let Some(choice) = to_tool_choice(body.get("tool_choice"))? {
+        let named = !matches!(choice.as_str(), "auto" | "none" | "required");
+        if named && !tools.iter().any(|t| t["name"] == choice.as_str()) {
+            return Err(format!("tool_choice names an unknown tool: {}", choice));
+        }
+        if choice == "required" && tools.is_empty() {
+            return Err("tool_choice \"required\" needs at least one tool".into());
+        }
         cmd["toolChoice"] = json!(choice);
     }
     let max = body
@@ -548,11 +561,15 @@ fn openai_tool_calls(result: &Value) -> Vec<Value> {
         .enumerate()
         .filter_map(|(i, c)| {
             let name = c.get("name").and_then(Value::as_str)?;
-            let args = c.get("arguments").cloned().unwrap_or(json!({}));
+            let arguments = match c.get("arguments") {
+                Some(Value::String(s)) => s.clone(),
+                Some(v) if !v.is_null() => v.to_string(),
+                _ => "{}".to_string(),
+            };
             Some(json!({
                 "id": c.get("id").and_then(Value::as_str).map(String::from).unwrap_or_else(|| format!("call_{}", i)),
                 "type": "function",
-                "function": { "name": name, "arguments": args.to_string() },
+                "function": { "name": name, "arguments": arguments },
             }))
         })
         .collect()
@@ -679,7 +696,7 @@ async fn chat_completions(
         return Ok(Json(completion_body(&response_id, &model, created, &result)).into_response());
     }
 
-    let (tx, mut rx) = mpsc::unbounded_channel::<StreamMsg>();
+    let (tx, rx) = mpsc::unbounded_channel::<StreamMsg>();
     let task_shared = Arc::clone(&shared);
     tokio::spawn(async move {
         let _permit = permit;
@@ -709,96 +726,88 @@ async fn chat_completions(
         }
     });
 
-    let rid = response_id.clone();
-    let events = async_stream(move |emit| async move {
-        emit(
-            chunk(
-                &rid,
-                &model,
-                created,
-                json!({ "role": "assistant", "content": "" }),
-                None,
-            )
-            .to_string(),
-        );
-        while let Some(msg) = rx.recv().await {
-            match msg {
-                StreamMsg::Delta(d) => {
-                    emit(chunk(&rid, &model, created, json!({ "content": d }), None).to_string());
-                }
-                StreamMsg::Done(Ok(result)) => {
-                    let calls = openai_tool_calls(&result);
-                    if !calls.is_empty() {
-                        let indexed: Vec<Value> = calls
-                            .into_iter()
-                            .enumerate()
-                            .map(|(i, mut c)| {
-                                c["index"] = json!(i);
-                                c
-                            })
-                            .collect();
-                        emit(
-                            chunk(
-                                &rid,
-                                &model,
-                                created,
-                                json!({ "tool_calls": indexed }),
-                                None,
-                            )
-                            .to_string(),
-                        );
-                    }
-                    let has_calls = result
-                        .get("toolCalls")
-                        .and_then(Value::as_array)
-                        .is_some_and(|a| !a.is_empty());
-                    emit(
-                        chunk(
-                            &rid,
-                            &model,
-                            created,
-                            json!({}),
-                            Some(finish_reason(&result, has_calls)),
-                        )
-                        .to_string(),
-                    );
-                    if include_usage {
-                        let mut u = chunk(&rid, &model, created, json!({}), None);
-                        u["choices"] = json!([]);
-                        u["usage"] = usage(&result);
-                        emit(u.to_string());
-                    }
-                    break;
-                }
-                StreamMsg::Done(Err(e)) => {
-                    emit(json!({ "error": { "message": e.message, "type": e.kind } }).to_string());
-                    break;
-                }
-            }
+    // The SSE body owns `rx`: when the client disconnects axum drops the body,
+    // `tx.closed()` fires in the task above and the completion is cancelled.
+    let sse = SseChunks {
+        id: response_id,
+        model,
+        created,
+        include_usage,
+    };
+    let head = sse.chunk(json!({ "role": "assistant", "content": "" }), None);
+    let body = futures::stream::unfold(Some((rx, sse)), |state| async move {
+        let (mut rx, sse) = state?;
+        match rx.recv().await {
+            Some(StreamMsg::Delta(d)) => Some((
+                vec![sse.chunk(json!({ "content": d }), None)],
+                Some((rx, sse)),
+            )),
+            Some(StreamMsg::Done(result)) => Some((sse.finish(result), None)),
+            None => None,
         }
-        emit("[DONE]".to_string());
     });
+    let events = futures::stream::once(async move { vec![head] })
+        .chain(body)
+        .chain(futures::stream::once(async { vec!["[DONE]".to_string()] }))
+        .flat_map(|batch| {
+            futures::stream::iter(
+                batch
+                    .into_iter()
+                    .map(|s| Ok::<_, std::convert::Infallible>(Event::default().data(s))),
+            )
+        });
     Ok(Sse::new(events)
         .keep_alive(KeepAlive::default())
         .into_response())
 }
 
-/// A tiny channel-backed stream of SSE `data:` events.
-fn async_stream<F, Fut>(
-    body: F,
-) -> impl futures::Stream<Item = Result<Event, std::convert::Infallible>>
-where
-    F: FnOnce(Box<dyn Fn(String) + Send + Sync>) -> Fut,
-    Fut: std::future::Future<Output = ()> + Send + 'static,
-{
-    let (tx, rx) = mpsc::unbounded_channel::<String>();
-    let emit: Box<dyn Fn(String) + Send + Sync> = Box::new(move |s| {
-        let _ = tx.send(s);
-    });
-    tokio::spawn(body(emit));
-    futures::stream::unfold(rx, |mut rx| async move {
-        rx.recv().await.map(|s| (Ok(Event::default().data(s)), rx))
-    })
+/// Builds the `chat.completion.chunk` payloads of one streamed response.
+struct SseChunks {
+    id: String,
+    model: String,
+    created: u64,
+    include_usage: bool,
+}
+
+impl SseChunks {
+    fn chunk(&self, delta: Value, finish: Option<&str>) -> String {
+        chunk(&self.id, &self.model, self.created, delta, finish).to_string()
+    }
+
+    /// Tool calls (if any), the finish chunk and optional usage; or an error.
+    fn finish(&self, result: Result<Value, ApiError>) -> Vec<String> {
+        let result = match result {
+            Ok(r) => r,
+            Err(e) => {
+                return vec![json!({ "error": {
+                    "message": e.message, "type": e.kind, "param": Value::Null, "code": e.kind,
+                } })
+                .to_string()]
+            }
+        };
+        let mut out = vec![];
+        let calls = openai_tool_calls(&result);
+        let has_calls = !calls.is_empty();
+        if has_calls {
+            let indexed: Vec<Value> = calls
+                .into_iter()
+                .enumerate()
+                .map(|(i, mut c)| {
+                    c["index"] = json!(i);
+                    c
+                })
+                .collect();
+            out.push(self.chunk(json!({ "tool_calls": indexed }), None));
+        }
+        out.push(self.chunk(json!({}), Some(finish_reason(&result, has_calls))));
+        if self.include_usage {
+            let mut u = chunk(&self.id, &self.model, self.created, json!({}), None);
+            u["choices"] = json!([]);
+            u["usage"] = usage(&result);
+            out.push(u.to_string());
+        }
+        out
+    }
 }
 
 async fn not_found() -> ApiError {
@@ -1083,24 +1092,40 @@ mod tests {
     use super::*;
     use std::net::Ipv6Addr;
 
-    /// Fake sidecar: answers `get_status` and `complete` like mind-provider would.
+    /// Fake sidecar speaking mind-provider 0.10.1's `complete` contract. A user
+    /// message "slow" streams one delta, then waits for `cancel_completion`.
     struct FakeSidecar {
         tx: broadcast::Sender<Value>,
         on: bool,
-        supports_complete: bool,
+        loaded: bool,
         sent: Mutex<Vec<Value>>,
+        pending: Mutex<HashMap<String, oneshot::Sender<()>>>,
     }
 
     impl FakeSidecar {
-        fn new(on: bool, supports_complete: bool) -> Arc<Self> {
+        fn new(on: bool, loaded: bool) -> Arc<Self> {
             let (tx, _) = broadcast::channel(64);
             Arc::new(Self {
                 tx,
                 on,
-                supports_complete,
+                loaded,
                 sent: Mutex::new(vec![]),
+                pending: Mutex::new(HashMap::new()),
             })
         }
+
+        fn cmds(&self) -> Vec<String> {
+            self.sent
+                .lock()
+                .iter()
+                .map(|c| c["cmd"].as_str().unwrap_or("").to_string())
+                .collect()
+        }
+    }
+
+    fn inference(status: &str, prompt: u64, completion: u64) -> Value {
+        json!({ "status": status, "durationMs": 1, "promptTokens": prompt,
+                "completionTokens": completion, "totalTokens": prompt + completion })
     }
 
     impl Sidecar for FakeSidecar {
@@ -1112,28 +1137,59 @@ mod tests {
             let id = payload["id"].as_str().unwrap_or("").to_string();
             let tx = self.tx.clone();
             let cmd = payload["cmd"].as_str().unwrap_or("").to_string();
-            let on = self.on;
-            let supports = self.supports_complete;
+            if cmd == "cancel_completion" {
+                if let Some(stop) = self
+                    .pending
+                    .lock()
+                    .remove(payload["target"].as_str().unwrap_or(""))
+                {
+                    let _ = stop.send(());
+                }
+                let _ = tx.send(json!({ "type": "response", "id": id, "ok": true }));
+                return Ok(());
+            }
+            let (on, loaded) = (self.on, self.loaded);
             let has_tools = payload["tools"].as_array().is_some_and(|t| !t.is_empty());
+            let slow = payload["messages"]
+                .as_array()
+                .and_then(|m| m.last())
+                .is_some_and(|m| m["content"] == "slow");
+            let cancelled = if cmd == "complete" && slow {
+                let (stop_tx, stop_rx) = oneshot::channel();
+                self.pending.lock().insert(id.clone(), stop_tx);
+                Some(stop_rx)
+            } else {
+                None
+            };
             tokio::spawn(async move {
                 tokio::time::sleep(Duration::from_millis(5)).await;
                 let reply = match cmd.as_str() {
                     "get_status" => json!({ "type": "response", "id": id, "ok": true,
                         "data": { "on": on, "activeModelId": "qwen3.5-2b" } }),
-                    "complete" if !supports => {
-                        json!({ "type": "response", "id": id, "ok": false, "error": "Unknown cmd: complete" })
+                    "complete" if !loaded => {
+                        json!({ "type": "response", "id": id, "ok": false, "error": "QVAC model not loaded" })
+                    }
+                    "complete" if cancelled.is_some() => {
+                        let _ = tx.send(
+                            json!({ "type": "completion_delta", "id": id, "delta": "Thinking" }),
+                        );
+                        let _ = cancelled.unwrap().await;
+                        json!({ "type": "response", "id": id, "ok": true,
+                            "data": { "text": "Thinking", "rawContent": "Thinking", "toolCalls": [],
+                                      "inference": inference("cancelled", 3, 1) } })
                     }
                     "complete" if has_tools => json!({ "type": "response", "id": id, "ok": true,
-                        "data": { "text": "", "toolCalls": [{ "name": "get_balance", "arguments": { "asset": "BTC" } }],
-                                  "inference": { "status": "completed", "promptTokens": 10, "completionTokens": 5, "totalTokens": 15 } } }),
+                        "data": { "text": "", "rawContent": "<tool_call>…</tool_call>",
+                                  "toolCalls": [{ "id": "t1", "name": "get_balance", "arguments": { "asset": "BTC" } }],
+                                  "inference": inference("completed", 10, 5) } }),
                     "complete" => {
                         for d in ["Hel", "lo"] {
                             let _ = tx
                                 .send(json!({ "type": "completion_delta", "id": id, "delta": d }));
                         }
                         json!({ "type": "response", "id": id, "ok": true,
-                            "data": { "text": "Hello", "toolCalls": [],
-                                      "inference": { "status": "completed", "promptTokens": 3, "completionTokens": 2, "totalTokens": 5 } } })
+                            "data": { "text": "Hello", "rawContent": "Hello", "toolCalls": [],
+                                      "inference": inference("completed", 3, 2) } })
                     }
                     _ => return,
                 };
@@ -1244,6 +1300,91 @@ mod tests {
     }
 
     #[test]
+    fn maps_sampling_and_tool_options() {
+        let cmd = build_complete_command(
+            "rb-2",
+            &json!({ "messages": [{ "role": "user", "content": "a" }],
+                "max_tokens": 10, "max_completion_tokens": 20, "temperature": 0.2,
+                "tools": [{ "type": "function", "function": { "name": "t" } }],
+                "tool_choice": "required" }),
+        )
+        .unwrap();
+        assert_eq!(cmd["maxTokens"], 20);
+        assert_eq!(cmd["temperature"], 0.2);
+        assert_eq!(cmd["tools"], json!([{ "name": "t" }]));
+        assert_eq!(cmd["toolChoice"], "required");
+
+        let cmd = build_complete_command(
+            "rb-3",
+            &json!({ "messages": [{ "role": "user", "content": "a" }], "tools": [], "max_tokens": 0 }),
+        )
+        .unwrap();
+        assert!(cmd.get("tools").is_none());
+        assert!(cmd.get("toolChoice").is_none());
+        assert!(cmd.get("temperature").is_none());
+        assert_eq!(cmd["maxTokens"], 1);
+
+        for choice in [
+            json!("required"),
+            json!({ "type": "function", "function": { "name": "nope" } }),
+        ] {
+            assert!(build_complete_command(
+                "x",
+                &json!({ "messages": [{ "role": "user", "content": "a" }], "tool_choice": choice }),
+            )
+            .is_err());
+        }
+        assert!(build_complete_command(
+            "x",
+            &json!({ "messages": [{ "role": "user", "content": "a" }], "tool_choice": "maybe" }),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn maps_completion_results() {
+        let calls = json!({ "text": "", "toolCalls": [
+            { "id": "a", "name": "x", "arguments": { "n": 1 } },
+            { "name": "y", "arguments": "{\"raw\":true}" },
+            { "name": "z" }
+        ], "inference": { "status": "completed", "durationMs": 1 } });
+        let body = completion_body("chatcmpl-1", "m", 1, &calls);
+        let msg = &body["choices"][0]["message"];
+        assert_eq!(msg["content"], Value::Null);
+        assert_eq!(msg["tool_calls"][0]["id"], "a");
+        assert_eq!(msg["tool_calls"][0]["function"]["arguments"], "{\"n\":1}");
+        assert_eq!(msg["tool_calls"][1]["id"], "call_1");
+        assert_eq!(
+            msg["tool_calls"][1]["function"]["arguments"],
+            "{\"raw\":true}"
+        );
+        assert_eq!(msg["tool_calls"][2]["function"]["arguments"], "{}");
+        assert_eq!(body["choices"][0]["finish_reason"], "tool_calls");
+
+        let truncated = json!({ "text": "partial", "toolCalls": [],
+            "inference": { "status": "truncated", "durationMs": 1, "promptTokens": 4, "completionTokens": 6, "totalTokens": 10 } });
+        let body = completion_body("chatcmpl-2", "m", 1, &truncated);
+        assert_eq!(body["choices"][0]["message"]["content"], "partial");
+        assert!(body["choices"][0]["message"].get("tool_calls").is_none());
+        assert_eq!(body["choices"][0]["finish_reason"], "length");
+        assert_eq!(
+            body["usage"],
+            json!({ "prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10 })
+        );
+
+        let plain = json!({ "text": "hi", "toolCalls": [] });
+        assert_eq!(
+            completion_body("c", "m", 1, &plain)["choices"][0]["finish_reason"],
+            "stop"
+        );
+        assert_eq!(
+            sidecar_error("QVAC model not loaded".into()).status,
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+        assert_eq!(sidecar_error("boom".into()).status, StatusCode::BAD_GATEWAY);
+    }
+
+    #[test]
     fn rejects_bad_requests() {
         assert!(build_complete_command("x", &json!({ "messages": [] })).is_err());
         assert!(build_complete_command(
@@ -1347,6 +1488,7 @@ mod tests {
         let (base, _stop) = start(Arc::clone(&sidecar)).await;
         let mut req = chat_body(false);
         req["tools"] = json!([{ "type": "function", "function": { "name": "get_balance", "parameters": {} } }]);
+        req["tool_choice"] = json!("required");
         let body: Value = client()
             .post(format!("{}/v1/chat/completions", base))
             .bearer_auth(TOKEN)
@@ -1362,13 +1504,14 @@ mod tests {
         assert_eq!(call["function"]["name"], "get_balance");
         assert_eq!(call["function"]["arguments"], "{\"asset\":\"BTC\"}");
         // Only get_status + complete reach the sidecar — never the agentic `chat`.
-        let cmds: Vec<String> = sidecar
-            .sent
-            .lock()
-            .iter()
-            .map(|c| c["cmd"].as_str().unwrap().to_string())
-            .collect();
-        assert_eq!(cmds, vec!["get_status", "complete"]);
+        assert_eq!(call["id"], "t1");
+        assert_eq!(sidecar.cmds(), vec!["get_status", "complete"]);
+        let sent = sidecar.sent.lock()[1].clone();
+        assert_eq!(
+            sent["tools"],
+            json!([{ "name": "get_balance", "parameters": {} }])
+        );
+        assert_eq!(sent["toolChoice"], "required");
     }
 
     #[tokio::test]
@@ -1406,8 +1549,38 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn offline_brain_and_old_runtime() {
-        let (base, _stop) = start(FakeSidecar::new(false, true)).await;
+    async fn streaming_tool_calls() {
+        let (base, _stop) = start(FakeSidecar::new(true, true)).await;
+        let mut req = chat_body(true);
+        req["tools"] = json!([{ "type": "function", "function": { "name": "get_balance" } }]);
+        let text = client()
+            .post(format!("{}/v1/chat/completions", base))
+            .bearer_auth(TOKEN)
+            .json(&req)
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+        let chunks: Vec<Value> = text
+            .lines()
+            .filter_map(|l| l.strip_prefix("data: "))
+            .filter_map(|d| serde_json::from_str(d).ok())
+            .collect();
+        let call = chunks
+            .iter()
+            .find_map(|c| c.pointer("/choices/0/delta/tool_calls/0"))
+            .unwrap();
+        assert_eq!(call["index"], 0);
+        assert_eq!(call["function"]["arguments"], "{\"asset\":\"BTC\"}");
+        assert!(text.contains("\"finish_reason\":\"tool_calls\""));
+        assert!(text.trim_end().ends_with("data: [DONE]"));
+    }
+
+    #[tokio::test]
+    async fn offline_brain_and_unloaded_model() {
+        let (base, _stop) = start(FakeSidecar::new(false, false)).await;
         let res = client()
             .post(format!("{}/v1/chat/completions", base))
             .bearer_auth(TOKEN)
@@ -1427,6 +1600,7 @@ mod tests {
             .unwrap();
         assert_eq!(body["data"], json!([]));
 
+        // Status says on, but the model is gone by the time `complete` runs.
         let (base, _stop) = start(FakeSidecar::new(true, false)).await;
         let res = client()
             .post(format!("{}/v1/chat/completions", base))
@@ -1435,7 +1609,90 @@ mod tests {
             .send()
             .await
             .unwrap();
-        assert_eq!(res.status(), 501);
+        assert_eq!(res.status(), 503);
+        let body: Value = res.json().await.unwrap();
+        assert_eq!(body["error"]["type"], "unavailable");
+        assert_eq!(body["error"]["code"], "unavailable");
+        assert_eq!(
+            body["error"]["message"],
+            "no model is running on the desktop"
+        );
+    }
+
+    async fn wait_for_cancel(sidecar: &FakeSidecar) -> Value {
+        for _ in 0..200 {
+            if let Some(c) = sidecar
+                .sent
+                .lock()
+                .iter()
+                .find(|c| c["cmd"] == "cancel_completion")
+            {
+                return c.clone();
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        panic!("no cancel_completion sent: {:?}", sidecar.cmds());
+    }
+
+    #[tokio::test]
+    async fn stream_disconnect_cancels_the_completion() {
+        let sidecar = FakeSidecar::new(true, true);
+        let (base, _stop) = start(Arc::clone(&sidecar)).await;
+        let mut req = chat_body(true);
+        req["messages"][0]["content"] = json!("slow");
+        let mut res = client()
+            .post(format!("{}/v1/chat/completions", base))
+            .bearer_auth(TOKEN)
+            .json(&req)
+            .send()
+            .await
+            .unwrap();
+        let mut seen = String::new();
+        while !seen.contains("Thinking") {
+            seen.push_str(&String::from_utf8_lossy(
+                &res.chunk().await.unwrap().unwrap(),
+            ));
+        }
+        drop(res);
+        let cancel = wait_for_cancel(&sidecar).await;
+        let complete = sidecar
+            .sent
+            .lock()
+            .iter()
+            .find(|c| c["cmd"] == "complete")
+            .cloned()
+            .unwrap();
+        assert_eq!(cancel["target"], complete["id"]);
+        assert!(cancel["id"]
+            .as_str()
+            .unwrap()
+            .starts_with(INTERNAL_ID_PREFIX));
+        // The permit is released: the next request runs.
+        let res = client()
+            .post(format!("{}/v1/chat/completions", base))
+            .bearer_auth(TOKEN)
+            .json(&chat_body(false))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(res.status(), 200);
+    }
+
+    #[tokio::test]
+    async fn non_stream_disconnect_cancels_the_completion() {
+        let sidecar = FakeSidecar::new(true, true);
+        let (base, _stop) = start(Arc::clone(&sidecar)).await;
+        let mut req = chat_body(false);
+        req["messages"][0]["content"] = json!("slow");
+        let fut = client()
+            .post(format!("{}/v1/chat/completions", base))
+            .bearer_auth(TOKEN)
+            .json(&req)
+            .send();
+        assert!(tokio::time::timeout(Duration::from_millis(200), fut)
+            .await
+            .is_err());
+        wait_for_cancel(&sidecar).await;
     }
 
     #[tokio::test]
