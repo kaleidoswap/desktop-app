@@ -81,6 +81,13 @@ describe('colored UTXOs inside the deposit modal', () => {
     await user.click(screen.getByRole('button', { name: 'Advanced Settings' }))
     expect(screen.getByText('Number of UTXOs')).toBeVisible()
     expect(mocks.dispatch).not.toHaveBeenCalled()
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole('button', { name: 'Create UTXOs' })
+        ).toBeEnabled(),
+      { timeout: 10000 }
+    )
     await user.click(screen.getByRole('button', { name: 'Create UTXOs' }))
     expect(mocks.dispatch).not.toHaveBeenCalled()
     expect(mocks.create).toHaveBeenCalledWith({

@@ -34,6 +34,7 @@
     "@tauri-apps/plugin-process": "2.3.1",
     "@tauri-apps/plugin-shell": "2.3.5",
     "@tauri-apps/plugin-updater": "2.10.1",
+    "acorn": "^8.19.0",
     "axios": "^1.20.0",
     "date-fns": "^4.4.0",
     "decimal.js": "^10.6.0",

@@ -10,6 +10,7 @@ import { MIND_PHONE_PAIRING_ENABLED } from '../constants'
 import {
   mindClient,
   type CatalogModel,
+  type MindHardware,
   type CapabilityInfo,
   type ChatHandlers,
   type ChatResult,
@@ -20,10 +21,12 @@ import {
   type RuntimeProgress,
   type ToolConfirmRequestEvent,
 } from '../api/mind'
+import { loadModelCatalog } from '../api/mindCatalog'
 
 export interface UseMindResult {
   status: ProviderStatusEvent | null
   catalog: CatalogModel[]
+  hardware: MindHardware | null
   installed: InstalledModel[]
   downloads: Record<string, number> // modelId -> percentage
   loading: ProviderLoadingEvent | null
@@ -83,6 +86,8 @@ const MAX_LOGS = 100
 
 export function useMind(): UseMindResult {
   const [status, setStatus] = useState<ProviderStatusEvent | null>(null)
+  const [hardware, setHardware] = useState<MindHardware | null>(null)
+  const providerCatalog = useRef<CatalogModel[]>([])
   const [catalog, setCatalog] = useState<CatalogModel[]>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
@@ -113,16 +118,19 @@ export function useMind(): UseMindResult {
     setCatalogError(null)
     try {
       await mindClient.start()
-      const [cat, inst, st, caps] = await Promise.all([
+      const [cat, inst, st, caps, hw] = await Promise.all([
         mindClient.listCatalogModels(),
         mindClient.listInstalledModels(),
         mindClient.getStatus(),
         mindClient.listCapabilities(),
+        mindClient.getHardware().catch(() => null),
       ])
-      setCatalog(cat)
+      providerCatalog.current = cat
+      setHardware(hw)
       setInstalled(inst)
       setStatus(st)
       setCapabilities(caps)
+      setCatalog(await loadModelCatalog(cat))
     } catch (e) {
       // Surface the failure so the Models UI can offer a retry instead of
       // spinning on "Loading catalog…" forever. The common case is a fresh
@@ -133,6 +141,29 @@ export function useMind(): UseMindResult {
       setCatalogLoading(false)
     }
   }, [])
+
+  // Refresh when Mind returns to the foreground and periodically while visible.
+  useEffect(() => {
+    if (!runtimeInstalled) return
+    let lastRefresh = Date.now()
+    const update = () => {
+      if (
+        document.visibilityState !== 'visible' ||
+        Date.now() - lastRefresh < 15 * 60_000
+      )
+        return
+      lastRefresh = Date.now()
+      void refresh()
+    }
+    window.addEventListener('focus', update)
+    document.addEventListener('visibilitychange', update)
+    const timer = setInterval(update, 15 * 60_000)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', update)
+      document.removeEventListener('visibilitychange', update)
+    }
+  }, [runtimeInstalled, refresh])
 
   // Subscribe to events once.
   const refreshInstalledRef = useRef(refreshInstalled)
@@ -265,10 +296,26 @@ export function useMind(): UseMindResult {
     setStatus(st)
   }, [])
 
-  const downloadModel = useCallback(async (modelId: string) => {
-    setDownloads((d) => ({ ...d, [modelId]: 0 }))
-    await mindClient.downloadModel(modelId)
-  }, [])
+  const downloadModel = useCallback(
+    async (modelId: string) => {
+      setDownloads((d) => ({ ...d, [modelId]: 0 }))
+      const known = providerCatalog.current.some(
+        (model) => model.id === modelId
+      )
+      if (known) {
+        await mindClient.downloadModel(modelId)
+      } else {
+        const model = catalog.find((model) => model.id === modelId)
+        if (!model) throw new Error('Model not found in catalog')
+        await mindClient.addHuggingFaceModel(
+          `https://huggingface.co/${model.hfRepo}/blob/main/${encodeURIComponent(model.hfFile)}`,
+          model.displayName
+        )
+        providerCatalog.current = await mindClient.listCatalogModels()
+      }
+    },
+    [catalog]
+  )
 
   const cancelDownload = useCallback(async (modelId: string) => {
     await mindClient.cancelDownload(modelId)
@@ -367,6 +414,7 @@ export function useMind(): UseMindResult {
     deleteSkill,
     downloadModel,
     downloads,
+    hardware,
     installRuntime,
     installed,
     loading,

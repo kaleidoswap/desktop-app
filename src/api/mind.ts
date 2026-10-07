@@ -61,6 +61,13 @@ export interface InstalledModel {
   active: boolean
 }
 
+export interface MindHardware {
+  totalMemoryBytes: number
+  availableMemoryBytes: number
+  logicalCores: number
+  architecture: string
+}
+
 export interface CatalogModel {
   id: string
   family: string
@@ -457,6 +464,10 @@ class MindClient {
   }
 
   // ── Typed command helpers ───────────────────────────────────────────
+  getHardware() {
+    return invoke<MindHardware>('mind_hardware')
+  }
+
   getStatus() {
     return this.request<ProviderStatusEvent>({ cmd: 'get_status' })
   }

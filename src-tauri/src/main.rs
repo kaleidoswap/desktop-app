@@ -9,6 +9,7 @@ mod db;
 mod dca;
 mod docker_node;
 mod mind;
+mod mind_hardware;
 mod mind_runtime;
 mod node_backend;
 mod nwc;
@@ -229,6 +230,7 @@ fn main() {
             start_docker_node,
             stop_docker_node,
             // KaleidoMind sidecar commands
+            mind_hardware::mind_hardware,
             mind_start,
             mind_send,
             mind_stop,

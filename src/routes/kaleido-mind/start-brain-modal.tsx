@@ -36,7 +36,7 @@ export const StartBrainModal: React.FC<{
   } catch {
     /* ignore */
   }
-  const recommendedId = getRecommendedModelId(mind.catalog)
+  const recommendedId = getRecommendedModelId(mind.catalog, mind.hardware)
   const defaultId =
     (lastId && installed.some((m) => m.id === lastId)
       ? lastId
