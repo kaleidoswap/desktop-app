@@ -241,7 +241,24 @@
       "exported": "ログをエクスポートしました",
       "exportFailed": "ログのエクスポートに失敗しました",
       "jumpToLatest": "最新に戻る"
-    }
+    },
+    "tabs": {
+      "general": "一般",
+      "trading": "メーカーと LSP",
+      "node": "ノード接続",
+      "security": "セキュリティ",
+      "logs": "ログ"
+    },
+    "makerLspDescription": "マーケットメーカーがスワップの見積もりを出し、LSP がチャネルと受信流動性を提供します。",
+    "unsavedChanges": "未保存の変更があります",
+    "backupWalletDescription": "暗号化されたウォレットのバックアップをエクスポート",
+    "session": "セッション",
+    "showToken": "トークンを表示",
+    "hideToken": "トークンを隠す",
+    "changePassword": "パスワードを変更",
+    "changePasswordDescription": "ウォレットの暗号化パスワードを更新",
+    "logoutDescription": "ウォレットをロックしてアカウント一覧に戻ります。ノードのデータは保持されます。",
+    "shutdownDescription": "ノードのプロセスを停止します。チャネルは開いたままですがノードはオフラインになります。"
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",

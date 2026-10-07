@@ -241,7 +241,24 @@
       "exported": "Log esportati",
       "exportFailed": "Esportazione dei log non riuscita",
       "jumpToLatest": "Torna agli ultimi"
-    }
+    },
+    "tabs": {
+      "general": "Generale",
+      "trading": "Maker e LSP",
+      "node": "Connessione nodo",
+      "security": "Sicurezza",
+      "logs": "Log"
+    },
+    "makerLspDescription": "I market maker quotano i tuoi swap; l’LSP ti vende canali e liquidità in entrata.",
+    "unsavedChanges": "Hai modifiche non salvate",
+    "backupWalletDescription": "Esporta un backup cifrato del wallet",
+    "session": "Sessione",
+    "showToken": "Mostra token",
+    "hideToken": "Nascondi token",
+    "changePassword": "Cambia password",
+    "changePasswordDescription": "Aggiorna la password di cifratura del wallet",
+    "logoutDescription": "Blocca il wallet e torna alla lista account. Il nodo conserva i suoi dati.",
+    "shutdownDescription": "Arresta il processo del nodo. I canali restano aperti ma il nodo va offline."
   },
   "modals": {
     "logoutTitle": "Conferma Disconnessione",

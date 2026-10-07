@@ -241,7 +241,24 @@
       "exported": "Journaux exportés",
       "exportFailed": "Échec de l’export des journaux",
       "jumpToLatest": "Revenir aux plus récents"
-    }
+    },
+    "tabs": {
+      "general": "Général",
+      "trading": "Maker et LSP",
+      "node": "Connexion au nœud",
+      "security": "Sécurité",
+      "logs": "Journaux"
+    },
+    "makerLspDescription": "Les market makers cotent vos swaps ; le LSP vous vend des canaux et de la liquidité entrante.",
+    "unsavedChanges": "Vous avez des modifications non enregistrées",
+    "backupWalletDescription": "Exporter une sauvegarde chiffrée du portefeuille",
+    "session": "Session",
+    "showToken": "Afficher le jeton",
+    "hideToken": "Masquer le jeton",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordDescription": "Mettre à jour le mot de passe de chiffrement",
+    "logoutDescription": "Verrouille le portefeuille et revient à la liste des comptes. Le nœud garde ses données.",
+    "shutdownDescription": "Arrête le processus du nœud. Les canaux restent ouverts mais le nœud passe hors ligne."
   },
   "modals": {
     "logoutTitle": "Confirmer la déconnexion",

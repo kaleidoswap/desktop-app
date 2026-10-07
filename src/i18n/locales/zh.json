@@ -241,7 +241,24 @@
       "exported": "日志已导出",
       "exportFailed": "导出日志失败",
       "jumpToLatest": "回到最新"
-    }
+    },
+    "tabs": {
+      "general": "通用",
+      "trading": "做市商与 LSP",
+      "node": "节点连接",
+      "security": "安全",
+      "logs": "日志"
+    },
+    "makerLspDescription": "做市商为您的兑换报价；LSP 向您出售通道和入站流动性。",
+    "unsavedChanges": "您有未保存的更改",
+    "backupWalletDescription": "导出加密的钱包备份",
+    "session": "会话",
+    "showToken": "显示令牌",
+    "hideToken": "隐藏令牌",
+    "changePassword": "更改密码",
+    "changePasswordDescription": "更新钱包加密密码",
+    "logoutDescription": "锁定钱包并返回账户列表。节点数据会保留。",
+    "shutdownDescription": "停止节点进程。通道保持开启，但节点将离线。"
   },
   "modals": {
     "logoutTitle": "确认退出登录",

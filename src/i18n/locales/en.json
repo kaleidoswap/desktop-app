@@ -241,7 +241,24 @@
       "exported": "Logs exported",
       "exportFailed": "Failed to export logs",
       "jumpToLatest": "Back to latest"
-    }
+    },
+    "tabs": {
+      "general": "General",
+      "trading": "Maker & LSP",
+      "node": "Node connection",
+      "security": "Security",
+      "logs": "Logs"
+    },
+    "makerLspDescription": "Market makers quote your swaps; the LSP sells you channels and inbound liquidity.",
+    "unsavedChanges": "You have unsaved changes",
+    "backupWalletDescription": "Export an encrypted wallet backup",
+    "session": "Session",
+    "showToken": "Show token",
+    "hideToken": "Hide token",
+    "changePassword": "Change Password",
+    "changePasswordDescription": "Update the wallet encryption password",
+    "logoutDescription": "Lock the wallet and go back to the account list. The node keeps its data.",
+    "shutdownDescription": "Stop the node process. Open channels stay open but the node goes offline."
   },
   "modals": {
     "logoutTitle": "Confirm Logout",

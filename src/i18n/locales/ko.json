@@ -241,7 +241,24 @@
       "exported": "로그를 내보냈습니다",
       "exportFailed": "로그 내보내기 실패",
       "jumpToLatest": "최신으로 이동"
-    }
+    },
+    "tabs": {
+      "general": "일반",
+      "trading": "메이커 및 LSP",
+      "node": "노드 연결",
+      "security": "보안",
+      "logs": "로그"
+    },
+    "makerLspDescription": "마켓 메이커가 스왑 견적을 제공하고, LSP가 채널과 인바운드 유동성을 판매합니다.",
+    "unsavedChanges": "저장되지 않은 변경 사항이 있습니다",
+    "backupWalletDescription": "암호화된 지갑 백업 내보내기",
+    "session": "세션",
+    "showToken": "토큰 표시",
+    "hideToken": "토큰 숨기기",
+    "changePassword": "비밀번호 변경",
+    "changePasswordDescription": "지갑 암호화 비밀번호 변경",
+    "logoutDescription": "지갑을 잠그고 계정 목록으로 돌아갑니다. 노드 데이터는 유지됩니다.",
+    "shutdownDescription": "노드 프로세스를 중지합니다. 채널은 열린 상태로 유지되지만 노드는 오프라인이 됩니다."
   },
   "modals": {
     "logoutTitle": "로그아웃 확인",

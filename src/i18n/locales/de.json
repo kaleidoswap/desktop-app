@@ -241,7 +241,24 @@
       "exported": "Logs exportiert",
       "exportFailed": "Export der Logs fehlgeschlagen",
       "jumpToLatest": "Zu den neuesten"
-    }
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "trading": "Maker & LSP",
+      "node": "Node-Verbindung",
+      "security": "Sicherheit",
+      "logs": "Logs"
+    },
+    "makerLspDescription": "Market Maker stellen die Kurse für deine Swaps; der LSP verkauft dir Kanäle und eingehende Liquidität.",
+    "unsavedChanges": "Du hast ungespeicherte Änderungen",
+    "backupWalletDescription": "Verschlüsseltes Wallet-Backup exportieren",
+    "session": "Sitzung",
+    "showToken": "Token anzeigen",
+    "hideToken": "Token ausblenden",
+    "changePassword": "Passwort ändern",
+    "changePasswordDescription": "Verschlüsselungspasswort der Wallet ändern",
+    "logoutDescription": "Wallet sperren und zur Kontoliste zurückkehren. Der Node behält seine Daten.",
+    "shutdownDescription": "Node-Prozess beenden. Offene Kanäle bleiben bestehen, aber der Node ist offline."
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",

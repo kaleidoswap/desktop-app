@@ -241,7 +241,24 @@
       "exported": "Registros exportados",
       "exportFailed": "Error al exportar los registros",
       "jumpToLatest": "Volver a lo más reciente"
-    }
+    },
+    "tabs": {
+      "general": "General",
+      "trading": "Maker y LSP",
+      "node": "Conexión del nodo",
+      "security": "Seguridad",
+      "logs": "Registros"
+    },
+    "makerLspDescription": "Los market makers cotizan tus swaps; el LSP te vende canales y liquidez entrante.",
+    "unsavedChanges": "Tienes cambios sin guardar",
+    "backupWalletDescription": "Exportar una copia de seguridad cifrada",
+    "session": "Sesión",
+    "showToken": "Mostrar token",
+    "hideToken": "Ocultar token",
+    "changePassword": "Cambiar contraseña",
+    "changePasswordDescription": "Actualiza la contraseña de cifrado del monedero",
+    "logoutDescription": "Bloquea el monedero y vuelve a la lista de cuentas. El nodo conserva sus datos.",
+    "shutdownDescription": "Detiene el proceso del nodo. Los canales siguen abiertos pero el nodo queda desconectado."
   },
   "modals": {
     "logoutTitle": "Confirmar Cierre de Sesión",
