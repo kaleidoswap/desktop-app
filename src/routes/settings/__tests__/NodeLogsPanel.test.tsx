@@ -5,7 +5,9 @@ const mocks = vi.hoisted(() => ({ invoke: vi.fn() }))
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }))
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: vi.fn() }))
-vi.mock('react-toastify', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+vi.mock('react-toastify', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}))
 vi.mock('../../../utils/logger', () => ({
   logger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }))
@@ -48,7 +50,10 @@ describe('NodeLogsPanel', () => {
     })
     expect(screen.getByText('line 99')).toBeInTheDocument()
 
-    mocks.invoke.mockResolvedValue({ logs: ['line 99', 'line 100'], total: 101 })
+    mocks.invoke.mockResolvedValue({
+      logs: ['line 99', 'line 100'],
+      total: 101,
+    })
     await act(async () => {
       vi.advanceTimersByTime(3000)
     })
