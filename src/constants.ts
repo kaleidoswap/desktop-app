@@ -29,3 +29,8 @@ export const ERROR_INSUFFICIENT_UTXOs = [
   ERROR_NOT_ENOUGH_UNCOLORED,
   ERROR_INSUFFICIENT_ALLOCATION_SLOT,
 ]
+
+// Phone pairing (delegating inference from the mobile app to this desktop's
+// KaleidoMind) relied on QVAC's P2P provider, which @qvac/sdk 0.19 removed.
+// Paused until it ships again in a later release.
+export const MIND_PHONE_PAIRING_ENABLED = false
