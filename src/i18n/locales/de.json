@@ -2241,7 +2241,9 @@
         "title": "Zahlung erhalten",
         "detectedTitle": "Zahlung erkannt",
         "confirmedBody": "Das Guthaben ist jetzt in deiner Wallet.",
-        "pendingBody": "Die Transaktion ist im Mempool. Das Guthaben ist nach der Bestätigung verfügbar — du kannst dieses Fenster schließen."
+        "pendingBody": "Die Transaktion ist im Mempool. Das Guthaben ist nach der Bestätigung verfügbar — du kannst dieses Fenster schließen.",
+        "confirmations": "{{count}}/{{required}} Bestätigungen",
+        "pendingBodyRgb": "Der Transfer wurde akzeptiert und wartet auf die On-Chain-Bestätigung. Die Assets sind nach der Bestätigung verfügbar — du kannst dieses Fenster schließen."
       }
     }
   },

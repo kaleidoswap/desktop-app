@@ -6,6 +6,10 @@ import { logger } from '../../../../utils/logger'
 
 const POLL_MS = 8_000
 
+// BTC is spendable after one confirmation and RGB invoices are created with
+// `min_confirmations: 1` (see NodeApiWrapper.createRgbInvoice).
+export const REQUIRED_CONFIRMATIONS = 1
+
 export interface DetectedDeposit {
   txid?: string
   // Base units: sats for BTC, raw asset units for RGB.
@@ -13,64 +17,74 @@ export interface DetectedDeposit {
   confirmed: boolean
 }
 
-// Watches the BTC wallet for an on-chain deposit that shows up while the
-// receive screen is open. Every txid already known when the screen opened is
-// ignored, so the first new incoming tx (mempool included) is the deposit.
+// Watches the BTC wallet for an on-chain deposit while the receive screen is
+// showing an address. rgb-lib returns mempool txs with no confirmation_time,
+// so the deposit is reported as soon as it is broadcast. Every txid known when
+// watching started is ignored; polling stops once the deposit confirms.
 export const useOnchainDepositWatcher = (
   enabled: boolean
 ): DetectedDeposit | undefined => {
-  const [mountedAt] = useState(() => Date.now())
+  const [startedAt] = useState(() => Date.now())
   const baseline = useRef<Set<string>>()
-  const [txid, setTxid] = useState<string>()
+  const [deposit, setDeposit] = useState<DetectedDeposit>()
 
   const { data, fulfilledTimeStamp } = nodeApi.useListTransactionsQuery(
     undefined,
     {
       pollingInterval: POLL_MS,
       refetchOnMountOrArgChange: true,
-      skip: !enabled,
+      skip: !enabled || !!deposit?.confirmed,
     }
   )
 
   useEffect(() => {
     const txs = data?.transactions
-    if (!txs || !fulfilledTimeStamp || fulfilledTimeStamp < mountedAt) return
+    if (!enabled || !txs || !fulfilledTimeStamp) return
+    if (fulfilledTimeStamp < startedAt) return
     if (!baseline.current) {
       baseline.current = new Set(txs.map((tx) => tx.txid))
       return
     }
-    if (txid) return
-    const incoming = txs.find(
-      (tx) =>
-        !baseline.current!.has(tx.txid) &&
-        isBtcWalletTx(tx.transaction_type) &&
-        tx.received - tx.sent > 0
-    )
-    if (incoming) setTxid(incoming.txid)
-  }, [data, fulfilledTimeStamp, mountedAt, txid])
+    const tx = deposit?.txid
+      ? txs.find((t) => t.txid === deposit.txid)
+      : txs.find(
+          (t) =>
+            !baseline.current!.has(t.txid) &&
+            isBtcWalletTx(t.transaction_type) &&
+            t.received - t.sent > 0
+        )
+    if (!tx) return
+    const next = {
+      amount: tx.received - tx.sent,
+      confirmed: !!tx.confirmation_time,
+      txid: tx.txid,
+    }
+    if (next.txid !== deposit?.txid || next.confirmed !== deposit?.confirmed) {
+      setDeposit(next)
+    }
+  }, [data, fulfilledTimeStamp, startedAt, enabled, deposit])
 
-  const tx = txid ? data?.transactions?.find((t) => t.txid === txid) : undefined
-  if (!tx) return undefined
-  return {
-    amount: tx.received - tx.sent,
-    confirmed: !!tx.confirmation_time,
-    txid: tx.txid,
-  }
+  return deposit
 }
 
 // Watches an RGB receive (blinded or witness) by its recipient id. The node
 // only advances incoming transfers on `refreshtransfers`, so refresh before
-// each poll.
+// each poll. `WaitingConfirmations` means the consignment was accepted and the
+// transfer is pending on-chain; `Settled` means it reached the confirmations.
 export const useRgbReceiveWatcher = (
   assetId: string | undefined,
   recipientId: string | undefined,
   enabled: boolean
 ): DetectedDeposit | undefined => {
-  const active = enabled && !!assetId && !!recipientId
   const [refresh] = nodeApi.useRefreshMutation()
   const { data, refetch } = nodeApi.useListTransfersQuery(assetId ?? '', {
-    skip: !active,
+    skip: !enabled || !assetId || !recipientId,
   })
+  const transfer = recipientId
+    ? data?.transfers?.find((t) => t.recipient_id === recipientId)
+    : undefined
+  const isSettled = transfer?.status === 'Settled'
+  const active = enabled && !!assetId && !!recipientId && !isSettled
 
   useEffect(() => {
     if (!active) return
@@ -90,12 +104,10 @@ export const useRgbReceiveWatcher = (
     }
   }, [active, refresh, refetch])
 
-  if (!active) return undefined
-  const transfer = data?.transfers?.find((t) => t.recipient_id === recipientId)
   if (
+    !enabled ||
     !transfer ||
-    (transfer.status !== 'WaitingConfirmations' &&
-      transfer.status !== 'Settled')
+    (transfer.status !== 'WaitingConfirmations' && !isSettled)
   ) {
     return undefined
   }
@@ -103,7 +115,7 @@ export const useRgbReceiveWatcher = (
   return {
     amount:
       assigned && 'value' in assigned ? Number(assigned.value) : undefined,
-    confirmed: transfer.status === 'Settled',
+    confirmed: isSettled,
     txid: transfer.txid ?? undefined,
   }
 }

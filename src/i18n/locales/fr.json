@@ -2247,7 +2247,9 @@
         "title": "Paiement reçu",
         "detectedTitle": "Paiement détecté",
         "confirmedBody": "Les fonds sont maintenant dans votre portefeuille.",
-        "pendingBody": "La transaction est dans la mempool. Les fonds seront disponibles après confirmation — vous pouvez fermer cette fenêtre."
+        "pendingBody": "La transaction est dans la mempool. Les fonds seront disponibles après confirmation — vous pouvez fermer cette fenêtre.",
+        "confirmations": "{{count}}/{{required}} confirmations",
+        "pendingBodyRgb": "Le transfert a été accepté et attend la confirmation on-chain. Les actifs seront disponibles après confirmation — vous pouvez fermer cette fenêtre."
       }
     }
   },

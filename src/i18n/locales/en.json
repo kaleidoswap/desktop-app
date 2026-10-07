@@ -2241,7 +2241,9 @@
         "title": "Payment received",
         "detectedTitle": "Payment detected",
         "confirmedBody": "The funds are now in your wallet.",
-        "pendingBody": "The transaction is in the mempool. Funds become spendable once it confirms — you can close this window."
+        "pendingBody": "The transaction is in the mempool. Funds become spendable once it confirms — you can close this window.",
+        "confirmations": "{{count}}/{{required}} confirmations",
+        "pendingBodyRgb": "The transfer was accepted and is waiting for on-chain confirmation. The assets become spendable once it confirms — you can close this window."
       }
     }
   },

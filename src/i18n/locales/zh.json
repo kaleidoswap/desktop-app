@@ -2238,7 +2238,9 @@
         "title": "已收到付款",
         "detectedTitle": "检测到付款",
         "confirmedBody": "资金已到达您的钱包。",
-        "pendingBody": "交易已在内存池中。确认后资金即可使用——您可以关闭此窗口。"
+        "pendingBody": "交易已在内存池中。确认后资金即可使用——您可以关闭此窗口。",
+        "confirmations": "{{count}}/{{required}} 确认",
+        "pendingBodyRgb": "转账已被接受，正在等待链上确认。确认后资产即可使用——您可以关闭此窗口。"
       }
     }
   },

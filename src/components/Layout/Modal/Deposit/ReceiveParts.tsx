@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../../../hooks/useCopyToClipboard'
 
+import { REQUIRED_CONFIRMATIONS } from './useReceiveWatchers'
+
 // Long payloads (LN / RGB invoices) keep both ends visible so they can still be
 // checked by eye; addresses are short enough to show in full.
 const FULL_DISPLAY_MAX = 90
@@ -79,6 +81,7 @@ export const WaitingIndicator = ({ label }: { label: string }) => (
 
 interface ReceivedPanelProps {
   confirmed: boolean
+  kind: 'btc' | 'rgb'
   amountLabel?: string
   txid?: string
   onDone: () => void
@@ -86,6 +89,7 @@ interface ReceivedPanelProps {
 
 export const ReceivedPanel = ({
   confirmed,
+  kind,
   amountLabel,
   txid,
   onDone,
@@ -122,16 +126,35 @@ export const ReceivedPanel = ({
         </p>
       )}
 
-      <p className="mt-2 text-sm text-content-secondary max-w-xs">
+      {!confirmed && (
+        <span className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-status-warning-subtle text-xs font-medium text-status-warning">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-status-warning opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-status-warning" />
+          </span>
+          {t('depositModal.step2.received.confirmations', {
+            count: 0,
+            defaultValue: '{{count}}/{{required}} confirmations',
+            required: REQUIRED_CONFIRMATIONS,
+          })}
+        </span>
+      )}
+
+      <p className="mt-3 text-sm text-content-secondary max-w-xs">
         {confirmed
           ? t(
               'depositModal.step2.received.confirmedBody',
               'The funds are now in your wallet.'
             )
-          : t(
-              'depositModal.step2.received.pendingBody',
-              'The transaction is in the mempool. Funds become spendable once it confirms — you can close this window.'
-            )}
+          : kind === 'rgb'
+            ? t(
+                'depositModal.step2.received.pendingBodyRgb',
+                'The transfer was accepted and is waiting for on-chain confirmation. The assets become spendable once it confirms — you can close this window.'
+              )
+            : t(
+                'depositModal.step2.received.pendingBody',
+                'The transaction is in the mempool. Funds become spendable once it confirms — you can close this window.'
+              )}
       </p>
 
       {txid && (

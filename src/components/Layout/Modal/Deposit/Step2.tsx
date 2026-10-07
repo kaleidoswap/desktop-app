@@ -601,11 +601,13 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
 
   // --- Payment detection ---------------------------------------------------
   const [lnReceived, setLnReceived] = useState(false)
-  const btcDeposit = useOnchainDepositWatcher(isBtc && !lnReceived)
+  const btcDeposit = useOnchainDepositWatcher(
+    isBtc && !!onchainAddress && !lnReceived
+  )
   const rgbDeposit = useRgbReceiveWatcher(
     assetId,
     recipientId,
-    !isBtc && network === 'on-chain'
+    !isBtc && network === 'on-chain' && !!address
   )
 
   useEffect(() => {
@@ -765,6 +767,7 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         <ReceivedPanel
           amountLabel={received.amountLabel}
           confirmed={received.confirmed}
+          kind={isBtc ? 'btc' : 'rgb'}
           onDone={onNext}
           txid={received.txid}
         />
