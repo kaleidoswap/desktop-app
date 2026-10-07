@@ -19,6 +19,7 @@ import {
   getModalPositionClass,
 } from '../../helpers/modalPortal'
 
+import { useAppSelector } from '../../app/store/hooks'
 import { Spinner } from '../../components/Spinner'
 import { Button } from '../../components/ui'
 import { NETWORK_DEFAULTS } from '../../constants/networks'
@@ -51,6 +52,7 @@ interface FormFields {
 
 export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
   const { t } = useTranslation()
+  const account = useAppSelector((state) => state.nodeSettings.data)
   const [isLoading, setIsLoading] = useState(false)
   const [localError, setLocalError] = useState('')
   const [showConnectionDialog, setShowConnectionDialog] = useState(false)
@@ -202,12 +204,16 @@ export const Step1 = ({ onNext, formData, onFormUpdate, formError }: Props) => {
         )
       }
 
-      const apiUrl = NETWORK_DEFAULTS[network].default_lsp_url
+      const apiUrl = (
+        account.default_lsp_url ||
+        account.default_maker_url ||
+        NETWORK_DEFAULTS[network].default_lsp_url
+      ).replace(/\/+$/, '')
       if (!apiUrl) {
         throw new Error(t('createChannel.step1.errorNoLspUrl', { network }))
       }
 
-      const response = await axios.get(`${apiUrl}api/v1/lsps1/get_info`)
+      const response = await axios.get(`${apiUrl}/api/v1/lsps1/get_info`)
       const connectionUrl = response.data.lsp_connection_url
 
       // Update both form state and form data

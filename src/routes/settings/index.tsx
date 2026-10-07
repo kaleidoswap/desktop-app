@@ -164,9 +164,7 @@ export const Component: React.FC = () => {
         indexerUrl: nodeSettings.indexer_url || '',
         language: language || 'en',
         lspUrl:
-          nodeSettings.default_lsp_url ||
-          nodeSettings.default_maker_url ||
-          'http://localhost:8000',
+          nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
         makerUrls: Array.isArray(nodeSettings.maker_urls)
           ? nodeSettings.maker_urls
           : [],
@@ -287,9 +285,7 @@ export const Component: React.FC = () => {
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
       lspUrl:
-        nodeSettings.default_lsp_url ||
-        nodeSettings.default_maker_url ||
-        'http://localhost:8000',
+        nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
         : [],
@@ -517,9 +513,7 @@ export const Component: React.FC = () => {
       indexerUrl: nodeSettings.indexer_url || '',
       language: language || 'en',
       lspUrl:
-        nodeSettings.default_lsp_url ||
-        nodeSettings.default_maker_url ||
-        'http://localhost:8000',
+        nodeSettings.default_lsp_url || nodeSettings.default_maker_url || '',
       makerUrls: Array.isArray(nodeSettings.maker_urls)
         ? nodeSettings.maker_urls
         : [],

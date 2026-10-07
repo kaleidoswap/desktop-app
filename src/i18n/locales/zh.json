@@ -952,7 +952,15 @@
       "invalidUrl": "请输入有效的 URL",
       "reconnectingStatus": "正在连接到做市商...",
       "reconnectionInitFailed": "无法启动重新连接",
-      "reconnectionFailed": "重新连接失败"
+      "reconnectionFailed": "重新连接失败",
+      "noMaker": {
+        "title": "未配置做市商",
+        "message": "{{network}} 没有默认的 KaleidoSwap 做市商。请输入您要交易的做市商的 API URL。",
+        "save": "保存",
+        "saved": "做市商 URL 已保存",
+        "saveFailed": "无法保存做市商 URL",
+        "openSettings": "打开设置"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2P 交易",

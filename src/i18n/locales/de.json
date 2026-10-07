@@ -952,7 +952,15 @@
       "invalidUrl": "Bitte gib eine gültige URL ein",
       "reconnectingStatus": "Verbinde mit Maker...",
       "reconnectionInitFailed": "Verbindungsaufbau fehlgeschlagen",
-      "reconnectionFailed": "Verbindung fehlgeschlagen"
+      "reconnectionFailed": "Verbindung fehlgeschlagen",
+      "noMaker": {
+        "title": "Kein Maker konfiguriert",
+        "message": "Für {{network}} gibt es keinen Standard-Maker von KaleidoSwap. Gib die API-URL des Makers ein, mit dem du handeln möchtest.",
+        "save": "Speichern",
+        "saved": "Maker-URL gespeichert",
+        "saveFailed": "Maker-URL konnte nicht gespeichert werden",
+        "openSettings": "Einstellungen öffnen"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2P-Handel",

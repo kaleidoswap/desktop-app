@@ -952,7 +952,15 @@
       "invalidUrl": "Format d'URL invalide",
       "reconnectingStatus": "Reconnexion au teneur...",
       "reconnectionInitFailed": "Échec de l'initiation de la reconnexion. Veuillez réessayer.",
-      "reconnectionFailed": "Échec de la reconnexion au teneur"
+      "reconnectionFailed": "Échec de la reconnexion au teneur",
+      "noMaker": {
+        "title": "Aucun maker configuré",
+        "message": "Il n'y a pas de maker KaleidoSwap par défaut pour {{network}}. Saisissez l'URL de l'API du maker avec lequel vous voulez trader.",
+        "save": "Enregistrer",
+        "saved": "URL du maker enregistrée",
+        "saveFailed": "Impossible d'enregistrer l'URL du maker",
+        "openSettings": "Ouvrir les paramètres"
+      }
     },
     "nostrP2P": {
       "title": "Échanges P2P Nostr",

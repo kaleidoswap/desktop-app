@@ -952,7 +952,15 @@
       "invalidUrl": "無効なURL形式",
       "reconnectingStatus": "メイカーに再接続中...",
       "reconnectionInitFailed": "再接続の開始に失敗しました。もう一度お試しください。",
-      "reconnectionFailed": "メイカーへの再接続に失敗しました"
+      "reconnectionFailed": "メイカーへの再接続に失敗しました",
+      "noMaker": {
+        "title": "メーカーが設定されていません",
+        "message": "{{network}} にはデフォルトの KaleidoSwap メーカーがありません。取引したいメーカーの API URL を入力してください。",
+        "save": "保存",
+        "saved": "メーカー URL を保存しました",
+        "saveFailed": "メーカー URL を保存できませんでした",
+        "openSettings": "設定を開く"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2Pトレーディング",

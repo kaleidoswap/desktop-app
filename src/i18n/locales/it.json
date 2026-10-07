@@ -952,7 +952,15 @@
       "invalidUrl": "Inserisci un URL valido",
       "reconnectingStatus": "Riconnessione al maker...",
       "reconnectionInitFailed": "Impossibile avviare la riconnessione",
-      "reconnectionFailed": "Riconnessione fallita"
+      "reconnectionFailed": "Riconnessione fallita",
+      "noMaker": {
+        "title": "Nessun maker configurato",
+        "message": "Non esiste un maker KaleidoSwap predefinito per {{network}}. Inserisci l'URL API del maker con cui vuoi fare trading.",
+        "save": "Salva",
+        "saved": "URL del maker salvato",
+        "saveFailed": "Impossibile salvare l'URL del maker",
+        "openSettings": "Apri Impostazioni"
+      }
     },
     "nostrP2P": {
       "title": "Trading P2P Nostr",
