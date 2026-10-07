@@ -34,6 +34,7 @@ import type {
   DecodeRGBInvoiceResponse,
 } from 'kaleido-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
+import { findNewOutgoingTxid } from '../../../../helpers/sentTxid'
 
 import { WithdrawForm, ConfirmationModal } from './components'
 import { SentPanel, type SentSummary } from './components/SentPanel'
@@ -974,6 +975,22 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
     ]
   )
 
+  // Wallet transactions right now (fresh from the node), or null on error.
+  const snapshotTransactions = async () => {
+    const query = dispatch(
+      nodeApi.endpoints.listTransactions.initiate(undefined, {
+        forceRefetch: true,
+      })
+    )
+    try {
+      return (await query.unwrap())?.transactions ?? []
+    } catch {
+      return null
+    } finally {
+      query.unsubscribe()
+    }
+  }
+
   const describeSent = (
     kind: SentSummary['kind'],
     reference?: string | null
@@ -1176,7 +1193,8 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               ? Math.round(Number(pendingData.amount))
               : BTCtoSatoshi(Number(pendingData.amount))
 
-          await sendBtc({
+          const before = await snapshotTransactions()
+          const btcRes = await sendBtc({
             address: pendingData.address ?? '',
             amount: amountInSats,
             fee_rate:
@@ -1187,7 +1205,16 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          setSent(describeSent('onchain'))
+          let txid = (btcRes as { txid?: string } | undefined)?.txid
+          if (!txid && before) {
+            const after = await snapshotTransactions()
+            if (after)
+              txid = findNewOutgoingTxid(
+                before.map((tx) => tx.txid),
+                after
+              )
+          }
+          setSent(describeSent('onchain', txid))
         } else {
           const assetInfo = (assets.data?.nia || []).find(
             (a: any) => a.asset_id === pendingData.asset_id

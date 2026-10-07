@@ -2,6 +2,7 @@ import { Check, CircleCheckBig, Clock, Copy } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../../../hooks/useCopyToClipboard'
+import { ExplorerLink } from '../../../ExplorerLink'
 
 import { REQUIRED_CONFIRMATIONS } from './useReceiveWatchers'
 
@@ -175,6 +176,7 @@ export const ReceivedPanel = ({
           )}
         </button>
       )}
+      <ExplorerLink className="mt-2" txid={txid} withLabel />
 
       <button
         className="mt-6 w-full py-2.5 px-4 bg-primary hover:bg-primary-emphasis text-primary-foreground

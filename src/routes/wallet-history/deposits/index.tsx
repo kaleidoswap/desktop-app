@@ -13,6 +13,7 @@ import {
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ExplorerLink } from '../../../components/ExplorerLink'
 import { useAppSelector } from '../../../app/store/hooks'
 import { Button, Badge, Alert, Card, Select } from '../../../components/ui'
 import {
@@ -335,12 +336,17 @@ export const Component: React.FC = () => {
     {
       accessor: (deposit: DepositWithTimestamp) => (
         <div className="flex flex-col gap-1">
-          {renderCopyableField(
-            deposit.txId,
-            true,
-            4,
-            t('deposits.transactionId')
-          )}
+          <div className="flex items-center gap-1.5">
+            {renderCopyableField(
+              deposit.txId,
+              true,
+              4,
+              t('deposits.transactionId')
+            )}
+            {deposit.type === 'on-chain' && (
+              <ExplorerLink txid={deposit.txId} />
+            )}
+          </div>
           {deposit.payeePublicKey && (
             <div className="flex items-center gap-1">
               <span className="text-xs text-content-tertiary">

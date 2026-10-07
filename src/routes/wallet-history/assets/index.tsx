@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
+import { ExplorerLink } from '../../../components/ExplorerLink'
 import { Card, Badge, Select, Button } from '../../../components/ui'
 import {
   Table,
@@ -556,6 +557,7 @@ export const Component = () => {
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
+                      <ExplorerLink className="ml-2" txid={transfer.txid} />
                     </div>
                   </div>
                 </div>

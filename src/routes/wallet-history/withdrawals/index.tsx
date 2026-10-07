@@ -13,6 +13,7 @@ import {
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ExplorerLink } from '../../../components/ExplorerLink'
 import { useAppSelector } from '../../../app/store/hooks'
 import { Button, Badge, Card, Alert, Select } from '../../../components/ui'
 import {
@@ -410,12 +411,17 @@ export const Component: React.FC = () => {
             {
               accessor: (withdrawal: Withdrawal) => (
                 <div className="flex flex-col gap-1">
-                  {renderCopyableField(
-                    withdrawal.txId,
-                    true,
-                    4,
-                    t('withdrawals.transactionId')
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {renderCopyableField(
+                      withdrawal.txId,
+                      true,
+                      4,
+                      t('withdrawals.transactionId')
+                    )}
+                    {withdrawal.type === 'on-chain' && (
+                      <ExplorerLink txid={withdrawal.txId} />
+                    )}
+                  </div>
                   {withdrawal.payeePublicKey && (
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-content-tertiary">
