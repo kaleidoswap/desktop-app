@@ -134,7 +134,12 @@ export const NodeLogsPanel = ({ remoteUrl }: NodeLogsPanelProps) => {
         filters: [{ extensions: ['txt'], name: 'Log Files' }],
       })
       if (filePath) {
-        await invoke('save_logs_to_file', { filePath })
+        await (remoteUrl
+          ? invoke('save_remote_logs_to_file', {
+              filePath,
+              nodeUrl: remoteUrl,
+            })
+          : invoke('save_logs_to_file', { filePath }))
         toast.success(t('settings.logs.exported', 'Logs exported'))
       }
     } catch {
@@ -275,17 +280,15 @@ export const NodeLogsPanel = ({ remoteUrl }: NodeLogsPanelProps) => {
               <Copy className="h-4 w-4" />
             )}
           </button>
-          {!remoteUrl && (
-            <button
-              className={iconButton}
-              disabled={total === 0}
-              onClick={handleExport}
-              title={t('settings.exportLogs')}
-              type="button"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-          )}
+          <button
+            className={iconButton}
+            disabled={total === 0}
+            onClick={handleExport}
+            title={t('settings.exportLogs')}
+            type="button"
+          >
+            <Download className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

@@ -174,6 +174,7 @@ fn main() {
             stop_node,
             get_node_logs,
             get_remote_node_logs,
+            save_remote_logs_to_file,
             save_logs_to_file,
             is_node_running,
             get_running_node_account,
@@ -609,9 +610,42 @@ impl RemoteNodeLogsResponse {
     }
 }
 
-/// Logs for a node the app did not spawn itself. Only possible when it runs
-/// on this machine: either a Docker node started by the app, or any Docker
-/// container publishing the node URL's port on localhost.
+/// All available logs (oldest first) of a node the app did not spawn
+/// itself, plus the container they come from. Only possible when the node
+/// runs on this machine: either the Docker node started by the app, or any
+/// Docker container publishing the node URL's port on localhost. Blocking.
+fn read_local_container_logs(
+    docker_manager: &Arc<Mutex<DockerNodeManager>>,
+    node_url: &str,
+) -> Result<(Vec<String>, Option<String>), &'static str> {
+    let url = reqwest::Url::parse(node_url).map_err(|_| "invalid_url")?;
+    let is_local = matches!(
+        url.host_str(),
+        Some("localhost") | Some("127.0.0.1") | Some("[::1]") | Some("::1")
+    );
+    let port = url
+        .port_or_known_default()
+        .filter(|_| is_local)
+        .ok_or("remote_host")?;
+    {
+        let dm = docker_manager
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if dm.is_running() && dm.get_daemon_port() == Some(port) {
+            let (logs, _) = dm.get_logs_paginated(1, u32::MAX);
+            return Ok((logs, dm.get_current_environment()));
+        }
+    }
+    let (id, name) = DockerNodeManager::find_container_for_port(port).ok_or("no_container")?;
+    match DockerNodeManager::container_logs(&id, MAX_CONTAINER_LOG_LINES) {
+        Ok(lines) => Ok((lines, Some(name))),
+        Err(e) => {
+            log::warn!("docker logs failed for {}: {}", name, e);
+            Err("no_container")
+        }
+    }
+}
+
 #[tauri::command]
 async fn get_remote_node_logs(
     docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
@@ -619,57 +653,41 @@ async fn get_remote_node_logs(
     page: u32,
     page_size: u32,
 ) -> Result<RemoteNodeLogsResponse, String> {
-    let Ok(url) = reqwest::Url::parse(&node_url) else {
-        return Ok(RemoteNodeLogsResponse::unavailable("invalid_url"));
-    };
-    let is_local = matches!(
-        url.host_str(),
-        Some("localhost") | Some("127.0.0.1") | Some("[::1]") | Some("::1")
-    );
-    let Some(port) = url.port_or_known_default().filter(|_| is_local) else {
-        return Ok(RemoteNodeLogsResponse::unavailable("remote_host"));
-    };
     let docker_manager = Arc::clone(&*docker_manager);
-
     tauri::async_runtime::spawn_blocking(move || {
-        {
-            let dm = docker_manager
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if dm.is_running() && dm.get_daemon_port() == Some(port) {
-                let (logs, _) = dm.get_logs_paginated(1, u32::MAX);
-                let page_logs = paginate_newest_first(&logs, page, page_size);
-                return RemoteNodeLogsResponse {
-                    available: true,
-                    container: dm.get_current_environment(),
-                    reason: None,
-                    logs: page_logs.logs,
-                    total: page_logs.total,
-                };
-            }
-        }
-        let Some((id, name)) = DockerNodeManager::find_container_for_port(port) else {
-            return RemoteNodeLogsResponse::unavailable("no_container");
-        };
-        match DockerNodeManager::container_logs(&id, MAX_CONTAINER_LOG_LINES) {
-            Ok(lines) => {
+        match read_local_container_logs(&docker_manager, &node_url) {
+            Ok((lines, container)) => {
                 let page_logs = paginate_newest_first(&lines, page, page_size);
                 RemoteNodeLogsResponse {
                     available: true,
-                    container: Some(name),
+                    container,
                     reason: None,
                     logs: page_logs.logs,
                     total: page_logs.total,
                 }
             }
-            Err(e) => {
-                log::warn!("docker logs failed for {}: {}", name, e);
-                RemoteNodeLogsResponse::unavailable("no_container")
-            }
+            Err(reason) => RemoteNodeLogsResponse::unavailable(reason),
         }
     })
     .await
     .map_err(|e| format!("Failed to read container logs: {}", e))
+}
+
+#[tauri::command]
+async fn save_remote_logs_to_file(
+    docker_manager: tauri::State<'_, Arc<Mutex<DockerNodeManager>>>,
+    node_url: String,
+    file_path: String,
+) -> Result<(), String> {
+    let docker_manager = Arc::clone(&*docker_manager);
+    tauri::async_runtime::spawn_blocking(move || {
+        let (lines, _) = read_local_container_logs(&docker_manager, &node_url)
+            .map_err(|reason| format!("Node logs are not available ({})", reason))?;
+        std::fs::write(&file_path, lines.join("\n"))
+            .map_err(|e| format!("Failed to write logs to file: {}", e))
+    })
+    .await
+    .map_err(|e| format!("Failed to export container logs: {}", e))?
 }
 
 #[tauri::command]
