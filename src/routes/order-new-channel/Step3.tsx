@@ -57,6 +57,13 @@ export const Step3: React.FC<Props> = ({
 
   const assetTicker = assetInfoProp?.ticker || fetchedAssetInfo?.ticker || ''
   const assetName = assetInfoProp?.name || fetchedAssetInfo?.name || ''
+  const assetPrecision =
+    assetInfoProp?.precision ?? fetchedAssetInfo?.precision ?? 0
+  // Order amounts are raw units; show them in the asset's display units.
+  const formatAsset = (raw: number) =>
+    (raw / 10 ** assetPrecision).toLocaleString(undefined, {
+      maximumFractionDigits: assetPrecision,
+    })
   const [assetIcon] = useAssetIcon(assetTicker, rgbIcon)
 
   useEffect(() => {
@@ -211,20 +218,20 @@ export const Step3: React.FC<Props> = ({
                     {assetName ? ` (${assetName})` : ''}
                   </span>
                   <span className="ml-auto text-xs text-content-tertiary">
-                    {totalAssetAmount.toLocaleString()} {assetTicker} total
+                    {formatAsset(totalAssetAmount)} {assetTicker} total
                   </span>
                 </div>
                 <div className="pl-6">
                   <div className="grid grid-cols-3 items-center text-xs mb-1">
                     <span className="flex items-center gap-1 text-purple-400 font-medium">
                       <ArrowUpRight className="w-3 h-3" />
-                      {clientAssetRaw.toLocaleString()} {assetTicker}
+                      {formatAsset(clientAssetRaw)} {assetTicker}
                     </span>
                     <span className="text-center text-content-tertiary text-[10px] font-semibold uppercase tracking-wider">
                       {assetTicker}
                     </span>
                     <span className="flex items-center gap-1 text-emerald-400 font-medium justify-end">
-                      {lspAssetRaw.toLocaleString()} {assetTicker}
+                      {formatAsset(lspAssetRaw)} {assetTicker}
                       <ArrowDownRight className="w-3 h-3" />
                     </span>
                   </div>
