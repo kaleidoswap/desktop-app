@@ -73,7 +73,8 @@
     "helpSupport": "Help & Support",
     "getHelpSupport": "Get Help & Support",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "App Connections"
   },
   "channels": {
     "pageTitle": "Manage Channels",
@@ -3165,5 +3166,97 @@
     "bitcoindBody": "More private, relies on a node you run. Needs Bitcoin Core with RPC, always reachable.",
     "invalidFormat": "Use the format user:password@host:port",
     "notConfigured": "Not used: syncing from the indexer"
+  },
+  "nwc": {
+    "title": "App Connections",
+    "subtitle": "Let other apps use this wallet through Nostr Wallet Connect. Your node stays on this computer.",
+    "add": "New connection",
+    "activity": "Recent activity",
+    "activityHint": "Requests from connected apps will appear here while this page is open.",
+    "budgetUsed": "{{spent}} of {{budget}} sats spent",
+    "cancel": "Cancel",
+    "caps": {
+      "receive": "Receive",
+      "spend": "Can spend",
+      "view": "View"
+    },
+    "connect": {
+      "title": "Connect your app",
+      "warning": "This code gives the app the permissions you chose. It is shown only once: scan it or copy it now, and do not share it."
+    },
+    "connections": "Connections",
+    "done": "Done",
+    "empty": {
+      "body": "Create a connection and scan its QR code from the app you want to link, such as the KaleidoSwap mobile wallet.",
+      "stopped": "Start the service to add a connection.",
+      "title": "No apps connected yet"
+    },
+    "errors": {
+      "create": "Failed to create the connection",
+      "permissions": "Select at least one permission",
+      "revoke": "Failed to revoke the connection",
+      "start": "Failed to start the service",
+      "update": "Failed to update the connection"
+    },
+    "lastUsed": "Used {{when}}",
+    "neverUsed": "Never used",
+    "new": {
+      "access": "Access",
+      "budget": "Spending limit",
+      "budgetHint": "Caps the total this app can send. Leave empty for no limit.",
+      "create": "Create connection",
+      "customBudget": "Custom amount in sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB assets",
+      "name": "Name",
+      "namePlaceholder": "e.g. Rate mobile, Browser extension",
+      "noLimit": "No limit",
+      "title": "New app connection",
+      "defaultName": "App connection {{n}}"
+    },
+    "noBudget": "No spending limit",
+    "pause": "Pause",
+    "paused": "Paused",
+    "permissionsCount": "{{count}} permissions",
+    "presets": {
+      "custom": "Custom",
+      "customDesc": "Pick each permission.",
+      "full": "Full wallet",
+      "fullDesc": "Lightning and RGB: view, receive and send. Recommended for KaleidoSwap wallets.",
+      "receive": "View & receive",
+      "receiveDesc": "View balances and create invoices. Cannot spend.",
+      "view": "View only",
+      "viewDesc": "Balances, assets and history only."
+    },
+    "resume": "Resume",
+    "revoke": "Revoke",
+    "revokeBody": "“{{name}}” will lose access to this wallet immediately. To reconnect it you will need a new connection.",
+    "revokeTitle": "Revoke connection",
+    "revoked": "Connection revoked",
+    "service": {
+      "identity": "Wallet service identity",
+      "running": "Service running",
+      "scope": "Lightning payments and RGB assets (KaleidoSwap extensions)",
+      "start": "Start service",
+      "stopped": "Service stopped"
+    },
+    "methods": {
+      "get_info": "Node info",
+      "get_balance": "Balance",
+      "make_invoice": "Create invoices",
+      "lookup_invoice": "Look up invoices",
+      "list_transactions": "Transaction history",
+      "pay_invoice": "Pay invoices",
+      "pay_keysend": "Send keysend",
+      "rln_node_info": "RGB node info",
+      "rln_list_assets": "List RGB assets",
+      "rln_asset_balance": "RGB balances",
+      "rln_rgb_invoice": "Create RGB invoices",
+      "rln_ln_invoice": "Create RGB Lightning invoices",
+      "rln_decode_rgb_invoice": "Decode RGB invoices",
+      "rln_send_asset": "Send RGB assets",
+      "rln_list_channels": "List channels",
+      "rln_get_address": "On-chain address"
+    }
   }
 }

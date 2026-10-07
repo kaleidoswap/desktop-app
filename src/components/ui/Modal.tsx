@@ -83,7 +83,9 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="max-h-[80vh] overflow-y-scroll">{children}</div>
+        <div className="custom-scrollbar max-h-[80vh] overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>,
     getModalPortalTarget()

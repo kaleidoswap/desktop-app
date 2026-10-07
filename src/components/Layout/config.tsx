@@ -189,6 +189,11 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         ],
         to: CHANNELS_PATH,
       },
+      {
+        icon: <LinkIcon className="w-5 h-5" />,
+        label: t('navigation.nwc', 'App Connections'),
+        to: NWC_PATH,
+      },
     ],
     key: 'node',
     label: t('navigation.node', 'Node'),
