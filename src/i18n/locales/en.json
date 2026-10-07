@@ -3290,5 +3290,22 @@
       "rln_list_channels": "List channels",
       "rln_get_address": "On-chain address"
     }
+  },
+  "remoteBrain": {
+    "title": "Serve models to your phone",
+    "description": "Let the KaleidoSwap phone app run its AI on this desktop's model. Only model inference is shared: your phone keeps its own wallet tools and confirmations, and this desktop's wallet is never exposed.",
+    "enable": "Serve models",
+    "enableHint": "Starts a local OpenAI-compatible server protected by an access token.",
+    "lan": "Allow devices on my local network",
+    "lanHint": "Off: only this computer can connect. On: your phone on the same Wi-Fi can connect.",
+    "plainHttpWarning": "Traffic on your local network is not encrypted. Anyone on the same network could read prompts and replies, but cannot use the server without the token. Only enable this on a network you trust.",
+    "scanHint": "In the KaleidoSwap app: AI → Settings → Use desktop model, then scan this code.",
+    "startModelHint": "Start a model in Brain so the phone has something to use.",
+    "rotateToken": "New access token",
+    "rotateHint": "Creates a new token. Phones paired with the old one must scan again.",
+    "localOnly": "Serving on {{url}} for this computer only. Allow local network access to pair a phone.",
+    "off": "Turn on serving to show a pairing code.",
+    "error": "Could not serve models: {{error}}",
+    "back": "Back to Brain"
   }
 }
