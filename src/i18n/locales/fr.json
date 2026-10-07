@@ -2141,7 +2141,8 @@
     "common": {
       "continue": "Continuer",
       "back": "Retour",
-      "finish": "Terminer"
+      "finish": "Terminer",
+      "done": "Terminé"
     },
     "step1": {
       "title": "Sélectionner un actif",
@@ -2155,7 +2156,8 @@
       "genericAsset": "Actif",
       "newAssetInfo": "Si vous ne connaissez pas l'identifiant de l'actif, vous pouvez continuer sans le saisir. Le système générera une adresse de dépôt pouvant recevoir n'importe quel actif RGB.",
       "assetIdLabel": "Identifiant de l'actif (optionnel)",
-      "assetIdPlaceholder": "Saisir l'identifiant de l'actif (optionnel)"
+      "assetIdPlaceholder": "Saisir l'identifiant de l'actif (optionnel)",
+      "continueWith": "Continuer avec {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "Déposer {{ticker}}",
@@ -2218,17 +2220,22 @@
         "generateAddress": "Générer une nouvelle adresse",
         "generateAddressCta": "Générer une adresse",
         "generateInvoice": "Générer une facture",
-        "regenerate": "Générer de nouvelles adresses"
+        "regenerate": "Générer de nouvelles adresses",
+        "copied": "Copié"
       },
       "labels": {
         "lnInvoice": "Facture LN",
         "btcAddress": "Adresse BTC",
-        "rgbInvoice": "Facture RGB"
+        "rgbInvoice": "Facture RGB",
+        "recipientId": "ID du destinataire"
       },
       "status": {
         "pending": "Paiement en cours...",
         "success": "Paiement reçu !",
-        "failed": "Paiement échoué ({{status}})"
+        "failed": "Paiement échoué ({{status}})",
+        "waitingAny": "En attente du paiement",
+        "waitingLightning": "En attente du paiement",
+        "waitingOnchain": "En attente du transfert"
       },
       "toasts": {
         "generateAddressError": "Échec de la génération de l'adresse",
@@ -2243,6 +2250,14 @@
         "recipientCopyError": "Échec de la copie de l'identifiant du destinataire",
         "lightningSuccess": "Dépôt Lightning reçu avec succès !",
         "lightningFailed": "Échec du dépôt Lightning : {{status}}"
+      },
+      "received": {
+        "title": "Paiement reçu",
+        "detectedTitle": "Paiement détecté",
+        "confirmedBody": "Les fonds sont maintenant dans votre portefeuille.",
+        "pendingBody": "La transaction est dans la mempool. Les fonds seront disponibles après confirmation — vous pouvez fermer cette fenêtre.",
+        "confirmations": "{{count}}/{{required}} confirmations",
+        "pendingBodyRgb": "Le transfert a été accepté et attend la confirmation on-chain. Les actifs seront disponibles après confirmation — vous pouvez fermer cette fenêtre."
       }
     }
   },

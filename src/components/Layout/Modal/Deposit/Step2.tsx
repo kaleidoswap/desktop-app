@@ -1,11 +1,8 @@
 import { openUrl } from '@tauri-apps/plugin-opener'
 import {
-  CircleCheckBig,
-  CircleX,
-  ArrowRight,
   ArrowLeft,
-  Copy,
   Download,
+  Droplet,
   Loader,
   RefreshCw,
   Wallet,
@@ -15,7 +12,14 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
@@ -32,6 +36,7 @@ import {
   getAssetPrecision,
   getDisplayAsset,
 } from '../../../../helpers/number'
+import { formatAssetAmount } from '../../../../helpers/walletHistoryUtils'
 import { useUtxoErrorHandler } from '../../../../hooks/useUtxoErrorHandler'
 import {
   nodeApi,
@@ -40,6 +45,12 @@ import {
   AssignmentFungible,
 } from '../../../../slices/nodeApi/nodeApi.slice'
 import { logger } from '../../../../utils/logger'
+
+import { AddressField, ReceivedPanel, WaitingIndicator } from './ReceiveParts'
+import {
+  useOnchainDepositWatcher,
+  useRgbReceiveWatcher,
+} from './useReceiveWatchers'
 
 interface Props {
   assetId?: string
@@ -150,12 +161,6 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
       generateBtcBoth()
     }
   }, [isBtc])
-
-  // Auto-generate address on mount for non-BTC flows
-  useEffect(() => {
-    if (isBtc) return
-    generateAddress()
-  }, [])
 
   // When BTC amount changes, regenerate LN invoice with new amount
   useEffect(() => {
@@ -583,44 +588,31 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
     }
   }
 
-  const handleCopy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success(t('depositModal.step2.toasts.addressCopied'))
-    } catch (error) {
-      toast.error(t('depositModal.step2.toasts.addressCopyError'))
-    }
-  }
+  // RGB: (re)generate the invoice whenever it was cleared by a network,
+  // privacy or amount change. Debounced so typing an amount doesn't spam.
+  useEffect(() => {
+    if (isBtc || address || noColorableUtxos) return
+    if (network === 'lightning' && !assetId) return
+    const timer = setTimeout(generateAddress, 600)
+    return () => clearTimeout(timer)
+  }, [isBtc, address, network, amount, usePrivacy, noColorableUtxos])
 
-  const handleCopyRecipientId = async () => {
-    try {
-      await navigator.clipboard.writeText(recipientId ?? '')
-      toast.success(t('depositModal.step2.toasts.recipientCopied'))
-    } catch (error) {
-      toast.error(t('depositModal.step2.toasts.recipientCopyError'))
-    }
-  }
+  const btcUnitLabel = bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit
 
-  const getStatusColor = () => {
-    if (!invoiceStatus) return 'text-content-secondary'
-    switch (invoiceStatus.status) {
-      case 'Pending':
-        return 'text-yellow-500'
-      case 'Succeeded':
-        return 'text-green-500'
-      default:
-        return 'text-red-500'
-    }
-  }
+  // --- Payment detection ---------------------------------------------------
+  const [lnReceived, setLnReceived] = useState(false)
+  const btcDeposit = useOnchainDepositWatcher(
+    isBtc && !!onchainAddress && !lnReceived
+  )
+  const rgbDeposit = useRgbReceiveWatcher(
+    assetId,
+    recipientId,
+    !isBtc && network === 'on-chain' && !!address
+  )
 
-  // Close modal on successful payment
   useEffect(() => {
     if (invoiceStatus?.status === 'Succeeded') {
-      toast.success(t('depositModal.step2.toasts.lightningSuccess'), {
-        autoClose: 5000,
-        progressStyle: { background: '#3B82F6' },
-      })
-      onNext()
+      setLnReceived(true)
     } else if (
       invoiceStatus?.status === 'Failed' ||
       invoiceStatus?.status === 'Expired'
@@ -634,11 +626,132 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         }
       )
     }
-  }, [invoiceStatus, onNext])
+  }, [invoiceStatus])
+
+  const displayTicker = isBtc ? btcUnitLabel : assetTicker
+  const enteredAmount = parseFloat(amount.replace(/,/g, '')) > 0 ? amount : ''
+
+  const received = lnReceived
+    ? {
+        amountLabel: enteredAmount
+          ? `${enteredAmount} ${displayTicker}`
+          : undefined,
+        confirmed: true,
+        txid: undefined,
+      }
+    : (() => {
+        const detected = isBtc ? btcDeposit : rgbDeposit
+        if (!detected) return undefined
+        return {
+          amountLabel:
+            detected.amount != null
+              ? `${formatAssetAmount(
+                  detected.amount,
+                  isBtc,
+                  bitcoinUnit,
+                  getAssetPrecision(assetTicker, bitcoinUnit, assetList?.nia)
+                )} ${displayTicker}`
+              : undefined,
+          confirmed: detected.confirmed,
+          txid: detected.txid,
+        }
+      })()
+
+  const networkKey = String(networkInfo?.network ?? '').toLowerCase()
+  const isMainnet = networkKey === Network.Mainnet
+  const faucetKey =
+    networkKey === Network.Signet || networkKey === Network.SignetCustom
+      ? 'signet'
+      : networkKey === Network.Regtest
+        ? 'regtest'
+        : 'testnet'
+  const faucetLink =
+    faucetKey === 'regtest'
+      ? 'https://t.me/rgb_lightning_bot'
+      : 'https://faucet.mutinynet.com/'
+
+  const waitingLabel = isBtc
+    ? t('depositModal.step2.status.waitingAny', 'Waiting for payment')
+    : network === 'lightning'
+      ? t('depositModal.step2.status.waitingLightning', 'Waiting for payment')
+      : t('depositModal.step2.status.waitingOnchain', 'Waiting for transfer')
+
+  const qrBlock = (value: string, badge?: ReactNode) => (
+    <div className="flex flex-col items-center gap-3 py-1">
+      <div className="p-3 bg-white rounded-2xl shadow-xl">
+        <QRCodeCanvas
+          includeMargin={false}
+          level="M"
+          size={196}
+          value={value}
+        />
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <WaitingIndicator label={waitingLabel} />
+        {badge}
+      </div>
+    </div>
+  )
+
+  const regenerateButton = (onClick: () => void, label: string) => (
+    <button
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                 text-content-secondary hover:text-white hover:bg-surface-overlay/50
+                 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      disabled={loading}
+      onClick={onClick}
+      type="button"
+    >
+      {loading ? (
+        <Loader className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <RefreshCw className="w-3.5 h-3.5" />
+      )}
+      {label}
+    </button>
+  )
+
+  const amountInput = (opts: {
+    label: string
+    placeholder: string
+    unit: string
+    showMax: boolean
+    autoFocus?: boolean
+  }) => (
+    <div className="space-y-1.5 animate-fadeIn">
+      <label className="block text-xs font-medium text-content-secondary">
+        {opts.label}
+      </label>
+      <div className="flex items-center gap-2 px-3 bg-surface-overlay/50 rounded-xl border border-border-default focus-within:border-primary transition-colors">
+        <input
+          autoFocus={opts.autoFocus}
+          className="flex-1 min-w-0 py-2.5 bg-transparent text-white text-sm tabular-nums
+                     placeholder:text-content-tertiary focus:outline-none"
+          inputMode="decimal"
+          onChange={handleAmountChange}
+          placeholder={opts.placeholder}
+          type="text"
+          value={amount}
+        />
+        <span className="text-xs font-medium text-content-secondary">
+          {opts.unit}
+        </span>
+        {opts.showMax && (
+          <button
+            className="px-2 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg transition-colors text-xs font-medium"
+            onClick={handleSetMaxAmount}
+            type="button"
+          >
+            {t('depositModal.step2.amount.maxButton')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div>
-      <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-4">
+      <div className="flex items-center gap-3 pb-4 border-b border-divider/10 mb-5">
         <Download className="w-6 h-6 text-primary" />
         <h3 className="text-xl font-bold text-white flex-1">{titleText}</h3>
         <button
@@ -650,41 +763,63 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
         </button>
       </div>
 
-      <div className="space-y-3">
-        {/* Network Selection - Only for RGB assets */}
-        {!isBtc && (
-          <div className="flex gap-2 p-0.5">
-            {(['on-chain', 'lightning'] as const).map((type) => {
-              const isDisabled = type === 'lightning' && !assetId
-              const Icon = type === 'lightning' ? Zap : ChainIcon
-              const label = t(
-                `depositModal.step2.network.${type === 'on-chain' ? 'onchain' : 'lightning'}`
-              )
-              return (
-                <button
-                  className={`flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1.5 rounded-xl transition-colors duration-200 border-2 ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${network === type ? (type === 'lightning' ? 'bg-yellow-500/15 border-yellow-500 text-yellow-400' : 'bg-violet-500/15 border-violet-500 text-violet-400') : 'bg-white/5 border-white/10 text-content-tertiary hover:border-white/20 hover:text-content-secondary'}`}
-                  disabled={isDisabled}
-                  key={type}
-                  onClick={() => setNetwork(type)}
-                  type="button"
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{label}</span>
-                  {isDisabled && (
-                    <span className="text-xs text-content-tertiary">
-                      {t('depositModal.step2.network.requiresAsset')}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        )}
+      {received ? (
+        <ReceivedPanel
+          amountLabel={received.amountLabel}
+          confirmed={received.confirmed}
+          kind={isBtc ? 'btc' : 'rgb'}
+          onDone={onNext}
+          txid={received.txid}
+        />
+      ) : (
+        <div className="space-y-4">
+          {/* Network selection — RGB assets only */}
+          {!isBtc && (
+            <div className="grid grid-cols-2 gap-1 p-1 bg-surface-overlay/50 rounded-xl border border-border-default">
+              {(['on-chain', 'lightning'] as const).map((type) => {
+                const isDisabled = type === 'lightning' && !assetId
+                const Icon = type === 'lightning' ? Zap : ChainIcon
+                const label = t(
+                  `depositModal.step2.network.${type === 'on-chain' ? 'onchain' : 'lightning'}`
+                )
+                return (
+                  <button
+                    className={`py-2 px-3 flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors
+                      ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}
+                      ${
+                        network === type
+                          ? 'bg-surface-high text-white shadow-sm'
+                          : 'text-content-secondary hover:text-white'
+                      }`}
+                    disabled={isDisabled}
+                    key={type}
+                    onClick={() => setNetwork(type)}
+                    title={
+                      isDisabled
+                        ? t('depositModal.step2.network.requiresAsset')
+                        : undefined
+                    }
+                    type="button"
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        network === type
+                          ? type === 'lightning'
+                            ? 'text-network-lightning'
+                            : 'text-network-rgb'
+                          : ''
+                      }`}
+                    />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
-        {/* RGB Privacy Mode Toggle */}
-        {!isBtc && network === 'on-chain' && assetId !== BTC_ASSET_ID && (
-          <div className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default animate-fadeIn">
-            <div className="flex items-center justify-between gap-3">
+          {/* RGB privacy mode toggle */}
+          {!isBtc && network === 'on-chain' && assetId !== BTC_ASSET_ID && (
+            <div className="flex items-center justify-between gap-3 p-3 bg-surface-overlay/50 rounded-xl border border-border-default animate-fadeIn">
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-medium text-white">
                   {t('depositModal.step2.privacy.title')}
@@ -709,560 +844,247 @@ export const Step2 = ({ assetId, onBack, onClose, onNext }: Props) => {
                 />
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* No Colorable UTXOs Warning */}
-        {noColorableUtxos && (
-          <div className="p-2 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-            <div className="flex items-start">
-              <AlertTriangle className="text-yellow-500 w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-              <div>
+          {/* No colorable UTXOs warning */}
+          {noColorableUtxos && (
+            <div className="flex items-start gap-2 p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
+              <AlertTriangle className="text-yellow-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
                 <h4 className="text-yellow-400 font-medium text-xs mb-1">
                   {t('depositModal.step2.noColorable.title')}
                 </h4>
-                <p className="text-yellow-300/80 text-xs mb-1.5">
+                <p className="text-yellow-300/80 text-xs mb-2">
                   {t('depositModal.step2.noColorable.description')}
                 </p>
                 <button
                   className="px-2 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400
                           rounded-lg transition-colors text-xs flex items-center gap-1.5"
                   onClick={() => setShowUtxoModal(true)}
+                  type="button"
                 >
                   <Wallet className="w-3 h-3" />
                   {t('depositModal.step2.noColorable.cta')}
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* === BTC Unified View: Amount + QR + Both addresses === */}
-        {isBtc && (
-          <>
-            {/* BTC Amount Input (optional) */}
-            <div className="space-y-1 animate-fadeIn">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-medium text-content-secondary">
-                  {t('depositModal.step2.amount.optionalLabel')}
-                </label>
-                <span className="text-xs text-content-secondary">
-                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
-                </span>
-              </div>
-              <div className="relative">
-                <input
-                  className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
-                           focus:outline-none focus:border-primary text-white
-                           placeholder:text-content-tertiary transition-colors duration-150 text-sm"
-                  inputMode="decimal"
-                  onChange={handleAmountChange}
-                  placeholder={t('depositModal.step2.amount.btcPlaceholder')}
-                  type="text"
-                  value={amount}
-                />
-                {maxDepositAmount > 0 && (
-                  <button
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                             bg-primary/20 hover:bg-primary/30 text-primary
-                             rounded-lg transition-colors text-xs font-medium"
-                    onClick={handleSetMaxAmount}
-                    type="button"
-                  >
-                    {t('depositModal.step2.amount.maxButton')}
-                  </button>
-                )}
-              </div>
+          {/* === BTC unified view: amount + one BIP21 QR + both payloads === */}
+          {isBtc && (
+            <>
+              {amountInput({
+                label: t('depositModal.step2.amount.optionalLabel'),
+                placeholder: t('depositModal.step2.amount.btcPlaceholder'),
+                showMax: maxDepositAmount > 0,
+                unit: btcUnitLabel,
+              })}
               {maxDepositAmount > 0 && (
-                <p className="text-xs text-content-secondary pt-0.5">
+                <p className="-mt-2 text-xs text-content-tertiary">
                   {t(
                     'depositModal.step2.amount.maxLightning',
                     'Max via Lightning'
                   )}
-                  : {formatAmount(maxDepositAmount, 'BTC')}{' '}
-                  {bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit}
+                  : {formatAmount(maxDepositAmount, 'BTC')} {btcUnitLabel}
                 </p>
               )}
-            </div>
 
-            {/* Network info and faucet suggestion */}
-            {networkInfo && (
-              <div className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default">
-                {(() => {
-                  const faucetKey =
-                    networkInfo.network === Network.Signet ||
-                    networkInfo.network === Network.SignetCustom
-                      ? 'signet'
-                      : networkInfo.network === Network.Regtest
-                        ? 'regtest'
-                        : 'testnet'
-                  const link =
-                    faucetKey === 'regtest'
-                      ? 'https://t.me/rgb_lightning_bot'
-                      : 'https://faucet.mutinynet.com/'
+              {onchainAddress || lnInvoiceStr ? (
+                <div className="space-y-3 animate-fadeIn">
+                  {qrBlock(
+                    bip21URI || onchainAddress || '',
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-overlay/50 border border-border-default text-xs text-content-secondary">
+                      <ChainIcon className="w-3 h-3 text-network-bitcoin" />
+                      <span>+</span>
+                      <Zap className="w-3 h-3 text-network-lightning" />
+                      <span>{t('depositModal.step2.bip21.badge')}</span>
+                    </span>
+                  )}
 
-                  return (
-                    <div className="flex flex-col">
-                      <p className="text-white text-xs font-medium mb-1">
-                        {t(
-                          'depositModal.step2.networkInfo.testCoins',
-                          'Test Coins'
-                        )}
-                      </p>
-
-                      <div className="text-xs text-content-secondary mt-1">
-                        <p className="mb-1.5">
-                          {t(
-                            `depositModal.step2.networkInfo.description.${faucetKey}`
-                          )}
-                        </p>
-                        <button
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-transparent
-                              hover:bg-white/5 border border-white/30 hover:border-white/50
-                              text-white rounded-lg transition-colors text-xs font-semibold"
-                          onClick={() => {
-                            openUrl(link)
-                          }}
-                        >
-                          <ArrowRight className="w-3 h-3" />
-                          {t(
-                            `depositModal.step2.networkInfo.button.${faucetKey}`
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
-
-            {onchainAddress || lnInvoiceStr ? (
-              <div className="space-y-4 animate-fadeIn">
-                {/* Payment Status */}
-                {invoiceStatus && (
-                  <div
-                    className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm py-2 bg-surface-overlay/50 rounded-lg`}
-                  >
-                    {invoiceStatus.status === 'Pending' ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        <span>{t('depositModal.step2.status.pending')}</span>
-                      </>
-                    ) : invoiceStatus.status === 'Succeeded' ? (
-                      <>
-                        <CircleCheckBig className="w-4 h-4" />
-                        <span>{t('depositModal.step2.status.success')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <CircleX className="w-4 h-4" />
-                        <span>
-                          {t('depositModal.step2.status.failed', {
-                            status: invoiceStatus.status,
-                          })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Unified BIP21 QR Code */}
-                <div className="flex justify-center py-1">
-                  <div className="p-2 bg-white rounded-xl shadow-xl">
-                    <QRCodeCanvas
-                      includeMargin={true}
-                      level="H"
-                      size={window.innerWidth < 500 ? 130 : 150}
-                      value={bip21URI || onchainAddress || ''}
+                  {onchainAddress && (
+                    <AddressField
+                      icon={btcLogo}
+                      label={t('depositModal.step2.labels.btcAddress')}
+                      value={onchainAddress}
                     />
-                  </div>
+                  )}
+                  {lnInvoiceStr && (
+                    <AddressField
+                      icon={lightningLogo}
+                      label={t('depositModal.step2.labels.lnInvoice')}
+                      value={lnInvoiceStr}
+                    />
+                  )}
                 </div>
-
-                {/* BIP21 badge */}
-                <div className="flex justify-center">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-overlay/50 border border-border-default text-xs text-content-secondary">
-                    <ChainIcon className="w-3 h-3" />
-                    <span>+</span>
-                    <Zap className="w-3 h-3" />
-                    <span>{t('depositModal.step2.bip21.badge')}</span>
-                  </span>
+              ) : (
+                <div className="flex justify-center py-16">
+                  <Loader className="w-6 h-6 animate-spin text-primary" />
                 </div>
+              )}
+            </>
+          )}
 
-                {/* Regenerate icon button */}
-                <div className="flex justify-end">
-                  <button
-                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30
-                             hover:border-white/50 text-white transition-colors disabled:opacity-40
-                             disabled:cursor-not-allowed"
-                    disabled={loading}
-                    onClick={handleRegenerateBtc}
-                    title={t('depositModal.step2.actions.regenerate')}
-                  >
-                    {loading ? (
-                      <Loader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
+          {/* === RGB asset flows === */}
+          {!isBtc && (
+            <>
+              {network === 'on-chain' &&
+                assetId &&
+                assetId !== BTC_ASSET_ID &&
+                amountInput({
+                  label: t('depositModal.step2.amount.optionalLabel'),
+                  placeholder: t(
+                    'depositModal.step2.amount.requiredLabel',
+                    'Enter amount'
+                  ),
+                  showMax: false,
+                  unit: assetTicker,
+                })}
 
-                {/* On-chain Address */}
-                {onchainAddress && (
-                  <div
-                    className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
-                                flex items-center justify-between group hover:border-primary/50
-                                transition-colors duration-200"
-                  >
-                    <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                      <img
-                        alt="Bitcoin"
-                        className="w-6 h-6 flex-shrink-0"
-                        src={btcLogo}
-                      />
-                      <span className="truncate">
-                        {onchainAddress.length > 40
-                          ? `${onchainAddress.slice(0, 20)}...${onchainAddress.slice(-10)}`
-                          : onchainAddress}
-                      </span>
-                    </div>
-                    <button
-                      className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                               text-content-secondary hover:text-primary flex-shrink-0"
-                      onClick={() => handleCopy(onchainAddress)}
-                      title={t('depositModal.step2.actions.copy')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Lightning Invoice */}
-                {lnInvoiceStr && (
-                  <div
-                    className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
-                                flex items-center justify-between group hover:border-primary/50
-                                transition-colors duration-200"
-                  >
-                    <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                      <img
-                        alt="Lightning"
-                        className="w-6 h-6 flex-shrink-0"
-                        src={lightningLogo}
-                      />
-                      <span className="truncate">
-                        {lnInvoiceStr.length > 40
-                          ? `${lnInvoiceStr.slice(0, 20)}...${lnInvoiceStr.slice(-10)}`
-                          : lnInvoiceStr}
-                      </span>
-                    </div>
-                    <button
-                      className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                               text-content-secondary hover:text-primary flex-shrink-0"
-                      onClick={() => handleCopy(lnInvoiceStr)}
-                      title={t('depositModal.step2.actions.copy')}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex justify-center py-10">
-                <Loader className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            )}
-          </>
-        )}
-
-        {/* === RGB Asset Flows (existing behavior) === */}
-        {!isBtc && (
-          <>
-            {/* Amount Input for On-chain RGB Invoices */}
-            {network === 'on-chain' && assetId && assetId !== BTC_ASSET_ID && (
-              <div className="space-y-1 animate-fadeIn">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-medium text-content-secondary">
-                    {t('depositModal.step2.amount.optionalLabel')}
-                  </label>
-                  <span className="text-xs text-content-secondary">
-                    {assetTicker}
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
-                             focus:border-primary focus:outline-none text-white
-                             placeholder:text-content-tertiary transition-colors duration-150 text-sm"
-                    inputMode="decimal"
-                    onChange={handleAmountChange}
-                    placeholder={t(
+              {network === 'lightning' && (
+                <>
+                  {amountInput({
+                    autoFocus: true,
+                    label: t('depositModal.step2.amount.optionalLabel'),
+                    placeholder: t(
                       'depositModal.step2.amount.requiredLabel',
                       'Enter amount'
-                    )}
-                    type="text"
-                    value={amount}
-                  />
-                </div>
-                {assetTicker && (
-                  <p className="text-xs text-content-secondary pt-0.5">
-                    {t('depositModal.step2.amount.precision', {
-                      value: getAssetPrecision(
-                        assetTicker,
-                        bitcoinUnit,
-                        assetList?.nia
-                      ),
-                    })}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Amount Input for Lightning (RGB) */}
-            {network === 'lightning' && (
-              <div className="space-y-1 animate-fadeIn">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-medium text-content-secondary">
-                    {t('depositModal.step2.amount.optionalLabel')}
-                  </label>
-                  <span className="text-xs text-content-secondary">
-                    {assetId === BTC_ASSET_ID
-                      ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
-                        ? 'SATS'
-                        : getDisplayAsset('BTC', bitcoinUnit)
-                      : assetTicker}
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    autoFocus
-                    className="w-full px-3 py-2 pr-14 bg-surface-overlay/50 rounded-xl border border-border-default
-                             focus:border-primary focus:outline-none text-white
-                             placeholder:text-content-tertiary transition-colors duration-150 text-sm"
-                    inputMode="decimal"
-                    onChange={handleAmountChange}
-                    placeholder={t(
-                      'depositModal.step2.amount.requiredLabel',
-                      'Enter amount'
-                    )}
-                    type="text"
-                    value={amount}
-                  />
+                    ),
+                    showMax: maxDepositAmount > 0,
+                    unit: assetTicker,
+                  })}
                   {maxDepositAmount > 0 && (
-                    <button
-                      className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1
-                               bg-primary/20 hover:bg-primary/30 text-primary
-                               rounded-lg transition-colors text-xs font-medium"
-                      onClick={handleSetMaxAmount}
-                      type="button"
-                    >
-                      {t('depositModal.step2.amount.maxButton')}
-                    </button>
+                    <p className="-mt-2 text-xs text-content-tertiary">
+                      Max: {formatAmount(maxDepositAmount, assetTicker)}{' '}
+                      {assetTicker}
+                    </p>
                   )}
-                </div>
-                {maxDepositAmount > 0 && (
-                  <p className="text-xs text-content-secondary pt-0.5">
-                    Max:{' '}
-                    {formatAmount(
-                      maxDepositAmount,
-                      assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                    )}{' '}
-                    {assetId === BTC_ASSET_ID
-                      ? getDisplayAsset('BTC', bitcoinUnit) === 'SAT'
-                        ? 'SATS'
-                        : getDisplayAsset('BTC', bitcoinUnit)
-                      : assetTicker}
-                  </p>
-                )}
-
-                {/* Validation and info messages */}
-                {amount &&
-                  parseFloat(amount.replace(/,/g, '')) > 0 &&
-                  maxDepositAmount > 0 && (
-                    <div className="mt-2">
-                      {parseAmount(
-                        amount,
-                        assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                      ) > maxDepositAmount && (
-                        <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                          <p className="text-xs text-red-400">
-                            {t('depositModal.step2.amount.exceeds', {
-                              amount: formatAmount(
-                                maxDepositAmount,
-                                assetId === BTC_ASSET_ID ? 'BTC' : assetTicker
-                              ),
-                              asset: getDisplayAsset(
-                                assetId === BTC_ASSET_ID ? 'BTC' : assetTicker,
-                                bitcoinUnit
-                              ),
-                            })}
-                          </p>
-                        </div>
-                      )}
+                  {maxDepositAmount > 0 &&
+                    enteredAmount &&
+                    parseAmount(enteredAmount, assetTicker) >
+                      maxDepositAmount && (
+                      <p className="p-2 text-xs text-red-400 bg-red-500/10 rounded-lg border border-red-500/20">
+                        {t('depositModal.step2.amount.exceeds', {
+                          amount: formatAmount(maxDepositAmount, assetTicker),
+                          asset: getDisplayAsset(assetTicker, bitcoinUnit),
+                        })}
+                      </p>
+                    )}
+                  {maxDepositAmount === 0 ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/15 border border-yellow-500/40 rounded-lg">
+                      <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                      <p className="text-xs text-yellow-300 font-medium">
+                        {t('depositModal.step2.amount.noChannels')}
+                      </p>
                     </div>
-                  )}
-
-                {assetId && assetId !== BTC_ASSET_ID && (
-                  <div className="mt-1 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                    <p className="text-xs text-primary">
+                  ) : (
+                    <p className="text-xs text-content-tertiary">
                       {t('depositModal.step2.amount.rgbNote')}
                     </p>
-                  </div>
-                )}
-
-                {maxDepositAmount === 0 && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/15 border border-yellow-500/40 rounded-lg">
-                    <AlertTriangle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-                    <p className="text-xs text-yellow-300 font-medium">
-                      {t('depositModal.step2.amount.noChannels')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* RGB Generate / Display */}
-            {address ? (
-              <div className="space-y-4 animate-fadeIn">
-                {/* Payment Status */}
-                {invoiceStatus && (
-                  <div
-                    className={`flex items-center justify-center gap-2 ${getStatusColor()} text-sm py-2 bg-surface-overlay/50 rounded-lg`}
-                  >
-                    {invoiceStatus.status === 'Pending' ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        <span>{t('depositModal.step2.status.pending')}</span>
-                      </>
-                    ) : invoiceStatus.status === 'Succeeded' ? (
-                      <>
-                        <CircleCheckBig className="w-4 h-4" />
-                        <span>{t('depositModal.step2.status.success')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <CircleX className="w-4 h-4" />
-                        <span>
-                          {t('depositModal.step2.status.failed', {
-                            status: invoiceStatus.status,
-                          })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* QR Code */}
-                <div className="flex justify-center py-1">
-                  <div className="p-2 bg-white rounded-xl shadow-xl">
-                    <QRCodeCanvas
-                      includeMargin={true}
-                      level="H"
-                      size={window.innerWidth < 500 ? 130 : 150}
-                      value={address}
-                    />
-                  </div>
-                </div>
-
-                {/* Regenerate icon button */}
-                <div className="flex justify-end">
-                  <button
-                    className="p-1.5 rounded-lg bg-transparent hover:bg-white/5 border border-white/30
-                             hover:border-white/50 text-white transition-colors disabled:opacity-40
-                             disabled:cursor-not-allowed"
-                    disabled={loading}
-                    onClick={generateAddress}
-                    title={t('depositModal.step2.actions.generateAddress')}
-                  >
-                    {loading ? (
-                      <Loader className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Address Display */}
-                <div
-                  className="p-3 bg-surface-overlay/50 rounded-xl border border-border-default
-                              flex items-center justify-between group hover:border-primary/50
-                              transition-colors duration-200"
-                >
-                  <div className="truncate flex-1 text-content-secondary font-mono text-xs flex items-center gap-2">
-                    <img
-                      alt="RGB"
-                      className="w-6 h-6 flex-shrink-0"
-                      src={rgbLogo}
-                    />
-                    {address.length > 45
-                      ? `${address.slice(0, 42)}...`
-                      : address}
-                  </div>
-                  <button
-                    className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                             text-content-secondary hover:text-primary"
-                    onClick={() => handleCopy(address)}
-                    title={t('depositModal.step2.actions.copy')}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Recipient ID Display for Assets */}
-                {assetId !== BTC_ASSET_ID &&
-                  recipientId &&
-                  network === 'on-chain' && (
-                    <div className="flex items-center justify-between px-3">
-                      <div className="truncate flex-1 text-content-secondary font-mono text-xs">
-                        <span className="text-content-secondary mr-2">
-                          Recipient ID:
-                        </span>
-                        {recipientId.length > 45
-                          ? `${recipientId.slice(0, 42)}...`
-                          : recipientId}
-                      </div>
-                      <button
-                        className="ml-2 p-1.5 hover:bg-primary/10 rounded-lg transition-colors
-                               text-content-secondary hover:text-primary"
-                        onClick={handleCopyRecipientId}
-                        title={t('depositModal.step2.actions.copy')}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
                   )}
-              </div>
-            ) : null}
-          </>
-        )}
+                </>
+              )}
 
-        {/* Navigation */}
-        <div className="flex justify-between pt-3">
-          <button
-            className="px-3 py-2 text-content-secondary hover:text-white transition-colors
-                     flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
-            onClick={onBack}
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{t('depositModal.common.back')}</span>
-          </button>
+              {address ? (
+                <div className="space-y-3 animate-fadeIn">
+                  {qrBlock(address)}
 
-          <button
-            className="px-4 py-2 bg-primary hover:bg-primary-emphasis disabled:opacity-50 disabled:cursor-not-allowed
-                     text-primary-foreground rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
-            disabled={loading}
-            onClick={onNext}
-          >
-            {loading ? (
-              <Loader className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <span>{t('depositModal.common.finish')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </>
-            )}
-          </button>
+                  <AddressField
+                    icon={network === 'lightning' ? lightningLogo : rgbLogo}
+                    label={
+                      network === 'lightning'
+                        ? t('depositModal.step2.labels.lnInvoice')
+                        : t('depositModal.step2.labels.rgbInvoice')
+                    }
+                    value={address}
+                  />
+
+                  {recipientId && network === 'on-chain' && (
+                    <AddressField
+                      icon={rgbLogo}
+                      label={t(
+                        'depositModal.step2.labels.recipientId',
+                        'Recipient ID'
+                      )}
+                      value={recipientId}
+                    />
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-10">
+                  {loading ? (
+                    <Loader className="w-6 h-6 animate-spin text-primary" />
+                  ) : (
+                    <button
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/15 hover:bg-primary/25 text-primary text-sm font-semibold transition-colors"
+                      onClick={generateAddress}
+                      type="button"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {network === 'lightning'
+                        ? t('depositModal.step2.actions.generateInvoice')
+                        : t('depositModal.step2.actions.generateAddressCta')}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Secondary actions: fresh address + test-coin faucet off mainnet */}
+          {(onchainAddress || lnInvoiceStr || address || !isMainnet) && (
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {isBtc &&
+                (onchainAddress || lnInvoiceStr) &&
+                regenerateButton(
+                  handleRegenerateBtc,
+                  t('depositModal.step2.actions.regenerate')
+                )}
+              {!isBtc &&
+                address &&
+                regenerateButton(
+                  generateAddress,
+                  t('depositModal.step2.actions.generateAddress')
+                )}
+              {isBtc && networkInfo && !isMainnet && (
+                <button
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                             text-content-secondary hover:text-white hover:bg-surface-overlay/50 transition-colors"
+                  onClick={() => openUrl(faucetLink)}
+                  title={t(
+                    `depositModal.step2.networkInfo.description.${faucetKey}`
+                  )}
+                  type="button"
+                >
+                  <Droplet className="w-3.5 h-3.5" />
+                  {t(`depositModal.step2.networkInfo.button.${faucetKey}`)}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between pt-2 border-t border-divider/10">
+            <button
+              className="mt-3 px-3 py-2 text-content-secondary hover:text-white transition-colors
+                       flex items-center gap-1.5 hover:bg-surface-overlay/50 rounded-lg text-sm"
+              onClick={onBack}
+              type="button"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{t('depositModal.common.back')}</span>
+            </button>
+
+            <button
+              className="mt-3 px-4 py-2 bg-surface-overlay/50 hover:bg-surface-high text-white border border-border-default
+                       rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
+              onClick={onNext}
+              type="button"
+            >
+              {t('depositModal.common.done', 'Done')}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* UTXO Modal for handling UTXO-related errors */}
       <CreateUTXOModal

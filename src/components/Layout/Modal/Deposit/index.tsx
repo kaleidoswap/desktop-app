@@ -16,9 +16,7 @@ export const DepositModalContent = ({ onClose }: DepositModalContentProps) => {
   const [assetId, setAssetId] = useState<string>()
 
   return (
-    <div
-      className={`flex-1 pr-1 ${step === 2 ? 'overflow-y-auto custom-scrollbar' : ''}`}
-    >
+    <div className="flex-1">
       {step === 1 && (
         <Step1
           onClose={onClose}

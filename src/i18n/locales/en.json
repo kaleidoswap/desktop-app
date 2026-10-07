@@ -2135,7 +2135,8 @@
     "common": {
       "continue": "Continue",
       "back": "Back",
-      "finish": "Finish"
+      "finish": "Finish",
+      "done": "Done"
     },
     "step1": {
       "title": "Select Asset",
@@ -2149,7 +2150,8 @@
       "genericAsset": "Asset",
       "newAssetInfo": "If you don't know the asset ID, you can proceed without entering it. The system will generate a deposit address that can receive any RGB asset.",
       "assetIdLabel": "Asset ID (optional)",
-      "assetIdPlaceholder": "Enter asset ID (optional)"
+      "assetIdPlaceholder": "Enter asset ID (optional)",
+      "continueWith": "Continue with {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "Deposit {{ticker}}",
@@ -2212,17 +2214,22 @@
         "generateAddress": "Generate new address",
         "generateAddressCta": "Generate Address",
         "generateInvoice": "Generate Invoice",
-        "regenerate": "Generate New Addresses"
+        "regenerate": "Generate New Addresses",
+        "copied": "Copied"
       },
       "labels": {
         "lnInvoice": "LN Invoice",
         "btcAddress": "BTC Address",
-        "rgbInvoice": "RGB Invoice"
+        "rgbInvoice": "RGB Invoice",
+        "recipientId": "Recipient ID"
       },
       "status": {
         "pending": "Payment pending...",
         "success": "Payment received!",
-        "failed": "Payment failed ({{status}})"
+        "failed": "Payment failed ({{status}})",
+        "waitingAny": "Waiting for payment",
+        "waitingLightning": "Waiting for payment",
+        "waitingOnchain": "Waiting for transfer"
       },
       "toasts": {
         "generateAddressError": "Failed to generate address",
@@ -2237,6 +2244,14 @@
         "recipientCopyError": "Failed to copy recipient ID",
         "lightningSuccess": "Lightning deposit received successfully!",
         "lightningFailed": "Lightning deposit failed: {{status}}"
+      },
+      "received": {
+        "title": "Payment received",
+        "detectedTitle": "Payment detected",
+        "confirmedBody": "The funds are now in your wallet.",
+        "pendingBody": "The transaction is in the mempool. Funds become spendable once it confirms — you can close this window.",
+        "confirmations": "{{count}}/{{required}} confirmations",
+        "pendingBodyRgb": "The transfer was accepted and is waiting for on-chain confirmation. The assets become spendable once it confirms — you can close this window."
       }
     }
   },

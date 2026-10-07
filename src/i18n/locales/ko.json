@@ -2135,7 +2135,8 @@
     "common": {
       "continue": "계속",
       "back": "뒤로",
-      "finish": "완료"
+      "finish": "완료",
+      "done": "완료"
     },
     "step1": {
       "title": "자산 선택",
@@ -2149,7 +2150,8 @@
       "genericAsset": "자산",
       "newAssetInfo": "자산 ID를 모르는 경우 입력하지 않고 진행할 수 있습니다. 시스템이 모든 RGB 자산을 수신할 수 있는 입금 주소를 생성합니다.",
       "assetIdLabel": "자산 ID (선택 사항)",
-      "assetIdPlaceholder": "자산 ID 입력 (선택 사항)"
+      "assetIdPlaceholder": "자산 ID 입력 (선택 사항)",
+      "continueWith": "{{ticker}}(으)로 계속"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} 입금",
@@ -2212,17 +2214,22 @@
         "generateAddress": "새 주소 생성",
         "generateAddressCta": "주소 생성",
         "generateInvoice": "인보이스 생성",
-        "regenerate": "새 주소 생성"
+        "regenerate": "새 주소 생성",
+        "copied": "복사됨"
       },
       "labels": {
         "lnInvoice": "LN 인보이스",
         "btcAddress": "BTC 주소",
-        "rgbInvoice": "RGB 인보이스"
+        "rgbInvoice": "RGB 인보이스",
+        "recipientId": "수신자 ID"
       },
       "status": {
         "pending": "결제 대기 중...",
         "success": "결제가 수신되었습니다!",
-        "failed": "결제 실패 ({{status}})"
+        "failed": "결제 실패 ({{status}})",
+        "waitingAny": "결제 대기 중",
+        "waitingLightning": "결제 대기 중",
+        "waitingOnchain": "전송 대기 중"
       },
       "toasts": {
         "generateAddressError": "주소 생성에 실패했습니다",
@@ -2237,6 +2244,14 @@
         "recipientCopyError": "수신자 ID 복사에 실패했습니다",
         "lightningSuccess": "Lightning 입금이 성공적으로 수신되었습니다!",
         "lightningFailed": "Lightning 입금 실패: {{status}}"
+      },
+      "received": {
+        "title": "결제 수신 완료",
+        "detectedTitle": "결제 감지됨",
+        "confirmedBody": "자금이 지갑에 입금되었습니다.",
+        "pendingBody": "트랜잭션이 멤풀에 있습니다. 컨펌 후 자금을 사용할 수 있습니다 — 이 창을 닫아도 됩니다.",
+        "confirmations": "{{count}}/{{required}} 컨펌",
+        "pendingBodyRgb": "전송이 수락되었으며 온체인 컨펌을 기다리고 있습니다. 컨펌 후 자산을 사용할 수 있습니다 — 이 창을 닫아도 됩니다."
       }
     }
   },

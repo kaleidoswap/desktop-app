@@ -2135,7 +2135,8 @@
     "common": {
       "continue": "Weiter",
       "back": "Zurück",
-      "finish": "Fertig"
+      "finish": "Fertig",
+      "done": "Fertig"
     },
     "step1": {
       "title": "Asset auswählen",
@@ -2149,7 +2150,8 @@
       "genericAsset": "Asset",
       "newAssetInfo": "Wenn du die Asset-ID nicht kennst, kannst du ohne fortfahren. Es wird eine Adresse erzeugt, die jedes RGB-Asset empfangen kann.",
       "assetIdLabel": "Asset-ID (optional)",
-      "assetIdPlaceholder": "Asset-ID eingeben (optional)"
+      "assetIdPlaceholder": "Asset-ID eingeben (optional)",
+      "continueWith": "Weiter mit {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} einzahlen",
@@ -2212,17 +2214,22 @@
         "generateAddress": "Neue Adresse generieren",
         "generateAddressCta": "Adresse generieren",
         "generateInvoice": "Rechnung generieren",
-        "regenerate": "Neue Adressen generieren"
+        "regenerate": "Neue Adressen generieren",
+        "copied": "Kopiert"
       },
       "labels": {
         "lnInvoice": "Lightning-Rechnung",
         "btcAddress": "BTC-Adresse",
-        "rgbInvoice": "RGB-Rechnung"
+        "rgbInvoice": "RGB-Rechnung",
+        "recipientId": "Empfänger-ID"
       },
       "status": {
         "pending": "Zahlung in Bearbeitung...",
         "success": "Zahlung erhalten!",
-        "failed": "Zahlung fehlgeschlagen ({{status}})"
+        "failed": "Zahlung fehlgeschlagen ({{status}})",
+        "waitingAny": "Warte auf Zahlung",
+        "waitingLightning": "Warte auf Zahlung",
+        "waitingOnchain": "Warte auf Transfer"
       },
       "toasts": {
         "generateAddressError": "Adresse konnte nicht erstellt werden",
@@ -2237,6 +2244,14 @@
         "recipientCopyError": "Empfänger-ID konnte nicht kopiert werden",
         "lightningSuccess": "Lightning-Einzahlung erfolgreich!",
         "lightningFailed": "Lightning-Einzahlung fehlgeschlagen: {{status}}"
+      },
+      "received": {
+        "title": "Zahlung erhalten",
+        "detectedTitle": "Zahlung erkannt",
+        "confirmedBody": "Das Guthaben ist jetzt in deiner Wallet.",
+        "pendingBody": "Die Transaktion ist im Mempool. Das Guthaben ist nach der Bestätigung verfügbar — du kannst dieses Fenster schließen.",
+        "confirmations": "{{count}}/{{required}} Bestätigungen",
+        "pendingBodyRgb": "Der Transfer wurde akzeptiert und wartet auf die On-Chain-Bestätigung. Die Assets sind nach der Bestätigung verfügbar — du kannst dieses Fenster schließen."
       }
     }
   },

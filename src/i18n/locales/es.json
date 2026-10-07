@@ -2141,7 +2141,8 @@
     "common": {
       "continue": "Continuar",
       "back": "Atrás",
-      "finish": "Finalizar"
+      "finish": "Finalizar",
+      "done": "Listo"
     },
     "step1": {
       "title": "Seleccionar Asset",
@@ -2155,7 +2156,8 @@
       "genericAsset": "Activo",
       "newAssetInfo": "Si no conoces el ID del asset, puedes continuar sin introducirlo. El sistema generará una dirección de depósito que puede recibir cualquier asset RGB.",
       "assetIdLabel": "ID del Asset (opcional)",
-      "assetIdPlaceholder": "Introduce el ID del asset (opcional)"
+      "assetIdPlaceholder": "Introduce el ID del asset (opcional)",
+      "continueWith": "Continuar con {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "Depositar {{ticker}}",
@@ -2218,17 +2220,22 @@
         "generateAddress": "Generar nueva dirección",
         "generateAddressCta": "Generar Dirección",
         "generateInvoice": "Generar Factura",
-        "regenerate": "Generar nuevas direcciones"
+        "regenerate": "Generar nuevas direcciones",
+        "copied": "Copiado"
       },
       "labels": {
         "lnInvoice": "Factura LN",
         "btcAddress": "Dirección BTC",
-        "rgbInvoice": "Factura RGB"
+        "rgbInvoice": "Factura RGB",
+        "recipientId": "ID del destinatario"
       },
       "status": {
         "pending": "Pago pendiente...",
         "success": "¡Pago recibido!",
-        "failed": "Pago fallido ({{status}})"
+        "failed": "Pago fallido ({{status}})",
+        "waitingAny": "Esperando el pago",
+        "waitingLightning": "Esperando el pago",
+        "waitingOnchain": "Esperando la transferencia"
       },
       "toasts": {
         "generateAddressError": "Error al generar la dirección",
@@ -2243,6 +2250,14 @@
         "recipientCopyError": "Error al copiar el ID del destinatario",
         "lightningSuccess": "¡Depósito Lightning recibido exitosamente!",
         "lightningFailed": "Depósito Lightning fallido: {{status}}"
+      },
+      "received": {
+        "title": "Pago recibido",
+        "detectedTitle": "Pago detectado",
+        "confirmedBody": "Los fondos ya están en tu billetera.",
+        "pendingBody": "La transacción está en la mempool. Los fondos estarán disponibles cuando se confirme — puedes cerrar esta ventana.",
+        "confirmations": "{{count}}/{{required}} confirmaciones",
+        "pendingBodyRgb": "La transferencia fue aceptada y está esperando la confirmación on-chain. Los activos estarán disponibles cuando se confirme — puedes cerrar esta ventana."
       }
     }
   },
