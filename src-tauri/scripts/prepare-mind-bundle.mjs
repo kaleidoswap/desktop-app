@@ -37,13 +37,14 @@ import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
 // Pin the provider and core together so every platform receives the same catalog.
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '0.8.0'
-const MIND_VERSION = process.env.MIND_VERSION ?? '0.8.1'
-// 0.3.x picks its defaults from KALEIDO_NETWORK (set by mind.rs) and no longer
-// installs the Spark/Liquid wallet packages (optional peers, unused here).
-const MCP_VERSION = process.env.MCP_VERSION ?? '0.3.1'
-// 0.19 removed the P2P provider behind phone pairing; the provider then runs
-// desktop-only, and pairing is paused in the app until it returns.
+const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '0.10.0'
+const MIND_VERSION = process.env.MIND_VERSION ?? '0.10.0'
+// Picks its defaults from KALEIDO_NETWORK (set by mind.rs). The Spark/Liquid
+// wallets and @kaleidorg/swap-sdk (submarine swaps) are optional peers that need
+// a Liquid seed, which the desktop does not pass, so they are left out.
+const MCP_VERSION = process.env.MCP_VERSION ?? '0.4.0'
+// mind requires >= 0.20. 0.19 removed the P2P provider behind phone
+// pairing, so the provider runs desktop-only and pairing stays paused.
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '0.21.0'
 
 // @qvac/sdk (via @qvac/inference) hard-depends on EVERY inference engine, but

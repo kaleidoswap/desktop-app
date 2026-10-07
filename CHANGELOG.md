@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### 🔧 Improvements
+- **KaleidoMind runtime `mind-assets-v0.10.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.0 (`@kaleidorg/mind` 0.10.0) and `kaleido-mcp` 0.4.0, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15. Existing installs download the new runtime on next enable
+
 ## [Version 0.5.1] - 2026-10-07
 
 > ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.5.1: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.5.1.
