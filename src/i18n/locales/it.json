@@ -2127,7 +2127,8 @@
     "common": {
       "continue": "Continua",
       "back": "Indietro",
-      "finish": "Fine"
+      "finish": "Fine",
+      "done": "Fatto"
     },
     "step1": {
       "title": "Seleziona Asset",
@@ -2141,7 +2142,8 @@
       "genericAsset": "Attivo",
       "newAssetInfo": "Se non conosci l'ID dell'asset, puoi procedere senza inserirlo. Il sistema genererà un indirizzo di deposito che può ricevere qualsiasi asset RGB.",
       "assetIdLabel": "ID Asset (opzionale)",
-      "assetIdPlaceholder": "Inserisci ID asset (opzionale)"
+      "assetIdPlaceholder": "Inserisci ID asset (opzionale)",
+      "continueWith": "Continua con {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "Deposita {{ticker}}",
@@ -2204,17 +2206,22 @@
         "generateAddress": "Genera nuovo indirizzo",
         "generateAddressCta": "Genera Indirizzo",
         "generateInvoice": "Genera Fattura",
-        "regenerate": "Genera nuovi indirizzi"
+        "regenerate": "Genera nuovi indirizzi",
+        "copied": "Copiato"
       },
       "labels": {
         "lnInvoice": "Fattura LN",
         "btcAddress": "Indirizzo BTC",
-        "rgbInvoice": "Fattura RGB"
+        "rgbInvoice": "Fattura RGB",
+        "recipientId": "ID destinatario"
       },
       "status": {
         "pending": "Pagamento in corso...",
         "success": "Pagamento ricevuto!",
-        "failed": "Pagamento fallito ({{status}})"
+        "failed": "Pagamento fallito ({{status}})",
+        "waitingAny": "In attesa del pagamento",
+        "waitingLightning": "In attesa del pagamento",
+        "waitingOnchain": "In attesa del trasferimento"
       },
       "toasts": {
         "generateAddressError": "Impossibile generare indirizzo",
@@ -2229,6 +2236,12 @@
         "recipientCopyError": "Impossibile copiare ID destinatario",
         "lightningSuccess": "Deposito Lightning ricevuto con successo!",
         "lightningFailed": "Deposito Lightning fallito: {{status}}"
+      },
+      "received": {
+        "title": "Pagamento ricevuto",
+        "detectedTitle": "Pagamento rilevato",
+        "confirmedBody": "I fondi sono ora nel tuo wallet.",
+        "pendingBody": "La transazione è nella mempool. I fondi saranno spendibili dopo la conferma — puoi chiudere questa finestra."
       }
     }
   },

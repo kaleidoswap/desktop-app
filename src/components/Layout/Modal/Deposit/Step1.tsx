@@ -1,4 +1,4 @@
-import { Search, Plus, ArrowRight, Download, X } from 'lucide-react'
+import { Search, Plus, ArrowRight, Check, Download, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -23,8 +23,12 @@ interface Asset {
   icon?: string
 }
 
-// How many asset icons to show inline before collapsing the rest behind "+".
-const INLINE_LIMIT = 5
+// Inline tiles before collapsing the rest behind "+". With the always-present
+// "New asset" tile this fills two even rows of four.
+const INLINE_LIMIT = 7
+
+const TILE =
+  'relative flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-2xl border transition-all duration-200 w-[calc(25%-9px)] min-w-[88px]'
 
 const AssetIconButton = ({
   asset,
@@ -42,29 +46,38 @@ const AssetIconButton = ({
 
   return (
     <button
-      className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 shrink-0 w-[76px]
-        ${
-          selected
-            ? 'border-primary bg-primary/10'
-            : 'border-border-subtle bg-surface-overlay/50 hover:border-primary/40'
-        }`}
+      className={`${TILE} ${
+        selected
+          ? 'border-primary bg-primary/10'
+          : 'border-border-subtle bg-surface-overlay/50 hover:border-primary/40 hover:bg-surface-overlay'
+      }`}
       onClick={onClick}
       title={asset.name || asset.ticker}
       type="button"
     >
-      <div className="w-10 h-10 rounded-full bg-surface-high/60 flex items-center justify-center overflow-hidden">
+      {selected && (
+        <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+          <Check className="w-3 h-3 text-primary-foreground" strokeWidth={3} />
+        </span>
+      )}
+      <div className="w-11 h-11 rounded-full bg-surface-high/60 flex items-center justify-center overflow-hidden">
         <img
           alt={asset.ticker}
-          className="w-7 h-7 object-contain"
+          className="w-8 h-8 object-contain"
           onError={() =>
             setIcon(asset.asset_id === BTC_ASSET_ID ? btcLogo : rgbLogo)
           }
           src={icon}
         />
       </div>
-      <span className="text-xs font-medium text-white truncate max-w-[64px]">
+      <span className="text-sm font-semibold text-white truncate max-w-full">
         {asset.ticker}
       </span>
+      {asset.name && (
+        <span className="-mt-1 text-[11px] text-content-tertiary truncate max-w-full">
+          {asset.name}
+        </span>
+      )}
     </button>
   )
 }
@@ -152,13 +165,16 @@ export const Step1 = ({ onNext, onClose }: Props) => {
         </button>
       </div>
 
-      <div className="space-y-3 max-w-xl mx-auto">
-        <p className="text-content-secondary text-sm">
-          {t('depositModal.step1.title')}
+      <div className="space-y-5">
+        <p className="text-content-secondary text-sm text-center">
+          {t(
+            'depositModal.step1.subtitle',
+            'Choose the asset you want to deposit into your wallet'
+          )}
         </p>
 
-        {/* Inline asset icons — show the few directly, collapse the rest behind "+" */}
-        <div className="flex flex-wrap gap-2">
+        {/* Inline asset tiles — a few directly, the rest behind "+" */}
+        <div className="flex flex-wrap justify-center gap-3">
           {inlineAssets.map((asset) => (
             <AssetIconButton
               asset={asset}
@@ -170,19 +186,18 @@ export const Step1 = ({ onNext, onClose }: Props) => {
 
           {hasMore && (
             <button
-              className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-dashed transition-all duration-200 shrink-0 w-[76px]
-                ${
-                  isExpanded
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border-default text-content-secondary hover:border-primary/40 hover:text-primary'
-                }`}
+              className={`${TILE} border-dashed ${
+                isExpanded
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border-default text-content-secondary hover:border-primary/40 hover:text-primary'
+              }`}
               onClick={() => setIsExpanded((v) => !v)}
               type="button"
             >
-              <div className="w-10 h-10 rounded-full bg-surface-high/60 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-full bg-surface-high/60 flex items-center justify-center">
                 <Plus className="w-5 h-5" />
               </div>
-              <span className="text-xs font-medium">
+              <span className="text-sm font-semibold">
                 {t('depositModal.step1.more', {
                   count: orderedAssets.length - inlineAssets.length,
                   defaultValue: 'More',
@@ -193,37 +208,36 @@ export const Step1 = ({ onNext, onClose }: Props) => {
 
           {/* Always available: receive a brand-new RGB asset (generic invoice) */}
           <button
-            className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border border-dashed transition-all duration-200 shrink-0 w-[76px]
-              ${
-                isNewAsset
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-primary/40 text-primary hover:bg-primary/10'
-              }`}
+            className={`${TILE} border-dashed ${
+              isNewAsset
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-primary/40 text-primary hover:bg-primary/10'
+            }`}
             onClick={handleAddNewAsset}
             title={t('depositModal.step1.newAssetInfo')}
             type="button"
           >
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
               <img
                 alt="RGB asset"
-                className="w-7 h-7 object-contain"
+                className="w-8 h-8 object-contain"
                 src={rgbLogo}
               />
             </div>
-            <span className="text-xs font-medium">
+            <span className="text-sm font-semibold">
               {t('depositModal.step1.newAssetLabel')}
             </span>
           </button>
         </div>
 
-        {/* Expanded slider — searchable, horizontally scrollable strip of all assets */}
+        {/* Expanded picker — searchable grid of every asset */}
         {isExpanded && (
-          <div className="rounded-xl border border-border-default bg-surface-overlay p-3 space-y-3">
+          <div className="rounded-2xl border border-border-default bg-surface-overlay/50 p-3 space-y-3 animate-fadeIn">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />
               <input
                 autoFocus
-                className="w-full pl-10 pr-4 py-1.5 bg-surface-base/50 rounded-lg border border-border-default
+                className="w-full pl-10 pr-4 py-2 bg-surface-base/50 rounded-xl border border-border-default
                          text-white placeholder:text-content-tertiary focus:border-primary
                          focus:outline-none text-sm"
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -238,64 +252,53 @@ export const Step1 = ({ onNext, onClose }: Props) => {
                 {t('depositModal.step1.noResults', { query: searchQuery })}
               </div>
             ) : (
-              <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
+              <div className="flex flex-wrap justify-center gap-3 max-h-64 overflow-y-auto custom-scrollbar">
                 {filteredAssets.map((asset) => (
-                  <div className="snap-start" key={asset.asset_id}>
-                    <AssetIconButton
-                      asset={asset}
-                      onClick={() => handleAssetSelect(asset)}
-                      selected={!isNewAsset && asset.asset_id === assetId}
-                    />
-                  </div>
+                  <AssetIconButton
+                    asset={asset}
+                    key={asset.asset_id}
+                    onClick={() => handleAssetSelect(asset)}
+                    selected={!isNewAsset && asset.asset_id === assetId}
+                  />
                 ))}
               </div>
             )}
           </div>
         )}
 
-        {/* Selected asset summary */}
-        {selectedAsset && !isNewAsset && (
-          <p className="text-xs text-content-secondary">
-            {t('depositModal.step1.selected')}:{' '}
-            <span className="text-white font-medium">
-              {selectedAsset.ticker}
-            </span>
-            {selectedAsset.name ? ` · ${selectedAsset.name}` : ''}
-          </p>
-        )}
-
-        {/* New Asset Input */}
+        {/* New asset: optional asset id */}
         {isNewAsset && (
           <div className="space-y-2 animate-fadeIn">
-            <div className="p-2 bg-primary/10 rounded-xl border border-primary/20">
-              <p className="text-primary text-xs">
-                {t('depositModal.step1.newAssetInfo')}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-content-secondary">
-                {t('depositModal.step1.assetIdLabel')}
-              </label>
-              <input
-                className="w-full px-3 py-2 bg-surface-overlay/50 rounded-xl border border-border-default
-                         focus:border-primary/60 focus:ring-1 focus:ring-primary/30 text-white
-                         placeholder:text-content-tertiary text-sm"
-                onChange={(e) => setAssetId(e.target.value)}
-                placeholder={t('depositModal.step1.assetIdPlaceholder')}
-                type="text"
-              />
-            </div>
+            <p className="p-3 text-primary text-xs bg-primary/10 rounded-xl border border-primary/20">
+              {t('depositModal.step1.newAssetInfo')}
+            </p>
+            <label className="block text-xs font-medium text-content-secondary">
+              {t('depositModal.step1.assetIdLabel')}
+            </label>
+            <input
+              className="w-full px-3 py-2.5 bg-surface-overlay/50 rounded-xl border border-border-default
+                       focus:border-primary/60 focus:outline-none text-white font-mono
+                       placeholder:text-content-tertiary placeholder:font-sans text-sm"
+              onChange={(e) => setAssetId(e.target.value)}
+              placeholder={t('depositModal.step1.assetIdPlaceholder')}
+              type="text"
+            />
           </div>
         )}
 
-        {/* Continue Button */}
         <button
-          className="w-full py-2.5 px-4 bg-[#15E99A] hover:bg-[#12C97E] text-gray-900
+          className="w-full py-3 px-4 bg-primary hover:bg-primary-emphasis text-primary-foreground
                    rounded-xl font-semibold transition-colors duration-200 shadow-md shadow-primary/20
                    flex items-center justify-center gap-2 text-sm"
           onClick={handleSubmit}
+          type="button"
         >
-          {t('depositModal.common.continue')}
+          {selectedAsset && !isNewAsset
+            ? t('depositModal.step1.continueWith', {
+                defaultValue: 'Continue with {{ticker}}',
+                ticker: selectedAsset.ticker,
+              })
+            : t('depositModal.common.continue')}
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

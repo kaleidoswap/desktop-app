@@ -28,7 +28,7 @@ export const LayoutModal = () => {
                    shadow-2xl shadow-black/20 overflow-hidden relative"
         ref={modalRef}
       >
-        <div className="max-h-[85vh] overflow-y-scroll px-8 py-8">
+        <div className="max-h-[85vh] overflow-y-auto custom-scrollbar px-8 py-8">
           <Content modal={modal} onClose={handleCloseModal} />
         </div>
       </div>

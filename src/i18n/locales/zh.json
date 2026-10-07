@@ -2124,7 +2124,8 @@
     "common": {
       "continue": "继续",
       "back": "返回",
-      "finish": "完成"
+      "finish": "完成",
+      "done": "完成"
     },
     "step1": {
       "title": "选择资产",
@@ -2138,7 +2139,8 @@
       "genericAsset": "资产",
       "newAssetInfo": "如果您不知道资产 ID，可以不输入即可继续。系统将生成一个可以接收任何 RGB 资产的存款地址。",
       "assetIdLabel": "资产 ID（可选）",
-      "assetIdPlaceholder": "输入资产 ID（可选）"
+      "assetIdPlaceholder": "输入资产 ID（可选）",
+      "continueWith": "继续使用 {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "存入 {{ticker}}",
@@ -2201,17 +2203,22 @@
         "generateAddress": "生成新地址",
         "generateAddressCta": "生成地址",
         "generateInvoice": "生成发票",
-        "regenerate": "生成新地址"
+        "regenerate": "生成新地址",
+        "copied": "已复制"
       },
       "labels": {
         "lnInvoice": "闪电发票",
         "btcAddress": "BTC 地址",
-        "rgbInvoice": "RGB 发票"
+        "rgbInvoice": "RGB 发票",
+        "recipientId": "接收方 ID"
       },
       "status": {
         "pending": "付款处理中...",
         "success": "付款已收到！",
-        "failed": "付款失败 ({{status}})"
+        "failed": "付款失败 ({{status}})",
+        "waitingAny": "等待付款",
+        "waitingLightning": "等待付款",
+        "waitingOnchain": "等待转账"
       },
       "toasts": {
         "generateAddressError": "生成地址失败",
@@ -2226,6 +2233,12 @@
         "recipientCopyError": "复制收款人 ID 失败",
         "lightningSuccess": "闪电存款接收成功！",
         "lightningFailed": "闪电存款失败：{{status}}"
+      },
+      "received": {
+        "title": "已收到付款",
+        "detectedTitle": "检测到付款",
+        "confirmedBody": "资金已到达您的钱包。",
+        "pendingBody": "交易已在内存池中。确认后资金即可使用——您可以关闭此窗口。"
       }
     }
   },

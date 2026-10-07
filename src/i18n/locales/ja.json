@@ -2133,7 +2133,8 @@
     "common": {
       "continue": "続ける",
       "back": "戻る",
-      "finish": "完了"
+      "finish": "完了",
+      "done": "完了"
     },
     "step1": {
       "title": "アセット選択",
@@ -2147,7 +2148,8 @@
       "genericAsset": "アセット",
       "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
       "assetIdLabel": "アセットID(オプション)",
-      "assetIdPlaceholder": "アセットIDを入力(オプション)"
+      "assetIdPlaceholder": "アセットIDを入力(オプション)",
+      "continueWith": "{{ticker}} で続行"
     },
     "step2": {
       "titleWithTicker": "{{ticker}}を入金",
@@ -2210,17 +2212,22 @@
         "generateAddress": "新しいアドレスを生成",
         "generateAddressCta": "アドレスを生成",
         "generateInvoice": "インボイスを生成",
-        "regenerate": "新しいアドレスを生成"
+        "regenerate": "新しいアドレスを生成",
+        "copied": "コピーしました"
       },
       "labels": {
         "lnInvoice": "LN インボイス",
         "btcAddress": "BTC アドレス",
-        "rgbInvoice": "RGB インボイス"
+        "rgbInvoice": "RGB インボイス",
+        "recipientId": "受取人ID"
       },
       "status": {
         "pending": "支払い待機中...",
         "success": "支払いを受け取りました！",
-        "failed": "支払いに失敗しました（{{status}}）"
+        "failed": "支払いに失敗しました（{{status}}）",
+        "waitingAny": "支払いを待っています",
+        "waitingLightning": "支払いを待っています",
+        "waitingOnchain": "送金を待っています"
       },
       "toasts": {
         "generateAddressError": "アドレスの生成に失敗しました",
@@ -2235,6 +2242,12 @@
         "recipientCopyError": "受取人 ID のコピーに失敗しました",
         "lightningSuccess": "Lightning 入金を正常に受け取りました！",
         "lightningFailed": "Lightning 入金に失敗しました：{{status}}"
+      },
+      "received": {
+        "title": "支払いを受け取りました",
+        "detectedTitle": "支払いを検出しました",
+        "confirmedBody": "資金はウォレットに反映されました。",
+        "pendingBody": "トランザクションはメンプールにあります。承認後に資金が利用可能になります。このウィンドウは閉じても構いません。"
       }
     }
   },
