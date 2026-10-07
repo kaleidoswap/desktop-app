@@ -3079,5 +3079,19 @@
       "invalidAmount": "有効な数量を入力してください",
       "insufficientBalance": "残高不足"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core ノード",
+    "optionalBadge": "任意 · 上級者向け",
+    "placeholder": "ユーザー:パスワード@ホスト:ポート",
+    "activeIndexer": "未設定：ノードはインデクサーから同期します。フルノードは不要です。",
+    "activeBitcoind": "設定済み：Lightning はあなたの Bitcoin Core ノードから同期します。",
+    "learnMore": "違いは？",
+    "indexerTitle": "インデクサーのみ（デフォルト）",
+    "indexerBody": "インストール不要。チェーンデータはインデクサーに依存します。",
+    "bitcoindTitle": "自分の Bitcoin Core ノード",
+    "bitcoindBody": "よりプライベートで、自分のノードに基づきます。RPC 有効な Bitcoin Core が常に接続可能である必要があります。",
+    "invalidFormat": "ユーザー:パスワード@ホスト:ポート の形式で入力してください",
+    "notConfigured": "未使用：インデクサーから同期中"
   }
 }

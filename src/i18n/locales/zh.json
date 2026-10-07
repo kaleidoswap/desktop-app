@@ -3070,5 +3070,19 @@
       "invalidAmount": "请输入有效的数量",
       "insufficientBalance": "余额不足"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core 节点",
+    "optionalBadge": "可选 · 高级",
+    "placeholder": "用户名:密码@主机:端口",
+    "activeIndexer": "未设置：节点通过索引器同步，无需全节点。",
+    "activeBitcoind": "已设置：Lightning 通过你的 Bitcoin Core 节点同步。",
+    "learnMore": "有什么区别？",
+    "indexerTitle": "仅索引器（默认）",
+    "indexerBody": "无需安装。链上数据依赖索引器。",
+    "bitcoindTitle": "你自己的 Bitcoin Core 节点",
+    "bitcoindBody": "更私密，基于你自己运行的节点。需要启用 RPC 且始终可访问的 Bitcoin Core。",
+    "invalidFormat": "请使用 用户名:密码@主机:端口 格式",
+    "notConfigured": "未使用：通过索引器同步"
   }
 }

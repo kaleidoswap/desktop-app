@@ -20,6 +20,14 @@ interface BuildUnlockRequestArgs {
   announceAddresses?: string[]
 }
 
+// `parseRpcUrl` splits on the first `:` and `@`, so neither may appear in the
+// username, and `@` may not appear in the password.
+const BITCOIND_RPC_URL_RE = /^[^\s:@]+:[^\s@]*@[^\s:@/]+:\d{1,5}$/
+
+/** An empty URL is valid: it selects indexer-only sync. */
+export const isValidBitcoindRpcUrl = (url: string): boolean =>
+  !url.trim() || BITCOIND_RPC_URL_RE.test(url.trim())
+
 /**
  * RLN 0.9.0 picks how LDK follows the chain per unlock: from bitcoind
  * (BlockSync) or from the indexer alone (TransactionSync). A node configured

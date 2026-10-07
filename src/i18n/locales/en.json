@@ -3073,5 +3073,19 @@
       "invalidAmount": "Please enter a valid amount",
       "insufficientBalance": "Insufficient balance"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core node",
+    "optionalBadge": "Optional · Advanced",
+    "placeholder": "user:password@host:port",
+    "activeIndexer": "Not set: the node syncs from the indexer, no full node needed.",
+    "activeBitcoind": "Set: Lightning syncs from your Bitcoin Core node.",
+    "learnMore": "What's the difference?",
+    "indexerTitle": "Indexer only (default)",
+    "indexerBody": "Nothing to install. Relies on the indexer for chain data.",
+    "bitcoindTitle": "Your own Bitcoin Core node",
+    "bitcoindBody": "More private, relies on a node you run. Needs Bitcoin Core with RPC, always reachable.",
+    "invalidFormat": "Use the format user:password@host:port",
+    "notConfigured": "Not used: syncing from the indexer"
   }
 }
