@@ -147,8 +147,16 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.getBtcBalance(skipSync))
   }
 
-  async sendBtc(request: SendBtcInput): Promise<ApiResult<void>> {
-    return this.execute(() => this.client.sendBtc(ensureSkipSync(request)))
+  // kaleido-sdk <= 0.1.21 resolves to void; newer versions return { txid }.
+  async sendBtc(
+    request: SendBtcInput
+  ): Promise<ApiResult<{ txid?: string } | void>> {
+    return this.execute(
+      () =>
+        this.client.sendBtc(ensureSkipSync(request)) as Promise<{
+          txid?: string
+        } | void>
+    )
   }
 
   async listTransactions(): Promise<ApiResult<ListTransactionsResponse>> {

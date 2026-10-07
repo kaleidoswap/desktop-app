@@ -267,7 +267,20 @@
     "changePassword": "Changer le mot de passe",
     "changePasswordDescription": "Mettre à jour le mot de passe de chiffrement",
     "logoutDescription": "Verrouille le portefeuille et revient à la liste des comptes. Le nœud garde ses données.",
-    "shutdownDescription": "Arrête le processus du nœud. Les canaux restent ouverts mais le nœud passe hors ligne."
+    "shutdownDescription": "Arrête le processus du nœud. Les canaux restent ouverts mais le nœud passe hors ligne.",
+    "toasts": {
+      "restarting": "Redémarrage du nœud…",
+      "restarted": "Nœud redémarré avec les nouveaux paramètres",
+      "restartFailedTitle": "Échec du redémarrage du nœud",
+      "restartFailedMessage": "Un problème est survenu lors du redémarrage du nœud.",
+      "saved": "Paramètres enregistrés",
+      "saveFailedTitle": "Paramètres non enregistrés",
+      "saveFailedMessage": "Un problème est survenu lors de l’enregistrement des paramètres.",
+      "loggedOut": "Déconnecté",
+      "logoutFailed": "Le portefeuille n’a pas pu être verrouillé proprement ({{error}}). Vous avez quand même été déconnecté.",
+      "shutDown": "Nœud arrêté",
+      "shutdownFailed": "Impossible d’arrêter le nœud"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmer la déconnexion",
@@ -601,6 +614,9 @@
       "goToChannels": "Aller à la page des canaux",
       "success": "Canal créé avec succès !",
       "successMessage": "Le canal a été créé. Vous pouvez maintenant commencer à trader."
+    },
+    "toasts": {
+      "capacityRequired": "Saisissez la capacité du canal"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "Veuillez patienter, la sauvegarde est en cours...",
     "backupLockedMessage": "Le nœud restera verrouillé jusqu'à la fin de la sauvegarde.",
     "cancel": "Annuler",
-    "createBackup": "Créer la sauvegarde"
+    "createBackup": "Créer la sauvegarde",
+    "toasts": {
+      "invalidPath": "Choisissez un dossier valide pour la sauvegarde",
+      "fileExists": "Une sauvegarde existe déjà à cet endroit. Choisissez un autre dossier.",
+      "lockFailed": "Impossible de verrouiller le portefeuille pour la sauvegarde",
+      "success": "Sauvegarde enregistrée",
+      "unlockFailed": "Impossible de déverrouiller le portefeuille après la sauvegarde",
+      "wrongPassword": "Mot de passe incorrect",
+      "failed": "Échec de la sauvegarde"
+    }
   },
   "logoutModal": {
     "loggingOut": "Déconnexion en cours",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Attendez la cotation de l’actif avant de continuer"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "Créer les UTXO"
     },
-    "toastSuccess": "UTXO créés avec succès"
+    "toastSuccess": "UTXO créés avec succès",
+    "toasts": {
+      "created": "UTXO créés",
+      "retryFailed": "Les UTXO ont été créés, mais l’opération d’origine a échoué. Réessayez."
+    }
   },
   "legal": {
     "common": {

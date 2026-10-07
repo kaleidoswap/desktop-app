@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import React, { ReactNode, useEffect } from 'react'
+import React, { ReactNode, useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 import {
@@ -23,6 +23,45 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   size = 'md',
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+
+  // Move focus into the dialog, keep Tab inside it, and give it back to the
+  // element that opened it on close.
+  useEffect(() => {
+    if (!isOpen) return
+    const opener = document.activeElement as HTMLElement | null
+    const dialog = dialogRef.current
+    const focusables = () =>
+      Array.from(
+        dialog?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      )
+    if (dialog && !dialog.contains(document.activeElement)) {
+      ;(focusables()[0] ?? dialog).focus()
+    }
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const items = focusables()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', trap)
+    return () => {
+      document.removeEventListener('keydown', trap)
+      opener?.focus?.()
+    }
+  }, [isOpen])
+
   // Prevent scrolling of the body when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -67,16 +106,24 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={onClose}
     >
       <div
-        className={`bg-surface-base rounded-xl border border-divider/20 shadow-xl ${sizeClasses[size]} w-full`}
+        aria-labelledby={title ? titleId : undefined}
+        aria-modal="true"
+        className={`bg-surface-base rounded-xl border border-divider/20 shadow-xl ${sizeClasses[size]} w-full outline-none`}
         onClick={(e) => e.stopPropagation()}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
       >
         {title && (
           <div className="flex items-center justify-between p-4 border-b border-divider/10">
-            <h3 className="text-xl font-semibold text-white">{title}</h3>
+            <h3 className="text-xl font-semibold text-white" id={titleId}>
+              {title}
+            </h3>
             <button
               aria-label="Close modal"
               className="p-2 rounded-full hover:bg-surface-overlay text-content-secondary hover:text-white transition-colors"
               onClick={onClose}
+              type="button"
             >
               <X size={20} />
             </button>

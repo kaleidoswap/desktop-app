@@ -267,7 +267,20 @@
     "changePassword": "Cambia password",
     "changePasswordDescription": "Aggiorna la password di cifratura del wallet",
     "logoutDescription": "Blocca il wallet e torna alla lista account. Il nodo conserva i suoi dati.",
-    "shutdownDescription": "Arresta il processo del nodo. I canali restano aperti ma il nodo va offline."
+    "shutdownDescription": "Arresta il processo del nodo. I canali restano aperti ma il nodo va offline.",
+    "toasts": {
+      "restarting": "Riavvio del nodo…",
+      "restarted": "Nodo riavviato con le nuove impostazioni",
+      "restartFailedTitle": "Riavvio del nodo non riuscito",
+      "restartFailedMessage": "Si è verificato un problema durante il riavvio del nodo.",
+      "saved": "Impostazioni salvate",
+      "saveFailedTitle": "Impostazioni non salvate",
+      "saveFailedMessage": "Si è verificato un problema durante il salvataggio delle impostazioni.",
+      "loggedOut": "Disconnesso",
+      "logoutFailed": "Non è stato possibile bloccare correttamente il wallet ({{error}}). Sei stato disconnesso comunque.",
+      "shutDown": "Nodo spento",
+      "shutdownFailed": "Impossibile spegnere il nodo"
+    }
   },
   "modals": {
     "logoutTitle": "Conferma Disconnessione",
@@ -601,6 +614,9 @@
       "goToChannels": "Vai alla Pagina Canali",
       "success": "Canale creato con successo!",
       "successMessage": "Il canale è stato creato con successo, ora puoi iniziare a fare trading."
+    },
+    "toasts": {
+      "capacityRequired": "Inserisci la capacità del canale"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "Attendere prego, il backup è in corso...",
     "backupLockedMessage": "Il nodo sarà bloccato fino al completamento del processo di backup.",
     "cancel": "Annulla",
-    "createBackup": "Crea Backup"
+    "createBackup": "Crea Backup",
+    "toasts": {
+      "invalidPath": "Scegli una cartella valida per il backup",
+      "fileExists": "Esiste già un file di backup in quella cartella. Scegline un’altra.",
+      "lockFailed": "Impossibile bloccare il wallet per il backup",
+      "success": "Backup salvato",
+      "unlockFailed": "Impossibile sbloccare il wallet dopo il backup",
+      "wrongPassword": "Password errata",
+      "failed": "Backup non riuscito"
+    }
   },
   "logoutModal": {
     "loggingOut": "Disconnessione in corso",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Attendi la quotazione dell’asset prima di continuare"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "Crea UTXO"
     },
-    "toastSuccess": "UTXO creati con successo"
+    "toastSuccess": "UTXO creati con successo",
+    "toasts": {
+      "created": "UTXO creati",
+      "retryFailed": "Gli UTXO sono stati creati, ma l’operazione originale non è riuscita. Riprova."
+    }
   },
   "legal": {
     "common": {

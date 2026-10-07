@@ -8,6 +8,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '../../../../../hooks/useCopyToClipboard'
+import { ExplorerLink } from '../../../../ExplorerLink'
 
 export interface SentSummary {
   kind: 'lightning' | 'onchain' | 'rgb'
@@ -123,6 +124,9 @@ export const SentPanel = ({
             />
           )}
         </div>
+      )}
+      {summary.kind !== 'lightning' && (
+        <ExplorerLink className="mt-3" txid={summary.reference} withLabel />
       )}
 
       <button

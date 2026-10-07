@@ -267,7 +267,20 @@
     "changePassword": "パスワードを変更",
     "changePasswordDescription": "ウォレットの暗号化パスワードを更新",
     "logoutDescription": "ウォレットをロックしてアカウント一覧に戻ります。ノードのデータは保持されます。",
-    "shutdownDescription": "ノードのプロセスを停止します。チャネルは開いたままですがノードはオフラインになります。"
+    "shutdownDescription": "ノードのプロセスを停止します。チャネルは開いたままですがノードはオフラインになります。",
+    "toasts": {
+      "restarting": "ノードを再起動しています…",
+      "restarted": "新しい設定でノードを再起動しました",
+      "restartFailedTitle": "ノードの再起動に失敗しました",
+      "restartFailedMessage": "ノードの再起動中に問題が発生しました。",
+      "saved": "設定を保存しました",
+      "saveFailedTitle": "設定を保存できませんでした",
+      "saveFailedMessage": "設定の保存中に問題が発生しました。",
+      "loggedOut": "ログアウトしました",
+      "logoutFailed": "ウォレットを正常にロックできませんでした（{{error}}）。ログアウトは完了しています。",
+      "shutDown": "ノードを停止しました",
+      "shutdownFailed": "ノードを停止できませんでした"
+    }
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",
@@ -601,6 +614,9 @@
       "goToChannels": "チャネルページに移動",
       "success": "チャネルが正常に作成されました！",
       "successMessage": "チャネルが正常に作成されました。これで取引を開始できます。"
+    },
+    "toasts": {
+      "capacityRequired": "チャネル容量を入力してください"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "バックアップ処理中です。お待ちください...",
     "backupLockedMessage": "バックアッププロセスが完了するまでノードはロックされます。",
     "cancel": "キャンセル",
-    "createBackup": "バックアップを作成"
+    "createBackup": "バックアップを作成",
+    "toasts": {
+      "invalidPath": "バックアップ用の有効なフォルダを選択してください",
+      "fileExists": "そこには既にバックアップファイルがあります。別のフォルダを選択してください。",
+      "lockFailed": "バックアップのためにウォレットをロックできませんでした",
+      "success": "バックアップを保存しました",
+      "unlockFailed": "バックアップ後にウォレットのロックを解除できませんでした",
+      "wrongPassword": "パスワードが違います",
+      "failed": "バックアップに失敗しました"
+    }
   },
   "logoutModal": {
     "loggingOut": "ログアウト中",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "続行する前にアセットの見積もりをお待ちください"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "UTXOを作成"
     },
-    "toastSuccess": "UTXOが正常に作成されました"
+    "toastSuccess": "UTXOが正常に作成されました",
+    "toasts": {
+      "created": "UTXO を作成しました",
+      "retryFailed": "UTXO は作成されましたが、元の操作に失敗しました。もう一度お試しください。"
+    }
   },
   "legal": {
     "common": {

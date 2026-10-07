@@ -267,7 +267,20 @@
     "changePassword": "Change Password",
     "changePasswordDescription": "Update the wallet encryption password",
     "logoutDescription": "Lock the wallet and go back to the account list. The node keeps its data.",
-    "shutdownDescription": "Stop the node process. Open channels stay open but the node goes offline."
+    "shutdownDescription": "Stop the node process. Open channels stay open but the node goes offline.",
+    "toasts": {
+      "restarting": "Restarting the node…",
+      "restarted": "Node restarted with the new settings",
+      "restartFailedTitle": "Node restart failed",
+      "restartFailedMessage": "There was a problem restarting the node.",
+      "saved": "Settings saved",
+      "saveFailedTitle": "Settings not saved",
+      "saveFailedMessage": "There was a problem saving your settings.",
+      "loggedOut": "Logged out",
+      "logoutFailed": "The wallet could not be locked cleanly ({{error}}). You have been logged out anyway.",
+      "shutDown": "Node shut down",
+      "shutdownFailed": "Failed to shut down the node"
+    }
   },
   "modals": {
     "logoutTitle": "Confirm Logout",
@@ -601,6 +614,9 @@
       "goToChannels": "Go to Channels Page",
       "success": "Channel creation completed",
       "successMessage": "The channel has been successfully created, you can now start trading."
+    },
+    "toasts": {
+      "capacityRequired": "Enter a channel capacity"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "Please wait, the backup is in progress...",
     "backupLockedMessage": "The node will be locked until the backup process is finished.",
     "cancel": "Cancel",
-    "createBackup": "Create Backup"
+    "createBackup": "Create Backup",
+    "toasts": {
+      "invalidPath": "Choose a valid folder for the backup",
+      "fileExists": "A backup file already exists there. Choose a different folder.",
+      "lockFailed": "Could not lock the wallet for the backup",
+      "success": "Backup saved",
+      "unlockFailed": "Could not unlock the wallet after the backup",
+      "wrongPassword": "Wrong password",
+      "failed": "Backup failed"
+    }
   },
   "logoutModal": {
     "loggingOut": "Logging Out",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Wait for the asset quote before continuing"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "Create UTXOs"
     },
-    "toastSuccess": "UTXOs created successfully"
+    "toastSuccess": "UTXOs created successfully",
+    "toasts": {
+      "created": "UTXOs created",
+      "retryFailed": "UTXOs were created, but the original operation failed. Try it again."
+    }
   },
   "legal": {
     "common": {

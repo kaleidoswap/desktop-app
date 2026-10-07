@@ -34,9 +34,12 @@ import type {
   DecodeRGBInvoiceResponse,
 } from 'kaleido-sdk/rln'
 import { uiSliceActions } from '../../../../slices/ui/ui.slice'
+import { findNewOutgoingTxid } from '../../../../helpers/sentTxid'
+import { toMsat } from '../../../../helpers/btcUnits'
 
 import { WithdrawForm, ConfirmationModal } from './components'
 import { SentPanel, type SentSummary } from './components/SentPanel'
+import { buildSentSummary } from './sentSummary'
 import {
   AddressType,
   FeeEstimations,
@@ -46,7 +49,10 @@ import {
   HTLCStatus,
   ValidationMessage,
 } from './types'
-import { getAssignmentAmount } from '../../../../utils/rgbUtils'
+import {
+  getAllRgbAssets,
+  getAssignmentAmount,
+} from '../../../../utils/rgbUtils'
 import { resolveRgbPaymentErrorKey } from '../../../../utils/rgbPaymentErrors'
 import { logger } from '../../../../utils/logger'
 
@@ -119,7 +125,23 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
   const [decodeInvoice] = nodeApi.useLazyDecodeInvoiceQuery()
   const [decodeRgbInvoice] = nodeApi.useLazyDecodeRgbInvoiceQuery()
 
-  const assets = nodeApi.endpoints.listAssets.useQuery()
+  const assetsQuery = nodeApi.endpoints.listAssets.useQuery()
+  // This flow and its children look assets up in `data.nia`; expose every RGB
+  // schema (NIA, CFA, UDA, IFA) there so tickers and precision resolve for
+  // all of them, not only NIA.
+  const assets = useMemo(
+    () =>
+      assetsQuery.data
+        ? {
+            ...assetsQuery,
+            data: {
+              ...assetsQuery.data,
+              nia: getAllRgbAssets(assetsQuery.data),
+            },
+          }
+        : assetsQuery,
+    [assetsQuery]
+  )
   const channelsQuery = nodeApi.endpoints.listChannels.useQuery(undefined, {
     pollingInterval: 3000,
   })
@@ -974,38 +996,33 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
     ]
   )
 
+  // Wallet transactions right now (fresh from the node), or null on error.
+  const snapshotTransactions = async () => {
+    const query = dispatch(
+      nodeApi.endpoints.listTransactions.initiate(undefined, {
+        forceRefetch: true,
+      })
+    )
+    try {
+      return (await query.unwrap())?.transactions ?? []
+    } catch {
+      return null
+    } finally {
+      query.unsubscribe()
+    }
+  }
+
   const describeSent = (
     kind: SentSummary['kind'],
     reference?: string | null
-  ): SentSummary => {
-    const data = pendingRef.current
-    if (!data) return { kind, reference: reference ?? undefined }
-    const assetForLabel = data.decodedInvoice?.asset_id || data.asset_id
-    const isBtc = !assetForLabel || assetForLabel === BTC_ASSET_ID
-    const unit = isBtc
-      ? bitcoinUnit === 'SAT'
-        ? 'SATS'
-        : bitcoinUnit
-      : ((assets.data?.nia || []).find((a: any) => a.asset_id === assetForLabel)
-          ?.ticker ?? '')
-    const entered = Number(String(data.amount ?? '').replace(/,/g, ''))
-    let amount =
-      entered > 0
-        ? entered.toLocaleString(undefined, { maximumFractionDigits: 8 })
-        : undefined
-    const invoiceMsat = data.decodedInvoice?.amt_msat
-    if (!amount && isBtc && invoiceMsat) {
-      const sats = invoiceMsat / 1000
-      amount =
-        bitcoinUnit === 'SAT' ? sats.toLocaleString() : (sats / 1e8).toFixed(8)
-    }
-    return {
-      amountLabel: amount ? `${amount} ${unit}`.trim() : undefined,
-      destination: data.address || undefined,
+  ): SentSummary =>
+    buildSentSummary(
+      pendingRef.current,
       kind,
-      reference: reference ?? undefined,
-    }
-  }
+      reference,
+      bitcoinUnit,
+      assets.data?.nia ?? []
+    )
 
   const handleConfirmedSubmit = useCallback(async () => {
     if (!pendingData) return
@@ -1076,13 +1093,10 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               pendingData.decodedInvoice.amt_msat === 0)
           ) {
             // Zero-amount BTC invoice: convert user-entered amount to msat
-            const userAmount = Number(pendingData.amount)
-            if (bitcoinUnit === 'SAT') {
-              paymentParams.amt_msat = userAmount * 1000
-            } else {
-              // BTC to msat
-              paymentParams.amt_msat = userAmount * 100000000 * 1000
-            }
+            paymentParams.amt_msat = toMsat(
+              Number(pendingData.amount),
+              bitcoinUnit
+            )
           }
 
           const res = await sendPayment(paymentParams).unwrap()
@@ -1176,7 +1190,8 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
               ? Math.round(Number(pendingData.amount))
               : BTCtoSatoshi(Number(pendingData.amount))
 
-          await sendBtc({
+          const before = await snapshotTransactions()
+          const btcRes = await sendBtc({
             address: pendingData.address ?? '',
             amount: amountInSats,
             fee_rate:
@@ -1187,7 +1202,16 @@ export const WithdrawModalContent: React.FC<{ onClose: () => void }> = ({
                 : Math.round(customFee),
           }).unwrap()
 
-          setSent(describeSent('onchain'))
+          let txid = (btcRes as { txid?: string } | undefined)?.txid
+          if (!txid && before) {
+            const after = await snapshotTransactions()
+            if (after)
+              txid = findNewOutgoingTxid(
+                before.map((tx) => tx.txid),
+                after
+              )
+          }
+          setSent(describeSent('onchain', txid))
         } else {
           const assetInfo = (assets.data?.nia || []).find(
             (a: any) => a.asset_id === pendingData.asset_id

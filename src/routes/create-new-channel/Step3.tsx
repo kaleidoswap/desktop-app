@@ -177,7 +177,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                 </div>
                 <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                    className="absolute left-0 top-0 h-full bg-purple rounded-l-full"
                     style={{ width: `${outPct}%` }}
                   />
                   <div
@@ -212,7 +212,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
                   </div>
                   <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                     <div
-                      className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                      className="absolute left-0 top-0 h-full bg-purple rounded-l-full"
                       style={{ width: `${outPct}%` }}
                     />
                     <div

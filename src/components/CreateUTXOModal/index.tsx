@@ -1,6 +1,7 @@
 import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import {
@@ -32,6 +33,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   error,
   retryFunction,
 }) => {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [creationError, setCreationError] = useState<string>()
   const [feeRate, setFeeRate] = useState(0)
@@ -136,7 +138,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         up_to: false,
       }).unwrap()
 
-      toast.success('UTXOs created successfully')
+      toast.success(t('createUtxos.toasts.created', 'UTXOs created'))
 
       // Close the modal first
       setIsLoading(false)
@@ -149,7 +151,12 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
           onSuccess()
         } catch (retryError) {
           logger.error('Error retrying operation:', retryError)
-          toast.error('Created UTXOs but failed to complete the operation')
+          toast.error(
+            t(
+              'createUtxos.toasts.retryFailed',
+              'UTXOs were created, but the original operation failed. Try it again.'
+            )
+          )
         }
       } else {
         onSuccess()
