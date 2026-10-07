@@ -15,7 +15,8 @@
 - **Sturdier desktop backend**: A locked or corrupt database reports an error at startup instead of crashing, and one failed request no longer breaks all later ones
 - **Translations**: All eight languages are in sync with English, with a test that guards key sets and value shapes
 - **bitcoind is optional**: Mainnet, Mutinynet and Testnet no longer prefill a bitcoind RPC URL and sync from the indexer by default. Bitcoin Core is an "Optional · Advanced" field in onboarding, restore and Settings; existing accounts keep their stored URL
-- **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0) and `kaleido-mcp` 0.3.1, still on `@qvac/sdk` 0.13.5 so phone pairing keeps working. Existing installs download the new runtime on next enable
+- **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0), `kaleido-mcp` 0.3.1 and `@qvac/sdk` 0.21.0. Existing installs download the new runtime on next enable
+- **Phone pairing paused**: Delegating from the mobile app to the desktop brain relied on a QVAC feature removed in 0.19, so pairing is hidden until it returns in a later release
 - **KaleidoMind on each network**: The agent's MCP server gets the active account's network, maker URL and RGB proxy, so it no longer falls back to a default maker that does not match the network
 - **New agent tools**: Labels for the RGB issuance, UTXO, transfer and atomic-swap tools in the live activity pill
 - **No maker configured**: Mainnet and Testnet no longer default to KaleidoSwap API hosts that do not exist. Market-maker, DCA and limit-order screens ask for a maker URL when the account has none, maker calls fail with a clear error instead of reaching `localhost:8000`, and KaleidoMind says when swap and channel tools are unavailable
