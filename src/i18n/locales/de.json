@@ -267,7 +267,20 @@
     "changePassword": "Passwort ändern",
     "changePasswordDescription": "Verschlüsselungspasswort der Wallet ändern",
     "logoutDescription": "Wallet sperren und zur Kontoliste zurückkehren. Der Node behält seine Daten.",
-    "shutdownDescription": "Node-Prozess beenden. Offene Kanäle bleiben bestehen, aber der Node ist offline."
+    "shutdownDescription": "Node-Prozess beenden. Offene Kanäle bleiben bestehen, aber der Node ist offline.",
+    "toasts": {
+      "restarting": "Node wird neu gestartet…",
+      "restarted": "Node mit den neuen Einstellungen neu gestartet",
+      "restartFailedTitle": "Neustart des Nodes fehlgeschlagen",
+      "restartFailedMessage": "Beim Neustart des Nodes ist ein Problem aufgetreten.",
+      "saved": "Einstellungen gespeichert",
+      "saveFailedTitle": "Einstellungen nicht gespeichert",
+      "saveFailedMessage": "Beim Speichern der Einstellungen ist ein Problem aufgetreten.",
+      "loggedOut": "Abgemeldet",
+      "logoutFailed": "Die Wallet konnte nicht sauber gesperrt werden ({{error}}). Du wurdest trotzdem abgemeldet.",
+      "shutDown": "Node heruntergefahren",
+      "shutdownFailed": "Node konnte nicht heruntergefahren werden"
+    }
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",
@@ -601,6 +614,9 @@
       "goToChannels": "Zur Kanalseite",
       "success": "Kanal erfolgreich erstellt!",
       "successMessage": "Der Kanal wurde erstellt. Du kannst jetzt mit dem Handel beginnen."
+    },
+    "toasts": {
+      "capacityRequired": "Gib eine Kanalkapazität ein"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "Bitte warten, Backup läuft...",
     "backupLockedMessage": "Der Node bleibt während des Backups gesperrt.",
     "cancel": "Abbrechen",
-    "createBackup": "Backup erstellen"
+    "createBackup": "Backup erstellen",
+    "toasts": {
+      "invalidPath": "Wähle einen gültigen Ordner für das Backup",
+      "fileExists": "Dort gibt es bereits eine Backup-Datei. Wähle einen anderen Ordner.",
+      "lockFailed": "Wallet konnte für das Backup nicht gesperrt werden",
+      "success": "Backup gespeichert",
+      "unlockFailed": "Wallet konnte nach dem Backup nicht entsperrt werden",
+      "wrongPassword": "Falsches Passwort",
+      "failed": "Backup fehlgeschlagen"
+    }
   },
   "logoutModal": {
     "loggingOut": "Abmeldung läuft",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Warte auf das Asset-Angebot, bevor du fortfährst"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "UTXOs erstellen"
     },
-    "toastSuccess": "UTXOs erfolgreich erstellt"
+    "toastSuccess": "UTXOs erfolgreich erstellt",
+    "toasts": {
+      "created": "UTXOs erstellt",
+      "retryFailed": "UTXOs wurden erstellt, aber der ursprüngliche Vorgang ist fehlgeschlagen. Versuche es erneut."
+    }
   },
   "legal": {
     "common": {

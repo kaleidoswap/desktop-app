@@ -301,14 +301,11 @@ export const Component: React.FC = () => {
       setIsSaving(true)
 
       // First, stop the current node
+      toast.info(t('settings.toasts.restarting', 'Restarting the node…'))
       await invoke('stop_node')
-      toast.info('Stopping current node...')
 
       // Wait a moment for the node to fully stop
       await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Then start the node with the updated settings
-      toast.info('Starting node with new settings...')
 
       await invoke('start_node', {
         accountName: currentAccount.name,
@@ -321,19 +318,19 @@ export const Component: React.FC = () => {
         daemonPort: currentAccount.daemon_listening_port,
       })
 
-      toast.success('Node restarted successfully with new settings')
-    } catch (error) {
-      toast.error(
-        `Failed to restart node: ${error instanceof Error ? error.message : 'Unknown error'}`
+      toast.success(
+        t('settings.toasts.restarted', 'Node restarted with the new settings')
       )
-
-      // Show error modal
+    } catch (error) {
       setModal({
         autoClose: false,
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.message : String(error),
         isOpen: true,
-        message: 'There was a problem restarting the node.',
-        title: 'Node Restart Failed',
+        message: t(
+          'settings.toasts.restartFailedMessage',
+          'There was a problem restarting the node.'
+        ),
+        title: t('settings.toasts.restartFailedTitle', 'Node restart failed'),
         type: ModalType.ERROR,
       })
     } finally {
@@ -406,20 +403,18 @@ export const Component: React.FC = () => {
         data.indexerUrl !== (nodeSettings.indexer_url || '') ||
         data.proxyEndpoint !== (nodeSettings.proxy_endpoint || '')
 
-      toast.success('Settings saved successfully')
+      toast.success(t('settings.toasts.saved', 'Settings saved'))
       if (nodeSettingsChanged) setShowRestartConfirmation(true)
     } catch (error) {
-      toast.error(
-        `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
-
-      // Show error modal
       setModal({
         autoClose: false,
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.message : String(error),
         isOpen: true,
-        message: 'There was a problem saving your settings.',
-        title: 'Settings Save Failed',
+        message: t(
+          'settings.toasts.saveFailedMessage',
+          'There was a problem saving your settings.'
+        ),
+        title: t('settings.toasts.saveFailedTitle', 'Settings not saved'),
         type: ModalType.ERROR,
       })
     } finally {
@@ -441,13 +436,17 @@ export const Component: React.FC = () => {
         await invoke('nwc_stop_service').catch(() => undefined)
         await invoke('stop_node')
         dispatch(nodeSettingsActions.resetNodeSettings())
-        toast.success('Logout successful')
+        toast.success(t('settings.toasts.loggedOut', 'Logged out'))
       } else {
         throw new Error('Node lock unsuccessful')
       }
     } catch (error) {
       toast.error(
-        `Logout failed: ${error instanceof Error ? error.message : ''}. Redirecting anyway.`
+        t('settings.toasts.logoutFailed', {
+          defaultValue:
+            'The wallet could not be locked cleanly ({{error}}). You have been logged out anyway.',
+          error: error instanceof Error ? error.message : String(error),
+        })
       )
     } finally {
       navigate(WALLET_SETUP_PATH)
@@ -484,9 +483,11 @@ export const Component: React.FC = () => {
       await shutdown().unwrap()
       dispatch(nodeSettingsActions.resetNodeSettings())
       navigate(WALLET_SETUP_PATH)
-      toast.success('Node shut down successfully')
+      toast.success(t('settings.toasts.shutDown', 'Node shut down'))
     } catch (error) {
-      toast.error('Failed to shut down node')
+      toast.error(
+        t('settings.toasts.shutdownFailed', 'Failed to shut down the node')
+      )
     } finally {
       setIsShuttingDown(false)
       setShowShutdownConfirmation(false)

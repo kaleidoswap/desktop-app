@@ -499,10 +499,16 @@ export const Step2: React.FC<Props> = ({
         )
 
         if (parsedClientAssetAmount > 0 && !quote) {
-          toast.error('Please wait for the asset quote before continuing', {
-            autoClose: 5000,
-            position: 'bottom-right',
-          })
+          toast.error(
+            t(
+              'orderChannel.toasts.waitForQuote',
+              'Wait for the asset quote before continuing'
+            ),
+            {
+              autoClose: 5000,
+              position: 'bottom-right',
+            }
+          )
           return
         }
 

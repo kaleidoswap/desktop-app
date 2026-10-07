@@ -267,7 +267,20 @@
     "changePassword": "Cambiar contraseña",
     "changePasswordDescription": "Actualiza la contraseña de cifrado del monedero",
     "logoutDescription": "Bloquea el monedero y vuelve a la lista de cuentas. El nodo conserva sus datos.",
-    "shutdownDescription": "Detiene el proceso del nodo. Los canales siguen abiertos pero el nodo queda desconectado."
+    "shutdownDescription": "Detiene el proceso del nodo. Los canales siguen abiertos pero el nodo queda desconectado.",
+    "toasts": {
+      "restarting": "Reiniciando el nodo…",
+      "restarted": "Nodo reiniciado con los nuevos ajustes",
+      "restartFailedTitle": "Error al reiniciar el nodo",
+      "restartFailedMessage": "Hubo un problema al reiniciar el nodo.",
+      "saved": "Ajustes guardados",
+      "saveFailedTitle": "Ajustes no guardados",
+      "saveFailedMessage": "Hubo un problema al guardar tus ajustes.",
+      "loggedOut": "Sesión cerrada",
+      "logoutFailed": "No se pudo bloquear el monedero correctamente ({{error}}). Se ha cerrado la sesión de todos modos.",
+      "shutDown": "Nodo apagado",
+      "shutdownFailed": "No se pudo apagar el nodo"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmar Cierre de Sesión",
@@ -601,6 +614,9 @@
       "goToChannels": "Ir a la Página de Canales",
       "success": "¡Canal creado exitosamente!",
       "successMessage": "El canal ha sido creado exitosamente, ahora puedes comenzar a operar."
+    },
+    "toasts": {
+      "capacityRequired": "Introduce la capacidad del canal"
     }
   },
   "supportModal": {
@@ -660,7 +676,16 @@
     "backupInProgressMessage": "Por favor espera, la copia de seguridad está en progreso...",
     "backupLockedMessage": "El nodo estará bloqueado hasta que finalice el proceso de copia de seguridad.",
     "cancel": "Cancelar",
-    "createBackup": "Crear Copia de Seguridad"
+    "createBackup": "Crear Copia de Seguridad",
+    "toasts": {
+      "invalidPath": "Elige una carpeta válida para la copia",
+      "fileExists": "Ya existe una copia en esa carpeta. Elige otra.",
+      "lockFailed": "No se pudo bloquear el monedero para la copia",
+      "success": "Copia guardada",
+      "unlockFailed": "No se pudo desbloquear el monedero tras la copia",
+      "wrongPassword": "Contraseña incorrecta",
+      "failed": "La copia ha fallado"
+    }
   },
   "logoutModal": {
     "loggingOut": "Cerrando Sesión",
@@ -1839,7 +1864,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Espera la cotización del activo antes de continuar"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1932,7 +1960,11 @@
     "actions": {
       "create": "Crear UTXOs"
     },
-    "toastSuccess": "UTXOs creados exitosamente"
+    "toastSuccess": "UTXOs creados exitosamente",
+    "toasts": {
+      "created": "UTXOs creados",
+      "retryFailed": "Se crearon los UTXOs, pero la operación original falló. Vuelve a intentarlo."
+    }
   },
   "legal": {
     "common": {
