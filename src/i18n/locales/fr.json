@@ -3079,5 +3079,19 @@
       "invalidAmount": "Veuillez entrer un montant valide",
       "insufficientBalance": "Solde insuffisant"
     }
+  },
+  "chainSync": {
+    "label": "Nœud Bitcoin Core",
+    "optionalBadge": "Optionnel · Avancé",
+    "placeholder": "utilisateur:motdepasse@hôte:port",
+    "activeIndexer": "Non défini : le nœud se synchronise via l'indexeur, aucun nœud complet requis.",
+    "activeBitcoind": "Défini : Lightning se synchronise via votre nœud Bitcoin Core.",
+    "learnMore": "Quelle est la différence ?",
+    "indexerTitle": "Indexeur seul (par défaut)",
+    "indexerBody": "Rien à installer. S'appuie sur l'indexeur pour les données de la chaîne.",
+    "bitcoindTitle": "Votre propre nœud Bitcoin Core",
+    "bitcoindBody": "Plus privé, repose sur votre propre nœud. Nécessite Bitcoin Core avec RPC, toujours joignable.",
+    "invalidFormat": "Utilisez le format utilisateur:motdepasse@hôte:port",
+    "notConfigured": "Non utilisé : synchronisation via l'indexeur"
   }
 }

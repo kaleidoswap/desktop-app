@@ -3073,5 +3073,19 @@
       "invalidAmount": "유효한 수량을 입력하세요",
       "insufficientBalance": "잔액 부족"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core 노드",
+    "optionalBadge": "선택 · 고급",
+    "placeholder": "사용자:비밀번호@호스트:포트",
+    "activeIndexer": "미설정: 노드가 인덱서에서 동기화하며, 풀 노드가 필요하지 않습니다.",
+    "activeBitcoind": "설정됨: Lightning이 내 Bitcoin Core 노드에서 동기화합니다.",
+    "learnMore": "차이점은 무엇인가요?",
+    "indexerTitle": "인덱서만 사용 (기본값)",
+    "indexerBody": "설치할 것이 없습니다. 체인 데이터는 인덱서에 의존합니다.",
+    "bitcoindTitle": "내 Bitcoin Core 노드",
+    "bitcoindBody": "더 프라이빗하며 직접 운영하는 노드에 기반합니다. RPC가 활성화된 Bitcoin Core가 항상 접속 가능해야 합니다.",
+    "invalidFormat": "사용자:비밀번호@호스트:포트 형식을 사용하세요",
+    "notConfigured": "사용 안 함: 인덱서에서 동기화 중"
   }
 }

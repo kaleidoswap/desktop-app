@@ -369,7 +369,9 @@ export const Component = () => {
     }
   }
 
-  const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
+  const rpcConfig = nodeSettings.rpc_connection_url?.trim()
+    ? parseRpcUrl(nodeSettings.rpc_connection_url)
+    : null
   const accountName = nodeSettings.name || 'Your Wallet'
 
   if (redirectToRoot) {
@@ -434,7 +436,9 @@ export const Component = () => {
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-surface-overlay/40 border border-border-subtle">
                   <Zap className="w-3.5 h-3.5 text-secondary shrink-0" />
                   <span className="text-xs text-content-secondary font-mono truncate">
-                    {rpcConfig.host}:{rpcConfig.port}
+                    {rpcConfig
+                      ? `${rpcConfig.host}:${rpcConfig.port}`
+                      : nodeSettings.indexer_url}
                   </span>
                 </div>
               </div>
@@ -525,9 +529,15 @@ export const Component = () => {
                               <p className="text-xs text-content-tertiary mb-0.5">
                                 Bitcoind RPC
                               </p>
-                              <p className="text-sm text-content-primary font-mono">
-                                {rpcConfig.host}:{rpcConfig.port}
-                              </p>
+                              {rpcConfig ? (
+                                <p className="text-sm text-content-primary font-mono">
+                                  {rpcConfig.host}:{rpcConfig.port}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-content-tertiary">
+                                  {t('chainSync.notConfigured')}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-start gap-3">

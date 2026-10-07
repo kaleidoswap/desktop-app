@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../unlock'
+import {
+  buildUnlockRequest,
+  DESKTOP_ANNOUNCE_ALIAS,
+  isValidBitcoindRpcUrl,
+} from '../unlock'
 
 const INDEXER_URL = 'https://esplora.example.com'
 
@@ -40,5 +44,23 @@ describe('buildUnlockRequest', () => {
       mode: 'TransactionSync',
     })
     expect(request.announce_alias).toBeUndefined()
+  })
+})
+
+describe('isValidBitcoindRpcUrl', () => {
+  it('accepts an empty URL (indexer-only sync)', () => {
+    expect(isValidBitcoindRpcUrl('')).toBe(true)
+    expect(isValidBitcoindRpcUrl('  ')).toBe(true)
+  })
+
+  it('accepts user:password@host:port', () => {
+    expect(isValidBitcoindRpcUrl('alice:hunter2@127.0.0.1:8332')).toBe(true)
+    expect(isValidBitcoindRpcUrl('alice:@node.local:38332')).toBe(true)
+  })
+
+  it('rejects URLs parseRpcUrl would misread', () => {
+    expect(isValidBitcoindRpcUrl('http://localhost:18443')).toBe(false)
+    expect(isValidBitcoindRpcUrl('alice:hunter2@localhost')).toBe(false)
+    expect(isValidBitcoindRpcUrl('alice:pa@ss@localhost:8332')).toBe(false)
   })
 })

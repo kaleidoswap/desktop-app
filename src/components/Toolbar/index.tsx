@@ -15,7 +15,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react'
-import { Input, AdvancedSettings, Button } from '../ui'
+import { Input, AdvancedSettings, BitcoindRpcField, Button } from '../ui'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -42,6 +42,7 @@ import {
   setSettingsAsync,
 } from '../../slices/nodeSettings/nodeSettings.slice'
 import { waitForDockerNodeReady, waitForNodeReady } from '../../utils/nodeState'
+import { isValidBitcoindRpcUrl } from '../../helpers/unlock'
 import { logger } from '../../utils/logger'
 
 export interface Account {
@@ -1330,10 +1331,21 @@ const NodeSelectionModalContent: React.FC<NodeSelectionModalContentProps> = ({
             label={t('toolbar.modal.nodeUrl')}
             value={account.node_url}
           />
-          <CopyField
-            label={t('toolbar.modal.rpcConnection')}
-            value={account.rpc_connection_url}
-          />
+          {account.rpc_connection_url?.trim() ? (
+            <CopyField
+              label={t('toolbar.modal.rpcConnection')}
+              value={account.rpc_connection_url}
+            />
+          ) : (
+            <div>
+              <label className="text-xs font-medium text-content-secondary uppercase tracking-wider">
+                {t('toolbar.modal.rpcConnection')}
+              </label>
+              <p className="mt-1.5 px-3 py-2 rounded-lg border border-border-default/50 bg-surface-base text-sm text-content-tertiary">
+                {t('chainSync.notConfigured')}
+              </p>
+            </div>
+          )}
         </AccordionSection>
 
         {/* Service Endpoints Section */}
@@ -1543,6 +1555,10 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
       toast.error(t('toolbar.nodes.portErrors'))
       return
     }
+    if (!isValidBitcoindRpcUrl(formData.rpc_connection_url)) {
+      toast.error(t('chainSync.invalidFormat'))
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -1615,20 +1631,6 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
             placeholder="http://localhost:3000"
             type="text"
             value={formData.node_url}
-          />
-        </div>
-
-        <div>
-          <label className={labelClass}>
-            {t('toolbar.edit.fields.rpcConnectionUrl')}
-          </label>
-          <Input
-            onChange={(e) =>
-              handleInputChange('rpc_connection_url', e.target.value)
-            }
-            placeholder="http://localhost:3001/rpc"
-            type="text"
-            value={formData.rpc_connection_url}
           />
         </div>
 
@@ -1747,6 +1749,27 @@ const EditNodeModalContent: React.FC<EditNodeModalContentProps> = ({
               </p>
             </div>
           )}
+
+          <BitcoindRpcField
+            error={
+              isValidBitcoindRpcUrl(formData.rpc_connection_url)
+                ? undefined
+                : t('chainSync.invalidFormat')
+            }
+            inputId="edit-rpc-connection-url"
+            value={formData.rpc_connection_url}
+          >
+            <Input
+              error={!isValidBitcoindRpcUrl(formData.rpc_connection_url)}
+              id="edit-rpc-connection-url"
+              onChange={(e) =>
+                handleInputChange('rpc_connection_url', e.target.value)
+              }
+              placeholder={t('chainSync.placeholder')}
+              type="text"
+              value={formData.rpc_connection_url}
+            />
+          </BitcoindRpcField>
         </AdvancedSettings>
 
         {/* Save button */}

@@ -1,5 +1,9 @@
 import { UseFormReturn } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
+import { isValidBitcoindRpcUrl } from '../../helpers/unlock'
+
+import { BitcoindRpcField } from './BitcoindRpcField'
 import { Input } from './Input'
 
 interface NetworkSettingsProps {
@@ -12,6 +16,7 @@ export const NetworkSettings = ({
   form,
   className = '',
 }: NetworkSettingsProps) => {
+  const { t } = useTranslation()
   const getErrorMessage = (error: any): string | undefined => {
     return error?.message ? String(error.message) : undefined
   }
@@ -21,26 +26,6 @@ export const NetworkSettings = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className={fieldCls}>
-        <label className={labelCls} htmlFor="rpc_connection_url">
-          RPC Connection URL
-        </label>
-        <Input
-          className="!py-2.5 text-sm"
-          id="rpc_connection_url"
-          placeholder="Enter RPC connection URL"
-          {...form.register('rpc_connection_url', {
-            required: 'RPC connection URL is required',
-          })}
-          error={!!form.formState.errors.rpc_connection_url}
-        />
-        {getErrorMessage(form.formState.errors.rpc_connection_url) && (
-          <p className="text-sm text-red-500">
-            {getErrorMessage(form.formState.errors.rpc_connection_url)}
-          </p>
-        )}
-      </div>
-
       <div className={fieldCls}>
         <label className={labelCls} htmlFor="indexer_url">
           Indexer URL
@@ -122,6 +107,24 @@ export const NetworkSettings = ({
           )}
         </div>
       </div>
+
+      <BitcoindRpcField
+        error={getErrorMessage(form.formState.errors.rpc_connection_url)}
+        inputId="rpc_connection_url"
+        value={form.watch('rpc_connection_url') ?? ''}
+      >
+        <Input
+          className="!py-2.5 text-sm"
+          id="rpc_connection_url"
+          placeholder={t('chainSync.placeholder')}
+          {...form.register('rpc_connection_url', {
+            validate: (value: string) =>
+              isValidBitcoindRpcUrl(value ?? '') ||
+              t('chainSync.invalidFormat'),
+          })}
+          error={!!form.formState.errors.rpc_connection_url}
+        />
+      </BitcoindRpcField>
     </div>
   )
 }

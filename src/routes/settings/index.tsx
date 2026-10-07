@@ -34,6 +34,7 @@ import {
   getModalPortalTarget,
   getModalPositionClass,
 } from '../../helpers/modalPortal'
+import { isValidBitcoindRpcUrl } from '../../helpers/unlock'
 import { WALLET_SETUP_PATH } from '../../app/router/paths'
 import { RootState } from '../../app/store'
 import { useAppSelector } from '../../app/store/hooks'
@@ -41,6 +42,7 @@ import { AppVersion } from '../../components/AppVersion'
 import { BackupModal } from '../../components/BackupModal'
 import { ChangePasswordModal } from '../../components/ChangePasswordModal'
 import { MnemonicViewerModal } from '../../components/MnemonicViewer'
+import { BitcoindRpcField } from '../../components/ui'
 import {
   ModalType,
   ModalTypeValue,
@@ -923,23 +925,6 @@ export const Component: React.FC = () => {
                 />
                 <Controller
                   control={control}
-                  name="rpcConnectionUrl"
-                  render={({ field }) => (
-                    <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-content-secondary">
-                        {t('settings.bitcoindRpc')}
-                      </label>
-                      <input
-                        {...field}
-                        className={inputCls}
-                        placeholder="Bitcoin RPC URL"
-                        type="text"
-                      />
-                    </div>
-                  )}
-                />
-                <Controller
-                  control={control}
                   name="indexerUrl"
                   render={({ field }) => (
                     <div className="space-y-1.5">
@@ -988,6 +973,30 @@ export const Component: React.FC = () => {
                       />
                     </div>
                   )}
+                />
+                <Controller
+                  control={control}
+                  name="rpcConnectionUrl"
+                  render={({ field, fieldState }) => (
+                    <BitcoindRpcField
+                      error={fieldState.error?.message}
+                      inputId="settings-rpc-connection-url"
+                      value={field.value}
+                    >
+                      <input
+                        {...field}
+                        className={inputCls}
+                        id="settings-rpc-connection-url"
+                        placeholder={t('chainSync.placeholder')}
+                        type="text"
+                      />
+                    </BitcoindRpcField>
+                  )}
+                  rules={{
+                    validate: (value) =>
+                      isValidBitcoindRpcUrl(value) ||
+                      t('chainSync.invalidFormat'),
+                  }}
                 />
               </div>
             </section>
