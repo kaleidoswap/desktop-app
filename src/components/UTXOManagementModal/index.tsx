@@ -21,6 +21,7 @@ import { formatBitcoinAmount } from '../../helpers/number'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { getAssignmentAmount } from '../../utils/rgbUtils'
 import { Modal } from '../ui/Modal'
+import { logger } from '../../utils/logger'
 
 interface UTXOManagementModalProps {
   onClose: () => void
@@ -277,7 +278,7 @@ export const UTXOManagementModal = ({
           slow: Math.round(slowFee.fee_rate ?? 1),
         })
       } catch (e) {
-        console.error(e)
+        logger.error(e)
       }
     }
     fetchFees()

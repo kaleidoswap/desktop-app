@@ -32,6 +32,7 @@ import {
 import { nodeApi, NiaAsset } from '../../slices/nodeApi/nodeApi.slice'
 
 import 'react-toastify/dist/ReactToastify.css'
+import { logger } from '../../utils/logger'
 
 const AssetSliders = ({
   asset,
@@ -323,7 +324,7 @@ export const Step2 = ({
         const newMaxCapacity = Math.min(MAX_CHANNEL_CAPACITY, totalSpendable)
         setMaxCapacity(newMaxCapacity)
       } catch (error) {
-        console.error('Error fetching BTC balance:', error)
+        logger.error('Error fetching BTC balance:', error)
       }
     }
 

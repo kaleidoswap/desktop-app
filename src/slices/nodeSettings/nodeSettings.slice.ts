@@ -36,7 +36,7 @@ const initialState: NodeSettingsState = {
     ldk_peer_listening_port: '',
     maker_urls: [],
     name: '',
-    network: 'Regtest' as BitcoinNetwork,
+    network: 'SignetCustom' as BitcoinNetwork,
     node_url: '',
     proxy_endpoint: '',
     rpc_connection_url: '',

@@ -52,11 +52,12 @@ import kaleidoswapPictogram from '../../assets/logo.svg'
 import { BitcoinNetwork } from '../../constants'
 import { NETWORK_DEFAULTS, getDefaultMakerUrls } from '../../constants/networks'
 import { buildLocalNodeUrl } from '../../api/client'
-import { parseRpcUrl } from '../../helpers/utils'
+import { buildUnlockRequest } from '../../helpers/unlock'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { setSettingsAsync } from '../../slices/nodeSettings/nodeSettings.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
 import { waitForNodeReady } from '../../utils/nodeState'
+import { logger } from '../../utils/logger'
 
 const checkPortAvailability = async (
   ports: string[]
@@ -91,7 +92,7 @@ const checkPortAvailability = async (
       conflictingPorts: unavailablePorts,
     }
   } catch (error) {
-    console.error('Error checking port availability:', error)
+    logger.error('Error checking port availability:', error)
     throw new Error('Failed to check port availability', { cause: error })
   }
 }
@@ -110,12 +111,7 @@ interface NodeSetupFields {
 }
 
 type SetupStep =
-  | 'terms'
-  | 'setup'
-  | 'password'
-  | 'mnemonic'
-  | 'verify'
-  | 'unlock'
+  'terms' | 'setup' | 'password' | 'mnemonic' | 'verify' | 'unlock'
 
 export const Component = () => {
   const { t } = useTranslation()
@@ -389,7 +385,7 @@ export const Component = () => {
     try {
       await invoke('stop_node')
     } catch (e) {
-      console.error('Failed to stop node during cancellation:', e)
+      logger.error('Failed to stop node during cancellation:', e)
     }
   }
 
@@ -434,7 +430,7 @@ export const Component = () => {
         })
       }
     } else if (runningNodeAccount) {
-      console.log(
+      logger.debug(
         'Node account exists but node is not running:',
         runningNodeAccount
       )
@@ -475,7 +471,7 @@ export const Component = () => {
               await invoke('stop_node_by_account', { accountName: nodeAccount })
               await new Promise((resolve) => setTimeout(resolve, 2000))
             } catch (error) {
-              console.warn(`Could not stop node on port ${port}:`, error)
+              logger.warn(`Could not stop node on port ${port}:`, error)
             }
           }
         } else {
@@ -673,20 +669,14 @@ export const Component = () => {
     return mnemonic.split(' ')
   }
 
-  const buildUnlockRequest = (password: string) => {
-    const rpcConfig = parseRpcUrl(nodeSetupForm.getValues('rpc_connection_url'))
-
-    return {
-      announce_addresses: [],
-      bitcoind_rpc_host: rpcConfig.host,
-      bitcoind_rpc_password: rpcConfig.password,
-      bitcoind_rpc_port: rpcConfig.port,
-      bitcoind_rpc_username: rpcConfig.username,
-      indexer_url: nodeSetupForm.getValues('indexer_url'),
+  const buildUnlockRequestFromForm = (password: string) =>
+    buildUnlockRequest({
+      nodeSettings: {
+        indexer_url: nodeSetupForm.getValues('indexer_url'),
+        rpc_connection_url: nodeSetupForm.getValues('rpc_connection_url'),
+      },
       password,
-      proxy_endpoint: nodeSetupForm.getValues('proxy_endpoint'),
-    }
-  }
+    })
 
   const unlockNodeUntilReady = async (password: string): Promise<void> => {
     const outcome = await unlockNodeWithRetry({
@@ -699,7 +689,7 @@ export const Component = () => {
       }),
       onLongUnlock: setUnlockStatusMessage,
       unlock: () =>
-        unlock(buildUnlockRequest(password))
+        unlock(buildUnlockRequestFromForm(password))
           .unwrap()
           .then(() => undefined),
       unlockLabel: 'Node unlock',
@@ -721,7 +711,7 @@ export const Component = () => {
   }
 
   const handlePasswordSetup: SubmitHandler<PasswordFields> = async (data) => {
-    console.log('[init] handlePasswordSetup called')
+    logger.debug('[init] handlePasswordSetup called')
     const accountName = nodeSetupForm.getValues('name')
     const network = nodeSetupForm.getValues('network')
     const datapath = getDatapath(accountName)
@@ -743,20 +733,22 @@ export const Component = () => {
     try {
       await dispatch(setSettingsAsync(pendingNodeSettings))
 
-      console.log('[init] registering startup listeners')
+      logger.debug('[init] registering startup listeners')
       await registerStartupListeners()
-      console.log('[init] startup listeners registered')
+      logger.debug('[init] startup listeners registered')
 
       // Check and stop any existing node
-      console.log('[init] step 1: checkAndStopExistingNode')
+      logger.debug('[init] step 1: checkAndStopExistingNode')
       await checkAndStopExistingNode()
-      console.log('[init] step 1 done')
+      logger.debug('[init] step 1 done')
       if (isCancelledRef.current) return
 
       try {
-        console.log('[init] step 2: startLocalNode (spawn + backend readiness)')
+        logger.debug(
+          '[init] step 2: startLocalNode (spawn + backend readiness)'
+        )
         await startLocalNode(accountName, network, datapath)
-        console.log('[init] step 2 done — node HTTP server is responding')
+        logger.debug('[init] step 2 done — node HTTP server is responding')
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
@@ -805,12 +797,12 @@ export const Component = () => {
 
       // Rest of the initialization process
       try {
-        console.log(
+        logger.debug(
           `[init] step 3 target node URL: ${finalNodeSettings.node_url}`
         )
-        console.log('[init] step 3: POST /init')
+        logger.debug('[init] step 3: POST /init')
         const mnemonic = await initializeNode(data.password)
-        console.log('[init] step 3 done — mnemonic received')
+        logger.debug('[init] step 3 done — mnemonic received')
         if (isCancelledRef.current) return
 
         setNodePassword(data.password)
@@ -821,7 +813,7 @@ export const Component = () => {
         handleStepChange('mnemonic')
         toast.success(t('walletInit.passwordStep.nodeInitializedSuccess'))
       } catch (error) {
-        console.log(
+        logger.debug(
           '[init] step 3 error:',
           error instanceof Error ? error.message : error
         )
@@ -832,9 +824,9 @@ export const Component = () => {
           toast.info(t('walletInit.passwordStep.nodeAlreadyInitialized'))
           setNodePassword(data.password)
           setInitPhase('unlocking-wallet')
-          console.log('[init] step 4: POST /unlock')
+          logger.debug('[init] step 4: POST /unlock')
           await unlockNodeUntilReady(data.password)
-          console.log('[init] step 4 done — unlock succeeded')
+          logger.debug('[init] step 4 done — unlock succeeded')
           if (isCancelledRef.current) return
           await saveAccountSettings(accountName, network, datapath)
           setRedirectToRoot(true)
@@ -856,7 +848,7 @@ export const Component = () => {
       try {
         await invoke('stop_node')
       } catch (cleanupError) {
-        console.error('Failed to clean up after error:', cleanupError)
+        logger.error('Failed to clean up after error:', cleanupError)
       }
     } finally {
       setIsInitializing(false)
@@ -919,9 +911,9 @@ export const Component = () => {
           mnemonic: mnemonic.join(' '),
           password: nodePassword,
         })
-        console.log('Mnemonic encrypted and stored successfully')
+        logger.debug('Mnemonic encrypted and stored successfully')
       } catch (error) {
-        console.error('Failed to store encrypted mnemonic:', error)
+        logger.error('Failed to store encrypted mnemonic:', error)
         toast.error(t('walletInit.passwordStep.failedToStoreRecovery'))
         return
       }
@@ -935,7 +927,7 @@ export const Component = () => {
       try {
         await handleUnlockComplete()
       } catch (error) {
-        console.error('Unlock failed:', error)
+        logger.error('Unlock failed:', error)
       }
     } catch (error) {
       const errorMessage =
@@ -1017,7 +1009,7 @@ export const Component = () => {
     try {
       await handleUnlockComplete()
     } catch (error) {
-      console.error('Unlock failed:', error)
+      logger.error('Unlock failed:', error)
     }
   }
 
@@ -1252,6 +1244,11 @@ export const Component = () => {
               variant="error"
             >
               <p className="text-sm">{nodeErrorMessage}</p>
+              {nodeErrorMessage.includes('Failed to deserialize') && (
+                <p className="mt-2 text-sm text-content-secondary">
+                  {t('walletInit.unlockStep.incompatibleNode')}
+                </p>
+              )}
               <div className="mt-4">
                 <Button
                   onClick={() => handleStepChange('verify')}

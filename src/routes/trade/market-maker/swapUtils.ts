@@ -12,9 +12,7 @@ import { logger } from '../../../utils/logger'
 import { handleApiError } from './apiUtils'
 import { Fields } from './types'
 
-/**
- * Type for swap recap details
- */
+/** Type for swap recap details */
 export interface SwapDetails {
   fromAmount: string
   fromAsset: string
@@ -26,9 +24,7 @@ export interface SwapDetails {
   selectedPair: TradingPair | null
 }
 
-/**
- * Copies error details to clipboard
- */
+/** Copies error details to clipboard */
 export const copyToClipboard = (text: string, t: TFunction) => {
   navigator.clipboard.write([
     new ClipboardItem({
@@ -38,9 +34,7 @@ export const copyToClipboard = (text: string, t: TFunction) => {
   toast.success(t('tradeMarketMaker.swap.errorDetailsClipboard'))
 }
 
-/**
- * Normalize asset ID for comparison (case-insensitive for BTC)
- */
+/** Normalize asset ID for comparison (case-insensitive for BTC) */
 const normalizeAssetIdForComparison = (assetId: string): string => {
   // BTC should be case-insensitive
   if (assetId.toLowerCase() === 'btc') {
@@ -50,9 +44,7 @@ const normalizeAssetIdForComparison = (assetId: string): string => {
   return assetId
 }
 
-/**
- * Validates the swapstring format and contents
- */
+/** Validates the swapstring format and contents */
 export const validateSwapString = (
   swapstring: string,
   fromAmount: number,
@@ -104,9 +96,7 @@ export const validateSwapString = (
   return true
 }
 
-/**
- * Creates a function to execute a swap
- */
+/** Creates a function to execute a swap */
 export const createSwapExecutor = (
   assets: NiaAsset[],
   pubKey: string,

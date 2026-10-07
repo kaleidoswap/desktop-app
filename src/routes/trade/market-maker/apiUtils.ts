@@ -2,9 +2,7 @@ import { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 import { logger } from '../../../utils/logger'
 
-/**
- * Handles API errors and extracts readable error messages
- */
+/** Handles API errors and extracts readable error messages */
 export const handleApiError = (error: FetchBaseQueryError): string => {
   if (!error) return 'Unknown error occurred'
 
@@ -73,9 +71,7 @@ export const handleApiError = (error: FetchBaseQueryError): string => {
   return String(errorData)
 }
 
-/**
- * Creates a handler for refreshing data (channels, pairs, etc.)
- */
+/** Creates a handler for refreshing data (channels, pairs, etc.) */
 export const createRefreshDataHandler = (
   listChannels: any,
   getPairs: any,

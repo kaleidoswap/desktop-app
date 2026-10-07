@@ -1,4 +1,5 @@
 import { CSSProperties, useEffect, useRef, memo, useMemo } from 'react'
+import { logger } from '../../utils/logger'
 
 // Move parseAnsi outside component to avoid recreating on every render
 const parseAnsi = (log: string) => {
@@ -121,7 +122,7 @@ const TerminalLogDisplay = memo(
     const logsContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-      console.log('TerminalLogDisplay received logs:', logs)
+      logger.debug('TerminalLogDisplay received logs:', logs)
       if (logsContainerRef.current) {
         logsContainerRef.current.scrollTop =
           logsContainerRef.current.scrollHeight

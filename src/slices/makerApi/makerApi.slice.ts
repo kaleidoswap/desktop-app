@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react'
-import { getKaleidoClient } from '../../api/client'
+import { getMakerClient } from '../../api/client'
 import { RootState } from '../../app/store'
 import {
   ChannelOrderResponse as CreateOrderResponseModel,
@@ -149,9 +149,7 @@ export const normalizePair = (pair: TradingPair): TradingPair => {
   }
 }
 
-/**
- * Normalize an array of pairs from API response.
- */
+/** Normalize an array of pairs from API response. */
 export const normalizePairs = (pairs: TradingPair[]): TradingPair[] => {
   return pairs.map(normalizePair)
 }
@@ -179,7 +177,7 @@ export const makerApi = createApi({
     >({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.createLspOrder(args)
           return { data: res }
         } catch (e) {
@@ -191,7 +189,7 @@ export const makerApi = createApi({
     estimate_fees: builder.query<ChannelFees, Lsps1CreateOrderRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.estimateLspFees(args)
           return { data: res }
         } catch (e) {
@@ -203,7 +201,7 @@ export const makerApi = createApi({
     execSwap: builder.query<null, ExecSwapRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           await client.maker.executeSwap(args)
           return { data: null }
         } catch (e) {
@@ -215,7 +213,7 @@ export const makerApi = createApi({
     getPairs: builder.query<GetPairsResponse, void>({
       queryFn: async (_args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.listPairs()
           return { data: res as any }
         } catch (e) {
@@ -227,7 +225,7 @@ export const makerApi = createApi({
     getQuote: builder.query<QuoteResponse, QuoteRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.getQuote(args)
           return { data: res }
         } catch (e) {
@@ -239,7 +237,7 @@ export const makerApi = createApi({
     get_info: builder.query<Lsps1GetInfoResponse, void>({
       queryFn: async (_args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.getLspInfo()
           return { data: res }
         } catch (e) {
@@ -251,7 +249,7 @@ export const makerApi = createApi({
     get_order: builder.query<Lsps1GetOrderResponse, Lsps1GetOrderRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.getLspOrder(args)
           return { data: res }
         } catch (e) {
@@ -263,7 +261,7 @@ export const makerApi = createApi({
     initSwap: builder.query<InitSwapResponse, InitSwapRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.initSwap(args)
           return { data: res }
         } catch (e) {
@@ -275,7 +273,7 @@ export const makerApi = createApi({
     retry_delivery: builder.query<RetryDeliveryResponse, RetryDeliveryRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           // retryAssetDelivery was removed from the SDK; call via escape hatch
           const res = await (client.maker as any).retryAssetDelivery(args)
           return { data: res }
@@ -288,7 +286,7 @@ export const makerApi = createApi({
     status: builder.query<StatusResponse, StatusRequest>({
       queryFn: async (args, api) => {
         try {
-          const client = await getKaleidoClient(api.getState() as RootState)
+          const client = await getMakerClient(api.getState() as RootState)
           const res = await client.maker.getAtomicSwapStatus(args)
           return { data: res }
         } catch (e) {

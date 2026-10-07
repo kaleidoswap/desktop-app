@@ -11,9 +11,7 @@ interface TooltipProps {
   className?: string
 }
 
-/**
- * A tooltip component that shows on hover
- */
+/** A tooltip component that shows on hover */
 export const Tooltip: React.FC<TooltipProps> = ({
   children,
   content,
@@ -57,9 +55,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   )
 }
 
-/**
- * A tooltip with an overlay effect (covers the entire element)
- */
+/** A tooltip with an overlay effect (covers the entire element) */
 export const OverlayTooltip: React.FC<TooltipProps> = ({
   children,
   content,

@@ -4,6 +4,7 @@ import { Update, check } from '@tauri-apps/plugin-updater'
 import { useEffect, createContext, useContext, useRef } from 'react'
 
 import { NotificationProvider, useNotification } from '../NotificationSystem'
+import { logger } from '../../utils/logger'
 
 // Helper function to compare semantic versions properly
 const isVersionNewer = (
@@ -61,7 +62,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
         await new Promise((resolve) => setTimeout(resolve, 1000))
         await invoke('close_splashscreen')
       } catch (error) {
-        console.error('Failed to close splashscreen:', error)
+        logger.error('Failed to close splashscreen:', error)
       }
     }
 
@@ -83,7 +84,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
       try {
         currentVersion = await getVersion()
       } catch (e) {
-        console.warn('Failed to get current version, using fallback:', e)
+        logger.warn('Failed to get current version, using fallback:', e)
       }
 
       let update: Update | null
@@ -95,7 +96,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
             ? maybeUpdate
             : null
       } catch (e) {
-        console.error('Initial update check failed:', e)
+        logger.error('Initial update check failed:', e)
         updateCheckInProgress.current = false
         return
       }
@@ -133,7 +134,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
     try {
       currentVersion = await getVersion()
     } catch (e) {
-      console.warn('Failed to get current version, using fallback:', e)
+      logger.warn('Failed to get current version, using fallback:', e)
     }
 
     lastCheckTime.current = now
@@ -147,7 +148,7 @@ const UpdateChecker = ({ children }: { children: React.ReactNode }) => {
           ? maybeUpdate
           : null
     } catch (e) {
-      console.error('Manual update check failed:', e)
+      logger.error('Manual update check failed:', e)
       addNotification({
         message: `Failed to check for updates: ${e instanceof Error ? e.message : 'Unknown error'}. Please try again later.`,
         title: 'Update Check Failed',

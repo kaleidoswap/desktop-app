@@ -492,11 +492,7 @@ export const Component = () => {
           setIsPriceLoading(false)
           setIsQuoteLoading(false)
 
-          // Only show connection error if:
-          // 1. We're connected to WebSocket
-          // 2. There's a 'from' amount entered
-          // 3. We're not currently in any loading state
-          // 4. There's no existing error message (to avoid overwriting validation errors)
+          // Guarded so a connection error never overwrites a validation error.
           const fromAmount = form.getValues().from
           const hasFromAmount = fromAmount && fromAmount !== '0'
 
@@ -706,7 +702,6 @@ export const Component = () => {
   const [listChannels] = nodeApi.endpoints.listChannels.useLazyQuery()
   const [nodeInfo] = nodeApi.endpoints.nodeInfo.useLazyQuery()
   const [whitelistTrade] = nodeApi.useWhitelistTradeMutation()
-  // const [getPairs] = makerApi.useLazyGetPairsQuery()
   const [initSwap] = makerApi.endpoints.initSwap.useLazyQuery()
   const [execSwap] = makerApi.endpoints.execSwap.useLazyQuery()
   const [btcBalance] = nodeApi.endpoints.btcBalance.useLazyQuery()
@@ -801,9 +796,8 @@ export const Component = () => {
     [assets, bitcoinUnit]
   )
 
-  // Reverse quote listener — uses module-level callback (zero overhead when not in reverse mode).
-  // This processes the quote response and populates the "from" field when direction is 'to'.
-  // Uses refs to avoid stale closure issues — the effect runs once and reads current values via refs.
+  // Reverse quote listener: populates the "from" field when direction is 'to'.
+  // Reads current values via refs so the once-only effect has no stale closure.
   const formatAmountRef = useRef(formatAmount)
   formatAmountRef.current = formatAmount
 
@@ -1092,10 +1086,7 @@ export const Component = () => {
           }
         }
 
-        // We have tradable channels and either:
-        // - Not trading for an asset that needs a channel purchase, OR
-        // - No onchain balance available
-        // Use normal lightning flow
+        // Normal lightning flow.
         setIsUsingOnchainBalance(false)
         const channelHtlcLimits = tradableChannels.map(
           (c) => (c.next_outbound_htlc_limit_msat ?? 0) / MSATS_PER_SAT
@@ -1309,9 +1300,7 @@ export const Component = () => {
         }
       }
 
-      // Special case: If no tradable channels exist at all,
-      // and we're buying a non-BTC asset, set that asset as missing
-      // This handles the onchain balance scenario
+      // No tradable channels at all: buying a non-BTC asset marks it missing.
       if (!missingChannel && toAsset !== 'BTC') {
         const tradableChannels = getTradableChannels(channels)
         if (tradableChannels.length === 0 && fromAsset === 'BTC') {
@@ -2680,10 +2669,6 @@ export const Component = () => {
         const timeSinceLastAttempt = now - lastReconnectAttemptRef.current
         const timeSinceLastSuccess = now - lastSuccessfulConnectionRef.current
 
-        // Only attempt reconnection if:
-        // 1. Enough time has passed since last attempt (5 seconds)
-        // 2. We haven't had a successful connection very recently (10 seconds)
-        // 3. We're not currently initializing
         if (
           timeSinceLastAttempt < 5000 ||
           timeSinceLastSuccess < 10000 ||

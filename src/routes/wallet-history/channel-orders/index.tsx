@@ -44,6 +44,7 @@ import {
   Lsps1CreateOrderResponse,
 } from '../../../slices/makerApi/makerApi.slice'
 import { nodeApi } from '../../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../../utils/logger'
 
 interface ChannelOrder {
   id: number
@@ -60,8 +61,7 @@ const getOrderDeliveryMetadata = (
   orderData?: Lsps1CreateOrderResponse
 ): OrderDeliveryMetadata =>
   (orderData as
-    | (Lsps1CreateOrderResponse & OrderDeliveryMetadata)
-    | undefined) || {}
+    (Lsps1CreateOrderResponse & OrderDeliveryMetadata) | undefined) || {}
 
 const getAvailableColumns = (t: any) => [
   {
@@ -651,13 +651,13 @@ export const Component = () => {
 
   const fetchOrders = async () => {
     try {
-      console.log('Fetching channel orders from database...')
+      logger.debug('Fetching channel orders from database...')
       const result = await invoke<ChannelOrder[]>('get_channel_orders')
-      console.log('Channel orders fetched:', result)
+      logger.debug('Channel orders fetched:', result)
       setOrders(result)
       setError(null)
     } catch (err) {
-      console.error('Error fetching channel orders:', err)
+      logger.error('Error fetching channel orders:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
     }
   }
@@ -693,7 +693,7 @@ export const Component = () => {
             data[order.order_id] = response.data
           }
         } catch (err) {
-          console.error(
+          logger.error(
             `Error fetching status for order ${order.order_id}:`,
             err
           )
@@ -730,7 +730,7 @@ export const Component = () => {
       setShowDeleteModal(false)
       setOrderToDelete(null)
     } catch (err) {
-      console.error('Error deleting channel order:', err)
+      logger.error('Error deleting channel order:', err)
       toast.error(
         err instanceof Error
           ? err.message

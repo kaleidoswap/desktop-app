@@ -9,9 +9,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   prefixNode?: ReactNode
 }
 
-/**
- * Standard input component
- */
+/** Standard input component */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
@@ -77,9 +75,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = 'Input'
 
-/**
- * Password input with toggle visibility button
- */
+/** Password input with toggle visibility button */
 export const PasswordInput = forwardRef<
   HTMLInputElement,
   Omit<InputProps, 'type'> & {
@@ -137,9 +133,7 @@ export const PasswordInput = forwardRef<
 
 PasswordInput.displayName = 'PasswordInput'
 
-/**
- * Textarea component
- */
+/** Textarea component */
 export const Textarea = forwardRef<
   HTMLTextAreaElement,
   React.TextareaHTMLAttributes<HTMLTextAreaElement> & {

@@ -4,17 +4,12 @@ export const MAX_CHANNEL_CAPACITY = 16_777_215
 export const MSATS_PER_SAT = 1000
 export const RGB_HTLC_MIN_SAT = 3000
 export const DEFAULT_UTXO_SIZE = 3000
-export const KALEIDOSWAP_LSP_URL = 'http://localhost:8000'
 export const DEFAULT_RGB_ICON = 'rgb-logo.svg'
 export const COIN_ICON_URL =
   'https://raw.githubusercontent.com/kaleidoswap/coinmarketcap-icons-cryptos/refs/heads/main/icons/'
 
 export type BitcoinNetwork =
-  | 'Regtest'
-  | 'Testnet'
-  | 'Mainnet'
-  | 'Signet'
-  | 'SignetCustom'
+  'Regtest' | 'Testnet' | 'Mainnet' | 'Signet' | 'SignetCustom'
 
 const NETWORK_DISPLAY_NAMES: Record<string, string> = {
   SignetCustom: 'Mutinynet',
@@ -23,7 +18,7 @@ const NETWORK_DISPLAY_NAMES: Record<string, string> = {
 export const getNetworkDisplayName = (network: string): string =>
   NETWORK_DISPLAY_NAMES[network] ?? network
 
-export type RegtestConnectionType = 'local' | 'bitfinex' | 'docker'
+export type RegtestConnectionType = 'local' | 'docker'
 
 // Error constants
 export const ERROR_NOT_ENOUGH_UNCOLORED =
@@ -34,3 +29,8 @@ export const ERROR_INSUFFICIENT_UTXOs = [
   ERROR_NOT_ENOUGH_UNCOLORED,
   ERROR_INSUFFICIENT_ALLOCATION_SLOT,
 ]
+
+// Phone pairing (delegating inference from the mobile app to this desktop's
+// KaleidoMind) relied on QVAC's P2P provider, which @qvac/sdk 0.19 removed.
+// Paused until it ships again in a later release.
+export const MIND_PHONE_PAIRING_ENABLED = false

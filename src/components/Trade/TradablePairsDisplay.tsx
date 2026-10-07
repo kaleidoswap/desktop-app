@@ -3,6 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { TradingPair } from '../../slices/makerApi/makerApi.slice'
+import { logger } from '../../utils/logger'
 
 interface TradablePairsDisplayProps {
   pairs: TradingPair[]
@@ -21,7 +22,7 @@ export const TradablePairsDisplay: React.FC<TradablePairsDisplayProps> = ({
     try {
       await navigator.clipboard.writeText(text)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      logger.error('Failed to copy text: ', err)
     }
   }
   if (pairs.length === 0) {
@@ -138,7 +139,7 @@ export const SupportedAssetsDisplay: React.FC<SupportedAssetsDisplayProps> = ({
     try {
       await navigator.clipboard.writeText(text)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      logger.error('Failed to copy text: ', err)
     }
   }
   // Extract unique asset-ID pairs from trading pairs

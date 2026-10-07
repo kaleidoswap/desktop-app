@@ -1,3 +1,37 @@
+## [Version 0.5.1] - 2026-10-07
+
+> ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.5.1: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.5.1.
+
+### 🚀 Features
+- **RGB Lightning Node 0.10.0**: The bundled node moves to 0.10.0, pinned to a release tag instead of the tip of master, and the app speaks the 0.8, 0.9 and 0.10 APIs (mandatory RGB invoice/send expiration, transfer filters, `WaitingBroadcast` status)
+- **Indexer-only sync**: Accounts without a bitcoind RPC URL now unlock with indexer-only chain sync instead of placeholder localhost credentials
+- **Safer recovery-phrase backup**: The phrase stays blurred until you reveal it, copy works only while it is visible, and verification requires revealing it first; "Skip backup" is now a discreet link
+- **Receive screen redesign**: Centered asset picker, a larger QR code, full addresses that copy with a click, and no empty columns
+- **On-chain payment detection**: While the deposit screen is open, an incoming BTC or RGB on-chain payment is shown as soon as it reaches the mempool, with the confirmations still missing, then marked as received once it confirms. Lightning deposits show the same confirmation instead of closing the window
+
+### 🔧 Improvements
+- **Clearer node errors**: An unlock rejected because the node runs an unsupported version now says so instead of showing the raw deserialization error
+- **Mutinynet by default**: Removed the Bitfinex regtest network; regtest is local-only (local or Docker)
+- **Sturdier desktop backend**: A locked or corrupt database reports an error at startup instead of crashing, and one failed request no longer breaks all later ones
+- **Translations**: All eight languages are in sync with English, with a test that guards key sets and value shapes
+- **bitcoind is optional**: Mainnet, Mutinynet and Testnet no longer prefill a bitcoind RPC URL and sync from the indexer by default. Bitcoin Core is an "Optional · Advanced" field in onboarding, restore and Settings; existing accounts keep their stored URL
+- **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0), `kaleido-mcp` 0.3.1 and `@qvac/sdk` 0.21.0. Existing installs download the new runtime on next enable
+- **Phone pairing paused**: Delegating from the mobile app to the desktop brain relied on a QVAC feature removed in 0.19, so pairing is hidden until it returns in a later release
+- **KaleidoMind on each network**: The agent's MCP server gets the active account's network, maker URL and RGB proxy, so it no longer falls back to a default maker that does not match the network
+- **New agent tools**: Labels for the RGB issuance, UTXO, transfer and atomic-swap tools in the live activity pill
+- **No maker configured**: Mainnet and Testnet no longer default to KaleidoSwap API hosts that do not exist. Market-maker, DCA and limit-order screens ask for a maker URL when the account has none, maker calls fail with a clear error instead of reaching `localhost:8000`, and KaleidoMind says when swap and channel tools are unavailable
+
+### 🐛 Bug Fixes
+- **Limit orders filled immediately (#92)**: The limit price no longer pre-fills at the market price, which created orders that triggered on the next tick; a warning now appears when the entered price would fill right away
+- **NWC RGB payments**: Sending RGB assets and creating RGB invoices over Nostr Wallet Connect include the fields the node now requires, or return a clear error
+- **Security**: Updated dependencies with known vulnerabilities (axios, react-router, nanoid, browserslist)
+- **Channel order review**: RGB asset amounts are shown in display units (e.g. 100 USDT instead of 100,000,000 USDT)
+- **RGB receive invoice**: The invoice is regenerated after switching between on-chain and Lightning, changing the privacy mode or editing the amount, instead of leaving the screen empty
+- **KaleidoMind tool arguments**: Tool calls from the on-device model now carry their arguments (amounts, asset IDs, invoices) instead of reaching the tools empty
+- **Stop button**: Stopping a chat turn keeps the text streamed so far (or shows "Stopped.") instead of an error
+- **KaleidoMind after editing an account**: A maker, node or proxy URL changed in Settings now reaches the agent on its next start instead of after re-login
+- **Create channel**: The LSP lookup uses the account's LSP or maker URL before the network default
+
 ## [Version 0.5.0] - 2026-07-10
 
 > ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.

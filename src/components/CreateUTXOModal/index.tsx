@@ -10,6 +10,7 @@ import {
 import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { Button, IconButton } from '../ui'
+import { logger } from '../../utils/logger'
 
 interface CreateUTXOModalProps {
   isOpen: boolean
@@ -51,7 +52,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       (error?.includes(ERROR_NOT_ENOUGH_UNCOLORED) ||
         error?.includes('No uncolored UTXOs available'))
     ) {
-      console.log(
+      logger.debug(
         'CreateUTXOModal: Detected channel UTXO error, using channelCapacity:',
         channelCapacity
       )
@@ -62,7 +63,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       return DEFAULT_UTXO_SIZE
     }
     // For channel, use the channel capacity
-    console.log(
+    logger.debug(
       'CreateUTXOModal: Using channelCapacity for regular channel operation:',
       channelCapacity
     )
@@ -87,7 +88,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         }
         setFeeRate(Math.round(feeRate))
       } catch (error) {
-        console.error('Failed to fetch fee rate:', error)
+        logger.error('Failed to fetch fee rate:', error)
         // Default to a reasonable fee rate if we can't fetch it
         setFeeRate(1.0)
       }
@@ -108,7 +109,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
       (error?.includes(ERROR_NOT_ENOUGH_UNCOLORED) ||
         error?.includes('No uncolored UTXOs available'))
     ) {
-      console.log(
+      logger.debug(
         'CreateUTXOModal: Updating UTXO size based on channelCapacity:',
         channelCapacity
       )
@@ -143,7 +144,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
           await retryFunction()
           onSuccess()
         } catch (retryError) {
-          console.error('Error retrying operation:', retryError)
+          logger.error('Error retrying operation:', retryError)
           toast.error('Created UTXOs but failed to complete the operation')
         }
       } else {

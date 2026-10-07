@@ -4,8 +4,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-toastify'
 
-import { parseRpcUrl } from '../helpers/utils'
+import { buildUnlockRequest, DESKTOP_ANNOUNCE_ALIAS } from '../helpers/unlock'
 import { nodeApi } from '../slices/nodeApi/nodeApi.slice'
+import { logger } from '../utils/logger'
 
 interface BackupFormFields {
   backupPath: string
@@ -61,28 +62,23 @@ export const useBackup = ({
       await lock().unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Lock attempt failed:', err)
+      logger.error('Lock attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
 
   const attemptUnlock = async (password: string) => {
     try {
-      const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
-      await unlock({
-        announce_addresses: [],
-        announce_alias: 'kaleidoswap-desktop',
-        bitcoind_rpc_host: rpcConfig.host,
-        bitcoind_rpc_password: rpcConfig.password,
-        bitcoind_rpc_port: rpcConfig.port,
-        bitcoind_rpc_username: rpcConfig.username,
-        indexer_url: nodeSettings.indexer_url,
-        password,
-        proxy_endpoint: nodeSettings.proxy_endpoint,
-      }).unwrap()
+      await unlock(
+        buildUnlockRequest({
+          announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+          nodeSettings,
+          password,
+        })
+      ).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Unlock attempt failed:', err)
+      logger.error('Unlock attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
@@ -92,7 +88,7 @@ export const useBackup = ({
       await backup({ backup_path: backupPath, password }).unwrap()
       return { data: {}, status: 200 }
     } catch (err) {
-      console.error('Backup attempt failed:', err)
+      logger.error('Backup attempt failed:', err)
       return err as { status: number; data: { error?: string; code?: number } }
     }
   }
@@ -122,7 +118,7 @@ export const useBackup = ({
         toast.error('Lock unsuccessful')
       }
     } catch (err) {
-      console.error('Backup failed:', err)
+      logger.error('Backup failed:', err)
       toast.error('Backup error')
     } finally {
       handleBackupCompletion(pathToBackup)
@@ -156,18 +152,13 @@ export const useBackup = ({
   }
 
   const handleSuccessfulBackup = async (data: BackupFormFields) => {
-    const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
-    await unlock({
-      announce_addresses: [],
-      announce_alias: 'kaleidoswap-desktop',
-      bitcoind_rpc_host: rpcConfig.host,
-      bitcoind_rpc_password: rpcConfig.password,
-      bitcoind_rpc_port: rpcConfig.port,
-      bitcoind_rpc_username: rpcConfig.username,
-      indexer_url: nodeSettings.indexer_url,
-      password: data.nodePassword,
-      proxy_endpoint: nodeSettings.proxy_endpoint,
-    }).unwrap()
+    await unlock(
+      buildUnlockRequest({
+        announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+        nodeSettings,
+        password: data.nodePassword,
+      })
+    ).unwrap()
     toast.success('Backup successful')
   }
 

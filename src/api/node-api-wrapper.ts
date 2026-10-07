@@ -1,3 +1,4 @@
+import { AssetFilterIdType } from 'kaleido-sdk/rln'
 import type {
   RlnClient,
   NetworkInfoResponse,
@@ -63,8 +64,7 @@ import { transformSdkError } from './errors'
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 export type ApiResult<T> =
-  | { data: T; error?: never }
-  | { data?: never; error: FetchBaseQueryError }
+  { data: T; error?: never } | { data?: never; error: FetchBaseQueryError }
 
 export type CreateUtxosInput = Omit<CreateUtxosRequest, 'skip_sync'>
 export type LNInvoiceInput = Omit<LNInvoiceRequest, 'expiry_sec'>
@@ -76,7 +76,10 @@ export type RefreshInput = Partial<Pick<RefreshRequest, 'skip_sync' | 'filter'>>
 export type SendBtcInput = Omit<SendBtcRequest, 'skip_sync'>
 // SendRgbRequest no longer carries skip_sync as of kaleido-sdk 0.1.8.
 export type SendRgbInput = SendRgbRequest
-export type RgbInvoiceInput = Omit<RgbInvoiceRequest, 'min_confirmations'>
+export type RgbInvoiceInput = Omit<
+  RgbInvoiceRequest,
+  'min_confirmations' | 'expiration_timestamp'
+>
 
 export class NodeApiWrapper {
   constructor(private readonly client: RlnClient) {}
@@ -90,9 +93,7 @@ export class NodeApiWrapper {
     }
   }
 
-  // ============================================================================
   // Wallet Management
-  // ============================================================================
 
   async getNodeInfo(): Promise<ApiResult<NodeInfoResponse>> {
     return this.execute(() => this.client.getNodeInfo())
@@ -134,9 +135,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.shutdown())
   }
 
-  // ============================================================================
   // BTC Operations
-  // ============================================================================
 
   async getAddress(): Promise<ApiResult<AddressResponse>> {
     return this.execute(() => this.client.getAddress())
@@ -170,9 +169,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.estimateFee(request))
   }
 
-  // ============================================================================
   // RGB Asset Operations
-  // ============================================================================
 
   async listAssets(
     filterAssetSchemas: Parameters<RlnClient['listAssets']>[0] = []
@@ -199,7 +196,11 @@ export class NodeApiWrapper {
   async listTransfers(
     assetId: string
   ): Promise<ApiResult<ListTransfersResponse>> {
-    return this.execute(() => this.client.listTransfers({ asset_id: assetId }))
+    return this.execute(() =>
+      this.client.listTransfers({
+        asset_filter: { type: AssetFilterIdType.Id, value: assetId },
+      })
+    )
   }
 
   async refreshTransfers(request?: RefreshInput): Promise<ApiResult<void>> {
@@ -208,9 +209,7 @@ export class NodeApiWrapper {
     )
   }
 
-  // ============================================================================
   // Lightning Network - Channels
-  // ============================================================================
 
   async listChannels(): Promise<ApiResult<ListChannelsResponse>> {
     return this.execute(() => this.client.listChannels())
@@ -237,9 +236,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.closeChannel(request))
   }
 
-  // ============================================================================
   // Lightning Network - Peers
-  // ============================================================================
 
   async listPeers(): Promise<ApiResult<ListPeersResponse>> {
     return this.execute(() => this.client.listPeers())
@@ -257,9 +254,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.disconnectPeer(request))
   }
 
-  // ============================================================================
   // Lightning Network - Invoices & Payments
-  // ============================================================================
 
   async createLNInvoice(
     request: LNInvoiceInput
@@ -275,7 +270,11 @@ export class NodeApiWrapper {
     request: RgbInvoiceInput
   ): Promise<ApiResult<RgbInvoiceResponse>> {
     return this.execute(() =>
-      this.client.createRgbInvoice({ ...request, min_confirmations: 1 })
+      this.client.createRgbInvoice({
+        ...request,
+        expiration_timestamp: Math.floor(Date.now() / 1000) + 3600,
+        min_confirmations: 1,
+      })
     )
   }
 
@@ -311,9 +310,7 @@ export class NodeApiWrapper {
     return this.execute(() => this.client.listPayments())
   }
 
-  // ============================================================================
   // Swaps
-  // ============================================================================
 
   async listSwaps(): Promise<ApiResult<ListSwapsResponse>> {
     return this.execute(() => this.client.listSwaps())
@@ -343,9 +340,7 @@ export class NodeApiWrapper {
     )
   }
 
-  // ============================================================================
   // Utility Methods
-  // ============================================================================
 
   async signMessage(
     request: SignMessageRequest

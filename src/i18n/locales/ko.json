@@ -132,6 +132,8 @@
     "noNode": "연결된 노드 없음",
     "tapToConnect": "탭하여 연결",
     "connectNode": "노드 연결",
+    "reconnect": "노드 다시 연결",
+    "reconnecting": "다시 연결하는 중…",
     "logout": "로그아웃",
     "settings": "설정"
   },
@@ -714,7 +716,16 @@
       "title": "복구 구문",
       "subtitle": "복구 구문을 안전한 장소에 저장하세요",
       "mnemonicCopied": "니모닉이 클립보드에 복사되었습니다",
-      "failedToCopy": "니모닉 복사에 실패했습니다"
+      "failedToCopy": "니모닉 복사에 실패했습니다",
+      "warning": "복구 문구를 절대 공유하지 마세요. 이 문구를 가진 사람은 누구나 지갑을 제어할 수 있습니다. 적어서 오프라인에 보관하세요.",
+      "wordCount": "{{count}}개 단어",
+      "reveal": "보기",
+      "hide": "숨기기",
+      "copy": "복사",
+      "revealTitle": "클릭하여 복구 문구 보기",
+      "revealHint": "다른 사람이 화면을 볼 수 없는지 확인하세요",
+      "verifyButton": "복구 문구 확인",
+      "skipButton": "백업 건너뛰기 (권장하지 않음)"
     },
     "verifyStep": {
       "title": "복구 구문 확인",
@@ -733,7 +744,8 @@
       "failedToUnlock": "노드 잠금 해제에 실패했습니다",
       "failedToVerify": "잠금 해제 후 노드 상태 확인에 실패했습니다",
       "unlockingCancelled": "노드 잠금 해제가 취소되었습니다",
-      "failedToCancel": "잠금 해제 취소에 실패했습니다"
+      "failedToCancel": "잠금 해제 취소에 실패했습니다",
+      "incompatibleNode": "노드가 요청 형식을 거부했습니다. 이 앱이 지원하지 않는 RGB Lightning Node 버전이 실행 중일 수 있습니다. 앱을 업데이트하거나 호환되는 노드 버전을 사용하세요."
     },
     "errors": {
       "failedToCheckPorts": "포트 사용 가능 여부 확인에 실패했습니다",
@@ -940,7 +952,15 @@
       "invalidUrl": "유효한 URL을 입력하세요",
       "reconnectingStatus": "메이커에 재연결 중...",
       "reconnectionInitFailed": "재연결을 시작하지 못했습니다",
-      "reconnectionFailed": "재연결에 실패했습니다"
+      "reconnectionFailed": "재연결에 실패했습니다",
+      "noMaker": {
+        "title": "설정된 메이커가 없습니다",
+        "message": "{{network}}에는 기본 KaleidoSwap 메이커가 없습니다. 거래할 메이커의 API URL을 입력하세요.",
+        "save": "저장",
+        "saved": "메이커 URL이 저장되었습니다",
+        "saveFailed": "메이커 URL을 저장할 수 없습니다",
+        "openSettings": "설정 열기"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2P 거래",
@@ -1145,9 +1165,7 @@
     "unknownTestError": "연결 테스트 중 알 수 없는 오류가 발생했습니다.",
     "unknownConnectionError": "노드에 연결하는 중 알 수 없는 오류가 발생했습니다.",
     "unexpectedError": "예기치 않은 오류",
-    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (Bitfinex regtest)",
     "regtestTypeLocal": "로컬",
-    "regtestTypeBitfinex": "Bitfinex",
     "connectionFailed": "연결 실패"
   },
   "deposits": {
@@ -1498,6 +1516,8 @@
     }
   },
   "orderChannel": {
+    "creatingOrder": "주문을 생성하는 중…",
+    "creatingOrderHint": "채널을 예약하기 위해 LSP에 연결하고 있습니다. 몇 초 정도 걸릴 수 있습니다.",
     "step1": {
       "title": "LSP 연결",
       "subtitle": "시작하려면 Lightning 서비스 제공자에 연결하세요",
@@ -1567,6 +1587,13 @@
     "step2": {
       "title": "채널 구성",
       "subtitle": "채널 매개변수와 용량을 설정하세요",
+      "intro": {
+        "title": "채널 구성",
+        "stepCapacity": "채널의 총 용량을 선택하세요 — 클수록 더 많이 보내고 받을 수 있습니다.",
+        "stepOutbound": "내 쪽에서 시작할 금액(아웃바운드, 즉시 전송 가능)을 설정하세요. 나머지는 인바운드 — 받을 수 있는 금액입니다.",
+        "stepAsset": "필요하면 RGB 자산을 추가하고 채널 유지 기간을 선택하세요.",
+        "stepReview": "하단의 총 비용 내역을 확인한 후 검토 및 결제로 진행하세요."
+      },
       "stepLabel": "{{total}}단계 중 {{current}}단계",
       "step1Label": "연결",
       "step2Label": "구성",
@@ -2108,7 +2135,8 @@
     "common": {
       "continue": "계속",
       "back": "뒤로",
-      "finish": "완료"
+      "finish": "완료",
+      "done": "완료"
     },
     "step1": {
       "title": "자산 선택",
@@ -2122,7 +2150,8 @@
       "genericAsset": "자산",
       "newAssetInfo": "자산 ID를 모르는 경우 입력하지 않고 진행할 수 있습니다. 시스템이 모든 RGB 자산을 수신할 수 있는 입금 주소를 생성합니다.",
       "assetIdLabel": "자산 ID (선택 사항)",
-      "assetIdPlaceholder": "자산 ID 입력 (선택 사항)"
+      "assetIdPlaceholder": "자산 ID 입력 (선택 사항)",
+      "continueWith": "{{ticker}}(으)로 계속"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} 입금",
@@ -2185,17 +2214,22 @@
         "generateAddress": "새 주소 생성",
         "generateAddressCta": "주소 생성",
         "generateInvoice": "인보이스 생성",
-        "regenerate": "새 주소 생성"
+        "regenerate": "새 주소 생성",
+        "copied": "복사됨"
       },
       "labels": {
         "lnInvoice": "LN 인보이스",
         "btcAddress": "BTC 주소",
-        "rgbInvoice": "RGB 인보이스"
+        "rgbInvoice": "RGB 인보이스",
+        "recipientId": "수신자 ID"
       },
       "status": {
         "pending": "결제 대기 중...",
         "success": "결제가 수신되었습니다!",
-        "failed": "결제 실패 ({{status}})"
+        "failed": "결제 실패 ({{status}})",
+        "waitingAny": "결제 대기 중",
+        "waitingLightning": "결제 대기 중",
+        "waitingOnchain": "전송 대기 중"
       },
       "toasts": {
         "generateAddressError": "주소 생성에 실패했습니다",
@@ -2210,6 +2244,14 @@
         "recipientCopyError": "수신자 ID 복사에 실패했습니다",
         "lightningSuccess": "Lightning 입금이 성공적으로 수신되었습니다!",
         "lightningFailed": "Lightning 입금 실패: {{status}}"
+      },
+      "received": {
+        "title": "결제 수신 완료",
+        "detectedTitle": "결제 감지됨",
+        "confirmedBody": "자금이 지갑에 입금되었습니다.",
+        "pendingBody": "트랜잭션이 멤풀에 있습니다. 컨펌 후 자금을 사용할 수 있습니다 — 이 창을 닫아도 됩니다.",
+        "confirmations": "{{count}}/{{required}} 컨펌",
+        "pendingBodyRgb": "전송이 수락되었으며 온체인 컨펌을 기다리고 있습니다. 컨펌 후 자산을 사용할 수 있습니다 — 이 창을 닫아도 됩니다."
       }
     }
   },
@@ -2999,6 +3041,8 @@
       "noPairs": "사용 가능한 페어 없음",
       "side": "방향",
       "limitPrice": "지정가",
+      "marketableWarningBuy": "이 가격은 시장가 이상이므로 주문이 거의 즉시 체결됩니다. 시세 하락을 기다리려면 더 낮은 가격을 입력하세요.",
+      "marketableWarningSell": "이 가격은 시장가 이하이므로 주문이 거의 즉시 체결됩니다. 시세 상승을 기다리려면 더 높은 가격을 입력하세요.",
       "amount": "수량",
       "available": "사용 가능",
       "estimatedTotal": "예상 총액",
@@ -3052,5 +3096,19 @@
       "invalidAmount": "유효한 수량을 입력하세요",
       "insufficientBalance": "잔액 부족"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core 노드",
+    "optionalBadge": "선택 · 고급",
+    "placeholder": "사용자:비밀번호@호스트:포트",
+    "activeIndexer": "미설정: 노드가 인덱서에서 동기화하며, 풀 노드가 필요하지 않습니다.",
+    "activeBitcoind": "설정됨: Lightning이 내 Bitcoin Core 노드에서 동기화합니다.",
+    "learnMore": "차이점은 무엇인가요?",
+    "indexerTitle": "인덱서만 사용 (기본값)",
+    "indexerBody": "설치할 것이 없습니다. 체인 데이터는 인덱서에 의존합니다.",
+    "bitcoindTitle": "내 Bitcoin Core 노드",
+    "bitcoindBody": "더 프라이빗하며 직접 운영하는 노드에 기반합니다. RPC가 활성화된 Bitcoin Core가 항상 접속 가능해야 합니다.",
+    "invalidFormat": "사용자:비밀번호@호스트:포트 형식을 사용하세요",
+    "notConfigured": "사용 안 함: 인덱서에서 동기화 중"
   }
 }

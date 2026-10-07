@@ -34,7 +34,9 @@ import type { ChatToolEvent } from './shared'
 
 // ── Formatting helpers ───────────────────────────────────────────────────
 
-/** Format a sats value (number or numeric string) → "12,345 sats", else null. */
+/**
+ * Format a sats value (number or numeric string) → "12,345 sats", else null.
+ */
 export function fmtSats(n: unknown): string | null {
   const v = typeof n === 'number' ? n : Number(n)
   return Number.isFinite(v) ? `${v.toLocaleString('en-US')} sats` : null
@@ -54,7 +56,9 @@ function num(n: unknown): number | null {
   return Number.isFinite(v) ? v : null
 }
 
-/** Tool results arrive as a JSON string (MCP text content). Coerce to a value. */
+/**
+ * Tool results arrive as a JSON string (MCP text content). Coerce to a value.
+ */
 export function coerce(result: unknown): unknown {
   if (typeof result === 'string') {
     const s = result.trim()
@@ -83,28 +87,39 @@ function truncMiddle(s: string, head = 10, tail = 8): string {
     : s
 }
 
-/** Humanize a tool name for the live "running" pill, e.g. "Checking balance". */
+/**
+ * Humanize a tool name for the live "running" pill, e.g. "Checking balance".
+ */
 export function humanizeToolName(name: string): string {
   const map: Record<string, string> = {
     find_merchant_locations: 'Finding merchants nearby',
+    kaleidoswap_atomic_execute: 'Executing the swap',
+    kaleidoswap_atomic_init: 'Starting the swap',
+    kaleidoswap_atomic_status: 'Checking the swap',
     kaleidoswap_get_quote: 'Getting a quote',
     kaleidoswap_lsp_create_asset_channel: 'Buying a channel',
     kaleidoswap_lsp_estimate_fees: 'Estimating channel fees',
     kaleidoswap_lsp_get_info: 'Checking the LSP',
     kaleidoswap_lsp_quote_asset_channel: 'Quoting a channel',
+    rln_atomic_taker: 'Accepting the swap',
     rln_close_channel: 'Closing a channel',
+    rln_connect_peer: 'Connecting to a peer',
     rln_create_ln_invoice: 'Creating an invoice',
     rln_create_rgb_invoice: 'Creating an RGB invoice',
+    rln_create_utxos: 'Creating UTXOs',
     rln_get_address: 'Getting an address',
     rln_get_asset_balance: 'Checking asset balance',
     rln_get_balances: 'Checking your balance',
     rln_get_node_info: 'Reading node info',
+    rln_issue_asset: 'Issuing the asset',
     rln_list_assets: 'Listing your assets',
     rln_list_channels: 'Reading your channels',
     rln_list_payments: 'Loading payments',
     rln_list_swaps: 'Loading swaps',
+    rln_list_transfers: 'Loading transfers',
     rln_open_channel: 'Opening a channel',
     rln_pay_invoice: 'Paying the invoice',
+    rln_refresh_transfers: 'Refreshing transfers',
     rln_send_asset: 'Sending the asset',
     rln_send_btc: 'Sending BTC',
   }

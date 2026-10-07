@@ -22,6 +22,7 @@ import {
 import React, { useState } from 'react'
 
 import { Modal } from '../../components/ui/Modal'
+import { MIND_PHONE_PAIRING_ENABLED } from '../../constants'
 
 import { ModelsManager } from './models'
 import { PairingPanel } from './pairing'
@@ -126,7 +127,9 @@ export const Component: React.FC = () => {
                   ? (status?.activeModelName ?? 'Running')
                   : loading
                     ? (loading.message ?? 'Loading model…')
-                    : 'Start a model to chat, run skills, and pair a phone.'}
+                    : MIND_PHONE_PAIRING_ENABLED
+                      ? 'Start a model to chat, run skills, and pair a phone.'
+                      : 'Start a model to chat and run skills.'}
               </p>
             </div>
           </div>
@@ -185,7 +188,11 @@ export const Component: React.FC = () => {
 
         {/* Live stats strip — only meaningful when running. */}
         {providerOn && (
-          <div className="grid grid-cols-3 divide-x divide-divider/10 border-t border-divider/10">
+          <div
+            className={`grid divide-x divide-divider/10 border-t border-divider/10 ${
+              MIND_PHONE_PAIRING_ENABLED ? 'grid-cols-3' : 'grid-cols-2'
+            }`}
+          >
             <div className="px-4 py-3">
               <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
                 {onGpu ? (
@@ -218,21 +225,27 @@ export const Component: React.FC = () => {
                   : '—'}
               </div>
             </div>
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
-                <Users className="h-3.5 w-3.5" />
-                Paired
+            {MIND_PHONE_PAIRING_ENABLED && (
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
+                  <Users className="h-3.5 w-3.5" />
+                  Paired
+                </div>
+                <div className="mt-0.5 text-sm font-semibold text-content-primary">
+                  {peers}
+                </div>
               </div>
-              <div className="mt-0.5 text-sm font-semibold text-content-primary">
-                {peers}
-              </div>
-            </div>
+            )}
           </div>
         )}
       </section>
 
       {/* ── Quick actions (open in modals / navigate) ──────────────────── */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div
+        className={`grid gap-3 ${
+          MIND_PHONE_PAIRING_ENABLED ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+        }`}
+      >
         <ActionTile
           hint={`${installed.length} installed`}
           icon={<Cpu className="h-5 w-5" />}
@@ -249,14 +262,16 @@ export const Component: React.FC = () => {
           label="Skills & tools"
           onClick={() => setModal('skills')}
         />
-        <ActionTile
-          hint={
-            providerOn ? `${peers} phone(s) paired` : 'Delegate from a phone'
-          }
-          icon={<QrCode className="h-5 w-5" />}
-          label="Phone pairing"
-          onClick={() => setModal('pairing')}
-        />
+        {MIND_PHONE_PAIRING_ENABLED && (
+          <ActionTile
+            hint={
+              providerOn ? `${peers} phone(s) paired` : 'Delegate from a phone'
+            }
+            icon={<QrCode className="h-5 w-5" />}
+            label="Phone pairing"
+            onClick={() => setModal('pairing')}
+          />
+        )}
         <ActionTile
           hint={`${mind.logs.length} log line(s)`}
           icon={<Activity className="h-5 w-5" />}
@@ -265,36 +280,40 @@ export const Component: React.FC = () => {
         />
       </div>
 
-      {/* ── Provider key (compact) ─────────────────────────────────────── */}
-      <section className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-base/50 p-4">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-overlay text-content-secondary">
-          <KeyRound className="h-4 w-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-content-primary">
-            Provider key
-          </p>
-          <p className="truncate text-xs text-content-tertiary">
-            {status?.publicKey
-              ? 'This brain’s public identity for paired phones.'
-              : 'Available once the brain is running.'}
-          </p>
-        </div>
-        {status?.publicKey && (
-          <button
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 font-mono text-xs text-content-secondary transition-colors hover:bg-surface-overlay"
-            onClick={copyKey}
-            type="button"
-          >
-            {copied ? (
-              <Check className="h-3.5 w-3.5 text-status-success" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
+      {MIND_PHONE_PAIRING_ENABLED && (
+        <>
+          {/* ── Provider key (compact) ─────────────────────────────────────── */}
+          <section className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-base/50 p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-overlay text-content-secondary">
+              <KeyRound className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-content-primary">
+                Provider key
+              </p>
+              <p className="truncate text-xs text-content-tertiary">
+                {status?.publicKey
+                  ? 'This brain’s public identity for paired phones.'
+                  : 'Available once the brain is running.'}
+              </p>
+            </div>
+            {status?.publicKey && (
+              <button
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 font-mono text-xs text-content-secondary transition-colors hover:bg-surface-overlay"
+                onClick={copyKey}
+                type="button"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-status-success" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                {status.publicKey.slice(0, 8)}…{status.publicKey.slice(-6)}
+              </button>
             )}
-            {status.publicKey.slice(0, 8)}…{status.publicKey.slice(-6)}
-          </button>
-        )}
-      </section>
+          </section>
+        </>
+      )}
 
       {/* ── Modals ─────────────────────────────────────────────────────── */}
       <Modal
@@ -320,7 +339,7 @@ export const Component: React.FC = () => {
       </Modal>
 
       <Modal
-        isOpen={modal === 'pairing'}
+        isOpen={MIND_PHONE_PAIRING_ENABLED && modal === 'pairing'}
         onClose={() => setModal(null)}
         size="sm"
         title="Phone pairing"

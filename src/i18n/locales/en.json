@@ -418,8 +418,7 @@
     "remoteNodePrerequisitesTitle": "Prerequisites",
     "remoteNodePrerequisitesMessage": "You'll need a running rgb-lightning-node instance to connect. Follow our setup guide to get started.",
     "viewSetupGuide": "View Setup Guide",
-    "getStarted": "Get Started",
-    "recommended": "Recommended"
+    "getStarted": "Get Started"
   },
   "createChannel": {
     "checkingBalance": "Checking balance",
@@ -717,7 +716,16 @@
       "title": "Recovery Phrase",
       "subtitle": "Save your recovery phrase in a secure location",
       "mnemonicCopied": "Mnemonic copied to clipboard",
-      "failedToCopy": "Failed to copy mnemonic"
+      "failedToCopy": "Failed to copy mnemonic",
+      "warning": "Never share your recovery phrase. Anyone who has it controls your wallet. Write it down and keep it offline.",
+      "wordCount": "{{count}} words",
+      "reveal": "Reveal",
+      "hide": "Hide",
+      "copy": "Copy",
+      "revealTitle": "Click to reveal your recovery phrase",
+      "revealHint": "Make sure no one can see your screen",
+      "verifyButton": "Verify Recovery Phrase",
+      "skipButton": "Skip backup (not recommended)"
     },
     "verifyStep": {
       "title": "Verify Recovery Phrase",
@@ -736,7 +744,8 @@
       "failedToUnlock": "Failed to unlock node",
       "failedToVerify": "Failed to verify node status after unlock",
       "unlockingCancelled": "Node unlocking cancelled",
-      "failedToCancel": "Failed to cancel unlocking"
+      "failedToCancel": "Failed to cancel unlocking",
+      "incompatibleNode": "The node rejected the request format. It is probably running an RGB Lightning Node version this app does not support: update the app, or run a node version that matches it."
     },
     "errors": {
       "failedToCheckPorts": "Failed to check port availability",
@@ -943,7 +952,15 @@
       "invalidUrl": "Please enter a valid URL",
       "reconnectingStatus": "Reconnecting to maker...",
       "reconnectionInitFailed": "Failed to initiate reconnection",
-      "reconnectionFailed": "Failed to reconnect"
+      "reconnectionFailed": "Failed to reconnect",
+      "noMaker": {
+        "title": "No maker configured",
+        "message": "There is no default KaleidoSwap maker for {{network}}. Enter the API URL of the maker you want to trade with.",
+        "save": "Save",
+        "saved": "Maker URL saved",
+        "saveFailed": "Could not save the maker URL",
+        "openSettings": "Open Settings"
+      }
     },
     "nostrP2P": {
       "title": "Nostr P2P Trading",
@@ -1148,9 +1165,7 @@
     "unknownTestError": "An unknown error occurred while testing the connection.",
     "unknownConnectionError": "An unknown error occurred while connecting to the node.",
     "unexpectedError": "Unexpected error",
-    "nodeUrlPlaceholderBitfinex": "http://localhost:3001 (Bitfinex regtest)",
     "regtestTypeLocal": "local",
-    "regtestTypeBitfinex": "Bitfinex",
     "connectionFailed": "Connection failed"
   },
   "deposits": {
@@ -2120,7 +2135,8 @@
     "common": {
       "continue": "Continue",
       "back": "Back",
-      "finish": "Finish"
+      "finish": "Finish",
+      "done": "Done"
     },
     "step1": {
       "title": "Select Asset",
@@ -2134,7 +2150,8 @@
       "genericAsset": "Asset",
       "newAssetInfo": "If you don't know the asset ID, you can proceed without entering it. The system will generate a deposit address that can receive any RGB asset.",
       "assetIdLabel": "Asset ID (optional)",
-      "assetIdPlaceholder": "Enter asset ID (optional)"
+      "assetIdPlaceholder": "Enter asset ID (optional)",
+      "continueWith": "Continue with {{ticker}}"
     },
     "step2": {
       "titleWithTicker": "Deposit {{ticker}}",
@@ -2197,17 +2214,22 @@
         "generateAddress": "Generate new address",
         "generateAddressCta": "Generate Address",
         "generateInvoice": "Generate Invoice",
-        "regenerate": "Generate New Addresses"
+        "regenerate": "Generate New Addresses",
+        "copied": "Copied"
       },
       "labels": {
         "lnInvoice": "LN Invoice",
         "btcAddress": "BTC Address",
-        "rgbInvoice": "RGB Invoice"
+        "rgbInvoice": "RGB Invoice",
+        "recipientId": "Recipient ID"
       },
       "status": {
         "pending": "Payment pending...",
         "success": "Payment received!",
-        "failed": "Payment failed ({{status}})"
+        "failed": "Payment failed ({{status}})",
+        "waitingAny": "Waiting for payment",
+        "waitingLightning": "Waiting for payment",
+        "waitingOnchain": "Waiting for transfer"
       },
       "toasts": {
         "generateAddressError": "Failed to generate address",
@@ -2222,6 +2244,14 @@
         "recipientCopyError": "Failed to copy recipient ID",
         "lightningSuccess": "Lightning deposit received successfully!",
         "lightningFailed": "Lightning deposit failed: {{status}}"
+      },
+      "received": {
+        "title": "Payment received",
+        "detectedTitle": "Payment detected",
+        "confirmedBody": "The funds are now in your wallet.",
+        "pendingBody": "The transaction is in the mempool. Funds become spendable once it confirms — you can close this window.",
+        "confirmations": "{{count}}/{{required}} confirmations",
+        "pendingBodyRgb": "The transfer was accepted and is waiting for on-chain confirmation. The assets become spendable once it confirms — you can close this window."
       }
     }
   },
@@ -3011,6 +3041,8 @@
       "noPairs": "No pairs available",
       "side": "Side",
       "limitPrice": "Limit Price",
+      "marketableWarningBuy": "This price is at or above the market price, so the order will execute almost immediately. Enter a lower price to wait for the market to drop.",
+      "marketableWarningSell": "This price is at or below the market price, so the order will execute almost immediately. Enter a higher price to wait for the market to rise.",
       "amount": "Amount",
       "available": "Available",
       "estimatedTotal": "Estimated Total",
@@ -3064,5 +3096,19 @@
       "invalidAmount": "Please enter a valid amount",
       "insufficientBalance": "Insufficient balance"
     }
+  },
+  "chainSync": {
+    "label": "Bitcoin Core node",
+    "optionalBadge": "Optional · Advanced",
+    "placeholder": "user:password@host:port",
+    "activeIndexer": "Not set: the node syncs from the indexer, no full node needed.",
+    "activeBitcoind": "Set: Lightning syncs from your Bitcoin Core node.",
+    "learnMore": "What's the difference?",
+    "indexerTitle": "Indexer only (default)",
+    "indexerBody": "Nothing to install. Relies on the indexer for chain data.",
+    "bitcoindTitle": "Your own Bitcoin Core node",
+    "bitcoindBody": "More private, relies on a node you run. Needs Bitcoin Core with RPC, always reachable.",
+    "invalidFormat": "Use the format user:password@host:port",
+    "notConfigured": "Not used: syncing from the indexer"
   }
 }

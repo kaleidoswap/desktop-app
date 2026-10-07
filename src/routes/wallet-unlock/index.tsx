@@ -31,9 +31,14 @@ import {
   PasswordInput,
 } from '../../components/ui'
 import { UnlockingProgress } from '../../components/UnlockingProgress'
+import {
+  buildUnlockRequest,
+  DESKTOP_ANNOUNCE_ALIAS,
+} from '../../helpers/unlock'
 import { parseRpcUrl } from '../../helpers/utils'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { unlockNodeWithRetry, withTimeout } from '../../utils/nodeUnlock'
+import { logger } from '../../utils/logger'
 
 interface Fields {
   password: string
@@ -192,9 +197,7 @@ export const Component = () => {
     setUnlockStatusMessage(null)
 
     try {
-      // Quick reachability check before starting the retry loop.
-      // If the node is completely unreachable, fail fast with a clear message
-      // instead of retrying for minutes.
+      // Fail fast on an unreachable node instead of retrying for minutes.
       try {
         await withTimeout(nodeInfo(), 8000, 'Node reachability check')
       } catch (preCheckError: any) {
@@ -212,7 +215,6 @@ export const Component = () => {
         // Non-network errors (403 locked, 401, etc.) are fine — proceed to unlock
       }
 
-      const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url)
       const outcome = await unlockNodeWithRetry({
         getNodeInfo: () => nodeInfo(),
         invalidPasswordMessage: t('walletUnlock.invalidPassword'),
@@ -224,17 +226,13 @@ export const Component = () => {
         }),
         onLongUnlock: setUnlockStatusMessage,
         unlock: () =>
-          unlock({
-            announce_addresses: [],
-            announce_alias: 'kaleidoswap-desktop',
-            bitcoind_rpc_host: rpcConfig.host,
-            bitcoind_rpc_password: rpcConfig.password,
-            bitcoind_rpc_port: rpcConfig.port,
-            bitcoind_rpc_username: rpcConfig.username,
-            indexer_url: nodeSettings.indexer_url,
-            password: data.password,
-            proxy_endpoint: nodeSettings.proxy_endpoint,
-          })
+          unlock(
+            buildUnlockRequest({
+              announceAlias: DESKTOP_ANNOUNCE_ALIAS,
+              nodeSettings,
+              password: data.password,
+            })
+          )
             .unwrap()
             .then(() => undefined),
         unlockLabel: 'Wallet unlock',
@@ -269,7 +267,7 @@ export const Component = () => {
       // Start the NWC wallet service now that the node is unlocked.
       // Best-effort: a failure here must not block the unlock flow.
       invoke('nwc_start_service').catch((err) => {
-        console.warn('nwc_start_service failed', err)
+        logger.warn('nwc_start_service failed', err)
       })
 
       setUnlockError(null)
@@ -301,7 +299,7 @@ export const Component = () => {
           position: 'bottom-right',
         })
       } catch (error) {
-        console.error('Failed to stop node:', error)
+        logger.error('Failed to stop node:', error)
       }
     }
     navigate(WALLET_SETUP_PATH)
@@ -371,7 +369,9 @@ export const Component = () => {
     }
   }
 
-  const rpcConfig = parseRpcUrl(nodeSettings.rpc_connection_url || '')
+  const rpcConfig = nodeSettings.rpc_connection_url?.trim()
+    ? parseRpcUrl(nodeSettings.rpc_connection_url)
+    : null
   const accountName = nodeSettings.name || 'Your Wallet'
 
   if (redirectToRoot) {
@@ -436,7 +436,9 @@ export const Component = () => {
                 <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-surface-overlay/40 border border-border-subtle">
                   <Zap className="w-3.5 h-3.5 text-secondary shrink-0" />
                   <span className="text-xs text-content-secondary font-mono truncate">
-                    {rpcConfig.host}:{rpcConfig.port}
+                    {rpcConfig
+                      ? `${rpcConfig.host}:${rpcConfig.port}`
+                      : nodeSettings.indexer_url}
                   </span>
                 </div>
               </div>
@@ -527,9 +529,15 @@ export const Component = () => {
                               <p className="text-xs text-content-tertiary mb-0.5">
                                 Bitcoind RPC
                               </p>
-                              <p className="text-sm text-content-primary font-mono">
-                                {rpcConfig.host}:{rpcConfig.port}
-                              </p>
+                              {rpcConfig ? (
+                                <p className="text-sm text-content-primary font-mono">
+                                  {rpcConfig.host}:{rpcConfig.port}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-content-tertiary">
+                                  {t('chainSync.notConfigured')}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-start gap-3">

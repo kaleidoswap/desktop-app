@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { MIND_PHONE_PAIRING_ENABLED } from '../constants'
 import {
   mindClient,
   type CatalogModel,
@@ -143,6 +144,14 @@ export function useMind(): UseMindResult {
           setStatus(e)
           break
         case 'provider_loading':
+          // Without phone pairing the P2P phases are noise ("no P2P provider");
+          // the provider continues straight to `ready`.
+          if (
+            !MIND_PHONE_PAIRING_ENABLED &&
+            (e.phase === 'starting_p2p' || e.phase === 'p2p_failed')
+          ) {
+            break
+          }
           setLoading(e)
           if (
             e.phase === 'ready' ||

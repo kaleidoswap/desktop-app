@@ -35,6 +35,12 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
   const clientAssetRaw =
     order.client_asset_amount || orderPayload?.client_asset_amount || 0
   const hasAsset = !!(order.asset_id || orderPayload?.asset_id)
+  // Order amounts are raw units; show them in the asset's display units.
+  const precision = assetInfo?.precision ?? 0
+  const formatAsset = (raw: number) =>
+    (raw / 10 ** precision).toLocaleString(undefined, {
+      maximumFractionDigits: precision,
+    })
 
   const channelAmount =
     (currentPayment?.order_total_sat || 0) -
@@ -58,13 +64,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       createAssetLiquiditySection({
         iconSrc: tetherLogo,
         inbound: lspAssetRaw,
-        inboundLabel: `${lspAssetRaw.toLocaleString()}${
+        inboundLabel: `${formatAsset(lspAssetRaw)}${
           assetInfo ? ` ${assetInfo.ticker}` : ''
         }`,
         outbound: clientAssetRaw,
         outboundLabel:
           clientAssetRaw > 0
-            ? `${clientAssetRaw.toLocaleString()}${
+            ? `${formatAsset(clientAssetRaw)}${
                 assetInfo ? ` ${assetInfo.ticker}` : ''
               }`
             : '0',
@@ -73,7 +79,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
           ? `${assetInfo.name} (${assetInfo.ticker})`
           : t('orderChannel.step3.rgbAssetChannel'),
         titleClassName: 'text-cyan-300',
-        totalLabel: `${(clientAssetRaw + lspAssetRaw).toLocaleString()}${
+        totalLabel: `${formatAsset(clientAssetRaw + lspAssetRaw)}${
           assetInfo ? ` ${assetInfo.ticker}` : ''
         }`,
       })

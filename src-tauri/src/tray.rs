@@ -88,7 +88,10 @@ pub fn update_tray_menu(app: &AppHandle, node_state: NodeState) {
 pub fn setup_tray(app: &AppHandle, node_process: Arc<Mutex<NodeProcess>>) -> tauri::Result<()> {
     let icon = app.default_window_icon().cloned().unwrap();
 
-    let node_state = node_process.lock().unwrap().get_state();
+    let node_state = node_process
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get_state();
     let menu = build_tray_menu(app, &node_state)?;
 
     let np_for_menu = Arc::clone(&node_process);
@@ -119,7 +122,10 @@ fn handle_menu_event(app: &AppHandle, id: &str, node_process: Arc<Mutex<NodeProc
             show_main_window(app);
         }
         MENU_START_STOP_ID => {
-            let state = node_process.lock().unwrap().get_state();
+            let state = node_process
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .get_state();
             match state {
                 NodeState::Running | NodeState::Starting | NodeState::Stopping => {
                     update_tray_menu(app, NodeState::Stopping);

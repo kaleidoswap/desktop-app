@@ -11,6 +11,7 @@ import { twJoin } from 'tailwind-merge'
 import defaultIcon from '../../assets/rgb-logo.svg'
 import { useAssetIcon } from '../../helpers/utils'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside'
+import { logger } from '../../utils/logger'
 
 export interface AssetOptionData {
   value: string
@@ -252,10 +253,10 @@ export const EnhancedAssetSelect: React.FC<EnhancedAssetSelectProps> = ({
       .writeText(assetId)
       .then(() => {
         // Toast or other feedback could be added here
-        console.log('Asset ID copied to clipboard:', assetId)
+        logger.debug('Asset ID copied to clipboard:', assetId)
       })
       .catch((err) => {
-        console.error('Failed to copy asset ID:', err)
+        logger.error('Failed to copy asset ID:', err)
       })
   }
 

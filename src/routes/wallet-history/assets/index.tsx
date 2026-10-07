@@ -25,6 +25,7 @@ import {
   TransferKind,
 } from '../../../slices/nodeApi/nodeApi.slice'
 import { getAssignmentAmount } from '../../../utils/rgbUtils'
+import { logger } from '../../../utils/logger'
 
 // Cap simultaneous listTransfers calls: the RGB node serializes these, so an
 // unbounded Promise.all over every asset causes a thundering-herd on wallets
@@ -175,6 +176,8 @@ export const Component = () => {
         return 'danger'
       case 'WaitingConfirmations':
       case 'WaitingCounterparty':
+      case 'WaitingSafeHeight':
+      case 'WaitingBroadcast':
         return 'warning'
       default:
         return 'default'
@@ -236,7 +239,7 @@ export const Component = () => {
         toast.success(t(translationKey))
       })
       .catch((err) => {
-        console.error('Failed to copy:', err)
+        logger.error('Failed to copy:', err)
       })
   }
 

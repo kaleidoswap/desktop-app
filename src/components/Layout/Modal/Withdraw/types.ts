@@ -31,12 +31,7 @@ export interface FeeEstimations {
 
 // Address type enum
 export type AddressType =
-  | 'unknown'
-  | 'bitcoin'
-  | 'lightning'
-  | 'lightning-address'
-  | 'rgb'
-  | 'invalid'
+  'unknown' | 'bitcoin' | 'lightning' | 'lightning-address' | 'rgb' | 'invalid'
 
 // Payment status type
 export type PaymentStatus = HTLCStatus | 'Expired' | null

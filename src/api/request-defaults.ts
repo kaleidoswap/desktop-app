@@ -11,9 +11,7 @@ import type {
   SendBtcRequest,
 } from 'kaleido-sdk/rln'
 
-/**
- * Default values for common request parameters
- */
+/** Default values for common request parameters */
 export const DEFAULT_SKIP_SYNC = false
 
 /**
@@ -23,14 +21,9 @@ export const DEFAULT_SKIP_SYNC = false
  * is no longer part of this union — sendRgb is sent without skip_sync.
  */
 export type SkipSyncRequest =
-  | SendBtcRequest
-  | CreateUtxosRequest
-  | RefreshRequest
-  | FailTransfersRequest
+  SendBtcRequest | CreateUtxosRequest | RefreshRequest | FailTransfersRequest
 
-/**
- * Ensure skip_sync is present in requests that require it
- */
+/** Ensure skip_sync is present in requests that require it */
 export function ensureSkipSync<T extends Partial<SkipSyncRequest>>(
   request: T
 ): T & { skip_sync: boolean } {
@@ -57,17 +50,13 @@ export function ensureRefreshDefaults(
   }
 }
 
-/**
- * Request options for node API calls
- */
+/** Request options for node API calls */
 export interface NodeRequestOptions {
   skipSync?: boolean
   skipValidation?: boolean
 }
 
-/**
- * Apply default options to a request
- */
+/** Apply default options to a request */
 export function applyRequestDefaults<T>(
   request: T,
   options?: NodeRequestOptions

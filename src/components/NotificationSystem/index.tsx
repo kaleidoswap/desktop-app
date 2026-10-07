@@ -15,11 +15,7 @@ import { UpdateModal } from './UpdateModal'
 const DEFAULT_NOTIFICATION_AUTO_CLOSE_MS = 5000
 
 export type NotificationType =
-  | 'success'
-  | 'error'
-  | 'warning'
-  | 'info'
-  | 'loading'
+  'success' | 'error' | 'warning' | 'info' | 'loading'
 
 export interface Notification {
   id: string

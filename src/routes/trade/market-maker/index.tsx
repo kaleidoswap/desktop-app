@@ -1,4 +1,4 @@
-import { TradeNav } from '../../../components/Trade'
+import { RequireMaker, TradeNav } from '../../../components/Trade'
 
 import { Component as MarketMakerTradingPage } from './MarketMakerTradingPage'
 
@@ -8,7 +8,9 @@ export const Component = () => {
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <TradeNav />
       </div>
-      <MarketMakerTradingPage />
+      <RequireMaker>
+        <MarketMakerTradingPage />
+      </RequireMaker>
     </div>
   )
 }

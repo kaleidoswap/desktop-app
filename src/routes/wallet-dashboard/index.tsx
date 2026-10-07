@@ -53,6 +53,7 @@ import defaultRgbIcon from '../../assets/rgb-logo.svg'
 import type { AssetNIA as NiaAsset } from 'kaleido-sdk/rln'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { uiSliceActions } from '../../slices/ui/ui.slice'
+import { logger } from '../../utils/logger'
 
 const BtcIcon: React.FC<{ className?: string }> = ({
   className = 'h-6 w-6',
@@ -163,7 +164,7 @@ export const Component = () => {
       try {
         await refreshTransfers({}).unwrap()
       } catch (err) {
-        console.error('refreshTransfers failed during dashboard refresh:', err)
+        logger.error('refreshTransfers failed during dashboard refresh:', err)
       }
       await Promise.all([assets(), listChannels(), btcBalance()])
     } finally {
@@ -356,7 +357,7 @@ export const Component = () => {
             <div className="text-xs text-content-secondary">
               {t('dashboard.activateMindDesc', {
                 defaultValue:
-                  'Run a local AI brain alongside your node — chat, models and phone pairing.',
+                  'Run a local AI brain alongside your node — chat, models and skills.',
               })}
             </div>
           </div>

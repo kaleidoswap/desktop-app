@@ -141,7 +141,11 @@ jobs:
           echo "Extracting changelog for version $VERSION"
           
           # Extract the changelog section for this version
-          CHANGELOG=$(awk "/## \[Version $VERSION\]/,/## \[Version/" CHANGELOG.md | sed '/## \[Version [0-9]/d' | sed '/^$/d')
+          CHANGELOG=$(awk -v heading="## [Version $VERSION]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## \[Version / { exit }
+            found { print }
+          ' CHANGELOG.md)
           
           # If changelog is empty, provide a default message
           if [ -z "$CHANGELOG" ]; then

@@ -15,9 +15,7 @@ interface AlertProps {
   onDismiss?: () => void
 }
 
-/**
- * Alert component for notifications, warnings, and errors
- */
+/** Alert component for notifications, warnings, and errors */
 export const Alert: React.FC<AlertProps> = ({
   children,
   variant = 'info',
@@ -70,9 +68,7 @@ export const Alert: React.FC<AlertProps> = ({
   )
 }
 
-/**
- * Network warning alert specifically for testnet warnings
- */
+/** Network warning alert specifically for testnet warnings */
 export const NetworkWarningAlert: React.FC<{
   network: string
   faucetUrl?: string

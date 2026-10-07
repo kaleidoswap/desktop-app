@@ -1,25 +1,19 @@
 //! KaleidoMind sidecar bridge.
 //!
-//! Supervises the `@kaleidorg/mind-provider` Node sidecar (apps/provider) and
-//! relays its line-delimited JSON protocol (see apps/provider/src/protocol.ts):
-//!   - Commands  (Tauri → sidecar) are written to the child's stdin.
-//!   - Events    (sidecar → Tauri) are read from stdout and re-emitted to the
-//!     webview as the `mind-event` Tauri event (the JSON is forwarded verbatim).
-//!   - stderr is human-readable diagnostics → forwarded to the Tauri log.
+//! Supervises the `@kaleidorg/mind-provider` Node sidecar and relays its
+//! line-delimited JSON protocol (apps/provider/src/protocol.ts): commands go to
+//! the child's stdin, stdout events are re-emitted verbatim as the `mind-event`
+//! Tauri event, stderr goes to the Tauri log. Rust stays a transparent pipe —
+//! all protocol/model logic lives in TS.
 //!
-//! Rust stays a transparent pipe; all protocol/model logic lives in TS. The
-//! sidecar runs the QVAC model, the P2P provider (for phone delegation), skills
-//! and MCP tools.
+//! Launch resolution order:
+//!   1. `$KALEIDO_MIND_CMD` (+ optional space-separated `$KALEIDO_MIND_ARGS`)
+//!   2. `node <dir>/dist/index.js`, if that build exists
+//!   3. `pnpm start` with cwd = `<dir>`
 //!
-//! Sidecar launch is resolved in this order:
-//!   1. `$KALEIDO_MIND_CMD` (+ optional `$KALEIDO_MIND_ARGS`, space-separated)
-//!   2. `node <dir>/dist/index.js`        if that build exists
-//!   3. `pnpm start` with cwd = `<dir>`    (runs `tsx src/index.ts`)
-//!
-//! where `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR` (override), the on-demand
-//! runtime downloaded into app data (mind_runtime), or a dev sibling-path guess.
-//! Resolution happens at start time and is passed to the child via cmd.env —
-//! we never mutate this process's own environment.
+//! `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR`, the downloaded runtime
+//! (mind_runtime), or a dev sibling-path guess. Resolved at start time and
+//! passed to the child via cmd.env — never by mutating our own environment.
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -49,7 +43,10 @@ impl MindProcess {
     }
 
     pub fn is_running(&self) -> bool {
-        let mut guard = self.child.lock().unwrap();
+        let mut guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         match guard.as_mut() {
             Some(child) => match child.try_wait() {
                 Ok(Some(_)) => false, // exited
@@ -66,7 +63,10 @@ impl MindProcess {
         // Hold the child lock for the entire check-and-spawn to prevent a race
         // where two concurrent callers both observe is_running()==false and each
         // try to spawn, producing multiple visible console windows on Windows.
-        let mut child_guard = self.child.lock().unwrap();
+        let mut child_guard = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let already_running = match child_guard.as_mut() {
             Some(c) => matches!(c.try_wait(), Ok(None)),
             None => false,
@@ -109,12 +109,16 @@ impl MindProcess {
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
             cmd.env("KALEIDO_MIND_MAX_TOKENS", "512");
         }
+        // Whisper/TTS are only loaded to serve paired phones, and phone pairing
+        // is paused (no P2P provider in @qvac/sdk >= 0.19): skip downloading them.
+        if std::env::var_os("KALEIDO_MIND_VOICE").is_none() {
+            cmd.env("KALEIDO_MIND_VOICE", "0");
+        }
 
         // Point the sidecar at kaleido-mcp so the agent gets real tools.
         // Without KALEIDO_MCP_PATH the provider runs "tool-less" — the model
         // narrates tool calls ("I'll check your balance…") it can never execute.
-        // The MCP server reads RLN_NODE_URL (default http://localhost:3001) +
-        // KALEIDOSWAP_API_URL + WDK_SEED from the inherited env.
+        // The MCP server's node/maker/network env comes from apply_account_env.
         match resolve_mcp_path(app) {
             Some(mcp) => {
                 log::info!("[mind] KALEIDO_MCP_PATH={}", mcp.display());
@@ -125,42 +129,11 @@ impl MindProcess {
             ),
         }
 
-        // Point the MCP server at the ACTIVE node so balances/channels work for
-        // remote nodes too — not just the localhost:3001 default. The current
-        // account's node_url is the RLN node HTTP API the rest of the app uses.
-        if let Some(url) = app
+        let account = app
             .try_state::<crate::CurrentAccount>()
-            .and_then(|acc| {
-                acc.0
-                    .read()
-                    .ok()
-                    .and_then(|g| g.as_ref().map(|a| a.node_url.clone()))
-            })
-            .filter(|u| !u.trim().is_empty())
-        {
-            log::info!("[mind] RLN_NODE_URL={}", url);
-            cmd.env("RLN_NODE_URL", url);
-        }
-
-        // Point the MCP at the SAME maker the trading UI uses. kaleido-mcp
-        // defaults to mainnet api.kaleidoswap.com, which doesn't resolve on the
-        // test networks (signet/regtest) — so without this the LSP + swap tools
-        // "fetch failed". Source it from the active account's default_maker_url
-        // (e.g. https://api.signet.kaleidoswap.com), trimming any trailing slash
-        // so the SDK's "/api/v1/lsps1/*" paths don't double up.
-        if let Some(url) = app
-            .try_state::<crate::CurrentAccount>()
-            .and_then(|acc| {
-                acc.0
-                    .read()
-                    .ok()
-                    .and_then(|g| g.as_ref().map(|a| a.default_maker_url.clone()))
-            })
-            .map(|u| u.trim().trim_end_matches('/').to_string())
-            .filter(|u| !u.is_empty())
-        {
-            log::info!("[mind] KALEIDOSWAP_API_URL={}", url);
-            cmd.env("KALEIDOSWAP_API_URL", url);
+            .and_then(|acc| acc.0.read().ok().and_then(|g| g.clone()));
+        if let Some(account) = account {
+            apply_account_env(&mut cmd, &account);
         }
 
         let mut child = cmd
@@ -172,7 +145,10 @@ impl MindProcess {
         let stdout = child.stdout.take().ok_or("no stdout on sidecar")?;
         let stderr = child.stderr.take().ok_or("no stderr on sidecar")?;
 
-        *self.stdin.lock().unwrap() = Some(child_stdin);
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(child_stdin);
         *child_guard = Some(child);
         drop(child_guard);
 
@@ -217,7 +193,10 @@ impl MindProcess {
     /// Write one JSON command line to the sidecar's stdin.
     pub fn send(&self, app: &AppHandle, payload: &serde_json::Value) -> Result<(), String> {
         self.ensure_started(app)?;
-        let mut guard = self.stdin.lock().unwrap();
+        let mut guard = self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let stdin = guard.as_mut().ok_or("sidecar stdin not available")?;
         let mut line = serde_json::to_string(payload).map_err(|e| e.to_string())?;
         line.push('\n');
@@ -230,11 +209,61 @@ impl MindProcess {
 
     /// Kill the sidecar (best-effort) and drop the pipes.
     pub fn stop(&self) {
-        *self.stdin.lock().unwrap() = None;
-        if let Some(mut child) = self.child.lock().unwrap().take() {
+        *self
+            .stdin
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        if let Some(mut child) = self
+            .child
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
             let _ = child.kill();
             let _ = child.wait();
         }
+    }
+}
+
+/// kaleido-mcp only knows `mainnet` and `signet`; every test network maps to
+/// `signet` and the explicit KALEIDOSWAP_API_URL / RGB_PROXY_ENDPOINT below
+/// override its defaults.
+fn mcp_network(network: &str) -> &'static str {
+    if network.eq_ignore_ascii_case("mainnet") {
+        "mainnet"
+    } else {
+        "signet"
+    }
+}
+
+/// Point kaleido-mcp at the ACTIVE account: its RLN node, the maker the
+/// trading UI uses, its RGB proxy and the matching network preset. On mainnet
+/// kaleido-mcp has no default maker and exits without KALEIDOSWAP_API_URL.
+fn apply_account_env(cmd: &mut Command, account: &crate::db::Account) {
+    let network = mcp_network(&account.network);
+    log::info!("[mind] KALEIDO_NETWORK={} ({})", network, account.network);
+    cmd.env("KALEIDO_NETWORK", network);
+
+    let node_url = account.node_url.trim();
+    if !node_url.is_empty() {
+        log::info!("[mind] RLN_NODE_URL={}", node_url);
+        cmd.env("RLN_NODE_URL", node_url);
+    }
+
+    // Trim the trailing slash so the SDK's "/api/v1/lsps1/*" paths don't double up.
+    let maker_url = account.default_maker_url.trim().trim_end_matches('/');
+    if !maker_url.is_empty() {
+        log::info!("[mind] KALEIDOSWAP_API_URL={}", maker_url);
+        cmd.env("KALEIDOSWAP_API_URL", maker_url);
+    } else if network == "mainnet" {
+        log::warn!(
+            "[mind] no maker URL on mainnet — kaleido-mcp will not start; chat runs tool-less"
+        );
+    }
+
+    let proxy = account.proxy_endpoint.trim();
+    if !proxy.is_empty() {
+        cmd.env("RGB_PROXY_ENDPOINT", proxy);
     }
 }
 
@@ -350,4 +379,23 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::mcp_network;
+
+    #[test]
+    fn maps_app_networks_to_mcp_presets() {
+        assert_eq!(mcp_network("Mainnet"), "mainnet");
+        for n in [
+            "SignetCustom",
+            "Signet",
+            "Testnet",
+            "Regtest",
+            "LocalRegtest",
+        ] {
+            assert_eq!(mcp_network(n), "signet");
+        }
+    }
 }

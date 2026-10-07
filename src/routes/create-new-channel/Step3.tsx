@@ -13,6 +13,7 @@ import RgbLogo from '../../assets/rgb-logo.svg'
 import { Button, Card } from '../../components/ui'
 import { TNewChannelForm } from '../../slices/channel/channel.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
+import { logger } from '../../utils/logger'
 
 interface Props {
   error?: string
@@ -52,7 +53,7 @@ export const Step3 = ({ error, onBack, onNext, feeRates, formData }: Props) => {
           }
         })
         .catch((error) => {
-          console.error('Error fetching asset information:', error)
+          logger.error('Error fetching asset information:', error)
         })
     }
   }, [formData.assetId, takerAssets])
