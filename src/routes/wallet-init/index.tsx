@@ -1141,7 +1141,7 @@ export const Component = () => {
           const phaseSubtitle: Record<typeof initPhase, string> = {
             idle: '',
             'initializing-wallet':
-              'Generating your 24-word mnemonic seed phrase',
+              'Generating your 12-word mnemonic seed phrase',
             'starting-node': 'Spawning the node process and binding to ports',
             'unlocking-wallet': 'Sending unlock request to the node',
             'waiting-ready':
@@ -1338,7 +1338,7 @@ const NodeStartupProgress = ({
     },
     {
       description:
-        'Generating a unique 24-word mnemonic seed phrase and encrypting your wallet with your password.',
+        'Generating a unique 12-word mnemonic seed phrase and encrypting your wallet with your password.',
       id: 'initializing-wallet',
       label: 'Init Wallet',
     },
@@ -1402,7 +1402,7 @@ const NodeStartupProgress = ({
             <div className="mt-3 flex items-start gap-2 rounded-md bg-primary/10 border border-primary/20 px-3 py-2">
               <Key className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-content-primary">
-                A 24-word mnemonic is being generated. You will need to save it
+                A 12-word mnemonic is being generated. You will need to save it
                 on the next screen — it is the only way to recover your wallet.
               </p>
             </div>
