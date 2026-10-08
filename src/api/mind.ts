@@ -182,12 +182,39 @@ export interface AgentState {
   schedulerRunning: boolean
   risk: RiskLimits
   targets: PortfolioTargets
-  /** Generation token caps (0 ⇒ uncapped). */
-  generation: { maxThinkingTokens: number; maxOutputTokens: number }
+  generation: GenerationLimits
   recent: TaskRunRecord[]
   stats: Record<string, TaskStats>
   cumulative: TaskRunCost
 }
+
+export interface GenerationLimits {
+  /** Older providers omit it; treat missing as on. */
+  thinking?: boolean
+  maxThinkingTokens: number
+  maxOutputTokens: number
+}
+
+/** The response cap always stays within these bounds on desktop. */
+export const RESPONSE_TOKENS = { default: 4096, max: 8192, min: 512 }
+export const THINKING_TOKENS = { default: 1024, max: 4096, min: 128 }
+
+const clampTokens = (
+  value: number,
+  bounds: { default: number; max: number; min: number }
+) =>
+  Number.isFinite(value) && value > 0
+    ? Math.min(bounds.max, Math.max(bounds.min, Math.round(value)))
+    : bounds.default
+
+/** Fill in thinking and keep both caps inside the desktop bounds (0 ⇒ default). */
+export const normalizeLimits = (
+  g: GenerationLimits
+): Required<GenerationLimits> => ({
+  maxOutputTokens: clampTokens(g.maxOutputTokens, RESPONSE_TOKENS),
+  maxThinkingTokens: clampTokens(g.maxThinkingTokens, THINKING_TOKENS),
+  thinking: g.thinking ?? true,
+})
 
 export interface SuggestedAction {
   id: string
@@ -614,10 +641,7 @@ class MindClient {
   setPortfolioTargets(targets: Partial<PortfolioTargets>) {
     return this.request<AgentState>({ cmd: 'set_portfolio_targets', targets })
   }
-  setGenerationLimits(limits: {
-    maxThinkingTokens?: number
-    maxOutputTokens?: number
-  }) {
+  setGenerationLimits(limits: Partial<GenerationLimits>) {
     return this.request<AgentState>({ cmd: 'set_generation_limits', ...limits })
   }
   getSuggestedActions() {

@@ -44,7 +44,7 @@ const FEATURES: Array<{
     title: 'Get things done',
   },
   {
-    body: 'Find nearby merchants, check prices, and explore RGB assets.',
+    body: 'Check prices, explore RGB assets and quote KaleidoSwap swaps.',
     icon: Sparkles,
     title: 'Explore',
   },

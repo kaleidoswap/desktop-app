@@ -20,7 +20,11 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import {
   mindClient,
+  normalizeLimits,
+  RESPONSE_TOKENS,
+  THINKING_TOKENS,
   type AgentState,
+  type GenerationLimits,
   type AgentTask,
   type MindEvent,
   type PortfolioTargets,
@@ -85,10 +89,7 @@ export const Component: React.FC = () => {
   const saveTargets = async (t: PortfolioTargets) => {
     setAgent(await mindClient.setPortfolioTargets(t))
   }
-  const saveLimits = async (g: {
-    maxThinkingTokens: number
-    maxOutputTokens: number
-  }) => {
+  const saveLimits = async (g: GenerationLimits) => {
     setAgent(await mindClient.setGenerationLimits(g))
   }
   const toggleTask = async (t: AgentTask) => {
@@ -454,27 +455,24 @@ const TargetsCard: React.FC<{
   )
 }
 
-/** Editable thinking + total-output token caps (0 = uncapped); saves live. */
+/** Thinking on/off and token caps; saves live. The response cap is always set. */
 const LimitsCard: React.FC<{
-  generation: { maxThinkingTokens: number; maxOutputTokens: number }
-  onSave: (g: {
-    maxThinkingTokens: number
-    maxOutputTokens: number
-  }) => Promise<void>
+  generation: GenerationLimits
+  onSave: (g: GenerationLimits) => Promise<void>
 }> = ({ generation, onSave }) => {
-  const [draft, setDraft] = useState(generation)
+  const current = normalizeLimits(generation)
+  const [draft, setDraft] = useState(current)
   const [saving, setSaving] = useState(false)
-  useEffect(() => setDraft(generation), [generation])
+  useEffect(() => setDraft(normalizeLimits(generation)), [generation])
 
-  const clamp = (v: number) =>
-    Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0
   const dirty =
+    draft.thinking !== generation.thinking ||
     draft.maxThinkingTokens !== generation.maxThinkingTokens ||
     draft.maxOutputTokens !== generation.maxOutputTokens
   const save = async () => {
     setSaving(true)
     try {
-      await onSave(draft)
+      await onSave(normalizeLimits(draft))
     } finally {
       setSaving(false)
     }
@@ -485,23 +483,35 @@ const LimitsCard: React.FC<{
       <div className="mb-3 flex items-center gap-2">
         <Gauge className="h-4 w-4 text-violet-400" />
         <h3 className="text-sm font-semibold text-white">Response limits</h3>
-        <span className="ml-auto text-xs text-gray-500">
-          0 = uncapped · ~30 tokens/sec
-        </span>
+        <span className="ml-auto text-xs text-gray-500">~30 tokens/sec</span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <TargetInput
-          label="Max thinking tokens"
-          onChange={(v) =>
-            setDraft((d) => ({ ...d, maxThinkingTokens: clamp(v) }))
+      <label className="mb-3 flex items-center justify-between rounded-lg border border-gray-800 bg-gray-900/40 px-3 py-2">
+        <span>
+          <span className="block text-sm text-gray-100">Thinking</span>
+          <span className="block text-xs text-gray-500">
+            Reason before answering. Off is faster; on helps multi-step tasks.
+          </span>
+        </span>
+        <input
+          checked={draft.thinking}
+          className="h-4 w-4 accent-violet-500"
+          onChange={(e) =>
+            setDraft((d) => ({ ...d, thinking: e.target.checked }))
           }
-          value={draft.maxThinkingTokens}
+          type="checkbox"
         />
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        {draft.thinking && (
+          <TargetInput
+            label={`Max thinking tokens (${THINKING_TOKENS.min}–${THINKING_TOKENS.max})`}
+            onChange={(v) => setDraft((d) => ({ ...d, maxThinkingTokens: v }))}
+            value={draft.maxThinkingTokens}
+          />
+        )}
         <TargetInput
-          label="Max response tokens"
-          onChange={(v) =>
-            setDraft((d) => ({ ...d, maxOutputTokens: clamp(v) }))
-          }
+          label={`Max response tokens (${RESPONSE_TOKENS.min}–${RESPONSE_TOKENS.max})`}
+          onChange={(v) => setDraft((d) => ({ ...d, maxOutputTokens: v }))}
           value={draft.maxOutputTokens}
         />
       </div>
