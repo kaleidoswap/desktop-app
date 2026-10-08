@@ -34,3 +34,9 @@ export const ERROR_INSUFFICIENT_UTXOs = [
 // KaleidoMind) relied on QVAC's P2P provider, which @qvac/sdk 0.19 removed.
 // Paused until it ships again in a later release.
 export const MIND_PHONE_PAIRING_ENABLED = false
+
+// Remote brain: serve the loaded model to the phone over an OpenAI-compatible
+// LAN API (replaces P2P delegation). On in dev; opt in for builds with
+// VITE_MIND_REMOTE_BRAIN=true until Rate ships the client setting.
+export const MIND_REMOTE_BRAIN_ENABLED =
+  import.meta.env.DEV || import.meta.env.VITE_MIND_REMOTE_BRAIN === 'true'
