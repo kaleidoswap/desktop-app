@@ -98,6 +98,11 @@ fn current_runtime_base(app: &AppHandle) -> Option<PathBuf> {
     runtime_base(app)
 }
 
+/// A runtime marker from an older ASSETS_TAG exists — the UI offers an update.
+pub fn is_stale(app: &AppHandle) -> bool {
+    installed_version(app).is_some_and(|v| v != ASSETS_TAG)
+}
+
 /// True once the CURRENT runtime version has been downloaded + extracted.
 pub fn is_installed(app: &AppHandle) -> bool {
     current_runtime_base(app)

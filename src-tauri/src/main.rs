@@ -58,6 +58,12 @@ fn mind_runtime_installed(app: AppHandle) -> bool {
     mind_runtime::is_installed(&app) || mind::provider_available(&app)
 }
 
+/// An older runtime version is installed — the UI labels the download as an update.
+#[tauri::command]
+fn mind_runtime_stale(app: AppHandle) -> bool {
+    mind_runtime::is_stale(&app)
+}
+
 /// Download + install the agent runtime (provider/mcp/node) into app data.
 /// Returns immediately; progress streams on the `mind-runtime` event.
 #[tauri::command]
@@ -236,6 +242,7 @@ fn main() {
             mind_stop,
             mind_is_running,
             mind_runtime_installed,
+            mind_runtime_stale,
             mind_runtime_install,
         ])
         .run(tauri::generate_context!())

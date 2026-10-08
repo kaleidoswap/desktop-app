@@ -41,6 +41,8 @@ export interface UseMindResult {
   capabilities: CapabilityInfo | null
   /** Whether the agent runtime is downloaded (null while still checking). */
   runtimeInstalled: boolean | null
+  /** An older runtime version is installed — the download is an update. */
+  runtimeStale: boolean
   /** Live progress of the runtime download (null when not downloading). */
   runtimeProgress: RuntimeProgress | null
   /**
@@ -99,6 +101,7 @@ export function useMind(): UseMindResult {
     useState<ToolConfirmRequestEvent | null>(null)
   const [capabilities, setCapabilities] = useState<CapabilityInfo | null>(null)
   const [runtimeInstalled, setRuntimeInstalled] = useState<boolean | null>(null)
+  const [runtimeStale, setRuntimeStale] = useState(false)
   const [runtimeProgress, setRuntimeProgress] =
     useState<RuntimeProgress | null>(null)
   const [starting, setStarting] = useState(false)
@@ -254,11 +257,16 @@ export function useMind(): UseMindResult {
         if (v) void refresh()
       })
       .catch(() => alive && setRuntimeInstalled(false))
+    void mindClient
+      .runtimeStale()
+      .then((v) => alive && setRuntimeStale(v))
+      .catch(() => {})
     const off = mindClient.onRuntimeProgress((p) => {
       if (!alive) return
       if (p.phase === 'done') {
         setRuntimeProgress(null)
         setRuntimeInstalled(true)
+        setRuntimeStale(false)
         void refresh()
       } else {
         setRuntimeProgress(p) // keeps the error phase visible too
@@ -426,6 +434,7 @@ export function useMind(): UseMindResult {
     respondConfirm,
     runtimeInstalled,
     runtimeProgress,
+    runtimeStale,
     setSkillEnabled,
     startProvider,
     starting,

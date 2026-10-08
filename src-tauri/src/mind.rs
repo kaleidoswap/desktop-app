@@ -12,7 +12,7 @@
 //!   3. `pnpm start` with cwd = `<dir>`
 //!
 //! `<dir>` is `$KALEIDO_MIND_PROVIDER_DIR`, the downloaded runtime
-//! (mind_runtime), or a dev sibling-path guess. Resolved at start time and
+//! (mind_runtime), or (debug builds) a dev sibling with @qvac/sdk. Resolved at start time and
 //! passed to the child via cmd.env — never by mutating our own environment.
 
 use std::io::{BufRead, BufReader, Write};
@@ -151,6 +151,7 @@ impl MindProcess {
         let app_out = app.clone();
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
+            let mut warned_mock = false;
             for line in reader.lines() {
                 let line = match line {
                     Ok(l) => l,
@@ -162,6 +163,12 @@ impl MindProcess {
                 }
                 match serde_json::from_str::<serde_json::Value>(trimmed) {
                     Ok(value) => {
+                        if !warned_mock && is_mock_status(&value) {
+                            warned_mock = true;
+                            log::warn!(
+                                "[mind] sidecar is in MOCK mode (no @qvac/sdk) — chat replies are fake"
+                            );
+                        }
                         let _ = app_out.emit(MIND_EVENT, value);
                     }
                     Err(e) => {
@@ -308,42 +315,79 @@ fn resolve_sidecar_command(
     Ok(("pnpm".to_string(), vec!["start".to_string()], Some(dir)))
 }
 
-/// Whether the sidecar can resolve a provider to run — true if a runtime has
-/// been downloaded OR the dev sibling repos are present. Used by the UI to
-/// decide whether the on-demand download is needed before showing KaleidoMind.
+/// Whether the sidecar can resolve a provider to run — true if a current
+/// runtime has been downloaded, or (debug builds only) a dev sibling checkout
+/// that can actually load @qvac/sdk is present. Used by the UI to decide
+/// whether the on-demand download is needed before showing KaleidoMind.
 pub fn provider_available(app: &AppHandle) -> bool {
     resolve_provider_dir(app).is_some()
 }
 
-/// Find the provider dir: `KALEIDO_MIND_PROVIDER_DIR` override (read-only) → a
-/// downloaded runtime in app data → dev sibling repos relative to the cwd.
+/// Find the provider dir: `KALEIDO_MIND_PROVIDER_DIR` override → the current
+/// downloaded runtime → (debug builds only, no stale runtime) a dev sibling
+/// `../kaleido-mind/apps/provider` that has @qvac/sdk installed.
 fn resolve_provider_dir(app: &AppHandle) -> Option<PathBuf> {
-    if let Ok(d) = std::env::var("KALEIDO_MIND_PROVIDER_DIR") {
-        let p = PathBuf::from(d);
+    pick_provider_dir(
+        std::env::var("KALEIDO_MIND_PROVIDER_DIR")
+            .ok()
+            .map(PathBuf::from),
+        crate::mind_runtime::provider_dir(app),
+        crate::mind_runtime::is_stale(app),
+        cfg!(debug_assertions),
+        std::env::current_dir().ok(),
+    )
+}
+
+fn pick_provider_dir(
+    override_dir: Option<PathBuf>,
+    runtime_dir: Option<PathBuf>,
+    runtime_stale: bool,
+    allow_dev_sibling: bool,
+    cwd: Option<PathBuf>,
+) -> Option<PathBuf> {
+    if let Some(p) = override_dir {
         if p.join("package.json").exists() {
             return Some(p);
         }
     }
-    if let Some(p) = crate::mind_runtime::provider_dir(app) {
-        return Some(p);
+    if runtime_dir.is_some() {
+        return runtime_dir;
     }
-    let rel = ["apps", "provider"];
-    let cwd = std::env::current_dir().ok()?;
-    // Candidate roots: cwd, parent, grandparent — each + ../kaleido-mind.
-    for base in [
+    if !allow_dev_sibling || runtime_stale {
+        return None;
+    }
+    let cwd = cwd?;
+    [
         Some(cwd.clone()),
         cwd.parent().map(PathBuf::from),
         cwd.parent().and_then(|p| p.parent()).map(PathBuf::from),
     ]
     .into_iter()
     .flatten()
-    {
-        let candidate = base.join("kaleido-mind").join(rel[0]).join(rel[1]);
-        if candidate.join("package.json").exists() {
-            return Some(candidate);
-        }
-    }
-    None
+    .map(|base| base.join("kaleido-mind").join("apps").join("provider"))
+    .find(|c| c.join("package.json").exists() && has_qvac_sdk(c))
+}
+
+/// Without @qvac/sdk the provider silently falls back to MOCK mode, so a dev
+/// sibling only counts if pnpm installed it (package-local or hoisted to the
+/// workspace root).
+fn has_qvac_sdk(provider_dir: &std::path::Path) -> bool {
+    let rel = ["node_modules", "@qvac", "sdk", "package.json"];
+    let local = rel
+        .iter()
+        .fold(provider_dir.to_path_buf(), |p, s| p.join(s));
+    let hoisted = provider_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .map(|root| rel.iter().fold(root.to_path_buf(), |p, s| p.join(s)));
+    local.exists() || hoisted.is_some_and(|h| h.exists())
+}
+
+/// True for a `status` event whose inference backend is the provider's MOCK
+/// fallback (no @qvac/sdk — every reply is fake).
+fn is_mock_status(value: &serde_json::Value) -> bool {
+    value.get("type").and_then(|t| t.as_str()) == Some("status")
+        && value.get("inferenceDevice").and_then(|d| d.as_str()) == Some("mock")
 }
 
 /// Resolve the kaleido-mcp entry (`dist/index.js`) passed to the sidecar child:
@@ -378,7 +422,127 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::mcp_network;
+    use super::{is_mock_status, mcp_network, pick_provider_dir};
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    fn tmp(name: &str) -> PathBuf {
+        let d =
+            std::env::temp_dir().join(format!("kaleido-mind-test-{}-{}", name, std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    fn touch(p: &Path) {
+        fs::create_dir_all(p.parent().unwrap()).unwrap();
+        fs::write(p, "{}").unwrap();
+    }
+
+    /// `<root>/app` is the cwd; `<root>/kaleido-mind/apps/provider` the sibling.
+    fn sibling(root: &Path, with_qvac: bool) -> PathBuf {
+        let provider = root.join("kaleido-mind").join("apps").join("provider");
+        touch(&provider.join("package.json"));
+        if with_qvac {
+            touch(&provider.join("node_modules/@qvac/sdk/package.json"));
+        }
+        fs::create_dir_all(root.join("app")).unwrap();
+        provider
+    }
+
+    #[test]
+    fn sibling_without_qvac_is_ignored() {
+        let root = tmp("no-qvac");
+        sibling(&root, false);
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn stale_runtime_never_falls_back_to_sibling() {
+        let root = tmp("stale");
+        sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, true, true, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn sibling_requires_debug_build() {
+        let root = tmp("release");
+        sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, false, false, Some(root.join("app"))),
+            None
+        );
+    }
+
+    #[test]
+    fn sibling_with_qvac_is_used_in_debug() {
+        let root = tmp("qvac");
+        let provider = sibling(&root, true);
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            Some(provider)
+        );
+    }
+
+    #[test]
+    fn sibling_with_hoisted_qvac_is_used_in_debug() {
+        let root = tmp("hoisted");
+        let provider = sibling(&root, false);
+        touch(&root.join("kaleido-mind/node_modules/@qvac/sdk/package.json"));
+        assert_eq!(
+            pick_provider_dir(None, None, false, true, Some(root.join("app"))),
+            Some(provider)
+        );
+    }
+
+    #[test]
+    fn override_dir_wins() {
+        let root = tmp("override");
+        let over = root.join("custom");
+        touch(&over.join("package.json"));
+        let runtime = root.join("runtime");
+        assert_eq!(
+            pick_provider_dir(
+                Some(over.clone()),
+                Some(runtime),
+                true,
+                false,
+                Some(root.join("app"))
+            ),
+            Some(over)
+        );
+    }
+
+    #[test]
+    fn current_runtime_beats_sibling() {
+        let root = tmp("runtime");
+        sibling(&root, true);
+        let runtime = root.join("runtime");
+        assert_eq!(
+            pick_provider_dir(
+                None,
+                Some(runtime.clone()),
+                false,
+                true,
+                Some(root.join("app"))
+            ),
+            Some(runtime)
+        );
+    }
+
+    #[test]
+    fn detects_mock_status() {
+        let mock = serde_json::json!({"type": "status", "inferenceDevice": "mock"});
+        let gpu = serde_json::json!({"type": "status", "inferenceDevice": "gpu"});
+        assert!(is_mock_status(&mock));
+        assert!(!is_mock_status(&gpu));
+    }
 
     #[test]
     fn maps_app_networks_to_mcp_presets() {
