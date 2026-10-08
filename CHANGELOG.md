@@ -11,6 +11,9 @@
 ### 🔧 Improvements
 - **KaleidoMind runtime `mind-assets-v0.10.5`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.1 (`@kaleidorg/mind` 0.10.5) and `kaleido-mcp` 0.4.2, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15, with LSP channel skills; ordering a channel now asks for confirmation, and channel orders show the full amount due instead of the fee alone. Existing installs download the new runtime on next enable
 - **Local models only**: Phone pairing and remote model serving are removed for now; KaleidoMind runs local models only
+- **RGB-only agent**: KaleidoMind loads only the RGB Lightning Node, channel, KaleidoSwap trading and portfolio skills, and only the node, KaleidoSwap and price tools; the Spark, Flashnet, Liquid, gift-card and paywall skills are gone, since the desktop wallet is an RGB Lightning Node
+- **Thinking switch**: A "Thinking on/off" button in the chat header, also in Agent → Response limits. Off answers faster; on reasons before answering, up to the thinking budget
+- **Response cap**: Each reply is capped at 4,096 tokens by default, adjustable between 512 and 8,192 in Agent → Response limits; it can no longer be set to uncapped
 - **Accessible dialogs**: Dialogs keep focus inside and restore it on close; restart, logout and shutdown use a shared confirmation dialog
 - **Translations**: Remaining hardcoded toasts and settings errors are translated in all eight languages
 - **Startup**: Simpler splash screen and smoother loading animation

@@ -30,6 +30,9 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub const MIND_EVENT: &str = "mind-event";
 
+const DESKTOP_SKILLS: &str = "rgb-lightning-node,channel-manager,kaleido-trading,portfolio-manager";
+const DESKTOP_TOOL_PREFIXES: &str = "rln_,kaleidoswap_,get_price,get_market_data";
+
 /// Supervises the single Node sidecar child process + its stdin handle.
 #[derive(Default)]
 pub struct MindProcess {
@@ -100,14 +103,22 @@ impl MindProcess {
         // aliases out of the model's tool prompt so small local models do not
         // waste tokens choosing between duplicate wallet implementations.
         cmd.env("KALEIDO_MIND_RLN_ONLY", "1");
+        // Only the RGB, RGB Lightning and KaleidoSwap skills and tools; the
+        // Spark, Flashnet, Liquid, Bitrefill and paywall ones have no backing
+        // wallet here.
+        cmd.env("KALEIDO_MIND_SKILLS", DESKTOP_SKILLS);
+        cmd.env("KALEIDO_MIND_TOOL_PREFIXES", DESKTOP_TOOL_PREFIXES);
 
-        // Conservative desktop defaults for local reasoning. Users can still
-        // override these through the inherited environment or Agent settings.
+        // Desktop defaults for local reasoning; the Agent tab changes them live.
+        // The response cap is never removed so a turn cannot run away.
         if std::env::var_os("KALEIDO_MIND_MAX_THINKING_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "128");
+            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "1024");
         }
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_TOKENS", "512");
+            cmd.env("KALEIDO_MIND_MAX_TOKENS", "4096");
+        }
+        if std::env::var_os("KALEIDO_MIND_MAX_TOKENS_CEILING").is_none() {
+            cmd.env("KALEIDO_MIND_MAX_TOKENS_CEILING", "8192");
         }
 
         // Point the sidecar at kaleido-mcp so the agent gets real tools.

@@ -34,6 +34,7 @@ import {
   type ChatMsgStats,
   type ChatToolEvent,
 } from './shared'
+import { ThinkingToggle } from './thinking-toggle'
 import { FollowupActions, WelcomeActions } from './welcome-actions'
 
 /**
@@ -533,6 +534,7 @@ export const Component: React.FC = () => {
             {providerOn ? 'Online' : 'Offline'}
           </span>
         </div>
+        <ThinkingToggle disabled={sending} />
         <button
           className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
           disabled={messages.length === 0 || sending}
