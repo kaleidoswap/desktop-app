@@ -30,44 +30,16 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub const MIND_EVENT: &str = "mind-event";
 
-/// Command ids with this prefix belong to in-process callers (the remote-brain
-/// server); their responses and streamed events are not forwarded to the webview.
-pub const INTERNAL_ID_PREFIX: &str = "rb-";
-
 /// Supervises the single Node sidecar child process + its stdin handle.
+#[derive(Default)]
 pub struct MindProcess {
     child: Arc<Mutex<Option<Child>>>,
     stdin: Arc<Mutex<Option<ChildStdin>>>,
-    events: tokio::sync::broadcast::Sender<serde_json::Value>,
-}
-
-impl Default for MindProcess {
-    fn default() -> Self {
-        let (events, _) = tokio::sync::broadcast::channel(4096);
-        Self {
-            child: Arc::default(),
-            stdin: Arc::default(),
-            events,
-        }
-    }
-}
-
-/// Whether a sidecar stdout line answers an in-process caller rather than the UI.
-fn is_internal_event(value: &serde_json::Value) -> bool {
-    value
-        .get("id")
-        .and_then(|v| v.as_str())
-        .is_some_and(|id| id.starts_with(INTERNAL_ID_PREFIX))
 }
 
 impl MindProcess {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Every stdout event of the sidecar, for in-process consumers.
-    pub fn subscribe(&self) -> tokio::sync::broadcast::Receiver<serde_json::Value> {
-        self.events.subscribe()
     }
 
     pub fn is_running(&self) -> bool {
@@ -177,7 +149,6 @@ impl MindProcess {
 
         // stdout → forward each JSON line to the webview as `mind-event`.
         let app_out = app.clone();
-        let events = self.events.clone();
         thread::spawn(move || {
             let reader = BufReader::new(stdout);
             let mut warned_mock = false;
@@ -198,10 +169,7 @@ impl MindProcess {
                                 "[mind] sidecar is in MOCK mode (no @qvac/sdk) — chat replies are fake"
                             );
                         }
-                        if !is_internal_event(&value) {
-                            let _ = app_out.emit(MIND_EVENT, value.clone());
-                        }
-                        let _ = events.send(value);
+                        let _ = app_out.emit(MIND_EVENT, value);
                     }
                     Err(e) => {
                         log::warn!("[mind] non-JSON stdout line: {} ({})", trimmed, e);
@@ -454,7 +422,7 @@ fn resolve_mcp_path(app: &AppHandle) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_internal_event, is_mock_status, mcp_network, pick_provider_dir};
+    use super::{is_mock_status, mcp_network, pick_provider_dir};
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -574,20 +542,6 @@ mod tests {
         let gpu = serde_json::json!({"type": "status", "inferenceDevice": "gpu"});
         assert!(is_mock_status(&mock));
         assert!(!is_mock_status(&gpu));
-    }
-
-    #[test]
-    fn internal_ids_are_not_forwarded_to_the_webview() {
-        assert!(is_internal_event(
-            &serde_json::json!({"type": "response", "id": "rb-1", "ok": true})
-        ));
-        assert!(is_internal_event(
-            &serde_json::json!({"type": "completion_delta", "id": "rb-1", "delta": "hi"})
-        ));
-        assert!(!is_internal_event(
-            &serde_json::json!({"type": "response", "id": "ui-1", "ok": true})
-        ));
-        assert!(!is_internal_event(&serde_json::json!({"type": "status"})));
     }
 
     #[test]

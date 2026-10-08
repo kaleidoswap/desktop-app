@@ -43,8 +43,7 @@ const MIND_VERSION = process.env.MIND_VERSION ?? '0.10.5'
 // wallets and @kaleidorg/swap-sdk (submarine swaps) are optional peers that need
 // a Liquid seed, which the desktop does not pass, so they are left out.
 const MCP_VERSION = process.env.MCP_VERSION ?? '0.4.2'
-// mind requires >= 0.20. 0.19 removed the P2P provider behind phone
-// pairing, so the provider runs desktop-only and pairing stays paused.
+// mind requires >= 0.20; the provider runs desktop-only.
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '0.21.0'
 
 // @qvac/sdk (via @qvac/inference) hard-depends on EVERY inference engine, but

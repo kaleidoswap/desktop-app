@@ -81,8 +81,7 @@ export const StartBrainModal: React.FC<{
             <Rocket className="h-5 w-5" />
           </span>
           <p className="text-sm text-content-secondary">
-            Your brain is offline. Start a model to chat, run skills, and pair
-            your phone.
+            Your brain is offline. Start a model to chat and run skills.
           </p>
         </div>
 

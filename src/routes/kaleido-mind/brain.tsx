@@ -1,39 +1,28 @@
 // Brain — KaleidoMind control panel. A compact, screen-fitting hub: start/stop
 // the brain (with a clear "start a model" prompt when it's off), and open Models,
-// Skills, Pairing and Activity in modals so the page never overflows.
+// Skills and Activity in modals so the page never overflows.
 
 import {
   Activity,
-  Check,
   ChevronRight,
-  Copy,
   Cpu,
   Gauge,
-  KeyRound,
   Loader2,
   Play,
   Power,
-  QrCode,
   Sparkles,
   Square,
-  Users,
   Zap,
 } from 'lucide-react'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Modal } from '../../components/ui/Modal'
-import {
-  MIND_PHONE_PAIRING_ENABLED,
-  MIND_REMOTE_BRAIN_ENABLED,
-} from '../../constants'
 
 import { ModelsManager } from './models'
-import { PairingPanel } from './pairing'
 import { useMindContext } from './shared'
 import { SkillsManager } from './skills'
 
-type ActiveModal = null | 'models' | 'skills' | 'pairing' | 'activity'
+type ActiveModal = null | 'models' | 'skills' | 'activity'
 
 /** A tappable tile in the quick-actions grid. */
 const ActionTile: React.FC<{
@@ -63,7 +52,6 @@ const ActionTile: React.FC<{
 )
 
 export const Component: React.FC = () => {
-  const { t } = useTranslation()
   const mind = useMindContext()
   const { status } = mind
   const providerOn = status?.on === true
@@ -73,7 +61,6 @@ export const Component: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState<string>('')
   const startModelId = selectedModel || installed[0]?.id || ''
   const [modal, setModal] = useState<ActiveModal>(null)
-  const [copied, setCopied] = useState(false)
 
   const device = status?.inferenceDevice
   const onGpu = device === 'gpu'
@@ -85,21 +72,9 @@ export const Component: React.FC = () => {
         ? 'Mock'
         : 'detecting'
   const tps = status?.tokensPerSecond
-  const peers = status?.peers.length ?? 0
   const enabledSkills =
     mind.capabilities?.skills.filter((s) => s.enabled).length ?? 0
   const toolCount = mind.capabilities?.tools.length ?? 0
-
-  const copyKey = async () => {
-    if (!status?.publicKey) return
-    try {
-      await navigator.clipboard.writeText(status.publicKey)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      /* ignore */
-    }
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -132,9 +107,7 @@ export const Component: React.FC = () => {
                   ? (status?.activeModelName ?? 'Running')
                   : loading
                     ? (loading.message ?? 'Loading model…')
-                    : MIND_PHONE_PAIRING_ENABLED
-                      ? 'Start a model to chat, run skills, and pair a phone.'
-                      : 'Start a model to chat and run skills.'}
+                    : 'Start a model to chat and run skills.'}
               </p>
             </div>
           </div>
@@ -193,11 +166,7 @@ export const Component: React.FC = () => {
 
         {/* Live stats strip — only meaningful when running. */}
         {providerOn && (
-          <div
-            className={`grid divide-x divide-divider/10 border-t border-divider/10 ${
-              MIND_PHONE_PAIRING_ENABLED ? 'grid-cols-3' : 'grid-cols-2'
-            }`}
-          >
+          <div className="grid grid-cols-2 divide-x divide-divider/10 border-t border-divider/10">
             <div className="px-4 py-3">
               <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
                 {onGpu ? (
@@ -230,27 +199,12 @@ export const Component: React.FC = () => {
                   : '—'}
               </div>
             </div>
-            {MIND_PHONE_PAIRING_ENABLED && (
-              <div className="px-4 py-3">
-                <div className="flex items-center gap-1.5 text-xs text-content-tertiary">
-                  <Users className="h-3.5 w-3.5" />
-                  Paired
-                </div>
-                <div className="mt-0.5 text-sm font-semibold text-content-primary">
-                  {peers}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </section>
 
       {/* ── Quick actions (open in modals / navigate) ──────────────────── */}
-      <div
-        className={`grid gap-3 ${
-          MIND_REMOTE_BRAIN_ENABLED ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
-        }`}
-      >
+      <div className="grid gap-3 sm:grid-cols-3">
         <ActionTile
           hint={`${installed.length} installed`}
           icon={<Cpu className="h-5 w-5" />}
@@ -267,14 +221,6 @@ export const Component: React.FC = () => {
           label="Skills & tools"
           onClick={() => setModal('skills')}
         />
-        {MIND_REMOTE_BRAIN_ENABLED && (
-          <ActionTile
-            hint={t('remoteBrain.enableHint')}
-            icon={<QrCode className="h-5 w-5" />}
-            label={t('remoteBrain.title')}
-            onClick={() => setModal('pairing')}
-          />
-        )}
         <ActionTile
           hint={`${mind.logs.length} log line(s)`}
           icon={<Activity className="h-5 w-5" />}
@@ -282,41 +228,6 @@ export const Component: React.FC = () => {
           onClick={() => setModal('activity')}
         />
       </div>
-
-      {MIND_PHONE_PAIRING_ENABLED && (
-        <>
-          {/* ── Provider key (compact) ─────────────────────────────────────── */}
-          <section className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-base/50 p-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-overlay text-content-secondary">
-              <KeyRound className="h-4 w-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-content-primary">
-                Provider key
-              </p>
-              <p className="truncate text-xs text-content-tertiary">
-                {status?.publicKey
-                  ? 'This brain’s public identity for paired phones.'
-                  : 'Available once the brain is running.'}
-              </p>
-            </div>
-            {status?.publicKey && (
-              <button
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 font-mono text-xs text-content-secondary transition-colors hover:bg-surface-overlay"
-                onClick={copyKey}
-                type="button"
-              >
-                {copied ? (
-                  <Check className="h-3.5 w-3.5 text-status-success" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-                {status.publicKey.slice(0, 8)}…{status.publicKey.slice(-6)}
-              </button>
-            )}
-          </section>
-        </>
-      )}
 
       {/* ── Modals ─────────────────────────────────────────────────────── */}
       <Modal
@@ -338,17 +249,6 @@ export const Component: React.FC = () => {
       >
         <div className="p-4">
           <SkillsManager />
-        </div>
-      </Modal>
-
-      <Modal
-        isOpen={MIND_REMOTE_BRAIN_ENABLED && modal === 'pairing'}
-        onClose={() => setModal(null)}
-        size="sm"
-        title={t('remoteBrain.title')}
-      >
-        <div className="p-4">
-          <PairingPanel />
         </div>
       </Modal>
 

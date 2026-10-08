@@ -10,20 +10,11 @@ import { listen } from '@tauri-apps/api/event'
 
 // ── Protocol types (mirror apps/provider/src/protocol.ts) ────────────────
 
-export interface PeerInfo {
-  shortKey: string
-  label: string
-  connectedAt: number
-  lastActiveAt: number
-}
-
 export interface ProviderStatusEvent {
   type: 'status'
   on: boolean
-  publicKey: string | null
   activeModelId: string | null
   activeModelName: string | null
-  peers: PeerInfo[]
   tokensPerSecond: number | null
   startedAt: number | null
   inferenceDevice?: 'gpu' | 'cpu' | 'mock' | null
@@ -89,12 +80,7 @@ export interface DownloadProgress {
 }
 
 export type ProviderLoadingPhase =
-  | 'loading_model'
-  | 'model_loaded'
-  | 'starting_p2p'
-  | 'ready'
-  | 'p2p_failed'
-  | 'aborted'
+  'loading_model' | 'model_loaded' | 'ready' | 'aborted'
 
 export interface ProviderLoadingEvent {
   type: 'provider_loading'
@@ -240,9 +226,6 @@ export type MindEvent =
   | ProviderStatusEvent
   | ProviderLoadingEvent
   | ToolConfirmRequestEvent
-  | { type: 'pubkey'; value: string }
-  | { type: 'peer_connected'; peer: PeerInfo }
-  | { type: 'peer_disconnected'; shortKey: string }
   | { type: 'download_progress'; progress: DownloadProgress }
   | { type: 'download_completed'; modelId: string }
   | { type: 'chat_thinking_delta'; chatId: string; delta: string }
@@ -501,7 +484,7 @@ class MindClient {
     return this.request({ cmd: 'delete_model', modelId })
   }
   startProvider(modelId: string) {
-    // Loading + P2P bootstrap can take a while.
+    // Loading a model can take a while.
     return this.request<ProviderStatusEvent>({ cmd: 'start', modelId }, 180_000)
   }
   stopProvider() {

@@ -2,6 +2,7 @@
 
 ### 🔧 Improvements
 - **KaleidoMind runtime `mind-assets-v0.10.5`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.1 (`@kaleidorg/mind` 0.10.5) and `kaleido-mcp` 0.4.2, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15, with LSP channel skills; ordering a channel now asks for confirmation, and channel orders show the full amount due instead of the fee alone. Existing installs download the new runtime on next enable
+- **Local models only**: Phone pairing / remote model serving removed for now; KaleidoMind runs local models only
 
 ## [Version 0.5.1] - 2026-10-07
 

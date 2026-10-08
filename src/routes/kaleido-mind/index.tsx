@@ -1,6 +1,6 @@
 // KaleidoMind — desktop "brain". This is the section LAYOUT: it owns the single
 // useMind() instance and renders the shared header + loading banner, with the
-// active sub-page (Brain / Pairing / Models / Skills / Chat) in the Outlet.
+// active sub-page (Brain / Models / Skills / Chat) in the Outlet.
 
 import { FlaskConical, Loader2 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'

@@ -13,7 +13,6 @@ mod mind_hardware;
 mod mind_runtime;
 mod node_backend;
 mod nwc;
-mod remote_brain;
 mod rgb_node;
 mod tray;
 
@@ -92,7 +91,6 @@ fn main() {
     let dca_scheduler = Arc::new(DcaScheduler::new());
     let nwc_manager = Arc::new(NwcManager::new());
     let mind_process = Arc::new(MindProcess::new());
-    let remote_brain = Arc::new(remote_brain::RemoteBrain::default());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -108,7 +106,6 @@ fn main() {
         .manage(Arc::clone(&dca_scheduler))
         .manage(Arc::clone(&nwc_manager))
         .manage(Arc::clone(&mind_process))
-        .manage(Arc::clone(&remote_brain))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -123,7 +120,6 @@ fn main() {
             let docker_manager = Arc::clone(&docker_manager);
             let dca_scheduler = Arc::clone(&dca_scheduler);
             let nwc_manager = Arc::clone(&nwc_manager);
-            let remote_brain = Arc::clone(&remote_brain);
             move |app| {
                 if let Some(main_window) = app.get_webview_window("main") {
                     node_process
@@ -143,10 +139,6 @@ fn main() {
 
                 // The agent runtime is downloaded on demand (mind_runtime) and
                 // resolved at sidecar-start time, so nothing to wire up here.
-
-                // Resume serving models to the phone only if the user left it on.
-                let rb_app = app.handle().clone();
-                tauri::async_runtime::spawn(async move { remote_brain.restore(&rb_app).await });
 
                 // Set up system tray
                 tray::setup_tray(app.handle(), Arc::clone(&node_process))?;
@@ -252,9 +244,6 @@ fn main() {
             mind_runtime_installed,
             mind_runtime_stale,
             mind_runtime_install,
-            remote_brain::remote_brain_status,
-            remote_brain::remote_brain_configure,
-            remote_brain::remote_brain_rotate_token,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
