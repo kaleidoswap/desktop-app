@@ -13,6 +13,7 @@ import {
 import { mindClient, type MindEvent } from '../../api/mind'
 import { useMind } from '../../hooks/useMind'
 
+import { MockModeBanner } from './mock-mode-banner'
 import { RuntimeInstall } from './runtime-install'
 import { StatusPill, type ChatMsg } from './shared'
 import { StartBrainModal } from './start-brain-modal'
@@ -101,6 +102,14 @@ export const Component: React.FC = () => {
         <RuntimeInstall mind={mind} />
       ) : (
         <>
+          <MockModeBanner
+            busy={
+              mind.runtimeProgress !== null &&
+              mind.runtimeProgress.phase !== 'error'
+            }
+            device={status?.inferenceDevice}
+            onDownload={() => void mind.installRuntime()}
+          />
           <Outlet
             context={{ chat: { input, messages, setInput, setMessages }, mind }}
           />

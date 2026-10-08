@@ -406,6 +406,13 @@ class MindClient {
   }
 
   /**
+   * Whether an older runtime version is installed (the download is an update).
+   */
+  async runtimeStale(): Promise<boolean> {
+    return invoke<boolean>('mind_runtime_stale')
+  }
+
+  /**
    * Start downloading the agent runtime; progress arrives via onRuntimeProgress.
    */
   async installRuntime(): Promise<void> {
