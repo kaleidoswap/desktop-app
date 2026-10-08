@@ -38,7 +38,7 @@ import { tmpdir } from 'node:os'
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
 // Pin the provider and core together so every platform receives the same catalog.
 const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '0.10.2'
-const MIND_VERSION = process.env.MIND_VERSION ?? '0.10.12'
+const MIND_VERSION = process.env.MIND_VERSION ?? '0.10.13'
 // Picks its defaults from KALEIDO_NETWORK (set by mind.rs). The Spark/Liquid
 // wallets and @kaleidorg/swap-sdk (submarine swaps) are optional peers that need
 // a Liquid seed, which the desktop does not pass, so they are left out.
