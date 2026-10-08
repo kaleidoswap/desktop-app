@@ -3296,22 +3296,5 @@
       "rln_list_channels": "Lister les canaux",
       "rln_get_address": "Adresse on-chain"
     }
-  },
-  "remoteBrain": {
-    "title": "Servir les modèles à votre téléphone",
-    "description": "Permettez à l'application KaleidoSwap sur téléphone d'utiliser le modèle de cet ordinateur. Seule l'inférence est partagée : votre téléphone conserve ses propres outils de portefeuille et confirmations, et le portefeuille de cet ordinateur n'est jamais exposé.",
-    "enable": "Servir les modèles",
-    "enableHint": "Démarre un serveur local compatible OpenAI protégé par un jeton d'accès.",
-    "lan": "Autoriser les appareils du réseau local",
-    "lanHint": "Désactivé : seul cet ordinateur peut se connecter. Activé : votre téléphone sur le même Wi-Fi peut se connecter.",
-    "plainHttpWarning": "Le trafic sur votre réseau local n'est pas chiffré. Toute personne sur le même réseau pourrait lire les requêtes et réponses, mais ne peut pas utiliser le serveur sans le jeton. N'activez cette option que sur un réseau de confiance.",
-    "scanHint": "Dans l'application KaleidoSwap : IA → Réglages → Utiliser le modèle de l'ordinateur, puis scannez ce code.",
-    "startModelHint": "Démarrez un modèle dans Brain pour que le téléphone puisse l'utiliser.",
-    "rotateToken": "Nouveau jeton d'accès",
-    "rotateHint": "Crée un nouveau jeton. Les téléphones associés avec l'ancien doivent scanner à nouveau.",
-    "localOnly": "Service sur {{url}} pour cet ordinateur uniquement. Autorisez l'accès au réseau local pour associer un téléphone.",
-    "off": "Activez le service pour afficher un code d'association.",
-    "error": "Impossible de servir les modèles : {{error}}",
-    "back": "Retour à Brain"
   }
 }

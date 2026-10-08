@@ -20,13 +20,9 @@ import {
   Zap,
 } from 'lucide-react'
 import React, { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import { Modal } from '../../components/ui/Modal'
-import {
-  MIND_PHONE_PAIRING_ENABLED,
-  MIND_REMOTE_BRAIN_ENABLED,
-} from '../../constants'
+import { MIND_PHONE_PAIRING_ENABLED } from '../../constants'
 
 import { ModelsManager } from './models'
 import { PairingPanel } from './pairing'
@@ -63,7 +59,6 @@ const ActionTile: React.FC<{
 )
 
 export const Component: React.FC = () => {
-  const { t } = useTranslation()
   const mind = useMindContext()
   const { status } = mind
   const providerOn = status?.on === true
@@ -248,7 +243,7 @@ export const Component: React.FC = () => {
       {/* ── Quick actions (open in modals / navigate) ──────────────────── */}
       <div
         className={`grid gap-3 ${
-          MIND_REMOTE_BRAIN_ENABLED ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
+          MIND_PHONE_PAIRING_ENABLED ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
         }`}
       >
         <ActionTile
@@ -267,11 +262,13 @@ export const Component: React.FC = () => {
           label="Skills & tools"
           onClick={() => setModal('skills')}
         />
-        {MIND_REMOTE_BRAIN_ENABLED && (
+        {MIND_PHONE_PAIRING_ENABLED && (
           <ActionTile
-            hint={t('remoteBrain.enableHint')}
+            hint={
+              providerOn ? `${peers} phone(s) paired` : 'Delegate from a phone'
+            }
             icon={<QrCode className="h-5 w-5" />}
-            label={t('remoteBrain.title')}
+            label="Phone pairing"
             onClick={() => setModal('pairing')}
           />
         )}
@@ -342,10 +339,10 @@ export const Component: React.FC = () => {
       </Modal>
 
       <Modal
-        isOpen={MIND_REMOTE_BRAIN_ENABLED && modal === 'pairing'}
+        isOpen={MIND_PHONE_PAIRING_ENABLED && modal === 'pairing'}
         onClose={() => setModal(null)}
         size="sm"
-        title={t('remoteBrain.title')}
+        title="Phone pairing"
       >
         <div className="p-4">
           <PairingPanel />

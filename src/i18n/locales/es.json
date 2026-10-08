@@ -3296,22 +3296,5 @@
       "rln_list_channels": "Listar canales",
       "rln_get_address": "Dirección on-chain"
     }
-  },
-  "remoteBrain": {
-    "title": "Servir modelos a tu teléfono",
-    "description": "Permite que la app de KaleidoSwap en tu teléfono use el modelo de este escritorio. Solo se comparte la inferencia: tu teléfono conserva sus propias herramientas de billetera y confirmaciones, y la billetera de este escritorio nunca se expone.",
-    "enable": "Servir modelos",
-    "enableHint": "Inicia un servidor local compatible con OpenAI protegido por un token de acceso.",
-    "lan": "Permitir dispositivos de mi red local",
-    "lanHint": "Desactivado: solo este ordenador puede conectarse. Activado: tu teléfono en la misma Wi-Fi puede conectarse.",
-    "plainHttpWarning": "El tráfico en tu red local no está cifrado. Cualquiera en la misma red podría leer las peticiones y respuestas, pero no puede usar el servidor sin el token. Actívalo solo en una red de confianza.",
-    "scanHint": "En la app de KaleidoSwap: IA → Ajustes → Usar el modelo del escritorio y escanea este código.",
-    "startModelHint": "Inicia un modelo en Brain para que el teléfono tenga algo que usar.",
-    "rotateToken": "Nuevo token de acceso",
-    "rotateHint": "Crea un token nuevo. Los teléfonos vinculados con el anterior deben escanear de nuevo.",
-    "localOnly": "Sirviendo en {{url}} solo para este ordenador. Permite el acceso a la red local para vincular un teléfono.",
-    "off": "Activa el servicio para mostrar un código de vinculación.",
-    "error": "No se pudieron servir los modelos: {{error}}",
-    "back": "Volver a Brain"
   }
 }

@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 
-import { MIND_REMOTE_BRAIN_ENABLED } from '../../constants'
+import { MIND_PHONE_PAIRING_ENABLED } from '../../constants'
 import { RootRoute } from '../../routes/root'
 
 import {
@@ -149,7 +149,7 @@ export const router = createBrowserRouter([
             lazy: () => import('../../routes/kaleido-mind/brain'),
             path: KALEIDO_MIND_BRAIN_PATH,
           },
-          ...(MIND_REMOTE_BRAIN_ENABLED
+          ...(MIND_PHONE_PAIRING_ENABLED
             ? [
                 {
                   lazy: () => import('../../routes/kaleido-mind/pairing'),

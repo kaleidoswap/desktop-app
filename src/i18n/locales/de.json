@@ -3290,22 +3290,5 @@
       "rln_list_channels": "Kanäle auflisten",
       "rln_get_address": "On-Chain-Adresse"
     }
-  },
-  "remoteBrain": {
-    "title": "Modelle für dein Telefon bereitstellen",
-    "description": "Lass die KaleidoSwap-App auf dem Telefon das Modell dieses Desktops nutzen. Geteilt wird nur die Modellinferenz: Dein Telefon behält seine eigenen Wallet-Werkzeuge und Bestätigungen, und die Wallet dieses Desktops wird nie offengelegt.",
-    "enable": "Modelle bereitstellen",
-    "enableHint": "Startet einen lokalen OpenAI-kompatiblen Server, geschützt durch ein Zugriffstoken.",
-    "lan": "Geräte im lokalen Netzwerk erlauben",
-    "lanHint": "Aus: Nur dieser Computer kann sich verbinden. An: Dein Telefon im selben WLAN kann sich verbinden.",
-    "plainHttpWarning": "Der Verkehr im lokalen Netzwerk ist nicht verschlüsselt. Jeder im selben Netzwerk könnte Anfragen und Antworten mitlesen, den Server aber ohne Token nicht nutzen. Aktiviere dies nur in einem vertrauenswürdigen Netzwerk.",
-    "scanHint": "In der KaleidoSwap-App: KI → Einstellungen → Desktop-Modell verwenden, dann diesen Code scannen.",
-    "startModelHint": "Starte ein Modell in Brain, damit das Telefon etwas nutzen kann.",
-    "rotateToken": "Neues Zugriffstoken",
-    "rotateHint": "Erstellt ein neues Token. Mit dem alten Token gekoppelte Telefone müssen erneut scannen.",
-    "localOnly": "Bereitgestellt auf {{url}} nur für diesen Computer. Erlaube den Zugriff aus dem lokalen Netzwerk, um ein Telefon zu koppeln.",
-    "off": "Aktiviere die Bereitstellung, um einen Kopplungscode anzuzeigen.",
-    "error": "Modelle konnten nicht bereitgestellt werden: {{error}}",
-    "back": "Zurück zu Brain"
   }
 }
