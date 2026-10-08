@@ -6,7 +6,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { MIND_PHONE_PAIRING_ENABLED } from '../constants'
 import {
   mindClient,
   type CatalogModel,
@@ -17,6 +16,7 @@ import {
   type InstalledModel,
   type MindEvent,
   type ProviderLoadingEvent,
+  type ProviderLoadingPhase,
   type ProviderStatusEvent,
   type RuntimeProgress,
   type ToolConfirmRequestEvent,
@@ -85,6 +85,9 @@ export interface UseMindResult {
 }
 
 const MAX_LOGS = 100
+const LOCAL_LOADING_PHASES: ReadonlySet<string> = new Set<ProviderLoadingPhase>(
+  ['loading_model', 'model_loaded', 'ready', 'aborted']
+)
 
 export function useMind(): UseMindResult {
   const [status, setStatus] = useState<ProviderStatusEvent | null>(null)
@@ -178,26 +181,13 @@ export function useMind(): UseMindResult {
           setStatus(e)
           break
         case 'provider_loading':
-          // Without phone pairing the P2P phases are noise ("no P2P provider");
-          // the provider continues straight to `ready`.
-          if (
-            !MIND_PHONE_PAIRING_ENABLED &&
-            (e.phase === 'starting_p2p' || e.phase === 'p2p_failed')
-          ) {
-            break
-          }
+          // The provider may still report its P2P phases; only local ones matter.
+          if (!LOCAL_LOADING_PHASES.has(e.phase)) break
           setLoading(e)
-          if (
-            e.phase === 'ready' ||
-            e.phase === 'p2p_failed' ||
-            e.phase === 'aborted'
-          ) {
+          if (e.phase === 'ready' || e.phase === 'aborted') {
             // Clear the loading banner shortly after a terminal phase.
             setTimeout(() => setLoading(null), 1500)
           }
-          break
-        case 'pubkey':
-          setStatus((s) => (s ? { ...s, publicKey: e.value } : s))
           break
         case 'download_progress':
           setDownloads((d) => ({
@@ -223,10 +213,6 @@ export function useMind(): UseMindResult {
             () => setPendingConfirm(null),
             e.timeoutMs
           )
-          break
-        case 'peer_connected':
-        case 'peer_disconnected':
-          // status event usually follows; nothing to do here
           break
         case 'log':
           setLogs((l) => [
