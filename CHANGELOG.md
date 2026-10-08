@@ -1,8 +1,26 @@
-## [Unreleased]
+## [Version 0.6.0] - 2026-10-08
+
+### 🚀 Features
+- **App Connections in the sidebar**: Nostr Wallet Connect moves to the Node section, with a redesigned page: service status, connection cards with permissions, budget and last use, pause switch, and revoke confirmation
+- **Settings tabs**: Settings are grouped into tabs, and the language applies at once
+- **Deposit and withdraw**: BTC and USDT are pinned in the deposit picker, with a slider and recents for other assets; a confirmation screen follows each sent payment
+- **Explorer links**: BTC sends show their txid with a block explorer link
+- **Node logs**: Logs keep their history across restarts, show the newest lines first, and can be exported from a local Docker node, also behind a remote URL
+- **KaleidoMind model catalog**: Updated published models, with a recommendation based on device memory
 
 ### 🔧 Improvements
 - **KaleidoMind runtime `mind-assets-v0.10.5`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.1 (`@kaleidorg/mind` 0.10.5) and `kaleido-mcp` 0.4.2, on `@qvac/sdk` 0.21.0. The agent loads 12 shorter skills instead of 15, with LSP channel skills; ordering a channel now asks for confirmation, and channel orders show the full amount due instead of the fee alone. Existing installs download the new runtime on next enable
-- **Local models only**: Phone pairing / remote model serving removed for now; KaleidoMind runs local models only
+- **Local models only**: Phone pairing and remote model serving are removed for now; KaleidoMind runs local models only
+- **Accessible dialogs**: Dialogs keep focus inside and restore it on close; restart, logout and shutdown use a shared confirmation dialog
+- **Translations**: Remaining hardcoded toasts and settings errors are translated in all eight languages
+- **Startup**: Simpler splash screen and smoother loading animation
+
+### 🐛 Bug Fixes
+- **Update modal**: Long release notes no longer push the install and close buttons off screen; notes render as Markdown, and a stalled download is reported
+- **KaleidoMind mock answers**: An outdated runtime now shows "Update KaleidoMind runtime" instead of silently answering in mock mode, and mock mode shows a banner
+- **Recovery phrase length**: Wallet creation says 12 words, matching the phrase the node generates
+- **RGB assets**: Every RGB asset resolves in the wallet, BTC unit conversion is shared, and polling is lighter
+- **Colored UTXO deposits**: Deposit controls stay interactive
 
 ## [Version 0.5.1] - 2026-10-07
 
