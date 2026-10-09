@@ -437,7 +437,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
           </p>
         </div>
         <button
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
           onClick={() => navigate(ORDER_CHANNEL_PATH)}
           type="button"
         >
@@ -703,7 +703,7 @@ export function CreateLimitOrderForm({ onCreated }: Props) {
           fromAmountRaw <= 0 ||
           insufficientBalance
             ? 'bg-surface-elevated text-content-tertiary cursor-not-allowed border border-border-default/30'
-            : 'bg-primary hover:bg-primary-emphasis text-[#12131C]'
+            : 'bg-primary hover:bg-primary-emphasis text-primary-foreground'
         }`}
         disabled={
           !selectedPair ||

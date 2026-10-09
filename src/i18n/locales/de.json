@@ -59,7 +59,6 @@
     "history": "Verlauf",
     "liquidity": "Liquidität",
     "brain": "Brain",
-    "pairing": "Kopplung",
     "models": "Modelle",
     "skills": "Fähigkeiten",
     "chat": "Chat",
@@ -73,7 +72,8 @@
     "helpSupport": "Hilfe & Support",
     "getHelpSupport": "Hilfe & Support erhalten",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "App-Verbindungen"
   },
   "channels": {
     "pageTitle": "Lightning-Wallet-Dashboard",
@@ -225,7 +225,61 @@
     "restartNow": "Jetzt neu starten",
     "later": "Später",
     "shuttingDownTitle": "Node wird heruntergefahren",
-    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt..."
+    "shuttingDownMessage": "Bitte warten, während der Node herunterfährt...",
+    "logs": {
+      "live": "Live",
+      "paused": "Pausiert",
+      "resume": "Live-Updates fortsetzen",
+      "pause": "Live-Updates pausieren",
+      "copy": "Sichtbare Zeilen kopieren",
+      "filter": "Zeilen filtern…",
+      "older": "Älter",
+      "newer": "Neuer",
+      "fetchError": "Node-Logs konnten nicht gelesen werden. Live-Updates sind gestoppt.",
+      "noMatches": "Keine Zeile passt zum Filter",
+      "matching": "{{count}} passende Zeilen",
+      "exported": "Logs exportiert",
+      "exportFailed": "Export der Logs fehlgeschlagen",
+      "jumpToLatest": "Zu den neuesten",
+      "dockerContainer": "Docker-Container",
+      "unavailableTitle": "Für diesen Node sind keine Logs verfügbar",
+      "checkAgain": "Erneut prüfen",
+      "unavailable": {
+        "invalid_url": "Die Node-URL ist ungültig, daher können die Logs nicht gefunden werden.",
+        "no_container": "Der Node läuft auf diesem Computer, aber nicht in einem Docker-Container, den die App findet. Wenn du ihn mit Docker startest, veröffentliche den API-Port (z. B. -p 3001:3001) und prüfe erneut.",
+        "remote_host": "Dieser Node läuft auf einer anderen Maschine, daher bleiben seine Logs dort. Lies sie auf dem Server, z. B. mit docker logs."
+      }
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "trading": "Maker & LSP",
+      "node": "Node-Verbindung",
+      "security": "Sicherheit",
+      "logs": "Logs"
+    },
+    "makerLspDescription": "Market Maker stellen die Kurse für deine Swaps; der LSP verkauft dir Kanäle und eingehende Liquidität.",
+    "unsavedChanges": "Du hast ungespeicherte Änderungen",
+    "backupWalletDescription": "Verschlüsseltes Wallet-Backup exportieren",
+    "session": "Sitzung",
+    "showToken": "Token anzeigen",
+    "hideToken": "Token ausblenden",
+    "changePassword": "Passwort ändern",
+    "changePasswordDescription": "Verschlüsselungspasswort der Wallet ändern",
+    "logoutDescription": "Wallet sperren und zur Kontoliste zurückkehren. Der Node behält seine Daten.",
+    "shutdownDescription": "Node-Prozess beenden. Offene Kanäle bleiben bestehen, aber der Node ist offline.",
+    "toasts": {
+      "restarting": "Node wird neu gestartet…",
+      "restarted": "Node mit den neuen Einstellungen neu gestartet",
+      "restartFailedTitle": "Neustart des Nodes fehlgeschlagen",
+      "restartFailedMessage": "Beim Neustart des Nodes ist ein Problem aufgetreten.",
+      "saved": "Einstellungen gespeichert",
+      "saveFailedTitle": "Einstellungen nicht gespeichert",
+      "saveFailedMessage": "Beim Speichern der Einstellungen ist ein Problem aufgetreten.",
+      "loggedOut": "Abgemeldet",
+      "logoutFailed": "Die Wallet konnte nicht sauber gesperrt werden ({{error}}). Du wurdest trotzdem abgemeldet.",
+      "shutDown": "Node heruntergefahren",
+      "shutdownFailed": "Node konnte nicht heruntergefahren werden"
+    }
   },
   "modals": {
     "logoutTitle": "Abmeldung bestätigen",
@@ -559,6 +613,9 @@
       "goToChannels": "Zur Kanalseite",
       "success": "Kanal erfolgreich erstellt!",
       "successMessage": "Der Kanal wurde erstellt. Du kannst jetzt mit dem Handel beginnen."
+    },
+    "toasts": {
+      "capacityRequired": "Gib eine Kanalkapazität ein"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "Bitte warten, Backup läuft...",
     "backupLockedMessage": "Der Node bleibt während des Backups gesperrt.",
     "cancel": "Abbrechen",
-    "createBackup": "Backup erstellen"
+    "createBackup": "Backup erstellen",
+    "toasts": {
+      "invalidPath": "Wähle einen gültigen Ordner für das Backup",
+      "fileExists": "Dort gibt es bereits eine Backup-Datei. Wähle einen anderen Ordner.",
+      "lockFailed": "Wallet konnte für das Backup nicht gesperrt werden",
+      "success": "Backup gespeichert",
+      "unlockFailed": "Wallet konnte nach dem Backup nicht entsperrt werden",
+      "wrongPassword": "Falsches Passwort",
+      "failed": "Backup fehlgeschlagen"
+    }
   },
   "logoutModal": {
     "loggingOut": "Abmeldung läuft",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Warte auf das Asset-Angebot, bevor du fortfährst"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "UTXOs erstellen"
     },
-    "toastSuccess": "UTXOs erfolgreich erstellt"
+    "toastSuccess": "UTXOs erfolgreich erstellt",
+    "toasts": {
+      "created": "UTXOs erstellt",
+      "retryFailed": "UTXOs wurden erstellt, aber der ursprüngliche Vorgang ist fehlgeschlagen. Versuche es erneut."
+    }
   },
   "legal": {
     "common": {
@@ -2151,7 +2224,9 @@
       "newAssetInfo": "Wenn du die Asset-ID nicht kennst, kannst du ohne fortfahren. Es wird eine Adresse erzeugt, die jedes RGB-Asset empfangen kann.",
       "assetIdLabel": "Asset-ID (optional)",
       "assetIdPlaceholder": "Asset-ID eingeben (optional)",
-      "continueWith": "Weiter mit {{ticker}}"
+      "continueWith": "Weiter mit {{ticker}}",
+      "anyRgbAsset": "Beliebiges RGB-Asset",
+      "otherAssets": "Weitere Assets"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} einzahlen",
@@ -2259,7 +2334,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "Update brach nach 5 Minuten ab. Prüfe deine Verbindung und versuche es erneut.",
+      "timeout": "Der Download kommt nicht mehr voran. Prüfe deine Internetverbindung und versuche es erneut.",
       "installFailed": "Update konnte nicht installiert werden: {{message}}. Versuche es erneut oder lade es manuell von GitHub herunter.",
       "cancelled": "Update vom Nutzer abgebrochen"
     },
@@ -2656,6 +2731,18 @@
         "custom": "{{rate}} sat/vB (Benutzerdefiniert)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Zahlung gesendet",
+      "lightning": "Lightning",
+      "onchain": "On-Chain",
+      "rgbOnchain": "RGB On-Chain",
+      "lightningBody": "Die Zahlung wurde über Lightning abgewickelt.",
+      "onchainBody": "Die Transaktion wurde gesendet. Sie wird in den nächsten Blöcken bestätigt.",
+      "rgbBody": "Der Transfer wurde gesendet. Der Empfänger erhält ihn, sobald die Transaktion bestätigt ist.",
+      "to": "An",
+      "paymentHash": "Zahlungs-Hash",
+      "txid": "Transaktions-ID"
     }
   },
   "components": {
@@ -3110,5 +3197,97 @@
     "bitcoindBody": "Privater, stützt sich auf deinen eigenen Node. Erfordert Bitcoin Core mit RPC, stets erreichbar.",
     "invalidFormat": "Verwende das Format benutzer:passwort@host:port",
     "notConfigured": "Nicht verwendet: Synchronisierung über den Indexer"
+  },
+  "nwc": {
+    "title": "App-Verbindungen",
+    "subtitle": "Andere Apps nutzen diese Wallet über Nostr Wallet Connect. Dein Node bleibt auf diesem Computer.",
+    "add": "Neue Verbindung",
+    "activity": "Letzte Aktivität",
+    "activityHint": "Anfragen verbundener Apps erscheinen hier, solange diese Seite geöffnet ist.",
+    "budgetUsed": "{{spent}} von {{budget}} sats ausgegeben",
+    "cancel": "Abbrechen",
+    "caps": {
+      "receive": "Empfangen",
+      "spend": "Kann ausgeben",
+      "view": "Ansehen"
+    },
+    "connect": {
+      "title": "App verbinden",
+      "warning": "Dieser Code gibt der App die gewählten Berechtigungen. Er wird nur einmal angezeigt: jetzt scannen oder kopieren und nicht teilen."
+    },
+    "connections": "Verbindungen",
+    "done": "Fertig",
+    "empty": {
+      "body": "Erstelle eine Verbindung und scanne ihren QR-Code mit der App, die du verbinden willst, z. B. der KaleidoSwap Mobile-Wallet.",
+      "stopped": "Starte den Dienst, um eine Verbindung hinzuzufügen.",
+      "title": "Noch keine Apps verbunden"
+    },
+    "errors": {
+      "create": "Verbindung konnte nicht erstellt werden",
+      "permissions": "Wähle mindestens eine Berechtigung",
+      "revoke": "Verbindung konnte nicht widerrufen werden",
+      "start": "Dienst konnte nicht gestartet werden",
+      "update": "Verbindung konnte nicht aktualisiert werden"
+    },
+    "lastUsed": "Genutzt {{when}}",
+    "neverUsed": "Nie genutzt",
+    "new": {
+      "access": "Zugriff",
+      "budget": "Ausgabelimit",
+      "budgetHint": "Begrenzt, wie viel diese App insgesamt senden kann. Leer lassen für kein Limit.",
+      "create": "Verbindung erstellen",
+      "customBudget": "Eigener Betrag in sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB-Assets",
+      "name": "Name",
+      "namePlaceholder": "z. B. Rate Mobile, Browser-Erweiterung",
+      "noLimit": "Kein Limit",
+      "title": "Neue App-Verbindung",
+      "defaultName": "App-Verbindung {{n}}"
+    },
+    "noBudget": "Kein Ausgabelimit",
+    "pause": "Pausieren",
+    "paused": "Pausiert",
+    "permissionsCount": "{{count}} Berechtigungen",
+    "presets": {
+      "custom": "Benutzerdefiniert",
+      "customDesc": "Jede Berechtigung einzeln wählen.",
+      "full": "Volle Wallet",
+      "fullDesc": "Lightning und RGB: ansehen, empfangen und senden. Empfohlen für KaleidoSwap-Wallets.",
+      "receive": "Ansehen & empfangen",
+      "receiveDesc": "Salden ansehen und Rechnungen erstellen. Kann nichts ausgeben.",
+      "view": "Nur ansehen",
+      "viewDesc": "Nur Salden, Assets und Verlauf."
+    },
+    "resume": "Fortsetzen",
+    "revoke": "Widerrufen",
+    "revokeBody": "„{{name}}“ verliert sofort den Zugriff auf diese Wallet. Zum erneuten Verbinden brauchst du eine neue Verbindung.",
+    "revokeTitle": "Verbindung widerrufen",
+    "revoked": "Verbindung widerrufen",
+    "service": {
+      "identity": "Identität des Wallet-Dienstes",
+      "running": "Dienst läuft",
+      "scope": "Lightning-Zahlungen und RGB-Assets (KaleidoSwap-Erweiterungen)",
+      "start": "Dienst starten",
+      "stopped": "Dienst gestoppt"
+    },
+    "methods": {
+      "get_info": "Node-Info",
+      "get_balance": "Saldo",
+      "make_invoice": "Rechnungen erstellen",
+      "lookup_invoice": "Rechnungen abfragen",
+      "list_transactions": "Transaktionsverlauf",
+      "pay_invoice": "Rechnungen bezahlen",
+      "pay_keysend": "Keysend senden",
+      "rln_node_info": "RGB-Node-Info",
+      "rln_list_assets": "RGB-Assets auflisten",
+      "rln_asset_balance": "RGB-Salden",
+      "rln_rgb_invoice": "RGB-Rechnungen erstellen",
+      "rln_ln_invoice": "RGB-Lightning-Rechnungen erstellen",
+      "rln_decode_rgb_invoice": "RGB-Rechnungen dekodieren",
+      "rln_send_asset": "RGB-Assets senden",
+      "rln_list_channels": "Kanäle auflisten",
+      "rln_get_address": "On-Chain-Adresse"
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { ChevronDown, Info, Settings, Zap, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
 
 import {
@@ -11,6 +12,7 @@ import { ERROR_NOT_ENOUGH_UNCOLORED, DEFAULT_UTXO_SIZE } from '../../constants'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 import { Button, IconButton } from '../ui'
 import { logger } from '../../utils/logger'
+import { extractErrorMessage } from '../../api/errors'
 
 interface CreateUTXOModalProps {
   isOpen: boolean
@@ -31,7 +33,9 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   error,
   retryFunction,
 }) => {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
+  const [creationError, setCreationError] = useState<string>()
   const [feeRate, setFeeRate] = useState(0)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [numUtxos, setNumUtxos] = useState(() => {
@@ -43,7 +47,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
     ) {
       return 1
     }
-    return 3
+    return operationType === 'issuance' ? 1 : 3
   })
   const [utxoSize, setUtxoSize] = useState(() => {
     // For channel creation with no uncolored UTXOs, use the channel capacity
@@ -86,7 +90,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         if (!feeRate) {
           throw Error('Unable to calculate fee-rate')
         }
-        setFeeRate(Math.round(feeRate))
+        setFeeRate(Math.max(1, Math.ceil(feeRate)))
       } catch (error) {
         logger.error('Failed to fetch fee rate:', error)
         // Default to a reasonable fee rate if we can't fetch it
@@ -122,6 +126,8 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
   }
 
   const handleCreateUTXOs = async () => {
+    if (isLoading || feeRate <= 0 || insufficientBalance) return
+    setCreationError(undefined)
     setIsLoading(true)
 
     try {
@@ -132,7 +138,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
         up_to: false,
       }).unwrap()
 
-      toast.success('UTXOs created successfully')
+      toast.success(t('createUtxos.toasts.created', 'UTXOs created'))
 
       // Close the modal first
       setIsLoading(false)
@@ -145,21 +151,35 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
           onSuccess()
         } catch (retryError) {
           logger.error('Error retrying operation:', retryError)
-          toast.error('Created UTXOs but failed to complete the operation')
+          toast.error(
+            t(
+              'createUtxos.toasts.retryFailed',
+              'UTXOs were created, but the original operation failed. Try it again.'
+            )
+          )
         }
       } else {
         onSuccess()
       }
     } catch (error: any) {
-      toast.error(error?.data?.error || 'Failed to create UTXOs')
+      const message = extractErrorMessage(error)
+      setCreationError(message)
+      toast.error(message)
       setIsLoading(false)
     }
   }
 
+  const availableBalance = btcBalanceData?.vanilla?.spendable
+  const totalAmount = numUtxos * utxoSize
+  const insufficientBalance =
+    availableBalance !== undefined && totalAmount >= availableBalance
+
+  // Output sizes exclude the transaction fee; the node calculates the exact fee.
   // Calculate the maximum possible size based on available balance
-  const maxPossibleSize = btcBalanceData?.vanilla?.spendable
-    ? Math.floor(btcBalanceData.vanilla.spendable / numUtxos)
-    : utxoSize
+  const maxPossibleSize =
+    availableBalance !== undefined
+      ? Math.floor(availableBalance / numUtxos)
+      : utxoSize
 
   if (!isOpen) return null
 
@@ -167,7 +187,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
   return createPortal(
     <div
-      className={`${pos} inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn`}
+      className={`${pos} inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] pointer-events-auto animate-fadeIn`}
       onClick={onClose}
     >
       <div
@@ -238,8 +258,10 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
             </div>
 
             <button
+              aria-expanded={showAdvanced}
               className="w-full flex items-center justify-between py-3 px-4 mb-5 text-sm font-medium text-content-primary hover:text-white bg-surface-overlay/40 hover:bg-surface-overlay/60 border border-border-default rounded-xl transition-all duration-200 group hover:shadow-md"
               onClick={toggleAdvanced}
+              type="button"
             >
               <div className="flex items-center">
                 <Settings
@@ -301,7 +323,12 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                       max="10"
                       min="1"
                       onChange={(e) =>
-                        setNumUtxos(Math.max(1, parseInt(e.target.value) || 1))
+                        setNumUtxos(
+                          Math.min(
+                            10,
+                            Math.max(1, parseInt(e.target.value) || 1)
+                          )
+                        )
                       }
                       type="number"
                       value={numUtxos}
@@ -352,10 +379,13 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                     className="w-full bg-surface-overlay/80 text-white px-4 py-2 rounded-lg border border-border-default 
                            focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                     max={maxPossibleSize}
-                    min="5000"
+                    min={DEFAULT_UTXO_SIZE}
                     onChange={(e) =>
                       setUtxoSize(
-                        Math.max(5000, parseInt(e.target.value) || 5000)
+                        Math.max(
+                          DEFAULT_UTXO_SIZE,
+                          parseInt(e.target.value) || DEFAULT_UTXO_SIZE
+                        )
                       )
                     }
                     type="number"
@@ -367,10 +397,7 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
                         Available balance:
                       </span>
                       <span className="text-content-primary font-medium">
-                        {btcBalanceData?.vanilla?.spendable
-                          ? btcBalanceData.vanilla.spendable.toLocaleString()
-                          : '...'}{' '}
-                        sats
+                        {availableBalance?.toLocaleString() ?? '...'} sats
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
@@ -405,13 +432,32 @@ export const CreateUTXOModal: React.FC<CreateUTXOModalProps> = ({
 
         {/* Footer - Fixed */}
         <div className="px-6 py-4 border-t border-border-subtle/50 bg-surface-overlay/50 flex-shrink-0 sticky bottom-0 z-10 w-full">
+          <div
+            aria-live="polite"
+            className="mb-3 text-sm text-content-secondary"
+          >
+            <p>
+              Available BTC: {availableBalance?.toLocaleString() ?? '...'} sats
+            </p>
+            <p>
+              Required: {totalAmount.toLocaleString()} sats + transaction fee
+            </p>
+            {insufficientBalance && (
+              <p className="mt-2 text-status-danger" role="alert">
+                Insufficient spendable BTC. Deposit BTC and wait for
+                confirmation, or reduce the number or size of UTXOs in Advanced
+                Settings.
+              </p>
+            )}
+            {creationError && (
+              <p className="mt-2 text-status-danger" role="alert">
+                {creationError}
+              </p>
+            )}
+          </div>
           <Button
             className="w-full"
-            disabled={
-              isLoading ||
-              (btcBalanceData?.vanilla?.spendable !== undefined &&
-                numUtxos * utxoSize > btcBalanceData.vanilla.spendable)
-            }
+            disabled={isLoading || feeRate <= 0 || insufficientBalance}
             icon={!isLoading ? <Zap size={18} /> : undefined}
             isLoading={isLoading}
             onClick={handleCreateUTXOs}

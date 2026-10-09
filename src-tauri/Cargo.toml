@@ -1,6 +1,6 @@
 [package]
 name = "kaleidoswap"
-version = "0.5.1"
+version = "0.6.0"
 description = "Kaleidoswap App"
 authors = ["Kaleidoswap Team"]
 license = "MIT"
@@ -56,6 +56,7 @@ argon2 = "0.5"
 rand = "0.8"
 hex = "0.4"
 base64 = "0.22"
+sysinfo = { version = "0.37", default-features = false, features = ["system"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

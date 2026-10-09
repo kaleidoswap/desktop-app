@@ -499,10 +499,16 @@ export const Step2: React.FC<Props> = ({
         )
 
         if (parsedClientAssetAmount > 0 && !quote) {
-          toast.error('Please wait for the asset quote before continuing', {
-            autoClose: 5000,
-            position: 'bottom-right',
-          })
+          toast.error(
+            t(
+              'orderChannel.toasts.waitForQuote',
+              'Wait for the asset quote before continuing'
+            ),
+            {
+              autoClose: 5000,
+              position: 'bottom-right',
+            }
+          )
           return
         }
 
@@ -841,10 +847,10 @@ export const Step2: React.FC<Props> = ({
                     onChange={(val) =>
                       setValue('clientBalanceSat', Math.round(val).toString())
                     }
-                    outboundColor="bg-[#9365FF]"
+                    outboundColor="bg-purple"
                     outboundLabel={`${formatNumber(btcOut)} sats`}
                     step={currentCapacity >= 1000000 ? 10000 : 1000}
-                    thumbBorderClass="border-[#9365FF]"
+                    thumbBorderClass="border-purple"
                     unit="sats"
                     value={btcOut}
                   />

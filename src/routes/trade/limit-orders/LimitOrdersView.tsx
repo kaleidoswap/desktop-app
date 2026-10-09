@@ -66,7 +66,7 @@ function CreateOrderModal({
                 </p>
               </div>
               <button
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-[#12131C] transition-colors"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-primary-foreground transition-colors"
                 onClick={() => {
                   onClose()
                   navigate(ORDER_CHANNEL_PATH, {
@@ -160,7 +160,7 @@ export const LimitOrdersView = () => {
               </div>
 
               <button
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-[#12131C] transition-colors"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-primary-foreground transition-colors"
                 onClick={() => setShowModal(true)}
                 title={t('limitOrders.createOrder', 'New Limit Order')}
               >
@@ -264,7 +264,7 @@ export const LimitOrdersView = () => {
                 </p>
                 {tab === 'active' && (
                   <button
-                    className="inline-flex items-center gap-1.5 rounded-md bg-primary hover:bg-primary-emphasis px-4 py-2 text-sm font-semibold text-[#12131C] transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary hover:bg-primary-emphasis px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors"
                     onClick={() => setShowModal(true)}
                   >
                     <Plus className="h-4 w-4" />

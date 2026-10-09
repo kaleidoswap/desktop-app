@@ -59,7 +59,6 @@
     "history": "Historial",
     "liquidity": "Liquidez",
     "brain": "Cerebro",
-    "pairing": "Emparejamiento",
     "models": "Modelos",
     "skills": "Habilidades",
     "chat": "Chat",
@@ -73,7 +72,8 @@
     "helpSupport": "Ayuda y Soporte",
     "getHelpSupport": "Obtener Ayuda y Soporte",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "Conexiones de apps"
   },
   "channels": {
     "pageTitle": "Panel de Billetera Lightning",
@@ -225,7 +225,61 @@
     "restartNow": "Reiniciar Ahora",
     "later": "Más Tarde",
     "shuttingDownTitle": "Apagando Nodo",
-    "shuttingDownMessage": "Por favor espera mientras se apaga el nodo..."
+    "shuttingDownMessage": "Por favor espera mientras se apaga el nodo...",
+    "logs": {
+      "live": "En vivo",
+      "paused": "En pausa",
+      "resume": "Reanudar actualizaciones",
+      "pause": "Pausar actualizaciones",
+      "copy": "Copiar líneas visibles",
+      "filter": "Filtrar líneas…",
+      "older": "Más antiguos",
+      "newer": "Más recientes",
+      "fetchError": "No se pudieron leer los registros del nodo. Actualizaciones en vivo detenidas.",
+      "noMatches": "Ninguna línea coincide con el filtro",
+      "matching": "{{count}} líneas coincidentes",
+      "exported": "Registros exportados",
+      "exportFailed": "Error al exportar los registros",
+      "jumpToLatest": "Volver a lo más reciente",
+      "dockerContainer": "Contenedor Docker",
+      "unavailableTitle": "Los registros no están disponibles para este nodo",
+      "checkAgain": "Comprobar de nuevo",
+      "unavailable": {
+        "invalid_url": "La URL del nodo no es válida, así que no se pueden localizar sus registros.",
+        "no_container": "El nodo se ejecuta en este equipo, pero no en un contenedor Docker que la app pueda encontrar. Si lo ejecutas con Docker, publica su puerto de API (por ejemplo -p 3001:3001) y comprueba de nuevo.",
+        "remote_host": "Este nodo se ejecuta en otra máquina, así que sus registros están allí. Léelos en el servidor, por ejemplo con docker logs."
+      }
+    },
+    "tabs": {
+      "general": "General",
+      "trading": "Maker y LSP",
+      "node": "Conexión del nodo",
+      "security": "Seguridad",
+      "logs": "Registros"
+    },
+    "makerLspDescription": "Los market makers cotizan tus swaps; el LSP te vende canales y liquidez entrante.",
+    "unsavedChanges": "Tienes cambios sin guardar",
+    "backupWalletDescription": "Exportar una copia de seguridad cifrada",
+    "session": "Sesión",
+    "showToken": "Mostrar token",
+    "hideToken": "Ocultar token",
+    "changePassword": "Cambiar contraseña",
+    "changePasswordDescription": "Actualiza la contraseña de cifrado del monedero",
+    "logoutDescription": "Bloquea el monedero y vuelve a la lista de cuentas. El nodo conserva sus datos.",
+    "shutdownDescription": "Detiene el proceso del nodo. Los canales siguen abiertos pero el nodo queda desconectado.",
+    "toasts": {
+      "restarting": "Reiniciando el nodo…",
+      "restarted": "Nodo reiniciado con los nuevos ajustes",
+      "restartFailedTitle": "Error al reiniciar el nodo",
+      "restartFailedMessage": "Hubo un problema al reiniciar el nodo.",
+      "saved": "Ajustes guardados",
+      "saveFailedTitle": "Ajustes no guardados",
+      "saveFailedMessage": "Hubo un problema al guardar tus ajustes.",
+      "loggedOut": "Sesión cerrada",
+      "logoutFailed": "No se pudo bloquear el monedero correctamente ({{error}}). Se ha cerrado la sesión de todos modos.",
+      "shutDown": "Nodo apagado",
+      "shutdownFailed": "No se pudo apagar el nodo"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmar Cierre de Sesión",
@@ -559,6 +613,9 @@
       "goToChannels": "Ir a la Página de Canales",
       "success": "¡Canal creado exitosamente!",
       "successMessage": "El canal ha sido creado exitosamente, ahora puedes comenzar a operar."
+    },
+    "toasts": {
+      "capacityRequired": "Introduce la capacidad del canal"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "Por favor espera, la copia de seguridad está en progreso...",
     "backupLockedMessage": "El nodo estará bloqueado hasta que finalice el proceso de copia de seguridad.",
     "cancel": "Cancelar",
-    "createBackup": "Crear Copia de Seguridad"
+    "createBackup": "Crear Copia de Seguridad",
+    "toasts": {
+      "invalidPath": "Elige una carpeta válida para la copia",
+      "fileExists": "Ya existe una copia en esa carpeta. Elige otra.",
+      "lockFailed": "No se pudo bloquear el monedero para la copia",
+      "success": "Copia guardada",
+      "unlockFailed": "No se pudo desbloquear el monedero tras la copia",
+      "wrongPassword": "Contraseña incorrecta",
+      "failed": "La copia ha fallado"
+    }
   },
   "logoutModal": {
     "loggingOut": "Cerrando Sesión",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Espera la cotización del activo antes de continuar"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "Crear UTXOs"
     },
-    "toastSuccess": "UTXOs creados exitosamente"
+    "toastSuccess": "UTXOs creados exitosamente",
+    "toasts": {
+      "created": "UTXOs creados",
+      "retryFailed": "Se crearon los UTXOs, pero la operación original falló. Vuelve a intentarlo."
+    }
   },
   "legal": {
     "common": {
@@ -2157,7 +2230,9 @@
       "newAssetInfo": "Si no conoces el ID del asset, puedes continuar sin introducirlo. El sistema generará una dirección de depósito que puede recibir cualquier asset RGB.",
       "assetIdLabel": "ID del Asset (opcional)",
       "assetIdPlaceholder": "Introduce el ID del asset (opcional)",
-      "continueWith": "Continuar con {{ticker}}"
+      "continueWith": "Continuar con {{ticker}}",
+      "anyRgbAsset": "Cualquier activo RGB",
+      "otherAssets": "Otros activos"
     },
     "step2": {
       "titleWithTicker": "Depositar {{ticker}}",
@@ -2265,7 +2340,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 bytes",
     "errors": {
-      "timeout": "El proceso de actualización se agotó después de 5 minutos. Por favor verifica tu conexión a internet e inténtalo de nuevo.",
+      "timeout": "La descarga dejó de avanzar. Revisa tu conexión a internet e inténtalo de nuevo.",
       "installFailed": "Error al instalar la actualización: {{message}}. Por favor inténtalo de nuevo o descarga manualmente desde GitHub.",
       "cancelled": "Actualización cancelada por el usuario"
     },
@@ -2662,6 +2737,18 @@
         "custom": "{{rate}} sat/vB (Personalizada)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Pago enviado",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "El pago se liquidó por Lightning.",
+      "onchainBody": "La transacción se transmitió. Se confirmará en los próximos bloques.",
+      "rgbBody": "La transferencia se envió. El destinatario la recibe cuando se confirme la transacción.",
+      "to": "Para",
+      "paymentHash": "Hash del pago",
+      "txid": "ID de transacción"
     }
   },
   "components": {
@@ -3116,5 +3203,97 @@
     "bitcoindBody": "Más privado, se apoya en un nodo propio. Requiere Bitcoin Core con RPC, siempre accesible.",
     "invalidFormat": "Usa el formato usuario:contraseña@host:puerto",
     "notConfigured": "No se usa: sincronización desde el indexador"
+  },
+  "nwc": {
+    "title": "Conexiones de apps",
+    "subtitle": "Permite que otras apps usen este monedero mediante Nostr Wallet Connect. Tu nodo se queda en este equipo.",
+    "add": "Nueva conexión",
+    "activity": "Actividad reciente",
+    "activityHint": "Las solicitudes de las apps conectadas aparecerán aquí mientras la página esté abierta.",
+    "budgetUsed": "{{spent}} de {{budget}} sats gastados",
+    "cancel": "Cancelar",
+    "caps": {
+      "receive": "Recibir",
+      "spend": "Puede gastar",
+      "view": "Ver"
+    },
+    "connect": {
+      "title": "Conecta tu app",
+      "warning": "Este código da a la app los permisos elegidos. Solo se muestra una vez: escanéalo o cópialo ahora y no lo compartas."
+    },
+    "connections": "Conexiones",
+    "done": "Listo",
+    "empty": {
+      "body": "Crea una conexión y escanea su código QR desde la app que quieras vincular, como el monedero móvil de KaleidoSwap.",
+      "stopped": "Inicia el servicio para añadir una conexión.",
+      "title": "Aún no hay apps conectadas"
+    },
+    "errors": {
+      "create": "No se pudo crear la conexión",
+      "permissions": "Selecciona al menos un permiso",
+      "revoke": "No se pudo revocar la conexión",
+      "start": "No se pudo iniciar el servicio",
+      "update": "No se pudo actualizar la conexión"
+    },
+    "lastUsed": "Usada {{when}}",
+    "neverUsed": "Nunca usada",
+    "new": {
+      "access": "Acceso",
+      "budget": "Límite de gasto",
+      "budgetHint": "Limita el total que esta app puede enviar. Déjalo vacío para no poner límite.",
+      "create": "Crear conexión",
+      "customBudget": "Importe personalizado en sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "Activos RGB",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. Rate móvil, Extensión del navegador",
+      "noLimit": "Sin límite",
+      "title": "Nueva conexión de app",
+      "defaultName": "Conexión de app {{n}}"
+    },
+    "noBudget": "Sin límite de gasto",
+    "pause": "Pausar",
+    "paused": "En pausa",
+    "permissionsCount": "{{count}} permisos",
+    "presets": {
+      "custom": "Personalizado",
+      "customDesc": "Elige cada permiso.",
+      "full": "Monedero completo",
+      "fullDesc": "Lightning y RGB: ver, recibir y enviar. Recomendado para monederos KaleidoSwap.",
+      "receive": "Ver y recibir",
+      "receiveDesc": "Ver saldos y crear facturas. No puede gastar.",
+      "view": "Solo ver",
+      "viewDesc": "Solo saldos, activos e historial."
+    },
+    "resume": "Reanudar",
+    "revoke": "Revocar",
+    "revokeBody": "“{{name}}” perderá de inmediato el acceso a este monedero. Para volver a conectarla necesitarás una nueva conexión.",
+    "revokeTitle": "Revocar conexión",
+    "revoked": "Conexión revocada",
+    "service": {
+      "identity": "Identidad del servicio de monedero",
+      "running": "Servicio activo",
+      "scope": "Pagos Lightning y activos RGB (extensiones de KaleidoSwap)",
+      "start": "Iniciar servicio",
+      "stopped": "Servicio detenido"
+    },
+    "methods": {
+      "get_info": "Info del nodo",
+      "get_balance": "Saldo",
+      "make_invoice": "Crear facturas",
+      "lookup_invoice": "Consultar facturas",
+      "list_transactions": "Historial de transacciones",
+      "pay_invoice": "Pagar facturas",
+      "pay_keysend": "Enviar keysend",
+      "rln_node_info": "Info del nodo RGB",
+      "rln_list_assets": "Listar activos RGB",
+      "rln_asset_balance": "Saldos RGB",
+      "rln_rgb_invoice": "Crear facturas RGB",
+      "rln_ln_invoice": "Crear facturas RGB Lightning",
+      "rln_decode_rgb_invoice": "Decodificar facturas RGB",
+      "rln_send_asset": "Enviar activos RGB",
+      "rln_list_channels": "Listar canales",
+      "rln_get_address": "Dirección on-chain"
+    }
   }
 }

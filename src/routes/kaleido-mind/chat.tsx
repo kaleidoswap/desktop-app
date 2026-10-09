@@ -34,6 +34,7 @@ import {
   type ChatMsgStats,
   type ChatToolEvent,
 } from './shared'
+import { ThinkingToggle } from './thinking-toggle'
 import { FollowupActions, WelcomeActions } from './welcome-actions'
 
 /**
@@ -249,6 +250,23 @@ function summarizeConfirm(
       note: `Opens a new Lightning channel pre-loaded with ${amount} ${asset}. The channel opens after you pay.`,
       rows,
       title: `Buy ${amount} ${asset}`.trim(),
+    }
+  }
+  if (name === 'kaleidoswap_lsp_create_order') {
+    const rows: { label: string; value: string }[] = []
+    const inbound = fmtSats(args.lsp_balance_sat)
+    const outbound = fmtSats(args.client_balance_sat)
+    if (inbound) rows.push({ label: 'Inbound liquidity', value: inbound })
+    if (outbound) rows.push({ label: 'Outbound to you', value: outbound })
+    if (args.channel_expiry_blocks != null)
+      rows.push({
+        label: 'Lease',
+        value: `${String(args.channel_expiry_blocks)} blocks`,
+      })
+    return {
+      note: 'Creates a channel order with the LSP. Nothing is paid yet: the order returns the amount due (fee plus outbound liquidity), which is paid in a separate step.',
+      rows,
+      title: 'Order a Lightning channel',
     }
   }
   return null
@@ -516,6 +534,7 @@ export const Component: React.FC = () => {
             {providerOn ? 'Online' : 'Offline'}
           </span>
         </div>
+        <ThinkingToggle disabled={sending} />
         <button
           className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1.5 text-xs text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
           disabled={messages.length === 0 || sending}

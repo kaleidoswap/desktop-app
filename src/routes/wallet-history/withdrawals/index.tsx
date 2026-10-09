@@ -13,6 +13,7 @@ import {
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ExplorerLink } from '../../../components/ExplorerLink'
 import { useAppSelector } from '../../../app/store/hooks'
 import { Button, Badge, Card, Alert, Select } from '../../../components/ui'
 import {
@@ -83,7 +84,7 @@ export const Component: React.FC = () => {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
           <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
-            <Upload className="relative z-10 w-10 h-10 text-[#15E99A]" />
+            <Upload className="relative z-10 w-10 h-10 text-primary" />
           </div>
         </div>
         <div className="text-center space-y-4 max-w-lg">
@@ -410,12 +411,17 @@ export const Component: React.FC = () => {
             {
               accessor: (withdrawal: Withdrawal) => (
                 <div className="flex flex-col gap-1">
-                  {renderCopyableField(
-                    withdrawal.txId,
-                    true,
-                    4,
-                    t('withdrawals.transactionId')
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {renderCopyableField(
+                      withdrawal.txId,
+                      true,
+                      4,
+                      t('withdrawals.transactionId')
+                    )}
+                    {withdrawal.type === 'on-chain' && (
+                      <ExplorerLink txid={withdrawal.txId} />
+                    )}
+                  </div>
                   {withdrawal.payeePublicKey && (
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-content-tertiary">

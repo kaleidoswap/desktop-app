@@ -59,7 +59,6 @@
     "history": "Historique",
     "liquidity": "Liquidité",
     "brain": "Cerveau",
-    "pairing": "Appairage",
     "models": "Modèles",
     "skills": "Compétences",
     "chat": "Chat",
@@ -73,7 +72,8 @@
     "helpSupport": "Aide et support",
     "getHelpSupport": "Obtenir de l'aide et du support",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "Connexions d’apps"
   },
   "channels": {
     "pageTitle": "Tableau de bord du portefeuille Lightning",
@@ -225,7 +225,61 @@
     "restartNow": "Redémarrer maintenant",
     "later": "Plus tard",
     "shuttingDownTitle": "Arrêt du nœud",
-    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud..."
+    "shuttingDownMessage": "Veuillez patienter pendant l'arrêt du nœud...",
+    "logs": {
+      "live": "En direct",
+      "paused": "En pause",
+      "resume": "Reprendre les mises à jour",
+      "pause": "Mettre en pause les mises à jour",
+      "copy": "Copier les lignes visibles",
+      "filter": "Filtrer les lignes…",
+      "older": "Plus anciens",
+      "newer": "Plus récents",
+      "fetchError": "Impossible de lire les journaux du nœud. Mises à jour en direct arrêtées.",
+      "noMatches": "Aucune ligne ne correspond au filtre",
+      "matching": "{{count}} lignes correspondantes",
+      "exported": "Journaux exportés",
+      "exportFailed": "Échec de l’export des journaux",
+      "jumpToLatest": "Revenir aux plus récents",
+      "dockerContainer": "Conteneur Docker",
+      "unavailableTitle": "Les journaux ne sont pas disponibles pour ce nœud",
+      "checkAgain": "Vérifier à nouveau",
+      "unavailable": {
+        "invalid_url": "L’URL du nœud n’est pas valide, ses journaux sont introuvables.",
+        "no_container": "Le nœud tourne sur cet ordinateur, mais pas dans un conteneur Docker que l’app peut trouver. Si vous l’exécutez avec Docker, publiez son port API (par exemple -p 3001:3001) et vérifiez à nouveau.",
+        "remote_host": "Ce nœud tourne sur une autre machine, ses journaux restent là-bas. Consultez-les sur le serveur, par exemple avec docker logs."
+      }
+    },
+    "tabs": {
+      "general": "Général",
+      "trading": "Maker et LSP",
+      "node": "Connexion au nœud",
+      "security": "Sécurité",
+      "logs": "Journaux"
+    },
+    "makerLspDescription": "Les market makers cotent vos swaps ; le LSP vous vend des canaux et de la liquidité entrante.",
+    "unsavedChanges": "Vous avez des modifications non enregistrées",
+    "backupWalletDescription": "Exporter une sauvegarde chiffrée du portefeuille",
+    "session": "Session",
+    "showToken": "Afficher le jeton",
+    "hideToken": "Masquer le jeton",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordDescription": "Mettre à jour le mot de passe de chiffrement",
+    "logoutDescription": "Verrouille le portefeuille et revient à la liste des comptes. Le nœud garde ses données.",
+    "shutdownDescription": "Arrête le processus du nœud. Les canaux restent ouverts mais le nœud passe hors ligne.",
+    "toasts": {
+      "restarting": "Redémarrage du nœud…",
+      "restarted": "Nœud redémarré avec les nouveaux paramètres",
+      "restartFailedTitle": "Échec du redémarrage du nœud",
+      "restartFailedMessage": "Un problème est survenu lors du redémarrage du nœud.",
+      "saved": "Paramètres enregistrés",
+      "saveFailedTitle": "Paramètres non enregistrés",
+      "saveFailedMessage": "Un problème est survenu lors de l’enregistrement des paramètres.",
+      "loggedOut": "Déconnecté",
+      "logoutFailed": "Le portefeuille n’a pas pu être verrouillé proprement ({{error}}). Vous avez quand même été déconnecté.",
+      "shutDown": "Nœud arrêté",
+      "shutdownFailed": "Impossible d’arrêter le nœud"
+    }
   },
   "modals": {
     "logoutTitle": "Confirmer la déconnexion",
@@ -559,6 +613,9 @@
       "goToChannels": "Aller à la page des canaux",
       "success": "Canal créé avec succès !",
       "successMessage": "Le canal a été créé. Vous pouvez maintenant commencer à trader."
+    },
+    "toasts": {
+      "capacityRequired": "Saisissez la capacité du canal"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "Veuillez patienter, la sauvegarde est en cours...",
     "backupLockedMessage": "Le nœud restera verrouillé jusqu'à la fin de la sauvegarde.",
     "cancel": "Annuler",
-    "createBackup": "Créer la sauvegarde"
+    "createBackup": "Créer la sauvegarde",
+    "toasts": {
+      "invalidPath": "Choisissez un dossier valide pour la sauvegarde",
+      "fileExists": "Une sauvegarde existe déjà à cet endroit. Choisissez un autre dossier.",
+      "lockFailed": "Impossible de verrouiller le portefeuille pour la sauvegarde",
+      "success": "Sauvegarde enregistrée",
+      "unlockFailed": "Impossible de déverrouiller le portefeuille après la sauvegarde",
+      "wrongPassword": "Mot de passe incorrect",
+      "failed": "Échec de la sauvegarde"
+    }
   },
   "logoutModal": {
     "loggingOut": "Déconnexion en cours",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Attendez la cotation de l’actif avant de continuer"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "Créer les UTXO"
     },
-    "toastSuccess": "UTXO créés avec succès"
+    "toastSuccess": "UTXO créés avec succès",
+    "toasts": {
+      "created": "UTXO créés",
+      "retryFailed": "Les UTXO ont été créés, mais l’opération d’origine a échoué. Réessayez."
+    }
   },
   "legal": {
     "common": {
@@ -2157,7 +2230,9 @@
       "newAssetInfo": "Si vous ne connaissez pas l'identifiant de l'actif, vous pouvez continuer sans le saisir. Le système générera une adresse de dépôt pouvant recevoir n'importe quel actif RGB.",
       "assetIdLabel": "Identifiant de l'actif (optionnel)",
       "assetIdPlaceholder": "Saisir l'identifiant de l'actif (optionnel)",
-      "continueWith": "Continuer avec {{ticker}}"
+      "continueWith": "Continuer avec {{ticker}}",
+      "anyRgbAsset": "N’importe quel actif RGB",
+      "otherAssets": "Autres actifs"
     },
     "step2": {
       "titleWithTicker": "Déposer {{ticker}}",
@@ -2265,7 +2340,7 @@
     "fileSizes": ["Octets", "Ko", "Mo", "Go"],
     "fileSizeZero": "0 octet",
     "errors": {
-      "timeout": "Le processus de mise à jour a expiré après 5 minutes. Vérifiez votre connexion Internet puis réessayez.",
+      "timeout": "Le téléchargement ne progresse plus. Vérifiez votre connexion internet et réessayez.",
       "installFailed": "Impossible d'installer la mise à jour : {{message}}. Réessayez ou téléchargez-la manuellement depuis GitHub.",
       "cancelled": "Mise à jour annulée par l'utilisateur"
     },
@@ -2662,6 +2737,18 @@
         "custom": "{{rate}} sat/vB (Personnalisé)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Paiement envoyé",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "Le paiement a été réglé via Lightning.",
+      "onchainBody": "La transaction a été diffusée. Elle sera confirmée dans les prochains blocs.",
+      "rgbBody": "Le transfert a été envoyé. Le destinataire le reçoit une fois la transaction confirmée.",
+      "to": "À",
+      "paymentHash": "Hash du paiement",
+      "txid": "ID de transaction"
     }
   },
   "components": {
@@ -3116,5 +3203,97 @@
     "bitcoindBody": "Plus privé, repose sur votre propre nœud. Nécessite Bitcoin Core avec RPC, toujours joignable.",
     "invalidFormat": "Utilisez le format utilisateur:motdepasse@hôte:port",
     "notConfigured": "Non utilisé : synchronisation via l'indexeur"
+  },
+  "nwc": {
+    "title": "Connexions d’apps",
+    "subtitle": "Laissez d’autres apps utiliser ce portefeuille via Nostr Wallet Connect. Votre nœud reste sur cet ordinateur.",
+    "add": "Nouvelle connexion",
+    "activity": "Activité récente",
+    "activityHint": "Les requêtes des apps connectées s’afficheront ici tant que cette page est ouverte.",
+    "budgetUsed": "{{spent}} sur {{budget}} sats dépensés",
+    "cancel": "Annuler",
+    "caps": {
+      "receive": "Recevoir",
+      "spend": "Peut dépenser",
+      "view": "Consulter"
+    },
+    "connect": {
+      "title": "Connecter votre app",
+      "warning": "Ce code donne à l’app les permissions choisies. Il n’est affiché qu’une fois : scannez-le ou copiez-le maintenant et ne le partagez pas."
+    },
+    "connections": "Connexions",
+    "done": "Terminé",
+    "empty": {
+      "body": "Créez une connexion et scannez son QR code depuis l’app à lier, par exemple le portefeuille mobile KaleidoSwap.",
+      "stopped": "Démarrez le service pour ajouter une connexion.",
+      "title": "Aucune app connectée"
+    },
+    "errors": {
+      "create": "Impossible de créer la connexion",
+      "permissions": "Sélectionnez au moins une permission",
+      "revoke": "Impossible de révoquer la connexion",
+      "start": "Impossible de démarrer le service",
+      "update": "Impossible de mettre à jour la connexion"
+    },
+    "lastUsed": "Utilisée {{when}}",
+    "neverUsed": "Jamais utilisée",
+    "new": {
+      "access": "Accès",
+      "budget": "Limite de dépense",
+      "budgetHint": "Plafonne le total que cette app peut envoyer. Laissez vide pour aucune limite.",
+      "create": "Créer la connexion",
+      "customBudget": "Montant personnalisé en sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "Actifs RGB",
+      "name": "Nom",
+      "namePlaceholder": "ex. Rate mobile, Extension de navigateur",
+      "noLimit": "Aucune limite",
+      "title": "Nouvelle connexion d’app",
+      "defaultName": "Connexion d’app {{n}}"
+    },
+    "noBudget": "Aucune limite de dépense",
+    "pause": "Mettre en pause",
+    "paused": "En pause",
+    "permissionsCount": "{{count}} permissions",
+    "presets": {
+      "custom": "Personnalisé",
+      "customDesc": "Choisissez chaque permission.",
+      "full": "Portefeuille complet",
+      "fullDesc": "Lightning et RGB : consulter, recevoir et envoyer. Recommandé pour les portefeuilles KaleidoSwap.",
+      "receive": "Consulter et recevoir",
+      "receiveDesc": "Consulter les soldes et créer des factures. Ne peut pas dépenser.",
+      "view": "Consultation seule",
+      "viewDesc": "Soldes, actifs et historique uniquement."
+    },
+    "resume": "Reprendre",
+    "revoke": "Révoquer",
+    "revokeBody": "« {{name}} » perdra immédiatement l’accès à ce portefeuille. Pour la reconnecter, il faudra une nouvelle connexion.",
+    "revokeTitle": "Révoquer la connexion",
+    "revoked": "Connexion révoquée",
+    "service": {
+      "identity": "Identité du service de portefeuille",
+      "running": "Service actif",
+      "scope": "Paiements Lightning et actifs RGB (extensions KaleidoSwap)",
+      "start": "Démarrer le service",
+      "stopped": "Service arrêté"
+    },
+    "methods": {
+      "get_info": "Infos du nœud",
+      "get_balance": "Solde",
+      "make_invoice": "Créer des factures",
+      "lookup_invoice": "Consulter des factures",
+      "list_transactions": "Historique des transactions",
+      "pay_invoice": "Payer des factures",
+      "pay_keysend": "Envoyer un keysend",
+      "rln_node_info": "Infos du nœud RGB",
+      "rln_list_assets": "Lister les actifs RGB",
+      "rln_asset_balance": "Soldes RGB",
+      "rln_rgb_invoice": "Créer des factures RGB",
+      "rln_ln_invoice": "Créer des factures RGB Lightning",
+      "rln_decode_rgb_invoice": "Décoder des factures RGB",
+      "rln_send_asset": "Envoyer des actifs RGB",
+      "rln_list_channels": "Lister les canaux",
+      "rln_get_address": "Adresse on-chain"
+    }
   }
 }

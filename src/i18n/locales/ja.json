@@ -59,7 +59,6 @@
     "history": "履歴",
     "liquidity": "流動性",
     "brain": "ブレイン",
-    "pairing": "ペアリング",
     "models": "モデル",
     "skills": "スキル",
     "chat": "チャット",
@@ -73,7 +72,8 @@
     "helpSupport": "ヘルプ&サポート",
     "getHelpSupport": "ヘルプ&サポートを利用",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "アプリ接続"
   },
   "channels": {
     "pageTitle": "Lightningウォレットダッシュボード",
@@ -225,7 +225,61 @@
     "restartNow": "今すぐ再起動",
     "later": "後で",
     "shuttingDownTitle": "ノードをシャットダウン中",
-    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください..."
+    "shuttingDownMessage": "ノードをシャットダウンしています。しばらくお待ちください...",
+    "logs": {
+      "live": "ライブ",
+      "paused": "一時停止中",
+      "resume": "ライブ更新を再開",
+      "pause": "ライブ更新を一時停止",
+      "copy": "表示中の行をコピー",
+      "filter": "行を絞り込み…",
+      "older": "古い",
+      "newer": "新しい",
+      "fetchError": "ノードのログを読み取れませんでした。ライブ更新を停止しました。",
+      "noMatches": "条件に一致する行はありません",
+      "matching": "{{count}} 行が一致",
+      "exported": "ログをエクスポートしました",
+      "exportFailed": "ログのエクスポートに失敗しました",
+      "jumpToLatest": "最新に戻る",
+      "dockerContainer": "Docker コンテナ",
+      "unavailableTitle": "このノードのログは表示できません",
+      "checkAgain": "再確認",
+      "unavailable": {
+        "invalid_url": "ノードの URL が無効なため、ログを特定できません。",
+        "no_container": "ノードはこのコンピュータで動作していますが、アプリが見つけられる Docker コンテナではありません。Docker で実行している場合は API ポートを公開して（例: -p 3001:3001）再確認してください。",
+        "remote_host": "このノードは別のマシンで動作しているため、ログはそちらにあります。サーバーで docker logs などを使って確認してください。"
+      }
+    },
+    "tabs": {
+      "general": "一般",
+      "trading": "メーカーと LSP",
+      "node": "ノード接続",
+      "security": "セキュリティ",
+      "logs": "ログ"
+    },
+    "makerLspDescription": "マーケットメーカーがスワップの見積もりを出し、LSP がチャネルと受信流動性を提供します。",
+    "unsavedChanges": "未保存の変更があります",
+    "backupWalletDescription": "暗号化されたウォレットのバックアップをエクスポート",
+    "session": "セッション",
+    "showToken": "トークンを表示",
+    "hideToken": "トークンを隠す",
+    "changePassword": "パスワードを変更",
+    "changePasswordDescription": "ウォレットの暗号化パスワードを更新",
+    "logoutDescription": "ウォレットをロックしてアカウント一覧に戻ります。ノードのデータは保持されます。",
+    "shutdownDescription": "ノードのプロセスを停止します。チャネルは開いたままですがノードはオフラインになります。",
+    "toasts": {
+      "restarting": "ノードを再起動しています…",
+      "restarted": "新しい設定でノードを再起動しました",
+      "restartFailedTitle": "ノードの再起動に失敗しました",
+      "restartFailedMessage": "ノードの再起動中に問題が発生しました。",
+      "saved": "設定を保存しました",
+      "saveFailedTitle": "設定を保存できませんでした",
+      "saveFailedMessage": "設定の保存中に問題が発生しました。",
+      "loggedOut": "ログアウトしました",
+      "logoutFailed": "ウォレットを正常にロックできませんでした（{{error}}）。ログアウトは完了しています。",
+      "shutDown": "ノードを停止しました",
+      "shutdownFailed": "ノードを停止できませんでした"
+    }
   },
   "modals": {
     "logoutTitle": "ログアウトの確認",
@@ -559,6 +613,9 @@
       "goToChannels": "チャネルページに移動",
       "success": "チャネルが正常に作成されました！",
       "successMessage": "チャネルが正常に作成されました。これで取引を開始できます。"
+    },
+    "toasts": {
+      "capacityRequired": "チャネル容量を入力してください"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "バックアップ処理中です。お待ちください...",
     "backupLockedMessage": "バックアッププロセスが完了するまでノードはロックされます。",
     "cancel": "キャンセル",
-    "createBackup": "バックアップを作成"
+    "createBackup": "バックアップを作成",
+    "toasts": {
+      "invalidPath": "バックアップ用の有効なフォルダを選択してください",
+      "fileExists": "そこには既にバックアップファイルがあります。別のフォルダを選択してください。",
+      "lockFailed": "バックアップのためにウォレットをロックできませんでした",
+      "success": "バックアップを保存しました",
+      "unlockFailed": "バックアップ後にウォレットのロックを解除できませんでした",
+      "wrongPassword": "パスワードが違います",
+      "failed": "バックアップに失敗しました"
+    }
   },
   "logoutModal": {
     "loggingOut": "ログアウト中",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "続行する前にアセットの見積もりをお待ちください"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "UTXOを作成"
     },
-    "toastSuccess": "UTXOが正常に作成されました"
+    "toastSuccess": "UTXOが正常に作成されました",
+    "toasts": {
+      "created": "UTXO を作成しました",
+      "retryFailed": "UTXO は作成されましたが、元の操作に失敗しました。もう一度お試しください。"
+    }
   },
   "legal": {
     "common": {
@@ -2157,7 +2230,9 @@
       "newAssetInfo": "アセットIDが不明な場合は、入力せずに進むことができます。システムは任意のRGBアセットを受け取れる入金アドレスを生成します。",
       "assetIdLabel": "アセットID(オプション)",
       "assetIdPlaceholder": "アセットIDを入力(オプション)",
-      "continueWith": "{{ticker}} で続行"
+      "continueWith": "{{ticker}} で続行",
+      "anyRgbAsset": "任意の RGB アセット",
+      "otherAssets": "その他のアセット"
     },
     "step2": {
       "titleWithTicker": "{{ticker}}を入金",
@@ -2265,7 +2340,7 @@
     "fileSizes": ["バイト", "KB", "MB", "GB"],
     "fileSizeZero": "0バイト",
     "errors": {
-      "timeout": "アップデートプロセスが5分後にタイムアウトしました。インターネット接続を確認してもう一度お試しください。",
+      "timeout": "ダウンロードが進まなくなりました。インターネット接続を確認して、もう一度お試しください。",
       "installFailed": "アップデートのインストールに失敗しました：{{message}}。もう一度試すか、GitHubから手動でダウンロードしてください。",
       "cancelled": "ユーザーによってアップデートがキャンセルされました"
     },
@@ -2662,6 +2737,18 @@
         "custom": "{{rate}} sat/vB(カスタム)",
         "predefined": "{{rate}} sat/vB({{label}})"
       }
+    },
+    "sent": {
+      "title": "送金しました",
+      "lightning": "Lightning",
+      "onchain": "オンチェーン",
+      "rgbOnchain": "RGB オンチェーン",
+      "lightningBody": "Lightning で支払いが完了しました。",
+      "onchainBody": "トランザクションをブロードキャストしました。次のブロックで承認されます。",
+      "rgbBody": "送金しました。トランザクションが承認されると受取人に届きます。",
+      "to": "宛先",
+      "paymentHash": "ペイメントハッシュ",
+      "txid": "トランザクション ID"
     }
   },
   "components": {
@@ -3116,5 +3203,97 @@
     "bitcoindBody": "よりプライベートで、自分のノードに基づきます。RPC 有効な Bitcoin Core が常に接続可能である必要があります。",
     "invalidFormat": "ユーザー:パスワード@ホスト:ポート の形式で入力してください",
     "notConfigured": "未使用：インデクサーから同期中"
+  },
+  "nwc": {
+    "title": "アプリ接続",
+    "subtitle": "Nostr Wallet Connect で他のアプリからこのウォレットを使えます。ノードはこのコンピュータに残ります。",
+    "add": "新しい接続",
+    "activity": "最近のアクティビティ",
+    "activityHint": "このページを開いている間、接続済みアプリからのリクエストがここに表示されます。",
+    "budgetUsed": "{{budget}} sats 中 {{spent}} sats 使用済み",
+    "cancel": "キャンセル",
+    "caps": {
+      "receive": "受取",
+      "spend": "支払い可能",
+      "view": "閲覧"
+    },
+    "connect": {
+      "title": "アプリを接続",
+      "warning": "このコードは選択した権限をアプリに付与します。表示は一度だけです。今すぐスキャンまたはコピーし、共有しないでください。"
+    },
+    "connections": "接続",
+    "done": "完了",
+    "empty": {
+      "body": "接続を作成し、KaleidoSwap モバイルウォレットなど連携したいアプリで QR コードをスキャンしてください。",
+      "stopped": "接続を追加するにはサービスを開始してください。",
+      "title": "まだ接続されたアプリはありません"
+    },
+    "errors": {
+      "create": "接続を作成できませんでした",
+      "permissions": "権限を 1 つ以上選択してください",
+      "revoke": "接続を取り消せませんでした",
+      "start": "サービスを開始できませんでした",
+      "update": "接続を更新できませんでした"
+    },
+    "lastUsed": "{{when}}に使用",
+    "neverUsed": "未使用",
+    "new": {
+      "access": "アクセス",
+      "budget": "支出上限",
+      "budgetHint": "このアプリが送金できる合計を制限します。空欄なら上限なし。",
+      "create": "接続を作成",
+      "customBudget": "カスタム金額（sats）",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB アセット",
+      "name": "名前",
+      "namePlaceholder": "例: Rate モバイル、ブラウザ拡張",
+      "noLimit": "上限なし",
+      "title": "新しいアプリ接続",
+      "defaultName": "アプリ接続 {{n}}"
+    },
+    "noBudget": "支出上限なし",
+    "pause": "一時停止",
+    "paused": "一時停止中",
+    "permissionsCount": "{{count}} 件の権限",
+    "presets": {
+      "custom": "カスタム",
+      "customDesc": "権限を個別に選択します。",
+      "full": "フルウォレット",
+      "fullDesc": "Lightning と RGB の閲覧・受取・送金。KaleidoSwap ウォレットにおすすめ。",
+      "receive": "閲覧と受取",
+      "receiveDesc": "残高の閲覧と請求書の作成。支払いはできません。",
+      "view": "閲覧のみ",
+      "viewDesc": "残高・アセット・履歴のみ。"
+    },
+    "resume": "再開",
+    "revoke": "取り消す",
+    "revokeBody": "「{{name}}」はこのウォレットへのアクセスを直ちに失います。再接続には新しい接続が必要です。",
+    "revokeTitle": "接続を取り消す",
+    "revoked": "接続を取り消しました",
+    "service": {
+      "identity": "ウォレットサービスの ID",
+      "running": "サービス稼働中",
+      "scope": "Lightning 決済と RGB アセット（KaleidoSwap 拡張）",
+      "start": "サービスを開始",
+      "stopped": "サービス停止中"
+    },
+    "methods": {
+      "get_info": "ノード情報",
+      "get_balance": "残高",
+      "make_invoice": "請求書を作成",
+      "lookup_invoice": "請求書を照会",
+      "list_transactions": "取引履歴",
+      "pay_invoice": "請求書を支払う",
+      "pay_keysend": "keysend を送信",
+      "rln_node_info": "RGB ノード情報",
+      "rln_list_assets": "RGB アセット一覧",
+      "rln_asset_balance": "RGB 残高",
+      "rln_rgb_invoice": "RGB 請求書を作成",
+      "rln_ln_invoice": "RGB Lightning 請求書を作成",
+      "rln_decode_rgb_invoice": "RGB 請求書をデコード",
+      "rln_send_asset": "RGB アセットを送信",
+      "rln_list_channels": "チャネル一覧",
+      "rln_get_address": "オンチェーンアドレス"
+    }
   }
 }

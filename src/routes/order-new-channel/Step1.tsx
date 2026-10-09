@@ -263,8 +263,8 @@ export const Step1: React.FC<Props> = ({ onNext }) => {
     <button
       className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md font-semibold transition-all duration-200 text-sm ${className} ${
         enabled
-          ? 'bg-primary hover:bg-primary-emphasis text-[#12131C] active:scale-95'
-          : 'bg-primary/30 text-[#12131C]/50 cursor-not-allowed'
+          ? 'bg-primary hover:bg-primary-emphasis text-primary-foreground active:scale-95'
+          : 'bg-primary/30 text-primary-foreground/50 cursor-not-allowed'
       }`}
       disabled={!enabled}
       onClick={onClick}

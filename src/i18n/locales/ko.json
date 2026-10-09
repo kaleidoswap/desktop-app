@@ -59,7 +59,6 @@
     "history": "내역",
     "liquidity": "유동성",
     "brain": "Brain",
-    "pairing": "페어링",
     "models": "모델",
     "skills": "스킬",
     "chat": "채팅",
@@ -73,7 +72,8 @@
     "helpSupport": "도움말 및 지원",
     "getHelpSupport": "도움말 및 지원 받기",
     "menu": "메뉴",
-    "expandSidebar": "사이드바 펼치기"
+    "expandSidebar": "사이드바 펼치기",
+    "nwc": "앱 연결"
   },
   "channels": {
     "pageTitle": "채널 관리",
@@ -225,7 +225,61 @@
     "restartNow": "지금 재시작",
     "later": "나중에",
     "shuttingDownTitle": "노드 종료 중",
-    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요..."
+    "shuttingDownMessage": "노드가 종료되는 동안 잠시 기다려 주세요...",
+    "logs": {
+      "live": "실시간",
+      "paused": "일시 중지됨",
+      "resume": "실시간 업데이트 재개",
+      "pause": "실시간 업데이트 일시 중지",
+      "copy": "표시된 줄 복사",
+      "filter": "줄 필터…",
+      "older": "이전",
+      "newer": "최신",
+      "fetchError": "노드 로그를 읽을 수 없습니다. 실시간 업데이트가 중지되었습니다.",
+      "noMatches": "필터와 일치하는 줄이 없습니다",
+      "matching": "{{count}}개 줄 일치",
+      "exported": "로그를 내보냈습니다",
+      "exportFailed": "로그 내보내기 실패",
+      "jumpToLatest": "최신으로 이동",
+      "dockerContainer": "Docker 컨테이너",
+      "unavailableTitle": "이 노드의 로그를 볼 수 없습니다",
+      "checkAgain": "다시 확인",
+      "unavailable": {
+        "invalid_url": "노드 URL이 올바르지 않아 로그를 찾을 수 없습니다.",
+        "no_container": "노드가 이 컴퓨터에서 실행 중이지만 앱이 찾을 수 있는 Docker 컨테이너가 아닙니다. Docker로 실행한다면 API 포트를 게시하고(예: -p 3001:3001) 다시 확인하세요.",
+        "remote_host": "이 노드는 다른 머신에서 실행되므로 로그도 그곳에 있습니다. 서버에서 docker logs 등으로 확인하세요."
+      }
+    },
+    "tabs": {
+      "general": "일반",
+      "trading": "메이커 및 LSP",
+      "node": "노드 연결",
+      "security": "보안",
+      "logs": "로그"
+    },
+    "makerLspDescription": "마켓 메이커가 스왑 견적을 제공하고, LSP가 채널과 인바운드 유동성을 판매합니다.",
+    "unsavedChanges": "저장되지 않은 변경 사항이 있습니다",
+    "backupWalletDescription": "암호화된 지갑 백업 내보내기",
+    "session": "세션",
+    "showToken": "토큰 표시",
+    "hideToken": "토큰 숨기기",
+    "changePassword": "비밀번호 변경",
+    "changePasswordDescription": "지갑 암호화 비밀번호 변경",
+    "logoutDescription": "지갑을 잠그고 계정 목록으로 돌아갑니다. 노드 데이터는 유지됩니다.",
+    "shutdownDescription": "노드 프로세스를 중지합니다. 채널은 열린 상태로 유지되지만 노드는 오프라인이 됩니다.",
+    "toasts": {
+      "restarting": "노드를 다시 시작하는 중…",
+      "restarted": "새 설정으로 노드를 다시 시작했습니다",
+      "restartFailedTitle": "노드 재시작 실패",
+      "restartFailedMessage": "노드를 다시 시작하는 중 문제가 발생했습니다.",
+      "saved": "설정이 저장되었습니다",
+      "saveFailedTitle": "설정이 저장되지 않았습니다",
+      "saveFailedMessage": "설정을 저장하는 중 문제가 발생했습니다.",
+      "loggedOut": "로그아웃되었습니다",
+      "logoutFailed": "지갑을 정상적으로 잠그지 못했습니다({{error}}). 그래도 로그아웃되었습니다.",
+      "shutDown": "노드가 종료되었습니다",
+      "shutdownFailed": "노드를 종료하지 못했습니다"
+    }
   },
   "modals": {
     "logoutTitle": "로그아웃 확인",
@@ -559,6 +613,9 @@
       "goToChannels": "채널 페이지로 이동",
       "success": "채널 생성이 완료되었습니다",
       "successMessage": "채널이 성공적으로 생성되었습니다. 이제 거래를 시작할 수 있습니다."
+    },
+    "toasts": {
+      "capacityRequired": "채널 용량을 입력하세요"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "백업이 진행 중입니다. 잠시 기다려 주세요...",
     "backupLockedMessage": "백업 프로세스가 완료될 때까지 노드가 잠깁니다.",
     "cancel": "취소",
-    "createBackup": "백업 만들기"
+    "createBackup": "백업 만들기",
+    "toasts": {
+      "invalidPath": "백업할 올바른 폴더를 선택하세요",
+      "fileExists": "해당 위치에 이미 백업 파일이 있습니다. 다른 폴더를 선택하세요.",
+      "lockFailed": "백업을 위해 지갑을 잠그지 못했습니다",
+      "success": "백업이 저장되었습니다",
+      "unlockFailed": "백업 후 지갑 잠금을 해제하지 못했습니다",
+      "wrongPassword": "비밀번호가 틀렸습니다",
+      "failed": "백업 실패"
+    }
   },
   "logoutModal": {
     "loggingOut": "로그아웃 중",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "이 페이지를 나가시겠습니까?",
     "backConfirmMessage": "뒤로 가면 현재 주문이 취소됩니다. 모든 진행 상황이 손실됩니다.",
     "backConfirmCancel": "머무르기",
-    "backConfirmGoBack": "뒤로 가기"
+    "backConfirmGoBack": "뒤로 가기",
+    "toasts": {
+      "waitForQuote": "계속하기 전에 자산 견적을 기다리세요"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "UTXO 생성"
     },
-    "toastSuccess": "UTXO가 성공적으로 생성되었습니다"
+    "toastSuccess": "UTXO가 성공적으로 생성되었습니다",
+    "toasts": {
+      "created": "UTXO가 생성되었습니다",
+      "retryFailed": "UTXO는 생성되었지만 원래 작업이 실패했습니다. 다시 시도하세요."
+    }
   },
   "legal": {
     "common": {
@@ -2151,7 +2224,9 @@
       "newAssetInfo": "자산 ID를 모르는 경우 입력하지 않고 진행할 수 있습니다. 시스템이 모든 RGB 자산을 수신할 수 있는 입금 주소를 생성합니다.",
       "assetIdLabel": "자산 ID (선택 사항)",
       "assetIdPlaceholder": "자산 ID 입력 (선택 사항)",
-      "continueWith": "{{ticker}}(으)로 계속"
+      "continueWith": "{{ticker}}(으)로 계속",
+      "anyRgbAsset": "모든 RGB 자산",
+      "otherAssets": "기타 자산"
     },
     "step2": {
       "titleWithTicker": "{{ticker}} 입금",
@@ -2259,7 +2334,7 @@
     "fileSizes": ["Bytes", "KB", "MB", "GB"],
     "fileSizeZero": "0 Bytes",
     "errors": {
-      "timeout": "업데이트 프로세스가 5분 후 시간 초과되었습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
+      "timeout": "다운로드가 더 이상 진행되지 않습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
       "installFailed": "업데이트 설치에 실패했습니다: {{message}}. 다시 시도하거나 GitHub에서 수동으로 다운로드하세요.",
       "cancelled": "사용자가 업데이트를 취소했습니다"
     },
@@ -2656,6 +2731,18 @@
         "custom": "{{rate}} sat/vB (사용자 지정)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "결제 전송됨",
+      "lightning": "Lightning",
+      "onchain": "온체인",
+      "rgbOnchain": "RGB 온체인",
+      "lightningBody": "Lightning으로 결제가 완료되었습니다.",
+      "onchainBody": "트랜잭션이 전파되었습니다. 다음 블록에서 컨펌됩니다.",
+      "rgbBody": "전송되었습니다. 트랜잭션이 컨펌되면 수신자가 받습니다.",
+      "to": "받는 사람",
+      "paymentHash": "결제 해시",
+      "txid": "트랜잭션 ID"
     }
   },
   "components": {
@@ -3110,5 +3197,97 @@
     "bitcoindBody": "더 프라이빗하며 직접 운영하는 노드에 기반합니다. RPC가 활성화된 Bitcoin Core가 항상 접속 가능해야 합니다.",
     "invalidFormat": "사용자:비밀번호@호스트:포트 형식을 사용하세요",
     "notConfigured": "사용 안 함: 인덱서에서 동기화 중"
+  },
+  "nwc": {
+    "title": "앱 연결",
+    "subtitle": "Nostr Wallet Connect로 다른 앱이 이 지갑을 사용할 수 있습니다. 노드는 이 컴퓨터에 그대로 있습니다.",
+    "add": "새 연결",
+    "activity": "최근 활동",
+    "activityHint": "이 페이지가 열려 있는 동안 연결된 앱의 요청이 여기에 표시됩니다.",
+    "budgetUsed": "{{budget}} sats 중 {{spent}} sats 사용",
+    "cancel": "취소",
+    "caps": {
+      "receive": "받기",
+      "spend": "지출 가능",
+      "view": "보기"
+    },
+    "connect": {
+      "title": "앱 연결하기",
+      "warning": "이 코드는 선택한 권한을 앱에 부여합니다. 한 번만 표시되니 지금 스캔하거나 복사하고 공유하지 마세요."
+    },
+    "connections": "연결",
+    "done": "완료",
+    "empty": {
+      "body": "연결을 만들고 KaleidoSwap 모바일 지갑 등 연결할 앱에서 QR 코드를 스캔하세요.",
+      "stopped": "연결을 추가하려면 서비스를 시작하세요.",
+      "title": "아직 연결된 앱이 없습니다"
+    },
+    "errors": {
+      "create": "연결을 만들지 못했습니다",
+      "permissions": "권한을 하나 이상 선택하세요",
+      "revoke": "연결을 취소하지 못했습니다",
+      "start": "서비스를 시작하지 못했습니다",
+      "update": "연결을 업데이트하지 못했습니다"
+    },
+    "lastUsed": "{{when}} 사용",
+    "neverUsed": "사용 기록 없음",
+    "new": {
+      "access": "접근 권한",
+      "budget": "지출 한도",
+      "budgetHint": "이 앱이 보낼 수 있는 총액을 제한합니다. 비워 두면 한도가 없습니다.",
+      "create": "연결 만들기",
+      "customBudget": "직접 입력 (sats)",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB 자산",
+      "name": "이름",
+      "namePlaceholder": "예: Rate 모바일, 브라우저 확장",
+      "noLimit": "한도 없음",
+      "title": "새 앱 연결",
+      "defaultName": "앱 연결 {{n}}"
+    },
+    "noBudget": "지출 한도 없음",
+    "pause": "일시 중지",
+    "paused": "일시 중지됨",
+    "permissionsCount": "권한 {{count}}개",
+    "presets": {
+      "custom": "사용자 지정",
+      "customDesc": "권한을 하나씩 선택합니다.",
+      "full": "전체 지갑",
+      "fullDesc": "Lightning 및 RGB 보기, 받기, 보내기. KaleidoSwap 지갑에 권장.",
+      "receive": "보기 및 받기",
+      "receiveDesc": "잔액 보기와 인보이스 생성. 지출 불가.",
+      "view": "보기 전용",
+      "viewDesc": "잔액, 자산, 내역만."
+    },
+    "resume": "재개",
+    "revoke": "취소",
+    "revokeBody": "“{{name}}”은(는) 즉시 이 지갑에 대한 접근 권한을 잃습니다. 다시 연결하려면 새 연결이 필요합니다.",
+    "revokeTitle": "연결 취소",
+    "revoked": "연결이 취소되었습니다",
+    "service": {
+      "identity": "지갑 서비스 ID",
+      "running": "서비스 실행 중",
+      "scope": "Lightning 결제 및 RGB 자산 (KaleidoSwap 확장)",
+      "start": "서비스 시작",
+      "stopped": "서비스 중지됨"
+    },
+    "methods": {
+      "get_info": "노드 정보",
+      "get_balance": "잔액",
+      "make_invoice": "인보이스 생성",
+      "lookup_invoice": "인보이스 조회",
+      "list_transactions": "거래 내역",
+      "pay_invoice": "인보이스 결제",
+      "pay_keysend": "keysend 보내기",
+      "rln_node_info": "RGB 노드 정보",
+      "rln_list_assets": "RGB 자산 목록",
+      "rln_asset_balance": "RGB 잔액",
+      "rln_rgb_invoice": "RGB 인보이스 생성",
+      "rln_ln_invoice": "RGB Lightning 인보이스 생성",
+      "rln_decode_rgb_invoice": "RGB 인보이스 디코딩",
+      "rln_send_asset": "RGB 자산 보내기",
+      "rln_list_channels": "채널 목록",
+      "rln_get_address": "온체인 주소"
+    }
   }
 }

@@ -22,6 +22,8 @@ import { useNavigate } from 'react-router-dom'
 import { KALEIDO_MIND_MODELS_PATH } from '../../app/router/paths'
 import { Select } from '../../components/ui/Select'
 import type { UseMindResult } from '../../hooks/useMind'
+import { getRecommendedModelId } from './modelCatalog'
+import { HardwareSummary, ModelMemoryNotice } from './HardwareSummary'
 
 import { gb, labelForPhase } from './shared'
 import { LAST_MODEL_KEY } from './start-brain-modal'
@@ -47,7 +49,7 @@ const CatalogSkeleton: React.FC = () => (
 /** Step 1 — choose & download a model from the catalog. */
 const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   const isEmpty = mind.catalog.length === 0
-  const recommendedId = mind.catalog[0]?.id
+  const recommendedId = getRecommendedModelId(mind.catalog, mind.hardware)
 
   return (
     <div className="w-full max-w-lg">
@@ -64,6 +66,7 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         </p>
       </div>
 
+      <HardwareSummary hardware={mind.hardware} />
       {isEmpty && mind.catalogLoading ? (
         <CatalogSkeleton />
       ) : isEmpty && mind.catalogError ? (
@@ -116,6 +119,7 @@ const ChooseModel: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
                         </span>
                       )}
                     </div>
+                    <ModelMemoryNotice hardware={mind.hardware} model={m} />
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-content-tertiary">
                       <span className="inline-flex items-center gap-1">
                         <HardDrive className="h-3 w-3" />
@@ -184,10 +188,12 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
   } catch {
     /* ignore */
   }
+  const recommendedId = getRecommendedModelId(mind.catalog, mind.hardware)
   const defaultId =
     (lastId && installed.some((m) => m.id === lastId)
       ? lastId
-      : installed[0]?.id) ?? ''
+      : (installed.find((m) => m.id === recommendedId)?.id ??
+        installed[0]?.id)) ?? ''
   const modelId = selected || defaultId
   const active = installed.find((m) => m.id === modelId)
   const busy = starting || !!loading
@@ -210,7 +216,7 @@ const StartBrain: React.FC<{ mind: UseMindResult }> = ({ mind }) => {
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 blur-2xl" />
           <div className="relative rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 p-6 shadow-lg shadow-primary/10 ring-1 ring-primary/20 backdrop-blur-2xl">
-            <Brain className="relative z-10 h-10 w-10 text-[#15E99A]" />
+            <Brain className="relative z-10 h-10 w-10 text-primary" />
           </div>
         </div>
         <div className="max-w-lg space-y-4 text-center">

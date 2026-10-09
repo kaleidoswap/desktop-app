@@ -76,7 +76,7 @@ const ChannelAssetBadge: React.FC<{ ticker: string }> = ({ ticker }) => {
     <span
       className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
         isUsdt
-          ? 'bg-[#26A17B]/10 border border-[#26A17B]/20'
+          ? 'bg-asset-usdt/10 border border-asset-usdt/20'
           : 'text-secondary bg-secondary/10 border border-secondary/20'
       }`}
       style={isUsdt ? { color: '#26A17B' } : {}}
@@ -773,7 +773,7 @@ export const Component = () => {
                         {/* BTC liquidity bar — purple, collapsed (no out/in labels) */}
                         <div className="mb-1.5">
                           <div className="grid grid-cols-3 items-center text-[10px] mb-0.5">
-                            <span className="flex items-center gap-0.5 text-[#9365FF]">
+                            <span className="flex items-center gap-0.5 text-purple">
                               <ArrowUpRight className="w-2.5 h-2.5" />
                               {formatBitcoinAmount(
                                 (ch.outbound_balance_msat || 0) / 1000,
@@ -794,7 +794,7 @@ export const Component = () => {
                           </div>
                           <div className="relative h-1.5 bg-surface-high/60 rounded-full overflow-hidden">
                             <div
-                              className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full"
+                              className="absolute left-0 top-0 h-full bg-purple rounded-l-full"
                               style={{ width: `${btcOutPct}%` }}
                             />
                             <div
@@ -894,7 +894,7 @@ export const Component = () => {
                 </div>
                 <div className="relative w-full bg-surface-elevated/60 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="absolute left-0 top-0 h-full bg-[#9365FF] rounded-l-full transition-all duration-500"
+                    className="absolute left-0 top-0 h-full bg-purple rounded-l-full transition-all duration-500"
                     style={{ width: `${outboundPct}%` }}
                   />
                   <div

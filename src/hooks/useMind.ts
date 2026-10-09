@@ -6,24 +6,27 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { MIND_PHONE_PAIRING_ENABLED } from '../constants'
 import {
   mindClient,
   type CatalogModel,
+  type MindHardware,
   type CapabilityInfo,
   type ChatHandlers,
   type ChatResult,
   type InstalledModel,
   type MindEvent,
   type ProviderLoadingEvent,
+  type ProviderLoadingPhase,
   type ProviderStatusEvent,
   type RuntimeProgress,
   type ToolConfirmRequestEvent,
 } from '../api/mind'
+import { loadModelCatalog } from '../api/mindCatalog'
 
 export interface UseMindResult {
   status: ProviderStatusEvent | null
   catalog: CatalogModel[]
+  hardware: MindHardware | null
   installed: InstalledModel[]
   downloads: Record<string, number> // modelId -> percentage
   loading: ProviderLoadingEvent | null
@@ -38,6 +41,8 @@ export interface UseMindResult {
   capabilities: CapabilityInfo | null
   /** Whether the agent runtime is downloaded (null while still checking). */
   runtimeInstalled: boolean | null
+  /** An older runtime version is installed — the download is an update. */
+  runtimeStale: boolean
   /** Live progress of the runtime download (null when not downloading). */
   runtimeProgress: RuntimeProgress | null
   /**
@@ -80,9 +85,14 @@ export interface UseMindResult {
 }
 
 const MAX_LOGS = 100
+const LOCAL_LOADING_PHASES: ReadonlySet<string> = new Set<ProviderLoadingPhase>(
+  ['loading_model', 'model_loaded', 'ready', 'aborted']
+)
 
 export function useMind(): UseMindResult {
   const [status, setStatus] = useState<ProviderStatusEvent | null>(null)
+  const [hardware, setHardware] = useState<MindHardware | null>(null)
+  const providerCatalog = useRef<CatalogModel[]>([])
   const [catalog, setCatalog] = useState<CatalogModel[]>([])
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
@@ -94,6 +104,7 @@ export function useMind(): UseMindResult {
     useState<ToolConfirmRequestEvent | null>(null)
   const [capabilities, setCapabilities] = useState<CapabilityInfo | null>(null)
   const [runtimeInstalled, setRuntimeInstalled] = useState<boolean | null>(null)
+  const [runtimeStale, setRuntimeStale] = useState(false)
   const [runtimeProgress, setRuntimeProgress] =
     useState<RuntimeProgress | null>(null)
   const [starting, setStarting] = useState(false)
@@ -113,16 +124,19 @@ export function useMind(): UseMindResult {
     setCatalogError(null)
     try {
       await mindClient.start()
-      const [cat, inst, st, caps] = await Promise.all([
+      const [cat, inst, st, caps, hw] = await Promise.all([
         mindClient.listCatalogModels(),
         mindClient.listInstalledModels(),
         mindClient.getStatus(),
         mindClient.listCapabilities(),
+        mindClient.getHardware().catch(() => null),
       ])
-      setCatalog(cat)
+      providerCatalog.current = cat
+      setHardware(hw)
       setInstalled(inst)
       setStatus(st)
       setCapabilities(caps)
+      setCatalog(await loadModelCatalog(cat))
     } catch (e) {
       // Surface the failure so the Models UI can offer a retry instead of
       // spinning on "Loading catalog…" forever. The common case is a fresh
@@ -134,6 +148,29 @@ export function useMind(): UseMindResult {
     }
   }, [])
 
+  // Refresh when Mind returns to the foreground and periodically while visible.
+  useEffect(() => {
+    if (!runtimeInstalled) return
+    let lastRefresh = Date.now()
+    const update = () => {
+      if (
+        document.visibilityState !== 'visible' ||
+        Date.now() - lastRefresh < 15 * 60_000
+      )
+        return
+      lastRefresh = Date.now()
+      void refresh()
+    }
+    window.addEventListener('focus', update)
+    document.addEventListener('visibilitychange', update)
+    const timer = setInterval(update, 15 * 60_000)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('focus', update)
+      document.removeEventListener('visibilitychange', update)
+    }
+  }, [runtimeInstalled, refresh])
+
   // Subscribe to events once.
   const refreshInstalledRef = useRef(refreshInstalled)
   refreshInstalledRef.current = refreshInstalled
@@ -144,26 +181,13 @@ export function useMind(): UseMindResult {
           setStatus(e)
           break
         case 'provider_loading':
-          // Without phone pairing the P2P phases are noise ("no P2P provider");
-          // the provider continues straight to `ready`.
-          if (
-            !MIND_PHONE_PAIRING_ENABLED &&
-            (e.phase === 'starting_p2p' || e.phase === 'p2p_failed')
-          ) {
-            break
-          }
+          // The provider may still report its P2P phases; only local ones matter.
+          if (!LOCAL_LOADING_PHASES.has(e.phase)) break
           setLoading(e)
-          if (
-            e.phase === 'ready' ||
-            e.phase === 'p2p_failed' ||
-            e.phase === 'aborted'
-          ) {
+          if (e.phase === 'ready' || e.phase === 'aborted') {
             // Clear the loading banner shortly after a terminal phase.
             setTimeout(() => setLoading(null), 1500)
           }
-          break
-        case 'pubkey':
-          setStatus((s) => (s ? { ...s, publicKey: e.value } : s))
           break
         case 'download_progress':
           setDownloads((d) => ({
@@ -189,10 +213,6 @@ export function useMind(): UseMindResult {
             () => setPendingConfirm(null),
             e.timeoutMs
           )
-          break
-        case 'peer_connected':
-        case 'peer_disconnected':
-          // status event usually follows; nothing to do here
           break
         case 'log':
           setLogs((l) => [
@@ -223,11 +243,16 @@ export function useMind(): UseMindResult {
         if (v) void refresh()
       })
       .catch(() => alive && setRuntimeInstalled(false))
+    void mindClient
+      .runtimeStale()
+      .then((v) => alive && setRuntimeStale(v))
+      .catch(() => {})
     const off = mindClient.onRuntimeProgress((p) => {
       if (!alive) return
       if (p.phase === 'done') {
         setRuntimeProgress(null)
         setRuntimeInstalled(true)
+        setRuntimeStale(false)
         void refresh()
       } else {
         setRuntimeProgress(p) // keeps the error phase visible too
@@ -265,10 +290,26 @@ export function useMind(): UseMindResult {
     setStatus(st)
   }, [])
 
-  const downloadModel = useCallback(async (modelId: string) => {
-    setDownloads((d) => ({ ...d, [modelId]: 0 }))
-    await mindClient.downloadModel(modelId)
-  }, [])
+  const downloadModel = useCallback(
+    async (modelId: string) => {
+      setDownloads((d) => ({ ...d, [modelId]: 0 }))
+      const known = providerCatalog.current.some(
+        (model) => model.id === modelId
+      )
+      if (known) {
+        await mindClient.downloadModel(modelId)
+      } else {
+        const model = catalog.find((model) => model.id === modelId)
+        if (!model) throw new Error('Model not found in catalog')
+        await mindClient.addHuggingFaceModel(
+          `https://huggingface.co/${model.hfRepo}/blob/main/${encodeURIComponent(model.hfFile)}`,
+          model.displayName
+        )
+        providerCatalog.current = await mindClient.listCatalogModels()
+      }
+    },
+    [catalog]
+  )
 
   const cancelDownload = useCallback(async (modelId: string) => {
     await mindClient.cancelDownload(modelId)
@@ -367,6 +408,7 @@ export function useMind(): UseMindResult {
     deleteSkill,
     downloadModel,
     downloads,
+    hardware,
     installRuntime,
     installed,
     loading,
@@ -378,6 +420,7 @@ export function useMind(): UseMindResult {
     respondConfirm,
     runtimeInstalled,
     runtimeProgress,
+    runtimeStale,
     setSkillEnabled,
     startProvider,
     starting,

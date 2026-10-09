@@ -169,7 +169,7 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
 
             <div className="flex flex-col gap-2 mt-auto">
               <button
-                className="w-full inline-flex h-10 items-center justify-between gap-2 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full inline-flex h-10 items-center justify-between gap-2 rounded-xl bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={!hasOnChain}
                 onClick={handleCreateChannel}
               >
@@ -254,7 +254,7 @@ export function GetUsdtModal({ isOpen, onClose }: GetUsdtModalProps) {
 
             <div className="flex flex-col gap-2 mt-auto">
               <button
-                className="w-full inline-flex h-10 items-center justify-between gap-2 rounded-xl bg-[#15E99A] hover:bg-[#12C97E] px-4 text-sm font-semibold text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full inline-flex h-10 items-center justify-between gap-2 rounded-xl bg-primary hover:bg-primary-emphasis px-4 text-sm font-semibold text-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={isLoadingLsp || !!lspError}
                 onClick={handleBuyUsdt}
               >

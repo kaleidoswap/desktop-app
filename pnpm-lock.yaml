@@ -53,6 +53,9 @@ importers:
       '@tauri-apps/plugin-updater':
         specifier: 2.10.1
         version: 2.10.1
+      acorn:
+        specifier: ^8.19.0
+        version: 8.19.0
       axios:
         specifier: ^1.20.0
         version: 1.20.0

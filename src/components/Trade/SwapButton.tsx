@@ -160,10 +160,10 @@ export const SwapButton: React.FC<SwapButtonProps> = ({
       ),
       success: twJoin(
         baseStyles,
-        'bg-[#15E99A]',
-        'border-[#15E99A]/60',
+        'bg-primary',
+        'border-primary/60',
         'text-gray-900',
-        'hover:bg-[#12C97E]',
+        'hover:bg-primary-emphasis',
         'hover:scale-[1.01]',
         'active:scale-[0.99]',
         'cursor-pointer',

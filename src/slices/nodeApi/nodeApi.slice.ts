@@ -289,7 +289,7 @@ export const nodeApi = createApi({
       queryFn: queryFn((w, args) => w.createRgbInvoice(args)),
     }),
 
-    sendBtc: builder.mutation<void, SendBtcInput>({
+    sendBtc: builder.mutation<{ txid?: string } | void, SendBtcInput>({
       queryFn: queryFn((w, args) => w.sendBtc(args)),
     }),
 

@@ -59,7 +59,6 @@
     "history": "Storico",
     "liquidity": "Liquidità",
     "brain": "Cervello",
-    "pairing": "Abbinamento",
     "models": "Modelli",
     "skills": "Competenze",
     "chat": "Chat",
@@ -73,7 +72,8 @@
     "helpSupport": "Aiuto e Supporto",
     "getHelpSupport": "Ottieni Aiuto e Supporto",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "Connessioni app"
   },
   "channels": {
     "pageTitle": "Dashboard Portafoglio Lightning",
@@ -225,7 +225,61 @@
     "restartNow": "Riavvia Ora",
     "later": "Più Tardi",
     "shuttingDownTitle": "Spegnimento Nodo",
-    "shuttingDownMessage": "Attendere mentre il nodo viene spento..."
+    "shuttingDownMessage": "Attendere mentre il nodo viene spento...",
+    "logs": {
+      "live": "Live",
+      "paused": "In pausa",
+      "resume": "Riprendi aggiornamenti",
+      "pause": "Metti in pausa gli aggiornamenti",
+      "copy": "Copia le righe visibili",
+      "filter": "Filtra righe…",
+      "older": "Più vecchi",
+      "newer": "Più recenti",
+      "fetchError": "Impossibile leggere i log del nodo. Aggiornamenti live interrotti.",
+      "noMatches": "Nessuna riga corrisponde al filtro",
+      "matching": "{{count}} righe corrispondenti",
+      "exported": "Log esportati",
+      "exportFailed": "Esportazione dei log non riuscita",
+      "jumpToLatest": "Torna agli ultimi",
+      "dockerContainer": "Container Docker",
+      "unavailableTitle": "I log non sono disponibili per questo nodo",
+      "checkAgain": "Riprova",
+      "unavailable": {
+        "invalid_url": "L’URL del nodo non è valido, quindi i log non si possono trovare.",
+        "no_container": "Il nodo gira su questo computer, ma non in un container Docker che l’app riesce a trovare. Se lo avvii con Docker, pubblica la porta API (ad esempio -p 3001:3001) e riprova.",
+        "remote_host": "Questo nodo gira su un’altra macchina, quindi i suoi log restano lì. Leggili sul server, ad esempio con docker logs."
+      }
+    },
+    "tabs": {
+      "general": "Generale",
+      "trading": "Maker e LSP",
+      "node": "Connessione nodo",
+      "security": "Sicurezza",
+      "logs": "Log"
+    },
+    "makerLspDescription": "I market maker quotano i tuoi swap; l’LSP ti vende canali e liquidità in entrata.",
+    "unsavedChanges": "Hai modifiche non salvate",
+    "backupWalletDescription": "Esporta un backup cifrato del wallet",
+    "session": "Sessione",
+    "showToken": "Mostra token",
+    "hideToken": "Nascondi token",
+    "changePassword": "Cambia password",
+    "changePasswordDescription": "Aggiorna la password di cifratura del wallet",
+    "logoutDescription": "Blocca il wallet e torna alla lista account. Il nodo conserva i suoi dati.",
+    "shutdownDescription": "Arresta il processo del nodo. I canali restano aperti ma il nodo va offline.",
+    "toasts": {
+      "restarting": "Riavvio del nodo…",
+      "restarted": "Nodo riavviato con le nuove impostazioni",
+      "restartFailedTitle": "Riavvio del nodo non riuscito",
+      "restartFailedMessage": "Si è verificato un problema durante il riavvio del nodo.",
+      "saved": "Impostazioni salvate",
+      "saveFailedTitle": "Impostazioni non salvate",
+      "saveFailedMessage": "Si è verificato un problema durante il salvataggio delle impostazioni.",
+      "loggedOut": "Disconnesso",
+      "logoutFailed": "Non è stato possibile bloccare correttamente il wallet ({{error}}). Sei stato disconnesso comunque.",
+      "shutDown": "Nodo spento",
+      "shutdownFailed": "Impossibile spegnere il nodo"
+    }
   },
   "modals": {
     "logoutTitle": "Conferma Disconnessione",
@@ -559,6 +613,9 @@
       "goToChannels": "Vai alla Pagina Canali",
       "success": "Canale creato con successo!",
       "successMessage": "Il canale è stato creato con successo, ora puoi iniziare a fare trading."
+    },
+    "toasts": {
+      "capacityRequired": "Inserisci la capacità del canale"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "Attendere prego, il backup è in corso...",
     "backupLockedMessage": "Il nodo sarà bloccato fino al completamento del processo di backup.",
     "cancel": "Annulla",
-    "createBackup": "Crea Backup"
+    "createBackup": "Crea Backup",
+    "toasts": {
+      "invalidPath": "Scegli una cartella valida per il backup",
+      "fileExists": "Esiste già un file di backup in quella cartella. Scegline un’altra.",
+      "lockFailed": "Impossibile bloccare il wallet per il backup",
+      "success": "Backup salvato",
+      "unlockFailed": "Impossibile sbloccare il wallet dopo il backup",
+      "wrongPassword": "Password errata",
+      "failed": "Backup non riuscito"
+    }
   },
   "logoutModal": {
     "loggingOut": "Disconnessione in corso",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "Attendi la quotazione dell’asset prima di continuare"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "Crea UTXO"
     },
-    "toastSuccess": "UTXO creati con successo"
+    "toastSuccess": "UTXO creati con successo",
+    "toasts": {
+      "created": "UTXO creati",
+      "retryFailed": "Gli UTXO sono stati creati, ma l’operazione originale non è riuscita. Riprova."
+    }
   },
   "legal": {
     "common": {
@@ -2151,7 +2224,9 @@
       "newAssetInfo": "Se non conosci l'ID dell'asset, puoi procedere senza inserirlo. Il sistema genererà un indirizzo di deposito che può ricevere qualsiasi asset RGB.",
       "assetIdLabel": "ID Asset (opzionale)",
       "assetIdPlaceholder": "Inserisci ID asset (opzionale)",
-      "continueWith": "Continua con {{ticker}}"
+      "continueWith": "Continua con {{ticker}}",
+      "anyRgbAsset": "Qualsiasi asset RGB",
+      "otherAssets": "Altri asset"
     },
     "step2": {
       "titleWithTicker": "Deposita {{ticker}}",
@@ -2259,7 +2334,7 @@
     "fileSizes": ["Byte", "KB", "MB", "GB"],
     "fileSizeZero": "0 Byte",
     "errors": {
-      "timeout": "Il processo di aggiornamento è scaduto dopo 5 minuti. Controlla la connessione internet e riprova.",
+      "timeout": "Il download si è interrotto. Controlla la connessione a internet e riprova.",
       "installFailed": "Installazione aggiornamento fallita: {{message}}. Riprova o scarica manualmente da GitHub.",
       "cancelled": "Aggiornamento annullato dall'utente"
     },
@@ -2656,6 +2731,18 @@
         "custom": "{{rate}} sat/vB (Personalizzata)",
         "predefined": "{{rate}} sat/vB ({{label}})"
       }
+    },
+    "sent": {
+      "title": "Pagamento inviato",
+      "lightning": "Lightning",
+      "onchain": "On-chain",
+      "rgbOnchain": "RGB on-chain",
+      "lightningBody": "Il pagamento è stato regolato su Lightning.",
+      "onchainBody": "La transazione è stata trasmessa. Verrà confermata nei prossimi blocchi.",
+      "rgbBody": "Il trasferimento è stato inviato. Il destinatario lo riceve quando la transazione viene confermata.",
+      "to": "A",
+      "paymentHash": "Hash del pagamento",
+      "txid": "ID transazione"
     }
   },
   "components": {
@@ -3110,5 +3197,97 @@
     "bitcoindBody": "Più privato, si basa su un nodo che gestisci tu. Richiede Bitcoin Core con RPC, sempre raggiungibile.",
     "invalidFormat": "Usa il formato utente:password@host:porta",
     "notConfigured": "Non usato: sincronizzazione dall'indexer"
+  },
+  "nwc": {
+    "title": "Connessioni app",
+    "subtitle": "Permetti ad altre app di usare questo wallet tramite Nostr Wallet Connect. Il nodo resta su questo computer.",
+    "add": "Nuova connessione",
+    "activity": "Attività recente",
+    "activityHint": "Le richieste delle app collegate appariranno qui mentre la pagina è aperta.",
+    "budgetUsed": "{{spent}} di {{budget}} sats spesi",
+    "cancel": "Annulla",
+    "caps": {
+      "receive": "Ricevere",
+      "spend": "Può spendere",
+      "view": "Visualizzare"
+    },
+    "connect": {
+      "title": "Collega la tua app",
+      "warning": "Questo codice dà all’app i permessi scelti. Viene mostrato una sola volta: scansionalo o copialo ora e non condividerlo."
+    },
+    "connections": "Connessioni",
+    "done": "Fatto",
+    "empty": {
+      "body": "Crea una connessione e scansiona il QR dall’app da collegare, ad esempio il wallet mobile di KaleidoSwap.",
+      "stopped": "Avvia il servizio per aggiungere una connessione.",
+      "title": "Nessuna app collegata"
+    },
+    "errors": {
+      "create": "Impossibile creare la connessione",
+      "permissions": "Seleziona almeno un permesso",
+      "revoke": "Impossibile revocare la connessione",
+      "start": "Impossibile avviare il servizio",
+      "update": "Impossibile aggiornare la connessione"
+    },
+    "lastUsed": "Usata {{when}}",
+    "neverUsed": "Mai usata",
+    "new": {
+      "access": "Accesso",
+      "budget": "Limite di spesa",
+      "budgetHint": "Limita il totale che questa app può inviare. Lascia vuoto per nessun limite.",
+      "create": "Crea connessione",
+      "customBudget": "Importo personalizzato in sats",
+      "groupLightning": "Lightning",
+      "groupRgb": "Asset RGB",
+      "name": "Nome",
+      "namePlaceholder": "es. Rate mobile, Estensione browser",
+      "noLimit": "Nessun limite",
+      "title": "Nuova connessione app",
+      "defaultName": "Connessione app {{n}}"
+    },
+    "noBudget": "Nessun limite di spesa",
+    "pause": "Metti in pausa",
+    "paused": "In pausa",
+    "permissionsCount": "{{count}} permessi",
+    "presets": {
+      "custom": "Personalizzato",
+      "customDesc": "Scegli ogni permesso.",
+      "full": "Wallet completo",
+      "fullDesc": "Lightning e RGB: visualizza, ricevi e invia. Consigliato per i wallet KaleidoSwap.",
+      "receive": "Visualizza e ricevi",
+      "receiveDesc": "Vede i saldi e crea fatture. Non può spendere.",
+      "view": "Solo visualizzazione",
+      "viewDesc": "Solo saldi, asset e cronologia."
+    },
+    "resume": "Riattiva",
+    "revoke": "Revoca",
+    "revokeBody": "“{{name}}” perderà subito l’accesso a questo wallet. Per ricollegarla servirà una nuova connessione.",
+    "revokeTitle": "Revoca connessione",
+    "revoked": "Connessione revocata",
+    "service": {
+      "identity": "Identità del servizio wallet",
+      "running": "Servizio attivo",
+      "scope": "Pagamenti Lightning e asset RGB (estensioni KaleidoSwap)",
+      "start": "Avvia servizio",
+      "stopped": "Servizio fermo"
+    },
+    "methods": {
+      "get_info": "Info nodo",
+      "get_balance": "Saldo",
+      "make_invoice": "Crea fatture",
+      "lookup_invoice": "Cerca fatture",
+      "list_transactions": "Cronologia transazioni",
+      "pay_invoice": "Paga fatture",
+      "pay_keysend": "Invia keysend",
+      "rln_node_info": "Info nodo RGB",
+      "rln_list_assets": "Elenca asset RGB",
+      "rln_asset_balance": "Saldi RGB",
+      "rln_rgb_invoice": "Crea fatture RGB",
+      "rln_ln_invoice": "Crea fatture RGB Lightning",
+      "rln_decode_rgb_invoice": "Decodifica fatture RGB",
+      "rln_send_asset": "Invia asset RGB",
+      "rln_list_channels": "Elenca canali",
+      "rln_get_address": "Indirizzo on-chain"
+    }
   }
 }

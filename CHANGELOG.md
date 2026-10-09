@@ -1,3 +1,30 @@
+## [Version 0.6.0] - 2026-10-08
+
+### 🚀 Features
+- **App Connections in the sidebar**: Nostr Wallet Connect moves to the Node section, with a redesigned page: service status, connection cards with permissions, budget and last use, pause switch, and revoke confirmation
+- **Settings tabs**: Settings are grouped into tabs, and the language applies at once
+- **Deposit and withdraw**: BTC and USDT are pinned in the deposit picker, with a slider and recents for other assets; a confirmation screen follows each sent payment
+- **Explorer links**: BTC sends show their txid with a block explorer link
+- **Node logs**: Logs keep their history across restarts, show the newest lines first, and can be exported from a local Docker node, also behind a remote URL
+- **KaleidoMind model catalog**: Updated published models, with a recommendation based on device memory
+
+### 🔧 Improvements
+- **KaleidoMind runtime `mind-assets-v0.10.14`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.2 (`@kaleidorg/mind` 0.10.14) and `kaleido-mcp` 0.4.5, on `@qvac/sdk` 0.21.0. Swaps quote with the RGB asset id, report when they complete or expire, show BTC amounts in sats, and explain the per-payment channel limit; balance questions that name an asset include RGB balances, and requests for a wallet the desktop does not have (Spark, Ark, Liquid) say so; ordering a channel asks for confirmation and shows the full amount due. Existing installs download the new runtime on next enable
+- **Local models only**: Phone pairing and remote model serving are removed for now; KaleidoMind runs local models only
+- **RGB-only agent**: KaleidoMind loads only the RGB Lightning Node, channel, KaleidoSwap trading and portfolio skills, and only the node, KaleidoSwap and price tools; the Spark, Flashnet, Liquid, gift-card and paywall skills are gone, since the desktop wallet is an RGB Lightning Node
+- **Thinking switch**: A "Thinking on/off" button in the chat header, also in Agent → Response limits. Off answers faster; on reasons before answering, up to the thinking budget
+- **Response cap**: Each reply is capped at 4,096 tokens by default, adjustable between 512 and 8,192 in Agent → Response limits; it can no longer be set to uncapped
+- **Accessible dialogs**: Dialogs keep focus inside and restore it on close; restart, logout and shutdown use a shared confirmation dialog
+- **Translations**: Remaining hardcoded toasts and settings errors are translated in all eight languages
+- **Startup**: Simpler splash screen and smoother loading animation
+
+### 🐛 Bug Fixes
+- **Update modal**: Long release notes no longer push the install and close buttons off screen; notes render as Markdown, and a stalled download is reported
+- **KaleidoMind mock answers**: An outdated runtime now shows "Update KaleidoMind runtime" instead of silently answering in mock mode, and mock mode shows a banner
+- **Recovery phrase length**: Wallet creation says 12 words, matching the phrase the node generates
+- **RGB assets**: Every RGB asset resolves in the wallet, BTC unit conversion is shared, and polling is lighter
+- **Colored UTXO deposits**: Deposit controls stay interactive
+
 ## [Version 0.5.1] - 2026-10-07
 
 > ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.5.1: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.5.1.

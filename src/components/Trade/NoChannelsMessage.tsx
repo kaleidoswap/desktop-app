@@ -768,7 +768,7 @@ export const ConnectionTimeoutMessage: React.FC<
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              className={`px-6 py-3 ${isConnecting ? 'bg-primary hover:bg-primary-emphasis text-[#12131C]' : 'bg-orange-600 hover:bg-orange-700 text-white'} rounded-lg transition-colors font-medium flex items-center gap-2`}
+              className={`px-6 py-3 ${isConnecting ? 'bg-primary hover:bg-primary-emphasis text-primary-foreground' : 'bg-orange-600 hover:bg-orange-700 text-white'} rounded-lg transition-colors font-medium flex items-center gap-2`}
               onClick={onRetry}
             >
               <RefreshCcw className="w-5 h-5" />

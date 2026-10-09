@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
+import { ExplorerLink } from '../../../components/ExplorerLink'
 import { Card, Badge, Select, Button } from '../../../components/ui'
 import {
   Table,
@@ -396,7 +397,7 @@ export const Component = () => {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 via-green-500/25 to-teal-600/30 rounded-full blur-2xl"></div>
             <div className="relative bg-gradient-to-br from-primary/20 to-primary/5 backdrop-blur-2xl rounded-2xl p-6 ring-1 ring-primary/20 shadow-lg shadow-primary/10">
-              <Coins className="relative z-10 w-10 h-10 text-[#15E99A]" />
+              <Coins className="relative z-10 w-10 h-10 text-primary" />
             </div>
           </div>
           <div className="text-center space-y-4 max-w-lg">
@@ -556,6 +557,7 @@ export const Component = () => {
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </button>
+                      <ExplorerLink className="ml-2" txid={transfer.txid} />
                     </div>
                   </div>
                 </div>

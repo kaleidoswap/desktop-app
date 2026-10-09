@@ -16,7 +16,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 /// GitHub release tag the agent tarballs live under. Bump when the agent
 /// (provider/mcp/@qvac) version changes and new assets are published.
-const ASSETS_TAG: &str = "mind-assets-v0.8.0";
+const ASSETS_TAG: &str = "mind-assets-v0.11.0";
 const ASSETS_REPO: &str = "kaleidoswap/desktop-app";
 const RUNTIME_EVENT: &str = "mind-runtime";
 
@@ -96,6 +96,11 @@ fn current_runtime_base(app: &AppHandle) -> Option<PathBuf> {
         return None;
     }
     runtime_base(app)
+}
+
+/// A runtime marker from an older ASSETS_TAG exists — the UI offers an update.
+pub fn is_stale(app: &AppHandle) -> bool {
+    installed_version(app).is_some_and(|v| v != ASSETS_TAG)
 }
 
 /// True once the CURRENT runtime version has been downloaded + extracted.

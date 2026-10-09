@@ -151,7 +151,7 @@ export function CreateDcaForm({ currentBtcPrice, onCreated }: Props) {
           </p>
         </div>
         <button
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-[#12131C] transition-colors hover:bg-primary-emphasis"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-emphasis"
           onClick={() =>
             navigate(ORDER_CHANNEL_PATH, {
               state: { returnTo: TRADE_DCA_PATH },

@@ -10,20 +10,11 @@ import { listen } from '@tauri-apps/api/event'
 
 // ── Protocol types (mirror apps/provider/src/protocol.ts) ────────────────
 
-export interface PeerInfo {
-  shortKey: string
-  label: string
-  connectedAt: number
-  lastActiveAt: number
-}
-
 export interface ProviderStatusEvent {
   type: 'status'
   on: boolean
-  publicKey: string | null
   activeModelId: string | null
   activeModelName: string | null
-  peers: PeerInfo[]
   tokensPerSecond: number | null
   startedAt: number | null
   inferenceDevice?: 'gpu' | 'cpu' | 'mock' | null
@@ -61,6 +52,13 @@ export interface InstalledModel {
   active: boolean
 }
 
+export interface MindHardware {
+  totalMemoryBytes: number
+  availableMemoryBytes: number
+  logicalCores: number
+  architecture: string
+}
+
 export interface CatalogModel {
   id: string
   family: string
@@ -71,6 +69,7 @@ export interface CatalogModel {
   hfFile: string
   ramHintGb: number
   notes?: string
+  recommended?: boolean
 }
 
 export interface DownloadProgress {
@@ -81,12 +80,7 @@ export interface DownloadProgress {
 }
 
 export type ProviderLoadingPhase =
-  | 'loading_model'
-  | 'model_loaded'
-  | 'starting_p2p'
-  | 'ready'
-  | 'p2p_failed'
-  | 'aborted'
+  'loading_model' | 'model_loaded' | 'ready' | 'aborted'
 
 export interface ProviderLoadingEvent {
   type: 'provider_loading'
@@ -188,12 +182,39 @@ export interface AgentState {
   schedulerRunning: boolean
   risk: RiskLimits
   targets: PortfolioTargets
-  /** Generation token caps (0 ⇒ uncapped). */
-  generation: { maxThinkingTokens: number; maxOutputTokens: number }
+  generation: GenerationLimits
   recent: TaskRunRecord[]
   stats: Record<string, TaskStats>
   cumulative: TaskRunCost
 }
+
+export interface GenerationLimits {
+  /** Older providers omit it; treat missing as on. */
+  thinking?: boolean
+  maxThinkingTokens: number
+  maxOutputTokens: number
+}
+
+/** The response cap always stays within these bounds on desktop. */
+export const RESPONSE_TOKENS = { default: 4096, max: 8192, min: 512 }
+export const THINKING_TOKENS = { default: 1024, max: 4096, min: 128 }
+
+const clampTokens = (
+  value: number,
+  bounds: { default: number; max: number; min: number }
+) =>
+  Number.isFinite(value) && value > 0
+    ? Math.min(bounds.max, Math.max(bounds.min, Math.round(value)))
+    : bounds.default
+
+/** Fill in thinking and keep both caps inside the desktop bounds (0 ⇒ default). */
+export const normalizeLimits = (
+  g: GenerationLimits
+): Required<GenerationLimits> => ({
+  maxOutputTokens: clampTokens(g.maxOutputTokens, RESPONSE_TOKENS),
+  maxThinkingTokens: clampTokens(g.maxThinkingTokens, THINKING_TOKENS),
+  thinking: g.thinking ?? true,
+})
 
 export interface SuggestedAction {
   id: string
@@ -232,9 +253,6 @@ export type MindEvent =
   | ProviderStatusEvent
   | ProviderLoadingEvent
   | ToolConfirmRequestEvent
-  | { type: 'pubkey'; value: string }
-  | { type: 'peer_connected'; peer: PeerInfo }
-  | { type: 'peer_disconnected'; shortKey: string }
   | { type: 'download_progress'; progress: DownloadProgress }
   | { type: 'download_completed'; modelId: string }
   | { type: 'chat_thinking_delta'; chatId: string; delta: string }
@@ -398,6 +416,13 @@ class MindClient {
   }
 
   /**
+   * Whether an older runtime version is installed (the download is an update).
+   */
+  async runtimeStale(): Promise<boolean> {
+    return invoke<boolean>('mind_runtime_stale')
+  }
+
+  /**
    * Start downloading the agent runtime; progress arrives via onRuntimeProgress.
    */
   async installRuntime(): Promise<void> {
@@ -456,6 +481,10 @@ class MindClient {
   }
 
   // ── Typed command helpers ───────────────────────────────────────────
+  getHardware() {
+    return invoke<MindHardware>('mind_hardware')
+  }
+
   getStatus() {
     return this.request<ProviderStatusEvent>({ cmd: 'get_status' })
   }
@@ -482,7 +511,7 @@ class MindClient {
     return this.request({ cmd: 'delete_model', modelId })
   }
   startProvider(modelId: string) {
-    // Loading + P2P bootstrap can take a while.
+    // Loading a model can take a while.
     return this.request<ProviderStatusEvent>({ cmd: 'start', modelId }, 180_000)
   }
   stopProvider() {
@@ -612,10 +641,7 @@ class MindClient {
   setPortfolioTargets(targets: Partial<PortfolioTargets>) {
     return this.request<AgentState>({ cmd: 'set_portfolio_targets', targets })
   }
-  setGenerationLimits(limits: {
-    maxThinkingTokens?: number
-    maxOutputTokens?: number
-  }) {
+  setGenerationLimits(limits: Partial<GenerationLimits>) {
     return this.request<AgentState>({ cmd: 'set_generation_limits', ...limits })
   }
   getSuggestedActions() {

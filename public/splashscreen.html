@@ -1,264 +1,214 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Opening KaleidoSwap</title>
     <style>
-        @import url('https://cdnjs.cloudflare.com/ajax/libs/inter/3.19.3/inter.css');
-
-        :root {
-            --primary: #6366F1;
-            --primary-light: #818CF8;
-            --accent: #F472B6;
-            --bg-dark: #0F172A;
-            --bg-light: #1E293B;
-            --text: #F8FAFC;
-            --text-secondary: #CBD5E1;
+      @font-face {
+        font-family: Satoshi;
+        src: url('/fonts/Satoshi-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: Satoshi;
+        src: url('/fonts/Satoshi-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-display: swap;
+      }
+      :root {
+        color-scheme: dark;
+        font-family:
+          Satoshi,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        color: #f4f5fa;
+        background: #11131d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse at 65% 30%, #6f32ff12, transparent 60%),
+          radial-gradient(ellipse at 25% 75%, #15e99a0a, transparent 60%),
+          #11131d;
+      }
+      .splash {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: min(100% - 48px, 340px);
+        text-align: center;
+        animation: arrive 450ms ease-out both;
+      }
+      .brand-mark {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 144px;
+        height: 144px;
+        margin-bottom: 28px;
+      }
+      .brand-mark::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(circle, #6f32ff1c, transparent 70%);
+      }
+      .orbit {
+        position: absolute;
+        inset: 0;
+        border: 1px solid #ffffff08;
+        border-radius: 50%;
+      }
+      .orbit::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        border: 1px solid transparent;
+        border-top-color: #15e99a70;
+        border-right-color: #6f32ff50;
+        border-radius: inherit;
+        animation: orbit 4s linear infinite;
+      }
+      .logo {
+        position: relative;
+        width: 76px;
+        height: 76px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -1px;
+      }
+      .tagline {
+        margin: 12px 0 36px;
+        color: #969aaa;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .loading {
+        width: 100%;
+        padding: 20px 24px;
+        border: 1px solid #ffffff09;
+        border-radius: 16px;
+        background: #ffffff03;
+      }
+      .status {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 9px;
+        margin: 0 0 16px;
+        font-size: 13px;
+        line-height: 20px;
+        color: #c9cbd6;
+      }
+      .status-light {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #15e99a;
+        box-shadow: 0 0 10px #15e99a35;
+      }
+      .activity-track {
+        height: 3px;
+        border-radius: 3px;
+        overflow: hidden;
+        background: #ffffff09;
+      }
+      .activity-fill {
+        width: 40%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #17b581, #15e99a, #8560ff);
+        animation: activity 1.8s ease-in-out infinite;
+        will-change: transform;
+      }
+      @keyframes arrive {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
         }
-
-        body, html {
-            height: 100vh;
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow: hidden;
-            background: radial-gradient(circle at 50% 50%, var(--bg-light), var(--bg-dark));
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: var(--text);
+      }
+      @keyframes orbit {
+        to {
+          transform: rotate(360deg);
         }
-
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
+      }
+      @keyframes activity {
+        from {
+          transform: translateX(-110%);
         }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.07;
-            animation: float 20s infinite linear;
+        to {
+          transform: translateX(360%);
         }
-
-        @keyframes float {
-            0% {
-                transform: translate(0, 0);
-            }
-            100% {
-                transform: translate(var(--move-x), var(--move-y));
-            }
+      }
+      @media (max-height: 420px) {
+        .brand-mark {
+          width: 100px;
+          height: 100px;
+          margin-bottom: 16px;
         }
-
-        .container {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 3.5rem;
-            width: 480px;
-            max-width: 90vw;
-            animation: appear 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        @keyframes appear {
-            0% {
-                opacity: 0;
-                transform: scale(0.96);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .product-name {
-            font-size: 42px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #15E99A, #6F32FF);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1.5rem;
-            animation: slideDown 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-            text-align: center;
-        }
-
-        @keyframes slideDown {
-            0% {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
         .logo {
-            width: 180px;
-            height: auto;
-            margin: 2rem 0 3.5rem;
-            animation: pulse 6s ease-in-out infinite;
-            filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.2));
+          width: 56px;
+          height: 56px;
         }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1) translateY(0);
-                filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.2));
-            }
-            50% {
-                transform: scale(1.05) translateY(-10px);
-                filter: drop-shadow(0 16px 32px rgba(99, 102, 241, 0.3));
-            }
+        .tagline {
+          margin-bottom: 20px;
         }
-
-        .text {
-            font-size: 18px;
-            line-height: 1.6;
-            color: var(--text-secondary);
-            margin: 0 0 3rem 0;
-            max-width: 360px;
-            text-align: center;
-            animation: fadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s backwards;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .activity-fill {
+          width: 100%;
+          opacity: 0.65;
+          will-change: auto;
         }
-
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-            animation: fadeIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s backwards;
-        }
-
-        .progress-bar {
-            width: 200px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background: linear-gradient(90deg, #15E99A, #6F32FF);
-            animation: loading 2s ease-in-out infinite;
-            border-radius: 2px;
-        }
-
-        @keyframes loading {
-            0% {
-                width: 0;
-                opacity: 1;
-            }
-            50% {
-                width: 100%;
-                opacity: 0.5;
-            }
-            100% {
-                width: 0;
-                opacity: 1;
-            }
-        }
-
-        .loading-text {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .loading-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .dot {
-            width: 4px;
-            height: 4px;
-            background: var(--text-secondary);
-            border-radius: 50%;
-            animation: dotPulse 1.4s infinite;
-        }
-
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes dotPulse {
-            0%, 100% { transform: scale(0.6); opacity: 0.4; }
-            50% { transform: scale(1); opacity: 1; }
-        }
+      }
     </style>
-</head>
-<body>
-    <div class="particles" id="particles"></div>
-    <div class="container">
-        <div class="product-name">KaleidoSwap</div>
-        <img src="/kaleidoswap-pictogram.svg" alt="KaleidoSwap Logo" class="logo">
-        <div class="text">Trustless trading on Lightning Network</div>
-        <div class="loading-container">
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-            <div class="loading-text">
-                Initializing
-                <div class="loading-dots">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            </div>
+  </head>
+  <body>
+    <main class="splash" aria-busy="true">
+      <div class="brand-mark" aria-hidden="true">
+        <div class="orbit"></div>
+        <img src="/kaleidoswap-pictogram.svg" alt="" class="logo" />
+      </div>
+      <h1>KaleidoSwap</h1>
+      <p class="tagline">Trustless trading on Lightning Network</p>
+      <div class="loading" role="status" aria-live="polite">
+        <p class="status">
+          <span class="status-light" aria-hidden="true"></span>
+          Opening your workspace
+        </p>
+        <div class="activity-track" aria-hidden="true">
+          <div class="activity-fill"></div>
         </div>
-    </div>
-
-    <script>
-        // Create floating particles
-        const particles = document.getElementById('particles');
-        const particleCount = 8;
-
-        const colors = ['#6F32FF', '#15E99A', '#4F1FCC', '#0FB87A', '#8B5CF6', '#10D98A'];
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-
-            const size = Math.random() * 260 + 140;
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size}px`;
-
-            particle.style.background = colors[i % colors.length];
-
-            particle.style.left = `${Math.random() * 100}%`;
-            particle.style.top = `${Math.random() * 100}%`;
-
-            const moveX = (Math.random() - 0.5) * 100;
-            const moveY = (Math.random() - 0.5) * 100;
-            particle.style.setProperty('--move-x', `${moveX}%`);
-            particle.style.setProperty('--move-y', `${moveY}%`);
-
-            particle.style.animationDelay = `${-Math.random() * 20}s`;
-
-            particles.appendChild(particle);
-        }
-    </script>
-</body>
+      </div>
+    </main>
+  </body>
 </html>

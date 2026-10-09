@@ -26,7 +26,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
             {t('components.buyChannelModal.statusClose')}
           </button>
           <button
-            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
             {t('components.buyChannelModal.statusTryAgain')}
@@ -58,7 +58,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
             {t('components.buyChannelModal.statusClose')}
           </button>
           <button
-            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
+            className="px-6 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
             onClick={onRetry}
           >
             {t('components.buyChannelModal.statusCreateNewOrder')}
@@ -83,7 +83,7 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({
     success: {
       actions: (
         <button
-          className="px-8 py-3 bg-primary hover:bg-primary-emphasis text-[#12131C] rounded-xl font-medium transition-colors"
+          className="px-8 py-3 bg-primary hover:bg-primary-emphasis text-primary-foreground rounded-xl font-medium transition-colors"
           onClick={onClose}
         >
           {t('components.buyChannelModal.statusGotIt')}

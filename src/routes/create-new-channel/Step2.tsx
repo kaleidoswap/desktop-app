@@ -441,10 +441,13 @@ export const Step2 = ({
     // Check if capacity is empty or zero
     const parsedCapacity = parseFloat(data.capacitySat || '0')
     if (!parsedCapacity) {
-      toast.error('Please enter a channel capacity.', {
-        autoClose: 5000,
-        position: 'bottom-right',
-      })
+      toast.error(
+        t('createChannel.toasts.capacityRequired', 'Enter a channel capacity'),
+        {
+          autoClose: 5000,
+          position: 'bottom-right',
+        }
+      )
       return
     }
 

@@ -59,7 +59,6 @@
     "history": "历史记录",
     "liquidity": "流动性",
     "brain": "大脑",
-    "pairing": "配对",
     "models": "模型",
     "skills": "技能",
     "chat": "聊天",
@@ -73,7 +72,8 @@
     "helpSupport": "帮助与支持",
     "getHelpSupport": "获取帮助与支持",
     "menu": "Menu",
-    "expandSidebar": "Expand sidebar"
+    "expandSidebar": "Expand sidebar",
+    "nwc": "应用连接"
   },
   "channels": {
     "pageTitle": "闪电钱包仪表板",
@@ -225,7 +225,61 @@
     "restartNow": "立即重启",
     "later": "稍后",
     "shuttingDownTitle": "正在关闭节点",
-    "shuttingDownMessage": "请稍候，节点正在关闭..."
+    "shuttingDownMessage": "请稍候，节点正在关闭...",
+    "logs": {
+      "live": "实时",
+      "paused": "已暂停",
+      "resume": "恢复实时更新",
+      "pause": "暂停实时更新",
+      "copy": "复制可见行",
+      "filter": "筛选行…",
+      "older": "更早",
+      "newer": "更新",
+      "fetchError": "无法读取节点日志，实时更新已停止。",
+      "noMatches": "没有匹配的行",
+      "matching": "{{count}} 行匹配",
+      "exported": "日志已导出",
+      "exportFailed": "导出日志失败",
+      "jumpToLatest": "回到最新",
+      "dockerContainer": "Docker 容器",
+      "unavailableTitle": "此节点的日志不可用",
+      "checkAgain": "重新检查",
+      "unavailable": {
+        "invalid_url": "节点 URL 无效，无法定位其日志。",
+        "no_container": "节点在本机运行，但不在应用可找到的 Docker 容器中。如果使用 Docker 运行，请发布其 API 端口（例如 -p 3001:3001）后重新检查。",
+        "remote_host": "此节点运行在另一台机器上，日志也在那里。请在服务器上查看，例如使用 docker logs。"
+      }
+    },
+    "tabs": {
+      "general": "通用",
+      "trading": "做市商与 LSP",
+      "node": "节点连接",
+      "security": "安全",
+      "logs": "日志"
+    },
+    "makerLspDescription": "做市商为您的兑换报价；LSP 向您出售通道和入站流动性。",
+    "unsavedChanges": "您有未保存的更改",
+    "backupWalletDescription": "导出加密的钱包备份",
+    "session": "会话",
+    "showToken": "显示令牌",
+    "hideToken": "隐藏令牌",
+    "changePassword": "更改密码",
+    "changePasswordDescription": "更新钱包加密密码",
+    "logoutDescription": "锁定钱包并返回账户列表。节点数据会保留。",
+    "shutdownDescription": "停止节点进程。通道保持开启，但节点将离线。",
+    "toasts": {
+      "restarting": "正在重启节点…",
+      "restarted": "已使用新设置重启节点",
+      "restartFailedTitle": "节点重启失败",
+      "restartFailedMessage": "重启节点时出现问题。",
+      "saved": "设置已保存",
+      "saveFailedTitle": "设置未保存",
+      "saveFailedMessage": "保存设置时出现问题。",
+      "loggedOut": "已退出登录",
+      "logoutFailed": "未能正常锁定钱包（{{error}}），但您已退出登录。",
+      "shutDown": "节点已关闭",
+      "shutdownFailed": "无法关闭节点"
+    }
   },
   "modals": {
     "logoutTitle": "确认退出登录",
@@ -559,6 +613,9 @@
       "goToChannels": "转到通道页面",
       "success": "通道创建成功！",
       "successMessage": "通道已成功创建，您现在可以开始交易。"
+    },
+    "toasts": {
+      "capacityRequired": "请输入通道容量"
     }
   },
   "supportModal": {
@@ -618,7 +675,16 @@
     "backupInProgressMessage": "请稍候，备份正在进行中...",
     "backupLockedMessage": "在备份过程完成之前，节点将被锁定。",
     "cancel": "取消",
-    "createBackup": "创建备份"
+    "createBackup": "创建备份",
+    "toasts": {
+      "invalidPath": "请选择有效的备份文件夹",
+      "fileExists": "该位置已存在备份文件，请选择其他文件夹。",
+      "lockFailed": "无法锁定钱包以进行备份",
+      "success": "备份已保存",
+      "unlockFailed": "备份后无法解锁钱包",
+      "wrongPassword": "密码错误",
+      "failed": "备份失败"
+    }
   },
   "logoutModal": {
     "loggingOut": "正在退出登录",
@@ -1797,7 +1863,10 @@
     "backConfirmTitle": "Leave this page?",
     "backConfirmMessage": "Going back will cancel your current order. Any progress will be lost.",
     "backConfirmCancel": "Stay",
-    "backConfirmGoBack": "Go Back"
+    "backConfirmGoBack": "Go Back",
+    "toasts": {
+      "waitForQuote": "请等待资产报价后再继续"
+    }
   },
   "channelConfiguration": {
     "bitcoinChannel": {
@@ -1890,7 +1959,11 @@
     "actions": {
       "create": "创建 UTXO"
     },
-    "toastSuccess": "UTXO 创建成功"
+    "toastSuccess": "UTXO 创建成功",
+    "toasts": {
+      "created": "已创建 UTXO",
+      "retryFailed": "UTXO 已创建，但原操作失败，请重试。"
+    }
   },
   "legal": {
     "common": {
@@ -2148,7 +2221,9 @@
       "newAssetInfo": "如果您不知道资产 ID，可以不输入即可继续。系统将生成一个可以接收任何 RGB 资产的存款地址。",
       "assetIdLabel": "资产 ID（可选）",
       "assetIdPlaceholder": "输入资产 ID（可选）",
-      "continueWith": "继续使用 {{ticker}}"
+      "continueWith": "继续使用 {{ticker}}",
+      "anyRgbAsset": "任意 RGB 资产",
+      "otherAssets": "其他资产"
     },
     "step2": {
       "titleWithTicker": "存入 {{ticker}}",
@@ -2256,7 +2331,7 @@
     "fileSizes": ["字节", "KB", "MB", "GB"],
     "fileSizeZero": "0 字节",
     "errors": {
-      "timeout": "更新过程在 5 分钟后超时。请检查您的互联网连接并重试。",
+      "timeout": "下载已停止。请检查网络连接后重试。",
       "installFailed": "安装更新失败：{{message}}。请重试或从 GitHub 手动下载。",
       "cancelled": "用户取消更新"
     },
@@ -2653,6 +2728,18 @@
         "custom": "{{rate}} sat/vB（自定义）",
         "predefined": "{{rate}} sat/vB（{{label}}）"
       }
+    },
+    "sent": {
+      "title": "付款已发送",
+      "lightning": "Lightning",
+      "onchain": "链上",
+      "rgbOnchain": "RGB 链上",
+      "lightningBody": "付款已通过闪电网络完成。",
+      "onchainBody": "交易已广播，将在接下来的区块中确认。",
+      "rgbBody": "转账已发送，交易确认后收款方即可收到。",
+      "to": "收款方",
+      "paymentHash": "付款哈希",
+      "txid": "交易 ID"
     }
   },
   "components": {
@@ -3107,5 +3194,97 @@
     "bitcoindBody": "更私密，基于你自己运行的节点。需要启用 RPC 且始终可访问的 Bitcoin Core。",
     "invalidFormat": "请使用 用户名:密码@主机:端口 格式",
     "notConfigured": "未使用：通过索引器同步"
+  },
+  "nwc": {
+    "title": "应用连接",
+    "subtitle": "通过 Nostr Wallet Connect 让其他应用使用此钱包。您的节点仍留在本机。",
+    "add": "新建连接",
+    "activity": "最近活动",
+    "activityHint": "页面打开期间，已连接应用的请求会显示在这里。",
+    "budgetUsed": "已花费 {{spent}} / {{budget}} sats",
+    "cancel": "取消",
+    "caps": {
+      "receive": "收款",
+      "spend": "可支出",
+      "view": "查看"
+    },
+    "connect": {
+      "title": "连接您的应用",
+      "warning": "此代码会授予应用您选择的权限，仅显示一次：请立即扫描或复制，切勿分享。"
+    },
+    "connections": "连接",
+    "done": "完成",
+    "empty": {
+      "body": "创建连接，并在要关联的应用（例如 KaleidoSwap 移动钱包）中扫描二维码。",
+      "stopped": "启动服务以添加连接。",
+      "title": "尚未连接任何应用"
+    },
+    "errors": {
+      "create": "无法创建连接",
+      "permissions": "请至少选择一项权限",
+      "revoke": "无法撤销连接",
+      "start": "无法启动服务",
+      "update": "无法更新连接"
+    },
+    "lastUsed": "{{when}}使用",
+    "neverUsed": "从未使用",
+    "new": {
+      "access": "访问权限",
+      "budget": "支出上限",
+      "budgetHint": "限制此应用可发送的总额。留空表示不限。",
+      "create": "创建连接",
+      "customBudget": "自定义金额（sats）",
+      "groupLightning": "Lightning",
+      "groupRgb": "RGB 资产",
+      "name": "名称",
+      "namePlaceholder": "例如：Rate 移动端、浏览器扩展",
+      "noLimit": "不限",
+      "title": "新建应用连接",
+      "defaultName": "应用连接 {{n}}"
+    },
+    "noBudget": "无支出上限",
+    "pause": "暂停",
+    "paused": "已暂停",
+    "permissionsCount": "{{count}} 项权限",
+    "presets": {
+      "custom": "自定义",
+      "customDesc": "逐项选择权限。",
+      "full": "完整钱包",
+      "fullDesc": "闪电网络与 RGB：查看、收款和发送。推荐用于 KaleidoSwap 钱包。",
+      "receive": "查看与收款",
+      "receiveDesc": "查看余额并创建发票，无法支出。",
+      "view": "仅查看",
+      "viewDesc": "仅余额、资产和历史记录。"
+    },
+    "resume": "恢复",
+    "revoke": "撤销",
+    "revokeBody": "“{{name}}”将立即失去对此钱包的访问权限。重新连接需要新建连接。",
+    "revokeTitle": "撤销连接",
+    "revoked": "连接已撤销",
+    "service": {
+      "identity": "钱包服务身份",
+      "running": "服务运行中",
+      "scope": "闪电支付与 RGB 资产（KaleidoSwap 扩展）",
+      "start": "启动服务",
+      "stopped": "服务已停止"
+    },
+    "methods": {
+      "get_info": "节点信息",
+      "get_balance": "余额",
+      "make_invoice": "创建发票",
+      "lookup_invoice": "查询发票",
+      "list_transactions": "交易记录",
+      "pay_invoice": "支付发票",
+      "pay_keysend": "发送 keysend",
+      "rln_node_info": "RGB 节点信息",
+      "rln_list_assets": "列出 RGB 资产",
+      "rln_asset_balance": "RGB 余额",
+      "rln_rgb_invoice": "创建 RGB 发票",
+      "rln_ln_invoice": "创建 RGB 闪电发票",
+      "rln_decode_rgb_invoice": "解码 RGB 发票",
+      "rln_send_asset": "发送 RGB 资产",
+      "rln_list_channels": "列出通道",
+      "rln_get_address": "链上地址"
+    }
   }
 }
