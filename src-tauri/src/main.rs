@@ -13,6 +13,7 @@ mod mind_hardware;
 mod mind_runtime;
 mod node_backend;
 mod nwc;
+mod p2p;
 mod rgb_node;
 mod tray;
 
@@ -20,6 +21,7 @@ use dca::{DcaOrderInfo, DcaScheduler};
 use docker_node::{DockerEnvironment, DockerNodeManager, DockerSpawnConfig};
 use mind::MindProcess;
 use nwc::NwcManager;
+use p2p::{P2pProcess, P2pStartConfig, P2pStatus};
 use rgb_node::{NodeProcess, NodeState};
 
 #[derive(Default)]
@@ -42,6 +44,44 @@ fn mind_send(
     payload: serde_json::Value,
 ) -> Result<(), String> {
     mind.send(&app, &payload)
+}
+
+// ── P2P market sidecar commands ──────────────────────────────────────────
+// The `p2pd` trading daemon: start it for the current network, read its state, stop it.
+// Its UI is served by the daemon itself on a local port (see p2p.rs).
+
+#[tauri::command]
+async fn p2p_start(app: AppHandle, p2p: State<'_, Arc<P2pProcess>>, config: P2pStartConfig) -> Result<P2pStatus, String> {
+    let p2p = Arc::clone(&*p2p);
+    tauri::async_runtime::spawn_blocking(move || p2p.ensure_started(&app, &config))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn p2p_stop(p2p: State<'_, Arc<P2pProcess>>) -> Result<(), String> {
+    let p2p = Arc::clone(&*p2p);
+    tauri::async_runtime::spawn_blocking(move || p2p.stop())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn p2p_request(
+    p2p: State<'_, Arc<P2pProcess>>,
+    method: String,
+    path: String,
+    body: Option<serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    let p2p = Arc::clone(&*p2p);
+    tauri::async_runtime::spawn_blocking(move || p2p.request(&method, &path, body))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn p2p_status(p2p: State<Arc<P2pProcess>>) -> P2pStatus {
+    p2p.status()
 }
 
 #[tauri::command]
@@ -91,6 +131,7 @@ fn main() {
     let dca_scheduler = Arc::new(DcaScheduler::new());
     let nwc_manager = Arc::new(NwcManager::new());
     let mind_process = Arc::new(MindProcess::new());
+    let p2p_process = Arc::new(P2pProcess::new());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -106,6 +147,7 @@ fn main() {
         .manage(Arc::clone(&dca_scheduler))
         .manage(Arc::clone(&nwc_manager))
         .manage(Arc::clone(&mind_process))
+        .manage(Arc::clone(&p2p_process))
         .manage(CurrentAccount::default())
         .on_window_event(|window, event| {
             if window.label() == "main" {
@@ -244,6 +286,11 @@ fn main() {
             mind_runtime_installed,
             mind_runtime_stale,
             mind_runtime_install,
+            // P2P market sidecar commands
+            p2p_start,
+            p2p_stop,
+            p2p_status,
+            p2p_request,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

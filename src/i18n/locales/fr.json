@@ -2337,7 +2337,12 @@
     }
   },
   "updaterModal": {
-    "fileSizes": ["Octets", "Ko", "Mo", "Go"],
+    "fileSizes": [
+      "Octets",
+      "Ko",
+      "Mo",
+      "Go"
+    ],
     "fileSizeZero": "0 octet",
     "errors": {
       "timeout": "Le téléchargement ne progresse plus. Vérifiez votre connexion internet et réessayez.",
@@ -3310,5 +3315,27 @@
     "quoteUnavailable": "Cotation indisponible",
     "lightningAvailable": "Canal Lightning disponible",
     "checkSwapAvailability": "Vérifiez les paires et les cotations disponibles avant un échange."
+  },
+  "p2pMarket": {
+    "title": "P2P market",
+    "desktopOnly": "The P2P market runs in the desktop app.",
+    "noNetwork": "There is no P2P market on this network yet.",
+    "startTitle": "Trade directly with other people",
+    "startBody": "Orders are posted on Nostr and settle on-chain, wallet to wallet. Nobody holds your funds. Start the market to see the order book; it uses a separate trading wallet that you fund yourself.",
+    "start": "Start the market",
+    "stop": "Stop",
+    "funds": {
+      "open": "Funds",
+      "title": "Trading wallet funds",
+      "explain": "The market trades from its own wallet. Move over only what you want to trade; the rest stays in your node.",
+      "toTrading": "Node to trading wallet",
+      "toNode": "Trading wallet to node",
+      "asset": "Asset",
+      "amount": "Amount",
+      "nodeBalance": "In your node",
+      "tradingBalance": "In the trading wallet",
+      "move": "Move funds",
+      "sent": "Transfer started. It shows up once the transaction confirms."
+    }
   }
 }

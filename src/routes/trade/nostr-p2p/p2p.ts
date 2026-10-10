@@ -1,0 +1,168 @@
+/**
+ * The desktop side of the P2P market: starting and stopping the `p2pd` daemon, and moving funds
+ * between the RGB Lightning node (savings) and the daemon's trading wallet (what is on offer).
+ *
+ * The daemon is a separate hot wallet. Funds only go there when the user moves them, so the node
+ * keeps everything else. The moving logic takes the node and the daemon as parameters so it can be
+ * tested without either.
+ */
+
+import { invoke } from '@tauri-apps/api/core'
+
+import type { P2pNetworkConfig } from '../../../constants/p2p'
+
+export interface P2pStatus {
+  running: boolean
+  port: number | null
+  url: string | null
+}
+
+export interface P2pStartConfig {
+  account: string
+  network: string
+  indexer_url: string
+  proxy_url: string
+  relays: string[]
+  fee_address: string
+  fee_bps?: number
+  min_fee_sat?: number
+  verified_assets_path?: string
+}
+
+export const p2pStatus = () => invoke<P2pStatus>('p2p_status')
+export const p2pStart = (config: P2pStartConfig) =>
+  invoke<P2pStatus>('p2p_start', { config })
+export const p2pStop = () => invoke<void>('p2p_stop')
+
+export const startConfigFor = (
+  account: string,
+  cfg: P2pNetworkConfig
+): P2pStartConfig => ({
+  account,
+  fee_address: cfg.feeAddress,
+  indexer_url: cfg.indexerUrl,
+  network: cfg.network,
+  proxy_url: cfg.proxyUrl,
+  relays: cfg.relays,
+})
+
+/** What the daemon exposes to the app: the funds endpoints, called through Rust. */
+export interface Daemon {
+  address(): Promise<string>
+  invoice(
+    amount: number
+  ): Promise<{ recipient_id: string; transport_endpoints: string[] }>
+  sendToInvoice(invoice: string, assetId: string): Promise<{ txid: string }>
+  sendBtc(address: string, amountSat: number): Promise<{ txid: string }>
+}
+
+const call = <T>(method: 'GET' | 'POST', path: string, body?: unknown) =>
+  invoke<T>('p2p_request', { body: body ?? null, method, path })
+
+export const tauriDaemon: Daemon = {
+  address: async () =>
+    (await call<{ address: string }>('GET', '/api/info')).address,
+  invoice: (amount) => call('POST', '/api/rgb/invoice', { amount }),
+  sendBtc: (address, amountSat) =>
+    call('POST', '/api/btc/send', { address, amount_sat: amountSat }),
+  sendToInvoice: (invoice, assetId) =>
+    call('POST', '/api/rgb/send', { asset_id: assetId, invoice }),
+}
+
+/** What the funds logic needs from the RGB Lightning node. */
+export interface NodeWallet {
+  address(): Promise<string>
+  /** An RGB invoice for `amount` of `assetId`. */
+  invoice(assetId: string, amount: number): Promise<string>
+  /** Pay to an RGB recipient (the daemon's invoice has no asset, so the node names it). */
+  sendRgb(args: {
+    assetId: string
+    amount: number
+    recipientId: string
+    transportEndpoints: string[]
+  }): Promise<void>
+  sendBtc(address: string, amountSat: number): Promise<void>
+}
+
+export class FundsError extends Error {}
+
+const wholePositive = (n: number, what: string) => {
+  if (!Number.isInteger(n) || n <= 0)
+    throw new FundsError(`Enter ${what} above zero.`)
+}
+
+/** Node → trading wallet: the daemon says where, the node pays. */
+export async function assetToTrading(
+  node: NodeWallet,
+  daemon: Daemon,
+  p: { assetId: string; amount: number; nodeBalance: number }
+) {
+  wholePositive(p.amount, 'an amount')
+  if (p.amount > p.nodeBalance)
+    throw new FundsError('That is more than the node holds.')
+  const inv = await daemon.invoice(p.amount)
+  await node.sendRgb({
+    amount: p.amount,
+    assetId: p.assetId,
+    recipientId: inv.recipient_id,
+    transportEndpoints: inv.transport_endpoints,
+  })
+}
+
+/** Trading wallet → node: the node makes an invoice, the daemon pays it. */
+export async function assetToNode(
+  node: NodeWallet,
+  daemon: Daemon,
+  p: { assetId: string; amount: number; tradingBalance: number }
+) {
+  wholePositive(p.amount, 'an amount')
+  if (p.amount > p.tradingBalance)
+    throw new FundsError('That is more than the trading wallet holds.')
+  const invoice = await node.invoice(p.assetId, p.amount)
+  await daemon.sendToInvoice(invoice, p.assetId)
+}
+
+export async function btcToTrading(
+  node: NodeWallet,
+  daemon: Daemon,
+  p: { amountSat: number; nodeBalance: number }
+) {
+  wholePositive(p.amountSat, 'an amount')
+  if (p.amountSat > p.nodeBalance)
+    throw new FundsError('That is more than the node holds.')
+  await node.sendBtc(await daemon.address(), p.amountSat)
+}
+
+export async function btcToNode(
+  node: NodeWallet,
+  daemon: Daemon,
+  p: { amountSat: number; tradingBalance: number }
+) {
+  wholePositive(p.amountSat, 'an amount')
+  if (p.amountSat > p.tradingBalance)
+    throw new FundsError('That is more than the trading wallet holds.')
+  await daemon.sendBtc(await node.address(), p.amountSat)
+}
+
+/** Whole units typed by the user → base units, without float drift. */
+export function toBaseUnits(input: string, precision: number): number {
+  const t = input.trim()
+  if (!/^\d*\.?\d*$/.test(t) || t === '' || t === '.') return 0
+  const [whole = '0', frac = ''] = t.split('.')
+  const fraction = (frac + '0'.repeat(precision)).slice(0, precision)
+  return Number(whole || '0') * 10 ** precision + Number(fraction || '0')
+}
+
+export interface DaemonBalance {
+  btc_spendable_sat: number
+  assets: {
+    asset_id: string
+    ticker: string
+    name: string
+    precision: number
+    total: number
+    spendable: number
+  }[]
+}
+
+export const daemonBalance = () => call<DaemonBalance>('GET', '/api/balance')
