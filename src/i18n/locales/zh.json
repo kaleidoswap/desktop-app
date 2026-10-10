@@ -2183,15 +2183,24 @@
     "summary": {
       "colorable": {
         "title": "可着色 UTXO",
-        "bullets": ["UTXO RGB 就绪但尚未分配", "接收链上 RGB 资产"]
+        "bullets": [
+          "UTXO RGB 就绪但尚未分配",
+          "接收链上 RGB 资产"
+        ]
       },
       "colored": {
         "title": "已着色 UTXO",
-        "bullets": ["开通 RGB Lightning 通道", "发送链上 RGB 资产"]
+        "bullets": [
+          "开通 RGB Lightning 通道",
+          "发送链上 RGB 资产"
+        ]
       },
       "normal": {
         "title": "普通 UTXO",
-        "bullets": ["开通比特币 Lightning 通道", "常规交易"]
+        "bullets": [
+          "开通比特币 Lightning 通道",
+          "常规交易"
+        ]
       },
       "countLabel": "{{count}} 个 UTXO"
     },
@@ -2342,7 +2351,12 @@
     }
   },
   "updaterModal": {
-    "fileSizes": ["字节", "KB", "MB", "GB"],
+    "fileSizes": [
+      "字节",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 字节",
     "errors": {
       "timeout": "下载已停止。请检查网络连接后重试。",
@@ -3320,5 +3334,27 @@
     "quoteUnavailable": "报价不可用",
     "lightningAvailable": "Lightning 通道可用",
     "checkSwapAvailability": "兑换前请检查可用交易对和报价。"
+  },
+  "p2pMarket": {
+    "title": "P2P market",
+    "desktopOnly": "The P2P market runs in the desktop app.",
+    "noNetwork": "There is no P2P market on this network yet.",
+    "startTitle": "Trade directly with other people",
+    "startBody": "Orders are posted on Nostr and settle on-chain, wallet to wallet. Nobody holds your funds. Start the market to see the order book; it uses a separate trading wallet that you fund yourself.",
+    "start": "Start the market",
+    "stop": "Stop",
+    "funds": {
+      "open": "Funds",
+      "title": "Trading wallet funds",
+      "explain": "The market trades from its own wallet. Move over only what you want to trade; the rest stays in your node.",
+      "toTrading": "Node to trading wallet",
+      "toNode": "Trading wallet to node",
+      "asset": "Asset",
+      "amount": "Amount",
+      "nodeBalance": "In your node",
+      "tradingBalance": "In the trading wallet",
+      "move": "Move funds",
+      "sent": "Transfer started. It shows up once the transaction confirms."
+    }
   }
 }

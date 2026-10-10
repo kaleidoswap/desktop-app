@@ -2190,11 +2190,17 @@
       },
       "colored": {
         "title": "컬러된 UTXO",
-        "bullets": ["RGB Lightning 채널 개설", "온체인 RGB 자산 전송"]
+        "bullets": [
+          "RGB Lightning 채널 개설",
+          "온체인 RGB 자산 전송"
+        ]
       },
       "normal": {
         "title": "일반 UTXO",
-        "bullets": ["Bitcoin Lightning 채널 개설", "일반 거래"]
+        "bullets": [
+          "Bitcoin Lightning 채널 개설",
+          "일반 거래"
+        ]
       },
       "countLabel": "{{count}}개 UTXO"
     },
@@ -2345,7 +2351,12 @@
     }
   },
   "updaterModal": {
-    "fileSizes": ["Bytes", "KB", "MB", "GB"],
+    "fileSizes": [
+      "Bytes",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 Bytes",
     "errors": {
       "timeout": "다운로드가 더 이상 진행되지 않습니다. 인터넷 연결을 확인하고 다시 시도하세요.",
@@ -3323,5 +3334,27 @@
     "quoteUnavailable": "견적을 사용할 수 없습니다",
     "lightningAvailable": "Lightning 채널 사용 가능",
     "checkSwapAvailability": "스왑 전에 이용 가능한 거래 쌍과 견적을 확인하세요."
+  },
+  "p2pMarket": {
+    "title": "P2P market",
+    "desktopOnly": "The P2P market runs in the desktop app.",
+    "noNetwork": "There is no P2P market on this network yet.",
+    "startTitle": "Trade directly with other people",
+    "startBody": "Orders are posted on Nostr and settle on-chain, wallet to wallet. Nobody holds your funds. Start the market to see the order book; it uses a separate trading wallet that you fund yourself.",
+    "start": "Start the market",
+    "stop": "Stop",
+    "funds": {
+      "open": "Funds",
+      "title": "Trading wallet funds",
+      "explain": "The market trades from its own wallet. Move over only what you want to trade; the rest stays in your node.",
+      "toTrading": "Node to trading wallet",
+      "toNode": "Trading wallet to node",
+      "asset": "Asset",
+      "amount": "Amount",
+      "nodeBalance": "In your node",
+      "tradingBalance": "In the trading wallet",
+      "move": "Move funds",
+      "sent": "Transfer started. It shows up once the transaction confirms."
+    }
   }
 }

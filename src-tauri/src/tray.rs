@@ -152,6 +152,10 @@ fn handle_menu_event(app: &AppHandle, id: &str, node_process: Arc<Mutex<NodeProc
 pub fn shutdown_node_and_exit(app: AppHandle, node_process: Arc<Mutex<NodeProcess>>) {
     std::thread::spawn(move || {
         perform_graceful_shutdown(node_process, None);
+        // the P2P daemon withdraws its open offers from the relays before it goes
+        if let Some(p2p) = app.try_state::<Arc<crate::p2p::P2pProcess>>() {
+            p2p.stop();
+        }
         app.exit(0);
     });
 }

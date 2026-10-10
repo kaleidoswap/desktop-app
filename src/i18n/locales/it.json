@@ -2190,11 +2190,17 @@
       },
       "colored": {
         "title": "UTXO Colorati",
-        "bullets": ["Apri canali Lightning RGB", "Invia asset RGB on-chain"]
+        "bullets": [
+          "Apri canali Lightning RGB",
+          "Invia asset RGB on-chain"
+        ]
       },
       "normal": {
         "title": "UTXO Normali",
-        "bullets": ["Apri canali Lightning Bitcoin", "Transazioni regolari"]
+        "bullets": [
+          "Apri canali Lightning Bitcoin",
+          "Transazioni regolari"
+        ]
       },
       "countLabel": "{{count}} UTXO"
     },
@@ -2345,7 +2351,12 @@
     }
   },
   "updaterModal": {
-    "fileSizes": ["Byte", "KB", "MB", "GB"],
+    "fileSizes": [
+      "Byte",
+      "KB",
+      "MB",
+      "GB"
+    ],
     "fileSizeZero": "0 Byte",
     "errors": {
       "timeout": "Il download si è interrotto. Controlla la connessione a internet e riprova.",
@@ -3323,5 +3334,27 @@
     "quoteUnavailable": "Quotazione non disponibile",
     "lightningAvailable": "Canale Lightning disponibile",
     "checkSwapAvailability": "Verifica le coppie e le quotazioni disponibili prima di scambiare."
+  },
+  "p2pMarket": {
+    "title": "Mercato P2P",
+    "desktopOnly": "Il mercato P2P funziona nell'app desktop.",
+    "noNetwork": "Su questa rete non c'è ancora un mercato P2P.",
+    "startTitle": "Scambia direttamente con altre persone",
+    "startBody": "Gli ordini sono pubblicati su Nostr e si regolano on-chain, da wallet a wallet. Nessuno custodisce i tuoi fondi. Avvia il mercato per vedere l'order book; usa un wallet di trading separato che finanzi tu.",
+    "start": "Avvia il mercato",
+    "stop": "Ferma",
+    "funds": {
+      "open": "Fondi",
+      "title": "Fondi del wallet di trading",
+      "explain": "Il mercato scambia dal proprio wallet. Sposta solo ciò che vuoi scambiare; il resto resta nel nodo.",
+      "toTrading": "Dal nodo al wallet di trading",
+      "toNode": "Dal wallet di trading al nodo",
+      "asset": "Asset",
+      "amount": "Importo",
+      "nodeBalance": "Nel nodo",
+      "tradingBalance": "Nel wallet di trading",
+      "move": "Sposta fondi",
+      "sent": "Trasferimento avviato. Apparirà alla conferma della transazione."
+    }
   }
 }
