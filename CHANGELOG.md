@@ -9,7 +9,7 @@
 - **KaleidoMind model catalog**: Updated published models, with a recommendation based on device memory
 
 ### 🔧 Improvements
-- **KaleidoMind runtime `mind-assets-v0.10.14`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.10.2 (`@kaleidorg/mind` 0.10.14) and `kaleido-mcp` 0.4.5, on `@qvac/sdk` 0.21.0. Swaps quote with the RGB asset id, report when they complete or expire, show BTC amounts in sats, and explain the per-payment channel limit; balance questions that name an asset include RGB balances, and requests for a wallet the desktop does not have (Spark, Ark, Liquid) say so; ordering a channel asks for confirmation and shows the full amount due. Existing installs download the new runtime on next enable
+- **KaleidoMind runtime `mind-assets-v0.11.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.11.0 (`@kaleidorg/mind` 0.11.0) and `kaleido-mcp` 0.5.0, on `@qvac/sdk` 0.21.0. Swaps quote with the RGB asset id, report when they complete or expire, show BTC amounts in sats, and explain the per-payment channel limit; balance questions that name an asset include RGB balances, and requests for a wallet the desktop does not have (Spark, Ark, Liquid) say so; ordering a channel asks for confirmation and shows the full amount due. Existing installs download the new runtime on next enable
 - **Local models only**: Phone pairing and remote model serving are removed for now; KaleidoMind runs local models only
 - **RGB-only agent**: KaleidoMind loads only the RGB Lightning Node, channel, KaleidoSwap trading and portfolio skills, and only the node, KaleidoSwap and price tools; the Spark, Flashnet, Liquid, gift-card and paywall skills are gone, since the desktop wallet is an RGB Lightning Node
 - **Thinking switch**: A "Thinking on/off" button in the chat header, also in Agent → Response limits. Off answers faster; on reasons before answering, up to the thinking budget
@@ -17,6 +17,9 @@
 - **Accessible dialogs**: Dialogs keep focus inside and restore it on close; restart, logout and shutdown use a shared confirmation dialog
 - **Translations**: Remaining hardcoded toasts and settings errors are translated in all eight languages
 - **Startup**: Simpler splash screen and smoother loading animation
+
+- **Security updates**: Nostr libraries (`nostr` 0.44.8, `nostr-relay-pool` 0.44.3) and `rustls` 0.23.45 fix malformed-payload denial of service, unverified relay events and a TLS 1.3 handshake flaw; development tooling updated
+- **Smaller install**: Unused dependencies removed
 
 ### 🐛 Bug Fixes
 - **Update modal**: Long release notes no longer push the install and close buttons off screen; notes render as Markdown, and a stalled download is reported
