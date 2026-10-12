@@ -483,7 +483,7 @@ export const Component = () => {
 
       // Quote was cleared or not found
       try {
-        window.requestAnimationFrame(() => {
+        {
           form.setValue('to', '')
           form.setValue('rfq_id', '')
           setHasValidQuote(false)
@@ -529,7 +529,7 @@ export const Component = () => {
               errorMessageTimeoutRef.current = null
             }, 1000) // 1 second delay to allow for quote processing
           }
-        })
+        }
       } catch (error) {
         logger.error('Error clearing quote response UI state:', error)
       }
@@ -552,8 +552,9 @@ export const Component = () => {
         errorMessageTimeoutRef.current = null
       }
 
-      // Use requestAnimationFrame to batch updates and prevent render loops
-      window.requestAnimationFrame(() => {
+      // Process quotes immediately: WebKit can suspend animation frames while
+      // the window is occluded. React batches these state updates itself.
+      {
         const now = Date.now()
         const quoteTimestamp = quoteResponse.timestamp * 1000 // Convert to ms
         const quoteAge = now - quoteTimestamp
@@ -673,7 +674,7 @@ export const Component = () => {
           }
           return null // Clear other errors
         })
-      })
+      }
     }
   }, [quoteResponse, form, assets, requestQuote])
 

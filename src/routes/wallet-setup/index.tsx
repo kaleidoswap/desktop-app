@@ -37,6 +37,8 @@ import {
 } from '../../components/wallet-setup'
 import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
 import { logger } from '../../utils/logger'
+import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
+import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
 const MODE_OPTIONS: {
   mode: AppMode
@@ -161,9 +163,20 @@ export const Component = () => {
     }
   }
 
-  const openMindOnly = () => {
-    dispatch(setAppMode('mind'))
-    navigate(KALEIDO_MIND_PATH)
+  const [mindLaunchError, setMindLaunchError] = useState<string | null>(null)
+  const openMindOnly = async () => {
+    setMindLaunchError(null)
+    try {
+      await invoke('set_current_account', { accountName: null })
+      dispatch(nodeSettingsActions.resetNodeSettings())
+      dispatch(nodeApi.util.resetApiState())
+      dispatch(setAppMode('mind'))
+      navigate(KALEIDO_MIND_PATH)
+    } catch {
+      setMindLaunchError(
+        'Could not disconnect the node from Mind. Please try again.'
+      )
+    }
   }
 
   const navigateToWalletInit = (path: string) => {
@@ -293,13 +306,18 @@ export const Component = () => {
                       </div>
                     </div>
 
+                    {mindLaunchError && (
+                      <p className="text-sm text-red-400" role="alert">
+                        {mindLaunchError}
+                      </p>
+                    )}
                     {selectedMode === 'mind' ? (
                       <div className="flex justify-center slide-in">
                         <div
                           className="relative overflow-hidden transition-all duration-300 border-2 rounded-2xl backdrop-blur-sm
                             hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 cursor-pointer fade-in
                             bg-surface-elevated/40 hover:bg-surface-elevated/60 border-divider/20 w-full max-w-sm"
-                          onClick={openMindOnly}
+                          onClick={() => void openMindOnly()}
                         >
                           <div className="p-6">
                             <div className="flex items-center gap-4 mb-4">

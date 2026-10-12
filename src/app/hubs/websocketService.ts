@@ -1253,7 +1253,17 @@ class WebSocketService {
         ? { from_asset: fromAsset, to_amount: amount, to_asset: toAsset }
         : { from_amount: amount, from_asset: fromAsset, to_asset: toAsset }
 
-    const queued = this.queueMessage('quote_request', payload, 4)
+    // Desktop atomic swaps settle through the connected Lightning channels.
+    // The maker otherwise defaults these legacy WebSocket requests to L1.
+    const queued = this.queueMessage(
+      'quote_request',
+      {
+        ...payload,
+        from_layer: fromAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
+        to_layer: toAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
+      },
+      4
+    )
     if (queued) {
       if (this.quoteTimeout) clearTimeout(this.quoteTimeout)
       const request = this.lastQuoteRequest
@@ -1326,7 +1336,9 @@ class WebSocketService {
                       action: 'quote_request',
                       from_amount: 1000,
                       from_asset: fromAsset,
+                      from_layer: fromAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
                       to_asset: toAsset,
+                      to_layer: toAsset === 'BTC' ? 'BTC_LN' : 'RGB_LN',
                     })
                   )
                 }

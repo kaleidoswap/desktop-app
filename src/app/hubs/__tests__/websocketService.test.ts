@@ -83,6 +83,28 @@ describe('maker connection lifecycle', () => {
     await vi.advanceTimersByTimeAsync(5000)
     expect(socket.close).toHaveBeenCalledWith(4000, 'Connection timeout')
   })
+  it.each(['from', 'to'] as const)(
+    'requests Lightning settlement for %s quotes',
+    async (direction) => {
+      const socket = connect()
+      socket.readyState = 1
+      socket.onopen!()
+      await vi.advanceTimersByTimeAsync(500)
+      await webSocketService.requestQuote('BTC', 'rgb:test', 1231000, direction)
+      await vi.advanceTimersByTimeAsync(500)
+      const requests = socket.send.mock.calls.map(([data]) => JSON.parse(data))
+      expect(requests).toContainEqual(
+        expect.objectContaining({
+          action: 'quote_request',
+          from_asset: 'BTC',
+          from_layer: 'BTC_LN',
+          to_asset: 'rgb:test',
+          to_layer: 'RGB_LN',
+          [direction === 'from' ? 'from_amount' : 'to_amount']: 1231000,
+        })
+      )
+    }
+  )
   it('reports a missing quote instead of leaving the form waiting indefinitely', async () => {
     const dispatch = vi.fn()
     webSocketService.init('https://maker.example', 'test-client', dispatch)
