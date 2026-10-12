@@ -25,7 +25,7 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { Link } from 'react-router-dom'
 
-import { SETTINGS_PATH } from '../../app/router/paths'
+import { SETTINGS_PATH, WALLET_SETUP_PATH } from '../../app/router/paths'
 import { useAppSelector } from '../../app/store/hooks'
 
 import { BrainLauncher } from './brain-launcher'
@@ -311,6 +311,9 @@ export const Component: React.FC = () => {
     activeChatRef,
     stoppedRef,
   } = useMindChat()
+  const hasNode = !!useAppSelector((state) =>
+    state.nodeSettings.data.node_url?.trim()
+  )
   const hasMaker = !!useAppSelector((state) =>
     state.nodeSettings.data.default_maker_url?.trim()
   )
@@ -627,7 +630,16 @@ export const Component: React.FC = () => {
         </p>
       )}
 
-      {!hasMaker && (
+      {!hasNode && (
+        <div className="border-b border-divider/15 bg-surface-overlay px-4 py-1.5 text-xs text-content-secondary">
+          Chat is local. Connect a node to check balances, manage channels or
+          swap.{' '}
+          <Link className="text-primary underline" to={WALLET_SETUP_PATH}>
+            Connect a node
+          </Link>
+        </div>
+      )}
+      {hasNode && !hasMaker && (
         <div className="border-b border-divider/15 bg-status-warning/10 px-4 py-1.5 text-xs text-content-secondary">
           No maker configured for this account, so swap and channel tools are
           unavailable.{' '}
@@ -706,14 +718,18 @@ export const Component: React.FC = () => {
                   <Brain className="h-7 w-7 text-primary" />
                 </div>
                 <p className="text-base font-semibold text-content-primary">
-                  Your sovereign financial agent
+                  {hasNode
+                    ? 'Your sovereign financial agent'
+                    : 'Your local AI assistant'}
                 </p>
                 <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
-                  I run locally and help with your wallet, node and portfolio.
-                  Pick a starting point, or just ask.
+                  {hasNode
+                    ? 'I run locally and help with your wallet, node and portfolio. Pick a starting point, or just ask.'
+                    : 'Ask a question, explore an idea or learn about Lightning. Your conversation runs on this desktop.'}
                 </p>
                 <WelcomeActions
                   disabled={!providerOn || sending}
+                  nodeConnected={hasNode}
                   onPick={(p) => void send(p)}
                   providerOn={providerOn}
                 />
@@ -752,7 +768,8 @@ export const Component: React.FC = () => {
                           Thinking…
                         </span>
                       ) : null}
-                      {!m.streaming &&
+                      {hasNode &&
+                        !m.streaming &&
                         m.followups &&
                         m.followups.length > 0 &&
                         i === messages.length - 1 && (
