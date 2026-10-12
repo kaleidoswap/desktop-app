@@ -3,8 +3,7 @@
     "resources": [
       "../docs",
       "../bin/rgb-lightning-node",
-      "../bin/p2pd*",
-      "resources/p2p-ui"
+      "../bin/p2pd*"
     ]
   }
 }

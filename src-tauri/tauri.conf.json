@@ -93,7 +93,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://raw.githubusercontent.com; frame-src http://127.0.0.1:*; connect-src ipc: http://ipc.localhost 'self' http://localhost:* http://127.0.0.1:* https://* http://* ws://localhost:* wss://* ws://*;"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://raw.githubusercontent.com; connect-src ipc: http://ipc.localhost 'self' http://localhost:* http://127.0.0.1:* https://* http://* ws://localhost:* wss://* ws://*;"
     }
   }
 }
