@@ -203,7 +203,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({
                     className="flex items-center gap-2 pt-5 pb-2"
                     key={`sep-${index}`}
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-content-tertiary/70">
+                    <span className="text-xs font-bold uppercase tracking-widest text-content-tertiary/70">
                       {row.separator}
                     </span>
                     <div className="flex-1 h-px bg-divider/20" />
@@ -344,7 +344,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
             {/* Status badge */}
             <span
-              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+              className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
                 isReady
                   ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-800/30'
                   : 'bg-amber-900/30 text-amber-300 border border-amber-800/30'
@@ -357,13 +357,13 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
             {/* Usable badge - only show "Offline" for confirmed channels whose peer went offline */}
             {isReady && !isUsable && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-800/30">
+              <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-800/30">
                 {t('channelCard.status.offline')}
               </span>
             )}
 
             {/* Public/Private */}
-            <span className="flex items-center gap-0.5 text-[10px] text-content-tertiary">
+            <span className="flex items-center gap-0.5 text-xs text-content-tertiary">
               {isPublic ? (
                 <Globe className="h-2.5 w-2.5" />
               ) : (
@@ -375,7 +375,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             {/* RGB badge */}
             {isRgbChannel && asset && (
               <span
-                className={`flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full ${
                   asset.ticker === 'USDT'
                     ? 'bg-asset-usdt/10 text-asset-usdt border border-asset-usdt/30'
                     : 'bg-purple-900/30 text-purple-300 border border-purple-800/30'
@@ -390,7 +390,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
         {/* Capacity */}
         <div className="text-right flex-shrink-0">
-          <div className="text-[10px] text-content-tertiary mb-0.5">
+          <div className="text-xs text-content-tertiary mb-0.5">
             {`Capacity (${bitcoinUnit === 'SAT' ? 'SATS' : bitcoinUnit})`}
           </div>
           <div className="font-mono text-sm font-semibold text-white/90">
@@ -400,7 +400,20 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       </div>
 
       {/* Liquidity sections — BTC = purple, RGB = green (out darker, in lighter) */}
+      {(!isReady || !isUsable) && (
+        <p className="px-4 pb-3 text-sm text-content-secondary" role="status">
+          {t(!isReady ? 'ux.channelPending' : 'ux.channelUnavailable')}
+        </p>
+      )}
       <div className="px-4 pb-3 flex flex-col gap-2 flex-1">
+        <p className="text-xs text-content-secondary">
+          {t('ux.paymentLimit')} ·{' '}
+          {formatBitcoinAmount(
+            channel.next_outbound_htlc_limit_msat / 1000,
+            bitcoinUnit
+          )}{' '}
+          {bitcoinUnit}
+        </p>
         {/* Bitcoin liquidity — purple */}
         {(() => {
           const out = channel.outbound_balance_msat / 1000
@@ -411,12 +424,12 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           return (
             <div className="rounded-lg bg-surface-overlay/40 p-2.5">
               {/* Section header: asset + amounts */}
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-1.5 text-[11px] text-purple">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 text-xs text-purple">
                   <AssetIcon className="h-3.5 w-3.5" ticker="BTC" />
                   <span className="font-semibold">BTC</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                <div className="flex items-center gap-1.5 text-xs font-mono">
                   <span className="flex items-center gap-0.5 text-purple">
                     <ArrowUpRight className="h-3 w-3" />
                     {formatBitcoinAmount(out, bitcoinUnit)}
@@ -438,13 +451,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                   style={{ width: `${inPct}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                <span className="text-purple/80">
-                  {t('channelCard.labels.outbound')}
-                </span>
-                <span className="text-[#C4B5FD]">
-                  {t('channelCard.labels.inbound')}
-                </span>
+              <div className="flex justify-between text-xs font-semibold uppercase tracking-wider mt-1">
+                <span className="text-purple/80">{t('ux.canSend')}</span>
+                <span className="text-[#C4B5FD]">{t('ux.canReceive')}</span>
               </div>
             </div>
           )
@@ -462,9 +471,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             return (
               <div className="rounded-lg bg-surface-overlay/40 p-2.5 border border-emerald-800/20">
                 {/* Section header: logo+ticker | amounts — mirrors the BTC block */}
-                <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                   <div
-                    className="flex items-center gap-1.5 text-[11px] font-semibold"
+                    className="flex items-center gap-1.5 text-xs font-semibold"
                     style={asset.ticker === 'USDT' ? { color: '#26A17B' } : {}}
                   >
                     <AssetIcon className="h-3.5 w-3.5" ticker={asset.ticker} />
@@ -476,7 +485,7 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                       {asset.ticker}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <div className="flex items-center gap-1.5 text-xs font-mono">
                     <span className="flex items-center gap-0.5 text-[#10B981]">
                       <ArrowUpRight className="h-3 w-3" />
                       {formatAssetAmount(out)}
@@ -498,13 +507,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                     style={{ width: `${inPct}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[8px] font-semibold uppercase tracking-wider mt-1">
-                  <span className="text-[#10B981]/90">
-                    {t('channelCard.labels.outbound')}
-                  </span>
-                  <span className="text-[#6EE7B7]">
-                    {t('channelCard.labels.inbound')}
-                  </span>
+                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider mt-1">
+                  <span className="text-[#10B981]/90">{t('ux.canSend')}</span>
+                  <span className="text-[#6EE7B7]">{t('ux.canReceive')}</span>
                 </div>
               </div>
             )

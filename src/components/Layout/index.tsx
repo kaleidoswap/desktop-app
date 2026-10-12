@@ -108,32 +108,30 @@ interface UserProfileProps {
 
 // NavItem component for sidebar
 const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
-  const { t } = useTranslation()
   const location = useLocation()
-  const navigate = useNavigate()
-
   const hasSubMenu = item.subMenu && item.subMenu.length > 0
 
-  // Auto-open submenu when the parent nav item is active
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState(isActive && hasSubMenu)
-
-  useEffect(() => {
-    if (isActive && hasSubMenu) {
-      setIsSubMenuOpen(true)
-    }
-  }, [isActive, hasSubMenu])
+  // Keep manual expansion local to the current route; other sections collapse
+  // on navigation without an effect-driven extra render.
+  const [menuOverride, setMenuOverride] = useState<{
+    path: string
+    open: boolean
+  } | null>(null)
+  const isSubMenuOpen =
+    menuOverride?.path === location.pathname
+      ? menuOverride.open
+      : Boolean(isActive && hasSubMenu)
+  const setIsSubMenuOpen = (value: boolean | ((open: boolean) => boolean)) => {
+    setMenuOverride({
+      open: typeof value === 'function' ? value(isSubMenuOpen) : value,
+      path: location.pathname,
+    })
+  }
 
   const handleChevronClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setIsSubMenuOpen((open) => !open)
-  }
-
-  const handleSubMenuClick = (subItem: any) => {
-    if (subItem.disabled) return
-    if (subItem.to) {
-      navigate(subItem.to)
-    }
   }
 
   return (
@@ -149,29 +147,31 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
               ? 'bg-status-success/10 text-status-success font-semibold border-l-2 border-status-success/60 shadow-lg shadow-status-success/5'
               : 'text-content-secondary hover:text-white hover:bg-surface-overlay/80 hover:shadow-md'
           }
-          transform hover:scale-[1.02] active:scale-95
+
         `}
       >
         <NavLink
-          className={`flex items-center py-3 px-4 flex-1 min-w-0
-            ${isCollapsed ? 'justify-center' : 'justify-start space-x-4'}
+          className={`flex items-center py-2.5 px-3 flex-1 min-w-0
+            ${isCollapsed ? 'justify-center' : 'justify-start space-x-3'}
           `}
           onClick={() => {
             if (isActive && hasSubMenu) setIsSubMenuOpen(true)
           }}
           to={item.to ?? '#'}
         >
-          <div className={`flex items-center ${!isCollapsed && 'space-x-4'}`}>
+          <div className={`flex items-center ${!isCollapsed && 'space-x-3'}`}>
             <div className="transition-transform duration-300 group-hover:scale-110">
               {item.icon}
             </div>
             {!isCollapsed && (
-              <span className="font-semibold text-base">{item.label}</span>
+              <span className="font-medium text-sm">{item.label}</span>
             )}
           </div>
         </NavLink>
         {hasSubMenu && !isCollapsed && (
           <button
+            aria-expanded={isSubMenuOpen}
+            aria-label={item.label}
             className="pr-4 py-3 flex items-center"
             onClick={handleChevronClick}
             type="button"
@@ -186,28 +186,26 @@ const SidebarNavItem = ({ item, isCollapsed, isActive }: NavItemProps) => {
       {hasSubMenu && isSubMenuOpen && !isCollapsed && (
         <div className="pl-4 mt-2 space-y-1.5 animate-fadeInUp">
           {item.subMenu &&
-            item.subMenu.map((subItem, index) => (
-              <div
-                className={`
+            item.subMenu
+              .filter((subItem) => subItem.to && !subItem.disabled)
+              .map((subItem) => (
+                <NavLink
+                  className={`
                 flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm cursor-pointer
                 transition-all duration-200
                 ${subItem.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-overlay/80 hover:text-white hover:translate-x-1'}
                 ${location.pathname === subItem.to ? 'bg-status-success/10 text-status-success font-semibold border-l-2 border-status-success/50' : 'text-content-secondary'}
               `}
-                key={index}
-                onClick={() => handleSubMenuClick(subItem)}
-              >
-                <div className="transition-transform duration-200 hover:scale-110">
-                  {subItem.icon}
-                </div>
-                <span className="font-medium">{subItem.label}</span>
-                {subItem.disabled && (
-                  <span className="text-[0.6rem] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full ml-auto font-semibold">
-                    {t('labels.soon')}
-                  </span>
-                )}
-              </div>
-            ))}
+                  end
+                  key={subItem.to}
+                  to={subItem.to!}
+                >
+                  <div className="transition-transform duration-200 hover:scale-110">
+                    {subItem.icon}
+                  </div>
+                  <span className="font-medium">{subItem.label}</span>
+                </NavLink>
+              ))}
         </div>
       )}
     </div>
@@ -325,7 +323,9 @@ const UserProfile = ({
   const statusText = hasNode
     ? isNodeReachable
       ? t('userProfile.connected')
-      : t('userProfile.disconnected')
+      : nodeReachability === 'unknown'
+        ? t('ux.checking')
+        : t('userProfile.disconnected')
     : t('userProfile.tapToConnect', { defaultValue: 'Tap to connect' })
   const statusDotClass = !hasNode
     ? 'bg-content-tertiary'
@@ -399,7 +399,9 @@ const UserProfile = ({
                   {nameText}
                 </span>
                 <span className="text-xs text-content-secondary group-hover:text-content-secondary transition-colors duration-300">
-                  {statusText}
+                  {hasNode
+                    ? `${t('ux.node')}: ${statusText} · ${nodeSettingsData.network === 'SignetCustom' ? 'Mutinynet' : nodeSettingsData.network}`
+                    : statusText}
                 </span>
               </div>
             </>
@@ -439,7 +441,11 @@ const UserProfile = ({
                   <div
                     className={`w-2 h-2 rounded-full ${!hasNode ? 'bg-content-tertiary' : isNodeReachable ? 'bg-green animate-pulse' : 'bg-red'}`}
                   ></div>
-                  <span>{statusText}</span>
+                  <span>
+                    {hasNode
+                      ? `${t('ux.node')}: ${statusText} · ${nodeSettingsData.network === 'SignetCustom' ? 'Mutinynet' : nodeSettingsData.network}`
+                      : statusText}
+                  </span>
                 </div>
               </div>
             </div>
@@ -578,6 +584,7 @@ export const Layout = (props: Props) => {
     )
       return true
     if (item.to && path === item.to) return true
+    if (item.matchPaths?.includes(path)) return true
     return !!item.subMenu?.some(
       (sub) => sub.to && (path === sub.to || path.startsWith(`${sub.to}/`))
     )
@@ -1018,16 +1025,16 @@ export const Layout = (props: Props) => {
           <div
             className={`flex flex-col fixed left-0 top-0 h-screen bg-surface-base border-r border-divider/30
                         transition-all duration-300 ease-in-out z-30 shadow-2xl shadow-black/30
-                        ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}
+                        ${isSidebarCollapsed ? 'w-20' : 'w-60'}`}
           >
             {/* Logo and collapse button */}
             <div
-              className={`flex items-center bg-surface-base py-5 px-4 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
+              className={`flex items-center bg-surface-base py-3 px-3 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
             >
               {!isSidebarCollapsed && (
                 <img
                   alt="KaleidoSwap"
-                  className="h-10 w-auto cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="h-8 w-auto cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
                   onClick={() => {
                     navigate(ROOT_PATH)
                   }}
@@ -1055,7 +1062,7 @@ export const Layout = (props: Props) => {
             </div>
 
             {/* Main navigation — grouped into Node / Mind categories */}
-            <div className="flex-1 overflow-y-auto pt-4 px-4">
+            <div className="flex-1 overflow-y-auto pt-3 px-3">
               {NAV_SECTIONS.map((section, sectionIndex) => {
                 const sectionEnabled =
                   section.key === 'node'
@@ -1172,12 +1179,12 @@ export const Layout = (props: Props) => {
 
           {/* Main content */}
           <main
-            className={`flex-1 flex flex-col min-h-screen max-w-full overflow-x-hidden bg-surface-raised transition-all duration-300
-                        ${isSidebarCollapsed ? 'ml-20' : 'ml-72'}`}
+            className={`flex-1 flex flex-col ${isMindRoute ? 'h-screen min-h-0' : 'min-h-screen'} max-w-full overflow-x-hidden bg-surface-raised transition-all duration-300
+                        ${isSidebarCollapsed ? 'ml-20' : 'ml-60'}`}
           >
             {/* Top bar with page title and notifications */}
             <div
-              className="sticky top-0 z-30 bg-surface-base border-b border-divider/20 px-6 py-4
+              className="sticky top-0 z-30 shrink-0 bg-surface-base border-b border-divider/20 px-4 py-2
                           shadow-lg shadow-black/20"
             >
               <div className="flex justify-between items-center">
@@ -1201,7 +1208,7 @@ export const Layout = (props: Props) => {
                         >
                           {icon}
                         </div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
+                        <h1 className="text-xl font-semibold text-white tracking-tight">
                           {title}
                         </h1>
                       </>
@@ -1310,7 +1317,7 @@ export const Layout = (props: Props) => {
 
             {/* Main content area */}
             <div
-              className={`relative isolate flex-1 overflow-hidden ${isMindRoute ? 'p-3' : 'p-6'}`}
+              className={`relative isolate flex-1 overflow-hidden ${isMindRoute ? 'min-h-0 p-3' : 'p-4'}`}
               id="content-area"
             >
               {/* Portal target for modals — absolute inset-0 so modals cover only this area.
@@ -1348,6 +1355,7 @@ export const Layout = (props: Props) => {
         closeOnClick={false}
         draggable={false}
         hideProgressBar={false}
+        limit={3}
         newestOnTop={false}
         pauseOnFocusLoss={false}
         pauseOnHover={false}

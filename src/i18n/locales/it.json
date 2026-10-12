@@ -3289,5 +3289,20 @@
       "rln_list_channels": "Elenca canali",
       "rln_get_address": "Indirizzo on-chain"
     }
+  },
+  "ux": {
+    "node": "Nodo",
+    "checking": "Verifica…",
+    "channelPending": "Canale in apertura. In attesa che il nodo lo dichiari pronto; il saldo non è ancora utilizzabile.",
+    "channelUnavailable": "Canale non disponibile. Controlla la connessione al peer e lo stato del nodo.",
+    "balanceHelp": "I saldi includono i fondi dei canali. Riserve e limiti dei pagamenti possono ridurre l’importo inviabile.",
+    "dataUnavailable": "Impossibile caricare i dati attuali. I valori mostrati potrebbero non essere aggiornati. Riprova per verificare il nodo.",
+    "canSend": "Puoi inviare",
+    "canReceive": "Puoi ricevere",
+    "lspRecovery": "Controlla la rete del nodo e l’indirizzo LSP, poi riprova. Puoi anche inserire un altro provider a sinistra.",
+    "paymentLimit": "Limite per pagamento",
+    "quoteUnavailable": "Quotazione non disponibile",
+    "lightningAvailable": "Canale Lightning disponibile",
+    "checkSwapAvailability": "Verifica le coppie e le quotazioni disponibili prima di scambiare."
   }
 }

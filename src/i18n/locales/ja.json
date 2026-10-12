@@ -3295,5 +3295,20 @@
       "rln_list_channels": "チャネル一覧",
       "rln_get_address": "オンチェーンアドレス"
     }
+  },
+  "ux": {
+    "node": "ノード",
+    "checking": "確認中…",
+    "channelPending": "チャネルを開いています。ノードが準備完了と判断するまで、この残高は利用できません。",
+    "channelUnavailable": "チャネルを利用できません。ピア接続とノードの状態を確認してください。",
+    "balanceHelp": "残高にはチャネルの資金が含まれます。準備金と支払上限により送信可能額が少なくなる場合があります。",
+    "dataUnavailable": "最新データを読み込めませんでした。表示値が古い可能性があります。再試行してノードを確認してください。",
+    "canSend": "送信可能",
+    "canReceive": "受信可能",
+    "lspRecovery": "ノードのネットワークとLSPアドレスを確認して再試行してください。左側で別のプロバイダーを指定することもできます。",
+    "paymentLimit": "1回の支払上限",
+    "quoteUnavailable": "見積もりを取得できません",
+    "lightningAvailable": "Lightningチャネルが利用可能",
+    "checkSwapAvailability": "スワップ前に利用可能な取引ペアと見積もりを確認してください。"
   }
 }

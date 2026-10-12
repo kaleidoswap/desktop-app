@@ -4,8 +4,6 @@ import {
   Brain,
   ArrowDown,
   ArrowUp,
-  Mic,
-  Paperclip,
   ChevronRight,
   FlaskConical,
   Clock,
@@ -131,7 +129,7 @@ const StatsFooter: React.FC<{ stats: ChatMsgStats }> = ({ stats }) => {
     !!device
   if (!hasAny) return null
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-divider/10 pt-1.5 text-[0.65rem] text-content-tertiary">
+    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 border-t border-divider/10 pt-1.5 text-xs text-content-tertiary">
       {typeof tokensPerSecond === 'number' && tokensPerSecond > 0 && (
         <span className="inline-flex items-center gap-1">
           <Gauge className="h-3 w-3" />
@@ -210,13 +208,13 @@ const ThinkingDisclosure: React.FC<{
         />
         <Sparkles className={`h-3 w-3 ${reasoning ? 'animate-pulse' : ''}`} />
         <span>{reasoning ? 'Thinking…' : 'Thought process'}</span>
-        <span className="ml-auto text-[0.65rem] font-normal text-content-tertiary">
+        <span className="ml-auto text-xs font-normal text-content-tertiary">
           {open ? 'Hide' : 'Show'}
         </span>
       </button>
       {open && (
         <div
-          className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words border-t border-primary/15 bg-surface-base/60 px-3 py-2 font-mono text-[0.72rem] leading-relaxed text-content-tertiary"
+          className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words border-t border-primary/15 bg-surface-base/60 px-3 py-2 font-mono text-xs leading-relaxed text-content-tertiary"
           ref={bodyRef}
         >
           {text}
@@ -303,17 +301,39 @@ export const Component: React.FC = () => {
   const tps = mind.status?.tokensPerSecond
 
   // Persisted across Mind sub-tabs (owned by the layout).
-  const { messages, setMessages, input, setInput } = useMindChat()
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    sending,
+    setSending,
+    activeChatRef,
+    stoppedRef,
+  } = useMindChat()
   const hasMaker = !!useAppSelector((state) =>
     state.nodeSettings.data.default_maker_url?.trim()
   )
-  const [sending, setSending] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
-  const activeChatRef = useRef<string | null>(null)
-  const stoppedRef = useRef(false)
+
+  const [clearError, setClearError] = useState<string | null>(null)
+  const clearChat = async () => {
+    setSending(true)
+    setClearError(null)
+    try {
+      await mind.clearChat()
+      setMessages([])
+      setInput('')
+      setShowHistory(false)
+    } catch {
+      setClearError('Could not clear the conversation. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
 
   const stop = () => {
     const id = activeChatRef.current
@@ -354,6 +374,17 @@ export const Component: React.FC = () => {
     })
   }, [])
 
+  useEffect(() => {
+    scrollToEnd()
+  }, [messages, scrollToEnd])
+
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    },
+    []
+  )
+
   // Before chat works the brain must be running. While it's offline (no model
   // downloaded yet, or just not started), guide the user through that setup
   // instead of dropping them into a disabled chat box.
@@ -361,7 +392,7 @@ export const Component: React.FC = () => {
 
   const send = async (override?: string) => {
     const prompt = (override ?? input).trim()
-    if (!prompt || sending || !providerOn) return
+    if (!prompt || activeChatRef.current || sending || !providerOn) return
     const assistantId = crypto.randomUUID()
     const now = Date.now()
     setInput('')
@@ -515,21 +546,21 @@ export const Component: React.FC = () => {
   }
 
   return (
-    <section className="flex h-full min-h-[320px] flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
+    <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border-default bg-surface-base/50">
       {/* Header — single slim row: status, then compact icon actions. */}
-      <div className="flex items-center gap-2 border-b border-divider/15 px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-divider/15 px-3 py-2">
         <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
           <Brain className="h-4 w-4 text-primary" />
         </div>
         <span
-          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium uppercase tracking-wide text-amber-300"
+          className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-300"
           title="KaleidoMind is experimental"
         >
           <FlaskConical className="h-2.5 w-2.5" />
           Beta
         </span>
         <span
-          className={`inline-flex min-w-0 items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-[0.7rem] font-medium ${
+          className={`inline-flex min-w-0 items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-xs font-medium ${
             onGpu
               ? 'bg-status-success/15 text-status-success'
               : device === 'cpu'
@@ -555,17 +586,19 @@ export const Component: React.FC = () => {
             ? ` · ${tps.toFixed(0)} tok/s`
             : ''}
         </span>
+        <span
+          className="min-w-0 truncate text-xs text-content-secondary"
+          title={mind.status?.activeModelName ?? undefined}
+        >
+          {mind.status?.activeModelName}
+        </span>
         <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">
           <ThinkingToggle disabled={sending} />
           <button
             aria-label="New chat"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border-default text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border-default text-content-secondary hover:bg-surface-overlay disabled:opacity-40 disabled:hover:bg-transparent"
             disabled={messages.length === 0 || sending}
-            onClick={() => {
-              setMessages([])
-              setInput('')
-              setShowHistory(false)
-            }}
+            onClick={() => void clearChat()}
             title="New chat"
             type="button"
           >
@@ -574,7 +607,7 @@ export const Component: React.FC = () => {
           <button
             aria-label="History"
             aria-pressed={showHistory}
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-content-secondary hover:bg-surface-overlay ${
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-md border text-content-secondary hover:bg-surface-overlay ${
               showHistory
                 ? 'border-primary/40 bg-primary/10 text-primary'
                 : 'border-border-default'
@@ -587,6 +620,12 @@ export const Component: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {clearError && (
+        <p className="px-4 py-2 text-sm text-red-400" role="alert">
+          {clearError}
+        </p>
+      )}
 
       {!hasMaker && (
         <div className="border-b border-divider/15 bg-status-warning/10 px-4 py-1.5 text-xs text-content-secondary">
@@ -608,17 +647,16 @@ export const Component: React.FC = () => {
             <div className="ml-auto flex gap-2">
               <button
                 className="inline-flex items-center gap-1 text-xs text-content-tertiary hover:text-content-primary"
-                onClick={() => {
-                  setMessages([])
-                  setShowHistory(false)
-                }}
+                disabled={sending}
+                onClick={() => void clearChat()}
                 type="button"
               >
                 <Plus className="h-3.5 w-3.5" /> New chat
               </button>
               <button
                 className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-300"
-                onClick={() => setMessages([])}
+                disabled={sending}
+                onClick={() => void clearChat()}
                 type="button"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Clear
@@ -643,7 +681,7 @@ export const Component: React.FC = () => {
                     {message.text || message.thinking || 'Thinking…'}
                   </span>
                   {message.createdAt && (
-                    <span className="ml-auto shrink-0 text-[0.65rem] text-content-tertiary">
+                    <span className="ml-auto shrink-0 text-xs text-content-tertiary">
                       {new Date(message.createdAt).toLocaleString()}
                     </span>
                   )}
@@ -849,26 +887,7 @@ export const Component: React.FC = () => {
               value={input}
             />
             <div className="flex items-center gap-1 px-2 pb-2">
-              {/* Placeholders for upcoming features — not wired yet. */}
-              <button
-                aria-label="Attach (coming soon)"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-content-tertiary opacity-50"
-                disabled
-                title="Attachments — coming soon"
-                type="button"
-              >
-                <Paperclip className="h-4 w-4" />
-              </button>
-              <button
-                aria-label="Voice input (coming soon)"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-content-tertiary opacity-50"
-                disabled
-                title="Voice input — coming soon"
-                type="button"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-              <span className="ml-1 hidden truncate text-[0.7rem] text-content-tertiary sm:inline">
+              <span className="ml-1 hidden truncate text-xs text-content-tertiary sm:inline">
                 {sending
                   ? 'Responding… press ■ to stop'
                   : 'Enter to send · Shift+Enter for a new line'}

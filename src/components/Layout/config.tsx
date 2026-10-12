@@ -6,26 +6,18 @@ import {
   MessageSquare,
   Github,
   Plus,
-  PlusCircle,
   ShoppingCart,
-  SlidersHorizontal,
   Settings,
-  Store,
   Zap,
   Home,
   Clock,
   ArrowDownLeft,
   ArrowUpRight,
   HardDriveDownload,
-  Target,
   Link as LinkIcon,
-  Bot,
   Brain,
   Droplets,
-  Tag,
-  TrendingUp,
   ArrowLeftRight,
-  Radio,
   LayoutDashboard,
   Download,
   Upload,
@@ -68,6 +60,7 @@ export interface NavItem {
   icon: React.ReactNode
   to?: string
   matchPath?: string
+  matchPaths?: string[]
   action?: string
   url?: string
   subMenu?: {
@@ -99,32 +92,11 @@ export const getNavSections = (t: TFunction): NavSection[] => [
         icon: <Zap className="w-5 h-5" />,
         label: t('navigation.trade'),
         matchPath: TRADE_PATH,
-        subMenu: [
-          {
-            icon: <Store className="w-4 h-4" />,
-            label: t('navigation.marketMaker'),
-            to: TRADE_MARKET_MAKER_PATH,
-          },
-          {
-            icon: <ArrowLeftRight className="w-4 h-4" />,
-            label: t('navigation.manualSwaps'),
-            to: TRADE_MANUAL_PATH,
-          },
-          {
-            icon: <TrendingUp className="h-4 w-4" />,
-            label: t('navigation.dca', 'DCA'),
-            to: TRADE_DCA_PATH,
-          },
-          {
-            icon: <Target className="w-4 h-4" />,
-            label: t('navigation.limitOrders', 'Limit Orders'),
-            to: TRADE_LIMIT_PATH,
-          },
-          {
-            disabled: true,
-            icon: <Radio className="w-4 h-4" />,
-            label: t('navigation.nostrP2P', 'Nostr P2P'),
-          },
+        matchPaths: [
+          TRADE_MANUAL_PATH,
+          TRADE_DCA_PATH,
+          TRADE_LIMIT_PATH,
+          TRADE_NOSTR_P2P_PATH,
         ],
         to: TRADE_MARKET_MAKER_PATH,
       },
@@ -163,30 +135,9 @@ export const getNavSections = (t: TFunction): NavSection[] => [
       },
       {
         icon: <Droplets className="w-5 h-5" />,
-        label: t('navigation.liquidity', 'Liquidity'),
+        label: t('navigation.channels'),
         matchPath: CHANNELS_PATH,
-        subMenu: [
-          {
-            icon: <SlidersHorizontal className="w-4 h-4" />,
-            label: t('channels.manageChannels'),
-            to: CHANNELS_PATH,
-          },
-          {
-            icon: <PlusCircle className="w-4 h-4" />,
-            label: t('channels.createNewChannel'),
-            to: CREATE_NEW_CHANNEL_PATH,
-          },
-          {
-            icon: <ShoppingCart className="w-4 h-4" />,
-            label: t('channels.buyAChannel'),
-            to: ORDER_CHANNEL_PATH,
-          },
-          {
-            disabled: true,
-            icon: <Tag className="w-4 h-4" />,
-            label: t('liquidity.sellChannels', 'Sell Channels'),
-          },
-        ],
+        matchPaths: [CREATE_NEW_CHANNEL_PATH, ORDER_CHANNEL_PATH],
         to: CHANNELS_PATH,
       },
       {
@@ -215,11 +166,6 @@ export const getNavSections = (t: TFunction): NavSection[] => [
             icon: <LayoutDashboard className="w-4 h-4" />,
             label: t('navigation.brain', 'Brain'),
             to: KALEIDO_MIND_BRAIN_PATH,
-          },
-          {
-            disabled: true,
-            icon: <Bot className="w-4 h-4" />,
-            label: t('navigation.agent', 'Agent'),
           },
         ],
         to: KALEIDO_MIND_PATH,
@@ -342,11 +288,11 @@ export const SUPPORT_RESOURCES = getSupportResources(
 export const getPageConfig = (t: TFunction) => ({
   [CHANNELS_PATH]: {
     icon: <Droplets className="w-5 h-5" />,
-    title: t('navigation.liquidity', 'Liquidity'),
+    title: t('navigation.channels'),
   },
   [CREATE_NEW_CHANNEL_PATH]: {
     icon: <Droplets className="w-5 h-5" />,
-    title: t('navigation.liquidity', 'Liquidity'),
+    title: t('navigation.channels'),
   },
   [NWC_PATH]: {
     icon: <LinkIcon className="w-5 h-5" />,
@@ -354,7 +300,7 @@ export const getPageConfig = (t: TFunction) => ({
   },
   [ORDER_CHANNEL_PATH]: {
     icon: <Droplets className="w-5 h-5" />,
-    title: t('navigation.liquidity', 'Liquidity'),
+    title: t('navigation.channels'),
   },
   [SETTINGS_PATH]: {
     icon: <Settings className="w-5 h-5" />,

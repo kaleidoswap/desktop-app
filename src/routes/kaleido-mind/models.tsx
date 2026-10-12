@@ -256,7 +256,10 @@ export const ModelsManager: React.FC = () => {
                         {gb(m.sizeBytes)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <MemoryStick className="h-3 w-3" />~{m.ramHintGb} GB RAM
+                        <MemoryStick className="h-3 w-3" />
+                        {m.ramHintGb > 0
+                          ? `~${m.ramHintGb} GB RAM`
+                          : 'RAM estimate unavailable'}
                       </span>
                     </div>
                     {m.notes && (

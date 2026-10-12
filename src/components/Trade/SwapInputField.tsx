@@ -100,14 +100,14 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
   return (
     <div className="bg-surface-overlay/70 rounded-xl border border-border-default/40 hover:border-border-default/60 transition-all duration-300">
       {/* Header row: label | available amount + refresh | size chips */}
-      <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between gap-2">
+      <div className="px-4 py-2 border-b border-border-default/20 flex items-center justify-between gap-2 flex-wrap">
         {/* Label */}
         <span className="text-xs font-semibold text-white uppercase tracking-wider shrink-0">
           {label}
         </span>
 
         {/* Right side: available + refresh + size chips */}
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
           {availableAmount && (
             <div
               className={`flex items-center gap-1 text-xs ${amountAnimationClass} shrink-0`}
@@ -158,12 +158,12 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
       </div>
 
       {/* Input row */}
-      <div className="px-4 py-3 flex items-center gap-3">
+      <div className="px-3 py-2 flex items-center gap-2">
         {/* Amount */}
         <div className="flex-1 min-w-0">
           {isLoadingState && !value ? (
             <div
-              className={`px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 h-14 flex items-center gap-2 ${amountAnimationClass}`}
+              className={`px-4 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 h-12 flex items-center gap-2 ${amountAnimationClass}`}
             >
               <div className="w-4 h-4 border-2 border-primary/60 border-t-transparent rounded-full animate-spin shrink-0"></div>
               <span className="text-content-secondary text-sm">
@@ -173,7 +173,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
           ) : (
             <div className="relative">
               <input
-                className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-2xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-14 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
+                className={`w-full pl-4 pr-16 py-2 bg-surface-base/50 rounded-lg border border-border-default/30 text-white text-xl font-semibold focus:border-primary/60 focus:ring-2 focus:ring-primary/15 placeholder:text-content-tertiary/50 h-12 hover:border-border-default/50 focus:outline-none ${readOnly ? 'text-content-secondary cursor-default' : ''} ${inputAnimationClass}`}
                 disabled={disabled}
                 onChange={handleAmountChange}
                 onKeyDown={(e) => {
@@ -197,7 +197,7 @@ export const SwapInputField: React.FC<SwapInputFieldProps> = ({
         <div className="shrink-0 w-36">
           {useEnhancedSelector ? (
             <AssetSelectWithModal
-              className="w-full h-14"
+              className="w-full h-12"
               disabled={disabled}
               fieldLabel={label}
               onChange={onAssetChange}

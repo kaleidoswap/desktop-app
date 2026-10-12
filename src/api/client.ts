@@ -100,3 +100,17 @@ export const getNodeApiWrapper = async (
   // At this point nodeApiWrapper is guaranteed to be non-null
   return nodeApiWrapper!
 }
+
+/** Short-lived read-only probes must not wait for the wallet operation timeout. */
+export const getNodeHealthApiWrapper = (
+  state: MinimalState
+): NodeApiWrapper => {
+  const data = state.nodeSettings.data
+  const client = KaleidoClient.create({
+    apiKey: data?.bearer_token,
+    baseUrl: data?.default_maker_url || 'http://localhost:8000',
+    nodeUrl: normalizeNodeUrl(data?.node_url),
+    timeout: 5,
+  })
+  return new NodeApiWrapper(client.rln)
+}

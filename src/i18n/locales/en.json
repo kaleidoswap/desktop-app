@@ -3289,5 +3289,20 @@
       "rln_list_channels": "List channels",
       "rln_get_address": "On-chain address"
     }
+  },
+  "ux": {
+    "node": "Node",
+    "checking": "Checking…",
+    "channelPending": "Channel opening. Waiting for the node to mark it ready; this balance cannot be used yet.",
+    "channelUnavailable": "Channel unavailable. Check the peer connection and node status.",
+    "balanceHelp": "Balances include channel funds. Reserves and payment limits may reduce the amount you can send.",
+    "dataUnavailable": "Unable to load current data. Displayed values may be outdated. Retry to check the node.",
+    "canSend": "Can send",
+    "canReceive": "Can receive",
+    "lspRecovery": "Check the node network and LSP address, then retry. You can also enter a different provider on the left.",
+    "paymentLimit": "Single-payment limit",
+    "quoteUnavailable": "Quote unavailable",
+    "lightningAvailable": "Lightning channel available",
+    "checkSwapAvailability": "Check available trading pairs and quotes before swapping."
   }
 }

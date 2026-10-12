@@ -3,12 +3,12 @@
  * prepare-mind-bundle — stage the KaleidoMind agent for a PACKAGED build.
  *
  * Run this BEFORE `tauri build`. It produces `src-tauri/resources/mind/`:
- *   provider/   — @kaleidorg/mind-provider (+ @qvac/sdk), installed from npm
- *   mcp/        — kaleido-mcp, installed from npm
+ *   provider/   — @kaleidorg/mind-provider (+ @qvac/sdk), installed from pinned release packages
+ *   mcp/        — kaleido-mcp, installed from pinned release packages
  *   node[.exe]  — a Node runtime for the TARGET platform
  *
- * Everything is pulled from the public npm registry — NO local sibling repos
- * are required, so this works in clean checkouts / CI / cloud builds. Each
+ * Release packages are checked into mind-packages with SHA-256 verification.
+ * Dependencies come from npm; no sibling repos are required in CI. Each
  * package lands at `<name>/node_modules/<pkg>/dist/index.js` (npm's hoisted
  * layout); main.rs probes that path and points the sidecar env at it. In dev
  * none of this runs — the sidecar uses the sibling repos + system node.
@@ -21,6 +21,7 @@
  * NODE_VERSION, TARGET_PLATFORM / TARGET_ARCH (override host detection).
  */
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import {
   existsSync,
   mkdirSync,
@@ -36,13 +37,9 @@ import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 
 const NODE_VERSION = process.env.NODE_VERSION ?? '20.18.1' // pin; match CI
-// Pin the provider and core together so every platform receives the same catalog.
-const PROVIDER_VERSION = process.env.PROVIDER_VERSION ?? '0.11.0'
-const MIND_VERSION = process.env.MIND_VERSION ?? '0.11.0'
 // Picks its defaults from KALEIDO_NETWORK (set by mind.rs). The Spark/Liquid
 // wallets and @kaleidorg/swap-sdk (submarine swaps) are optional peers that need
 // a Liquid seed, which the desktop does not pass, so they are left out.
-const MCP_VERSION = process.env.MCP_VERSION ?? '0.5.0'
 // mind requires >= 0.20; the provider runs desktop-only.
 const QVAC_VERSION = process.env.QVAC_VERSION ?? '0.21.0'
 
@@ -87,6 +84,16 @@ const DROP_PACKAGES = (process.env.MIND_DROP_PACKAGES ?? 'bare-ffmpeg')
 const here = dirname(fileURLToPath(import.meta.url))
 const srcTauri = resolve(here, '..')
 const out = join(srcTauri, 'resources', 'mind')
+const packagesDir = join(srcTauri, 'mind-packages')
+const manifest = JSON.parse(readFileSync(join(packagesDir, 'manifest.json'), 'utf8'))
+function pinnedPackage(name) {
+  const entry = manifest.packages[name]
+  if (!entry || entry.file !== entry.file.split(/[\\/]/).pop()) throw new Error(`Invalid runtime package: ${name}`)
+  const archive = join(packagesDir, entry.file)
+  const actual = createHash('sha256').update(readFileSync(archive)).digest('hex')
+  if (actual !== entry.sha256) throw new Error(`Runtime package checksum mismatch: ${name}`)
+  return `file:${archive}`
+}
 
 const isWin = process.platform === 'win32'
 
@@ -145,6 +152,12 @@ function installFromNpm(name, deps) {
         version: '0.0.0',
         private: true,
         dependencies: deps,
+        // Dependency-package overrides are ignored by npm. Keep the same
+        // patched transport versions at the bundle root as in kaleido-mcp.
+        overrides: {
+          '@modelcontextprotocol/sdk': '^1.32.1',
+          axios: '^1.20.0',
+        },
       },
       null,
       2
@@ -296,8 +309,8 @@ function fetchNode() {
 console.log(`Staging KaleidoMind bundle (from npm) → ${out}`)
 reset()
 installFromNpm('provider', {
-  '@kaleidorg/mind-provider': PROVIDER_VERSION,
-  '@kaleidorg/mind': MIND_VERSION,
+  '@kaleidorg/mind-provider': process.env.PROVIDER_VERSION ?? pinnedPackage('@kaleidorg/mind-provider'),
+  '@kaleidorg/mind': process.env.MIND_VERSION ?? pinnedPackage('@kaleidorg/mind'),
   '@qvac/sdk': QVAC_VERSION,
 })
 assertPlatformRuntimes('provider')
@@ -305,8 +318,9 @@ pruneEngines('provider')
 // After pruning engines, the default worker would crash importing them — swap in
 // a worker that registers only the LLM plugin we kept.
 if (DROP_ENGINES.length) writeSlimWorker('provider')
-installFromNpm('mcp', { 'kaleido-mcp': MCP_VERSION })
+installFromNpm('mcp', { 'kaleido-mcp': process.env.MCP_VERSION ?? pinnedPackage('kaleido-mcp') })
 fetchNode()
+writeFileSync(join(out, 'release-manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 console.log('\nDone. Verify size:  du -sh src-tauri/resources/mind')
 console.log(
   'Then `tauri build` and confirm the agent runs in the packaged app.'

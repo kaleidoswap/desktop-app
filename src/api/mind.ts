@@ -197,7 +197,7 @@ export interface GenerationLimits {
 
 /** The response cap always stays within these bounds on desktop. */
 export const RESPONSE_TOKENS = { default: 4096, max: 8192, min: 512 }
-export const THINKING_TOKENS = { default: 1024, max: 4096, min: 128 }
+export const THINKING_TOKENS = { default: 512, max: 4096, min: 128 }
 
 const clampTokens = (
   value: number,
@@ -521,6 +521,9 @@ class MindClient {
    * Stop an in-flight chat turn (the stop button). Fire-and-forget — the
    * matching `chat()` promise then resolves with whatever was produced so far.
    */
+  clearChat() {
+    return this.request<void>({ cmd: 'clear_chat' })
+  }
   cancelChat(chatId: string) {
     return this.send({ chatId, cmd: 'cancel_chat' })
   }

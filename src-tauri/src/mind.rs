@@ -112,7 +112,7 @@ impl MindProcess {
         // Desktop defaults for local reasoning; the Agent tab changes them live.
         // The response cap is never removed so a turn cannot run away.
         if std::env::var_os("KALEIDO_MIND_MAX_THINKING_TOKENS").is_none() {
-            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "1024");
+            cmd.env("KALEIDO_MIND_MAX_THINKING_TOKENS", "512");
         }
         if std::env::var_os("KALEIDO_MIND_MAX_TOKENS").is_none() {
             cmd.env("KALEIDO_MIND_MAX_TOKENS", "4096");

@@ -1,3 +1,4 @@
+import { summarizeChannelBalances } from '../../utils/channelBalances'
 import {
   RefreshCw,
   Zap,
@@ -160,6 +161,9 @@ export const Component: React.FC = () => {
 
   const channels: Channel[] = listChannelsResponse?.data?.channels ?? []
 
+  const dataUnavailable = listChannelsResponse.isError
+  const hasChannelData = !!listChannelsResponse.data
+
   // Separate channels by type
   const bitcoinChannels = channels.filter((channel) => !channel.asset_id)
   const rgbChannels = channels.filter((channel) => channel.asset_id)
@@ -257,22 +261,11 @@ export const Component: React.FC = () => {
     }
   })
 
-  // Calculate totals for all channels
-  const totalBalance = channels.reduce(
-    (sum, channel) =>
-      sum + Math.floor((channel.outbound_balance_msat ?? 0) / 1000),
-    0
-  )
-  const totalInboundLiquidity = channels.reduce(
-    (sum, channel) =>
-      sum + Math.floor((channel.inbound_balance_msat ?? 0) / 1000),
-    0
-  )
-  const totalOutboundLiquidity = channels.reduce(
-    (sum, channel) =>
-      sum + Math.floor((channel.outbound_balance_msat ?? 0) / 1000),
-    0
-  )
+  const {
+    localBalanceSat: totalBalance,
+    inboundSat: totalInboundLiquidity,
+    outboundSat: totalOutboundLiquidity,
+  } = summarizeChannelBalances(channels)
 
   // Toggle filter option
   const toggleFilter = (filter: FilterOption) => {
@@ -339,29 +332,53 @@ export const Component: React.FC = () => {
       <div className="mx-auto w-full max-w-screen-xl px-4 pt-2">
         <ChannelsNav />
       </div>
-      <div className="px-4 pb-6 pt-8 animate-fade-in">
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+      <div className="px-4 pb-6 pt-2 animate-fade-in">
+        {dataUnavailable && (
+          <div
+            className="mb-4 p-3 rounded-lg border border-amber-500/40 text-sm text-amber-200"
+            role="alert"
+          >
+            {t('ux.dataUnavailable')}{' '}
+            <button className="underline ml-2" onClick={() => refreshData()}>
+              {t('trade.connectionIssues.retryConnection')}
+            </button>
+          </div>
+        )}
+        <div className="grid gap-4 md:grid-cols-3 mb-4">
           <StatCard
             icon={<Wallet className="h-4 w-4 text-primary" />}
             title={t('channels.totalBalance')}
             trend="neutral"
-            value={`${totalBalance.toLocaleString()} sats`}
+            value={
+              hasChannelData ? `${totalBalance.toLocaleString()} sats` : '—'
+            }
           />
           <StatCard
             icon={<ArrowDownRight className="h-4 w-4 text-primary" />}
             title={t('channels.inboundLiquidity')}
             trend="up"
-            value={`${totalInboundLiquidity.toLocaleString()} sats`}
+            value={
+              hasChannelData
+                ? `${totalInboundLiquidity.toLocaleString()} sats`
+                : '—'
+            }
           />
           <StatCard
             icon={<ArrowUpRight className="h-4 w-4 text-primary" />}
             title={t('channels.outboundLiquidity')}
             trend="down"
-            value={`${totalOutboundLiquidity.toLocaleString()} sats`}
+            value={
+              hasChannelData
+                ? `${totalOutboundLiquidity.toLocaleString()} sats`
+                : '—'
+            }
           />
         </div>
 
-        <div className="bg-surface-overlay/80 backdrop-blur-sm rounded-xl border border-border-default/50 shadow-lg py-6 px-6">
+        <p className="text-sm text-content-secondary mb-4">
+          {t('ux.balanceHelp')}
+        </p>
+        <div className="bg-surface-overlay/80 backdrop-blur-sm rounded-xl border border-border-default/50 shadow-lg py-4 px-4">
           {/* Controls row: title + tabs + filter + sort all on one level */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-xl font-bold">{t('channels.yourChannels')}</h2>
@@ -536,7 +553,7 @@ export const Component: React.FC = () => {
           )}
 
           {displayedChannels.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-[50px]">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] gap-4 mt-4">
               {displayedChannels.map((channel) => {
                 const asset = channel.asset_id
                   ? assets[channel.asset_id]
