@@ -3514,7 +3514,9 @@
           "1h": "1 hour",
           "6h": "6 hours",
           "24h": "24 hours"
-        }
+        },
+        "noCoin": "Each swap spends a coin of its own and your wallet has {{n}} free. {{left}} more order(s) can follow once these settle.",
+        "perMaker": "A maker takes a few swaps from you at a time, so {{n}} more order(s) are left for next."
       },
       "registry": {
         "notListed": "Not in the registry",

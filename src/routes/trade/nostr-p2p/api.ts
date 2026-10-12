@@ -70,6 +70,8 @@ export interface AssetBalance {
 
 export interface Balance {
   btc_spendable_sat: number
+  /** Bitcoin coins free for a swap, largest first. Each swap spends coins of its own. Absent from an older daemon. */
+  btc_coins?: number[]
   assets: AssetBalance[]
 }
 
