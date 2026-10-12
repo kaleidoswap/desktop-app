@@ -162,6 +162,10 @@ sign-binary:
 		echo "Skipping binary signing (not on macOS or APPLE_SIGNING_IDENTITY not set)"; \
 	fi
 
+# Stage the P2P market daemon and its UI; see scripts/prepare-p2p-bundle.sh for the inputs.
+p2p-bundle:
+	@scripts/prepare-p2p-bundle.sh
+
 help:
 	@echo "Makefile for the Rust project"
 	@echo "Available commands:"
@@ -169,6 +173,7 @@ help:
 	@echo "  make release     - Update repo and compile the project in release mode"
 	@echo "  make debug       - Update repo and compile the project in debug mode"
 	@echo "  make build       - Alias for 'make debug'"
+	@echo "  make p2p-bundle  - Stage p2pd and its UI for a packaged build (see scripts/prepare-p2p-bundle.sh)"
 	@echo "  make build-app   - Build the Tauri desktop app"
 	@echo "  make build-app-windows - Build the Tauri desktop app for Windows"
 	@echo "  make pre-commit    - Format, lint, type-check and test frontend + format Rust backend"
@@ -179,4 +184,4 @@ help:
 	@echo "  make test        - Update repo and run the tests"
 	@echo "  make help        - Show this help message"
 
-.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build sign-binary pre-commit check-pr
+.PHONY: all release debug run run-debug clean test help check_cargo check_cargo_env check_dependencies check_curl check_openssl clone_repo update_repo build sign-binary p2p-bundle pre-commit check-pr

@@ -176,6 +176,21 @@ Use the app's update prompt, or download the matching installer from the release
    pnpm run tauri:dev
    ```
 
+#### Including the P2P market daemon (optional)
+
+The P2P market runs `p2pd`, which lives in its own repository. A normal build does not need it:
+in development the app finds it through `KALEIDO_P2PD_BIN` (or the `PATH`) and its UI through
+`KALEIDO_P2P_UI_DIR`. To ship it inside the app:
+
+```sh
+P2PD_SRC=/path/to/rgb-onchain-swaps/p2p make p2p-bundle     # or P2PD_REPO_URL + P2PD_REF
+pnpm tauri build --config src-tauri/tauri.p2p.conf.json
+```
+
+`make p2p-bundle` builds the daemon and its UI and stages them as `bin/p2pd` and
+`src-tauri/resources/p2p-ui`; the extra config adds both to the bundle (on macOS the binary is
+signed when `APPLE_SIGNING_IDENTITY` is set).
+
 ## Usage 💡
 
 ### Connecting to an RGB Lightning Node
