@@ -53,8 +53,9 @@ export const ThinkingToggle: React.FC<{ disabled?: boolean }> = ({
 
   return (
     <button
+      aria-label={`Thinking ${thinking ? 'on' : 'off'}`}
       aria-pressed={thinking}
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-40 ${
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-md border disabled:opacity-40 ${
         thinking
           ? 'border-primary/40 bg-primary/10 text-primary'
           : 'border-border-default text-content-secondary hover:bg-surface-overlay'
@@ -63,8 +64,8 @@ export const ThinkingToggle: React.FC<{ disabled?: boolean }> = ({
       onClick={() => void toggle()}
       title={
         thinking
-          ? 'The model reasons before answering. Turn off for faster replies.'
-          : 'The model answers directly. Turn on for multi-step tasks.'
+          ? 'Thinking on: the model reasons before answering. Turn off for faster replies.'
+          : 'Thinking off: the model answers directly. Turn on for multi-step tasks.'
       }
       type="button"
     >
@@ -73,7 +74,6 @@ export const ThinkingToggle: React.FC<{ disabled?: boolean }> = ({
       ) : (
         <LightbulbOff className="h-3.5 w-3.5" />
       )}
-      Thinking {thinking ? 'on' : 'off'}
     </button>
   )
 }

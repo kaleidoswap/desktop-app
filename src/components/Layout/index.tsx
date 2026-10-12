@@ -1310,7 +1310,7 @@ export const Layout = (props: Props) => {
 
             {/* Main content area */}
             <div
-              className="relative isolate flex-1 overflow-hidden p-6"
+              className={`relative isolate flex-1 overflow-hidden ${isMindRoute ? 'p-3' : 'p-6'}`}
               id="content-area"
             >
               {/* Portal target for modals — absolute inset-0 so modals cover only this area.

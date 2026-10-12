@@ -280,14 +280,22 @@ export function useMind(): UseMindResult {
       const st = await mindClient.startProvider(modelId)
       setStatus(st)
       setCapabilities(await mindClient.listCapabilities())
+    } catch (err) {
+      await mindClient.getStatus().then(setStatus, () => {})
+      throw err
     } finally {
       setStarting(false)
     }
   }, [])
 
   const stopProvider = useCallback(async () => {
-    const st = await mindClient.stopProvider()
-    setStatus(st)
+    try {
+      setStatus(await mindClient.stopProvider())
+    } catch (err) {
+      // Resync so the UI reflects what the sidecar is actually doing.
+      await mindClient.getStatus().then(setStatus, () => {})
+      throw err
+    }
   }, [])
 
   const downloadModel = useCallback(

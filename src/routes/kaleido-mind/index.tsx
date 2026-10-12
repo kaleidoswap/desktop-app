@@ -77,20 +77,23 @@ export const Component: React.FC = () => {
   }, [])
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 overflow-y-auto p-6">
-      {/* Header — the app's section header already shows the "KaleidoMind"
-          title, so here we just flag the feature as experimental + show status. */}
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300">
-          <FlaskConical className="h-3.5 w-3.5" />
-          Experimental
-        </span>
-        <StatusPill
-          model={status?.activeModelName}
-          on={providerOn}
-          tps={status?.tokensPerSecond}
-        />
-      </div>
+    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-3 overflow-y-auto">
+      {/* The app's section header already shows the "KaleidoMind" title. The
+          chat carries its own status in its header, so only the other tabs
+          get this slim experimental + status row. */}
+      {!onChatRoute && (
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[0.65rem] font-medium text-amber-300">
+            <FlaskConical className="h-3 w-3" />
+            Experimental
+          </span>
+          <StatusPill
+            model={status?.activeModelName}
+            on={providerOn}
+            tps={status?.tokensPerSecond}
+          />
+        </div>
+      )}
 
       {/* Gate: the agent runtime is downloaded on demand (not bundled). Show the
           install screen until it's available; dev (sibling repos) skips this. */}
