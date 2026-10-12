@@ -7,6 +7,10 @@ import {
   btcToNode,
   btcToTrading,
   FundsError,
+  MAX_PARTS,
+  MIN_PART_SAT,
+  PartialSend,
+  splitAmount,
   startConfigFor,
   toBaseUnits,
   type Daemon,
@@ -143,6 +147,86 @@ describe('moving funds between the node and the trading wallet', () => {
       })
     ).rejects.toThrow(/not running/)
     expect(calls).toEqual([])
+  })
+})
+
+describe('sending bitcoin in parts', () => {
+  it('cuts an amount into parts that add up to it', () => {
+    expect(splitAmount(90_000, 3)).toEqual([30_000, 30_000, 30_000])
+    expect(splitAmount(100_000, 3)).toEqual([33_334, 33_333, 33_333])
+    expect(splitAmount(50_000, 1)).toEqual([50_000])
+    for (const [amount, parts] of [
+      [123_457, 4],
+      [1_000_001, 10],
+    ] as const) {
+      const cut = splitAmount(amount, parts)
+      expect(cut.reduce((a, b) => a + b, 0)).toBe(amount)
+      expect(Math.max(...cut) - Math.min(...cut)).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('makes one transfer per part, each to a fresh address of the trading wallet', async () => {
+    const { calls, daemon, node } = fakes()
+    let n = 0
+    daemon.address = async () => `bcrt1-trading-${++n}`
+    await btcToTrading(node, daemon, {
+      amountSat: 90_000,
+      nodeBalance: 1_000_000,
+      parts: 3,
+    })
+    expect(calls).toEqual([
+      'node.sendBtc bcrt1-trading-1 30000',
+      'node.sendBtc bcrt1-trading-2 30000',
+      'node.sendBtc bcrt1-trading-3 30000',
+    ])
+  })
+
+  it('refuses parts that are too many, too few or too small before sending anything', async () => {
+    const { calls, daemon, node } = fakes()
+    const go = (parts: number, amountSat = 1_000_000) =>
+      btcToTrading(node, daemon, { amountSat, nodeBalance: 10_000_000, parts })
+    await expect(go(0)).rejects.toBeInstanceOf(FundsError)
+    await expect(go(MAX_PARTS + 1)).rejects.toBeInstanceOf(FundsError)
+    await expect(go(2.5)).rejects.toBeInstanceOf(FundsError)
+    await expect(go(3, MIN_PART_SAT * 3 - 1)).rejects.toThrow(/at least/)
+    expect(calls).toEqual([])
+  })
+
+  it('says how many parts went out when one fails, and nothing is hidden when the first fails', async () => {
+    const { calls, daemon, node } = fakes()
+    let sends = 0
+    node.sendBtc = async (address, amountSat) => {
+      sends += 1
+      if (sends === 3) throw new Error('the node is busy')
+      calls.push(`node.sendBtc ${address} ${amountSat}`)
+    }
+    const err = await btcToTrading(node, daemon, {
+      amountSat: 100_000,
+      nodeBalance: 1_000_000,
+      parts: 4,
+    }).catch((e) => e)
+    expect(err).toBeInstanceOf(PartialSend)
+    expect(err).toMatchObject({
+      message: 'the node is busy',
+      sent: 2,
+      total: 4,
+    })
+    expect(calls).toHaveLength(2)
+
+    sends = 2 // the next call to sendBtc is the third, which fails, as the first of a new transfer
+    const first = await btcToTrading(node, daemon, {
+      amountSat: 50_000,
+      nodeBalance: 1_000_000,
+      parts: 2,
+    }).catch((e) => e)
+    expect(first).not.toBeInstanceOf(PartialSend)
+    expect(first.message).toBe('the node is busy')
+  })
+
+  it('a single part is the plain transfer', async () => {
+    const { calls, daemon, node } = fakes()
+    await btcToTrading(node, daemon, { amountSat: 50_000, nodeBalance: 90_000 })
+    expect(calls).toEqual(['node.sendBtc bcrt1-trading-address 50000'])
   })
 })
 

@@ -14,6 +14,9 @@ import {
   btcToNode,
   btcToTrading,
   daemonBalance,
+  MIN_PART_SAT,
+  PartialSend,
+  splitAmount,
   tauriDaemon,
   toBaseUnits,
   type DaemonBalance,
@@ -26,6 +29,7 @@ const fungible = (value: number): any => ({ type: 'Fungible', value })
 type Direction = 'toTrading' | 'toNode'
 
 const BTC = 'btc'
+const PART_CHOICES = [1, 2, 3, 5, 10]
 
 interface Props {
   isOpen: boolean
@@ -41,6 +45,7 @@ export const FundsModal = ({ isOpen, onClose }: Props) => {
   const [direction, setDirection] = useState<Direction>('toTrading')
   const [asset, setAsset] = useState(BTC)
   const [amount, setAmount] = useState('')
+  const [parts, setParts] = useState(1)
   const [busy, setBusy] = useState(false)
   const [trading, setTrading] = useState<DaemonBalance | null>(null)
 
@@ -144,6 +149,7 @@ export const FundsModal = ({ isOpen, onClose }: Props) => {
         await run(node, tauriDaemon, {
           amountSat: units,
           nodeBalance,
+          parts: direction === 'toTrading' ? parts : undefined,
           tradingBalance,
         })
       } else if (direction === 'toTrading') {
@@ -163,11 +169,25 @@ export const FundsModal = ({ isOpen, onClose }: Props) => {
       setAmount('')
       void refreshTrading()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e))
+      if (e instanceof PartialSend) {
+        toast.error(
+          t('p2pMarket.funds.partial', {
+            reason: e.message,
+            sent: e.sent,
+            total: e.total,
+          })
+        )
+        void refreshTrading()
+      } else {
+        toast.error(e instanceof Error ? e.message : String(e))
+      }
     } finally {
       setBusy(false)
     }
   }
+
+  const splitting = asset === BTC && direction === 'toTrading'
+  const each = units > 0 ? splitAmount(units, parts)[0] : 0
 
   const unit = asset === BTC ? 'sat' : (selected?.ticker ?? '')
   const shown = (base: number) =>
@@ -228,6 +248,37 @@ export const FundsModal = ({ isOpen, onClose }: Props) => {
             value={amount}
           />
         </label>
+
+        {splitting && (
+          <div className="space-y-2 text-sm text-content-secondary">
+            <span id="p2p-parts-label">{t('p2pMarket.funds.parts')}</span>
+            <div
+              aria-labelledby="p2p-parts-label"
+              className="flex gap-2"
+              role="group"
+            >
+              {PART_CHOICES.map((n) => (
+                <Button
+                  aria-pressed={parts === n}
+                  disabled={
+                    n > 1 && units > 0 && Math.floor(units / n) < MIN_PART_SAT
+                  }
+                  key={n}
+                  onClick={() => setParts(n)}
+                  size="sm"
+                  variant={parts === n ? 'primary' : 'outline'}
+                >
+                  {n}
+                </Button>
+              ))}
+            </div>
+            <p className="text-content-tertiary">
+              {t('p2pMarket.funds.partsHint', {
+                each: each > 0 ? each.toLocaleString() : '–',
+              })}
+            </p>
+          </div>
+        )}
 
         <dl className="grid grid-cols-2 gap-1 text-sm text-content-secondary">
           <dt>{t('p2pMarket.funds.nodeBalance')}</dt>
