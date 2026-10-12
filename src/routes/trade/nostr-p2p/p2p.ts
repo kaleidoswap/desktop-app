@@ -124,15 +124,59 @@ export async function assetToNode(
   await daemon.sendToInvoice(invoice, p.assetId)
 }
 
+/** The most parts a transfer may be sent in, and the least a part may be. */
+export const MAX_PARTS = 10
+export const MIN_PART_SAT = 10_000
+
+/**
+ * Cut an amount into `parts` that add up to it, the remainder spread over the first ones, so that
+ * no part differs from another by more than a sat.
+ */
+export function splitAmount(amountSat: number, parts: number): number[] {
+  const base = Math.floor(amountSat / parts)
+  const extra = amountSat - base * parts
+  return Array.from({ length: parts }, (_, i) => base + (i < extra ? 1 : 0))
+}
+
+/** Some parts were sent and the rest were not: the money is split between the two wallets. */
+export class PartialSend extends FundsError {
+  constructor(
+    readonly sent: number,
+    readonly total: number,
+    cause: unknown
+  ) {
+    super(cause instanceof Error ? cause.message : String(cause))
+  }
+}
+
+/**
+ * Node → trading wallet. Each swap spends a coin of its own, so a wallet with one coin runs one
+ * swap at a time; sending in `parts` makes that many coins. Each part is its own transaction from
+ * the node, to a fresh address of the trading wallet.
+ */
 export async function btcToTrading(
   node: NodeWallet,
   daemon: Daemon,
-  p: { amountSat: number; nodeBalance: number }
+  p: { amountSat: number; nodeBalance: number; parts?: number }
 ) {
+  const parts = p.parts ?? 1
   wholePositive(p.amountSat, 'an amount')
+  if (!Number.isInteger(parts) || parts < 1 || parts > MAX_PARTS)
+    throw new FundsError(`Send it in between 1 and ${MAX_PARTS} parts.`)
+  if (parts > 1 && Math.floor(p.amountSat / parts) < MIN_PART_SAT)
+    throw new FundsError(`Each part needs at least ${MIN_PART_SAT} sats.`)
   if (p.amountSat > p.nodeBalance)
     throw new FundsError('That is more than the node holds.')
-  await node.sendBtc(await daemon.address(), p.amountSat)
+  let sent = 0
+  for (const part of splitAmount(p.amountSat, parts)) {
+    try {
+      await node.sendBtc(await daemon.address(), part)
+    } catch (e) {
+      if (sent === 0) throw e
+      throw new PartialSend(sent, parts, e)
+    }
+    sent += 1
+  }
 }
 
 export async function btcToNode(

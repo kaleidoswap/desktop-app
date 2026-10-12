@@ -186,6 +186,7 @@ export function Market({ onOpenFunds }: Props) {
               balance={balance.data}
               info={inf}
               key={market.asset_id}
+              onOpenFunds={onOpenFunds}
               onPlaced={refreshAll}
               onReview={setTaking}
               orders={marketOrders}

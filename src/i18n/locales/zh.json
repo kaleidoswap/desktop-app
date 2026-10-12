@@ -3335,7 +3335,10 @@
       "nodeBalance": "In your node",
       "tradingBalance": "In the trading wallet",
       "move": "Move funds",
-      "sent": "Transfer started. It shows up once the transaction confirms."
+      "sent": "Transfer started. It shows up once the transaction confirms.",
+      "parts": "In how many coins",
+      "partsHint": "Each coin lets one swap run, so more coins means more swaps at once. {{each}} sats per coin; each part is its own transaction with its own fee.",
+      "partial": "{{sent}} of {{total}} parts went out and the rest did not. {{reason}}"
     },
     "market": {
       "header": {
@@ -3516,7 +3519,9 @@
           "24h": "24 hours"
         },
         "noCoin": "Each swap spends a coin of its own and your wallet has {{n}} free. {{left}} more order(s) can follow once these settle.",
-        "perMaker": "A maker takes a few swaps from you at a time, so {{n}} more order(s) are left for next."
+        "perMaker": "A maker takes a few swaps from you at a time, so {{n}} more order(s) are left for next.",
+        "splitHint": "To run more at once, move your bitcoin from the node in several parts.",
+        "openFunds": "Open Funds"
       },
       "registry": {
         "notListed": "Not in the registry",

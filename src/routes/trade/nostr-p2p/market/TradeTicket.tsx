@@ -29,6 +29,8 @@ interface Props {
   orders: Order[]
   onReview: (orders: Order[]) => void
   onPlaced: () => void
+  /** Opens the dialog that moves funds between the node and the trading wallet. */
+  onOpenFunds?: () => void
 }
 
 const TTLS = [
@@ -47,6 +49,7 @@ export function TradeTicket({
   orders,
   onReview,
   onPlaced,
+  onOpenFunds,
 }: Props) {
   const tr = useTr()
   const [side, setSide] = useState<Side>('buy')
@@ -368,6 +371,21 @@ export function TradeTicket({
                   'Each swap spends a coin of its own and your wallet has {{n}} free. {{left}} more order(s) can follow once these settle.',
                   { left: plan.noCoinFor, n: balance?.btc_coins?.length ?? 0 }
                 )}
+              </p>
+            )}
+            {plan.noCoinFor > 0 && onOpenFunds && (
+              <p className="text-content-tertiary">
+                {tr(
+                  'ticket.splitHint',
+                  'To run more at once, move your bitcoin from the node in several parts.'
+                )}{' '}
+                <button
+                  className="text-primary hover:underline"
+                  onClick={onOpenFunds}
+                  type="button"
+                >
+                  {tr('ticket.openFunds', 'Open Funds')}
+                </button>
               </p>
             )}
             {plan.tooManyFromMaker > 0 && (

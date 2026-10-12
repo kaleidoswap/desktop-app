@@ -3335,7 +3335,10 @@
       "nodeBalance": "Nel nodo",
       "tradingBalance": "Nel wallet di trading",
       "move": "Sposta fondi",
-      "sent": "Trasferimento avviato. Apparirà alla conferma della transazione."
+      "sent": "Trasferimento avviato. Apparirà alla conferma della transazione.",
+      "parts": "In quante monete",
+      "partsHint": "Ogni moneta fa partire uno swap, quindi più monete vuol dire più swap contemporanei. {{each}} sat per moneta; ogni parte è una transazione a sé con la sua commissione.",
+      "partial": "{{sent}} parti su {{total}} sono partite e le altre no. {{reason}}"
     },
     "market": {
       "header": {
@@ -3516,7 +3519,9 @@
           "24h": "24 ore"
         },
         "noCoin": "Ogni swap spende una moneta sua e il tuo wallet ne ha {{n}} libere. Altri {{left}} ordini possono seguire quando questi si saranno regolati.",
-        "perMaker": "Un maker accetta da te pochi swap alla volta, quindi altri {{n}} ordini restano per dopo."
+        "perMaker": "Un maker accetta da te pochi swap alla volta, quindi altri {{n}} ordini restano per dopo.",
+        "splitHint": "Per farne di più insieme, sposta i bitcoin dal nodo in più parti.",
+        "openFunds": "Apri Fondi"
       },
       "registry": {
         "notListed": "Non è nel registro",
