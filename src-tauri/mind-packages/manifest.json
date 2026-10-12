@@ -1,13 +1,13 @@
 {
-  "runtimeVersion": "0.11.1-rc.3",
+  "runtimeVersion": "0.11.1-rc.4",
   "packages": {
     "@kaleidorg/mind": {
-      "file": "kaleidorg-mind-0.11.1-rc.2.tgz",
-      "sha256": "78e0a7c1107f943b4db71d0d607848cdb48313685e206699d51b7cc6d5cc7c7f"
+      "file": "kaleidorg-mind-0.11.1-rc.3.tgz",
+      "sha256": "a200a6541d4ed5f9fcd3d968dd6b38d276908b91264d455abe3e8b8c71b307db"
     },
     "@kaleidorg/mind-provider": {
-      "file": "kaleidorg-mind-provider-0.11.1-rc.3.tgz",
-      "sha256": "25f595d797ce9fb6b7ee8ce3a6dc0c91f87e158fc1e1df0e26130778c57809a4"
+      "file": "kaleidorg-mind-provider-0.11.1-rc.4.tgz",
+      "sha256": "66c63619453bb5cb4d73e6a72246f3ed8e084e3828ebf519ea34e5a6743f4d61"
     },
     "kaleido-mcp": {
       "file": "kaleido-mcp-0.5.1-rc.1.tgz",
