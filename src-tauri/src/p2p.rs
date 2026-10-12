@@ -92,10 +92,15 @@ pub fn route_allowed(method: &str, path: &str) -> bool {
     if ALLOWED.contains(&(method, path)) {
         return true;
     }
-    method == "DELETE"
-        && path
-            .strip_prefix("/api/orders/")
-            .is_some_and(|id| !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')))
+    // the market's own ids: an order id, or an RGB contract id (`rgb:` and dashes, `~` and `_`)
+    let named = |prefix: &str, ok: fn(char) -> bool| {
+        path.strip_prefix(prefix).is_some_and(|id| !id.is_empty() && id.len() <= 128 && id.chars().all(ok))
+    };
+    match method {
+        "DELETE" => named("/api/orders/", |c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')),
+        "GET" => named("/api/asset/", |c| c.is_ascii_alphanumeric() || matches!(c, ':' | '-' | '_' | '~')),
+        _ => false,
+    }
 }
 
 #[derive(Default)]
@@ -355,7 +360,7 @@ mod tests {
 
     #[test]
     fn only_the_market_routes_are_reachable_from_the_app() {
-        for (m, p) in [("GET", "/api/info"), ("GET", "/api/book"), ("POST", "/api/take"), ("POST", "/api/orders"), ("POST", "/api/btc/send"), ("DELETE", "/api/orders/aB3-_9")] {
+        for (m, p) in [("GET", "/api/info"), ("GET", "/api/book"), ("POST", "/api/take"), ("POST", "/api/orders"), ("POST", "/api/btc/send"), ("DELETE", "/api/orders/aB3-_9"), ("GET", "/api/asset/rgb:4bU8bbHe-171EgfO-0q6Hy8Q-_xczpHF-56GrDjt-KNMyzCA")] {
             assert!(route_allowed(m, p), "{m} {p}");
         }
         for (m, p) in [
@@ -367,6 +372,10 @@ mod tests {
             ("DELETE", "/api/orders/../info"),
             ("DELETE", "/api/orders/a/b"),
             ("DELETE", "/api/info"),
+            ("GET", "/api/asset/"),
+            ("GET", "/api/asset/rgb:a/b"),
+            ("GET", "/api/asset/../info"),
+            ("POST", "/api/asset/rgb:abc"),
             ("PUT", "/api/orders"),
             ("GET", "/api/../etc"),
             ("GET", "/"),

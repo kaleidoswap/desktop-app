@@ -114,6 +114,11 @@ export function Market({ onOpenFunds }: Props) {
         onOpenFunds={onOpenFunds}
         onSelect={setSelected}
         open={marketOrders.length}
+        registry={
+          marketOrders.find((o) => o.registry?.ticker_differs)?.registry ??
+          marketOrders[0]?.registry ??
+          null
+        }
         selected={current}
       />
 

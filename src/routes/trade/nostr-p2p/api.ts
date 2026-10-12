@@ -2,6 +2,46 @@ import { transport } from './transport'
 
 export type Side = 'sell' | 'buy'
 
+/** What the registry lists about an order's asset, set next to the maker's own claim. */
+export interface RegistryNote {
+  listed: boolean
+  /** The ticker the registry lists the asset under, when it differs from the maker's. */
+  ticker_differs: string | null
+  /** Other listed contracts that carry the same ticker. */
+  same_ticker_listed: number
+  listed_by: string[]
+}
+
+export interface RegistryListing {
+  contract_id: string
+  ticker: string
+  name: string
+  precision: number | null
+  schema_type: string | null
+  listed_by: string[]
+}
+
+/** What the index publishes about one asset, each fact on its own. None of them is a verdict. */
+export interface RegistryDetail {
+  contract_valid: boolean | null
+  /** Someone signed a declaration for it. Not that they are its issuer. */
+  issuer_signed: boolean
+  issuer_address: string | null
+  issuer_verified: boolean
+  issuer_proof: string | null
+  issuer_identified: boolean
+  dispute: boolean
+  impersonation_warning: boolean
+  same_ticker: number
+  contested_by: number
+}
+
+export interface AssetFacts {
+  listed: RegistryListing | null
+  same_ticker_listed: number
+  detail: RegistryDetail | null
+}
+
 export interface Info {
   name: string
   network: string
@@ -13,6 +53,9 @@ export interface Info {
   network_fee_sat: number
   min_confirmations: number
   taker_wait_secs: number
+  /** The RGBMap index being read, and how many assets it listed at the last fetch. */
+  registry: string | null
+  registry_assets: number
   dev: boolean
 }
 
@@ -51,6 +94,7 @@ export interface Order {
   away: boolean
   verified: boolean
   impersonates: string | null
+  registry: RegistryNote | null
 }
 
 export type TradeStatus = 'negotiating' | 'broadcast' | 'settled' | 'failed'
@@ -88,6 +132,9 @@ const post = <T>(path: string, body: unknown) =>
   transport().request<T>('POST', path, body)
 
 export const marketApi = {
+  /** Null when the daemon reads no registry. */
+  asset: (contractId: string) =>
+    get<AssetFacts | null>(`/api/asset/${contractId}`),
   balance: () => get<Balance>('/api/balance'),
   book: () => get<Order[]>('/api/book'),
   cancel: (id: string) =>

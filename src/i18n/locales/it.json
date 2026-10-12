@@ -3368,7 +3368,11 @@
         "last": "Ultimo scambio",
         "openOrders": "Ordini aperti",
         "spendable": "Bitcoin spendibili nel wallet di trading",
-        "funds": "Fondi"
+        "funds": "Fondi",
+        "regDiffers": "Il registro lo elenca come {{ticker}}",
+        "regSame": "Stesso ticker altrove: {{n}}",
+        "regListed": "Nel registro",
+        "regNot": "Non nel registro"
       },
       "depth": {
         "empty": "Il grafico di profondità si riempie man mano che arrivano ordini.",
@@ -3530,6 +3534,25 @@
           "6h": "6 ore",
           "24h": "24 ore"
         }
+      },
+      "registry": {
+        "notListed": "Non è nel registro",
+        "listedBy": "Nel registro, elencato da {{by}}",
+        "listed": "Nel registro",
+        "tickerDiffers": "Il maker lo chiama in un altro modo. Il registro lo elenca come {{ticker}}.",
+        "contractBad": "Il contratto non risulta valido rispetto alla sua genesi",
+        "contractOk": "Il contratto risulta valido rispetto alla sua genesi",
+        "noDeclaration": "Nessuno ha dichiarato questo asset",
+        "declared": "Una dichiarazione è stata firmata da {{address}}",
+        "proofOk": "È stata controllata una prova che chi firma è l'emittente",
+        "noProof": "Nessuna prova che chi firma sia l'emittente",
+        "sameTicker": "Contratti con lo stesso ticker: {{n}}",
+        "impersonation": "Il registro segnala questo asset come imitazione",
+        "dispute": "C'è una contestazione aperta su questo asset",
+        "contested": "Contestazioni: {{n}}",
+        "title": "Cosa dice il registro",
+        "asking": "Sto chiedendo al registro…",
+        "footnote": "Sono fatti pubblicati dal registro. Nessuno dice che un asset sia sicuro."
       }
     }
   }
