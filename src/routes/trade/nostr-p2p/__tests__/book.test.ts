@@ -27,6 +27,7 @@ const order = (
   platform_fee_sat: 1000,
   precision: 0,
   price_sat: priceSat,
+  registry: null,
   rgb_output_sat: 1000,
   side,
   state: null,

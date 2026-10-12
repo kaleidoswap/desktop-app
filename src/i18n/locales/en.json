@@ -3349,7 +3349,11 @@
         "last": "Last trade",
         "openOrders": "Open orders",
         "spendable": "Spendable bitcoin in the trading wallet",
-        "funds": "Funds"
+        "funds": "Funds",
+        "regDiffers": "Registry lists it as {{ticker}}",
+        "regSame": "Same ticker elsewhere: {{n}}",
+        "regListed": "In the registry",
+        "regNot": "Not in the registry"
       },
       "depth": {
         "empty": "The depth chart fills in as orders arrive.",
@@ -3511,6 +3515,25 @@
           "6h": "6 hours",
           "24h": "24 hours"
         }
+      },
+      "registry": {
+        "notListed": "Not in the registry",
+        "listedBy": "Listed in the registry by {{by}}",
+        "listed": "Listed in the registry",
+        "tickerDiffers": "The maker calls it something else. The registry lists it as {{ticker}}.",
+        "contractBad": "The contract does not validate against its genesis",
+        "contractOk": "The contract validates against its genesis",
+        "noDeclaration": "Nobody has declared this asset",
+        "declared": "A declaration was signed by {{address}}",
+        "proofOk": "A proof that the signer is the issuer was checked",
+        "noProof": "No proof that the signer is the issuer",
+        "sameTicker": "Contracts with the same ticker: {{n}}",
+        "impersonation": "The registry flags this asset as an imitation",
+        "dispute": "A dispute is open on this asset",
+        "contested": "Contests filed: {{n}}",
+        "title": "What the registry says",
+        "asking": "Asking the registry…",
+        "footnote": "These are facts the registry publishes. None of them says an asset is safe."
       }
     }
   }

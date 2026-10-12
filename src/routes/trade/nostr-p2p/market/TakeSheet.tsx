@@ -3,7 +3,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-toastify'
 
 import { Modal } from '../../../../components/ui'
-import { marketApi, type Info, type Order, type Trade } from '../api'
+import {
+  marketApi,
+  type AssetFacts,
+  type Info,
+  type Order,
+  type Trade,
+} from '../api'
 import {
   fmtPrice,
   fmtSats,
@@ -14,6 +20,7 @@ import {
 } from '../format'
 
 import { useTr } from './hooks'
+import { RegistryPanel } from './RegistryPanel'
 import { failureKind, swapProgress, type Stage } from './progress'
 import { SwapGlyph } from './SwapGlyph'
 import { SummaryRows, Steps, cx, type Step } from './ui'
@@ -65,6 +72,20 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
   const imitation = orders.find((o) => o.impersonates)?.impersonates ?? null
   const away = orders.some((o) => o.away)
   const done = p.stage === 'settled'
+
+  // asked of the registry when the sheet opens: this is the moment someone is about to trade it
+  const [facts, setFacts] = useState<AssetFacts | null | undefined>(undefined)
+  const assetId = first.asset_id
+  useEffect(() => {
+    let live = true
+    marketApi
+      .asset(assetId)
+      .then((f) => live && setFacts(f))
+      .catch(() => live && setFacts(null))
+    return () => {
+      live = false
+    }
+  }, [assetId])
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -224,6 +245,7 @@ export function TakeSheet({ orders, trades, info, onClose, onChanged }: Props) {
         {!started && (
           <>
             <SummaryRows rows={rows} />
+            <RegistryPanel facts={facts} note={first.registry} />
             {imitation && (
               <p className="rounded-xl bg-status-danger-subtle p-3 text-caption text-content-primary">
                 {tr(

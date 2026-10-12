@@ -1,6 +1,6 @@
 import { ShieldAlert, ShieldCheck, Wallet } from 'lucide-react'
 
-import type { Info } from '../api'
+import type { Info, RegistryNote } from '../api'
 import { fmtPrice, fmtSats, short } from '../format'
 
 import { useTr } from './hooks'
@@ -25,6 +25,8 @@ interface Props {
   open: number
   btc: number
   info: Info
+  /** What the registry lists for this market's asset, when the daemon reads one. */
+  registry?: RegistryNote | null
   onOpenFunds?: () => void
 }
 
@@ -60,6 +62,7 @@ export function PairHeader({
   open,
   btc,
   info,
+  registry,
   onOpenFunds,
 }: Props) {
   const tr = useTr()
@@ -86,6 +89,33 @@ export function PairHeader({
           }
         : null
 
+  // one extra signal from the registry, the one that matters most
+  const registryFlag = !registry
+    ? null
+    : registry.ticker_differs
+      ? {
+          text: tr('header.regDiffers', 'Registry lists it as {{ticker}}', {
+            ticker: registry.ticker_differs,
+          }),
+          tone: 'warning' as const,
+        }
+      : registry.same_ticker_listed > 0
+        ? {
+            text: tr('header.regSame', 'Same ticker elsewhere: {{n}}', {
+              n: registry.same_ticker_listed,
+            }),
+            tone: 'warning' as const,
+          }
+        : registry.listed
+          ? {
+              text: tr('header.regListed', 'In the registry'),
+              tone: 'muted' as const,
+            }
+          : {
+              text: tr('header.regNot', 'Not in the registry'),
+              tone: 'muted' as const,
+            }
+
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-surface-card/70 px-4 py-3">
       <div className="flex items-center gap-3">
@@ -108,6 +138,9 @@ export function PairHeader({
             </option>
           ))}
         </select>
+        {registryFlag && (
+          <Pill tone={registryFlag.tone}>{registryFlag.text}</Pill>
+        )}
         {flag && (
           <span title={market?.asset_id}>
             <Pill tone={flag.tone}>
