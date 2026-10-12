@@ -139,7 +139,7 @@ jobs:
           ls -lh bin/rgb-lightning-node
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             expected_arch="${{ contains(matrix.args, 'x86_64') && 'x86_64' || 'arm64' }}"
-            lipo -verify_arch "$expected_arch" bin/rgb-lightning-node
+            lipo bin/rgb-lightning-node -verify_arch "$expected_arch"
           fi
 
       - name: Create placeholder rgb-lightning-node for Windows
@@ -228,6 +228,21 @@ jobs:
           includeUpdaterJson: true
           updaterJsonPreferNsis: false
           args: ${{ matrix.args }}
+
+      - name: Preserve installers if release upload fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}-${{ contains(matrix.args, 'x86_64') && 'x64' || 'native' }}
+          path: |
+            src-tauri/target/**/bundle/**/*.tar.gz
+            src-tauri/target/**/bundle/**/*.sig
+            src-tauri/target/**/bundle/**/*.dmg
+            src-tauri/target/**/bundle/**/*.AppImage
+            src-tauri/target/**/bundle/**/*.deb
+            src-tauri/target/**/bundle/**/*.exe
+            src-tauri/target/**/bundle/**/*.msi
+          if-no-files-found: ignore
 
       - name: Update latest release tag
         if: startsWith(github.ref, 'refs/tags/v') && !startsWith(github.ref, 'refs/tags/test-v')
