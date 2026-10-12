@@ -42,4 +42,3 @@ target/
 .claude
 # P2P market bundle (scripts/prepare-p2p-bundle.sh)
 .p2pd-src
-src-tauri/resources/p2p-ui

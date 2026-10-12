@@ -71,18 +71,31 @@ pub struct P2pStatus {
 /// What the desktop UI may ask the daemon. The wallet-moving calls go through Rust rather than the
 /// webview, so a web page can never reach the daemon's API and the daemon never has to trust the
 /// webview's origin.
-const ALLOWED_PATHS: &[&str] = &[
-    "/api/info",
-    "/api/balance",
-    "/api/rgb/invoice",
-    "/api/rgb/send",
-    "/api/btc/send",
-    "/api/transfers",
-    "/api/refresh",
+const ALLOWED: &[(&str, &str)] = &[
+    ("GET", "/api/info"),
+    ("GET", "/api/balance"),
+    ("GET", "/api/book"),
+    ("GET", "/api/orders"),
+    ("GET", "/api/trades"),
+    ("GET", "/api/transfers"),
+    ("POST", "/api/orders"),
+    ("POST", "/api/take"),
+    ("POST", "/api/rgb/invoice"),
+    ("POST", "/api/rgb/send"),
+    ("POST", "/api/btc/send"),
+    ("POST", "/api/refresh"),
 ];
 
-pub fn path_allowed(path: &str) -> bool {
-    ALLOWED_PATHS.contains(&path)
+/// Whether the app may call `method path`: the market's own routes, nothing from the daemon's
+/// development tools. Cancelling an order names the order in the path.
+pub fn route_allowed(method: &str, path: &str) -> bool {
+    if ALLOWED.contains(&(method, path)) {
+        return true;
+    }
+    method == "DELETE"
+        && path
+            .strip_prefix("/api/orders/")
+            .is_some_and(|id| !id.is_empty() && id.len() <= 64 && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')))
 }
 
 #[derive(Default)]
@@ -150,9 +163,6 @@ impl P2pProcess {
         if let Some(path) = &cfg.verified_assets_path {
             cmd.args(["--verified-assets", path]);
         }
-        if let Some(ui) = resolve_ui(app) {
-            cmd.arg("--ui-dir").arg(ui);
-        }
         if cfg.network == "mainnet" {
             cmd.arg("--allow-mainnet");
         }
@@ -188,8 +198,8 @@ impl P2pProcess {
     /// Call one of the daemon's allowed endpoints. The daemon refuses requests that carry a browser
     /// `Origin`; this one does not, because it is made from here.
     pub fn request(&self, method: &str, path: &str, body: Option<serde_json::Value>) -> Result<serde_json::Value, String> {
-        if !path_allowed(path) {
-            return Err(format!("{path} is not available from the app"));
+        if !route_allowed(method, path) {
+            return Err(format!("{method} {path} is not available from the app"));
         }
         let port = self.status().port.ok_or("the P2P daemon is not running")?;
         let client = reqwest::blocking::Client::builder()
@@ -200,6 +210,7 @@ impl P2pProcess {
         let req = match method {
             "GET" => client.get(url),
             "POST" => client.post(url).json(&body.unwrap_or(serde_json::Value::Null)),
+            "DELETE" => client.delete(url),
             other => return Err(format!("unsupported method {other}")),
         };
         let res = req.send().map_err(|e| format!("the P2P daemon did not answer: {e}"))?;
@@ -263,10 +274,6 @@ fn binary_candidates(resources: &Path, exe: &str) -> Vec<PathBuf> {
     vec![resources.join("_up_").join("bin").join(exe), resources.join("bin").join(exe), resources.join(exe)]
 }
 
-fn ui_candidates(resources: &Path) -> Vec<PathBuf> {
-    vec![resources.join("resources").join("p2p-ui"), resources.join("p2p-ui")]
-}
-
 fn resolve_binary(app: &AppHandle) -> PathBuf {
     if let Some(path) = std::env::var_os("KALEIDO_P2PD_BIN") {
         return PathBuf::from(path);
@@ -278,16 +285,6 @@ fn resolve_binary(app: &AppHandle) -> PathBuf {
         }
     }
     PathBuf::from(exe)
-}
-
-/// The daemon's UI: an explicit directory, or the one that came with the app.
-fn resolve_ui(app: &AppHandle) -> Option<PathBuf> {
-    let has_index = |p: &PathBuf| p.join("index.html").is_file();
-    if let Some(dir) = std::env::var_os("KALEIDO_P2P_UI_DIR").map(PathBuf::from) {
-        return has_index(&dir).then_some(dir);
-    }
-    let res = app.path().resource_dir().ok()?;
-    ui_candidates(&res).into_iter().find(has_index)
 }
 
 fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str) {
@@ -311,7 +308,6 @@ mod tests {
         let found = binary_candidates(res, "p2pd");
         assert_eq!(found[0], Path::new("/app/Resources/_up_/bin/p2pd"));
         assert!(found.contains(&Path::new("/app/Resources/p2pd").to_path_buf()));
-        assert_eq!(ui_candidates(res)[0], Path::new("/app/Resources/resources/p2p-ui"));
     }
 
     fn cfg() -> P2pStartConfig {
@@ -358,12 +354,26 @@ mod tests {
     }
 
     #[test]
-    fn only_the_funds_endpoints_are_reachable_from_the_app() {
-        for ok in ["/api/info", "/api/rgb/invoice", "/api/btc/send"] {
-            assert!(path_allowed(ok), "{ok}");
+    fn only_the_market_routes_are_reachable_from_the_app() {
+        for (m, p) in [("GET", "/api/info"), ("GET", "/api/book"), ("POST", "/api/take"), ("POST", "/api/orders"), ("POST", "/api/btc/send"), ("DELETE", "/api/orders/aB3-_9")] {
+            assert!(route_allowed(m, p), "{m} {p}");
         }
-        for bad in ["/api/orders", "/api/take", "/api/dev/fund", "/api/../etc", "/", "/api/info/", "http://evil/api/info"] {
-            assert!(!path_allowed(bad), "{bad}");
+        for (m, p) in [
+            ("POST", "/api/dev/fund"),
+            ("GET", "/api/dev/mine"),
+            ("GET", "/api/take"),
+            ("DELETE", "/api/orders"),
+            ("DELETE", "/api/orders/"),
+            ("DELETE", "/api/orders/../info"),
+            ("DELETE", "/api/orders/a/b"),
+            ("DELETE", "/api/info"),
+            ("PUT", "/api/orders"),
+            ("GET", "/api/../etc"),
+            ("GET", "/"),
+            ("GET", "/api/info/"),
+            ("GET", "http://evil/api/info"),
+        ] {
+            assert!(!route_allowed(m, p), "{m} {p}");
         }
     }
 

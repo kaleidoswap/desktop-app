@@ -11,6 +11,8 @@ import { invoke } from '@tauri-apps/api/core'
 
 import type { P2pNetworkConfig } from '../../../constants/p2p'
 
+import { transport } from './transport'
+
 export interface P2pStatus {
   running: boolean
   port: number | null
@@ -57,7 +59,7 @@ export interface Daemon {
 }
 
 const call = <T>(method: 'GET' | 'POST', path: string, body?: unknown) =>
-  invoke<T>('p2p_request', { body: body ?? null, method, path })
+  transport().request<T>(method, path, body)
 
 export const tauriDaemon: Daemon = {
   address: async () =>

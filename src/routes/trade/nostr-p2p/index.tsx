@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Power } from 'lucide-react'
+import { Power } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
@@ -9,6 +9,7 @@ import { Alert, Button } from '../../../components/ui'
 import { p2pConfigFor } from '../../../constants/p2p'
 
 import { FundsModal } from './FundsModal'
+import { Market } from './market/Market'
 import {
   p2pStart,
   p2pStatus,
@@ -84,15 +85,7 @@ export const Component = () => {
   } else {
     body = (
       <div className="flex flex-col gap-3">
-        <div className="flex justify-end gap-2">
-          <Button
-            icon={<ArrowLeftRight size={14} />}
-            onClick={() => setFundsOpen(true)}
-            size="sm"
-            variant="outline"
-          >
-            {t('p2pMarket.funds.open')}
-          </Button>
+        <div className="flex justify-end">
           <Button
             icon={<Power size={14} />}
             isLoading={busy}
@@ -103,11 +96,7 @@ export const Component = () => {
             {t('p2pMarket.stop')}
           </Button>
         </div>
-        <iframe
-          className="h-[calc(100vh-14rem)] w-full rounded-lg border border-border-default"
-          src={status.url}
-          title={t('p2pMarket.title')}
-        />
+        <Market onOpenFunds={() => setFundsOpen(true)} />
         <FundsModal isOpen={fundsOpen} onClose={() => setFundsOpen(false)} />
       </div>
     )
