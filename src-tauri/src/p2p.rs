@@ -15,7 +15,7 @@
 
 use std::io::{BufRead, BufReader};
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -150,11 +150,8 @@ impl P2pProcess {
         if let Some(path) = &cfg.verified_assets_path {
             cmd.args(["--verified-assets", path]);
         }
-        if let Ok(res) = app.path().resource_dir() {
-            let ui = res.join("p2p-ui");
-            if ui.join("index.html").exists() {
-                cmd.arg("--ui-dir").arg(ui);
-            }
+        if let Some(ui) = resolve_ui(app) {
+            cmd.arg("--ui-dir").arg(ui);
         }
         if cfg.network == "mainnet" {
             cmd.arg("--allow-mainnet");
@@ -260,18 +257,37 @@ fn free_port() -> Result<u16, String> {
     listener.local_addr().map(|a| a.port()).map_err(|e| e.to_string())
 }
 
+/// Where the bundler may have put the daemon. `../bin/p2pd` lands under `_up_/bin` on macOS and
+/// Linux and next to the other resources on Windows, like the RGB node.
+fn binary_candidates(resources: &Path, exe: &str) -> Vec<PathBuf> {
+    vec![resources.join("_up_").join("bin").join(exe), resources.join("bin").join(exe), resources.join(exe)]
+}
+
+fn ui_candidates(resources: &Path) -> Vec<PathBuf> {
+    vec![resources.join("resources").join("p2p-ui"), resources.join("p2p-ui")]
+}
+
 fn resolve_binary(app: &AppHandle) -> PathBuf {
     if let Some(path) = std::env::var_os("KALEIDO_P2PD_BIN") {
         return PathBuf::from(path);
     }
     let exe = if cfg!(target_os = "windows") { "p2pd.exe" } else { "p2pd" };
     if let Ok(res) = app.path().resource_dir() {
-        let bundled = res.join("bin").join(exe);
-        if bundled.exists() {
+        if let Some(bundled) = binary_candidates(&res, exe).into_iter().find(|p| p.is_file()) {
             return bundled;
         }
     }
     PathBuf::from(exe)
+}
+
+/// The daemon's UI: an explicit directory, or the one that came with the app.
+fn resolve_ui(app: &AppHandle) -> Option<PathBuf> {
+    let has_index = |p: &PathBuf| p.join("index.html").is_file();
+    if let Some(dir) = std::env::var_os("KALEIDO_P2P_UI_DIR").map(PathBuf::from) {
+        return has_index(&dir).then_some(dir);
+    }
+    let res = app.path().resource_dir().ok()?;
+    ui_candidates(&res).into_iter().find(has_index)
 }
 
 fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'static str) {
@@ -288,6 +304,15 @@ fn pipe_to_log(stream: Option<impl std::io::Read + Send + 'static>, tag: &'stati
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_bundled_daemon_is_looked_for_where_the_bundler_puts_it() {
+        let res = Path::new("/app/Resources");
+        let found = binary_candidates(res, "p2pd");
+        assert_eq!(found[0], Path::new("/app/Resources/_up_/bin/p2pd"));
+        assert!(found.contains(&Path::new("/app/Resources/p2pd").to_path_buf()));
+        assert_eq!(ui_candidates(res)[0], Path::new("/app/Resources/resources/p2p-ui"));
+    }
 
     fn cfg() -> P2pStartConfig {
         P2pStartConfig {
