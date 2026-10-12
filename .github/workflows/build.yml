@@ -114,6 +114,12 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      # Initialize the checkout before restoring target/: Makefile treats an
+      # existing directory as a repository.
+      - name: Checkout bundled node
+        if: matrix.platform != 'windows-latest'
+        run: make update_repo
+
       - name: Cache native node build
         if: matrix.platform != 'windows-latest'
         uses: actions/cache@v4
