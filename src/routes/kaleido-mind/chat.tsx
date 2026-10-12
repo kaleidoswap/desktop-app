@@ -3,6 +3,9 @@
 import {
   Brain,
   ArrowDown,
+  ArrowUp,
+  Mic,
+  Paperclip,
   ChevronRight,
   FlaskConical,
   Clock,
@@ -12,7 +15,6 @@ import {
   History,
   Loader2,
   Plus,
-  Send,
   ShieldAlert,
   Sparkles,
   Square,
@@ -308,6 +310,7 @@ export const Component: React.FC = () => {
   const [sending, setSending] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   // chatId of the in-flight turn, so the stop button can cancel it.
   const activeChatRef = useRef<string | null>(null)
   const stoppedRef = useRef(false)
@@ -318,6 +321,14 @@ export const Component: React.FC = () => {
     stoppedRef.current = true
     void mind.cancelChat(id)
   }
+
+  // Grow the composer with its content (up to its max height).
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [input])
 
   // Stick to the bottom only while the reader is already there, so scrolling
   // up to re-read isn't yanked back by every streamed token.
@@ -499,6 +510,7 @@ export const Component: React.FC = () => {
       setSending(false)
       activeChatRef.current = null
       scrollToEnd()
+      inputRef.current?.focus()
     }
   }
 
@@ -645,76 +657,82 @@ export const Component: React.FC = () => {
       {/* Messages */}
       <div className="relative min-h-0 flex-1">
         <div
-          className="h-full space-y-3 overflow-y-auto px-4 py-3"
+          className="h-full overflow-y-auto px-4 py-3"
           onScroll={onListScroll}
           ref={listRef}
         >
-          {messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
-                <Brain className="h-7 w-7 text-primary" />
-              </div>
-              <p className="text-base font-semibold text-content-primary">
-                Your sovereign financial agent
-              </p>
-              <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
-                I run locally and help with your wallet, node and portfolio.
-                Pick a starting point, or just ask.
-              </p>
-              <WelcomeActions
-                disabled={!providerOn || sending}
-                onPick={(p) => void send(p)}
-                providerOn={providerOn}
-              />
-            </div>
-          ) : (
-            messages.map((m, i) =>
-              m.role === 'user' ? (
-                <div className="flex justify-end" key={m.id ?? i}>
-                  <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
-                    {m.text}
-                  </div>
+          <div className="mx-auto w-full max-w-3xl space-y-3">
+            {messages.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
+                  <Brain className="h-7 w-7 text-primary" />
                 </div>
-              ) : (
-                <div className="flex items-start gap-2.5" key={m.id ?? i}>
-                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                    <Brain className="h-4 w-4 text-primary" />
+                <p className="text-base font-semibold text-content-primary">
+                  Your sovereign financial agent
+                </p>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-content-tertiary">
+                  I run locally and help with your wallet, node and portfolio.
+                  Pick a starting point, or just ask.
+                </p>
+                <WelcomeActions
+                  disabled={!providerOn || sending}
+                  onPick={(p) => void send(p)}
+                  providerOn={providerOn}
+                />
+              </div>
+            ) : (
+              messages.map((m, i) =>
+                m.role === 'user' ? (
+                  <div className="flex justify-end" key={m.id ?? i}>
+                    <div className="max-w-[80%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-secondary px-3.5 py-2.5 text-sm text-white shadow-sm">
+                      {m.text}
+                    </div>
                   </div>
-                  <div className="max-w-[88%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
-                    {m.thinking && (
-                      <ThinkingDisclosure
-                        hasContent={!!m.text}
-                        live={m.streaming}
-                        text={m.thinking}
-                      />
-                    )}
-                    {m.toolEvents?.map((ev) => (
-                      <ToolEventView event={ev} key={ev.id} />
-                    ))}
-                    {m.text ? (
-                      <MarkdownText text={m.text} />
-                    ) : m.streaming && !m.thinking && !m.toolEvents?.length ? (
-                      <span className="inline-flex items-center gap-2 text-content-tertiary">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        Thinking…
-                      </span>
-                    ) : null}
-                    {!m.streaming &&
-                      m.followups &&
-                      m.followups.length > 0 &&
-                      i === messages.length - 1 && (
-                        <FollowupActions
-                          actions={m.followups}
-                          disabled={!providerOn || sending}
-                          onPick={(p) => void send(p)}
+                ) : (
+                  <div className="flex items-start gap-2.5" key={m.id ?? i}>
+                    <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                      <Brain className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="max-w-[88%] break-words rounded-2xl rounded-tl-md border border-divider/10 bg-surface-overlay px-3.5 py-2.5 text-sm leading-relaxed text-content-primary">
+                      {m.thinking && (
+                        <ThinkingDisclosure
+                          hasContent={!!m.text}
+                          live={m.streaming}
+                          text={m.thinking}
                         />
                       )}
-                    {!m.streaming && m.stats && <StatsFooter stats={m.stats} />}
+                      {m.toolEvents?.map((ev) => (
+                        <ToolEventView event={ev} key={ev.id} />
+                      ))}
+                      {m.text ? (
+                        <MarkdownText text={m.text} />
+                      ) : m.streaming &&
+                        !m.thinking &&
+                        !m.toolEvents?.length ? (
+                        <span className="inline-flex items-center gap-2 text-content-tertiary">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          Thinking…
+                        </span>
+                      ) : null}
+                      {!m.streaming &&
+                        m.followups &&
+                        m.followups.length > 0 &&
+                        i === messages.length - 1 && (
+                          <FollowupActions
+                            actions={m.followups}
+                            disabled={!providerOn || sending}
+                            onPick={(p) => void send(p)}
+                          />
+                        )}
+                      {!m.streaming && m.stats && (
+                        <StatsFooter stats={m.stats} />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )
               )
-            )
-          )}
+            )}
+          </div>
         </div>
         {showJump && (
           <button
@@ -794,56 +812,86 @@ export const Component: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="border-t border-divider/15 px-3 py-2">
-        {/* While the model is working, make it unmistakable that input is paused. */}
-        {sending && (
-          <div className="mb-1.5 flex items-center gap-2 px-1 text-xs font-medium text-primary">
-            <span className="flex items-end gap-0.5">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
-            </span>
-            KaleidoMind is responding… tap ■ to stop
-          </div>
-        )}
-        <div
-          className={`flex items-center gap-2 rounded-xl border bg-surface-overlay/40 py-1.5 pl-3 pr-1.5 transition-colors ${
-            sending
-              ? 'border-primary/40 opacity-70'
-              : 'border-border-default focus-within:border-primary/50'
-          }`}
-        >
-          <input
-            className="flex-1 bg-transparent py-1.5 text-sm text-content-primary placeholder-content-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={!providerOn || sending}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder={
+      <div className="px-3 pb-3 pt-1">
+        <div className="mx-auto w-full max-w-3xl">
+          <div
+            className={`rounded-2xl border bg-surface-overlay/50 shadow-sm transition-colors ${
               sending
-                ? 'Waiting for KaleidoMind to finish…'
-                : providerOn
-                  ? 'Message KaleidoMind…'
-                  : 'Start a model first'
-            }
-            value={input}
-          />
-          <button
-            aria-label={sending ? 'Stop KaleidoMind' : 'Send message'}
-            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all active:scale-95 disabled:opacity-40 ${
-              sending
-                ? 'bg-red text-white hover:bg-red/90'
-                : 'bg-primary text-surface-base hover:bg-primary-emphasis'
+                ? 'border-primary/40'
+                : 'border-border-default focus-within:border-primary/50'
             }`}
-            disabled={!providerOn || (!sending && !input.trim())}
-            onClick={() => (sending ? stop() : send())}
-            type="button"
           >
-            {sending ? (
-              <Square className="h-3.5 w-3.5 fill-current" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </button>
+            <textarea
+              aria-label="Message KaleidoMind"
+              className="block max-h-40 w-full resize-none bg-transparent px-4 pb-1 pt-3 text-sm leading-relaxed text-content-primary placeholder-content-tertiary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!providerOn}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter sends, Shift+Enter adds a line; ignore while composing (IME).
+                if (
+                  e.key === 'Enter' &&
+                  !e.shiftKey &&
+                  !e.nativeEvent.isComposing
+                ) {
+                  e.preventDefault()
+                  if (!sending) void send()
+                }
+              }}
+              placeholder={
+                providerOn
+                  ? sending
+                    ? 'Reply to KaleidoMind…'
+                    : 'Message KaleidoMind…'
+                  : 'Start a model first'
+              }
+              ref={inputRef}
+              rows={1}
+              value={input}
+            />
+            <div className="flex items-center gap-1 px-2 pb-2">
+              {/* Placeholders for upcoming features — not wired yet. */}
+              <button
+                aria-label="Attach (coming soon)"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-content-tertiary opacity-50"
+                disabled
+                title="Attachments — coming soon"
+                type="button"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
+              <button
+                aria-label="Voice input (coming soon)"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-content-tertiary opacity-50"
+                disabled
+                title="Voice input — coming soon"
+                type="button"
+              >
+                <Mic className="h-4 w-4" />
+              </button>
+              <span className="ml-1 hidden truncate text-[0.7rem] text-content-tertiary sm:inline">
+                {sending
+                  ? 'Responding… press ■ to stop'
+                  : 'Enter to send · Shift+Enter for a new line'}
+              </span>
+              <button
+                aria-label={sending ? 'Stop KaleidoMind' : 'Send message'}
+                className={`ml-auto flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all active:scale-95 disabled:opacity-40 ${
+                  sending
+                    ? 'bg-red text-white hover:bg-red/90'
+                    : 'bg-primary text-surface-base hover:bg-primary-emphasis'
+                }`}
+                disabled={!providerOn || (!sending && !input.trim())}
+                onClick={() => (sending ? stop() : void send())}
+                type="button"
+              >
+                {sending ? (
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
