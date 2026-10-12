@@ -36,7 +36,21 @@ export interface MarketPlan {
   nextFit?: Order
   /** Orders left out because they are outside the price limit. */
   beyondLimit: number
+  /** Orders left out because the wallet has no free coin left for another swap. */
+  noCoinFor: number
+  /** Orders left out because one maker would be asked for more than it allows at once. */
+  tooManyFromMaker: number
 }
+
+export interface PlanLimits {
+  /** Bitcoin coins free for a swap. Each buy spends coins of its own. Unknown: no limit. */
+  coins?: number[]
+  /** Swaps a maker accepts from one taker at once. */
+  perMaker?: number
+}
+
+/** What a maker accepts from one taker at once, unless it was set otherwise. */
+export const DEFAULT_PER_MAKER = 3
 
 /**
  * Plan a market order against the book. Orders fill whole, so the plan takes the best-priced orders
@@ -48,7 +62,8 @@ export function planMarket(
   book: Order[],
   side: Side,
   wantBase: number,
-  slippage: number
+  slippage: number,
+  limits: PlanLimits = {}
 ): MarketPlan {
   const theirs = book.filter((o) => !o.mine)
   const { asks, bids } = splitBook(theirs)
@@ -70,14 +85,36 @@ export function planMarket(
   const picks: Order[] = []
   let base = 0
   let nextFit: Order | undefined
+  const perMaker = limits.perMaker ?? DEFAULT_PER_MAKER
+  const fromMaker = new Map<string, number>()
+  // a buyer's swap spends a coin of its own, large enough for what it pays
+  const coins =
+    side === 'buy' && limits.coins
+      ? [...limits.coins].sort((a, b) => a - b)
+      : null
+  let noCoinFor = 0
+  let tooManyFromMaker = 0
   for (const o of rows) {
     if (!inside(o)) continue
-    if (base + o.amount <= wantBase) {
-      picks.push(o)
-      base += o.amount
-    } else if (!nextFit) {
-      nextFit = o
+    if (base + o.amount > wantBase) {
+      nextFit ??= o
+      continue
     }
+    if ((fromMaker.get(o.maker) ?? 0) >= perMaker) {
+      tooManyFromMaker += 1
+      continue
+    }
+    if (coins) {
+      const i = coins.findIndex((c) => c >= takerCost(o).pay)
+      if (i < 0) {
+        noCoinFor += 1
+        continue
+      }
+      coins.splice(i, 1)
+    }
+    fromMaker.set(o.maker, (fromMaker.get(o.maker) ?? 0) + 1)
+    picks.push(o)
+    base += o.amount
   }
   const costs = picks.map(takerCost)
   const priceSats = picks.reduce((s, o) => s + o.price_sat, 0)
@@ -95,8 +132,10 @@ export function planMarket(
     beyondLimit: rows.filter((o) => !inside(o)).length,
     fees: costs.reduce((s, c) => s + c.fees, 0),
     nextFit,
+    noCoinFor,
     picks,
     sats,
     shortBy: Math.max(0, wantBase - base),
+    tooManyFromMaker,
   }
 }

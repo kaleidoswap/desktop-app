@@ -65,8 +65,11 @@ export function TradeTicket({
     [orders]
   )
   const plan = useMemo(
-    () => planMarket(orders, side, amountBase, slippage),
-    [orders, side, amountBase, slippage]
+    () =>
+      planMarket(orders, side, amountBase, slippage, {
+        coins: balance?.btc_coins,
+      }),
+    [orders, side, amountBase, slippage, balance?.btc_coins]
   )
 
   const wider = SLIPPAGE.find((x) => x > slippage)
@@ -330,18 +333,21 @@ export function TradeTicket({
                 {plan.picks.length ? fmtPrice(plan.avgPrice) : '–'}
               </span>
             </div>
-            {plan.picks.length > 0 && plan.shortBy > 0 && (
-              <p className="text-status-warning">
-                {tr(
-                  'ticket.partial',
-                  'Orders fill whole, so {{n}} of the {{ticker}} you asked for is not covered.',
-                  {
-                    n: fmtUnits(plan.shortBy, asset.precision),
-                    ticker: asset.ticker,
-                  }
-                )}
-              </p>
-            )}
+            {plan.picks.length > 0 &&
+              plan.shortBy > 0 &&
+              plan.noCoinFor === 0 &&
+              plan.tooManyFromMaker === 0 && (
+                <p className="text-status-warning">
+                  {tr(
+                    'ticket.partial',
+                    'Orders fill whole, so {{n}} of the {{ticker}} you asked for is not covered.',
+                    {
+                      n: fmtUnits(plan.shortBy, asset.precision),
+                      ticker: asset.ticker,
+                    }
+                  )}
+                </p>
+              )}
             {amountBase > 0 && plan.beyondLimit > 0 && wider && (
               <button
                 className="text-left text-primary hover:underline"
@@ -354,6 +360,24 @@ export function TradeTicket({
                   { n: plan.beyondLimit, pct: (wider * 100).toFixed(0) }
                 )}
               </button>
+            )}
+            {plan.noCoinFor > 0 && (
+              <p className="text-status-warning">
+                {tr(
+                  'ticket.noCoin',
+                  'Each swap spends a coin of its own and your wallet has {{n}} free. {{left}} more order(s) can follow once these settle.',
+                  { left: plan.noCoinFor, n: balance?.btc_coins?.length ?? 0 }
+                )}
+              </p>
+            )}
+            {plan.tooManyFromMaker > 0 && (
+              <p className="text-content-tertiary">
+                {tr(
+                  'ticket.perMaker',
+                  'A maker takes a few swaps from you at a time, so {{n}} more order(s) are left for next.',
+                  { n: plan.tooManyFromMaker }
+                )}
+              </p>
             )}
             {plan.picks.length > 1 && (
               <p className="text-content-tertiary">

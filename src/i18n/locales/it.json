@@ -3533,7 +3533,9 @@
           "1h": "1 ora",
           "6h": "6 ore",
           "24h": "24 ore"
-        }
+        },
+        "noCoin": "Ogni swap spende una moneta sua e il tuo wallet ne ha {{n}} libere. Altri {{left}} ordini possono seguire quando questi si saranno regolati.",
+        "perMaker": "Un maker accetta da te pochi swap alla volta, quindi altri {{n}} ordini restano per dopo."
       },
       "registry": {
         "notListed": "Non è nel registro",

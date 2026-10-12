@@ -113,6 +113,53 @@ describe('a market order', () => {
   })
 })
 
+describe('a market order and what the wallet and the makers allow', () => {
+  const maker = (m: string) => ({ maker: m })
+  const asks = [
+    order('sell', 100, 5000, maker('A')), // pays 8000
+    order('sell', 100, 5100, maker('A')),
+    order('sell', 100, 5200, maker('B')),
+    order('sell', 100, 5300, maker('A')),
+    order('sell', 100, 5400, maker('A')), // a fourth from A
+  ]
+
+  it('asks one maker for no more swaps at once than it takes', () => {
+    const plan = planMarket(asks, 'buy', 1000, 0.2)
+    expect(plan.picks.filter((o) => o.maker === 'A')).toHaveLength(3)
+    expect(plan.tooManyFromMaker).toBe(1)
+    expect(plan.picks).toHaveLength(4)
+  })
+
+  it('takes no more orders than the wallet has coins for', () => {
+    // two coins that can each pay one order (price + 3000 in fees)
+    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [8300, 8200] })
+    expect(plan.picks).toHaveLength(2)
+    expect(plan.noCoinFor).toBe(3)
+    expect(plan.picks.map((o) => o.unit_price)).toEqual([50, 51])
+  })
+
+  it('gives each swap a coin large enough for what it pays', () => {
+    // one coin is too small for any order, the other covers exactly one
+    const plan = planMarket(asks, 'buy', 1000, 0.2, { coins: [1000, 8100] })
+    expect(plan.picks).toHaveLength(1)
+    expect(plan.noCoinFor).toBe(4)
+  })
+
+  it('does not hold a seller to coins: it is paid in bitcoin', () => {
+    const bids = [
+      order('buy', 100, 4000, maker('A')),
+      order('buy', 100, 3900, maker('B')),
+    ]
+    const plan = planMarket(bids, 'sell', 1000, 0.2, { coins: [] })
+    expect(plan.picks).toHaveLength(2)
+    expect(plan.noCoinFor).toBe(0)
+  })
+
+  it('does not limit by coins when the daemon does not say', () => {
+    expect(planMarket(asks, 'buy', 1000, 0.2).picks.length).toBe(4)
+  })
+})
+
 describe('numbers', () => {
   it('a buyer pays price and fees, a seller gets the price', () => {
     expect(takerCost(order('sell', 1000, 50_000))).toEqual({
