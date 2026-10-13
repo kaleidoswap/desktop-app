@@ -1007,17 +1007,21 @@ fn is_local_node_supported() -> bool {
 }
 
 #[tauri::command]
-fn get_local_node_capabilities() -> HashMap<String, bool> {
-    let mut caps = HashMap::new();
-    caps.insert(
-        "native".to_string(),
-        rgb_node::NodeProcess::is_local_node_supported(),
-    );
-    caps.insert(
-        "docker".to_string(),
-        DockerNodeManager::is_docker_available(),
-    );
-    caps
+async fn get_local_node_capabilities() -> Result<HashMap<String, bool>, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let mut caps = HashMap::new();
+        caps.insert(
+            "native".to_string(),
+            rgb_node::NodeProcess::is_local_node_supported(),
+        );
+        caps.insert(
+            "docker".to_string(),
+            DockerNodeManager::is_docker_available(),
+        );
+        caps
+    })
+    .await
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]

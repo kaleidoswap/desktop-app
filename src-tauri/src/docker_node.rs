@@ -326,7 +326,23 @@ impl DockerNodeManager {
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
 
-        cmd.status().map(|s| s.success()).unwrap_or(false)
+        let Ok(mut child) = cmd.spawn() else {
+            return false;
+        };
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => return status.success(),
+                Ok(None) if std::time::Instant::now() < deadline => {
+                    thread::sleep(Duration::from_millis(100));
+                }
+                _ => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return false;
+                }
+            }
+        }
     }
 
     /// Format an account name into a Docker environment name. Mirrors the
@@ -734,10 +750,10 @@ impl DockerNodeManager {
             return Err("Docker is not installed or not running".to_string());
         }
 
-        self.set_state(NodeState::Starting);
-
         // Determine daemon port from compose file
         let daemon_port = Self::get_daemon_port_from_compose(&compose_path, node_index)?;
+
+        self.set_state(NodeState::Starting);
 
         // Clear logs
         if let Ok(mut logs) = self.logs.lock() {
@@ -757,7 +773,16 @@ impl DockerNodeManager {
 
         // Run docker compose up -d
         println!("Starting Docker environment '{}' ...", env_name);
-        let output = Self::run_compose(&env_dir, &["up", "-d"])?;
+        // Refresh mutable image tags even when a cached image/container exists.
+        // Compose recreates changed containers while preserving their volumes.
+        self.add_log("Checking for Docker image updates and starting the node...");
+        let output = match Self::run_compose(&env_dir, &["up", "-d", "--pull", "always"]) {
+            Ok(output) => output,
+            Err(err) => {
+                self.set_state(NodeState::Failed(err.clone()));
+                return Err(err);
+            }
+        };
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);

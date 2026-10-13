@@ -16,6 +16,8 @@ A clearer desktop experience for managing an RGB Lightning node, trading assets 
 
 ### Wallet and node
 
+- Docker node startup now pulls the configured image even when an older copy is cached, preserving existing data volumes. A failed pull is reported instead of silently using a stale image.
+- Recheck Docker availability from local setup without restarting the app; returning to the window also refreshes availability. Docker checks time out instead of blocking indefinitely.
 - Clearer typography, spacing, navigation, dashboard balances and channel liquidity displays.
 - Redesigned receive and payment-confirmation screens, with larger QR codes, copyable addresses, pinned BTC/USDT choices and transaction explorer links.
 - Incoming on-chain payments appear while awaiting confirmation; Lightning deposits show a completion state.

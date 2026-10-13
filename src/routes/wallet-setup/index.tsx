@@ -11,7 +11,7 @@ import {
   Boxes,
   Brain,
 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
@@ -36,7 +36,7 @@ import {
   IconWrapper,
 } from '../../components/wallet-setup'
 import { setAppMode, type AppMode } from '../../slices/settings/settings.slice'
-import { logger } from '../../utils/logger'
+import { useLocalNodeCapabilities } from './useLocalNodeCapabilities'
 import { nodeSettingsActions } from '../../slices/nodeSettings/nodeSettings.slice'
 import { nodeApi } from '../../slices/nodeApi/nodeApi.slice'
 
@@ -77,59 +77,15 @@ export const Component = () => {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const { toggleNotificationPanel, notifications } = useNotification()
-  // Docker / local node mode
-  const [isNativeSupported, setIsNativeSupported] = useState(false)
-  const [isDockerAvailable, setIsDockerAvailable] = useState(false)
-  const [capabilitiesLoaded, setCapabilitiesLoaded] = useState(false)
-  const [localNodeMode, setLocalNodeMode] = useState<
-    'native' | 'docker' | null
-  >(null)
-
-  // Check local node capabilities (native binary + Docker)
-  useEffect(() => {
-    const checkCapabilities = async () => {
-      try {
-        const caps = await invoke<Record<string, boolean>>(
-          'get_local_node_capabilities'
-        )
-        const native = caps.native ?? false
-        const docker = caps.docker ?? false
-        setIsNativeSupported(native)
-        setIsDockerAvailable(docker)
-
-        // Prefer Docker when present so local setup can proceed immediately.
-        if (docker) {
-          setLocalNodeMode('docker')
-        } else if (native) {
-          setLocalNodeMode('native')
-        }
-      } catch (error) {
-        logger.error('Failed to check local node capabilities:', error)
-        // Fallback: check each backend separately
-        try {
-          const supported = await invoke<boolean>('is_local_node_supported')
-          if (supported) {
-            setIsNativeSupported(true)
-            setLocalNodeMode('native')
-          }
-        } catch {
-          // Native not available
-        }
-        try {
-          const docker = await invoke<boolean>('is_docker_available')
-          if (docker) {
-            setIsDockerAvailable(true)
-            setLocalNodeMode((mode) => mode ?? 'docker')
-          }
-        } catch {
-          // Docker command not available
-        }
-      }
-      setCapabilitiesLoaded(true)
-    }
-
-    checkCapabilities()
-  }, [])
+  const {
+    isNativeSupported,
+    isDockerAvailable,
+    capabilitiesLoaded,
+    localNodeMode,
+    setLocalNodeMode,
+    checkingCapabilities,
+    checkCapabilities,
+  } = useLocalNodeCapabilities()
 
   // Handle transitions
   const handleNodeTypeChange = (type: 'local' | 'remote' | null) => {
@@ -475,6 +431,31 @@ export const Component = () => {
                           {t('walletSetup.backendDockerDescription')}
                         </p>
                       </button>
+                    </div>
+
+                    <div
+                      aria-live="polite"
+                      className="mb-6 flex flex-wrap items-center gap-3"
+                    >
+                      <button
+                        className="rounded-lg border border-white/20 px-4 py-2 text-sm text-content-primary disabled:opacity-50"
+                        disabled={checkingCapabilities}
+                        onClick={() => void checkCapabilities()}
+                        type="button"
+                      >
+                        {t(
+                          checkingCapabilities
+                            ? 'walletSetup.checkingBackends'
+                            : 'walletSetup.recheckDocker'
+                        )}
+                      </button>
+                      <p className="text-sm text-content-secondary">
+                        {t(
+                          isDockerAvailable
+                            ? 'walletSetup.dockerReady'
+                            : 'walletSetup.startDockerHint'
+                        )}
+                      </p>
                     </div>
 
                     {/* Message when no backend is available */}

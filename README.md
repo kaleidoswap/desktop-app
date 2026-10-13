@@ -10,8 +10,9 @@
 
 KaleidoSwap also ships with **Kaleido Mind**, an optional built-in AI assistant that lets you interact with your wallet in plain language—asking questions and carrying out actions such as buying assets, requesting channels, and swapping. You can run the app as **Node**, **Mind**, or both, switchable from **Settings → Capabilities**.
 
-- **Alpha Software Caution**: This software is still in alpha. Swaps may fail or get stuck, and **mainnet usage is not recommended**.  
-- **Platform Note**: Kaleido Mind depends on a local AI runtime and **may not be available on Windows yet**. All trading and node features work normally without it—run the app in **Node** mode if Mind is unavailable on your platform.
+- **Alpha Software Caution**: This software is still in alpha. Swaps may fail or get stuck, and **mainnet usage is not recommended**.
+- **Current release**: [Desktop 0.6.0](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0) is the stable distribution release. Trading remains experimental; **Kaleido Mind remains beta**. See the [changelog](CHANGELOG.md) and [release security review](docs/security-review-0.6.0.md).
+- **Mind platforms**: Optional runtime downloads are available for macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64. Node mode works without the AI runtime.
 - **Documentation**: Visit [docs.kaleidoswap.com](https://docs.kaleidoswap.com) for comprehensive guides and additional details.
 
 ## Table of Contents
@@ -24,7 +25,8 @@ KaleidoSwap also ships with **Kaleido Mind**, an optional built-in AI assistant 
   - [Supported Networks](#supported-networks)
   - [Installation 🛠️](#installation-️)
     - [1. Download Binaries](#1-download-binaries)
-      - [Verifying Downloads with GPG](#verifying-downloads-with-gpg)
+      - [Verifying Downloads](#verifying-downloads)
+    - [Updating to 0.6.0](#updating-to-060)
     - [2. Building Locally](#2-building-locally)
       - [Common Prerequisites](#common-prerequisites)
       - [Windows-Specific Instructions](#windows-specific-instructions)
@@ -63,7 +65,7 @@ KaleidoSwap also ships with **Kaleido Mind**, an optional built-in AI assistant 
 - **Tray and Background Operation**: Keep the app running in the background while the local node stays active.
 - **Multi-language UI**: Use the app in multiple supported languages through the built-in i18n system.
 - **Node Backup**: Secure node data backups directly from the settings.
-- **Kaleido Mind (AI Assistant)**: Chat with your wallet to get help and perform actions—buy assets, request channels, and swap—through a conversational interface. *(Depends on a local AI runtime; may not be available on Windows yet.)*
+- **Kaleido Mind (AI Assistant, beta)**: Chat with your wallet to get help and perform actions—buy assets, request channels, and swap—through a conversational interface. _(Requires an optional local runtime and model download.)_
 - **Flexible Capability Modes**: Run KaleidoSwap as Node only, Mind only, or both, switchable from Settings → Capabilities.
 
 ## Supported Networks
@@ -83,48 +85,42 @@ You can install the app in two ways:
 
 1. **Download** the appropriate binary for your operating system from the [Releases](https://github.com/kaleidoswap/desktop-app/releases) page.
 
-2. **Verify** the download using GPG signatures (recommended for security).
+2. **Verify** the download against the release's `SHA256SUMS` file.
 
-3. **Run** the app by executing the binary.
+3. **Install and run** the package for your operating system and architecture.
 
-#### Verifying Downloads with GPG
+#### Verifying Downloads
 
-Each release is signed with a hardware security key (Yubikey) to guarantee authenticity. Download both the binary and its `.asc` signature file, then verify:
+Download your installer and `SHA256SUMS` from the same [0.6.0 release](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0). Calculate its SHA-256 hash and compare it with the matching filename in `SHA256SUMS`:
 
-**Step 1: Import the public GPG key** (first time only)
 ```sh
-curl https://keybase.io/bitwalt/pgp_keys.asc | gpg --import
+# macOS
+shasum -a 256 <downloaded-file>
+# Linux
+sha256sum <downloaded-file>
 ```
 
-**Step 2: Download binary and signature**
-```sh
-# Example: replace VERSION and ASSET with the current release tag and asset name
-VERSION=v0.4.0
-ASSET=KaleidoSwap_0.4.0_amd64_linux.AppImage
+On Windows, use PowerShell:
 
-curl -LO https://github.com/kaleidoswap/desktop-app/releases/download/$VERSION/$ASSET
-curl -LO https://github.com/kaleidoswap/desktop-app/releases/download/$VERSION/$ASSET.asc
+```powershell
+Get-FileHash <downloaded-file> -Algorithm SHA256
 ```
 
-**Step 3: Verify the signature**
-```sh
-gpg --verify "$ASSET.asc" "$ASSET"
-```
+Checksums detect file corruption; they are not independent proof of publisher identity. The app's updater verifies the `.sig` signatures automatically using its embedded public key. Both macOS builds are also code-signed and Apple-notarized. This release does not include GPG `.asc` files.
 
-**Expected output:**
-```
-gpg: Good signature from "Walter Maffione <your-email>"
-```
+### Updating to 0.6.0
 
-> **Note:** The `.asc` files are GPG signatures created post-build with a hardware security key. The `.sig` files in releases are for the app's auto-updater functionality. macOS binaries are also code-signed and notarized by Apple.
+Use the app's update prompt, or download the matching installer from the release page. The public updater path from **0.5.1 to 0.6.0** was verified on **macOS Apple Silicon**, with the local application database preserved. See the [validation details](docs/security-review-0.6.0.md#validation) for the scope of testing.
+
+**RGB Lightning Node 0.10.0 or later is required.** The bundled node is 0.10.0. Wallets and backups created with the node bundled in desktop 0.5.0 or earlier require a separate migration: node 0.9.0 changed recovery-phrase storage without an automatic migration. Updating the desktop does not migrate those older node wallets. Keep your node backup and recovery phrase before upgrading.
 
 ### 2. Building Locally
 
 #### Common Prerequisites
 
 - **Tauri 2 prerequisites**  
-  Install the [official Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform, including Rust, Node.js, and pnpm.
-- **Repository**  
+  Install the [official Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform, including Rust, Node.js **22.22.1 or later**, and pnpm.
+- **Repository**
   ```sh
   git clone https://github.com/kaleidoswap/desktop-app
   cd desktop-app
@@ -139,35 +135,35 @@ gpg: Good signature from "Walter Maffione <your-email>"
 3. **MSVC for C++ Linking**  
    Ensure **Microsoft Visual C++** is installed (usually via Visual Studio or Build Tools).
 4. **Kaleido Mind on Windows**  
-   The built-in **Kaleido Mind** AI assistant relies on a local AI runtime that may not be supported on Windows yet. Trading and node features are unaffected—run the app in **Node** mode (Settings → Capabilities) if Mind is unavailable.
+   The optional **Kaleido Mind beta** runtime is available for Windows x64. Download it through the app when enabling Mind; Node mode does not require it.
 
 #### Linux-Specific Instructions
 
 1. **Build Tools and Libraries**  
    Install `build-essential`, `pkg-config`, and SSL libraries on Debian/Ubuntu (or equivalents on other distros).
 2. **GTK and WebKit Requirements**  
-   Install **libsoup 2.4**, **javascriptcoregtk 4.0**, **webkit2gtk 4.0**, etc.
+   Install the Tauri 2 GTK 3 and WebKitGTK 4.1 development libraries. The Ubuntu 22.04 release workflow also installs WebKitGTK 4.0, GLib, AppIndicator, librsvg and patchelf; see [.github/workflows/build.yml](.github/workflows/build.yml) for the exact build dependencies.
 3. **Tauri Prerequisites**  
    Confirm correct installation of Rust, Node.js, npm, and pnpm.
 
 #### Building and Running
 
-1. **Install dependencies**:  
+1. **Install dependencies**:
    ```sh
-   pnpm install
+   pnpm install --frozen-lockfile
    ```
-2. **Build the Tauri app**:  
+2. **Build the Tauri app**:
    ```sh
    # For current platform
    pnpm run tauri:build
-   
+
    # For Windows specifically
    pnpm run tauri:build:windows
-   
+
    # Using Make
    make build-app
    ```
-3. **Run Kaleidoswap in development mode**:  
+3. **Run Kaleidoswap in development mode**:
    ```sh
    pnpm run tauri:dev
    ```
@@ -234,7 +230,7 @@ gpg: Good signature from "Walter Maffione <your-email>"
 - **🔐 TOR Support:** Integrate TOR for enhanced privacy and anonymity.
 - **🤖 Expanded Automation:** Broaden recurring trading and execution controls beyond the current DCA flows.
 - **✨ Improved UI/UX Design:** Further refine the user interface for a better overall experience.
-  
+
 ## Contributing 🤝
 
 We welcome contributions of all forms—bug reports, feature requests, and pull requests!
@@ -254,7 +250,7 @@ We welcome contributions of all forms—bug reports, feature requests, and pull 
 
 ## Support 📞
 
-- If you run into any issues or want to request a feature, please [open an issue](https://github.com/kaleidoswap/desktop-app/issues).  
+- If you run into any issues or want to request a feature, please [open an issue](https://github.com/kaleidoswap/desktop-app/issues).
 - Additional documentation is available at [docs.kaleidoswap.com](https://docs.kaleidoswap.com).
 
 ## License 📜
@@ -270,16 +266,15 @@ Kaleidoswap is licensed under the [MIT License](LICENSE).
 - You are solely responsible for the security of your funds, private keys, and any transactions conducted through the application.
 - We strongly recommend testing with minimal amounts on test networks before considering any use on mainnet.
 - The software may contain bugs, errors, or security vulnerabilities that could result in the loss of funds.
----  
 
-*Thanks for using Kaleidoswap! We're excited to see what you build, and we appreciate your feedback and contributions.*
+---
+
+_Thanks for using Kaleidoswap! We're excited to see what you build, and we appreciate your feedback and contributions._
 
 ### AI runtime baseline
 
-The next desktop build uses `mind-assets-v0.11.0`: Mind/provider `0.11.0`,
-MCP `0.5.0`, and QVAC `0.21.0`. Existing installations detect the runtime tag
-change and offer the new download instead of silently reusing an older runtime.
-Publish all platform archives and checksums before shipping the desktop build.
-Dataset collection is not enabled by this dependency update. The packaged runtime
-is LLM-only; the current bundle prunes speech engines, so this update does not
-add desktop voice support.
+Desktop 0.6.0 downloads `mind-assets-v0.11.1` on demand. Mind core/provider and runtime assets are released as 0.11.1; the desktop Mind experience remains **beta**. Runtime assets were preserved unchanged during the desktop security rebuild.
+
+The bundle uses QVAC 0.21.0 and is LLM-only; it does not add desktop voice support. Dataset collection is not enabled by this dependency update. When the runtime tag changes, existing installations offer the matching download instead of silently reusing an older runtime.
+
+Thinking is optional and can be slower on busy or lower-powered devices. Reduce its budget or disable it for faster replies. Review amounts and tool confirmations before authorizing wallet actions.

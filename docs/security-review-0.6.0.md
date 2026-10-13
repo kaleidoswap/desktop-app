@@ -1,8 +1,8 @@
 # Desktop 0.6.0 security review — 2026-10-13
 
-The owner requested rebuilding the unannounced 0.6.0 release in place. Prepare and verify signed replacement installers in a separate draft, retain a backup of the current artifacts, and promote only after Linux tests and signature checks pass. Mind assets are unchanged.
+The rebuilt [stable 0.6.0](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0) was published on 2026-10-13 after replacing the unannounced build at the owner's request. [PR #189](https://github.com/kaleidoswap/desktop-app/pull/189) was squash-merged as `fe42ad85feb01d64217324ac0da4a8cfcb769c4f`; both `v0.6.0` and `latest` point to that source commit. Signed replacement packages passed the checks below. Mind remains beta and its assets were preserved unchanged.
 
-## Changes prepared
+## Shipped changes
 
 - Remove the unused Node polyfill plugin and its elliptic dependency (GHSA-848j-6mx2-7j84). The frontend uses browser APIs; the SDK guards its optional process logger.
 - Exclude React Native, SVG native peers and the native-only WDK dependency from this web desktop application. These overrides must be revisited if native UI imports are introduced. Upgrade lint-staged to 17.6.0, which requires Node >=22.22.1. Together these remove braces (GHSA-vfj7-8cjw-p6xm), for which no patched version is available.
@@ -25,12 +25,21 @@ Primary advisories: [glib](https://rustsec.org/advisories/RUSTSEC-2024-0429.html
 
 ## Release cleanup
 
-Removed only desktop test releases test-v0.6.0-rc.1, rc.4, rc.5 and rc.6. Git tags were retained. The stable v0.6.0 and every mind-assets release were verified unchanged by asset name and digest after deletion. Mind remains beta. No updater or Mind asset was deleted.
+Desktop test releases `test-v0.6.0-rc.1`, `rc.4`, `rc.5` and `rc.6` were removed earlier; their Git tags were retained. The signed replacement draft was promoted to `v0.6.0` and marked Latest. The temporary backup draft was removed after public-download and updater verification; the previous release artifacts remain in a local backup. Only the stable desktop 0.6.0 release remains. Every protected Mind asset was checked by name and digest and remains unchanged.
+
+## Docker follow-up rebuild
+
+A subsequent 0.6.0 rebuild adds automatic Docker image pulls, a manual availability recheck, and refresh on window focus. Local validation passed: three capability regression tests, TypeScript, ESLint, formatting and `cargo check --locked`. The signed build and public upgrade evidence below applies to the earlier security rebuild at `fe42ad85`, not yet to the Docker follow-up artifacts.
 
 ## Validation
 
-- Production frontend build passed (TypeScript and Vite); no missing Node polyfill warnings.
-- Frontend suite: 547/549 passed initially; two UI tests hit the default five-second timeout under host load. Both affected files passed on a single-worker rerun with a 30-second timeout (9/9); source timeout settings were not changed.
-- pnpm audit: zero known vulnerabilities, including development dependencies.
-- cargo audit: XML and event-listener findings removed; rkyv remains in the lockfile audit, plus the glib/lru and maintenance warnings documented above.
-- Native Apple Silicon cargo check --locked passed. Linux validation of the GLib backport is required before approval. This review does not validate a new signed installer.
+Results below apply to the 2026-10-13 release checks, not a continuous security guarantee.
+
+- [PR checks](https://github.com/kaleidoswap/desktop-app/actions/runs/38391371056): frontend formatting, lint, type checks and production build passed; **549/549 frontend tests** passed. Backend tests passed on Linux and macOS Apple Silicon (**21/21 each**).
+- **3/3 optimized GLib iterator regression tests** passed. An isolated negative control with the original unpatched implementation reproduced a segmentation fault. The Linux release build compiled the vendored patched GLib source.
+- [Signed release build](https://github.com/kaleidoswap/desktop-app/actions/runs/38392877723): all four targets succeeded (macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64).
+- All **seven updater-package signatures** were cryptographically verified. Both macOS applications passed code-signature, Gatekeeper notarization and stapled-ticket checks; DMG checksums and matching app/node architectures were verified. Updater signatures do not establish Windows Authenticode signing.
+- All **18 public release downloads** matched their expected hashes. The public `latest.json` feed and both release tags were checked.
+- The actual updater installed **0.5.1 → 0.6.0** from the public HTTPS feed into a disposable macOS Apple Silicon app copy, verified its signature, and produced the same executable as the validated new ARM build. The upgraded app started successfully; the local application database's logical contents were unchanged. This does not establish update behavior on Windows, Linux or Intel Macs, or migration compatibility for older node wallets.
+- `pnpm audit`: **zero known vulnerabilities**, including development dependencies. GitHub Dependabot: **zero open alerts** after the merge.
+- `cargo audit`: XML and event-listener findings removed; the version-based GLib finding, lru/rkyv assessments and maintenance warnings remain documented above. No audit findings were suppressed or dismissed.
