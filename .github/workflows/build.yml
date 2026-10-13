@@ -9,6 +9,11 @@ on:
       - 'v*'
       - 'test-v*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Draft build tag (vX.Y.Z or build-vX.Y.Z-security)'
+        required: true
+        type: string
 
 jobs:
   build-tauri:
@@ -33,7 +38,16 @@ jobs:
 
       - name: Extract version from tag
         id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        shell: bash
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            [[ "$REQUESTED_TAG" =~ ^(build-)?v[0-9]+\.[0-9]+\.[0-9]+(-security)?$ ]] || exit 1
+            expected_version="$(node -p "require('./package.json').version")"
+            [[ "$REQUESTED_TAG" == "v$expected_version" || "$REQUESTED_TAG" == "build-v$expected_version-security" ]] || exit 1
+          fi
+          echo "VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
 
       # macOS Code Signing Setup
       - name: Import Apple Developer Certificate (macOS)
@@ -112,7 +126,7 @@ jobs:
           cache-on-failure: true
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       # Initialize the checkout before restoring target/: Makefile treats an
       # existing directory as a repository.
@@ -151,27 +165,26 @@ jobs:
 
       - name: Extract changelog for release
         id: changelog
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
         shell: bash
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
           echo "Extracting changelog for version $VERSION"
-          
+
           # Extract the changelog section for this version
           CHANGELOG=$(awk -v heading="## [Version $VERSION]" '
             index($0, heading) == 1 { found = 1; next }
             found && /^## \[Version / { exit }
             found { print }
           ' CHANGELOG.md)
-          
+
           # If changelog is empty, provide a default message
           if [ -z "$CHANGELOG" ]; then
             CHANGELOG="See the CHANGELOG.md for details about this release."
           fi
-          
+
           # Save to file for multiline content
           echo "$CHANGELOG" > /tmp/changelog.txt
-          
+
           # Set output using the recommended method for multiline strings
           {
             echo 'CHANGELOG<<EOF'
@@ -197,14 +210,15 @@ jobs:
           BUILD_AND_RUN_RGB_LIGHTNING_NODE: ${{ matrix.platform != 'windows-latest' && 'true' || 'false' }}
         id: tauri_build
         with:
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
-          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
+          releaseCommitish: ${{ github.sha }}
+          tagName: ${{ inputs.release_tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || (github.ref == 'refs/heads/test-build' && 'test-latest' || 'latest') }}
+          releaseName: ${{ inputs.release_tag && format('KaleidoSwap {0}', inputs.release_tag) || startsWith(github.ref, 'refs/tags/v') && format('KaleidoSwap {0}', github.ref_name) || (github.ref == 'refs/heads/test-build' && 'Test App v__VERSION__' || 'App v__VERSION__') }}
           releaseBody: |
             ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) || format('Release v{0}', env.VERSION) }}
-            
+
             See the assets to download and install this version.
 
-            ${{ startsWith(github.ref, 'refs/tags/v') && steps.changelog.outputs.CHANGELOG || 'Changes in this version:
+            ${{ (startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != '') && steps.changelog.outputs.CHANGELOG || 'Changes in this version:
             - Built from test-build or build branch
             - Includes macOS (Intel + Apple Silicon), Linux, and Windows builds
             - All macOS builds are signed with Apple Developer ID Certificate and notarized by Apple
@@ -218,12 +232,12 @@ jobs:
             - macOS Intel (x86_64): Download and extract the `.app.tar.gz` asset; native Intel build, code signed and notarized
             - Linux: Use .AppImage or .deb as preferred
             - Windows: Use the provided installer
-            
+
             All macOS builds install without security warnings!
-            
+
             **Verification:**
             - GPG signatures (`.asc` files) will be added shortly after release
-          releaseDraft: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+          releaseDraft: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.ref, 'refs/tags/v') }}
           prerelease: ${{ startsWith(github.ref, 'refs/tags/test-v') }}
           includeUpdaterJson: true
           updaterJsonPreferNsis: false
@@ -256,8 +270,8 @@ jobs:
           git push origin latest
 
       - name: Create manifest file
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
-        shell: bash  # Explicitly use bash for this step
+        if: matrix.platform != 'windows-latest' # Skip on Windows
+        shell: bash # Explicitly use bash for this step
         run: |
           echo "Creating manifest.txt for signing..."
           echo "App version: ${{ env.VERSION }}" > manifest.txt
@@ -292,7 +306,7 @@ jobs:
           cat manifest.txt
 
       - name: Upload manifest.txt
-        if: matrix.platform != 'windows-latest'  # Skip on Windows
+        if: matrix.platform != 'windows-latest' # Skip on Windows
         uses: actions/upload-artifact@v4
         with:
           name: manifest-${{ github.ref_name || 'build' }}-${{ matrix.platform }}-${{ matrix.args != '' && format('{0}', matrix.args) || 'default' }}

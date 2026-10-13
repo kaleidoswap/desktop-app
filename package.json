@@ -76,17 +76,23 @@
     "eslint-plugin-sort-keys-fix": "^1.1.2",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^7.3.7",
-    "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.1.11"
   },
   "lint-staged": {
     "src/**/*": "prettier --write --ignore-unknown",
     "src/**/*.{ts,tsx}": "eslint --fix"
+  },
+  "pnpm": {
+    "overrides": {
+      "kaleido-ui>@tetherto/wdk-uikit-react-native": "-",
+      "react-native": "-",
+      "react-native-svg": "-"
+    }
   }
 }

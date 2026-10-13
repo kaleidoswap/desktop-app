@@ -2,6 +2,12 @@
 
 A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
 
+### Security maintenance
+
+- Apply the upstream GLib iterator safety fix to the Linux GTK dependency.
+- Update XML parsers and event-listener to patched versions.
+- Remove unused browser crypto polyfills and React Native dependencies from the desktop build.
+
 ### Upgrade compatibility
 
 - **RGB Lightning Node 0.10.0 or later is required.** The bundled node is pinned to 0.10.0; remote nodes must also run a supported version.
