@@ -1,119 +1,70 @@
-## [Version 0.6.0] - 2026-10-08
+## [Version 0.6.0] - 2026-10-13
 
-### 🚀 Features
-- **App Connections in the sidebar**: Nostr Wallet Connect moves to the Node section, with a redesigned page: service status, connection cards with permissions, budget and last use, pause switch, and revoke confirmation
-- **Settings tabs**: Settings are grouped into tabs, and the language applies at once
-- **Deposit and withdraw**: BTC and USDT are pinned in the deposit picker, with a slider and recents for other assets; a confirmation screen follows each sent payment
-- **Explorer links**: BTC sends show their txid with a block explorer link
-- **Node logs**: Logs keep their history across restarts, show the newest lines first, and can be exported from a local Docker node, also behind a remote URL
-- **KaleidoMind model catalog**: Updated published models, with a recommendation based on device memory
+A clearer desktop experience for managing an RGB Lightning node, trading assets and using KaleidoMind. These notes cover the complete upgrade from 0.5.0, including the changes previously listed under 0.5.1.
 
-### 🔧 Improvements
-- **KaleidoMind runtime `mind-assets-v0.11.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.11.0 (`@kaleidorg/mind` 0.11.0) and `kaleido-mcp` 0.5.0, on `@qvac/sdk` 0.21.0. Swaps quote with the RGB asset id, report when they complete or expire, show BTC amounts in sats, and explain the per-payment channel limit; balance questions that name an asset include RGB balances, and requests for a wallet the desktop does not have (Spark, Ark, Liquid) say so; ordering a channel asks for confirmation and shows the full amount due. Existing installs download the new runtime on next enable
-- **Local models only**: Phone pairing and remote model serving are removed for now; KaleidoMind runs local models only
-- **RGB-only agent**: KaleidoMind loads only the RGB Lightning Node, channel, KaleidoSwap trading and portfolio skills, and only the node, KaleidoSwap and price tools; the Spark, Flashnet, Liquid, gift-card and paywall skills are gone, since the desktop wallet is an RGB Lightning Node
-- **Thinking switch**: A "Thinking on/off" button in the chat header, also in Agent → Response limits. Off answers faster; on reasons before answering, up to the thinking budget
-- **Response cap**: Each reply is capped at 4,096 tokens by default, adjustable between 512 and 8,192 in Agent → Response limits; it can no longer be set to uncapped
-- **Accessible dialogs**: Dialogs keep focus inside and restore it on close; restart, logout and shutdown use a shared confirmation dialog
-- **Translations**: Remaining hardcoded toasts and settings errors are translated in all eight languages
-- **Startup**: Simpler splash screen and smoother loading animation
+### Upgrade compatibility
 
-- **Security updates**: Nostr libraries (`nostr` 0.44.8, `nostr-relay-pool` 0.44.3) and `rustls` 0.23.45 fix malformed-payload denial of service, unverified relay events and a TLS 1.3 handshake flaw; development tooling updated
-- **Smaller install**: Unused dependencies removed
+- **RGB Lightning Node 0.10.0 or later is required.** The bundled node is pinned to 0.10.0; remote nodes must also run a supported version.
+- **Older local wallets need a separate migration.** Node 0.9.0 changed recovery-phrase storage without an automatic migration. Wallets and backups created with the node bundled in desktop 0.5.0 or earlier cannot be opened directly with the newer node. Updating the desktop does not migrate those wallets.
+- Updating an existing 0.5.1 installation to 0.6.0 was verified on macOS Apple Silicon, preserving accounts, orders, settings and balances. This test does not establish compatibility for older node wallets.
 
-### 🐛 Bug Fixes
-- **Update modal**: Long release notes no longer push the install and close buttons off screen; notes render as Markdown, and a stalled download is reported
-- **KaleidoMind mock answers**: An outdated runtime now shows "Update KaleidoMind runtime" instead of silently answering in mock mode, and mock mode shows a banner
-- **Recovery phrase length**: Wallet creation says 12 words, matching the phrase the node generates
-- **RGB assets**: Every RGB asset resolves in the wallet, BTC unit conversion is shared, and polling is lighter
-- **Colored UTXO deposits**: Deposit controls stay interactive
+### Wallet and node
 
-## [Version 0.5.1] - 2026-10-07
+- Clearer typography, spacing, navigation, dashboard balances and channel liquidity displays.
+- Redesigned receive and payment-confirmation screens, with larger QR codes, copyable addresses, pinned BTC/USDT choices and transaction explorer links.
+- Incoming on-chain payments appear while awaiting confirmation; Lightning deposits show a completion state.
+- More reliable reconnection and account switching, clearer locked/offline/unsupported-node errors, and safer handling of database failures.
+- Indexer-only synchronization when no Bitcoin Core endpoint is configured. Bitcoin Core settings are optional; existing endpoints are retained.
+- Node logs persist across restarts and can be exported for local Docker nodes, including those reached through a remote URL.
+- Recovery phrases remain hidden until revealed, and backup verification requires viewing the phrase first.
 
-> ⚠️ **Requires RGB Lightning Node 0.10.0 or later.** The bundled node is now RLN 0.10.0, and remote nodes must run 0.10.0+ as well (`kaleidoswap/rgb-lightning-node:0.10.0`). Wallets created on the bundled node of 0.5.0 or earlier, and backups taken from them, cannot be opened by 0.5.1: node 0.9.0 changed how the recovery phrase is stored, without a migration. Before upgrading, close your channels and send your BTC and RGB assets out with 0.5.0, then create a new wallet in 0.5.1.
+### Trading, channels and app connections
 
-### 🚀 Features
-- **RGB Lightning Node 0.10.0**: The bundled node moves to 0.10.0, pinned to a release tag instead of the tip of master, and the app speaks the 0.8, 0.9 and 0.10 APIs (mandatory RGB invoice/send expiration, transfer filters, `WaitingBroadcast` status)
-- **Indexer-only sync**: Accounts without a bitcoind RPC URL now unlock with indexer-only chain sync instead of placeholder localhost credentials
-- **Safer recovery-phrase backup**: The phrase stays blurred until you reveal it, copy works only while it is visible, and verification requires revealing it first; "Skip backup" is now a discreet link
-- **Receive screen redesign**: Centered asset picker, a larger QR code, full addresses that copy with a click, and no empty columns
-- **On-chain payment detection**: While the deposit screen is open, an incoming BTC or RGB on-chain payment is shown as soon as it reaches the mempool, with the confirmations still missing, then marked as received once it confirms. Lightning deposits show the same confirmation instead of closing the window
+- Correct BTC/satoshi and RGB display units in balances, channel orders, swap quotes and confirmation screens.
+- Quote refresh no longer depends on window animation frames; Lightning settlement layers and complete fees are included in requests and reviews.
+- Maker and LSP settings follow the selected account. Missing endpoints produce clear setup guidance instead of calls to an unrelated default service.
+- Limit-order prices no longer default to the current market price; immediately executable orders show a warning.
+- Nostr Wallet Connect is available under **App Connections**, with permissions, budgets, last-use details, pause controls and revoke confirmation. RGB invoice and payment requests include required node fields.
 
-### 🔧 Improvements
-- **Clearer node errors**: An unlock rejected because the node runs an unsupported version now says so instead of showing the raw deserialization error
-- **Mutinynet by default**: Removed the Bitfinex regtest network; regtest is local-only (local or Docker)
-- **Sturdier desktop backend**: A locked or corrupt database reports an error at startup instead of crashing, and one failed request no longer breaks all later ones
-- **Translations**: All eight languages are in sync with English, with a test that guards key sets and value shapes
-- **bitcoind is optional**: Mainnet, Mutinynet and Testnet no longer prefill a bitcoind RPC URL and sync from the indexer by default. Bitcoin Core is an "Optional · Advanced" field in onboarding, restore and Settings; existing accounts keep their stored URL
-- **KaleidoMind runtime `mind-assets-v0.8.0`**: The agent runtime moves to `@kaleidorg/mind-provider` 0.7.0 (`@kaleidorg/mind` 0.7.0), `kaleido-mcp` 0.3.1 and `@qvac/sdk` 0.21.0. Existing installs download the new runtime on next enable
-- **Phone pairing paused**: Delegating from the mobile app to the desktop brain relied on a QVAC feature removed in 0.19, so pairing is hidden until it returns in a later release
-- **KaleidoMind on each network**: The agent's MCP server gets the active account's network, maker URL and RGB proxy, so it no longer falls back to a default maker that does not match the network
-- **New agent tools**: Labels for the RGB issuance, UTXO, transfer and atomic-swap tools in the live activity pill
-- **No maker configured**: Mainnet and Testnet no longer default to KaleidoSwap API hosts that do not exist. Market-maker, DCA and limit-order screens ask for a maker URL when the account has none, maker calls fail with a clear error instead of reaching `localhost:8000`, and KaleidoMind says when swap and channel tools are unavailable
+### KaleidoMind — beta
 
-### 🐛 Bug Fixes
-- **Limit orders filled immediately (#92)**: The limit price no longer pre-fills at the market price, which created orders that triggered on the next tick; a warning now appears when the entered price would fill right away
-- **NWC RGB payments**: Sending RGB assets and creating RGB invoices over Nostr Wallet Connect include the fields the node now requires, or return a clear error
-- **Security**: Updated dependencies with known vulnerabilities (axios, react-router, nanoid, browserslist)
-- **Channel order review**: RGB asset amounts are shown in display units (e.g. 100 USDT instead of 100,000,000 USDT)
-- **RGB receive invoice**: The invoice is regenerated after switching between on-chain and Lightning, changing the privacy mode or editing the amount, instead of leaving the screen empty
-- **KaleidoMind tool arguments**: Tool calls from the on-device model now carry their arguments (amounts, asset IDs, invoices) instead of reaching the tools empty
-- **Stop button**: Stopping a chat turn keeps the text streamed so far (or shows "Stopped.") instead of an error
-- **KaleidoMind after editing an account**: A maker, node or proxy URL changed in Settings now reaches the agent on its next start instead of after re-login
-- **Create channel**: The LSP lookup uses the account's LSP or maker URL before the network default
+- Stable **Mind core/provider 0.11.1** and **runtime assets 0.11.1**, downloaded on demand for macOS Apple Silicon, macOS Intel, Linux x64 and Windows x64.
+- Local model recommendations based on device memory, a clearer chat composer, model controls and visible start/stop feedback.
+- Optional Thinking with a bounded reasoning phase and a direct-answer fallback. Thinking can be slow or reach the timeout on busy or lower-powered devices; reduce its budget or turn it off for faster replies.
+- Stop cancels active inference and tool work; clearing a chat resets its conversation state. Cancelled or failed turns are excluded from subsequent context.
+- Correct tool arguments, wallet units and swap status. Node-health questions keep access to the full agent workflow.
+- Switching accounts resets the agent's node context. Standalone Mind shows general chat actions and does not inherit wallet tools from the previous account.
+- Desktop skills focus on RGB Lightning node management, channels, trading and portfolio reads. Phone pairing and remote model serving are unavailable in this release.
+- **Mind remains beta.** Responses can be incorrect; review the amounts and details before confirming an action.
 
-## [Version 0.5.0] - 2026-07-10
+### Reliability and distribution
 
-> ⚠️ **KaleidoMind is experimental.** The on-device agent and chat-based trading are an early preview — expect rough edges, occasional incorrect responses, and changing behavior between releases. Always review the confirmation details before approving any spend.
+- Accessible dialogs, settings tabs, immediate language switching and synchronized translations across eight languages.
+- A usable update dialog even with long release notes, with clearer stalled-download feedback and no silent fallback to mock answers.
+- Updated security dependencies and removal of unused packages.
+- Signed and notarized macOS installers with matching native app/node architectures; Windows and Linux installers are also available.
 
-### 🚀 Features
-- **KaleidoMind — on-device AI agent (experimental)**: A local, private assistant that runs entirely on-device via the QVAC engine. Chat with your wallet and node in natural language — no data leaves the machine. Bundled with the app and downloaded on first enable (provider + MCP runtime, `mind-assets-v0.7.1`), now including a **Windows (win-x64)** agent runtime alongside macOS and Linux
-- **Trade by chat**: Ask "buy 1 USDT on KaleidoSwap" and the agent quotes the maker and runs the full atomic swap (quote → init → whitelist → execute) behind a single confirmation gate showing the real numbers
-- **Buy a Lightning channel by chat**: Order inbound BTC liquidity or a new RGB asset channel (USDT/XAUT) pre-loaded via the LSP, as a one-confirmation flow
-- **Agent tab (autonomy)**: Schedule the agent to run optimizer tasks (portfolio, DCA-style) with risk limits and a dry-run default; review recent runs and costs
-- **Stop button**: Cancel an in-flight chat turn at any time — the running on-device inference is aborted immediately and the turn ends cleanly
-- **Live tool activity + reasoning**: Watch the model's tool calls (balances, channels, quotes) render as typed result cards, and optionally expand its `<think>` reasoning
-- **Wallet & node tools over MCP**: The agent reads balances, channels, and quotes, and drafts payments/swaps through the KaleidoSwap MCP server, with every spend gated by explicit confirmation
-- **Change Password**: Change your node password directly from Settings via a safe lock → changepassword → unlock sequence
-- **Docker regtest connect preset**: One-click connection preset for a local Docker regtest node, streamlining local development and testing
-- **All RGB asset schemas**: Wallet and trading surfaces now show every RGB asset schema (NIA, CFA, UDA, IFA), not just NIA
-- **Faster on-chain deposits**: The deposit flow opens straight to a freshly generated BTC address, shown immediately, with the asset step kept for RGB flows
+[Download 0.6.0](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.6.0) · [Changes since 0.5.0](https://github.com/kaleidoswap/desktop-app/compare/v0.5.0...v0.6.0)
 
-### 🔧 Improvements
-- **Tailwind v4 + kaleido-ui design tokens**: Migrated the frontend to Tailwind v4 and adopted the shared kaleido-ui design-token system for consistent theming across the app
-- **History redesign**: Reworked filters, sidebar navigation, and visual consistency across all history sections; zero-amount Lightning invoices are hidden from the deposits list by default
-- **Redesigned Deposit & Withdraw modals**: Cleaner deposit/withdraw modals with an updated global asset logo treatment
-- **Redesigned buy-channel flow**: Cleaner channel summary and payment-review UI with richer states and clearer cost breakdowns, plus Market Maker navigation polish
-- **General UI polish**: Refreshed splash screen branding, channel cards, DCA and Limit Order surfaces, buttons, modals, support modal, and notification panel
-- **Modal & control standardization**: Refactored the Peer Management, UTXO Management, and Issue Asset modals onto the shared `Modal` component with consistent inputs, filter tabs, fee selectors, and info banners; embedded Create Colored UTXOs as a step within UTXO management; swapped native `<select>`s for the shared `Select`; standardized the notification "Clear All", Skip Recovery Phrase, mnemonic display, and Test Connection button treatments; and replaced the node-switching alert icon with a spinner
-- **Consolidated Maker & LSP configuration**: Unified Maker and LSP URL configuration in Settings
-- **"Max via Lightning" deposit**: The Lightning deposit max now reflects the maximum HTLC limit across channels
-- **Onboarding readability**: Improved recovery-phrase readability during onboarding
-- **KaleidoMind polish**: Styled the model pickers, fixed a modal race condition, and restyled the start screen
-- **Mind runtime v0.7.1**: Updated the bundled provider (`@kaleidorg/mind-provider ^0.6.3`) and MCP (`kaleido-mcp ^0.2.1`) so chat trading and the stop button work end to end; the win-x64 runtime now ships the Bare runtime binary
-- **SDK migration**: Moved to `kaleido-sdk ^0.1.11` (BitcoinNetwork node/api split, TransferKind enum, refresh defaults)
-- **Removed Auto Time-Lock**: Dropped the Auto Time-Lock setting to simplify node configuration
+## [Version 0.5.0] - 2026-06-21
 
-### 🐛 Bug Fixes
-- **Chat swap quote failed validation**: "buy 1 USDT" hit an MCP input-validation error because the swap recipe sent the wrong argument names; the quote tool now derives layers and accepts a buy-side amount, and the recipe emits the correct fields
-- **Chat stalled on extraction cancel/timeout**: A cancelled or timed-out slot-extraction inference on small models no longer fails the whole request — it degrades to deterministic parsing for requests the app already understands
-- **Node reconnection**: The app now reconnects automatically and faster when the node connection drops
-- **Locked remote node handling**: A locked node (HTTP 403) is treated as locked, not as an auth failure, so account creation and connection no longer fail against a locked remote node
-- **Asset precision of 0**: Respect an explicitly configured asset precision of `0` (`||` → `??`) instead of falling back to a default
-- **Clearer error classification**: Distinguish RGB/SDK validation errors from connectivity failures for more accurate messaging
-- **Order history hygiene**: Stop persisting empty or failed channel orders to history
-- **Expanded channel card**: Restored the expanded channel card with BTC/RGB icons
-- **No false restart prompt**: Settings no longer shows a spurious "restart required" prompt
-- **Trade page & dashboard fixes**: Assorted fixes across the trade page and dashboard
-- **KaleidoMind won't start on Windows**: The win-x64 agent runtime was published without its Bare runtime binary (`bare-runtime-win32-x64`), so QVAC aborted at model load with "Could not load the Bare runtime binary for win32-x64". The bundle now installs the platform package (npm's `--os` needs `win32`, not `win`) and the CI build fails outright if any platform runtime is missing
-- **BTC deposit/withdrawal history was empty**: History filtered on a `transaction_type` of `User`, which the node's enum never emits; it now classifies on-chain movements by excluding RGB transaction types and derives direction from the net sent/received amount, and shows the loader while either query is still in flight
+Introduced KaleidoMind as an experimental on-device assistant and refreshed the wallet, channel and trading interfaces.
 
-### 🏗️ Infrastructure
-- **Windows KaleidoMind runtime build**: The `build-mind-assets` CI workflow now builds and publishes the `win-x64` agent runtime tarball, fixing the 404 Windows users hit on first enable. Includes Windows-specific bundling fixes: resolving `npm.cmd`, running npm via shell (Node 24 `.cmd`-spawn EINVAL), extracting the Node `.zip` with System32 `bsdtar`, a `sha256sum`/`shasum -a 256` checksum fallback, normalizing npm's `--os` to `win32` so the Bare runtime platform package is installed, and a build-time guard that fails if any platform runtime package is missing
+### Highlights
+
+- On-device chat with wallet and node tools, visible tool activity and reasoning, a Stop control, and confirmation screens for swaps and channel purchases.
+- An agent workspace for scheduled tasks, with risk limits and a dry-run default.
+- A shared design system, redesigned history filters, deposit/withdraw dialogs and channel-purchase reviews.
+- Consolidated maker/LSP settings, support for all RGB asset schemas, and clearer Lightning deposit limits.
+- Node password changes from Settings, a Docker regtest connection preset and Korean translations.
+- Fixes for asset precision, chat swap quotes, node reconnection and failed channel-order history.
+
+[Download 0.5.0](https://github.com/kaleidoswap/desktop-app/releases/tag/v0.5.0)
 
 ## [Version 0.4.0] - 2026-04-15
 
 ### 🚀 Features
+
 - **Docker Node Backend**: Run the RGB Lightning Node via Docker directly from the app — automatic image pull, container lifecycle management, and health monitoring with no manual setup required
 - **Node Reachability Monitoring**: Continuous background health checks with automatic reconnection and clear status indicators when the node becomes unreachable
 - **Reverse Quote Support**: Accept quotes from the maker side, enabling two-way RFQ trading
@@ -127,6 +78,7 @@
 - **Expanded Internationalization**: Broadened multi-language coverage across trading, wallet history, setup, and channel management flows
 
 ### 🔧 Improvements
+
 - **Backend Selection UX**: Always show backend selection (native/Docker/remote) during local node setup for clearer onboarding; Docker backend is prioritized when available
 - **Trading Page Refactor**: Extracted market-maker and limit-orders into separate view components for better maintainability
 - **Channel Order Payment Monitoring**: Improved channel order payment tracking, persistence, and duration selector
@@ -140,6 +92,7 @@
 - **Code Formatting**: Reordered object properties and cleaned up code formatting across multiple components and hooks
 
 ### 🐛 Bug Fixes
+
 - **Light Mode Disabled**: Disabled light mode to prevent UI inconsistencies; dark mode is now the only supported theme
 - **Issues #95 and #96**: Resolved reported bugs related to wallet and UI behavior
 - **Wallet Actions Visibility**: Fixed wallet actions not showing when only the native backend is available
@@ -153,6 +106,7 @@
 - **Duplicate State Fix**: Removed duplicate `bearer_token` property in nodeSettings initial state
 
 ### 🏗️ Infrastructure
+
 - **Dependency Updates**: Refreshed frontend and Tauri-related dependencies and aligned project scripts with the current toolchain
 - **Security Fixes**: Updated rustls-webpki (0.103.9 → 0.103.10) and tar (0.4.44 → 0.4.45) to patch known vulnerabilities
 - **CI: macOS DMG Bundle**: Added DMG bundle target to macOS builds
@@ -164,32 +118,38 @@
 ## [Version 0.3.2] - 2025-11-10
 
 ### 🚀 Features
+
 - **Witness RGB Asset Sending**: Added support for sending RGB assets to witness recipients with a new input field for specifying Bitcoin amount (in sats) required for witness UTXOs, with validation ensuring at least 512 sats
 - **RGB Invoice Assignment**: Enhanced RGB invoice handling with improved assignment functionality in deposit and withdrawal flows
 - **Windows Installer Enhancement**: Added WebView2 embedBootstrapper configuration to Tauri config, improving Windows installation experience by automatically installing required WebView2 components
 
 ### 🔧 Improvements
+
 - **Withdrawal Form**: Enhanced error handling and validation for witness amount inputs, providing better user feedback during asset withdrawals
 - **Deposit Flow**: Improved RGB invoice assignment handling in Step2 component with better validation and user guidance
 
 ## [Version 0.3.1] - 2025-11-03
 
 ### 🚀 Features
+
 - **Mnemonic Viewer Modal**: Secure access to view your recovery phrase directly from the app with proper security warnings and confirmation
 - **Windows Installer Enhancement**: Improved Windows installation experience with NSIS configuration for better integration with Windows OS
 
 ### 🐛 Bug Fixes
+
 - **RGB Asset On-chain Payments**: Fixed missing amount parameter when sending RGB assets on-chain, ensuring proper transaction amounts
 - **Withdrawal Form**: Fixed handling of null or undefined assignments in amount extraction, preventing crashes during withdrawals
 - **Invoice Details**: Improved clarity and user guidance in RGB invoice details and withdrawal forms
 
 ### 🔧 Improvements
+
 - **Layout & Settings UI**: Enhanced user experience with improved layout and settings components
 - **Code Cleanup**: Removed unused assignment extraction logic for better code maintainability
 
 ## [Version 0.3.0] - 2025-10-20
 
 ### 🚀 Features
+
 - **Direct Asset Purchase in Channels**: Buy assets directly in a channel even if you don't have a channel yet - the app will automatically set up the channel for you during the purchase process
 - **Fee Estimation for Channel Setup**: View estimated setup, capacity, and duration fees in real-time, helping you plan your channel configurations better
 - **Order Detail View**: Access detailed information about channel orders, including status and payment details, via the new Order Detail Card
@@ -201,6 +161,7 @@
 - **Asset Delivery Status and Retry**: View the delivery status of your assets, and retry delivery for pending orders directly from the Order Detail Card
 
 ### 🚀 Improvements
+
 - **Mac Installation Fixed**: Seamless installation on macOS with Apple code signing - no more security warnings or installation issues!
 - **Trading Flexibility**: Trade using on-chain balance even when no channels are available, and get prompted to create channels for specific assets
 - **User Interface Enhancements**: Enjoy improved button styles, layout, and animations for a more engaging user experience
@@ -210,6 +171,7 @@
 - **Buy Channel Modal Improvements**: New components and better organized sections for a smoother payment and order summary experience
 
 ### 🐛 Bug Fixes
+
 - **Database Migration Crash Fix**: Fixed critical crash when upgrading from previous versions due to missing database columns. The app now automatically migrates the database schema when detecting an older version
 - **Improved Error Messaging**: Enhanced conditions for displaying connection errors and managing error message timeouts, reducing confusion during rapid actions
 - **Wallet Status Loading State**: Clearer feedback with a loading animation when checking wallet status, ensuring you know when the wallet is being unlocked
@@ -217,6 +179,7 @@
 ## [Version 0.2.0] - 2025-07-23
 
 ### 🚀 Features
+
 - Enhance `IssueAssetModal` with amount calculation and preview using `useMemo` hooks for better user feedback (70f3cee0)
 - Implement `CloseChannelModal` for channel closure confirmation with state management and logic updates (f68639a9)
 - Enhance `create-new-channel` flow with improved error handling and UI updates, including alert designs and action buttons (440bd432)
@@ -242,6 +205,7 @@
 - Auto-generate BTC address on component mount in Step2 with loading state management (47c6507d)
 
 ### 🐛 Bug Fixes
+
 - Update max sendable amount in step3 of channel buy to use max HTLC limit for clarity (adffe031)
 - Fix error modal not closing in open channel scenarios (eccea6ff)
 - Update Tauri prerequisites link in README for installation instructions (888f749c, f08f4276)
@@ -250,6 +214,7 @@
 - Fix Windows manifest file on pipeline for proper CI integration (3853a14a)
 
 ### 🔧 Improvements
+
 - Improve WebSocketService with retry logic and connection management for better performance (965dbed9)
 - Refactor `UnlockingProgress` and `SetupLayout` components for improved layout and styling (1e1c446c)
 - Enhance WithdrawModal with new components and improved functionality for balance display and invoice handling (e5cc2faa)
@@ -257,14 +222,17 @@
 - Enhance UpdateChecker with version comparison and logging enhancements for clarity on update availability (5d747b4c)
 
 ### 🏗️ Infrastructure
+
 - Update package dependencies and configuration for improved functionality and security (124691ce)
 - Enhance GitHub Actions workflow with version tagging and release management improvements (1bdfec21)
 - Improve WebSocket connection handling and trading setup with simplified state management (866fc070)
 
 ### 📚 Documentation
+
 - Update README and build instructions to reflect changes in build processes and prerequisites (c1b909cc, 40aaf690)
 
 ### 🧹 Refactoring
+
 - Remove `UnlockingProgress` component and refactor related components for better maintainability (51b15eb0)
 - Clean up WebSocketService and enhance number formatting utilities (7427137e)
 - Remove SwapForm and QuickAmountSection components to streamline trading interface (2245de2e)
